@@ -29,6 +29,8 @@ from routers import (
     admin_settings,
     dify,  # v0.7.4: Dify workflow integration
     ai,  # Phase 2: AI Copilot
+    ueba,  # Phase 3: UEBA analytics
+    threat_hunting,  # Phase 3: Threat hunting
 )
 from middleware import AuditMiddleware
 
@@ -310,6 +312,8 @@ app.include_router(secrets.router)  # v0.7.4: Secrets management
 app.include_router(admin_settings.router)  # System settings
 app.include_router(dify.router)  # v0.7.4: Dify workflow integration
 app.include_router(ai.router)  # Phase 2: AI Copilot service
+app.include_router(ueba.router)  # Phase 3: UEBA analytics
+app.include_router(threat_hunting.router)  # Phase 3: Threat hunting
 
 
 # Global OPTIONS handler for CORS preflight

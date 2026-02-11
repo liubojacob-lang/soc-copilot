@@ -20,3 +20,6 @@ alembic==1.14.0
 
 # Phase 2: AI enhancements (optional)
 chromadb==0.5.0
+
+# Phase 3: Advanced Analytics
+scikit-learn==1.4.0
