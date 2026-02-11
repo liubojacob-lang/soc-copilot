@@ -34,6 +34,7 @@ export default function MarketplacePage() {
 
   const loadData = async () => {
     try {
+      console.log("Loading marketplace data...");
       const [playbooksRes, featuredRes, trendingRes, categoriesRes] = await Promise.all([
         api.get("/api/marketplace/playbooks"),
         api.get("/api/marketplace/featured"),
@@ -41,12 +42,17 @@ export default function MarketplacePage() {
         api.get("/api/marketplace/categories")
       ]);
       
-      setPlaybooks(playbooksRes.data);
-      setFeatured(featuredRes.data.featured);
-      setTrending(trendingRes.data.trending);
-      setCategories(categoriesRes.data.categories);
-    } catch (e) {
-      console.error("Failed to load data:", e);
+      console.log("Playbooks loaded:", playbooksRes.data?.length || 0);
+      console.log("Featured:", featuredRes.data?.featured?.length || 0);
+      console.log("Trending:", trendingRes.data?.trending?.length || 0);
+      
+      setPlaybooks(playbooksRes.data || []);
+      setFeatured(featuredRes.data?.featured || []);
+      setTrending(trendingRes.data?.trending || []);
+      setCategories(categoriesRes.data?.categories || []);
+    } catch (e: any) {
+      console.error("Failed to load marketplace data:", e);
+      alert("Failed to load marketplace: " + (e.response?.data?.detail || e.message));
     } finally {
       setLoading(false);
     }
@@ -100,6 +106,15 @@ export default function MarketplacePage() {
             </div>
           </div>
 
+          {/* Debug Info */}
+          {!loading && playbooks.length > 0 && (
+            <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <p className="text-sm text-green-800 dark:text-green-200">
+                ✅ Loaded {playbooks.length} playbooks from marketplace
+              </p>
+            </div>
+          )}
+
           {/* Search & Filter */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
             <div className="flex flex-col md:flex-row gap-4">
@@ -124,6 +139,12 @@ export default function MarketplacePage() {
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
+                <button
+                  onClick={loadData}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-sm"
+                >
+                  Refresh
+                </button>
               </div>
             </div>
           </div>
@@ -187,7 +208,21 @@ export default function MarketplacePage() {
             </div>
             <div className="p-4">
               {loading ? (
-                <div className="text-center py-8 text-gray-500">Loading...</div>
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto"></div>
+                  <p className="text-gray-500 mt-2">Loading playbooks...</p>
+                </div>
+              ) : filteredPlaybooks.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Store className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <p>No playbooks found</p>
+                  <button 
+                    onClick={loadData}
+                    className="mt-2 text-amber-600 hover:text-amber-700 text-sm"
+                  >
+                    Refresh
+                  </button>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredPlaybooks.map((playbook) => (
