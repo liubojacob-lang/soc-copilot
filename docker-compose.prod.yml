@@ -1,0 +1,115 @@
+version: '3.8'
+
+# Production Docker Compose Configuration
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: soc-copilot-postgres-prod
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "127.0.0.1:5432:5432"  # Only bind to localhost for security
+    command: 
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "max_connections=200"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soc-copilot-prod
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: soc-copilot-redis-prod
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_prod_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soc-copilot-prod
+    restart: always
+
+  backend:
+    image: ${DOCKERHUB_USERNAME}/soc-copilot-backend:latest
+    container_name: soc-copilot-backend-prod
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=production
+      - DIFY_API_URL=${DIFY_API_URL}
+      - DIFY_API_KEY=${DIFY_API_KEY}
+      - LOG_LEVEL=INFO
+      - WORKERS=4
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - soc-copilot-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/soc-copilot-frontend:latest
+    container_name: soc-copilot-frontend-prod
+    environment:
+      - NEXT_PUBLIC_API_URL=${API_URL}
+      - NODE_ENV=production
+    networks:
+      - soc-copilot-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  nginx:
+    image: nginx:alpine
+    container_name: soc-copilot-nginx-prod
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - soc-copilot-prod
+    restart: always
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+
+networks:
+  soc-copilot-prod:
+    driver: bridge

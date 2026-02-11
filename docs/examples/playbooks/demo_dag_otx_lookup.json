@@ -1,0 +1,102 @@
+{
+  "nodes": [
+    {
+      "id": "extract",
+      "name": "Extract IOC from Input",
+      "type": "extract_iocs",
+      "config": {},
+      "inputs": {
+        "text": "$.context.alert_text"
+      }
+    },
+    {
+      "id": "decision",
+      "name": "Check if IOC Exists",
+      "type": "decision",
+      "config": {
+        "condition": "$.extracted.total_count > 0"
+      },
+      "inputs": {}
+    },
+    {
+      "id": "ti_lookup",
+      "name": "OTX Threat Intelligence Lookup",
+      "type": "ti_lookup_otx",
+      "config": {
+        "timeout_seconds": 30
+      },
+      "inputs": {
+        "ioc": "$.extracted.ips.0"
+      }
+    },
+    {
+      "id": "enrich",
+      "name": "Enrich Asset Information",
+      "type": "asset_enrich",
+      "config": {},
+      "inputs": {}
+    },
+    {
+      "id": "score",
+      "name": "Calculate Risk Score",
+      "type": "risk_score",
+      "config": {},
+      "inputs": {
+        "ti_data": "$.ti_lookup.output_json",
+        "asset": "$.enrich.output_json"
+      }
+    },
+    {
+      "id": "callback",
+      "name": "Send Callback",
+      "type": "http_request",
+      "config": {
+        "url": "https://httpbin.org/post",
+        "method": "POST",
+        "timeout_seconds": 10
+      },
+      "inputs": {
+        "body": {
+          "run_id": "$.context.run_id",
+          "score": "$.score.output_json.score"
+        }
+      }
+    },
+    {
+      "id": "sleep",
+      "name": "Delay Before Completion",
+      "type": "sleep",
+      "config": {
+        "seconds": 2
+      },
+      "inputs": {}
+    }
+  ],
+  "edges": [
+    {
+      "source": "extract",
+      "target": "decision"
+    },
+    {
+      "source": "decision",
+      "target": "ti_lookup",
+      "condition": "$.decision.result == true"
+    },
+    {
+      "source": "ti_lookup",
+      "target": "enrich"
+    },
+    {
+      "source": "enrich",
+      "target": "score"
+    },
+    {
+      "source": "score",
+      "target": "callback"
+    },
+    {
+      "source": "callback",
+      "target": "sleep"
+    }
+  ]
+}
