@@ -6,15 +6,13 @@ import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
 import { 
-  Search, 
   Target, 
   Play, 
-  FileText,
   Shield,
   Clock,
   CheckCircle,
   AlertTriangle,
-  Download
+  TrendingUp
 } from "lucide-react";
 
 export default function ThreatHuntingPage() {
@@ -56,7 +54,6 @@ export default function ThreatHuntingPage() {
         hypothesis_id: hypothesisId,
         time_range_hours: 24
       });
-      // Reload results
       const resultRes = await api.get("/api/threat-hunting/results?limit=10");
       setResults(resultRes.data);
     } catch (e) {
@@ -79,7 +76,7 @@ export default function ThreatHuntingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation />
+      <Navigation title="Threat Hunting" />
       
       <main className="pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4">
@@ -91,10 +88,10 @@ export default function ThreatHuntingPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  威胁狩猎
+                  Threat Hunting
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Proactive Threat Hunting - 主动发现并应对威胁
+                  Proactive Threat Discovery - Hunt for threats before they cause damage
                 </p>
               </div>
             </div>
@@ -104,25 +101,25 @@ export default function ThreatHuntingPage() {
           {dashboard && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400">总狩猎次数</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Hunts</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {dashboard.summary.total_hunts_executed}
                 </p>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400">发现威胁</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Findings</p>
                 <p className="text-2xl font-bold text-green-600">
                   {dashboard.summary.total_findings}
                 </p>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400">严重发现</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Critical</p>
                 <p className="text-2xl font-bold text-red-600">
                   {dashboard.summary.critical_findings}
                 </p>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400">成功率</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Success Rate</p>
                 <p className="text-2xl font-bold text-blue-600">
                   {dashboard.hunt_effectiveness.success_rate}
                 </p>
@@ -137,12 +134,12 @@ export default function ThreatHuntingPage() {
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <Shield className="w-5 h-5 text-green-500" />
-                    狩猎假设库 (MITRE ATT&CK)
+                    Hunt Hypotheses (MITRE ATT&CK)
                   </h2>
                 </div>
                 <div className="p-4">
                   {loading ? (
-                    <div className="text-center py-8 text-gray-500">加载中...</div>
+                    <div className="text-center py-8 text-gray-500">Loading...</div>
                   ) : (
                     <div className="space-y-4">
                       {hypotheses.map((hypothesis) => (
@@ -157,9 +154,9 @@ export default function ThreatHuntingPage() {
                                   {hypothesis.name}
                                 </h3>
                                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityColor(hypothesis.severity)}`}>
-                                  {hypothesis.severity === 'critical' ? '严重' : 
-                                   hypothesis.severity === 'high' ? '高危' : 
-                                   hypothesis.severity === 'medium' ? '中危' : '低危'}
+                                  {hypothesis.severity === 'critical' ? 'Critical' : 
+                                   hypothesis.severity === 'high' ? 'High' : 
+                                   hypothesis.severity === 'medium' ? 'Medium' : 'Low'}
                                 </span>
                                 {hypothesis.verified && (
                                   <CheckCircle className="w-4 h-4 text-green-500" />
@@ -170,7 +167,7 @@ export default function ThreatHuntingPage() {
                               </p>
                               <div className="flex items-center gap-4 text-xs text-gray-500">
                                 <span>MITRE: {hypothesis.mitre_techniques.join(", ")}</span>
-                                <span>数据源: {hypothesis.data_sources.join(", ")}</span>
+                                <span>Data Sources: {hypothesis.data_sources.join(", ")}</span>
                               </div>
                             </div>
                             <button
@@ -181,12 +178,12 @@ export default function ThreatHuntingPage() {
                               {executing === hypothesis.id ? (
                                 <>
                                   <Clock className="w-4 h-4 animate-spin" />
-                                  执行中...
+                                  Running...
                                 </>
                               ) : (
                                 <>
                                   <Play className="w-4 h-4" />
-                                  执行
+                                  Run
                                 </>
                               )}
                             </button>
@@ -205,7 +202,7 @@ export default function ThreatHuntingPage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                    最近狩猎结果
+                    Recent Hunt Results
                   </h3>
                 </div>
                 <div className="p-4">
@@ -225,11 +222,11 @@ export default function ThreatHuntingPage() {
                       <div className="flex items-center gap-2">
                         {result.findings_count > 0 ? (
                           <span className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs">
-                            {result.findings_count} 发现
+                            {result.findings_count} findings
                           </span>
                         ) : (
                           <span className="px-2 py-1 bg-green-100 text-green-600 rounded text-xs">
-                            正常
+                            Clean
                           </span>
                         )}
                       </div>
@@ -242,7 +239,7 @@ export default function ThreatHuntingPage() {
               {dashboard && (
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                    常用技术 (MITRE)
+                    Top MITRE Techniques
                   </h3>
                   <div className="space-y-3">
                     {dashboard.top_mitre_techniques.map((tech: any, index: number) => (
@@ -254,7 +251,7 @@ export default function ThreatHuntingPage() {
                           <p className="text-xs text-gray-500">{tech.name}</p>
                         </div>
                         <span className="text-sm text-gray-600">
-                          {tech.count} 次
+                          {tech.count} times
                         </span>
                       </div>
                     ))}
@@ -265,17 +262,17 @@ export default function ThreatHuntingPage() {
               {/* IOC Hunt */}
               <div className="bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
                 <h4 className="font-medium text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
-                  <Search className="w-4 h-4" />
-                  IOC 狩猎
+                  <AlertTriangle className="w-4 h-4" />
+                  IOC Hunt
                 </h4>
                 <p className="text-sm text-green-800 dark:text-green-200 mb-3">
-                  在历史数据中搜索已知的 IOC（IP、域名、哈希值）
+                  Search historical data for known IOCs (IPs, domains, hashes)
                 </p>
                 <button 
-                  onClick={() => alert("IOC狩猎功能开发中...")}
+                  onClick={() => alert("IOC Hunt feature coming soon...")}
                   className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
                 >
-                  开始 IOC 狩猎
+                  Start IOC Hunt
                 </button>
               </div>
             </div>

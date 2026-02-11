@@ -10,10 +10,7 @@ import {
   AlertTriangle, 
   TrendingUp, 
   Shield,
-  Activity,
-  Search,
-  UserCheck,
-  Clock
+  Activity
 } from "lucide-react";
 
 export default function UEBAPage() {
@@ -60,7 +57,7 @@ export default function UEBAPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation />
+      <Navigation title="UEBA" />
       
       <main className="pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4">
@@ -72,10 +69,10 @@ export default function UEBAPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  UEBA 用户行为分析
+                  UEBA
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  User and Entity Behavior Analytics - 检测内部威胁和异常行为
+                  User and Entity Behavior Analytics - Detect insider threats and anomalous behavior
                 </p>
               </div>
             </div>
@@ -87,7 +84,7 @@ export default function UEBAPage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">监控用户</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Monitored Users</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {dashboard.summary.total_users_monitored}
                     </p>
@@ -99,7 +96,7 @@ export default function UEBAPage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">高风险用户</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">High Risk Users</p>
                     <p className="text-2xl font-bold text-red-600">
                       {dashboard.summary.high_risk_users}
                     </p>
@@ -111,7 +108,7 @@ export default function UEBAPage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">24h异常检测</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">24h Anomalies</p>
                     <p className="text-2xl font-bold text-orange-600">
                       {dashboard.summary.anomalies_detected_24h}
                     </p>
@@ -123,7 +120,7 @@ export default function UEBAPage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">严重告警</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Critical Alerts</p>
                     <p className="text-2xl font-bold text-red-600">
                       {dashboard.summary.critical_alerts}
                     </p>
@@ -141,14 +138,14 @@ export default function UEBAPage() {
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-red-500" />
-                    高风险用户
+                    High Risk Users
                   </h2>
                 </div>
                 <div className="p-4">
                   {loading ? (
-                    <div className="text-center py-8 text-gray-500">加载中...</div>
+                    <div className="text-center py-8 text-gray-500">Loading...</div>
                   ) : highRiskUsers.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">暂无高风险用户</div>
+                    <div className="text-center py-8 text-gray-500">No high risk users found</div>
                   ) : (
                     <div className="space-y-3">
                       {highRiskUsers.map((user, index) => (
@@ -167,7 +164,7 @@ export default function UEBAPage() {
                                 {user.username}
                               </p>
                               <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {user.anomaly_count} 个异常行为
+                                {user.anomaly_count} anomalous behaviors
                               </p>
                             </div>
                           </div>
@@ -176,10 +173,10 @@ export default function UEBAPage() {
                               <p className={`text-lg font-bold ${getRiskColor(user.risk_score).split(' ')[0]}`}>
                                 {user.risk_score.toFixed(1)}
                               </p>
-                              <p className="text-xs text-gray-500">风险评分</p>
+                              <p className="text-xs text-gray-500">Risk Score</p>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRiskColor(user.risk_score)}`}>
-                              {user.risk_level === 'high' ? '高危' : user.risk_level === 'medium' ? '中危' : '低危'}
+                              {user.risk_level === 'high' ? 'High' : user.risk_level === 'medium' ? 'Medium' : 'Low'}
                             </span>
                           </div>
                         </div>
@@ -196,19 +193,19 @@ export default function UEBAPage() {
               {dashboard && (
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                    主要风险因素
+                    Top Risk Factors
                   </h3>
                   <div className="space-y-3">
                     {dashboard.top_risk_factors.map((factor: any, index: number) => (
                       <div key={index} className="flex items-center justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {factor.factor === 'off_hours_login' ? '非工作时间登录' :
-                           factor.factor === 'unusual_data_access' ? '异常数据访问' :
-                           factor.factor === 'geolocation_anomaly' ? '地理位置异常' :
+                          {factor.factor === 'off_hours_login' ? 'Off-hours Login' :
+                           factor.factor === 'unusual_data_access' ? 'Unusual Data Access' :
+                           factor.factor === 'geolocation_anomaly' ? 'Geolocation Anomaly' :
                            factor.factor}
                         </span>
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {factor.count} 次
+                          {factor.count} times
                         </span>
                       </div>
                     ))}
@@ -220,7 +217,7 @@ export default function UEBAPage() {
               {dashboard && dashboard.recent_anomalies.length > 0 && (
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                    最近异常
+                    Recent Anomalies
                   </h3>
                   <div className="space-y-3">
                     {dashboard.recent_anomalies.map((anomaly: any, index: number) => (
@@ -232,7 +229,7 @@ export default function UEBAPage() {
                           </span>
                         </div>
                         <p className="text-sm text-red-700 dark:text-red-300">
-                          {anomaly.type === 'off_hours_login' ? '非工作时间登录' : anomaly.type}
+                          {anomaly.type === 'off_hours_login' ? 'Off-hours Login' : anomaly.type}
                         </p>
                         <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                           {new Date(anomaly.detected_at).toLocaleString()}
@@ -247,10 +244,10 @@ export default function UEBAPage() {
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
                 <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
-                  ML 驱动
+                  ML Powered
                 </h4>
                 <p className="text-sm text-purple-800 dark:text-purple-200">
-                  使用 Isolation Forest 算法检测异常行为，自动学习正常模式并识别偏离行为。
+                  Using Isolation Forest algorithm to detect anomalous behavior, automatically learning normal patterns and identifying deviations.
                 </p>
               </div>
             </div>

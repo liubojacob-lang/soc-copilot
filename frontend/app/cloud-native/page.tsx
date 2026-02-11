@@ -12,8 +12,7 @@ import {
   Server,
   AlertTriangle,
   CheckCircle,
-  Scan,
-  Activity
+  Scan
 } from "lucide-react";
 
 export default function CloudNativePage() {
@@ -52,7 +51,7 @@ export default function CloudNativePage() {
         image: "nginx",
         tag: "1.21"
       });
-      alert(`扫描完成！\n发现 ${response.data.total_vulnerabilities} 个漏洞`);
+      alert(`Scan Complete!\nFound ${response.data.total_vulnerabilities} vulnerabilities`);
     } catch (e) {
       console.error("Scan failed:", e);
     } finally {
@@ -73,7 +72,7 @@ export default function CloudNativePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation />
+      <Navigation title="Cloud Native Security" />
       
       <main className="pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4">
@@ -85,10 +84,10 @@ export default function CloudNativePage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  云原生安全
+                  Cloud Native Security
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Cloud Native Security - Kubernetes、容器和多云安全监控
+                  Kubernetes, Container and Multi-Cloud Security Monitoring
                 </p>
               </div>
             </div>
@@ -100,7 +99,7 @@ export default function CloudNativePage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">连接集群</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Connected Clusters</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {dashboard.overview.connected_clusters}
                     </p>
@@ -112,7 +111,7 @@ export default function CloudNativePage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">连接云平台</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Cloud Providers</p>
                     <p className="text-2xl font-bold text-blue-600">
                       {dashboard.overview.connected_clouds}
                     </p>
@@ -124,7 +123,7 @@ export default function CloudNativePage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">容器总数</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Containers</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {dashboard.overview.total_containers}
                     </p>
@@ -136,7 +135,7 @@ export default function CloudNativePage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">漏洞镜像</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Vulnerable Images</p>
                     <p className="text-2xl font-bold text-orange-600">
                       {dashboard.overview.vulnerable_images}
                     </p>
@@ -155,7 +154,7 @@ export default function CloudNativePage() {
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <Shield className="w-5 h-5 text-blue-500" />
-                      安全概览
+                      Security Overview
                     </h2>
                   </div>
                   <div className="p-4">
@@ -164,25 +163,25 @@ export default function CloudNativePage() {
                         <p className="text-2xl font-bold text-red-600">
                           {dashboard.security_summary.critical_findings}
                         </p>
-                        <p className="text-sm text-red-600">严重</p>
+                        <p className="text-sm text-red-600">Critical</p>
                       </div>
                       <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                         <p className="text-2xl font-bold text-orange-600">
                           {dashboard.security_summary.high_findings}
                         </p>
-                        <p className="text-sm text-orange-600">高危</p>
+                        <p className="text-sm text-orange-600">High</p>
                       </div>
                       <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                         <p className="text-2xl font-bold text-yellow-600">
                           {dashboard.security_summary.medium_findings}
                         </p>
-                        <p className="text-sm text-yellow-600">中危</p>
+                        <p className="text-sm text-yellow-600">Medium</p>
                       </div>
                       <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <p className="text-2xl font-bold text-blue-600">
                           {dashboard.security_summary.low_findings}
                         </p>
-                        <p className="text-sm text-blue-600">低危</p>
+                        <p className="text-sm text-blue-600">Low</p>
                       </div>
                     </div>
 
@@ -190,7 +189,7 @@ export default function CloudNativePage() {
                     <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-gray-900 dark:text-white">
-                          CIS Kubernetes 合规性
+                          CIS Kubernetes Compliance
                         </span>
                         <span className="text-lg font-bold text-green-600">
                           {dashboard.compliance.cis_benchmark}%
@@ -203,7 +202,7 @@ export default function CloudNativePage() {
                         ></div>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        上次扫描: {new Date(dashboard.compliance.last_scan).toLocaleString()}
+                        Last Scan: {new Date(dashboard.compliance.last_scan).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -214,7 +213,7 @@ export default function CloudNativePage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    快速操作
+                    Quick Actions
                   </h2>
                 </div>
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -225,23 +224,23 @@ export default function CloudNativePage() {
                   >
                     <Scan className="w-8 h-8 text-blue-500 mb-2" />
                     <h3 className="font-medium text-gray-900 dark:text-white">
-                      {scanning ? "扫描中..." : "扫描容器镜像"}
+                      {scanning ? "Scanning..." : "Scan Container Image"}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      检测镜像中的已知漏洞
+                      Detect known vulnerabilities in images
                     </p>
                   </button>
 
                   <button
-                    onClick={() => alert("K8s扫描功能开发中...")}
+                    onClick={() => alert("K8s scan feature coming soon...")}
                     className="p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors text-left"
                   >
                     <Server className="w-8 h-8 text-green-500 mb-2" />
                     <h3 className="font-medium text-gray-900 dark:text-white">
-                      扫描 Kubernetes
+                      Scan Kubernetes
                     </h3>
                     <p className="text-sm text-gray-500">
-                      CIS 基准合规性检查
+                      CIS Benchmark compliance check
                     </p>
                   </button>
                 </div>
@@ -253,7 +252,7 @@ export default function CloudNativePage() {
               {/* Cloud Connections */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                  云连接状态
+                  Cloud Connection Status
                 </h3>
                 <div className="space-y-3">
                   {['AWS', 'Azure', 'GCP', 'AliCloud'].map((provider) => {
@@ -266,10 +265,10 @@ export default function CloudNativePage() {
                         {connected ? (
                           <span className="flex items-center gap-1 text-green-600 text-sm">
                             <CheckCircle className="w-4 h-4" />
-                            已连接
+                            Connected
                           </span>
                         ) : (
-                          <span className="text-gray-400 text-sm">未配置</span>
+                          <span className="text-gray-400 text-sm">Not Configured</span>
                         )}
                       </div>
                     );
@@ -281,7 +280,7 @@ export default function CloudNativePage() {
               {dashboard && dashboard.recent_vulnerabilities.length > 0 && (
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                    最新漏洞
+                    Recent Vulnerabilities
                   </h3>
                   <div className="space-y-3">
                     {dashboard.recent_vulnerabilities.map((vuln: any, index: number) => (
@@ -306,7 +305,7 @@ export default function CloudNativePage() {
               {/* Info */}
               <div className="bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-sky-200 dark:border-sky-800">
                 <h4 className="font-medium text-sky-900 dark:text-sky-100 mb-2">
-                  支持的云平台
+                  Supported Cloud Providers
                 </h4>
                 <ul className="text-sm text-sky-800 dark:text-sky-200 space-y-1">
                   <li>• AWS (CloudTrail)</li>

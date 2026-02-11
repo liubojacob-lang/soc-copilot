@@ -7,14 +7,12 @@ import { loadAuthState } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
 import { 
   Brain, 
-  MessageSquare, 
   AlertTriangle, 
   Lightbulb, 
   FileText, 
   Send, 
   Loader2,
-  Sparkles,
-  RefreshCw
+  Sparkles
 } from "lucide-react";
 
 interface Message {
@@ -29,7 +27,7 @@ export default function AIAssistantPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "你好！我是 **SOC Copilot AI** 🤖\n\n我可以帮你：\n\n🔍 **分析告警** - 智能分析安全告警的根因和影响\n💡 **推荐剧本** - 根据告警推荐最佳响应剧本\n❓ **自然语言查询** - 用自然语言查询SOC数据\n📊 **生成报告** - 自动生成了调查报告\n\n你想让我帮你做什么？",
+      content: "Hello! I'm **SOC Copilot AI** 🤖\n\nI can help you with:\n\n🔍 **Alert Analysis** - Intelligent analysis of security alerts\n💡 **Playbook Recommendations** - Suggest best response playbooks\n❓ **Natural Language Queries** - Query SOC data in plain English\n📊 **Report Generation** - Auto-generate investigation reports\n\nWhat would you like me to help you with?",
       timestamp: new Date()
     }
   ]);
@@ -67,7 +65,6 @@ export default function AIAssistantPage() {
     setLoading(true);
 
     try {
-      // Try natural language query first
       const queryResponse = await api.post("/api/ai/query", {
         query: userMessage
       });
@@ -79,7 +76,6 @@ export default function AIAssistantPage() {
           timestamp: new Date()
         }]);
       } else {
-        // Fall back to chat
         const chatResponse = await api.post("/api/ai/chat", {
           message: userMessage,
           conversation_history: messages.slice(-5).map(m => ({
@@ -97,7 +93,7 @@ export default function AIAssistantPage() {
     } catch (error: any) {
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: `❌ 抱歉，我遇到了错误：${error.message || "未知错误"}`,
+        content: `❌ Sorry, I encountered an error: ${error.message || "Unknown error"}`,
         timestamp: new Date()
       }]);
     } finally {
@@ -106,17 +102,17 @@ export default function AIAssistantPage() {
   };
 
   const quickActions = [
-    { icon: AlertTriangle, label: "分析最新告警", query: "分析最新的高危告警" },
-    { icon: Lightbulb, label: "推荐剧本", query: "为当前告警推荐响应剧本" },
-    { icon: FileText, label: "生成报告", query: "生成了最近事件的分析报告" },
-    { icon: Brain, label: "威胁狩猎建议", query: "给我一些威胁狩猎的建议" },
+    { icon: AlertTriangle, label: "Analyze Latest Alert", query: "Analyze the most recent high severity alert" },
+    { icon: Lightbulb, label: "Recommend Playbooks", query: "Recommend playbooks for current alerts" },
+    { icon: FileText, label: "Generate Report", query: "Generate analysis report for recent events" },
+    { icon: Brain, label: "Threat Hunting Tips", query: "Give me some threat hunting suggestions" },
   ];
 
   if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation />
+      <Navigation title="AI Copilot" />
       
       <main className="pt-16 pb-8">
         <div className="max-w-6xl mx-auto px-4">
@@ -131,14 +127,14 @@ export default function AIAssistantPage() {
                   SOC Copilot AI
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  智能安全助手
+                  Intelligent Security Assistant
                   {aiStatus?.status === "available" ? (
                     <span className="flex items-center gap-1 text-green-600 text-sm">
                       <Sparkles className="w-4 h-4" />
-                      AI已就绪
+                      AI Ready
                     </span>
                   ) : (
-                    <span className="text-amber-600 text-sm">AI未配置</span>
+                    <span className="text-amber-600 text-sm">AI Not Configured</span>
                   )}
                 </p>
               </div>
@@ -162,7 +158,7 @@ export default function AIAssistantPage() {
                           : "bg-gradient-to-br from-blue-500 to-purple-600"
                       }`}>
                         {message.role === "user" ? (
-                          <span className="text-blue-600 dark:text-blue-400 font-semibold">你</span>
+                          <span className="text-blue-600 dark:text-blue-400 font-semibold">You</span>
                         ) : (
                           <Brain className="w-5 h-5 text-white" />
                         )}
@@ -199,7 +195,7 @@ export default function AIAssistantPage() {
                       type="text"
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      placeholder="输入你的问题，例如：分析最新的告警..."
+                      placeholder="Type your question, e.g., analyze the latest alert..."
                       className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       disabled={loading}
                     />
@@ -209,7 +205,7 @@ export default function AIAssistantPage() {
                       className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                     >
                       <Send className="w-5 h-5" />
-                      发送
+                      Send
                     </button>
                   </div>
                 </form>
@@ -222,7 +218,7 @@ export default function AIAssistantPage() {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-amber-500" />
-                  快捷操作
+                  Quick Actions
                 </h3>
                 <div className="space-y-2">
                   {quickActions.map((action, index) => (
@@ -241,24 +237,24 @@ export default function AIAssistantPage() {
               {/* AI Capabilities */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                  AI 能力
+                  AI Capabilities
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">告警智能分析</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Alert Analysis</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">自然语言查询</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Natural Language Query</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">剧本推荐</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Playbook Recommendations</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">报告生成</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Report Generation</span>
                   </div>
                 </div>
               </div>
@@ -266,13 +262,13 @@ export default function AIAssistantPage() {
               {/* Tips */}
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                  💡 使用提示
+                  💡 Usage Tips
                 </h4>
                 <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                  <li>• 用自然语言描述你的需求</li>
-                  <li>• 可以询问具体的告警分析</li>
-                  <li>• 请求生成各类安全报告</li>
-                  <li>• 获取响应建议和最佳实践</li>
+                  <li>• Describe your needs in natural language</li>
+                  <li>• Ask about specific alert analysis</li>
+                  <li>• Request various security reports</li>
+                  <li>• Get response suggestions and best practices</li>
                 </ul>
               </div>
             </div>
