@@ -8,6 +8,7 @@ anthropic==0.40.0
 python-json-logger==3.2.1
 sqlalchemy[asyncio]==2.0.36
 aiosqlite==0.20.0
+numpy==1.26.4
 
 # v0.6.2 additions
 passlib[bcrypt]==1.7.4
@@ -16,3 +17,6 @@ python-jose[cryptography]==3.3.0
 # v0.7.1 additions (trigger system)
 croniter==3.0.3
 alembic==1.14.0
+
+# Phase 2: AI enhancements (optional)
+chromadb==0.5.0

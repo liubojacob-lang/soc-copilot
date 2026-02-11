@@ -1,5 +1,45 @@
 """API routers module."""
 
-from . import alert, report, timeline, history, assets, ioc_hits, threat_intel, playbook, playbook_definitions, auth, users, api_keys, audit, webhooks, triggers, secrets
+from . import (
+    alert,
+    report,
+    timeline,
+    history,
+    assets,
+    ioc_hits,
+    threat_intel,
+    playbook,
+    playbook_definitions,
+    auth,
+    users,
+    api_keys,
+    audit,
+    webhooks,
+    triggers,
+    secrets,
+    admin_settings,
+    dify,
+    ai,
+)
 
-__all__ = ["alert", "report", "timeline", "history", "assets", "ioc_hits", "threat_intel", "playbook", "playbook_definitions", "auth", "users", "api_keys", "audit", "webhooks", "triggers", "secrets"]
+__all__ = [
+    "alert",
+    "report",
+    "timeline",
+    "history",
+    "assets",
+    "ioc_hits",
+    "threat_intel",
+    "playbook",
+    "playbook_definitions",
+    "auth",
+    "users",
+    "api_keys",
+    "audit",
+    "webhooks",
+    "triggers",
+    "secrets",
+    "admin_settings",
+    "dify",
+    "ai",
+]

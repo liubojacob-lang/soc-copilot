@@ -10,10 +10,25 @@ from core.logger import get_logger
 from core.config import settings
 from db.session import init_db, AsyncSessionLocal
 from routers import (
-    alert, report, timeline, history, assets, ioc_hits, threat_intel, playbook,
+    alert,
+    report,
+    timeline,
+    history,
+    assets,
+    ioc_hits,
+    threat_intel,
+    playbook,
     playbook_definitions,
-    auth, users, api_keys, audit, webhooks, triggers, secrets, admin_settings,
+    auth,
+    users,
+    api_keys,
+    audit,
+    webhooks,
+    triggers,
+    secrets,
+    admin_settings,
     dify,  # v0.7.4: Dify workflow integration
+    ai,  # Phase 2: AI Copilot
 )
 from middleware import AuditMiddleware
 
@@ -45,7 +60,9 @@ async def create_bootstrap_admin():
 
         if user_count == 0:
             logger.info("No users found. Creating bootstrap admin user...")
-            logger.info(f"Bootstrap admin username: {settings.bootstrap_admin_username}")
+            logger.info(
+                f"Bootstrap admin username: {settings.bootstrap_admin_username}"
+            )
             logger.info(f"Bootstrap admin email: {settings.bootstrap_admin_email}")
             logger.warning("CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
 
@@ -61,6 +78,7 @@ async def create_bootstrap_admin():
 
             # Create audit log
             from repositories.audit_repository import AuditRepository
+
             audit_repo = AuditRepository(session)
             await audit_repo.create(
                 action="user:create",
@@ -92,14 +110,16 @@ async def run_migrations():
             config.set_main_option("script_location", str(alembic_dir))
             # Disable fileConfig to avoid logging conflicts
             import logging
-            logging.getLogger('alembic').setLevel(logging.WARNING)
+
+            logging.getLogger("alembic").setLevel(logging.WARNING)
             # Run migrations in a separate process to avoid event loop conflicts
             import subprocess
+
             result = subprocess.run(
-                ['python', '-m', 'alembic', '-c', str(ini_path), 'upgrade', 'head'],
+                ["python", "-m", "alembic", "-c", str(ini_path), "upgrade", "head"],
                 capture_output=True,
                 text=True,
-                cwd=str(Path(__file__).parent)
+                cwd=str(Path(__file__).parent),
             )
             if result.returncode == 0:
                 logger.info("Database migrations completed")
@@ -122,7 +142,9 @@ async def lifespan(app_instance: FastAPI):
     logger.info(f"Trigger System: ENABLED (webhook + cron)")
     logger.info(f"Run Queue: ENABLED (max_concurrent={settings.run_queue_max})")
     logger.info(f"Secrets Management: ENABLED (Fernet encryption)")
-    logger.info(f"External TI: {'ENABLED' if settings.allow_external_ti else 'DISABLED'}")
+    logger.info(
+        f"External TI: {'ENABLED' if settings.allow_external_ti else 'DISABLED'}"
+    )
     logger.info(f"Authentication: ENABLED")
     logger.info(f"RBAC: ENABLED (admin, analyst, auditor)")
     logger.info(f"Audit Logging: ENABLED")
@@ -130,7 +152,10 @@ async def lifespan(app_instance: FastAPI):
     # P1: 生产环境敏感配置校验
     if settings.environment == "production":
         _fail = []
-        if not settings.jwt_secret or settings.jwt_secret == "CHANGE_THIS_IN_PRODUCTION_MIN_32_CHARS_LONG":
+        if (
+            not settings.jwt_secret
+            or settings.jwt_secret == "CHANGE_THIS_IN_PRODUCTION_MIN_32_CHARS_LONG"
+        ):
             _fail.append("JWT_SECRET must be set to a secure value (min 32 chars)")
         if settings.bootstrap_admin_password == "admin123!":
             _fail.append("BOOTSTRAP_ADMIN_PASSWORD must be changed from default")
@@ -140,13 +165,17 @@ async def lifespan(app_instance: FastAPI):
                 "Set STRICT_PRODUCTION_CHECKS=1 to fail startup when key is missing."
             )
         elif not settings.secret_encryption_key and settings.strict_production_checks:
-            _fail.append("SECRET_ENCRYPTION_KEY must be set in production when STRICT_PRODUCTION_CHECKS=1")
+            _fail.append(
+                "SECRET_ENCRYPTION_KEY must be set in production when STRICT_PRODUCTION_CHECKS=1"
+            )
         if _fail:
             msg = "Production config validation failed: " + "; ".join(_fail)
             if settings.strict_production_checks:
                 logger.critical(msg)
                 raise RuntimeError(msg)
-            logger.critical(msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=1 to fail)")
+            logger.critical(
+                msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=1 to fail)"
+            )
 
     # Run migrations before initializing database
     await run_migrations()
@@ -158,14 +187,18 @@ async def lifespan(app_instance: FastAPI):
 
     # v0.7.4: Initialize queue manager
     from services.run_queue_manager import RunQueueManager, set_run_queue_manager
+
     queue_manager = RunQueueManager(AsyncSessionLocal)
     set_run_queue_manager(queue_manager)
     await queue_manager.recover_runs()
-    logger.info(f"Run queue manager initialized (max_concurrent={settings.run_queue_max})")
+    logger.info(
+        f"Run queue manager initialized (max_concurrent={settings.run_queue_max})"
+    )
 
     # v0.7.4: Load node plugins
     from pathlib import Path
     from playbook_engine.v7_dag.registry import NodeRegistry, get_node_registry
+
     node_registry = NodeRegistry()
     plugin_dir = Path(__file__).parent / "playbook_engine" / "v7_dag" / "plugins"
     plugin_count = node_registry.auto_load_plugins(plugin_dir)
@@ -173,6 +206,7 @@ async def lifespan(app_instance: FastAPI):
 
     # Start cron scheduler
     from services.cron_scheduler_service import CronSchedulerService, set_cron_scheduler
+
     cron_scheduler = CronSchedulerService(AsyncSessionLocal)
     set_cron_scheduler(cron_scheduler)
     await cron_scheduler.start()
@@ -207,6 +241,7 @@ app = FastAPI(
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
+
 class SetUserStateMiddleware(BaseHTTPMiddleware):
     """Middleware to set user_id in request.state for audit middleware."""
 
@@ -219,6 +254,7 @@ class SetUserStateMiddleware(BaseHTTPMiddleware):
 
         if auth_header and auth_header.startswith("Bearer "):
             from core.security import decode_token
+
             token = auth_header.split(" ")[1]
             payload = decode_token(token)
             if payload:
@@ -228,8 +264,13 @@ class SetUserStateMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
 
+
 # CORS: 生产环境通过 CORS_ORIGINS 配置允许来源，未配置时默认 ["*"]
-_cors_origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()] if settings.cors_origins else ["*"]
+_cors_origins = (
+    [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+    if settings.cors_origins
+    else ["*"]
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
@@ -268,10 +309,12 @@ app.include_router(triggers.router)
 app.include_router(secrets.router)  # v0.7.4: Secrets management
 app.include_router(admin_settings.router)  # System settings
 app.include_router(dify.router)  # v0.7.4: Dify workflow integration
+app.include_router(ai.router)  # Phase 2: AI Copilot service
 
 
 # Global OPTIONS handler for CORS preflight
 from fastapi.responses import Response
+
 
 @app.options("/{path:path}")
 async def options_handler(path: str, request: Request):
@@ -285,7 +328,7 @@ async def options_handler(path: str, request: Request):
             "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
             "Access-Control-Allow-Credentials": "true",
             "Access-Control-Max-Age": "600",
-        }
+        },
     )
 
 
@@ -303,6 +346,7 @@ async def health() -> dict[str, str]:
 
 if __name__ == "__main__":
     import uvicorn
+
     # Increase timeout for long AI analysis requests (120 seconds)
     uvicorn.run(
         "main:app",

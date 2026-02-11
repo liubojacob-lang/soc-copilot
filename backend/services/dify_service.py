@@ -107,21 +107,90 @@ class DifyClient:
         """
         try:
             client = await self._get_client()
-            # Use Dify Server API - list applications via API
-            # Since we have an API token, we can only access the associated app
-            # Return mock data for now - the user needs to configure via Dify Console
-            logger.info("Dify integration configured - using Console API for app management")
-            return [{
-                "id": "b3940dba-4479-4741-a529-5d2d8c066909",
-                "name": "个性化记忆助手",
-                "description": "从 Dify 导入的应用",
-                "mode": "advanced-chat",
-                "created_at": "2026-02-11T00:00:00Z",
-            }]
 
+            # Check if we have a platform/workspace API key (starts with 'pat-' or 'platform-')
+            # or an app-level API key (starts with 'app-')
+            api_key = self.config.api_key or ""
+
+            if api_key.startswith("app-"):
+                # App-level key: can only access the single app associated with this key
+                # Use the workflow execution API to get basic app info
+                logger.info("Using app-level API key - will attempt to fetch the associated app")
+
+                # Try to get app info from the execution API endpoint
+                response = await client.post("/v1/workflows/run", json={
+                    "inputs": {},
+                    "response_mode": "blocking",
+                    "user": "soc-copilot"
+                }, timeout=5.0)
+
+                # If we get a response (even an error about inputs), the app exists
+                # Extract app ID from error message or try to get app details
+                if response.status_code in (400, 401):
+                    # App exists but needs proper inputs
+                    return [{
+                        "id": self._extract_app_id_from_key(api_key),
+                        "name": "Dify App (app-level key)",
+                        "description": "Use the app ID from your Dify Console",
+                        "mode": "workflow",
+                        "created_at": "",
+                    }]
+                elif response.status_code == 404:
+                    logger.warning("App not found with the provided API key")
+                    return []
+
+                # If successful, we got some data back
+                return [{
+                    "id": "unknown",
+                    "name": "Dify App",
+                    "description": "Connected via app-level API key",
+                    "mode": "workflow",
+                    "created_at": "",
+                }]
+
+            else:
+                # Platform/workspace API key: try to fetch all apps
+                response = await client.get("/console/api/apps")
+                response.raise_for_status()
+
+                data = response.json()
+
+                # Handle different response formats
+                if isinstance(data, dict):
+                    apps = data.get("apps", data.get("data", data.get("items", [])))
+                else:
+                    apps = data if isinstance(data, list) else []
+
+                # Format workflows
+                workflows = []
+                for app in apps:
+                    if isinstance(app, dict):
+                        workflows.append({
+                            "id": app.get("id", ""),
+                            "name": app.get("name", ""),
+                            "description": app.get("description", ""),
+                            "mode": app.get("mode", "workflow"),
+                            "created_at": app.get("created_at", ""),
+                        })
+
+                logger.info(f"Retrieved {len(workflows)} workflows from Dify")
+                return workflows
+
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"Dify API error when listing workflows: {e.response.status_code}")
+            return []
         except Exception as e:
             logger.error(f"Failed to list Dify workflows: {e}")
             return []
+
+    def _extract_app_id_from_key(self, api_key: str) -> str:
+        """Extract app ID from API key if possible.
+
+        For app-level keys, the actual app ID needs to be obtained from Dify Console.
+        This is a placeholder - users should manually enter their app ID.
+        """
+        # app-level keys don't contain the app ID
+        return "enter-your-app-id"
 
     async def get_workflow(self, app_id: str) -> Optional[DifyWorkflow]:
         """Get a specific workflow by app ID.
