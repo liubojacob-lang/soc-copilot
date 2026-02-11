@@ -16,7 +16,8 @@
       "Bash(netstat:*)",
       "Bash(tasklist:*)",
       "Bash(taskkill:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "WebSearch"
     ]
   }
 }

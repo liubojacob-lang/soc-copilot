@@ -31,6 +31,8 @@ from routers import (
     ai,  # Phase 2: AI Copilot
     ueba,  # Phase 3: UEBA analytics
     threat_hunting,  # Phase 3: Threat hunting
+    marketplace,  # Phase 4: Playbook marketplace
+    cloud_native,  # Phase 4: Cloud native security
 )
 from middleware import AuditMiddleware
 
@@ -314,6 +316,8 @@ app.include_router(dify.router)  # v0.7.4: Dify workflow integration
 app.include_router(ai.router)  # Phase 2: AI Copilot service
 app.include_router(ueba.router)  # Phase 3: UEBA analytics
 app.include_router(threat_hunting.router)  # Phase 3: Threat hunting
+app.include_router(marketplace.router)  # Phase 4: Playbook marketplace
+app.include_router(cloud_native.router)  # Phase 4: Cloud native security
 
 
 # Global OPTIONS handler for CORS preflight
