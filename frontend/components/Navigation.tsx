@@ -95,7 +95,7 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
       { label: "Marketplace", path: "/marketplace" },
       { label: "Cloud Native", path: "/cloud-native" },
       { label: "Dify", path: "/dify" },
-      { label: "Wazuh", path: "/wazuh" },
+      { label: "Alerts", path: "/alerts" },
       { label: "Triggers", path: "/triggers" },
     ],
   };

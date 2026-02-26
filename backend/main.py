@@ -43,10 +43,8 @@ from routers import (
     security_alerts,  # v0.9.0: External security alert ingestion
     alert_enrichment,  # v0.9.0: Threat intelligence enrichment
     notifications,  # v0.9.x: Notification channels and queue status
-    wazuh_integration,  # v1.0.0: Wazuh SIEM integration
-    wazuh_event_receiver,  # v1.1.0: Event-driven Wazuh webhook receiver
+    alert_stream,  # v1.2.0: Real-time alert stream (replaces Wazuh)
 )
-from routers import wazuh_stream  # v1.1.0: Wazuh real-time alert stream
 from routers import websocket as ws_router  # v0.8.5: WebSocket real-time alerts
 from routers import websocket_filters  # v0.9.0: WebSocket filter management
 from routers import monitoring_alerts  # v0.9.1: Monitoring alert rules
@@ -281,49 +279,19 @@ async def lifespan(app_instance: FastAPI):
         archival_task = asyncio.create_task(run_scheduled_archival(AsyncSessionLocal))
         logger.info("Audit log archival service started")
 
-    # v1.0.0: Initialize Wazuh integration
-    if settings.wazuh_enabled:
-        from services.wazuh_client import init_wazuh_client
-        from services.wazuh_log_receiver import init_wazuh_receiver
+    # v1.2.0: Initialize real-time alert stream service (replaces Wazuh)
+    from services.alert_stream_service import init_alert_stream_service
 
-        try:
-            # Initialize Wazuh client
-            wazuh_client = init_wazuh_client(
-                api_url=settings.wazuh_api_url,
-                username=settings.wazuh_api_username,
-                password=settings.wazuh_api_password,
-                cert_path=settings.wazuh_api_cert_path,
-                verify_ssl=settings.wazuh_verify_ssl
-            )
-            logger.info(f"Wazuh client initialized: {settings.wazuh_api_url}")
-
-            # Initialize Wazuh log receiver
-            wazuh_receiver = init_wazuh_receiver(
-                poll_interval=settings.wazuh_poll_interval,
-                batch_size=settings.wazuh_batch_size,
-                lookback_minutes=settings.wazuh_lookback_minutes,
-                enabled=settings.wazuh_receiver_enabled
-            )
-
-            # Start receiver in background if enabled
-            if settings.wazuh_receiver_auto_start:
-                asyncio.create_task(wazuh_receiver.start())
-                logger.info("Wazuh log receiver started")
-
-            # v1.1.0: Initialize Wazuh alert stream service
-            from services.wazuh_stream_service import init_wazuh_stream_service
-
-            stream_service = await init_wazuh_stream_service(
-                aggregation_window_seconds=60,  # 1 minute aggregation window
-                max_buffer_size=10000,  # Max 10k alerts in buffer
-                max_history_size=1000  # Keep last 1000 alerts
-            )
-            logger.info("Wazuh alert stream service initialized")
-
-        except Exception as e:
-            logger.error(f"Failed to initialize Wazuh integration: {e}")
-            if settings.wazuh_required:
-                raise RuntimeError("Wazuh integration is required but failed to initialize")
+    try:
+        stream_service = await init_alert_stream_service(
+            aggregation_window_seconds=60,  # 1 minute aggregation window
+            max_buffer_size=10000,  # Max 10k alerts in buffer
+            max_history_size=1000  # Keep last 1000 alerts
+        )
+        logger.info("Real-time alert stream service initialized")
+    except Exception as e:
+        logger.warning(f"Alert stream service initialization failed: {e}")
+        # Continue without alert stream
 
     yield
 
@@ -504,9 +472,7 @@ app.include_router(websocket_filters.router)  # v0.9.0: WebSocket filter managem
 app.include_router(monitoring_alerts.router)  # v0.9.1: Monitoring alert rules
 app.include_router(export.router)  # v0.8.5: Data export functionality
 app.include_router(system_dashboard.router)  # v0.8.5: System health dashboard
-app.include_router(wazuh_integration.router)  # v1.0.0: Wazuh SIEM integration
-app.include_router(wazuh_event_receiver.router)  # v1.1.0: Event-driven Wazuh webhook receiver
-app.include_router(wazuh_stream.router)  # v1.1.0: Wazuh real-time alert stream
+app.include_router(alert_stream.router)  # v1.2.0: Real-time alert stream (replaces Wazuh)
 
 
 # Global OPTIONS handler for CORS preflight
