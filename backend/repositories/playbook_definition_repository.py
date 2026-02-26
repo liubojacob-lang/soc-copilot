@@ -157,3 +157,82 @@ class PlaybookDefinitionRepository:
         stmt = select(func.count()).select_from(PlaybookDefinitionModel)
         result = await self.session.execute(stmt)
         return result.scalar() or 0
+
+
+# Caching enhancements
+try:
+    from core.cache import get_cache, CacheKeys
+
+    class PlaybookDefinitionRepositoryCached(PlaybookDefinitionRepository):
+        """Extended repository with caching support"""
+
+        async def get_cached(self, definition_id: str) -> Optional[PlaybookDefinitionModel]:
+            """Get playbook definition from cache or database"""
+            cache = get_cache()
+            cache_key = f"{CacheKeys.PLAYBOOK_DEFINITION}:{definition_id}"
+
+            # Try cache first
+            cached = await cache.get(cache_key)
+            if cached is not None:
+                logger.debug(f"Cache hit: playbook {definition_id}")
+                return PlaybookDefinitionModel(**cached)
+
+            # Query database
+            entity = await self.get_by_id(definition_id)
+            if entity is not None:
+                # Cache for 5 minutes
+                await cache.set(cache_key, entity.__dict__, CacheKeys.PLAYBOOK_TTL)
+
+            return entity
+
+        async def list_active_cached(self) -> List[PlaybookDefinitionModel]:
+            """List active playbooks with cache"""
+            cache = get_cache()
+            cache_key = CacheKeys.PLAYBOOK_DEFINITIONS_LIST
+
+            # Try cache first
+            cached = await cache.get(cache_key)
+            if cached is not None:
+                logger.debug(f"Cache hit: active playbooks list")
+                return [PlaybookDefinitionModel(**item) for item in cached]
+
+            # Query database
+            items, _ = await self.list_definitions(is_active=True, page=1, page_size=1000)
+
+            # Cache the list
+            await cache.set(cache_key, [item.__dict__ for item in items], CacheKeys.PLAYBOOK_TTL)
+
+            return items
+
+        async def invalidate_cache(self, definition_id: Optional[str] = None):
+            """Invalidate playbook cache"""
+            from core.cache import invalidate_playbook_cache
+            await invalidate_playbook_cache(definition_id)
+
+        async def create_with_cache(self, **kwargs) -> PlaybookDefinitionModel:
+            """Create playbook and invalidate cache"""
+            entity = await self.create(**kwargs)
+            await self.invalidate_cache()
+            return entity
+
+        async def update_with_cache(self, definition_id: str, **kwargs) -> Optional[PlaybookDefinitionModel]:
+            """Update playbook and invalidate cache"""
+            entity = await self.update(definition_id, **kwargs)
+            if entity:
+                await self.invalidate_cache(definition_id)
+            return entity
+
+        async def delete_with_cache(self, definition_id: str) -> bool:
+            """Delete playbook and invalidate cache"""
+            result = await self.delete(definition_id)
+            if result:
+                await self.invalidate_cache(definition_id)
+            return result
+
+    # Export cached version as default
+    PlaybookDefinitionRepository = PlaybookDefinitionRepositoryCached
+
+except ImportError:
+    # Cache module not available, use original
+    logger.warning("Cache module not available, using uncached repository")
+    pass

@@ -1,17 +1,159 @@
-"""Webhook trigger handler with HMAC signature verification."""
+"""Webhook trigger handler with HMAC signature verification and deduplication."""
 
 import hmac
 import hashlib
 import base64
 import json
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from core.logger import get_logger
+from core.config import settings
 from models.playbook_definition import PlaybookTriggerModel, PlaybookDefinitionModel
 
 logger = get_logger(__name__)
+
+
+class WebhookDeduplicationStore:
+    """Store for webhook deduplication based on payload hash.
+    
+    Supports both Redis and in-memory backends for distributed deployments.
+    """
+    
+    def __init__(self, redis_url: Optional[str] = None):
+        """Initialize deduplication store.
+        
+        Args:
+            redis_url: Optional Redis URL for distributed deployments
+        """
+        self._memory_store: Dict[str, Dict] = {}
+        self._redis = None
+        self._key_prefix = "webhook_dedup:"
+        self._lock = None
+        
+        # Try to use Redis if available
+        if redis_url:
+            try:
+                import redis.asyncio as redis
+                self._redis = redis.from_url(
+                    redis_url,
+                    encoding="utf-8",
+                    decode_responses=True,
+                )
+                logger.info("Webhook deduplication store initialized with Redis")
+            except Exception as e:
+                logger.warning(f"Failed to init Redis for webhook dedup: {e}")
+        
+        import asyncio
+        self._lock = asyncio.Lock()
+    
+    def _compute_payload_hash(self, trigger_id: str, payload: bytes) -> str:
+        """Compute hash for payload deduplication.
+        
+        Args:
+            trigger_id: Trigger ID for scope
+            payload: Raw payload bytes
+        
+        Returns:
+            SHA256 hash of trigger_id + payload
+        """
+        combined = f"{trigger_id}:{payload.hex()}"
+        return hashlib.sha256(combined.encode()).hexdigest()[:32]
+    
+    async def check_and_mark(
+        self,
+        trigger_id: str,
+        payload: bytes,
+        ttl: int = 300,  # 5 minutes default dedup window
+    ) -> Optional[Dict[str, Any]]:
+        """Check if payload was recently processed and mark as processing.
+        
+        Args:
+            trigger_id: Trigger ID
+            payload: Raw payload bytes
+            ttl: Deduplication window in seconds
+        
+        Returns:
+            Previous run info if duplicate, None if new
+        """
+        payload_hash = self._compute_payload_hash(trigger_id, payload)
+        full_key = f"{self._key_prefix}{payload_hash}"
+        
+        # Check Redis first
+        if self._redis:
+            try:
+                existing = await self._redis.get(full_key)
+                if existing:
+                    logger.info(f"Duplicate webhook detected (Redis): {payload_hash[:16]}...")
+                    return json.loads(existing)
+            except Exception as e:
+                logger.error(f"Redis error in webhook dedup check: {e}")
+        
+        # Check memory store
+        async with self._lock:
+            if full_key in self._memory_store:
+                entry = self._memory_store[full_key]
+                if datetime.now(timezone.utc) < entry["expires_at"]:
+                    logger.info(f"Duplicate webhook detected (memory): {payload_hash[:16]}...")
+                    return entry["run_info"]
+                else:
+                    del self._memory_store[full_key]
+        
+        return None
+    
+    async def mark_processed(
+        self,
+        trigger_id: str,
+        payload: bytes,
+        run_info: Dict[str, Any],
+        ttl: int = 300,
+    ) -> None:
+        """Mark payload as processed.
+        
+        Args:
+            trigger_id: Trigger ID
+            payload: Raw payload bytes
+            run_info: Run information to cache
+            ttl: Deduplication window in seconds
+        """
+        payload_hash = self._compute_payload_hash(trigger_id, payload)
+        full_key = f"{self._key_prefix}{payload_hash}"
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl)
+        
+        # Store in Redis
+        if self._redis:
+            try:
+                await self._redis.setex(
+                    full_key,
+                    ttl,
+                    json.dumps(run_info),
+                )
+            except Exception as e:
+                logger.error(f"Redis error storing webhook dedup: {e}")
+        
+        # Also store in memory as backup
+        async with self._lock:
+            self._memory_store[full_key] = {
+                "run_info": run_info,
+                "expires_at": expires_at,
+            }
+        
+        logger.debug(f"Webhook marked as processed: {payload_hash[:16]}...")
+
+
+# Global deduplication store
+_dedup_store: Optional[WebhookDeduplicationStore] = None
+
+
+def get_dedup_store() -> WebhookDeduplicationStore:
+    """Get global webhook deduplication store instance."""
+    global _dedup_store
+    if _dedup_store is None:
+        redis_url = getattr(settings, 'redis_url', None)
+        _dedup_store = WebhookDeduplicationStore(redis_url)
+    return _dedup_store
 
 
 def verify_hmac_signature(
@@ -128,7 +270,23 @@ class WebhookHandler:
         if not verify_hmac_signature(payload, signature, secret):
             raise ValueError("Invalid HMAC signature")
 
-        # Check idempotency
+        # v0.8.4: Check payload-based deduplication (automatic)
+        dedup_store = get_dedup_store()
+        dedup_ttl = trigger.config_json.get("dedup_ttl_seconds", 300)  # Default 5 minutes
+        dedup_enabled = trigger.config_json.get("dedup_enabled", True)  # Enabled by default
+        
+        if dedup_enabled:
+            existing_run = await dedup_store.check_and_mark(trigger_id, payload, dedup_ttl)
+            if existing_run:
+                logger.info(f"Duplicate webhook payload detected for trigger {trigger_id}")
+                return {
+                    "run_id": existing_run.get("run_id"),
+                    "status": existing_run.get("status"),
+                    "message": "Duplicate payload within dedup window, returning existing run",
+                    "dedup": True,
+                }
+
+        # Check explicit idempotency key (client-provided)
         if idempotency_key:
             is_unique = await self.check_idempotency(idempotency_key)
             if not is_unique:
@@ -192,6 +350,15 @@ class WebhookHandler:
         )
 
         await self.session.flush()
+        
+        # v0.8.4: Mark payload as processed for deduplication
+        if dedup_enabled:
+            await dedup_store.mark_processed(
+                trigger_id, 
+                payload, 
+                {"run_id": run_id, "status": "running"},
+                dedup_ttl
+            )
 
         # Execute the DAG
         result = await engine.execute_dag(

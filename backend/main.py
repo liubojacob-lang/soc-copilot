@@ -7,11 +7,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 from core.logger import get_logger
+from observability.logging import setup_json_logging
+from observability.tracing import setup_tracing
 from core.config import settings
 from db.session import init_db, AsyncSessionLocal
 from routers import (
     alert,
     report,
+    ai_models,  # AI model management
     timeline,
     history,
     assets,
@@ -29,13 +32,42 @@ from routers import (
     admin_settings,
     dify,  # v0.7.4: Dify workflow integration
     ai,  # Phase 2: AI Copilot
+    ai_tasks,  # v0.7.7: AI background task queue
     ueba,  # Phase 3: UEBA analytics
     threat_hunting,  # Phase 3: Threat hunting
     marketplace,  # Phase 4: Playbook marketplace
     cloud_native,  # Phase 4: Cloud native security
+    health,  # v0.8.2: Enhanced health check and metrics
+    monitor,  # Real-time monitoring dashboard
+    correlation,  # v0.8.0: Event correlation engine
+    security_alerts,  # v0.9.0: External security alert ingestion
+    alert_enrichment,  # v0.9.0: Threat intelligence enrichment
+    notifications,  # v0.9.x: Notification channels and queue status
+    wazuh_integration,  # v1.0.0: Wazuh SIEM integration
+    wazuh_event_receiver,  # v1.1.0: Event-driven Wazuh webhook receiver
 )
-from middleware import AuditMiddleware
+from routers import wazuh_stream  # v1.1.0: Wazuh real-time alert stream
+from routers import websocket as ws_router  # v0.8.5: WebSocket real-time alerts
+from routers import websocket_filters  # v0.9.0: WebSocket filter management
+from routers import monitoring_alerts  # v0.9.1: Monitoring alert rules
+from routers import export  # v0.8.5: Data export functionality
+from routers import system_dashboard  # v0.8.5: System health dashboard
+from middleware import (
+    AuditMiddleware,
+    TraceIDMiddleware,
+    RequestContextMiddleware,
+    ObservabilityMiddleware,
+    ExceptionCaptureMiddleware,
+    setup_trace_logging,
+    setup_exception_handlers,
+    ResourceAuthorizationMiddleware,
+    IdempotencyMiddleware,  # P0-3: Request deduplication
+)
+from middleware.tenant_middleware import TenantMiddleware
+from middleware.rate_limiter import init_rate_limiter, close_rate_limiter  # v0.8.5: Async rate limiter
+from middleware.performance import PerformanceMiddleware  # v0.8.5: Performance monitoring
 
+setup_json_logging(settings.log_level)
 logger = get_logger(__name__)
 
 
@@ -55,7 +87,7 @@ class AddCredentialsMiddleware(BaseHTTPMiddleware):
 async def create_bootstrap_admin():
     """Create bootstrap admin user if no users exist."""
     from repositories.user_repository import UserRepository
-    from models.user import UserRole
+    from models.user import UserModel, UserRole
     from core.security import get_password_hash
 
     async with AsyncSessionLocal() as session:
@@ -68,6 +100,7 @@ async def create_bootstrap_admin():
                 f"Bootstrap admin username: {settings.bootstrap_admin_username}"
             )
             logger.info(f"Bootstrap admin email: {settings.bootstrap_admin_email}")
+            logger.info("Bootstrap admin password: [REDACTED for security]")
             logger.warning("CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
 
             hashed_password = get_password_hash(settings.bootstrap_admin_password)
@@ -76,9 +109,11 @@ async def create_bootstrap_admin():
                 email=settings.bootstrap_admin_email,
                 hashed_password=hashed_password,
                 role=UserRole.ADMIN,
+                must_change_password=True,  # v0.8.4: Force password change on first login
             )
 
             logger.info(f"Bootstrap admin created with ID: {admin_user.id}")
+            logger.warning("Bootstrap admin must change password on first login!")
 
             # Create audit log
             from repositories.audit_repository import AuditRepository
@@ -92,7 +127,7 @@ async def create_bootstrap_admin():
                 user_id=admin_user.id,
                 target_type="user",
                 target_id=admin_user.id,
-                extra_json={"bootstrap": True},
+                extra_json={"bootstrap": True, "must_change_password": True},
             )
             await session.commit()
 
@@ -118,9 +153,10 @@ async def run_migrations():
             logging.getLogger("alembic").setLevel(logging.WARNING)
             # Run migrations in a separate process to avoid event loop conflicts
             import subprocess
+            import sys
 
             result = subprocess.run(
-                ["python", "-m", "alembic", "-c", str(ini_path), "upgrade", "head"],
+                [sys.executable, "-m", "alembic", "-c", str(ini_path), "upgrade", "head"],
                 capture_output=True,
                 text=True,
                 cwd=str(Path(__file__).parent),
@@ -140,7 +176,7 @@ async def lifespan(app_instance: FastAPI):
     Initializes database on startup and creates bootstrap admin if needed.
     """
     # Startup
-    logger.info(f"Initializing SOC Copilot API v0.7.4")
+    logger.info(f"Initializing SOC Copilot API v0.8.0")
     logger.info(f"Environment: {settings.environment}")
     logger.info(f"Playbook Engine: ENABLED (DAG-based with Node Plugin System)")
     logger.info(f"Trigger System: ENABLED (webhook + cron)")
@@ -154,32 +190,17 @@ async def lifespan(app_instance: FastAPI):
     logger.info(f"Audit Logging: ENABLED")
 
     # P1: 生产环境敏感配置校验
-    if settings.environment == "production":
-        _fail = []
-        if (
-            not settings.jwt_secret
-            or settings.jwt_secret == "CHANGE_THIS_IN_PRODUCTION_MIN_32_CHARS_LONG"
-        ):
-            _fail.append("JWT_SECRET must be set to a secure value (min 32 chars)")
-        if settings.bootstrap_admin_password == "admin123!":
-            _fail.append("BOOTSTRAP_ADMIN_PASSWORD must be changed from default")
-        if not settings.secret_encryption_key and not settings.strict_production_checks:
-            logger.warning(
-                "SECRET_ENCRYPTION_KEY is not set; secrets management will be unavailable. "
-                "Set STRICT_PRODUCTION_CHECKS=1 to fail startup when key is missing."
-            )
-        elif not settings.secret_encryption_key and settings.strict_production_checks:
-            _fail.append(
-                "SECRET_ENCRYPTION_KEY must be set in production when STRICT_PRODUCTION_CHECKS=1"
-            )
-        if _fail:
-            msg = "Production config validation failed: " + "; ".join(_fail)
-            if settings.strict_production_checks:
-                logger.critical(msg)
-                raise RuntimeError(msg)
-            logger.critical(
-                msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=1 to fail)"
-            )
+    from core.security_validators import run_production_security_checks
+    
+    security_errors = run_production_security_checks()
+    if security_errors:
+        msg = "Production security validation failed: " + "; ".join(security_errors)
+        if settings.strict_production_checks:
+            logger.critical(msg)
+            raise RuntimeError(msg)
+        logger.critical(
+            msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=true to fail)"
+        )
 
     # Run migrations before initializing database
     await run_migrations()
@@ -219,10 +240,110 @@ async def lifespan(app_instance: FastAPI):
     # v0.7.4: Start queue processor
     await queue_manager.start_background_processor()
 
+    # v0.7.7: Start AI task processor
+    from services.ai_task_service import start_ai_task_processor, stop_ai_task_processor
+    await start_ai_task_processor()
+    logger.info("AI task processor started")
+
+    # v0.8.5: Initialize async rate limiter
+    await init_rate_limiter()
+    logger.info("Rate limiter initialized")
+
+    # v0.9.1: Start WebSocket monitoring service
+    from services.websocket_monitoring import start_websocket_monitoring
+    await start_websocket_monitoring()
+    logger.info("WebSocket monitoring service started")
+
+    # v0.9.1: Initialize alert evaluator
+    from services.alert_evaluator import start_alert_evaluator
+    await start_alert_evaluator()
+    logger.info("Alert evaluator initialized")
+
+    # v0.9.2: Initialize message compression service
+    from services.websocket_compression import start_compression_service
+    await start_compression_service()
+    logger.info("Message compression service initialized")
+
+    # v0.9.2: Start message batch service
+    from services.message_batch_service import start_batch_service
+    await start_batch_service()
+    logger.info("Message batch service initialized")
+
+    # v0.9.2: Start connection pool service
+    from services.websocket_connection_pool import start_connection_pool
+    await start_connection_pool()
+    logger.info("Connection pool service initialized")
+
+    # v0.8.5: Start audit log archival background task
+    if settings.audit_log_cleanup_enabled:
+        from services.audit_archive_service import run_scheduled_archival
+        import asyncio
+        archival_task = asyncio.create_task(run_scheduled_archival(AsyncSessionLocal))
+        logger.info("Audit log archival service started")
+
+    # v1.0.0: Initialize Wazuh integration
+    if settings.wazuh_enabled:
+        from services.wazuh_client import init_wazuh_client
+        from services.wazuh_log_receiver import init_wazuh_receiver
+
+        try:
+            # Initialize Wazuh client
+            wazuh_client = init_wazuh_client(
+                api_url=settings.wazuh_api_url,
+                username=settings.wazuh_api_username,
+                password=settings.wazuh_api_password,
+                cert_path=settings.wazuh_api_cert_path,
+                verify_ssl=settings.wazuh_verify_ssl
+            )
+            logger.info(f"Wazuh client initialized: {settings.wazuh_api_url}")
+
+            # Initialize Wazuh log receiver
+            wazuh_receiver = init_wazuh_receiver(
+                poll_interval=settings.wazuh_poll_interval,
+                batch_size=settings.wazuh_batch_size,
+                lookback_minutes=settings.wazuh_lookback_minutes,
+                enabled=settings.wazuh_receiver_enabled
+            )
+
+            # Start receiver in background if enabled
+            if settings.wazuh_receiver_auto_start:
+                asyncio.create_task(wazuh_receiver.start())
+                logger.info("Wazuh log receiver started")
+
+            # v1.1.0: Initialize Wazuh alert stream service
+            from services.wazuh_stream_service import init_wazuh_stream_service
+
+            stream_service = await init_wazuh_stream_service(
+                aggregation_window_seconds=60,  # 1 minute aggregation window
+                max_buffer_size=10000,  # Max 10k alerts in buffer
+                max_history_size=1000  # Keep last 1000 alerts
+            )
+            logger.info("Wazuh alert stream service initialized")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize Wazuh integration: {e}")
+            if settings.wazuh_required:
+                raise RuntimeError("Wazuh integration is required but failed to initialize")
+
     yield
 
     # Shutdown
     logger.info("Shutting down SOC Copilot API")
+
+    # v0.8.5: Close rate limiter
+    await close_rate_limiter()
+    logger.info("Rate limiter closed")
+
+    # v0.9.1: Stop WebSocket monitoring service
+    from services.websocket_monitoring import get_websocket_monitoring
+    monitoring_service = get_websocket_monitoring()
+    await monitoring_service.stop()
+    logger.info("WebSocket monitoring service stopped")
+
+    # v0.7.7: Stop AI task processor
+    await stop_ai_task_processor()
+    logger.info("AI task processor stopped")
+    
     if cron_scheduler:
         await cron_scheduler.stop()
         logger.info("Cron scheduler stopped")
@@ -236,9 +357,14 @@ async def lifespan(app_instance: FastAPI):
 app = FastAPI(
     title="SOC Copilot API",
     description="Security Operations Center Analysis Platform with Playbook Engine, OTX Threat Intelligence, and Multi-User Support",
-    version="0.7.4",
+    version="0.8.0",
     lifespan=lifespan,
 )
+
+# Setup Prometheus metrics
+from core.metrics import setup_metrics
+setup_metrics(app)
+setup_tracing(app, service_name="soc-backend")
 
 # Middleware to set user_id in request.state for audit middleware
 # Must be added BEFORE AuditMiddleware
@@ -247,14 +373,15 @@ from starlette.types import ASGIApp
 
 
 class SetUserStateMiddleware(BaseHTTPMiddleware):
-    """Middleware to set user_id in request.state for audit middleware."""
+    """Middleware to set user_id and user_role in request.state for audit and authorization middleware."""
 
     async def dispatch(self, request: Request, call_next):
-        """Set current user in request.state for audit middleware."""
+        """Set current user in request.state for audit and authorization middleware."""
         # Try to get user from Authorization header only
         # API key lookup is done in the auth dependency to avoid DB calls in middleware
         auth_header = request.headers.get("authorization")
         user_id = None
+        user_role = None
 
         if auth_header and auth_header.startswith("Bearer "):
             from core.security import decode_token
@@ -263,18 +390,39 @@ class SetUserStateMiddleware(BaseHTTPMiddleware):
             payload = decode_token(token)
             if payload:
                 user_id = payload.get("sub")
+                user_role = payload.get("role")
 
         request.state.user_id = user_id
+        request.state.user_role = user_role
         response = await call_next(request)
         return response
 
 
-# CORS: 生产环境通过 CORS_ORIGINS 配置允许来源，未配置时默认 ["*"]
-_cors_origins = (
-    [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
-    if settings.cors_origins
-    else ["*"]
-)
+# CORS: 生产环境通过 CORS_ORIGINS 配置允许来源，未配置时开发环境允许 ["*"]
+# 安全增强: 生产环境不允许通配符 "*"
+if settings.environment == "production":
+    if not settings.cors_origins:
+        raise RuntimeError(
+            "CORS_ORIGINS must be configured in production. "
+            "Example: CORS_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com"
+        )
+    _cors_origins = (
+        [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+    )
+    # v0.8.1: Production CORS security - reject wildcard origins
+    if "*" in _cors_origins:
+        raise RuntimeError(
+            "CORS_ORIGINS cannot contain wildcard '*' in production. "
+            "Specify explicit origins like https://yourdomain.com"
+        )
+else:
+    # 开发环境允许所有来源用于本地测试
+    _cors_origins = (
+        [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+        if settings.cors_origins
+        else ["*"]
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
@@ -287,20 +435,46 @@ app.add_middleware(
 # Add credentials header for localhost origins
 app.add_middleware(AddCredentialsMiddleware)
 
+# v0.8.5: Performance monitoring middleware (should be early to capture all requests)
+if settings.performance_monitoring_enabled:
+    app.add_middleware(
+        PerformanceMiddleware,
+        slow_request_threshold=settings.slow_request_threshold,
+    )
+
+# Trace ID middleware (must be first to capture all requests)
+app.add_middleware(TraceIDMiddleware)
+app.add_middleware(TenantMiddleware)
+app.add_middleware(RequestContextMiddleware)
+app.add_middleware(ObservabilityMiddleware)
+app.add_middleware(ExceptionCaptureMiddleware)
+
 # Set user state middleware (must be before AuditMiddleware)
 app.add_middleware(SetUserStateMiddleware)
 
 # Audit middleware (must be added after SetUserStateMiddleware)
 app.add_middleware(AuditMiddleware)
 
+# Resource authorization middleware (must be after SetUserStateMiddleware)
+app.add_middleware(ResourceAuthorizationMiddleware)
 
-# Include routers - auth first, then others
+# Setup global exception handlers
+setup_exception_handlers(app)
+
+# Setup trace logging
+setup_trace_logging()
+
+
+# Include routers - health first (no auth required), then auth, then others
+app.include_router(health.router)  # v0.8.2: Enhanced health check and metrics
+app.include_router(correlation.router)  # v0.8.0: Event correlation engine
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(api_keys.router)
 app.include_router(audit.router)
 app.include_router(alert.router)
 app.include_router(report.router)
+app.include_router(ai_models.router)  # AI model management
 app.include_router(timeline.router)
 app.include_router(history.router)
 app.include_router(assets.router)
@@ -314,10 +488,25 @@ app.include_router(secrets.router)  # v0.7.4: Secrets management
 app.include_router(admin_settings.router)  # System settings
 app.include_router(dify.router)  # v0.7.4: Dify workflow integration
 app.include_router(ai.router)  # Phase 2: AI Copilot service
+app.include_router(ai_tasks.router)  # v0.7.7: AI background task queue
 app.include_router(ueba.router)  # Phase 3: UEBA analytics
 app.include_router(threat_hunting.router)  # Phase 3: Threat hunting
 app.include_router(marketplace.router)  # Phase 4: Playbook marketplace
 app.include_router(cloud_native.router)  # Phase 4: Cloud native security
+app.include_router(monitor.router)  # Real-time monitoring dashboard
+app.include_router(security_alerts.router)  # v0.9.0: External security alert ingestion
+app.include_router(alert_enrichment.router)  # v0.9.0: Threat intelligence enrichment
+app.include_router(notifications.router)  # v0.9.x: Notification channels and queue status
+from routers import alerts_lifecycle  # v0.9.0: Alert lifecycle management
+app.include_router(alerts_lifecycle.router)  # v0.9.0: Alert lifecycle management
+app.include_router(ws_router.router)  # v0.8.5: WebSocket real-time alerts
+app.include_router(websocket_filters.router)  # v0.9.0: WebSocket filter management
+app.include_router(monitoring_alerts.router)  # v0.9.1: Monitoring alert rules
+app.include_router(export.router)  # v0.8.5: Data export functionality
+app.include_router(system_dashboard.router)  # v0.8.5: System health dashboard
+app.include_router(wazuh_integration.router)  # v1.0.0: Wazuh SIEM integration
+app.include_router(wazuh_event_receiver.router)  # v1.1.0: Event-driven Wazuh webhook receiver
+app.include_router(wazuh_stream.router)  # v1.1.0: Wazuh real-time alert stream
 
 
 # Global OPTIONS handler for CORS preflight
@@ -349,7 +538,7 @@ async def root() -> dict[str, str]:
 @app.get("/api/health")
 async def health() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "ok", "version": "0.7.4", "auth": "enabled"}
+    return {"status": "ok", "version": "0.8.0", "auth": "enabled"}
 
 
 if __name__ == "__main__":

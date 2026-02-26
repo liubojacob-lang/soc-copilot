@@ -10,7 +10,7 @@ from schemas.user import UserCreate, UserUpdate, UserResponse, UserInDB
 from repositories.user_repository import UserRepository
 from core.security import get_password_hash
 from core.logger import get_logger
-from dependencies.auth import require_admin
+from dependencies.auth import require_admin, invalidate_user_permission_cache
 
 logger = get_logger(__name__)
 
@@ -142,6 +142,10 @@ async def update_user(
             detail="User not found",
         )
 
+    # Invalidate permission cache if role was changed
+    if user_data.role is not None:
+        invalidate_user_permission_cache(user_id)
+
     # Create audit log
     from repositories.audit_repository import AuditRepository
     audit_repo = AuditRepository(session)
@@ -232,6 +236,9 @@ async def delete_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
+
+    # Invalidate permission cache for deleted user
+    invalidate_user_permission_cache(user_id)
 
     # Create audit log
     from repositories.audit_repository import AuditRepository

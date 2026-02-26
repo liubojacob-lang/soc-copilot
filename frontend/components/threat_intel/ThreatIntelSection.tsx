@@ -1,6 +1,7 @@
 "use client";
 
 import { ThreatIntelAnalysis, Verdict } from "@/lib/api";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 interface ThreatIntelSectionProps {
@@ -8,6 +9,7 @@ interface ThreatIntelSectionProps {
 }
 
 export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
+  const t = useTranslations('threatIntel');
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [showFiltered, setShowFiltered] = useState(false);
 
@@ -41,12 +43,12 @@ export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
   const getFilterReasonLabel = (reason?: string) => {
     switch (reason) {
       case "private_ip": return "Private IP";
-      case "internal_domain": return "Internal Domain";
+      case "internal_domain": return t('internalDomain');
       case "blocked_tld": return "Blocked TLD";
       case "url_private_ip_host": return "Private IP in URL";
       case "url_internal_domain": return "Internal Domain in URL";
       case "url_blocked_tld": return "Blocked TLD in URL";
-      case "rate_limit": return "Rate Limited";
+      case "rate_limit": return t('rateLimited');
       default: return reason || "Filtered";
     }
   };

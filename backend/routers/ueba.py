@@ -28,7 +28,7 @@ class BehaviorDataInput(BaseModel):
     """Input for behavior analysis."""
 
     entity_id: str
-    entity_type: str = Field(default="user", regex="^(user|host|ip)$")
+    entity_type: str = Field(default="user", pattern="^(user|host|ip)$")
     login_time: Optional[datetime] = None
     data_volume_mb: Optional[float] = None
     accessed_hosts: Optional[List[str]] = None
@@ -66,7 +66,7 @@ class BaselineBuildRequest(BaseModel):
     """Request to build behavior baseline."""
 
     entity_id: str
-    entity_type: str = Field(default="user", regex="^(user|host|ip)$")
+    entity_type: str = Field(default="user", pattern="^(user|host|ip)$")
     days_of_history: int = Field(default=30, ge=7, le=90)
 
 

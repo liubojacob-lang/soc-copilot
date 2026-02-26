@@ -80,6 +80,17 @@ class SettingsResponse(BaseModel):
     dify_configured: bool
 
 
+class TimeoutConfigResponse(BaseModel):
+    """Response model for API timeout configuration."""
+
+    analysis_ms: int
+    default_ms: int
+    health_ms: int
+    report_ms: int
+    timeline_ms: int
+    dag_run_ms: int
+
+
 @router.get("", response_model=SettingsResponse)
 async def get_settings(
     current_user: UserModel = Depends(get_current_user),
@@ -153,3 +164,22 @@ async def update_settings(
         logger.error(f"Failed to update settings: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
+@router.get("/timeouts", response_model=TimeoutConfigResponse)
+async def get_timeout_config(
+    current_user: UserModel = Depends(get_current_user),
+) -> TimeoutConfigResponse:
+    """Get API timeout configuration.
+
+    Returns timeout values in milliseconds for various API operations.
+    Requires: authenticated user
+    """
+    return TimeoutConfigResponse(
+        analysis_ms=settings.api_timeout_analysis_ms,
+        default_ms=settings.api_timeout_default_ms,
+        health_ms=settings.api_timeout_health_ms,
+        report_ms=settings.api_timeout_report_ms,
+        timeline_ms=settings.api_timeout_timeline_ms,
+        dag_run_ms=settings.api_timeout_dag_run_ms,
+    )

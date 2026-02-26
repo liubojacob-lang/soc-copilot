@@ -1,0 +1,863 @@
+{
+  "meta": {
+    "title": "SOC Copilot - Security Operations Center",
+    "description": "AI-powered security operations center platform"
+  },
+  "common": {
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "refresh": "Refresh",
+    "close": "Close",
+    "clear": "Clear",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "reset": "Reset",
+    "noData": "No data",
+    "yes": "Yes",
+    "no": "No",
+    "actions": "Actions",
+    "viewDetails": "View Details",
+    "download": "Download",
+    "total": "Total",
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "info": "Info"
+  },
+  "nav": {
+    "home": "Home",
+    "runs": "Playbooks",
+    "ai": "AI Assistant",
+    "ueba": "UEBA",
+    "hunting": "Hunting",
+    "market": "Marketplace",
+    "cloud": "Cloud",
+    "dify": "Dify",
+    "triggers": "Triggers",
+    "reports": "Reports",
+    "wazuh": "Wazuh",
+    "correlation": "Correlation",
+    "settings": "Settings",
+    "monitor": "Monitor",
+    "users": "Users",
+    "more": "More",
+    "exit": "Exit",
+    "logout": "Logout",
+    "playbookDefinitions": "Playbook Definitions",
+    "apiStatus": {
+      "healthy": "API Healthy",
+      "checking": "Checking...",
+      "error": "API Error"
+    }
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "playbooks": "Playbooks",
+    "aiAssistant": "AI Assistant",
+    "settings": "Settings",
+    "admin": "Admin",
+    "triggers": "Triggers",
+    "assets": "Assets",
+    "monitor": "Monitor",
+    "audit": "Audit"
+  },
+  "home": {
+    "title": "SOC Copilot",
+    "subtitle": "Security Operations Center",
+    "tabs": {
+      "alertAnalyzer": "Alert Analyzer",
+      "timelineBuilder": "Timeline Builder",
+      "reportWriter": "Report Writer",
+      "assets": "Assets"
+    }
+  },
+  "login": {
+    "title": "Sign In",
+    "subtitle": "Enter your credentials",
+    "username": "Username",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "error": "Invalid credentials",
+    "devMode": "Dev Mode"
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Manage user accounts and permissions",
+    "createUser": "Add User",
+    "editUser": "Edit User",
+    "deleteUser": "Delete User",
+    "search": "Search users...",
+    "username": "Username",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "actions": "Actions",
+    "lastLogin": "Last Login"
+  },
+  "alertAnalyzer": {
+    "input": "Input",
+    "output": "Output",
+    "history": "History",
+    "placeholder": "Paste raw log or alert data for analysis...",
+    "analyze": "Analyze",
+    "analyzing": "Analyzing...",
+    "analysisFailed": "Analysis failed",
+    "confidence": "Confidence",
+    "escalate": "Escalate",
+    "id": "ID",
+    "summary": "Summary",
+    "entities": "Entities",
+    "users": "Users:",
+    "hosts": "Hosts:",
+    "processes": "Processes:",
+    "evidencePoints": "Evidence Points",
+    "recommendedActions": "Recommended Actions",
+    "verify": "Verify:"
+  },
+  "tabs": {
+    "input": "Input",
+    "output": "Output",
+    "history": "History",
+    "placeholder": "Enter content...",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "generateFailed": "Generation failed",
+    "buildTimeline": "Build Timeline",
+    "buildingTimeline": "Building Timeline...",
+    "generateReports": "Generate Reports",
+    "generatingReports": "Generating Reports...",
+    "timeline": {
+      "title": "Timeline",
+      "events": "Events",
+      "noEvents": "No events"
+    },
+    "report": {
+      "title": "Report",
+      "download": "Download",
+      "format": "Format"
+    }
+  },
+  "assets": {
+    "title": "Asset Management",
+    "subtitle": "Manage organizational assets",
+    "search": "Search assets...",
+    "searchPlaceholder": "Search assets...",
+    "addAsset": "Add Asset",
+    "editAsset": "Edit Asset",
+    "deleteAsset": "Delete Asset",
+    "importAssets": "Import Assets",
+    "exportAssets": "Export Assets",
+    "name": "Name",
+    "type": "Type",
+    "ip": "IP Address",
+    "status": "Status",
+    "criticality": "Criticality",
+    "lastSeen": "Last Seen",
+    "tags": "Tags",
+    "noAssets": "No assets"
+  },
+  "aiAssistant": {
+    "title": "AI Assistant",
+    "subtitle": "Intelligent Security Analysis",
+    "welcome": {
+      "title": "AI Security Assistant",
+      "greeting": "Hello! I'm your AI Security Assistant, specialized in helping you analyze security events, recommend playbooks, and generate reports.",
+      "capabilities": "I can help you with:",
+      "features": {
+        "alertAnalysis": "• Alert analysis and threat assessment",
+        "playbookRecommend": "• Playbook recommendations for incident response",
+        "naturalLanguage": "• Natural language queries for security data",
+        "reportGeneration": "• Security report generation"
+      },
+      "prompt": "Please describe your security question or select a quick action below."
+    },
+    "inputPlaceholder": "Type your security question...",
+    "thinking": "Thinking...",
+    "userLabel": "You",
+    "pressEnterToSend": "Press",
+    "toSend": "to send",
+    "forNewLine": "for new line",
+    "model": {
+      "select": "Select Model",
+      "noModels": "No models available",
+      "testing": "Testing...",
+      "testConnection": "Test Connection",
+      "setDefault": "Set as Default",
+      "isDefault": "Default Model"
+    },
+    "providers": {
+      "openai": "OpenAI",
+      "anthropic": "Anthropic",
+      "azure": "Azure OpenAI",
+      "local": "Local Model",
+      "nvidia": "NVIDIA NIM",
+      "zhipu": "Zhipu AI",
+      "moonshot": "Moonshot AI",
+      "openrouter": "OpenRouter"
+    },
+    "actions": {
+      "quickActions": "Quick Actions:",
+      "clearChat": "Clear Chat",
+      "copy": "Copy"
+    },
+    "quickActions": {
+      "analyzeAlert": {
+        "label": "Analyze Alert",
+        "query": "Please help me analyze the latest security alert and provide threat assessment."
+      },
+      "recommendPlaybook": {
+        "label": "Recommend Playbook",
+        "query": "Based on recent security events, what playbooks do you recommend for incident response?"
+      },
+      "generateReport": {
+        "label": "Generate Report",
+        "query": "Generate a security summary report for the last 24 hours."
+      },
+      "threatHunt": {
+        "label": "Threat Hunt",
+        "query": "Help me hunt for potential threats in the environment based on recent IOCs."
+      }
+    },
+    "history": {
+      "title": "Chat History",
+      "justNow": "Just now",
+      "minutesAgo": "{count} minutes ago",
+      "hoursAgo": "{count} hours ago",
+      "daysAgo": "{count} days ago",
+      "newChat": "New Chat",
+      "searchPlaceholder": "Search conversations...",
+      "noConversations": "No conversations yet",
+      "deleteConfirm": "Delete this conversation?",
+      "renameTitle": "Rename Conversation",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "past7Days": "Past 7 Days",
+      "older": "Older"
+    },
+    "sidebar": {
+      "capabilities": "Capabilities",
+      "usageTips": "Usage Tips",
+      "currentModel": "Current Model",
+      "tips": {
+        "naturalLanguage": "Use natural language to describe your security questions",
+        "alertAnalysis": "Ask for detailed alert analysis and recommendations",
+        "securityReports": "Request security reports for any time period",
+        "recommendations": "Get playbook recommendations for incidents"
+      }
+    },
+    "errors": {
+      "loadModelsFailed": "Failed to load AI models",
+      "serviceFailed": "AI service error: {message}",
+      "copyFailed": "Failed to copy to clipboard",
+      "setDefaultFailed": "Failed to set default model"
+    }
+  },
+  "playbooks": {
+    "title": "Playbook Management",
+    "subtitle": "Manage and execute playbooks",
+    "runs": "Run History",
+    "create": "Create Playbook",
+    "search": "Search playbooks...",
+    "noPlaybooks": "No playbooks",
+    "tabs": {
+      "runs": "Run History",
+      "definitions": "Definitions"
+    },
+    "queue": {
+      "running": "Running",
+      "queued": "Queued"
+    },
+    "allPlaybooks": "All Playbooks",
+    "allStatuses": "All Statuses",
+    "noRuns": "No run records",
+    "playbook": "Playbook",
+    "status": "Status",
+    "mode": "Mode",
+    "started": "Started",
+    "duration": "Duration",
+    "statuses": {
+      "running": "Running",
+      "success": "Success",
+      "failed": "Failed",
+      "pending": "Pending",
+      "cancelled": "Cancelled",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Expired"
+    },
+    "actions": {
+      "run": "Run",
+      "pause": "Pause",
+      "resume": "Resume",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "duplicate": "Duplicate"
+    },
+    "details": {
+      "title": "Playbook Details",
+      "description": "Description",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "author": "Author",
+      "version": "Version"
+    },
+    "definitions": {
+      "title": "Playbook Definitions",
+      "subtitle": "Manage playbook templates and configurations",
+      "noDefinitions": "No playbook definitions",
+      "description": "Description",
+      "version": "Version",
+      "status": "Status",
+      "actions": "Actions",
+      "edit": "Edit",
+      "delete": "Delete",
+      "name": "Name",
+      "updated": "Updated",
+      "createNew": "Create New",
+      "createFirst": "Create your first playbook definition",
+      "searchPlaceholder": "Search definitions..."
+    },
+    "approvals": {
+      "title": "Approval Requests",
+      "subtitle": "Review and manage playbook approval requests",
+      "noApprovals": "No approval requests",
+      "noApprovalsDesc": "Pending approvals will appear here",
+      "runId": "Run ID",
+      "status": "Status",
+      "requestedBy": "Requested By",
+      "created": "Created",
+      "actions": "Actions",
+      "approve": "Approve",
+      "reject": "Reject",
+      "searchPlaceholder": "Search approvals..."
+    }
+  },
+  "playbookPanel": {
+    "title": "Playbook Panel",
+    "queries": "Queries",
+    "actions": "Remediation Actions",
+    "generateQueries": "Generate Queries",
+    "generateActions": "Generate Actions",
+    "copyQuery": "Copy Query",
+    "copyAction": "Copy Action",
+    "applyAction": "Apply Action",
+    "noQueries": "No queries",
+    "noActions": "No actions"
+  },
+  "impact": {
+    "title": "Impact Analysis",
+    "severity": "Severity",
+    "affectedSystems": "Affected Systems",
+    "businessImpact": "Business Impact",
+    "recommendations": "Recommendations",
+    "noImpact": "No impact analysis data"
+  },
+  "threatIntel": {
+    "title": "Threat Intelligence",
+    "search": "Search IOC...",
+    "noResults": "No results found",
+    "verdict": {
+      "malicious": "Malicious",
+      "suspicious": "Suspicious",
+      "benign": "Benign",
+      "unknown": "Unknown"
+    },
+    "details": {
+      "source": "Source",
+      "confidence": "Confidence",
+      "firstSeen": "First Seen",
+      "lastSeen": "Last Seen",
+      "tags": "Tags",
+      "relatedIOCs": "Related IOCs"
+    }
+  },
+  "dag": {
+    "status": {
+      "pending": "Pending",
+      "running": "Running",
+      "success": "Success",
+      "failed": "Failed",
+      "skipped": "Skipped"
+    },
+    "node": {
+      "type": "Type",
+      "duration": "Duration",
+      "startedAt": "Started At",
+      "completedAt": "Completed At"
+    }
+  },
+  "correlation": {
+    "title": "Event Correlation",
+    "relatedIncidents": "Related Incidents",
+    "noCorrelations": "No correlated events",
+    "timeline": "Timeline",
+    "severity": "Severity"
+  },
+  "reports": {
+    "title": "Reports",
+    "generate": "Generate Report",
+    "download": "Download",
+    "noReports": "No reports"
+  },
+  "difyPage": {
+    "title": "Dify Integration",
+    "subtitle": "Dify workflow management",
+    "header": "Dify Workflow Integration",
+    "description": "Import and manage automation workflows from Dify",
+    "config": "Configuration",
+    "workflows": "Workflows",
+    "noWorkflows": "No workflows",
+    "testConnection": "Test Connection",
+    "saveConfig": "Save Configuration",
+    "refresh": "Refresh",
+    "importById": "Import by ID",
+    "connected": "Connected",
+    "notConnected": "Not Connected",
+    "whatIsDify": "What is Dify?",
+    "loading": "Loading...",
+    "notConfigured": "Please configure Dify connection first",
+    "noWorkspaces": "No workflows in workspace",
+    "configure": "Configure",
+    "modal": {
+      "deleteConfirm": "Are you sure you want to delete workflow '{name}'?"
+    },
+    "quickStart": {
+      "title": "Quick Start Guide",
+      "step1": "1. Create a workflow app in Dify",
+      "step2": "2. Configure Dify API connection",
+      "step3": "3. Import workflows from the list",
+      "step4": "4. View imported workflows in Playbook Definitions"
+    }
+  },
+  "threatHunting": {
+    "title": "Threat Hunting",
+    "subtitle": "Proactive threat detection",
+    "search": "Search...",
+    "noResults": "No threats found",
+    "huntHypotheses": "Hunt Hypotheses",
+    "totalHunts": "Total Hunts",
+    "findings": "Findings",
+    "critical": "Critical",
+    "successRate": "Success Rate",
+    "mitre": "MITRE",
+    "dataSources": "Data Sources",
+    "running": "Running",
+    "run": "Run",
+    "recentResults": "Recent Results",
+    "findingsCount": "{count} findings",
+    "clean": "Clean",
+    "topTechniques": "Top Techniques",
+    "times": "times",
+    "severity": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "iocHunt": {
+      "title": "IOC Hunt",
+      "description": "Quickly search for IOCs based on threat intelligence",
+      "comingSoon": "This feature is coming soon",
+      "button": "Start IOC Hunt"
+    },
+    "filters": {
+      "title": "Filters",
+      "timeRange": "Time Range",
+      "severity": "Severity",
+      "type": "Type"
+    }
+  },
+  "marketplace": {
+    "title": "Playbook Marketplace",
+    "subtitle": "Browse and install playbook templates",
+    "search": "Search playbooks...",
+    "searchPlaceholder": "Search playbooks...",
+    "categories": {
+      "all": "All",
+      "security": "Security",
+      "compliance": "Compliance",
+      "operations": "Operations"
+    },
+    "install": "Install",
+    "installed": "Installed",
+    "details": "Details",
+    "allCategories": "All Categories",
+    "refresh": "Refresh",
+    "featured": "Featured",
+    "trending": "Trending",
+    "allPlaybooks": "All Playbooks ({count})",
+    "loading": "Loading...",
+    "noPlaybooks": "No playbooks available",
+    "downloadSuccess": "Successfully downloaded {name}! Go to {page} to view.",
+    "downloadFailed": "Download failed",
+    "downloading": "Downloading...",
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "loaded": "Loaded {count} playbooks"
+  },
+  "admin": {
+    "title": "System Administration",
+    "subtitle": "System configuration and management",
+    "settings": "Settings",
+    "health": "Health Status",
+    "audit": "Audit Logs",
+    "dashboard": {
+      "title": "System Dashboard",
+      "subtitle": "System Status Overview",
+      "systemInfo": "System Info",
+      "version": "Version",
+      "environment": "Environment",
+      "uptime": "Uptime",
+      "database": "Database",
+      "redis": "Redis",
+      "status": "Status",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "healthy": "Healthy",
+      "unhealthy": "Unhealthy",
+      "aiModels": "AI Models",
+      "features": "Features",
+      "systemStats": "System Stats",
+      "cpu": "CPU Usage",
+      "memory": "Memory Usage",
+      "disk": "Disk Usage",
+      "network": "Network",
+      "requests": "Requests",
+      "errors": "Errors",
+      "autoRefresh": "Auto Refresh",
+      "lastUpdate": "Last Update"
+    },
+    "secrets": {
+      "title": "Secrets Management",
+      "add": "Add Secret",
+      "edit": "Edit Secret",
+      "delete": "Delete Secret",
+      "name": "Name",
+      "value": "Value",
+      "noSecrets": "No secrets"
+    }
+  },
+  "triggers": {
+    "title": "Triggers",
+    "subtitle": "Manage playbook triggers",
+    "webhooks": "Webhooks",
+    "cron": "Cron Jobs",
+    "noTriggers": "No triggers",
+    "webhookTrigger": "Webhook Trigger",
+    "cronTrigger": "Cron Trigger",
+    "playbook": "Playbook",
+    "status": "Status",
+    "lastTriggered": "Last Triggered",
+    "active": "Active",
+    "inactive": "Inactive",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "errors": {
+      "loadFailed": "Failed to load triggers",
+      "deleteFailed": "Failed to delete trigger",
+      "toggleFailed": "Failed to toggle status"
+    },
+    "modal": {
+      "deleteConfirm": "Are you sure you want to delete this trigger?"
+    },
+    "newWebhook": {
+      "title": "Create Webhook",
+      "name": "Name",
+      "playbook": "Select Playbook",
+      "secret": "Secret"
+    },
+    "newCron": {
+      "title": "Create Cron Job",
+      "name": "Name",
+      "playbook": "Select Playbook",
+      "schedule": "Schedule Expression"
+    }
+  },
+  "triggersPage": {
+    "title": "Trigger Management",
+    "subtitle": "Configure automatic playbook triggers",
+    "pageHeader": "Trigger List",
+    "pageDescription": "Manage automatic trigger rules for playbooks",
+    "all": "All",
+    "webhooks": "Webhooks",
+    "cron": "Cron Jobs",
+    "noTriggers": "No triggers",
+    "noTriggersType": "No {type} triggers",
+    "type": "Type",
+    "name": "Name",
+    "details": "Details",
+    "unnamed": "Unnamed",
+    "never": "Never triggered",
+    "disable": "Disable",
+    "enable": "Enable",
+    "test": "Test",
+    "infoBox": {
+      "title": "About Triggers",
+      "webhook": "Webhook triggers: Trigger playbook execution via HTTP requests",
+      "cron": "Cron triggers: Execute playbooks automatically on a schedule",
+      "logs": "All trigger executions are logged in the audit log"
+    }
+  },
+  "uebaPage": {
+    "title": "User Behavior Analysis",
+    "subtitle": "Detect anomalous user behavior",
+    "noData": "No data",
+    "anomalies": "Anomalies",
+    "riskScore": "Risk Score",
+    "monitoredUsers": "Monitored Users",
+    "highRiskUsers": "High Risk Users",
+    "anomalies24h": "Anomalies (24h)",
+    "criticalAlerts": "Critical Alerts",
+    "highRiskUsersSection": "High Risk Users",
+    "noHighRiskUsers": "No high risk users",
+    "anomalousBehaviors": "{count} anomalous behaviors",
+    "topRiskFactors": "Top Risk Factors",
+    "offHoursLogin": "Off-Hours Login",
+    "times": "times",
+    "recentAnomalies": "Recent Anomalies",
+    "mlPowered": {
+      "title": "ML-Powered Analysis",
+      "description": "Using machine learning algorithms to automatically detect user behavior anomalies and identify potential security threats."
+    }
+  },
+  "cloudNative": {
+    "title": "Cloud Native Security",
+    "subtitle": "Cloud environment security monitoring",
+    "resources": "Resources",
+    "vulnerabilities": "Vulnerabilities",
+    "misconfigurations": "Misconfigurations",
+    "noData": "No data",
+    "quickActions": "Quick Actions",
+    "connectedClusters": "Connected Clusters",
+    "cloudProviders": "Cloud Providers",
+    "totalContainers": "Total Containers",
+    "vulnerableImages": "Vulnerable Images",
+    "securityOverview": "Security Overview",
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "cisCompliance": "CIS Compliance",
+    "lastScan": "Last Scan",
+    "scanningImage": "Scanning image...",
+    "scanImage": "Scan Image",
+    "detectVulnerabilities": "Detect container image vulnerabilities",
+    "k8sScanComingSoon": "Kubernetes scan feature coming soon",
+    "scanKubernetes": "Scan Kubernetes",
+    "cisBenchmark": "CIS Benchmark check",
+    "cloudConnectionStatus": "Cloud Connection Status",
+    "connected": "Connected",
+    "notConfigured": "Not Configured",
+    "recentVulnerabilities": "Recent Vulnerabilities",
+    "supportedCloudProviders": "Supported Cloud Providers",
+    "aws": "AWS - Amazon Web Services",
+    "azure": "Azure - Microsoft Cloud",
+    "gcp": "GCP - Google Cloud Platform",
+    "alicloud": "Alibaba Cloud",
+    "scanComplete": "Scan Complete",
+    "foundVulnerabilities": "Found {count} vulnerabilities"
+  },
+  "monitor": {
+    "title": "System Monitoring",
+    "subtitle": "Real-time system status monitoring",
+    "cpu": "CPU Usage",
+    "memory": "Memory Usage",
+    "disk": "Disk Usage",
+    "network": "Network",
+    "connections": "Connections",
+    "uptime": "Uptime",
+    "noData": "No monitoring data",
+    "live": "Live",
+    "offline": "Offline",
+    "sseConnected": "SSE Connected",
+    "pollingMode": "Polling Mode",
+    "latency": "Latency",
+    "status": {
+      "ok": "OK",
+      "error": "Error",
+      "degraded": "Degraded",
+      "disabled": "Disabled",
+      "initializing": "Initializing"
+    },
+    "services": {
+      "title": "Service Status",
+      "database": "Database",
+      "redis": "Redis Cache",
+      "ai": "AI Service",
+      "queue": "Task Queue"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit Fullscreen"
+    },
+    "errors": {
+      "connectionFailed": "Connection failed"
+    },
+    "chart": {
+      "title": "Resource Usage Trend",
+      "cpu": "CPU",
+      "memory": "Memory"
+    },
+    "activities": {
+      "title": "Recent Activities",
+      "empty": "No activities"
+    },
+    "resources": {
+      "cpu": "CPU Usage",
+      "memory": "Memory Usage",
+      "disk": "Disk Usage"
+    }
+  },
+  "notificationSettings": {
+    "title": "Notification Settings",
+    "subtitle": "Manage alert notification channels",
+    "feishu": "Feishu",
+    "feishuDesc": "Send alert notifications to Feishu group chat",
+    "slack": "Slack",
+    "slackDesc": "Send alert notifications to Slack channel",
+    "email": "Email",
+    "emailDesc": "Send alert notifications to specified email",
+    "configured": "Configured",
+    "notConfigured": "Not configured",
+    "test": "Test",
+    "testAll": "Test All Channels",
+    "configInfoTitle": "Configuration Info",
+    "configInfoDesc": "Notification channels are configured via environment variables. Restart the service after making changes."
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "System settings and configuration",
+    "general": "General",
+    "security": "Security",
+    "notifications": "Notifications",
+    "errors": {
+      "adminOnly": "This page is accessible to admins only",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save settings"
+    },
+    "apiKeys": {
+      "title": "API Keys",
+      "add": "Add Key",
+      "name": "Name",
+      "key": "Key",
+      "expires": "Expires",
+      "neverExpires": "Never Expires",
+      "noKeys": "No API keys",
+      "copyKey": "Copy Key",
+      "keyCopied": "Key copied"
+    }
+  },
+  "audit": {
+    "title": "Audit Logs",
+    "subtitle": "System operation audit"
+  },
+  "auditPage": {
+    "title": "Audit Logs",
+    "subtitle": "System operation audit",
+    "search": "Search logs...",
+    "filters": "Filters",
+    "export": "Export",
+    "noLogs": "No audit logs",
+    "details": {
+      "action": "Action",
+      "user": "User",
+      "ip": "IP Address",
+      "timestamp": "Timestamp",
+      "details": "Details"
+    }
+  },
+  "wazuh": {
+    "title": "Wazuh Monitoring",
+    "subtitle": "Wazuh SIEM Integration",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "notConfigured": "Not Configured",
+    "refresh": "Refresh",
+    "totalAgents": "Total Agents",
+    "active": "Active",
+    "alerts": "Alerts",
+    "alertSummary": "Alert Summary",
+    "searchAgents": "Search agents...",
+    "allStatus": "All Status",
+    "neverConnected": "Never Connected",
+    "noAgents": "No agents found",
+    "agent": "Agent",
+    "status": "Status",
+    "version": "Version",
+    "stream": {
+      "title": "Real-time Alert Stream",
+      "connecting": "Connecting...",
+      "streaming": "Live",
+      "stopped": "Stopped",
+      "toggleFilters": "Toggle Filters",
+      "clearAlerts": "Clear Alerts",
+      "exportAlerts": "Export Alerts",
+      "filters": "Filters",
+      "minSeverity": "Minimum Severity",
+      "allSeverities": "All Severities",
+      "search": "Search",
+      "searchPlaceholder": "Search alerts...",
+      "agent": "Agent",
+      "allAgents": "All Agents",
+      "noAlerts": "No alerts yet",
+      "notConnected": "Not connected to Wazuh stream"
+    }
+  },
+  "correlation": {
+    "title": "Correlation Analysis",
+    "subtitle": "Alert correlation and incident grouping",
+    "incidents": "Incidents",
+    "rules": "Rules",
+    "refresh": "Refresh",
+    "totalIncidents": "Total Incidents",
+    "openIncidents": "Open",
+    "resolvedIncidents": "Resolved",
+    "totalCorrelations": "Total Correlations",
+    "searchIncidents": "Search incidents...",
+    "allSeverity": "All Severity",
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "noIncidents": "No correlated incidents",
+    "incident": "Incident",
+    "severity": "Severity",
+    "status": "Status",
+    "events": "Events",
+    "confidence": "Confidence",
+    "created": "Created",
+    "page": "Page",
+    "of": "of",
+    "noRules": "No correlation rules",
+    "rule": "Rule",
+    "priority": "Priority",
+    "timeWindow": "Time Window",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "correlations": "Correlations"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "subtitle": "Security alert management",
+    "noAlerts": "No alerts"
+  }
+}

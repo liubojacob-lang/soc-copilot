@@ -1,5 +1,8 @@
 """Database models."""
 
+from models.ai_model import AIModelModel, AIProvider, AIModelCapability
+from models.ai_user_setting import AIUserSettingModel
+from models.ai_task import AITaskModel, AITaskStatus, AITaskType
 from models.history import HistoryModel
 from models.asset import AssetModel
 from models.ioc_hit import IOCHitModel
@@ -15,8 +18,22 @@ from models.user import UserModel, UserRole
 from models.api_key import APIKeyModel
 from models.audit_log import AuditLogModel
 from models.secret import SecretModel
+from models.monitor_history import MonitorHistoryModel
+from models.correlation_rule import CorrelationRule
+from models.correlated_event import CorrelatedEvent
+from models.event_similarity import EventSimilarity
+from models.root_cause_analysis import RootCauseAnalysis
+from models.security_alert import SecurityAlert
+from models.rbac import Role, Permission
 
 __all__ = [
+    "AIModelModel",
+    "AIProvider",
+    "AIModelCapability",
+    "AIUserSettingModel",
+    "AITaskModel",
+    "AITaskStatus",
+    "AITaskType",
     "HistoryModel",
     "AssetModel",
     "IOCHitModel",
@@ -35,4 +52,12 @@ __all__ = [
     "APIKeyModel",
     "AuditLogModel",
     "SecretModel",
+    "MonitorHistoryModel",
+    "CorrelationRule",
+    "CorrelatedEvent",
+    "EventSimilarity",
+    "RootCauseAnalysis",
+    "SecurityAlert",
+    "Role",
+    "Permission",
 ]

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Routes Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .test-item {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-item a {
+            display: block;
+            color: #0066cc;
+            text-decoration: none;
+            margin-bottom: 8px;
+        }
+        .test-item a:hover {
+            text-decoration: underline;
+        }
+        .status {
+            font-size: 12px;
+            color: #666;
+        }
+        .status.success {
+            color: #008800;
+        }
+        .status.error {
+            color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Navigation Routes Test</h1>
+    <p>点击以下链接测试各个页面是否可访问：</p>
+
+    <div class="test-grid">
+        <div class="test-item">
+            <a href="/en/marketplace" target="_blank">Marketplace (English)</a>
+            <span class="status">测试剧本市场页面</span>
+        </div>
+        <div class="test-item">
+            <a href="/en/cloud-native" target="_blank">Cloud Security (English)</a>
+            <span class="status">测试云安全页面</span>
+        </div>
+        <div class="test-item">
+            <a href="/en/dify" target="_blank">Workflow Integration (English)</a>
+            <span class="status">测试工作流集成页面</span>
+        </div>
+        <div class="test-item">
+            <a href="/en/triggers" target="_blank">Automation (English)</a>
+            <span class="status">测试自动化页面</span>
+        </div>
+        <div class="test-item">
+            <a href="/en/settings" target="_blank">System Config (English)</a>
+            <span class="status">测试系统配置页面</span>
+        </div>
+        <div class="test-item">
+            <a href="/en/monitor" target="_blank">System Monitor (English)</a>
+            <span class="status">测试系统监控页面</span>
+        </div>
+        <div class="test-item">
+            <a href="/en/admin/users" target="_blank">User Management (English)</a>
+            <span class="status">测试用户管理页面</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; padding: 20px; background: #e3f2fd; border-radius: 8px;">
+        <h3>📝 测试说明</h3>
+        <ol>
+            <li>点击上述任意链接，在新标签页中打开</li>
+            <li>如果页面正常加载并显示内容，则路由正常 ✅</li>
+            <li>如果页面显示 404 或空白，则有问题 ❌</li>
+            <li>查看浏览器控制台（F12）的错误信息</li>
+        </ol>
+    </div>
+
+    <div style="margin-top: 20px; padding: 20px; background: #fff3e0; border-radius: 8px;">
+        <h3>⚠️ 常见问题</h3>
+        <ul>
+            <li><strong>页面一直加载：</strong> 检查后端服务是否运行</li>
+            <li><strong>显示空白：</strong> 查看浏览器控制台的错误信息</li>
+            <li><strong>显示 404：</strong> 路由配置错误，重启开发服务器</li>
+        </ul>
+    </div>
+</body>
+</html>

@@ -2,52 +2,85 @@
 Test fixtures and configuration
 """
 
+import os
+
+# Set environment variables BEFORE any other imports
+# This must be done at module level before any imports from the project
+os.environ["ENVIRONMENT"] = "test"
+os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
+os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
+
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from asgi_lifespan import LifespanManager
 
 from main import app
+
+# Test password constant
+TEST_PASSWORD = "admin123!TestPass"
+
+
+def pytest_configure(config):
+    """Configure pytest with environment variables."""
+    os.environ["ENVIRONMENT"] = "test"
+    os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
+    os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
 
 
 @pytest_asyncio.fixture(scope="session")
 async def client():
     """Async HTTP client for testing."""
     async with LifespanManager(app):
-        async with AsyncClient(app=app, base_url="http://test") as ac:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
             yield ac
 
 
 @pytest_asyncio.fixture
 async def auth_client(client):
-    """Authenticated client for testing."""
-    # Login to get token
+    """Authenticated client for testing - uses session-scoped client with fresh token."""
+    # Login to get a fresh token
     response = await client.post(
-        "/api/auth/login", json={"username": "admin", "password": "admin123"}
+        "/api/auth/login", json={"username": "admin", "password": TEST_PASSWORD}
     )
-    if response.status_code == 200:
-        token = response.json()["access_token"]
-        client.headers["Authorization"] = f"Bearer {token}"
+    assert response.status_code == 200, response.text
+    token = response.json()["access_token"]
+    
+    # Store original headers
+    original_headers = dict(client.headers)
+    
+    # Set auth header
+    client.headers["Authorization"] = f"Bearer {token}"
+    
     yield client
-    # Cleanup
-    if "Authorization" in client.headers:
-        del client.headers["Authorization"]
+    
+    # Restore original headers
+    client.headers.clear()
+    client.headers.update(original_headers)
 
 
 @pytest_asyncio.fixture
 async def admin_client(client):
-    """Admin authenticated client."""
-    # Login as admin
+    """Admin authenticated client - uses session-scoped client with fresh token."""
+    # Login as admin to get a fresh token
     response = await client.post(
-        "/api/auth/login", json={"username": "admin", "password": "admin123"}
+        "/api/auth/login", json={"username": "admin", "password": TEST_PASSWORD}
     )
-    if response.status_code == 200:
-        token = response.json()["access_token"]
-        client.headers["Authorization"] = f"Bearer {token}"
+    assert response.status_code == 200, response.text
+    token = response.json()["access_token"]
+    
+    # Store original headers
+    original_headers = dict(client.headers)
+    
+    # Set auth header
+    client.headers["Authorization"] = f"Bearer {token}"
+    
     yield client
-    # Cleanup
-    if "Authorization" in client.headers:
-        del client.headers["Authorization"]
+    
+    # Restore original headers
+    client.headers.clear()
+    client.headers.update(original_headers)
 
 
 @pytest.fixture

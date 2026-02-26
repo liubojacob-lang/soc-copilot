@@ -52,7 +52,7 @@ class HuntHypothesisCreate(BaseModel):
     mitre_techniques: List[str] = Field(default_factory=list)
     data_sources: List[str] = Field(default_factory=list)
     query_logic: str = Field(..., min_length=10)
-    severity: str = Field(default="medium", regex="^(low|medium|high|critical)$")
+    severity: str = Field(default="medium", pattern="^(low|medium|high|critical)$")
 
 
 class HuntHypothesisResponse(BaseModel):

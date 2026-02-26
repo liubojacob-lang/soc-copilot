@@ -399,3 +399,63 @@ async def test_dify_connection(
             "message": f"Dify server is reachable (API endpoint verification needed)",
             "note": str(e),
         }
+
+
+@router.delete("/workflows/{definition_id}")
+async def delete_imported_workflow(
+    definition_id: str,
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Delete an imported Dify workflow playbook.
+
+    Args:
+        definition_id: Playbook definition ID to delete
+        db: Database session
+
+    Requires: admin role
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=403, detail="Only admins can delete imported workflows"
+        )
+
+    try:
+        from repositories.playbook_definition_repository import (
+            PlaybookDefinitionRepository,
+        )
+
+        defn_repo = PlaybookDefinitionRepository(db)
+        definition = await defn_repo.get_by_id(definition_id)
+
+        if not definition:
+            raise HTTPException(status_code=404, detail="Definition not found")
+
+        # Only allow deleting definitions that were imported from Dify
+        dify_app_id = getattr(definition, "dify_app_id", None)
+        if not dify_app_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Can only delete playbook definitions imported from Dify"
+            )
+
+        # Delete the definition
+        await defn_repo.delete(definition_id)
+
+        logger.info(
+            f"Deleted imported Dify workflow definition {definition_id} (Dify app: {dify_app_id})"
+        )
+
+        return {
+            "success": True,
+            "definition_id": definition_id,
+            "message": "Workflow deleted successfully",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete imported workflow: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete workflow: {str(e)}"
+        )

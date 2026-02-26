@@ -49,7 +49,7 @@ class HumanApprovalExecutor(BaseExecutor):
             id=str(uuid.uuid4()),
             run_id=context.run_id,
             node_id=context.node_id,
-            requested_by_user_id=self._get_current_user_id(),
+            requested_by_user_id=self._get_current_user_id(context),
             status="pending",
             title=title,
             message=message,
@@ -91,13 +91,19 @@ class HumanApprovalExecutor(BaseExecutor):
         from db.session import AsyncSessionLocal
         return AsyncSessionLocal()
 
-    def _get_current_user_id(self) -> str | None:
+    def _get_current_user_id(self, context: ExecutorContext) -> str | None:
         """Get current user ID from context.
 
-        This is a workaround - in production, user should be passed via context.
+        User context is now passed via ExecutorContext during playbook execution.
+        Falls back to None if user context is not available (e.g., system-triggered runs).
+
+        Args:
+            context: Execution context containing user information
+
+        Returns:
+            User ID if available, None otherwise
         """
-        # TODO: Get from proper context (auth headers, request state, etc.)
-        return None
+        return context.user_id
 
     async def _update_node_status(
         self,

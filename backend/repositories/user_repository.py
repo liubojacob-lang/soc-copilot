@@ -20,6 +20,7 @@ class UserRepository:
         email: str,
         hashed_password: str,
         role: UserRole = UserRole.ANALYST,
+        must_change_password: bool = False,
     ) -> UserModel:
         """Create a new user."""
         user = UserModel(
@@ -27,6 +28,7 @@ class UserRepository:
             email=email,
             hashed_password=hashed_password,
             role=role,
+            must_change_password=must_change_password,
         )
         self.session.add(user)
         await self.session.flush()
@@ -126,11 +128,14 @@ class UserRepository:
             await self.session.flush()
 
     async def update_password(self, user_id: str, hashed_password: str) -> bool:
-        """Update user's password."""
+        """Update user's password and clear must_change_password flag."""
+        from datetime import datetime
         user = await self.get_by_id(user_id)
         if not user:
             return False
         user.hashed_password = hashed_password
+        user.must_change_password = False  # Clear flag after password change
+        user.password_changed_at = datetime.now().isoformat()
         self.session.add(user)
         await self.session.flush()
         return True

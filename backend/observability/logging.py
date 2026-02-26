@@ -1,0 +1,48 @@
+"""Global JSON logging bootstrap for backend services."""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+from datetime import datetime, timezone
+
+from observability.context import get_request_id, get_tenant_id, get_trace_id
+
+
+class JsonLogFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "trace_id": getattr(record, "trace_id", None) or get_trace_id(),
+            "request_id": getattr(record, "request_id", None) or get_request_id(),
+            "tenant_id": getattr(record, "tenant_id", None) or get_tenant_id(),
+        }
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload, ensure_ascii=False)
+
+
+class ContextInjectFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.trace_id = get_trace_id()
+        record.request_id = get_request_id()
+        record.tenant_id = get_tenant_id()
+        return True
+
+
+def setup_json_logging(level: str | None = None) -> None:
+    """Configure root logger to JSON format with context fields."""
+    log_level = (level or os.getenv("LOG_LEVEL") or "INFO").upper()
+
+    root = logging.getLogger()
+    root.setLevel(log_level)
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(JsonLogFormatter())
+    handler.addFilter(ContextInjectFilter())
+
+    root.handlers = [handler]

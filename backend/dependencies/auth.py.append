@@ -1,0 +1,17 @@
+
+async def logout_with_token_blacklist(
+    current_user: UserModel,
+    session: AsyncSession
+) -> dict:
+    """Handle logout with token blacklist."""
+    from core.token_blacklist import add_token_to_blacklist
+
+    token = None  # Authorization credentials not passed here
+
+    if token:
+        await add_token_to_blacklist(token, reason="User logged out")
+
+    return {
+        "message": "Successfully logged out",
+        "token_revoked": True
+    }

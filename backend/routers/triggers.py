@@ -264,6 +264,44 @@ async def delete_trigger(
     return {"message": "Trigger deleted successfully"}
 
 
+@router.post("/{trigger_id}/test")
+async def test_webhook_trigger(
+    trigger_id: str,
+    current_user: Annotated[UserModel, Depends(require_any_role_internal)] = None,
+    session: Annotated[AsyncSession, Depends(get_session)] = None,
+) -> dict[str, str]:
+    """Test a webhook trigger by sending a test invocation."""
+    trigger_repo = TriggerRepository(session)
+    trigger = await trigger_repo.get_by_id(trigger_id)
+    
+    if not trigger:
+        raise HTTPException(status_code=404, detail="Trigger not found")
+    
+    if trigger.type != "webhook":
+        raise HTTPException(status_code=400, detail="Only webhook triggers can be tested")
+    
+    from core.config import settings
+    base_url = getattr(settings, "base_url", "http://localhost:8000")
+    webhook_url = f"{base_url}/api/webhooks/{trigger.id}"
+    
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                webhook_url,
+                json={"__test": True, "test_payload": True},
+                headers={"X-Webhook-Test": "true"},
+            )
+            if response.status_code >= 200 and response.status_code < 300:
+                return {"success": True, "message": f"Webhook test successful! (Status: {response.status_code})"}
+            else:
+                return {"success": False, "message": f"Webhook test failed with status {response.status_code}"}
+    except httpx.RequestError as e:
+        return {"success": False, "message": f"Failed to connect: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "message": f"Test error: {str(e)}"}
+
+
 @router.post("/{trigger_id}/webhook/regenerate-secret", response_model=SecretRegenerateResponse)
 async def regenerate_webhook_secret(
     trigger_id: str,

@@ -180,6 +180,8 @@ class DAGPlaybookRunCreate(BaseModel):
     mode: Literal["dry_run", "apply"] = Field("dry_run")
     input_context: dict[str, Any] = Field(default_factory=dict)
     failure_strategy: FailureStrategy = Field("fail_fast")
+    # P0-3: Idempotency key for request deduplication
+    idempotency_key: Optional[str] = Field(None, description="Unique key to prevent duplicate runs")
 
 
 class DAGNodeRunResponse(BaseModel):

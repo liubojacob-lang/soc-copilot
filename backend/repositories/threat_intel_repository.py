@@ -1,7 +1,7 @@
 """Threat Intel Cache repository for database operations."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional, List
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +37,7 @@ class ThreatIntelRepository:
                     ThreatIntelCacheDB.provider == provider,
                     ThreatIntelCacheDB.ioc_type == ioc_type,
                     ThreatIntelCacheDB.ioc_value == ioc_value,
-                    ThreatIntelCacheDB.expires_at > datetime.utcnow(),
+                    ThreatIntelCacheDB.expires_at > datetime.now(UTC),
                 )
             )
         )
@@ -76,7 +76,7 @@ class ThreatIntelRepository:
             Created cache entry
         """
         ttl_hours = settings.ti_cache_ttl_hours
-        expires_at = datetime.utcnow() + timedelta(hours=ttl_hours)
+        expires_at = datetime.now(UTC) + timedelta(hours=ttl_hours)
 
         cache_entry = ThreatIntelCacheDB(
             provider=provider,
@@ -124,7 +124,7 @@ class ThreatIntelRepository:
             Updated cache entry
         """
         ttl_hours = settings.ti_cache_ttl_hours
-        expires_at = datetime.utcnow() + timedelta(hours=ttl_hours)
+        expires_at = datetime.now(UTC) + timedelta(hours=ttl_hours)
 
         cache_entry.status = status
         cache_entry.response_json = json.dumps(response_json)
@@ -133,7 +133,7 @@ class ThreatIntelRepository:
         cache_entry.pulse_count = pulse_count
         cache_entry.last_seen = last_seen
         cache_entry.expires_at = expires_at
-        cache_entry.updated_at = datetime.utcnow()
+        cache_entry.updated_at = datetime.now(UTC)
         cache_entry.error_reason = error_reason
 
         await session.flush()
@@ -150,7 +150,7 @@ class ThreatIntelRepository:
         """
         result = await session.execute(
             select(ThreatIntelCacheDB).where(
-                ThreatIntelCacheDB.expires_at < datetime.utcnow()
+                ThreatIntelCacheDB.expires_at < datetime.now(UTC)
             )
         )
         expired = result.scalars().all()
@@ -177,7 +177,7 @@ class ThreatIntelRepository:
 
         active_result = await session.execute(
             select(func.count()).select_from(ThreatIntelCacheDB).where(
-                ThreatIntelCacheDB.expires_at > datetime.utcnow()
+                ThreatIntelCacheDB.expires_at > datetime.now(UTC)
             )
         )
         active = active_result.scalar() or 0
@@ -190,7 +190,7 @@ class ThreatIntelRepository:
                 .where(
                     and_(
                         ThreatIntelCacheDB.provider == provider,
-                        ThreatIntelCacheDB.expires_at > datetime.utcnow(),
+                        ThreatIntelCacheDB.expires_at > datetime.now(UTC),
                     )
                 )
             )
@@ -202,3 +202,36 @@ class ThreatIntelRepository:
             "expired": total - active,
             "by_provider": by_provider,
         }
+
+    async def delete_by_ioc(
+        self,
+        session: AsyncSession,
+        provider: str,
+        ioc_type: str,
+        ioc_value: str,
+    ) -> int:
+        """Delete cache entry by IOC identifier.
+
+        v0.8.3: Added for TI Cache Refresh API.
+
+        Args:
+            session: Database session
+            provider: Provider name (e.g., "otx")
+            ioc_type: IOC type (ip/domain/url/hash)
+            ioc_value: IOC value
+
+        Returns:
+            Number of deleted entries (0 or 1)
+        """
+        from sqlalchemy import delete
+
+        result = await session.execute(
+            delete(ThreatIntelCacheDB).where(
+                and_(
+                    ThreatIntelCacheDB.provider == provider,
+                    ThreatIntelCacheDB.ioc_type == ioc_type,
+                    ThreatIntelCacheDB.ioc_value == ioc_value,
+                )
+            )
+        )
+        return result.rowcount

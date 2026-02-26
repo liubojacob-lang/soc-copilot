@@ -8,6 +8,11 @@ from dependencies.auth import (
     require_analyst,
     get_api_key_user,
 )
+from dependencies.authorization import (
+    get_resource_checker,
+    require_owner_or_admin,
+    ResourceAccess,
+)
 
 __all__ = [
     "get_current_user",
@@ -16,4 +21,7 @@ __all__ = [
     "require_admin",
     "require_analyst",
     "get_api_key_user",
+    "get_resource_checker",
+    "require_owner_or_admin",
+    "ResourceAccess",
 ]

@@ -123,6 +123,7 @@ class AlertAnalysisResponse(BaseModel):
     model_used: Optional[str] = Field(None, description="AI model used")
     degraded: bool = Field(False, description="Whether degraded mode was used")
     error_reason: Optional[str] = Field(None, description="Error reason if degraded")
+    history_id: Optional[str] = Field(None, description="History record ID for this analysis")
 
     # Impact analysis (v0.3)
     impact_analysis: ImpactAnalysis = Field(..., description="Impact analysis result")

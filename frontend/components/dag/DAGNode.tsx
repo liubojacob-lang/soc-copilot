@@ -3,6 +3,7 @@
 import React from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Clock, CheckCircle, XCircle, AlertTriangle, SkipForward, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export type NodeData = {
   label: string;
@@ -53,6 +54,7 @@ const statusConfig = {
 };
 
 export function DAGNode({ data, selected }: NodeProps<NodeData>) {
+  const t = useTranslations('dag');
   const config = statusConfig[data.status];
 
   const formatDuration = (ms?: number): string => {
@@ -110,7 +112,7 @@ export function DAGNode({ data, selected }: NodeProps<NodeData>) {
       {data.output && Object.keys(data.output).length > 0 && data.status === "success" && (
         <details className="mt-2 text-xs">
           <summary className={`cursor-pointer opacity-70 ${config.textColor}`}>
-            Output
+            {t('output')}
           </summary>
           <pre className={`mt-1 p-1 rounded bg-white/50 dark:bg-black/20 overflow-auto max-h-20 ${config.textColor}`}>
             {JSON.stringify(data.output, null, 2)}

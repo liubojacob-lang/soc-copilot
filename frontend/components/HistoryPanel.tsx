@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { api, HistoryRecord } from "@/lib/api";
+import { X, Search, Trash2, Clock, AlertTriangle, CheckCircle, Info } from "lucide-react";
 
 interface HistoryPanelProps {
   module: "analyzer" | "report" | "timeline";
@@ -10,13 +12,26 @@ interface HistoryPanelProps {
 }
 
 export function HistoryPanel({ module, onSelect, onClose }: HistoryPanelProps) {
+  const t = useTranslations('common');
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [mounted, setMounted] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setMounted(true);
     loadHistory();
   }, [module, search]);
+
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
 
   const loadHistory = async () => {
     setLoading(true);
@@ -44,7 +59,7 @@ export function HistoryPanel({ module, onSelect, onClose }: HistoryPanelProps) {
   };
 
   const handleDeleteAll = async () => {
-    if (!confirm("Delete all history?")) return;
+    if (!confirm("Are you sure you want to delete all history?")) return;
     try {
       await api.deleteAllHistory();
       setRecords([]);
@@ -54,13 +69,38 @@ export function HistoryPanel({ module, onSelect, onClose }: HistoryPanelProps) {
   };
 
   const formatDate = (dateStr: string) => {
+    if (!mounted) return "..."; // Avoid hydration mismatch
     const date = new Date(dateStr);
-    return date.toLocaleString();
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
   };
 
-  const getTruncated = (text: string, maxLength = 60) => {
+  const getTruncated = (text: string, maxLength = 80) => {
+    if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
+  };
+
+  const getSeverityIcon = (severity?: string) => {
+    switch (severity) {
+      case "high":
+        return <AlertTriangle className="w-4 h-4 text-red-500" />;
+      case "medium":
+        return <Info className="w-4 h-4 text-amber-500" />;
+      case "low":
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-400" />;
+    }
   };
 
   const getModuleLabel = () => {
@@ -74,104 +114,152 @@ export function HistoryPanel({ module, onSelect, onClose }: HistoryPanelProps) {
     }
   };
 
-  const getSeverityColor = (severity?: string) => {
-    switch (severity) {
-      case "high":
-        return "bg-red-100 text-red-700";
-      case "medium":
-        return "bg-amber-100 text-amber-700";
-      case "low":
-        return "bg-green-100 text-green-700";
-      default:
-        return "bg-slate-100 text-slate-700";
-    }
-  };
-
   return (
-    <div className="w-80 bg-white border-l border-slate-200 flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-200">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-slate-800">{getModuleLabel()} History</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div 
+        ref={modalRef}
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {getModuleLabel()} History
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              {records.length} records found
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-slate-100 rounded"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Search */}
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search IOCs, text..."
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-soc-500 focus:border-soc-500"
-        />
+        {/* Search Bar */}
+        <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-700">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by IOC, text, or keywords..."
+              className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+          </div>
+        </div>
 
-        {/* Delete All */}
-        {records.length > 0 && (
-          <button
-            onClick={handleDeleteAll}
-            className="mt-3 text-xs text-red-600 hover:text-red-800"
-          >
-            Delete All
-          </button>
-        )}
-      </div>
-
-      {/* Records List */}
-      <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="p-4 text-center text-slate-500">Loading...</div>
-        ) : records.length === 0 ? (
-          <div className="p-4 text-center text-slate-500">No history found</div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {records.map((record) => (
-              <div
-                key={record.id}
-                className="p-3 hover:bg-slate-50 cursor-pointer group"
-              >
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">{t('loading')}</p>
+            </div>
+          ) : records.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Clock className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">No history records</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Your analysis history will appear here</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+              {records.map((record) => (
                 <div
-                  className="mb-2"
-                  onClick={() => onSelect(record)}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-slate-500">
-                      {formatDate(record.created_at)}
-                    </span>
-                    {record.tags?.severity && (
-                      <span className={`px-2 py-0.5 rounded text-xs ${getSeverityColor(record.tags.severity)}`}>
-                        {record.tags.severity.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-slate-700 mb-1">
-                    {getTruncated(record.input_text)}
-                  </p>
-                  {record.degraded && (
-                    <span className="text-xs text-amber-600">⚠️ Degraded mode</span>
-                  )}
-                  {record.extracted_iocs && (
-                    <div className="flex gap-2 text-xs text-slate-500 mt-1">
-                      {record.extracted_iocs.ips?.length && <span>IPs: {record.extracted_iocs.ips.length}</span>}
-                      {record.extracted_iocs.domains?.length && <span>Domains: {record.extracted_iocs.domains.length}</span>}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(record.id);
+                  key={record.id}
+                  className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer group transition-colors"
+                  onClick={() => {
+                    onSelect(record);
+                    onClose();
                   }}
-                  className="text-xs text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100"
                 >
-                  Delete
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-start gap-3">
+                    {/* Icon */}
+                    <div className="flex-shrink-0 mt-0.5">
+                      {getSeverityIcon(record.tags?.severity)}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDate(record.created_at)}
+                        </span>
+                        {record.degraded && (
+                          <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Degraded
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="text-sm text-gray-800 dark:text-gray-200 line-clamp-2">
+                        {getTruncated(record.input_text)}
+                      </p>
+
+                      {/* IOC Tags */}
+                      {record.extracted_iocs && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {record.extracted_iocs.ips?.length > 0 && (
+                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded">
+                              {record.extracted_iocs.ips.length} IPs
+                            </span>
+                          )}
+                          {record.extracted_iocs.domains?.length > 0 && (
+                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded">
+                              {record.extracted_iocs.domains.length} Domains
+                            </span>
+                          )}
+                          {record.extracted_iocs.hashes?.length > 0 && (
+                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded">
+                              {record.extracted_iocs.hashes.length} Hashes
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(record.id);
+                      }}
+                      className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded opacity-0 group-hover:opacity-100 transition-all"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {records.length > 0 && (
+          <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Click a record to load it
+            </span>
+            <button
+              onClick={handleDeleteAll}
+              className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium flex items-center gap-1"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Clear All
+            </button>
           </div>
         )}
       </div>

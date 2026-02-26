@@ -11,12 +11,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from core.logger import get_logger
-from ..registry import get_registry
-from ..models import StepResult
+from core.config import settings
+from core.metrics import observe_playbook_error, observe_playbook_run
+from ..v6_linear.registry import get_registry
+from ..v6_linear.models import StepResult
 from .state_machine import NodeState, NodeStateMachine
 from .retry_policy import RetryPolicy, RetryExecutor
+from .exceptions import (
+    DAGExecutionError,
+    DAGCycleError,
+    DAGTimeoutError,
+    NodeExecutionError,
+    NodeTimeoutError,
+    DependencyError,
+    ErrorHandler,
+    ErrorCategory,
+    ErrorSeverity,
+    ErrorContext,
+)
 
 logger = get_logger(__name__)
+
+# v0.8.1: Global timeout for DAG execution (in seconds)
+DAG_GLOBAL_TIMEOUT_SECONDS = settings.api_timeout_dag_run_ms // 1000
 
 
 @dataclass
@@ -158,18 +175,22 @@ class DAGExecutionEngine:
     def __init__(
         self,
         session: AsyncSession,
-        concurrency_limit: int = 5,
+        concurrency_limit: int = None,
     ):
         """Initialize the DAG execution engine.
 
         Args:
             session: Database session for persistence
-            concurrency_limit: Maximum concurrent node executions
+            concurrency_limit: Maximum concurrent node executions (defaults to config)
         """
         self.session = session
         self.registry = get_registry()
-        self.concurrency_limit = concurrency_limit
-        self.semaphore = asyncio.Semaphore(concurrency_limit)
+        # v0.8.3: Use config default, respect max limit
+        self.concurrency_limit = min(
+            concurrency_limit or settings.dag_concurrency_default,
+            settings.dag_concurrency_max
+        )
+        self.semaphore = asyncio.Semaphore(self.concurrency_limit)
         self._node_states: Dict[str, NodeStateMachine] = {}
         self._node_outputs: Dict[str, Any] = {}
 
@@ -196,6 +217,9 @@ class DAGExecutionEngine:
             Dictionary with execution results
         """
         logger.info(f"[{run_id}] Starting DAG execution with {len(definition.nodes)} nodes")
+        start_time = datetime.now(timezone.utc)
+        playbook_name = input_json.get("playbook_name", "unknown")
+        tenant_id = str(input_json.get("tenant_id", "default"))
 
         # Initialize state machines for all nodes
         self._node_states = {node_id: NodeStateMachine() for node_id in definition.nodes}
@@ -228,40 +252,104 @@ class DAGExecutionEngine:
         # Group nodes by level for concurrent execution
         levels = self._group_by_level(definition, execution_order)
 
-        for level, nodes_at_level in enumerate(levels):
-            logger.info(f"[{run_id}] Executing level {level} with {len(nodes_at_level)} nodes")
+        try:
+            for level, nodes_at_level in enumerate(levels):
+                # v0.8.1: Check global timeout before each level
+                elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+                if elapsed > DAG_GLOBAL_TIMEOUT_SECONDS:
+                    logger.error(f"[{run_id}] DAG execution timed out after {elapsed:.1f}s")
+                    await self._update_run_status(run_id, "timeout", self._node_outputs, run_context)
+                    observe_playbook_error(playbook_name, "timeout", tenant_id)
+                    observe_playbook_run(playbook_name, "timeout", mode, tenant_id, elapsed)
+                    return {
+                        "run_id": run_id,
+                        "status": "timeout",
+                        "failed_nodes": failed_nodes,
+                        "skipped_nodes": skipped_nodes + nodes_at_level,  # Remaining nodes are skipped
+                        "outputs": self._node_outputs,
+                        "error": f"Global timeout exceeded ({DAG_GLOBAL_TIMEOUT_SECONDS}s)",
+                    }
 
-            # Execute all nodes at this level concurrently
-            tasks = [
-                self._execute_node(
-                    node_id=node_id,
-                    definition=definition,
-                    run_id=run_id,
-                    input_json=input_json,
-                    mode=mode,
-                    run_context=run_context,  # v0.7.3: Pass context for variable rendering
-                )
-                for node_id in nodes_at_level
-            ]
+                logger.info(f"[{run_id}] Executing level {level} with {len(nodes_at_level)} nodes")
 
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+                # Execute all nodes at this level concurrently with timeout
+                tasks = [
+                    self._execute_node_with_timeout(
+                        node_id=node_id,
+                        definition=definition,
+                        run_id=run_id,
+                        input_json=input_json,
+                        mode=mode,
+                        run_context=run_context,
+                        start_time=start_time,  # Pass start time for timeout checking
+                    )
+                    for node_id in nodes_at_level
+                ]
 
-            for node_id, result in zip(nodes_at_level, results):
-                if isinstance(result, Exception):
-                    logger.error(f"[{run_id}] Node {node_id} failed: {result}")
-                    failed_nodes.append(node_id)
-                elif result.status == "failed":
-                    failed_nodes.append(node_id)
-                elif result.status == "skipped":
-                    skipped_nodes.append(node_id)
+                results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            # Check if we should continue (fail-fast behavior)
-            if failed_nodes:
-                # Determine which nodes can still run (dependents of successful nodes only)
-                remaining_nodes = self._get_executable_nodes(definition, failed_nodes, skipped_nodes)
-                if not remaining_nodes:
-                    logger.warning(f"[{run_id}] Cannot continue after failures in {failed_nodes}")
-                    break
+                for node_id, result in zip(nodes_at_level, results):
+                    if isinstance(result, Exception):
+                        logger.error(f"[{run_id}] Node {node_id} failed: {result}")
+                        failed_nodes.append(node_id)
+                    elif result.status == "failed":
+                        failed_nodes.append(node_id)
+                    elif result.status == "skipped":
+                        skipped_nodes.append(node_id)
+
+                # Check if we should continue (fail-fast behavior)
+                if failed_nodes:
+                    # Determine which nodes can still run (dependents of successful nodes only)
+                    remaining_nodes = self._get_executable_nodes(definition, failed_nodes, skipped_nodes)
+                    if not remaining_nodes:
+                        logger.warning(f"[{run_id}] Cannot continue after failures in {failed_nodes}")
+                        break
+
+        except asyncio.TimeoutError:
+            logger.error(f"[{run_id}] DAG execution timed out")
+            await self._update_run_status(run_id, "timeout", self._node_outputs, run_context)
+            observe_playbook_error(playbook_name, "timeout", tenant_id)
+            observe_playbook_run(
+                playbook_name,
+                "timeout",
+                mode,
+                tenant_id,
+                (datetime.now(timezone.utc) - start_time).total_seconds(),
+            )
+            # Create structured error for timeout
+            timeout_error = DAGTimeoutError(
+                run_id=run_id,
+                timeout_seconds=DAG_GLOBAL_TIMEOUT_SECONDS,
+                completed_nodes=list(self._node_outputs.keys()),
+                pending_nodes=[n for n in definition.nodes if n not in self._node_outputs],
+            )
+            return {
+                "run_id": run_id,
+                "status": "timeout",
+                "failed_nodes": failed_nodes,
+                "skipped_nodes": skipped_nodes,
+                "outputs": self._node_outputs,
+                "error": timeout_error.to_dict(),
+            }
+        except DAGExecutionError as e:
+            logger.error(f"[{run_id}] DAG execution error: {e.message}")
+            await self._update_run_status(run_id, "failed", self._node_outputs, run_context)
+            observe_playbook_error(playbook_name, type(e).__name__, tenant_id)
+            observe_playbook_run(
+                playbook_name,
+                "failed",
+                mode,
+                tenant_id,
+                (datetime.now(timezone.utc) - start_time).total_seconds(),
+            )
+            return {
+                "run_id": run_id,
+                "status": "failed",
+                "failed_nodes": failed_nodes,
+                "skipped_nodes": skipped_nodes,
+                "outputs": self._node_outputs,
+                "error": e.to_dict(),
+            }
 
         # Update run status
         final_status = "success"
@@ -271,6 +359,8 @@ class DAGExecutionEngine:
             final_status = "partial"
 
         await self._update_run_status(run_id, final_status, self._node_outputs, run_context)
+        total_duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        observe_playbook_run(playbook_name, final_status, mode, tenant_id, total_duration)
 
         logger.info(f"[{run_id}] DAG execution completed with status: {final_status}")
 
@@ -326,7 +416,12 @@ class DAGExecutionEngine:
 
         # Check for cycles
         if len(result) != len(definition.nodes):
-            raise ValueError("DAG contains a cycle, cannot determine execution order")
+            # Find the cycle nodes
+            remaining = set(definition.nodes.keys()) - set(result)
+            raise DAGCycleError(
+                message="DAG contains a cycle, cannot determine execution order",
+                cycle_nodes=list(remaining),
+            )
 
         return result
 
@@ -375,6 +470,50 @@ class DAGExecutionEngine:
             levels.append(current_level)
 
         return levels
+
+    async def _execute_node_with_timeout(
+        self,
+        node_id: str,
+        definition: DAGDefinition,
+        run_id: str,
+        input_json: dict[str, Any],
+        mode: str,
+        run_context: dict[str, Any] = None,
+        start_time: datetime = None,
+    ) -> "NodeExecutionResult":
+        """Execute a single DAG node with global timeout checking.
+
+        Args:
+            node_id: Node identifier
+            definition: DAG definition
+            run_id: Run ID
+            input_json: Input data
+            mode: Execution mode
+            run_context: Current execution context
+            start_time: DAG execution start time for timeout checking
+
+        Returns:
+            NodeExecutionResult with execution outcome
+        """
+        # Check global timeout before executing
+        if start_time:
+            elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+            if elapsed > DAG_GLOBAL_TIMEOUT_SECONDS:
+                logger.warning(f"[{run_id}] Node {node_id} skipped due to global timeout")
+                return NodeExecutionResult(
+                    node_id=node_id,
+                    status="skipped",
+                    error=f"Global timeout exceeded ({DAG_GLOBAL_TIMEOUT_SECONDS}s)",
+                )
+
+        return await self._execute_node(
+            node_id=node_id,
+            definition=definition,
+            run_id=run_id,
+            input_json=input_json,
+            mode=mode,
+            run_context=run_context,
+        )
 
     async def _execute_node(
         self,
@@ -486,11 +625,47 @@ class DAGExecutionEngine:
                     # Persist context to database
                     await self._persist_run_context(run_id, run_context)
 
-            except Exception as e:
-                logger.error(f"[{run_id}] Node {node_id} execution failed: {e}")
-                error = str(e)
+            except DAGExecutionError as e:
+                # Already a structured error
+                logger.error(f"[{run_id}] Node {node_id} execution failed: {e.message}")
+                error = e.to_dict()
                 state_machine.transition_to(NodeState.FAILED)
-                await self._update_node_status(run_id, node_id, "failed", error=error)
+                await self._update_node_status(run_id, node_id, "failed", error=e.message)
+            except asyncio.TimeoutError as e:
+                # Handle timeout specifically
+                logger.error(f"[{run_id}] Node {node_id} timed out")
+                timeout_error = NodeTimeoutError(
+                    node_id=node_id,
+                    step_id=node.step_id,
+                    timeout_seconds=node.timeout_seconds,
+                    context=ErrorContext(
+                        run_id=run_id,
+                        node_id=node_id,
+                        step_id=node.step_id,
+                    ),
+                )
+                error = timeout_error.to_dict()
+                state_machine.transition_to(NodeState.FAILED)
+                await self._update_node_status(run_id, node_id, "failed", error=timeout_error.message)
+            except Exception as e:
+                # Convert to structured error
+                logger.error(f"[{run_id}] Node {node_id} execution failed: {e}", exc_info=True)
+                node_error = NodeExecutionError(
+                    message=str(e),
+                    node_id=node_id,
+                    step_id=node.step_id,
+                    context=ErrorContext(
+                        run_id=run_id,
+                        node_id=node_id,
+                        step_id=node.step_id,
+                        input_data=enriched_input if 'enriched_input' in dir() else None,
+                    ),
+                    recoverable=True,
+                    cause=e,
+                )
+                error = node_error.to_dict()
+                state_machine.transition_to(NodeState.FAILED)
+                await self._update_node_status(run_id, node_id, "failed", error=node_error.message)
 
             # Calculate duration
             duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
@@ -744,6 +919,7 @@ class DAGExecutionEngine:
             logger.error(f"[{run_id}] Failed to send failure notification: {e}")
 
 
+@dataclass
 @dataclass
 class NodeExecutionResult:
     """Result of executing a single DAG node."""

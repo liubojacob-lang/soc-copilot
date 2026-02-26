@@ -10,18 +10,34 @@ interface Message {
   timestamp: Date;
 }
 
+// Static initial message to avoid hydration mismatch
+const INITIAL_MESSAGE: Message = {
+  role: "assistant",
+  content: `Hello! I'm SOC Copilot AI. I can help you with:
+
+• Analyzing security alerts
+• Finding playbooks
+• Answering questions about your SOC data
+• Generating reports
+
+What would you like to do?`,
+  timestamp: new Date(0) // Use epoch time for initial render consistency
+};
+
 export default function AIAssistant() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Hello! I'm SOC Copilot AI. I can help you with:\n\n• Analyzing security alerts\n• Finding playbooks\n• Answering questions about your SOC data\n• Generating reports\n
-What would you like to do?",
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Update timestamp after mount to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+    setMessages(prev => prev.map((msg, i) => 
+      i === 0 ? { ...msg, timestamp: new Date() } : msg
+    ));
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,14 +69,15 @@ What would you like to do?",
         query: userMessage
       });
 
-      if (queryResponse.data.intent && queryResponse.data.intent !== "unknown") {
+      const queryData = queryResponse as any;
+      if (queryData.intent && queryData.intent !== "unknown") {
         // Handle specific intents
-        let response = queryResponse.data.response;
-        
+        let response = queryData.response;
+
         // Add action buttons based on intent
-        if (queryResponse.data.intent === "list_alerts") {
+        if (queryData.intent === "list_alerts") {
           response += "\n\n[View Alerts](/alerts)";
-        } else if (queryResponse.data.intent === "list_playbooks") {
+        } else if (queryData.intent === "list_playbooks") {
           response += "\n\n[View Playbooks](/playbooks/definitions)";
         }
 
@@ -81,7 +98,7 @@ What would you like to do?",
 
         setMessages(prev => [...prev, {
           role: "assistant",
-          content: chatResponse.data.response,
+          content: (chatResponse as any).response,
           timestamp: new Date()
         }]);
       }
@@ -160,7 +177,7 @@ What would you like to do?",
               <div className={`text-xs mt-1 ${
                 message.role === "user" ? "text-blue-200" : "text-gray-500 dark:text-gray-400"
               }`}>
-                {message.timestamp.toLocaleTimeString()}
+                {mounted ? message.timestamp.toLocaleTimeString() : ''}
               </div>
             </div>
           </div>

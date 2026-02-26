@@ -1,0 +1,226 @@
+{
+  "dashboard": {
+    "title": "SOC Copilot 安全运营中心 - 完整版",
+    "uid": "soc-copilot-full",
+    "schemaVersion": 39,
+    "version": 1,
+    "description": "完整的安全运营中心仪表板，展示所有安全告警和威胁情报",
+    "tags": ["security", "soc", "threat-hunting", "full"],
+    "timezone": "browser",
+    "refresh": "10s",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "告警总数",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+        "targets": [{
+          "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+          "expr": "count_over_time({job=\"soc-copilot\"}[1h])",
+          "refId": "A"
+        }],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [{"value": null, "color": "green"}, {"value": 50, "color": "yellow"}, {"value": 100, "color": "red"}]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "严重告警",
+        "type": "stat",
+        "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+        "targets": [{
+          "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+          "expr": "count_over_time({job=\"soc-copilot\", level=\"critical\"}[1h])",
+          "refId": "A"
+        }],
+        "options": {"colorMode": "value", "graphMode": "area"},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [{"value": null, "color": "purple"}, {"value": 1, "color": "red"}]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "高危告警",
+        "type": "stat",
+        "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+        "targets": [{
+          "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+          "expr": "count_over_time({job=\"soc-copilot\", level=\"high\"}[1h])",
+          "refId": "A"
+        }],
+        "options": {"colorMode": "value", "graphMode": "area"}
+      },
+      {
+        "id": 4,
+        "title": "告警趋势 (24小时)",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+            "expr": "sum(count_over_time({job=\"soc-copilot\", level=\"critical\"}[5m]))",
+            "refId": "A",
+            "legendFormat": "严重"
+          },
+          {
+            "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+            "expr": "sum(count_over_time({job=\"soc-copilot\", level=\"high\"}[5m]))",
+            "refId": "B",
+            "legendFormat": "高危"
+          },
+          {
+            "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+            "expr": "sum(count_over_time({job=\"soc-copilot\", level=\"medium\"}[5m]))",
+            "refId": "C",
+            "legendFormat": "中危"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            }
+          }
+        },
+        "options": {
+          "legend": {"displayMode": "table", "placement": "right"}
+        }
+      },
+      {
+        "id": 5,
+        "title": "攻击类型分布",
+        "type": "piechart",
+        "gridPos": {"x": 0, "y": 4, "w": 8, "h": 8},
+        "targets": [{
+          "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+          "expr": "count by (event_type) ({job=\"soc-copilot\"})",
+          "refId": "A"
+        }],
+        "options": {
+          "pieType": "donut",
+          "legend": {"displayMode": "table", "placement": "right", "showLegend": true}
+        }
+      },
+      {
+        "id": 6,
+        "title": "严重级别分布",
+        "type": "bargauge",
+        "gridPos": {"x": 8, "y": 4, "w": 4, "h": 8},
+        "targets": [{
+          "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+          "expr": "count by (level) ({job=\"soc-copilot\"})",
+          "refId": "A",
+          "legendFormat": "{{level}}"
+        }],
+        "options": {
+          "displayMode": "gradient",
+          "orientation": "horizontal",
+          "namePlacement": "auto"
+        }
+      },
+      {
+        "id": 7,
+        "title": "Top 10 攻击源 IP",
+        "type": "table",
+        "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+        "targets": [{
+          "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+          "expr": "topk(10, sum by (source_ip) ({job=\"soc-copilot\"}))",
+          "refId": "A",
+          "format": "table"
+        }],
+        "transformations": [{
+          "id": "organize",
+          "options": {
+            "excludeByName": {"Time": true},
+            "renameByName": {"Value": "攻击次数", "source_ip": "源 IP 地址"}
+          }
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {"align": "left"},
+            "color": {"mode": "thresholds"}
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "攻击类型排名",
+        "type": "table",
+        "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+        "targets": [{
+          "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+          "expr": "topk(10, count by (event_type) ({job=\"soc-copilot\"}))",
+          "refId": "A",
+          "format": "table"
+        }],
+        "transformations": [{
+          "id": "organize",
+          "options": {
+            "excludeByName": {"Time": true},
+            "renameByName": {"Value": "次数", "event_type": "攻击类型"}
+          }
+        }]
+      },
+      {
+        "id": 9,
+        "title": "Agent 告警分布",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+        "targets": [{
+          "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+          "expr": "topk(5, count by (agent_id) ({job=\"soc-copilot\"}))",
+          "refId": "A"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {"drawStyle": "bars", "fillOpacity": 80}
+          }
+        },
+        "options": {
+          "legend": {"displayMode": "list", "placement": "bottom"}
+        }
+      },
+      {
+        "id": 10,
+        "title": "最新告警流（实时）",
+        "type": "logs",
+        "gridPos": {"x": 0, "y": 20, "w": 24, "h": 16},
+        "targets": [{
+          "datasource": {"type": "loki", "uid": "bfedbqw7nppfkd"},
+          "expr": "{job=\"soc-copilot\"}",
+          "refId": "A"
+        }],
+        "options": {
+          "showLabels": false,
+          "showTime": true,
+          "sortOrder": "Descending",
+          "wrapLogMessage": false
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}

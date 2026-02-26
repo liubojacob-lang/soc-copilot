@@ -1,0 +1,896 @@
+{
+  "meta": {
+    "title": "SOC Copilot - 安全运营中心",
+    "description": "AI驱动的安全运营中心平台"
+  },
+  "common": {
+    "search": "搜索",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "refresh": "刷新",
+    "close": "关闭",
+    "clear": "清除",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "confirm": "确认",
+    "back": "返回",
+    "next": "下一步",
+    "submit": "提交",
+    "reset": "重置",
+    "noData": "暂无数据",
+    "yes": "是",
+    "no": "否",
+    "actions": "操作",
+    "viewDetails": "查看详情",
+    "download": "下载",
+    "total": "总计",
+    "critical": "严重",
+    "high": "高",
+    "medium": "中",
+    "low": "低",
+    "info": "信息"
+  },
+  "nav": {
+    "home": "首页",
+    "runs": "剧本",
+    "ai": "AI助手",
+    "ueba": "用户行为分析",
+    "hunting": "威胁狩猎",
+    "market": "市场",
+    "cloud": "云原生",
+    "dify": "Dify",
+    "triggers": "触发器",
+    "reports": "报告",
+    "wazuh": "Wazuh",
+    "correlation": "关联分析",
+    "settings": "设置",
+    "monitor": "监控",
+    "users": "用户",
+    "more": "更多",
+    "exit": "退出",
+    "logout": "登出",
+    "playbookDefinitions": "剧本定义",
+    "apiStatus": {
+      "healthy": "API正常",
+      "checking": "检查中...",
+      "error": "API错误"
+    }
+  },
+  "breadcrumbs": {
+    "home": "首页",
+    "playbooks": "剧本",
+    "aiAssistant": "AI助手",
+    "settings": "设置",
+    "admin": "管理",
+    "triggers": "触发器",
+    "assets": "资产",
+    "monitor": "监控",
+    "audit": "审计"
+  },
+  "home": {
+    "title": "SOC Copilot",
+    "subtitle": "安全运营中心",
+    "tabs": {
+      "alertAnalyzer": "告警分析器",
+      "timelineBuilder": "时间线构建器",
+      "reportWriter": "报告编写器",
+      "assets": "资产管理"
+    }
+  },
+  "login": {
+    "title": "登录",
+    "subtitle": "输入您的凭据",
+    "username": "用户名",
+    "password": "密码",
+    "signIn": "登录",
+    "signingIn": "登录中...",
+    "error": "凭据无效",
+    "devMode": "开发模式"
+  },
+  "users": {
+    "title": "用户管理",
+    "subtitle": "管理用户账户和权限",
+    "createUser": "添加用户",
+    "editUser": "编辑用户",
+    "deleteUser": "删除用户",
+    "search": "搜索用户...",
+    "searchPlaceholder": "按用户名或邮箱搜索...",
+    "username": "用户名",
+    "email": "邮箱",
+    "role": "角色",
+    "status": "状态",
+    "active": "活跃",
+    "inactive": "未激活",
+    "actions": "操作",
+    "lastLogin": "最后登录",
+    "allRoles": "所有角色",
+    "allStatus": "所有状态",
+    "noUsers": "未找到用户",
+    "noUsersFilter": "请调整搜索条件或筛选器",
+    "noUsersEmpty": "点击上方按钮创建第一个用户",
+    "userCount": "{count} 个用户",
+    "edit": "编辑",
+    "delete": "删除",
+    "resetPassword": "重置密码",
+    "newPassword": "新密码",
+    "enterPassword": "输入密码或自动生成",
+    "generate": "生成",
+    "password": "密码",
+    "cancel": "取消",
+    "create": "创建",
+    "save": "保存",
+    "saveChanges": "保存更改",
+    "confirmDelete": "确定要删除此用户吗？此操作无法撤销。",
+    "deleteUserTitle": "删除用户",
+    "resetPasswordTitle": "重置密码",
+    "resetSuccess": "密码重置成功！",
+    "createSuccess": "用户创建成功！",
+    "passwordWarning": "请妥善保存此密码，您将无法再次查看。",
+    "copyPassword": "复制密码",
+    "admin": "管理员",
+    "analyst": "分析师",
+    "auditor": "审计员"
+  },
+  "alertAnalyzer": {
+    "input": "输入",
+    "output": "输出",
+    "history": "历史",
+    "placeholder": "粘贴原始日志或告警数据进行分析...",
+    "analyze": "分析",
+    "analyzing": "分析中...",
+    "analysisFailed": "分析失败",
+    "confidence": "置信度",
+    "escalate": "需要升级",
+    "id": "ID",
+    "summary": "摘要",
+    "entities": "实体",
+    "users": "用户：",
+    "hosts": "主机：",
+    "processes": "进程：",
+    "evidencePoints": "证据点",
+    "recommendedActions": "建议操作",
+    "verify": "验证："
+  },
+  "tabs": {
+    "input": "输入",
+    "output": "输出",
+    "history": "历史",
+    "placeholder": "输入内容...",
+    "generate": "生成",
+    "generating": "生成中...",
+    "generateFailed": "生成失败",
+    "buildTimeline": "构建时间线",
+    "buildingTimeline": "构建中...",
+    "generateReports": "生成报告",
+    "generatingReports": "生成中...",
+    "timeline": {
+      "title": "时间线",
+      "events": "事件",
+      "noEvents": "暂无事件"
+    },
+    "report": {
+      "title": "报告",
+      "download": "下载",
+      "format": "格式"
+    }
+  },
+  "assets": {
+    "title": "资产管理",
+    "subtitle": "管理组织资产",
+    "search": "搜索资产...",
+    "addAsset": "添加资产",
+    "editAsset": "编辑资产",
+    "deleteAsset": "删除资产",
+    "importAssets": "导入资产",
+    "exportAssets": "导出资产",
+    "name": "名称",
+    "type": "类型",
+    "ip": "IP地址",
+    "status": "状态",
+    "criticality": "重要性",
+    "lastSeen": "最后发现",
+    "tags": "标签",
+    "noAssets": "暂无资产数据"
+  },
+  "aiAssistant": {
+    "title": "AI助手",
+    "subtitle": "智能安全分析",
+    "welcome": {
+      "title": "AI安全助手",
+      "greeting": "您好！我是您的AI安全助手，专注于帮助您分析安全事件、推荐剧本和生成报告。",
+      "capabilities": "我可以帮助您：",
+      "features": {
+        "alertAnalysis": "• 告警分析和威胁评估",
+        "playbookRecommend": "• 事件响应剧本推荐",
+        "naturalLanguage": "• 自然语言安全数据查询",
+        "reportGeneration": "• 安全报告生成"
+      },
+      "prompt": "请描述您的安全问题，或选择下方的快捷操作。"
+    },
+    "inputPlaceholder": "输入您的安全问题...",
+    "thinking": "思考中...",
+    "userLabel": "我",
+    "pressEnterToSend": "按",
+    "toSend": "发送",
+    "forNewLine": "换行",
+    "model": {
+      "select": "选择模型",
+      "noModels": "暂无可用模型",
+      "testing": "测试中...",
+      "testConnection": "测试连接",
+      "setDefault": "设为默认",
+      "isDefault": "默认模型"
+    },
+    "providers": {
+      "openai": "OpenAI",
+      "anthropic": "Anthropic",
+      "azure": "Azure OpenAI",
+      "local": "本地模型",
+      "nvidia": "NVIDIA NIM",
+      "zhipu": "智谱AI",
+      "moonshot": "Moonshot AI",
+      "openrouter": "OpenRouter"
+    },
+    "actions": {
+      "quickActions": "快捷操作：",
+      "clearChat": "清空对话",
+      "copy": "复制"
+    },
+    "quickActions": {
+      "analyzeAlert": {
+        "label": "分析告警",
+        "query": "请帮我分析最新的安全告警并提供威胁评估。"
+      },
+      "recommendPlaybook": {
+        "label": "推荐剧本",
+        "query": "根据最近的安全事件，您推荐哪些事件响应剧本？"
+      },
+      "generateReport": {
+        "label": "生成报告",
+        "query": "生成过去24小时的安全摘要报告。"
+      },
+      "threatHunt": {
+        "label": "威胁狩猎",
+        "query": "根据最近的IOC，帮我在环境中搜寻潜在威胁。"
+      }
+    },
+    "history": {
+      "title": "对话历史",
+      "justNow": "刚刚",
+      "minutesAgo": "{count}分钟前",
+      "hoursAgo": "{count}小时前",
+      "daysAgo": "{count}天前",
+      "newChat": "新对话",
+      "searchPlaceholder": "搜索对话...",
+      "noConversations": "暂无对话",
+      "deleteConfirm": "确定删除此对话？",
+      "renameTitle": "重命名对话",
+      "today": "今天",
+      "yesterday": "昨天",
+      "past7Days": "过去7天",
+      "older": "更早"
+    },
+    "sidebar": {
+      "capabilities": "功能列表",
+      "usageTips": "使用提示",
+      "currentModel": "当前模型",
+      "tips": {
+        "naturalLanguage": "使用自然语言描述您的安全问题",
+        "alertAnalysis": "请求详细的告警分析和建议",
+        "securityReports": "请求任意时间段的安全报告",
+        "recommendations": "获取事件响应剧本推荐"
+      }
+    },
+    "errors": {
+      "loadModelsFailed": "加载AI模型失败",
+      "serviceFailed": "AI服务错误：{message}",
+      "copyFailed": "复制到剪贴板失败",
+      "setDefaultFailed": "设置默认模型失败"
+    }
+  },
+  "playbooks": {
+    "title": "剧本管理",
+    "subtitle": "管理和执行剧本",
+    "runs": "运行记录",
+    "definitions": {
+      "title": "剧本定义",
+      "subtitle": "管理剧本模板和配置",
+      "noDefinitions": "暂无剧本定义",
+      "description": "描述",
+      "version": "版本",
+      "status": "状态",
+      "actions": "操作",
+      "edit": "编辑",
+      "delete": "删除",
+      "name": "名称",
+      "updated": "更新时间",
+      "createNew": "创建新剧本",
+      "createFirst": "创建您的第一个剧本定义",
+      "searchPlaceholder": "搜索剧本定义..."
+    },
+    "approvals": {
+      "title": "审批请求",
+      "subtitle": "审核和管理剧本审批请求",
+      "noApprovals": "暂无审批请求",
+      "noApprovalsDesc": "待审批的请求将显示在这里",
+      "runId": "运行ID",
+      "status": "状态",
+      "requestedBy": "请求人",
+      "created": "创建时间",
+      "actions": "操作",
+      "approve": "批准",
+      "reject": "拒绝",
+      "searchPlaceholder": "搜索审批请求..."
+    },
+    "create": "创建剧本",
+    "search": "搜索剧本...",
+    "noPlaybooks": "暂无剧本",
+    "tabs": {
+      "runs": "运行记录",
+      "definitions": "剧本定义"
+    },
+    "queue": {
+      "running": "运行中",
+      "queued": "排队中"
+    },
+    "allPlaybooks": "所有剧本",
+    "allStatuses": "所有状态",
+    "noRuns": "暂无运行记录",
+    "playbook": "剧本",
+    "status": "状态",
+    "mode": "模式",
+    "started": "开始时间",
+    "duration": "耗时",
+    "statuses": {
+      "running": "运行中",
+      "success": "成功",
+      "failed": "失败",
+      "pending": "等待中",
+      "cancelled": "已取消"
+    },
+    "actions": {
+      "run": "运行",
+      "pause": "暂停",
+      "resume": "继续",
+      "cancel": "取消",
+      "delete": "删除",
+      "duplicate": "复制"
+    },
+    "details": {
+      "title": "剧本详情",
+      "description": "描述",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "author": "作者",
+      "version": "版本"
+    }
+  },
+  "playbookPanel": {
+    "title": "剧本面板",
+    "queries": "查询语句",
+    "actions": "修复操作",
+    "generateQueries": "生成查询",
+    "generateActions": "生成操作",
+    "copyQuery": "复制查询",
+    "copyAction": "复制操作",
+    "applyAction": "应用操作",
+    "noQueries": "暂无查询语句",
+    "noActions": "暂无修复操作"
+  },
+  "impact": {
+    "title": "影响分析",
+    "severity": "严重程度",
+    "affectedSystems": "受影响系统",
+    "businessImpact": "业务影响",
+    "recommendations": "建议",
+    "noImpact": "无影响分析数据"
+  },
+  "threatIntel": {
+    "title": "威胁情报",
+    "search": "搜索IOC...",
+    "noResults": "未找到结果",
+    "verdict": {
+      "malicious": "恶意",
+      "suspicious": "可疑",
+      "benign": "良性",
+      "unknown": "未知"
+    },
+    "details": {
+      "source": "来源",
+      "confidence": "置信度",
+      "firstSeen": "首次发现",
+      "lastSeen": "最后发现",
+      "tags": "标签",
+      "relatedIOCs": "相关IOC"
+    }
+  },
+  "dag": {
+    "status": {
+      "pending": "等待中",
+      "running": "运行中",
+      "success": "成功",
+      "failed": "失败",
+      "skipped": "跳过"
+    },
+    "node": {
+      "type": "类型",
+      "duration": "耗时",
+      "startedAt": "开始时间",
+      "completedAt": "完成时间"
+    }
+  },
+  "correlation": {
+    "title": "事件关联",
+    "relatedIncidents": "相关事件",
+    "noCorrelations": "暂无关联事件",
+    "timeline": "时间线",
+    "severity": "严重程度"
+  },
+  "reports": {
+    "title": "报告",
+    "generate": "生成报告",
+    "download": "下载",
+    "noReports": "暂无报告"
+  },
+  "assets": {
+    "title": "资产",
+    "searchPlaceholder": "搜索资产..."
+  },
+  "difyPage": {
+    "title": "报告",
+    "generate": "生成报告",
+    "download": "下载",
+    "noReports": "暂无报告"
+  },
+  "difyPage": {
+    "title": "Dify集成",
+    "subtitle": "Dify工作流管理",
+    "header": "Dify 工作流集成",
+    "description": "从 Dify 导入和管理自动化工作流",
+    "config": "配置",
+    "workflows": "工作流",
+    "noWorkflows": "暂无工作流",
+    "testConnection": "测试连接",
+    "saveConfig": "保存配置",
+    "refresh": "刷新",
+    "importById": "按ID导入",
+    "connected": "已连接",
+    "notConnected": "未连接",
+    "whatIsDify": "什么是 Dify?",
+    "loading": "加载中...",
+    "notConfigured": "请先配置 Dify 连接",
+    "noWorkspaces": "工作区中没有工作流",
+    "configure": "配置",
+    "modal": {
+      "deleteConfirm": "确定要删除工作流 '{name}' 吗？"
+    },
+    "quickStart": {
+      "title": "快速入门指南",
+      "step1": "1. 在 Dify 中创建工作流应用",
+      "step2": "2. 配置 Dify API 连接",
+      "step3": "3. 从列表中导入工作流",
+      "step4": "4. 在剧本定义中查看导入的工作流"
+    }
+  },
+  "threatHunting": {
+    "title": "威胁狩猎",
+    "subtitle": "主动威胁检测",
+    "search": "搜索...",
+    "noResults": "未发现威胁",
+    "huntHypotheses": "狩猎假设",
+    "totalHunts": "总狩猎次数",
+    "findings": "发现数",
+    "critical": "严重",
+    "successRate": "成功率",
+    "mitre": "MITRE",
+    "dataSources": "数据源",
+    "running": "运行中",
+    "run": "执行",
+    "recentResults": "最近结果",
+    "findingsCount": "{count} 个发现",
+    "clean": "干净",
+    "topTechniques": "热门技术",
+    "times": "次",
+    "severity": {
+      "critical": "严重",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "iocHunt": {
+      "title": "IOC 狩猎",
+      "description": "基于威胁情报快速搜索 IOC",
+      "comingSoon": "此功能即将推出",
+      "button": "开始 IOC 狩猎"
+    },
+    "filters": {
+      "title": "筛选",
+      "timeRange": "时间范围",
+      "severity": "严重程度",
+      "type": "类型"
+    }
+  },
+  "marketplace": {
+    "title": "剧本市场",
+    "subtitle": "浏览和安装剧本模板",
+    "search": "搜索剧本...",
+    "searchPlaceholder": "搜索剧本...",
+    "categories": {
+      "all": "全部",
+      "security": "安全",
+      "compliance": "合规",
+      "operations": "运维"
+    },
+    "install": "安装",
+    "installed": "已安装",
+    "details": "详情",
+    "allCategories": "所有分类",
+    "refresh": "刷新",
+    "featured": "精选",
+    "trending": "热门",
+    "allPlaybooks": "全部剧本 ({count})",
+    "loading": "加载中...",
+    "noPlaybooks": "暂无剧本",
+    "downloadSuccess": "成功下载 {name}！请前往 {page} 查看。",
+    "downloadFailed": "下载失败",
+    "downloading": "下载中...",
+    "difficulty": {
+      "beginner": "初级",
+      "intermediate": "中级",
+      "advanced": "高级"
+    },
+    "loaded": "已加载 {count} 个剧本"
+  },
+  "admin": {
+    "title": "系统管理",
+    "subtitle": "系统配置和管理",
+    "settings": "设置",
+    "health": "健康状态",
+    "audit": "审计日志",
+    "dashboard": {
+      "title": "系统仪表盘",
+      "subtitle": "系统状态概览",
+      "systemInfo": "系统信息",
+      "version": "版本",
+      "environment": "环境",
+      "uptime": "运行时间",
+      "database": "数据库",
+      "redis": "Redis",
+      "status": "状态",
+      "connected": "已连接",
+      "disconnected": "未连接",
+      "healthy": "健康",
+      "unhealthy": "异常",
+      "aiModels": "AI模型",
+      "features": "功能特性",
+      "systemStats": "系统统计",
+      "cpu": "CPU使用率",
+      "memory": "内存使用",
+      "disk": "磁盘使用",
+      "network": "网络",
+      "requests": "请求数",
+      "errors": "错误数",
+      "autoRefresh": "自动刷新",
+      "lastUpdate": "最后更新"
+    },
+    "secrets": {
+      "title": "密钥管理",
+      "add": "添加密钥",
+      "edit": "编辑密钥",
+      "delete": "删除密钥",
+      "name": "名称",
+      "value": "值",
+      "noSecrets": "暂无密钥"
+    }
+  },
+  "triggers": {
+    "title": "触发器",
+    "subtitle": "管理剧本触发器",
+    "webhooks": "Webhook",
+    "cron": "定时任务",
+    "noTriggers": "暂无触发器",
+    "webhookTrigger": "Webhook触发器",
+    "cronTrigger": "定时触发器",
+    "playbook": "剧本",
+    "status": {
+      "active": "活跃",
+      "inactive": "未激活"
+    },
+    "lastTriggered": "最后触发时间",
+    "active": "活跃",
+    "inactive": "未激活",
+    "errors": {
+      "loadFailed": "加载触发器失败",
+      "deleteFailed": "删除触发器失败",
+      "toggleFailed": "切换状态失败"
+    },
+    "modal": {
+      "deleteConfirm": "确定要删除此触发器吗？"
+    },
+    "newWebhook": {
+      "title": "创建Webhook",
+      "name": "名称",
+      "playbook": "选择剧本",
+      "secret": "密钥"
+    },
+    "newCron": {
+      "title": "创建定时任务",
+      "name": "名称",
+      "playbook": "选择剧本",
+      "schedule": "调度表达式"
+    }
+  },
+  "triggersPage": {
+    "title": "触发器管理",
+    "subtitle": "配置剧本自动触发规则",
+    "pageHeader": "触发器列表",
+    "pageDescription": "管理剧本的自动触发规则",
+    "all": "全部",
+    "webhooks": "Webhook",
+    "cron": "定时任务",
+    "noTriggers": "暂无触发器",
+    "noTriggersType": "暂无{type}类型的触发器",
+    "type": "类型",
+    "name": "名称",
+    "details": "详情",
+    "unnamed": "未命名",
+    "never": "从未触发",
+    "disable": "禁用",
+    "enable": "启用",
+    "test": "测试",
+    "infoBox": {
+      "title": "关于触发器",
+      "webhook": "Webhook 触发器：通过 HTTP 请求触发剧本执行",
+      "cron": "定时触发器：按计划自动执行剧本",
+      "logs": "所有触发器执行都会记录在审计日志中"
+    }
+  },
+  "uebaPage": {
+    "title": "用户行为分析",
+    "subtitle": "检测异常用户行为",
+    "noData": "暂无数据",
+    "anomalies": "异常检测",
+    "riskScore": "风险评分",
+    "monitoredUsers": "监控用户数",
+    "highRiskUsers": "高风险用户",
+    "anomalies24h": "24小时异常",
+    "criticalAlerts": "关键告警",
+    "highRiskUsersSection": "高风险用户列表",
+    "noHighRiskUsers": "暂无高风险用户",
+    "anomalousBehaviors": "{count} 个异常行为",
+    "topRiskFactors": "主要风险因素",
+    "offHoursLogin": "非工作时间登录",
+    "times": "次",
+    "recentAnomalies": "最近异常",
+    "mlPowered": {
+      "title": "ML 驱动分析",
+      "description": "使用机器学习算法自动检测用户行为异常，识别潜在的安全威胁。"
+    }
+  },
+  "cloudNative": {
+    "title": "云原生安全",
+    "subtitle": "云环境安全监控",
+    "resources": "资源",
+    "vulnerabilities": "漏洞",
+    "misconfigurations": "配置错误",
+    "noData": "暂无数据",
+    "quickActions": "快捷操作",
+    "connectedClusters": "已连接集群",
+    "cloudProviders": "云服务商",
+    "totalContainers": "容器总数",
+    "vulnerableImages": "漏洞镜像",
+    "securityOverview": "安全概览",
+    "critical": "严重",
+    "high": "高",
+    "medium": "中",
+    "low": "低",
+    "cisCompliance": "CIS 合规性",
+    "lastScan": "上次扫描",
+    "scanningImage": "正在扫描镜像...",
+    "scanImage": "扫描镜像",
+    "detectVulnerabilities": "检测容器镜像漏洞",
+    "k8sScanComingSoon": "Kubernetes 扫描功能即将推出",
+    "scanKubernetes": "扫描 Kubernetes",
+    "cisBenchmark": "CIS 基准检测",
+    "cloudConnectionStatus": "云连接状态",
+    "connected": "已连接",
+    "notConfigured": "未配置",
+    "recentVulnerabilities": "最近漏洞",
+    "supportedCloudProviders": "支持的云服务商",
+    "aws": "AWS - 亚马逊云",
+    "azure": "Azure - 微软云",
+    "gcp": "GCP - 谷歌云",
+    "alicloud": "阿里云",
+    "scanComplete": "扫描完成",
+    "foundVulnerabilities": "发现 {count} 个漏洞"
+  },
+  "monitor": {
+    "title": "系统监控",
+    "subtitle": "实时系统状态监控",
+    "cpu": "CPU使用率",
+    "memory": "内存使用率",
+    "disk": "磁盘使用率",
+    "network": "网络",
+    "connections": "连接数",
+    "uptime": "运行时间",
+    "noData": "暂无监控数据",
+    "live": "实时",
+    "offline": "离线",
+    "sseConnected": "SSE 连接",
+    "pollingMode": "轮询模式",
+    "latency": "延迟",
+    "status": {
+      "ok": "正常",
+      "error": "错误",
+      "degraded": "降级",
+      "disabled": "已禁用",
+      "initializing": "初始化中"
+    },
+    "services": {
+      "title": "服务状态",
+      "database": "数据库",
+      "redis": "Redis 缓存",
+      "ai": "AI 服务",
+      "queue": "任务队列"
+    },
+    "actions": {
+      "refresh": "刷新",
+      "fullscreen": "全屏",
+      "exitFullscreen": "退出全屏"
+    },
+    "errors": {
+      "connectionFailed": "连接失败"
+    },
+    "chart": {
+      "title": "资源使用趋势",
+      "cpu": "CPU",
+      "memory": "内存"
+    },
+    "activities": {
+      "title": "最近活动",
+      "empty": "暂无活动"
+    },
+    "resources": {
+      "cpu": "CPU 使用率",
+      "memory": "内存使用率",
+      "disk": "磁盘使用率"
+    }
+  },
+  "notificationSettings": {
+    "title": "通知设置",
+    "subtitle": "管理告警通知渠道",
+    "feishu": "飞书",
+    "feishuDesc": "发送告警通知到飞书群聊",
+    "slack": "Slack",
+    "slackDesc": "发送告警通知到 Slack 频道",
+    "email": "邮件",
+    "emailDesc": "发送告警通知到指定邮箱",
+    "configured": "已配置",
+    "notConfigured": "未配置",
+    "test": "测试",
+    "testAll": "测试所有渠道",
+    "configInfoTitle": "配置说明",
+    "configInfoDesc": "通知渠道通过环境变量配置，修改后需要重启服务。"
+  },
+  "settings": {
+    "title": "设置",
+    "subtitle": "系统设置和配置",
+    "general": "常规",
+    "security": "安全",
+    "notifications": "通知",
+    "errors": {
+      "adminOnly": "此页面仅管理员可访问",
+      "loadFailed": "加载设置失败",
+      "saveFailed": "保存设置失败"
+    },
+    "apiKeys": {
+      "title": "API密钥",
+      "add": "添加密钥",
+      "name": "名称",
+      "key": "密钥",
+      "expires": "过期时间",
+      "neverExpires": "永不过期",
+      "noKeys": "暂无API密钥",
+      "copyKey": "复制密钥",
+      "keyCopied": "密钥已复制"
+    }
+  },
+  "audit": {
+    "title": "审计日志",
+    "subtitle": "系统操作审计"
+  },
+  "auditPage": {
+    "title": "审计日志",
+    "subtitle": "系统操作审计",
+    "search": "搜索日志...",
+    "filters": "筛选",
+    "export": "导出",
+    "noLogs": "暂无审计日志",
+    "details": {
+      "action": "操作",
+      "user": "用户",
+      "ip": "IP地址",
+      "timestamp": "时间",
+      "details": "详情"
+    }
+  },
+  "wazuh": {
+    "title": "Wazuh 监控",
+    "subtitle": "Wazuh SIEM 集成监控",
+    "connected": "已连接",
+    "disconnected": "已断开",
+    "notConfigured": "未配置",
+    "refresh": "刷新",
+    "totalAgents": "总设备数",
+    "active": "在线",
+    "alerts": "告警",
+    "alertSummary": "告警摘要",
+    "searchAgents": "搜索设备...",
+    "allStatus": "全部状态",
+    "neverConnected": "从未连接",
+    "noAgents": "暂无设备",
+    "agent": "设备",
+    "status": "状态",
+    "version": "版本",
+    "stream": {
+      "title": "实时告警流",
+      "connecting": "连接中...",
+      "streaming": "实时",
+      "stopped": "已停止",
+      "toggleFilters": "切换过滤",
+      "clearAlerts": "清空告警",
+      "exportAlerts": "导出告警",
+      "filters": "过滤条件",
+      "minSeverity": "最低严重级别",
+      "allSeverities": "全部级别",
+      "search": "搜索",
+      "searchPlaceholder": "搜索告警...",
+      "agent": "设备",
+      "allAgents": "全部设备",
+      "noAlerts": "暂无告警",
+      "notConnected": "未连接到 Wazuh 实时流"
+    }
+  },
+  "correlation": {
+    "title": "关联分析",
+    "subtitle": "告警关联分析和事件分组",
+    "incidents": "事件",
+    "rules": "规则",
+    "refresh": "刷新",
+    "totalIncidents": "总事件",
+    "openIncidents": "待处理",
+    "resolvedIncidents": "已解决",
+    "totalCorrelations": "总关联次数",
+    "searchIncidents": "搜索事件...",
+    "allSeverity": "全部严重性",
+    "critical": "严重",
+    "high": "高",
+    "medium": "中",
+    "low": "低",
+    "noIncidents": "暂无关联事件",
+    "incident": "事件",
+    "severity": "严重性",
+    "status": "状态",
+    "events": "事件数",
+    "confidence": "置信度",
+    "created": "创建时间",
+    "page": "第",
+    "of": "页，共",
+    "noRules": "暂无关联规则",
+    "rule": "规则",
+    "priority": "优先级",
+    "timeWindow": "时间窗口",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "correlations": "关联次数"
+  },
+  "alerts": {
+    "title": "告警",
+    "subtitle": "安全告警管理",
+    "noAlerts": "暂无告警"
+  }
+}

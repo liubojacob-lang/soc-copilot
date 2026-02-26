@@ -1,6 +1,6 @@
 """Schemas for audit log operations."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -25,8 +25,7 @@ class AuditLogInDB(AuditLogBase):
     extra_json: dict = Field(default_factory=dict)
     created_at: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AuditLogResponse(AuditLogInDB):

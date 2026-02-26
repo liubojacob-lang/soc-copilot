@@ -2,7 +2,9 @@
 
 import secrets
 import hashlib
-from typing import Optional, Annotated
+from datetime import datetime, timedelta, timezone
+from functools import lru_cache
+from typing import Optional, Annotated, Dict, Tuple
 from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,12 +13,19 @@ from sqlalchemy import select
 from db.session import get_session
 from models.user import UserModel, UserRole
 from models.api_key import APIKeyModel
-from schemas.user import UserResponse
-from core.security import decode_token, verify_password, hash_api_key
+from schemas.user import UserResponse, MeResponse
+from core.security import decode_token, verify_password, hash_api_key, verify_api_key
+from core.cookie_auth import get_token_from_cookie, COOKIE_ACCESS_TOKEN_NAME
 from core.config import settings
 from core.logger import get_logger
+from core.validators import validate_sql_input, validate_id_format
 
 logger = get_logger(__name__)
+
+# v0.8.3: User permission cache with TTL for improved performance
+# Cache structure: {user_id: (permissions_list, cached_at_datetime)}
+_user_permission_cache: Dict[str, Tuple[list[str], datetime]] = {}
+_PERMISSION_CACHE_TTL_SECONDS = 300  # 5 minutes TTL
 
 # HTTP Bearer scheme for JWT
 security = HTTPBearer(auto_error=False)
@@ -24,26 +33,62 @@ security = HTTPBearer(auto_error=False)
 
 async def get_user_by_username(session: AsyncSession, username: str) -> Optional[UserModel]:
     """Get user by username."""
-    result = await session.execute(select(UserModel).where(UserModel.username == username))
+    validated_username = validate_sql_input(username)
+    result = await session.execute(select(UserModel).where(UserModel.username == validated_username))
     return result.scalar_one_or_none()
 
 
 async def get_user_by_id(session: AsyncSession, user_id: str) -> Optional[UserModel]:
     """Get user by ID."""
+    validate_id_format(user_id, "user_id")
     result = await session.execute(select(UserModel).where(UserModel.id == user_id))
     return result.scalar_one_or_none()
 
 
-async def get_user_by_api_key(session: AsyncSession, key_hash: str) -> Optional[UserModel]:
-    """Get user by API key hash."""
+async def get_user_by_api_key(session: AsyncSession, plain_api_key: str) -> Optional[tuple[UserModel, APIKeyModel]]:
+    """Get user and API key by plain API key (verifies against stored hash).
+
+    v0.8.4: Added rate limiting to prevent API key enumeration attacks.
+
+    Returns tuple of (user, api_key) if valid, None otherwise.
+    """
+    from middleware.rate_limiter import check_api_key_rate_limit
+    from fastapi import HTTPException, status
+
+    # Get API key prefix for quick lookup
+    prefix = plain_api_key[:8] if len(plain_api_key) >= 8 else plain_api_key
+
+    # P3-3: Rate limiting - Check before verification to prevent enumeration
+    allowed, rate_info = await check_api_key_rate_limit(prefix, session)
+
+    if not allowed:
+        logger.warning(f"API key rate limit exceeded for prefix: {prefix[:4]}****")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many authentication attempts. Please wait a moment before trying again.",
+            headers={
+                "X-RateLimit-Limit": str(rate_info["limit"]),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(rate_info["reset"]),
+                "Retry-After": str(rate_info["reset"])
+            }
+        )
+
+    # Query active API keys matching the prefix
     result = await session.execute(
-        select(UserModel)
-        .join(APIKeyModel, UserModel.id == APIKeyModel.user_id)
-        .where(APIKeyModel.key_hash == key_hash)
+        select(APIKeyModel, UserModel)
+        .join(UserModel, APIKeyModel.user_id == UserModel.id)
+        .where(APIKeyModel.key_prefix == prefix)
         .where(APIKeyModel.is_active == True)
         .where(UserModel.is_active == True)
     )
-    return result.scalar_one_or_none()
+
+    # Check each key for match (bcrypt hashes are unique)
+    for api_key, user in result.all():
+        if verify_api_key(plain_api_key, api_key.key_hash):
+            return (user, api_key)
+
+    return None
 
 
 async def update_api_key_last_used(session: AsyncSession, api_key: APIKeyModel) -> None:
@@ -54,10 +99,14 @@ async def update_api_key_last_used(session: AsyncSession, api_key: APIKeyModel) 
     await session.commit()
 
 
-def get_user_permissions(user: UserModel) -> list[str]:
-    """Get user permissions based on role."""
-    if user.role == UserRole.ADMIN:
-        return [
+@lru_cache(maxsize=32)
+def _get_permissions_by_role(role_value: str) -> tuple[str, ...]:
+    """Get permissions for a role value (cached).
+    
+    Returns tuple for hashability and immutability.
+    """
+    if role_value == UserRole.ADMIN.value:
+        return (
             "users:read", "users:write", "users:delete",
             "api_keys:read", "api_keys:write", "api_keys:delete",
             "audit_logs:read", "audit_logs:write",
@@ -67,9 +116,9 @@ def get_user_permissions(user: UserModel) -> list[str]:
             "analyze_alert", "build_timeline", "generate_report",
             "playbook:read", "playbook:run", "playbook:resume", "playbook:apply",
             "ti:query",
-        ]
-    elif user.role == UserRole.ANALYST:
-        return [
+        )
+    elif role_value == UserRole.ANALYST.value:
+        return (
             "api_keys:read", "api_keys:write",
             "assets:read", "assets:write",
             "ioc_hits:read", "ioc_hits:write",
@@ -77,9 +126,9 @@ def get_user_permissions(user: UserModel) -> list[str]:
             "analyze_alert", "build_timeline", "generate_report",
             "playbook:read", "playbook:run", "playbook:resume",
             "ti:query",
-        ]
-    elif user.role == UserRole.AUDITOR:
-        return [
+        )
+    elif role_value == UserRole.AUDITOR.value:
+        return (
             "assets:read",
             "ioc_hits:read",
             "history:read",
@@ -87,13 +136,74 @@ def get_user_permissions(user: UserModel) -> list[str]:
             "playbook:read",
             "ti:query",
             "audit_logs:read",
-        ]
-    return []
+        )
+    return ()
 
 
-def user_to_response(user: UserModel) -> UserResponse:
-    """Convert UserModel to UserResponse."""
-    return UserResponse(
+def get_user_permissions(user: UserModel) -> list[str]:
+    """Get user permissions based on role (cached by role)."""
+    # user.role may be stored as string, not enum
+    role_value = user.role.value if hasattr(user.role, 'value') else user.role
+    return list(_get_permissions_by_role(role_value))
+
+
+def get_user_permissions_cached(user_id: str, user: UserModel) -> list[str]:
+    """Get user permissions with per-user caching and TTL.
+    
+    This provides a second-level cache that avoids repeated role lookups
+    for the same user within the TTL window.
+    
+    Args:
+        user_id: User ID for cache key
+        user: User model to get permissions from
+        
+    Returns:
+        List of permission strings for the user
+    """
+    now = datetime.now(timezone.utc)
+    
+    # Check cache
+    if user_id in _user_permission_cache:
+        perms, cached_at = _user_permission_cache[user_id]
+        if now - cached_at < timedelta(seconds=_PERMISSION_CACHE_TTL_SECONDS):
+            return perms
+    
+    # Fetch and cache
+    perms = get_user_permissions(user)
+    _user_permission_cache[user_id] = (perms, now)
+    return perms
+
+
+def clear_permission_cache() -> None:
+    """Clear the permission cache (use when roles/permissions are updated)."""
+    _get_permissions_by_role.cache_clear()
+    _user_permission_cache.clear()
+
+
+def invalidate_user_permission_cache(user_id: str = None) -> None:
+    """Invalidate permission cache for a specific user or all users.
+    
+    Call this when:
+    - User's role is changed
+    - Role permissions are updated
+    - User is deleted/deactivated
+    
+    Args:
+        user_id: Specific user to invalidate, or None for all users
+    """
+    global _user_permission_cache
+    if user_id:
+        _user_permission_cache.pop(user_id, None)
+        logger.debug(f"Permission cache invalidated for user {user_id}")
+    else:
+        _user_permission_cache.clear()
+        _get_permissions_by_role.cache_clear()
+        logger.debug("All permission caches cleared")
+
+
+def user_to_response(user: UserModel) -> MeResponse:
+    """Convert UserModel to MeResponse with cached permissions."""
+    return MeResponse(
         id=user.id,
         username=user.username,
         email=user.email,
@@ -102,7 +212,7 @@ def user_to_response(user: UserModel) -> UserResponse:
         created_at=user.created_at,
         updated_at=user.updated_at,
         last_login_at=user.last_login_at,
-        permissions=get_user_permissions(user),
+        permissions=get_user_permissions_cached(user.id, user),
     )
 
 
@@ -110,25 +220,34 @@ async def get_current_user_optional(
     session: Annotated[AsyncSession, Depends(get_session)],
     authorization: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)],
     x_api_key: Annotated[Optional[str], Header()] = None,
+    cookie: Annotated[Optional[str], Header(alias="cookie")] = None,
 ) -> Optional[UserModel]:
-    """Get current user from JWT or API key (optional, returns None if not authenticated)."""
+    """Get current user from JWT (Bearer or cookie) or API key (optional, returns None if not authenticated)."""
     # Try API Key first
     if x_api_key:
-        key_hash = hash_api_key(x_api_key)
-        user = await get_user_by_api_key(session, key_hash)
-        if user:
-            # Get the API key to update last_used
-            result = await session.execute(
-                select(APIKeyModel).where(APIKeyModel.key_hash == key_hash)
-            )
-            api_key = result.scalar_one_or_none()
-            if api_key:
-                await update_api_key_last_used(session, api_key)
+        result = await get_user_by_api_key(session, x_api_key)
+        if result:
+            user, api_key = result
+            await update_api_key_last_used(session, api_key)
             return user
 
-    # Try JWT
+    # Try JWT from Bearer header
+    token = None
+
     if authorization:
         token = authorization.credentials
+    # Try JWT from httpOnly cookie (fallback)
+    elif cookie:
+        token = get_token_from_cookie(cookie, COOKIE_ACCESS_TOKEN_NAME)
+
+    if token:
+        # Check if token is blacklisted
+        from core.token_blacklist import get_token_blacklist
+        blacklist = get_token_blacklist()
+        if await blacklist.is_blacklisted(token):
+            logger.warning(f"Blacklisted token used for authentication")
+            return None
+
         payload = decode_token(token)
         if payload and payload.get("type") == "access":
             user_id = payload.get("sub")
@@ -184,14 +303,15 @@ async def get_api_key_user(
     x_api_key: Annotated[str, Header(...)],
 ) -> UserModel:
     """Get user from API Key (for API authentication)."""
-    key_hash = hash_api_key(x_api_key)
-    user = await get_user_by_api_key(session, key_hash)
+    result = await get_user_by_api_key(session, x_api_key)
 
-    if not user:
+    if not result:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API key",
         )
+
+    user, api_key = result
 
     if not user.is_active:
         raise HTTPException(
@@ -200,11 +320,23 @@ async def get_api_key_user(
         )
 
     # Update last_used
-    result = await session.execute(
-        select(APIKeyModel).where(APIKeyModel.key_hash == key_hash)
-    )
-    api_key = result.scalar_one_or_none()
-    if api_key:
-        await update_api_key_last_used(session, api_key)
+    await update_api_key_last_used(session, api_key)
 
     return user
+
+
+async def logout_with_token_blacklist(
+    authorization: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)],
+) -> dict:
+    """Handle logout with token blacklist."""
+    from core.token_blacklist import add_token_to_blacklist
+
+    token = authorization.credentials if authorization else None
+
+    if token:
+        await add_token_to_blacklist(token, reason="User logged out")
+
+    return {
+        "message": "Successfully logged out",
+        "token_revoked": True
+    }

@@ -21,6 +21,9 @@ const nodeTypes: NodeTypes = {
   dagNode: DAGNode,
 };
 
+// P0-2: Maximum update iterations to prevent infinite loops
+const MAX_UPDATE_ITERATIONS = 100;
+
 interface DAGCanvasProps {
   definition?: {
     nodes: Array<{ id: string; step_id: string; name: string; position_x?: number; position_y?: number }> | Node<NodeData>[];
@@ -76,6 +79,9 @@ export function DAGCanvas({
   const readonlyDefinitionKeyRef = useRef("");
   const editDefinitionKeyRef = useRef("");
   const lastProcessedStatusHashRef = useRef("");
+  
+  // P0-2: Update iteration counter for infinite loop protection
+  const updateIterationRef = useRef(0);
 
   // Create a stable key for the definition structure (ignoring statuses)
   const currentDefinitionKey = useMemo(() => {
@@ -162,6 +168,8 @@ export function DAGCanvas({
         setEdges(initialEdges);
         initializedRef.current = true;
         lastProcessedStatusHashRef.current = nodeStatusesHash;
+        // P0-2: Reset iteration counter on definition change
+        updateIterationRef.current = 0;
       }
     } else {
       // Edit mode: only sync when definition structure changes
@@ -174,6 +182,8 @@ export function DAGCanvas({
         lastNotifiedNodesRef.current = JSON.stringify(initialNodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y })));
         lastNotifiedEdgesRef.current = JSON.stringify(initialEdges.map(e => ({ s: e.source, t: e.target })));
         lastProcessedStatusHashRef.current = nodeStatusesHash;
+        // P0-2: Reset iteration counter on definition change
+        updateIterationRef.current = 0;
       }
     }
   }, [readonly, currentDefinitionKey, initialNodes, initialEdges, setNodes, setEdges, nodeStatusesHash]);
@@ -194,9 +204,17 @@ export function DAGCanvas({
   useLayoutEffect(() => {
     if (!readonly || !initializedRef.current) return;
 
+    // P0-2: Infinite loop protection - check iteration count
+    if (updateIterationRef.current >= MAX_UPDATE_ITERATIONS) {
+      console.warn('[DAGCanvas] Max update iterations reached, skipping further updates');
+      return;
+    }
+
     // Skip if status hash hasn't changed (prevents unnecessary updates)
     if (nodeStatusesHash === lastProcessedStatusHashRef.current) return;
 
+    // P0-2: Increment iteration counter
+    updateIterationRef.current += 1;
     lastProcessedStatusHashRef.current = nodeStatusesHash;
 
     // IDEMPOTENT node update: only create new objects when values change

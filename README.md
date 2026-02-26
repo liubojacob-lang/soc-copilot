@@ -1,6 +1,6 @@
 # SOC Copilot - Security Operations Center Intelligent Analysis Platform
 
-[![Version](https://img.shields.io/badge/version-v0.7.4-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.8.0-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.10+-green.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
@@ -140,7 +140,7 @@ npm run dev
 
 | Service | URL | Default Credentials |
 |---------|-----|---------------------|
-| Frontend | http://localhost:8080 | admin / admin123 |
+| Frontend | http://localhost:3003 | admin / admin123 |
 | Backend API | http://localhost:8000 | - |
 | API Documentation | http://localhost:8000/docs | - |
 | Database | `data/app.db` (auto-created) | - |
@@ -201,10 +201,15 @@ npm run dev
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/playbook/definitions` | Definition list |
-| POST | `/api/playbook/definitions` | Create definition |
-| GET | `/api/playbook/definitions/{id}` | Definition details |
-| POST | `/api/playbook/definitions/{id}/run` | Execute definition |
+| GET | `/api/playbook-definitions` | Definition list (CRUD primary path) |
+| POST | `/api/playbook-definitions` | Create definition |
+| GET | `/api/playbook-definitions/{id}` | Definition details |
+| PATCH | `/api/playbook-definitions/{id}` | Update definition |
+| DELETE | `/api/playbook-definitions/{id}` | Delete definition |
+| POST | `/api/playbook-definitions/{id}/run` | Execute definition |
+| GET | `/api/playbook-definitions/runs/{run_id}` | Execution details (DAG) |
+| GET | `/api/playbook-definitions/runs/{run_id}/nodes` | Node execution details |
+| POST | `/api/playbook-definitions/runs/{run_id}/cancel` | Cancel execution |
 | POST | `/api/playbook/definitions/{id}/publish` | Publish version |
 | GET | `/api/playbook/definitions/{id}/versions` | Version history |
 | POST | `/api/playbook/definitions/{id}/restore/{version_no}` | Rollback version |
@@ -376,7 +381,7 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 
 ## Version History
 
-### v0.7.4 (Current Version)
+### v0.8.0 (Current Version)
 - ✨ **Added**: Node plugin system with dynamic auto-loading
 - ✨ **Added**: Secrets management with Fernet encryption
 - ✨ **Added**: Template variable `{{secret.xxx}}` support
@@ -474,6 +479,6 @@ This project is an internal security operations tool for authorized users only.
 
 ---
 
-**Version**: v0.7.4
+**Version**: v0.8.0
 **Last Updated**: 2026-02-10
 **Maintainer**: SOC Team

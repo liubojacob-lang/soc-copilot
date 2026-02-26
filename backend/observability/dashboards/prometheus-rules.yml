@@ -1,0 +1,17 @@
+groups:
+  - name: soc-backend
+    rules:
+      - alert: HighApiErrorRate
+        expr: sum(rate(soc_api_requests_total{status=~"5.."}[5m])) / sum(rate(soc_api_requests_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SOC API 5xx error rate is above 5%"
+      - alert: QueueLagTooHigh
+        expr: max(soc_queue_lag) > 1000
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Queue lag is too high"

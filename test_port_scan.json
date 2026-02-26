@@ -1,0 +1,11 @@
+{
+  "events": [
+    {"id": "scan-001", "timestamp": "2026-02-17T03:05:00+00:00", "source_ip": "10.0.0.50", "dest_port": 21, "severity": "medium", "category": "network", "message": "Port scan detected on port 21"},
+    {"id": "scan-002", "timestamp": "2026-02-17T03:05:05+00:00", "source_ip": "10.0.0.50", "dest_port": 22, "severity": "medium", "category": "network", "message": "Port scan detected on port 22"},
+    {"id": "scan-003", "timestamp": "2026-02-17T03:05:10+00:00", "source_ip": "10.0.0.50", "dest_port": 23, "severity": "medium", "category": "network", "message": "Port scan detected on port 23"},
+    {"id": "scan-004", "timestamp": "2026-02-17T03:05:15+00:00", "source_ip": "10.0.0.50", "dest_port": 80, "severity": "medium", "category": "network", "message": "Port scan detected on port 80"},
+    {"id": "scan-005", "timestamp": "2026-02-17T03:05:20+00:00", "source_ip": "10.0.0.50", "dest_port": 443, "severity": "medium", "category": "network", "message": "Port scan detected on port 443"},
+    {"id": "scan-006", "timestamp": "2026-02-17T03:05:25+00:00", "source_ip": "10.0.0.50", "dest_port": 3389, "severity": "medium", "category": "network", "message": "Port scan detected on port 3389"},
+    {"id": "scan-007", "timestamp": "2026-02-17T03:05:30+00:00", "source_ip": "10.0.0.50", "dest_port": 8080, "severity": "medium", "category": "network", "message": "Port scan detected on port 8080"}
+  ]
+}

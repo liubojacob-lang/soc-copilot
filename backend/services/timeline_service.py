@@ -136,6 +136,9 @@ For suspicious events, include:
                 error_reason=result.error_reason,
             )
             history_id = history.id
+            
+            # v0.8.1: Return history_id in response to avoid extra API call
+            result.history_id = history_id
 
             # Create IOC hits
             if self.ioc_hits_service:

@@ -198,6 +198,7 @@ class TriggerService:
         )
 
         # Execute playbook
+        run = None
         try:
             # Get definition
             from repositories.playbook_definition_repository import PlaybookDefinitionRepository
@@ -235,21 +236,37 @@ class TriggerService:
                 run_id=run.id,
                 compiled_dag=compiled,
                 input_context=input_context,
+                mode="apply",
                 failure_strategy="fail_fast",
             )
             output = await scheduler.execute()
 
+            final_status = "cancelled" if scheduler.cancelled else (
+                "failed" if scheduler.failed_nodes else "success"
+            )
+            invocation_status = "success" if final_status == "success" else "failed"
+            invocation_error = None
+            run_error_message = None
+            if final_status == "cancelled":
+                invocation_error = "Run cancelled during execution"
+                run_error_message = invocation_error
+            elif final_status == "failed":
+                invocation_error = f"Node failures: {len(scheduler.failed_nodes)}"
+                run_error_message = invocation_error
+
             await self.run_repo.update(
                 run.id,
-                status="success",
+                status=final_status,
                 output_json=output,
+                error_message=run_error_message,
             )
 
             # Update invocation
             await self.trigger_repo.update_invocation(
                 invocation_id=invocation.id,
                 run_id=run.id,
-                status="success",
+                status=invocation_status,
+                error_message=invocation_error,
             )
 
             # Update last triggered
@@ -273,7 +290,7 @@ class TriggerService:
 
             return {
                 "run_id": run.id,
-                "status": "success",
+                "status": final_status,
                 "cached": False,
                 "invocation_id": invocation.id,
             }
@@ -281,9 +298,17 @@ class TriggerService:
         except Exception as e:
             logger.error(f"Failed to execute webhook trigger: {e}")
 
+            if run:
+                await self.run_repo.update(
+                    run.id,
+                    status="failed",
+                    error_message=str(e),
+                )
+
             # Update invocation with error
             await self.trigger_repo.update_invocation(
                 invocation_id=invocation.id,
+                run_id=run.id if run else None,
                 status="failed",
                 error_message=str(e),
             )
@@ -362,6 +387,7 @@ class TriggerService:
                 return None
 
         # Execute playbook
+        run = None
         try:
             # Get definition
             from repositories.playbook_definition_repository import PlaybookDefinitionRepository
@@ -401,14 +427,25 @@ class TriggerService:
                 run_id=run.id,
                 compiled_dag=compiled,
                 input_context=input_context,
+                mode="apply",
                 failure_strategy="fail_fast",
             )
             output = await scheduler.execute()
 
+            final_status = "cancelled" if scheduler.cancelled else (
+                "failed" if scheduler.failed_nodes else "success"
+            )
+            run_error_message = None
+            if final_status == "cancelled":
+                run_error_message = "Run cancelled during execution"
+            elif final_status == "failed":
+                run_error_message = f"Node failures: {len(scheduler.failed_nodes)}"
+
             await self.run_repo.update(
                 run.id,
-                status="success",
+                status=final_status,
                 output_json=output,
+                error_message=run_error_message,
             )
 
             # Update last triggered
@@ -430,11 +467,20 @@ class TriggerService:
             )
             await self.session.commit()
 
-            logger.info(f"Cron trigger executed: {trigger_id} -> run {run.id}")
+            logger.info(
+                f"Cron trigger executed: {trigger_id} -> run {run.id} ({final_status})"
+            )
             return run.id
 
         except Exception as e:
             logger.error(f"Failed to execute cron trigger {trigger_id}: {e}")
+
+            if run:
+                await self.run_repo.update(
+                    run.id,
+                    status="failed",
+                    error_message=str(e),
+                )
 
             # Create audit log
             await self.audit_repo.create(

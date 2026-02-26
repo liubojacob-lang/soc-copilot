@@ -19,8 +19,8 @@ from schemas.threat_intel import (
     IOCType,
 )
 from repositories.threat_intel_repository import ThreatIntelRepository
-from app.integrations.otx_client import OTXClient
-from app.utils.ti_filter import should_send_ioc_to_external_ti, FilterDecision
+from integrations.otx_client import OTXClient
+from utils.ti_filter import should_send_ioc_to_external_ti, FilterDecision
 
 logger = get_logger(__name__)
 

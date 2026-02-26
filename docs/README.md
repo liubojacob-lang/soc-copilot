@@ -1,0 +1,112 @@
+# 📚 SOC Copilot 文档中心
+
+> **智能安全运营平台 - 驱动的AI赋能SOC自动化**
+
+![Version](https://img.shields.io/badge/version-v0.7.4-blue?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+
+---
+
+## 🗂️ 快速导航
+
+| 文档 | 说明 | 优先级 |
+|------|------|--------|
+| [📘 入门指南](00-getting-started.md) | 15分钟快速搭建开发环境 | 🔥 必读 |
+| [🧪 测试指南](13-testing-guide.md) | 完整的测试方案和自动化脚本 | 🔥 必读 |
+| [✅ 验收标准](14-acceptance-criteria.md) | 一键验收和手动检查清单 | 🔥 必读 |
+| [🏗️ 架构总览](01-architecture.md) | 系统架构设计与技术选型 | ⭐ 推荐 |
+| [📊 API 总览](02-api-overview.md) | 后端API完整参考 | ⭐ 推荐 |
+| [🔧 安全设计](08-security.md) | 安全架构与最佳实践 | ⭐ 推荐 |
+
+---
+
+## 🎯 功能文档
+
+### 🚔 告警与分析
+| 文档 | 说明 |
+|------|------|
+| [📊 告警分析器](04-alert-analyzer.md) | 智能告警分析与响应流程 |
+| [🧠 威胁情报](05-threat-intel.md) | 外部威胁情报集成与查询 |
+
+### 🤖 自动化
+| 文档 | 说明 |
+|------|------|
+| [📜 Playbook 引擎](06-playbook-engine.md) | DAG工作流自动化引擎 |
+| [🤖 AI 助手](07-ai-copilot.md) | AI驱动的安全分析助手 |
+
+### 🔍 数据与资产
+| 文档 | 说明 |
+|------|------|
+| [💾 资产管理](03-database.md) | 资产全生命周期管理 |
+| [🎯 IOC 追踪](02-api-overview.md) | 威胁指标关联追踪 |
+
+### 🛠️ 运维与部署
+| 文档 | 说明 |
+|------|------|
+| [📦 部署指南](09-ops-deploy.md) | 生产环境部署最佳实践 |
+| [🔧 排障手册](10-troubleshooting.md) | 常见问题排查指南 |
+
+---
+
+## 📚 开发者资源
+
+### 🎯 前端开发
+| 文档 | 说明 |
+|------|------|
+| [前端指南](07-frontend.md) | Next.js React 开发规范 |
+
+### 🔧 后端开发
+| 文档 | 说明 |
+|------|------|
+| [后端指南](01-backend-guide.md) | FastAPI Python 开发规范 |
+
+### 🔐 安全指南
+| 文档 | 说明 |
+|------|------|
+| [安全设计](08-security.md) | 安全架构与策略 |
+
+### 📋 版本管理
+| 文档 | 说明 |
+|------|------|
+| [版本历史](CHANGELOG.md) | 版本更新记录 |
+
+---
+
+## 🏷️ 项目状态
+
+**当前版本**: v0.7.4
+**最后更新**: 2026-02-12
+**开发状态**: 活跃开发中
+
+---
+
+---
+
+## 📁 Week 1: Wazuh 实时告警流 ✅
+
+**状态**: 完成并测试通过
+
+### 快速参考
+- [Week 1 快速参考](week1/README_WEEK1.md)
+- [实施计划](week1/WAZUH_DEEP_INTEGRATION_PLAN.md)
+- [交接文档](week1/WEEK1_FINAL_HANDOVER.md)
+
+### 测试报告
+- [测试成功报告](week1/WEEK1_BROWSER_TEST_SUCCESS.md)
+- [最终测试报告](week1/reports/FINAL_TEST_REPORT_WEEK1.md)
+
+### 指南
+- [浏览器测试快速参考](week1/guides/BROWSER_TEST_QUICK_REF.md)
+- [测试指南](week1/guides/TEST_GUIDE_WEEK1.md)
+
+---
+
+## 📝 文档管理规定
+
+**所有文档统一放在 `docs/` 文件夹里**
+
+详见: [文档管理规定](DOC_MANAGEMENT_RULES.md)
+
+---
+
+*本文档将持续更新以反映项目的最新状态和功能。*

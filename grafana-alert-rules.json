@@ -1,0 +1,32 @@
+{
+  "rules": [
+    {
+      "name": "高危告警激增",
+      "description": "5分钟内高危告警超过10个",
+      "condition": "count_over_time({job=\"soc-copilot\", level=\"high\"}[5m]) > 10",
+      "severity": "warning",
+      "notifications": ["webhook"]
+    },
+    {
+      "name": "严重告警检测",
+      "description": "检测到严重级别告警",
+      "condition": "count_over_time({job=\"soc-copilot\", level=\"critical\"}[1m]) > 0",
+      "severity": "critical",
+      "notifications": ["webhook", "email"]
+    },
+    {
+      "name": "SSH暴力破解攻击",
+      "description": "检测到SSH暴力破解",
+      "condition": "count_over_time({job=\"soc-copilot\", event_type=\"ssh_bruteforce\"}[5m]) > 5",
+      "severity": "high",
+      "notifications": ["webhook"]
+    },
+    {
+      "name": "恶意软件检测",
+      "description": "检测到恶意软件",
+      "condition": "count_over_time({job=\"soc-copilot\", event_type=\"malware_detected\"}[1m]) > 0",
+      "severity": "critical",
+      "notifications": ["webhook", "email"]
+    }
+  ]
+}

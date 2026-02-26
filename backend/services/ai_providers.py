@@ -52,7 +52,8 @@ class LLMProvider:
         messages: List[Dict[str, str]],
         model: str = None,
         temperature: float = 0.7,
-        max_tokens: int = 2000,
+        max_tokens: int = 4096,
+        timeout: Optional[float] = None,
     ) -> str:
         """Generate chat completion."""
         raise NotImplementedError
@@ -65,26 +66,36 @@ class LLMProvider:
 class ZhipuAIProvider(LLMProvider):
     """Zhipu AI (智谱AI) provider."""
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, model: str = "glm-4"):
         super().__init__(api_key, "https://open.bigmodel.cn/api/paas/v4")
+        self.model = model
 
     async def chat_completion(
         self,
         messages: List[Dict[str, str]],
-        model: str = "glm-4",
+        model: str = None,
         temperature: float = 0.7,
-        max_tokens: int = 2000,
+        max_tokens: int = 4096,
+        timeout: Optional[float] = None,
     ) -> str:
         """Generate chat completion using Zhipu AI."""
         try:
-            response = await self.client.post(
+            # Use provided model or default from initialization
+            actual_model = model or self.model
+            
+            # Use custom timeout if provided
+            client = self.client
+            if timeout:
+                client = httpx.AsyncClient(timeout=timeout)
+            
+            response = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": model,
+                    "model": actual_model,
                     "messages": messages,
                     "temperature": temperature,
                     "max_tokens": max_tokens,
@@ -127,7 +138,8 @@ class ClaudeProvider(LLMProvider):
         messages: List[Dict[str, str]],
         model: str = "claude-3-opus-20240229",
         temperature: float = 0.7,
-        max_tokens: int = 2000,
+        max_tokens: int = 4096,
+        timeout: Optional[float] = None,
     ) -> str:
         """Generate chat completion using Claude."""
         try:
@@ -141,7 +153,12 @@ class ClaudeProvider(LLMProvider):
                 else:
                     user_messages.append(msg)
 
-            response = await self.client.post(
+            # Use custom timeout if provided
+            client = self.client
+            if timeout:
+                client = httpx.AsyncClient(timeout=timeout)
+
+            response = await client.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
                     "x-api-key": self.api_key,
@@ -179,11 +196,17 @@ class OpenAIProvider(LLMProvider):
         messages: List[Dict[str, str]],
         model: str = "gpt-4",
         temperature: float = 0.7,
-        max_tokens: int = 2000,
+        max_tokens: int = 4096,
+        timeout: Optional[float] = None,
     ) -> str:
         """Generate chat completion using OpenAI."""
         try:
-            response = await self.client.post(
+            # Use custom timeout if provided
+            client = self.client
+            if timeout:
+                client = httpx.AsyncClient(timeout=timeout)
+            
+            response = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
@@ -224,6 +247,207 @@ class OpenAIProvider(LLMProvider):
             raise
 
 
+class OpenRouterProvider(LLMProvider):
+    """OpenRouter provider (access to multiple LLMs including Kimi models)."""
+
+    def __init__(self, api_key: str, model: str = "moonshotai/kimi-k2.5"):
+        # Use NVIDIA API endpoint instead of OpenRouter to avoid 502 errors
+        super().__init__(api_key, "https://integrate.api.nvidia.com/v1")
+        self.model = model
+
+    async def chat_completion(
+        self,
+        messages: List[Dict[str, str]],
+        model: str = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        timeout: Optional[float] = None,
+    ) -> str:
+        """Generate chat completion using OpenRouter."""
+        try:
+            # Use provided model or default from initialization
+            actual_model = model or self.model
+            
+            # Use custom timeout if provided
+            client = self.client
+            if timeout:
+                client = httpx.AsyncClient(timeout=timeout)
+            
+            response = await client.post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": actual_model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error(f"OpenRouter API error: {e}")
+            raise
+
+    async def embedding(
+        self, text: str, model: str = "openai/text-embedding-ada-002"
+    ) -> List[float]:
+        """Generate embedding using OpenRouter."""
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/embeddings",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={"model": model, "input": text},
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["data"][0]["embedding"]
+        except Exception as e:
+            logger.error(f"OpenRouter embedding error: {e}")
+            raise
+
+
+class MoonshotAIProvider(LLMProvider):
+    """Moonshot AI (Kimi) provider (OpenAI-compatible)."""
+
+    def __init__(self, api_key: str, model: str = "moonshot-v1-8k"):
+        # Moonshot AI API endpoint
+        super().__init__(api_key, "https://api.moonshot.cn/v1")
+        self.model = model
+
+    async def chat_completion(
+        self,
+        messages: List[Dict[str, str]],
+        model: str = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        timeout: Optional[float] = None,
+    ) -> str:
+        """Generate chat completion using Moonshot AI (Kimi)."""
+        try:
+            # Use provided model or default from initialization
+            actual_model = model or self.model
+            
+            # Use custom timeout if provided
+            client = self.client
+            if timeout:
+                client = httpx.AsyncClient(timeout=timeout)
+            
+            response = await client.post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": actual_model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error(f"Moonshot AI API error: {e}")
+            raise
+
+    async def embedding(
+        self, text: str, model: str = "moonshot-embedding"
+    ) -> List[float]:
+        """Generate embedding using Moonshot AI."""
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/embeddings",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={"model": model, "input": text},
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["data"][0]["embedding"]
+        except Exception as e:
+            logger.error(f"Moonshot AI embedding error: {e}")
+            raise
+
+
+class NVIDIAProvider(LLMProvider):
+    """NVIDIA AI Foundation Models provider (OpenAI-compatible)."""
+
+    def __init__(self, api_key: str, model: str = "meta/llama-3.1-405b-instruct"):
+        # NVIDIA API endpoint
+        super().__init__(api_key, "https://integrate.api.nvidia.com/v1")
+        self.model = model
+
+    async def chat_completion(
+        self,
+        messages: List[Dict[str, str]],
+        model: str = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        timeout: Optional[float] = None,
+    ) -> str:
+        """Generate chat completion using NVIDIA API."""
+        try:
+            # Use provided model or default from initialization
+            actual_model = model or self.model
+            
+            # Use custom timeout if provided
+            client = self.client
+            if timeout:
+                client = httpx.AsyncClient(timeout=timeout)
+            
+            response = await client.post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": actual_model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error(f"NVIDIA API error: {e}")
+            raise
+
+    async def embedding(
+        self, text: str, model: str = "nvidia/nv-embedqa-e5-v5"
+    ) -> List[float]:
+        """Generate embedding using NVIDIA API."""
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/embeddings",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={"model": model, "input": text},
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["data"][0]["embedding"]
+        except Exception as e:
+            logger.error(f"NVIDIA embedding error: {e}")
+            raise
+
+
 class LLMFactory:
     """Factory for creating LLM providers."""
 
@@ -234,6 +458,9 @@ class LLMFactory:
             "zhipu": ZhipuAIProvider,
             "claude": ClaudeProvider,
             "openai": OpenAIProvider,
+            "nvidia": NVIDIAProvider,
+            "moonshot": MoonshotAIProvider,
+            "openrouter": OpenRouterProvider,
         }
 
         provider_class = providers.get(provider_type.lower())
@@ -243,22 +470,86 @@ class LLMFactory:
         return provider_class(api_key)
 
     @staticmethod
+    def create_provider_for_model(model_id: str, provider_type: str) -> LLMProvider:
+        """Create LLM provider for a specific model."""
+        from core.config import settings
+
+        # Map provider type to API key setting
+        provider_key_map = {
+            "anthropic": ("anthropic_api_key", None),
+            "zhipu": ("zhipu_api_key", "zhipu_model"),
+            "openai": ("openai_api_key", None),
+            "nvidia": ("nvidia_api_key", "nvidia_model"),
+            "moonshot": ("moonshot_api_key", "moonshot_model"),
+            "openrouter": ("openrouter_api_key", "openrouter_model"),
+        }
+
+        if provider_type.lower() not in provider_key_map:
+            raise ValueError(f"Unknown provider: {provider_type}")
+
+        key_setting, model_setting = provider_key_map[provider_type.lower()]
+        api_key = getattr(settings, key_setting, None)
+
+        if not api_key:
+            raise ValueError(f"No API key configured for provider: {provider_type}")
+
+        # Create provider with model if needed
+        providers = {
+            "anthropic": ClaudeProvider,
+            "zhipu": ZhipuAIProvider,
+            "openai": OpenAIProvider,
+            "nvidia": NVIDIAProvider,
+            "moonshot": MoonshotAIProvider,
+            "openrouter": OpenRouterProvider,
+        }
+
+        provider_class = providers.get(provider_type.lower())
+        if not provider_class:
+            raise ValueError(f"Unknown provider: {provider_type}")
+
+        # Some providers need model in constructor
+        if provider_type.lower() in ["zhipu", "nvidia", "moonshot", "openrouter"]:
+            return provider_class(api_key, model_id)
+        else:
+            return provider_class(api_key)
+
+    @staticmethod
     def create_from_config() -> Optional[LLMProvider]:
         """Create provider from configuration."""
-        ai_provider = getattr(settings, "AI_PROVIDER", "zhipu")
+        ai_provider = getattr(settings, "ai_provider", "zhipu")
 
         if ai_provider == "zhipu":
-            api_key = getattr(settings, "ZHIPU_API_KEY", None)
+            api_key = getattr(settings, "zhipu_api_key", None)
             if api_key:
-                return ZhipuAIProvider(api_key)
+                zhipu_model = getattr(settings, "zhipu_model", "glm-4")
+                return ZhipuAIProvider(api_key, zhipu_model)
         elif ai_provider == "claude":
-            api_key = getattr(settings, "ANTHROPIC_API_KEY", None)
+            api_key = getattr(settings, "anthropic_api_key", None)
             if api_key:
                 return ClaudeProvider(api_key)
         elif ai_provider == "openai":
-            api_key = getattr(settings, "OPENAI_API_KEY", None)
+            api_key = getattr(settings, "openai_api_key", None)
             if api_key:
                 return OpenAIProvider(api_key)
+        elif ai_provider == "nvidia":
+            api_key = getattr(settings, "nvidia_api_key", None)
+            if api_key:
+                nvidia_model = getattr(
+                    settings, "nvidia_model", "meta/llama-3.1-405b-instruct"
+                )
+                return NVIDIAProvider(api_key, nvidia_model)
+        elif ai_provider == "moonshot":
+            api_key = getattr(settings, "moonshot_api_key", None)
+            if api_key:
+                moonshot_model = getattr(settings, "moonshot_model", "moonshot-v1-8k")
+                return MoonshotAIProvider(api_key, moonshot_model)
+        elif ai_provider == "openrouter":
+            api_key = getattr(settings, "openrouter_api_key", None)
+            if api_key:
+                openrouter_model = getattr(
+                    settings, "openrouter_model", "moonshotai/kimi-k2.5"
+                )
+                return OpenRouterProvider(api_key, openrouter_model)
 
         logger.warning(f"No API key found for provider: {ai_provider}")
         return None

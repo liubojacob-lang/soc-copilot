@@ -30,6 +30,7 @@ class DAGScheduler:
         run_id: str,
         compiled_dag: dict[str, Any],
         input_context: dict[str, Any],
+        mode: str = "apply",
         failure_strategy: str = "fail_fast",
         created_by_user_id: Optional[str] = None,
     ):
@@ -37,6 +38,7 @@ class DAGScheduler:
         self.run_id = run_id
         self.compiled_dag = compiled_dag
         self.input_context = input_context
+        self.mode = mode
         self.failure_strategy = failure_strategy
         self.created_by_user_id = created_by_user_id
 
@@ -209,8 +211,11 @@ class DAGScheduler:
                 if source_id in self.node_outputs:
                     parent_outputs[source_id] = self.node_outputs[source_id]
             
-            # Build input from original context + parent outputs
-            input_json = dict(self.input_context)
+            # Build input from node config + original context + parent outputs
+            # Priority: node config < run input < parent outputs
+            node_config = node_def.get("config", {}) if isinstance(node_def, dict) else {}
+            input_json = dict(node_config)
+            input_json.update(self.input_context)
             input_json.update(parent_outputs)
             
             # Validate input if plugin supports it
@@ -226,7 +231,7 @@ class DAGScheduler:
                 node_id=node_id,
                 node_name=node_name,
                 input_json=input_json,
-                mode="dry_run",  # Could be passed from run config
+                mode=self.mode,
                 secrets=secrets,
                 context={
                     "node_outputs": self.node_outputs,

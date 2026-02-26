@@ -147,3 +147,37 @@ Respond with JSON that matches the schema above:"""
 
 
 ai_service = AIService()
+
+
+# -------- P2 Extension Interfaces (backward-compatible additions) --------
+class IncidentAnalysisRequest(BaseModel):
+    incident_id: str
+    title: str
+    summary: str
+    indicators: list[str] = []
+    raw_events: list[dict] = []
+
+
+class IncidentAnalysisResult(BaseModel):
+    incident_id: str
+    risk_score: float
+    root_cause: str
+    recommendations: list[str] = []
+    confidence: float = 0.0
+
+
+class AIIncidentAnalyzer:
+    """Adapter interface for future LLM-backed incident analysis providers."""
+
+    async def analyze_incident(self, request: IncidentAnalysisRequest) -> IncidentAnalysisResult:
+        raise NotImplementedError
+
+
+class VectorStoreProvider:
+    """Extension point for vector DB integrations (pgvector/milvus/faiss/etc)."""
+
+    async def upsert_documents(self, namespace: str, documents: list[dict]) -> None:
+        raise NotImplementedError
+
+    async def similarity_search(self, namespace: str, query: str, top_k: int = 5) -> list[dict]:
+        raise NotImplementedError

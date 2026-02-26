@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "title": "SOC Copilot - Security Operations Center",
+    "description": "AI-powered security operations center platform"
+  },
+  "common": {
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "export": "Export",
+    "import": "Import",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "open": "Open",
+    "view": "View",
+    "actions": "Actions"
+  },
+  "nav": {
+    "home": "Home",
+    "runs": "Playbooks",
+    "ai": "AI Assistant",
+    "alerts": "Alerts",
+    "reports": "Reports",
+    "threatIntel": "Threat Intel",
+    "admin": "Admin",
+    "settings": "Settings"
+  },
+  "home": {
+    "title": "SOC Copilot",
+    "subtitle": "Security Operations Center",
+    "tabs": {
+      "alertAnalyzer": "Alert Analyzer",
+      "timelineBuilder": "Timeline Builder",
+      "reportWriter": "Report Writer",
+      "assets": "Assets"
+    }
+  },
+  "login": {
+    "title": "Sign In",
+    "subtitle": "Enter your credentials",
+    "username": "Username",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "error": "Invalid credentials",
+    "devMode": "Dev Mode"
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Manage user accounts and permissions",
+    "createUser": "Add User",
+    "editUser": "Edit User",
+    "deleteUser": "Delete User",
+    "search": "Search users...",
+    "role": "Role",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "actions": "Actions"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "settings": "Settings",
+    "auditLogs": "Audit Logs",
+    "systemHealth": "System Health",
+    "apiKeys": "API Keys"
+  },
+  "errors": {
+    "accessDenied": "Access Denied",
+    "accessDeniedMessage": "You don't have permission to access this page.",
+    "unauthorized": "Unauthorized",
+    "pageNotFound": "Page Not Found",
+    "serverError": "Server Error"
+  },
+  "playbooks": {
+    "title": "Playbooks",
+    "execute": "Execute",
+    "history": "Run History",
+    "dag": "DAG Visualization",
+    "create": "Create Playbook",
+    "edit": "Edit Playbook",
+    "delete": "Delete Playbook",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "filter": "Filter Alerts",
+    "assign": "Assign",
+    "status": "Status",
+    "severity": "Severity",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical",
+    "open": "Open",
+    "investigating": "Investigating",
+    "resolved": "Resolved",
+    "closed": "Closed"
+  },
+  "reports": {
+    "title": "Reports",
+    "generate": "Generate Report",
+    "download": "Download",
+    "history": "Report History",
+    "templates": "Templates",
+    "sharing": "Sharing",
+    "format": "Format",
+    "pdf": "PDF",
+    "html": "HTML",
+    "json": "JSON",
+    "csv": "CSV"
+  },
+  "ai": {
+    "title": "AI Assistant",
+    "sendMessage": "Send",
+    "clear": "Clear",
+    "typing": "AI is typing...",
+    "error": "AI service error",
+    "quickActions": "Quick Actions",
+    "analyzeAlert": "Analyze Alert",
+    "extractIOCs": "Extract IOCs",
+    "suggestPlaybooks": "Suggest Playbooks"
+  },
+  "threatIntel": {
+    "title": "Threat Intelligence",
+    "query": "Query IOC",
+    "cache": "Cache Management",
+    "ipAddress": "IP Address",
+    "domain": "Domain",
+    "url": "URL",
+    "hash": "File Hash",
+    "pulse": "OTX Pulse",
+    "threatLevel": "Threat Level"
+  }
+}

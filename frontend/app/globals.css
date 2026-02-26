@@ -6,6 +6,22 @@
   --foreground-rgb: 15, 23, 42;
   --background-start-rgb: 248, 250, 252;
   --background-end-rgb: 255, 255, 255;
+  
+  /* Responsive spacing tokens */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  
+  /* Touch target size (minimum 44px for accessibility) */
+  --touch-target-min: 44px;
+  
+  /* Safe area insets for mobile devices */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
 }
 
 body {
@@ -16,10 +32,349 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  
+  /* Enable smooth scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  
+  /* Prevent text size adjustment on orientation change */
+  -webkit-text-size-adjust: 100%;
+  
+  /* Improve text rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mobile-first responsive base styles */
+@layer base {
+  /* Ensure proper box sizing */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  
+  /* Remove default margins */
+  html, body, h1, h2, h3, h4, h5, h6, p, ul, ol, figure {
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Responsive typography scale */
+  html {
+    font-size: 14px;
+  }
+  
+  @media (min-width: 640px) {
+    html {
+      font-size: 15px;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16px;
+    }
+  }
+  
+  /* Improve form element appearance on mobile */
+  input, button, textarea, select {
+    font: inherit;
+  }
+  
+  button {
+    cursor: pointer;
+  }
+  
+  /* Remove tap highlight on mobile */
+  button, a, input, textarea, select {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* Hide scrollbar by default, show on hover */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-hide:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+  }
+  
+  .dark .scrollbar-hide:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 85, 99, 0.5);
+  }
+  
+  /* Custom lighter scrollbar - always visible but subtle */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.3);
+    border-radius: 2px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.5);
+  }
+  
+  .dark .custom-scrollbar {
+    scrollbar-color: rgba(75, 85, 99, 0.3) transparent;
+  }
+  
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 85, 99, 0.3);
+  }
+  
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(75, 85, 99, 0.5);
+  }
+  
+  /* Mobile-specific utilities */
+  .touch-target {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+  
+  .safe-area-top {
+    padding-top: var(--safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+  
+  .safe-area-left {
+    padding-left: var(--safe-area-inset-left);
+  }
+  
+  .safe-area-right {
+    padding-right: var(--safe-area-inset-right);
+  }
+  
+  /* Prevent overscroll bounce on iOS */
+  .overscroll-none {
+    overscroll-behavior: none;
+  }
+  
+  /* Touch manipulation for better touch response */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  /* Hide on mobile */
+  @media (max-width: 639px) {
+    .hide-on-mobile {
+      display: none !important;
+    }
+  }
+  
+  /* Hide on tablet */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .hide-on-tablet {
+      display: none !important;
+    }
+  }
+  
+  /* Hide on desktop */
+  @media (min-width: 1024px) {
+    .hide-on-desktop {
+      display: none !important;
+    }
+  }
+  
+  /* Show only on mobile */
+  @media (min-width: 640px) {
+    .show-on-mobile {
+      display: none !important;
+    }
+  }
+  
+  /* Show only on tablet */
+  @media not all and (min-width: 640px) and (max-width: 1023px) {
+    .show-on-tablet {
+      display: none !important;
+    }
+  }
+  
+  /* Show only on desktop */
+  @media (max-width: 1023px) {
+    .show-on-desktop {
+      display: none !important;
+    }
+  }
+}
+
+/* Component-level responsive styles */
+@layer components {
+  /* Responsive card */
+  .card-responsive {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700;
+    @apply p-3 sm:p-4 md:p-6;
+  }
+  
+  /* Responsive button */
+  .btn-responsive {
+    @apply inline-flex items-center justify-center font-medium rounded-md;
+    @apply px-3 py-2 text-sm;
+    @apply sm:px-4 sm:py-2;
+    @apply md:px-6 md:py-2.5 md:text-base;
+    @apply touch-manipulation;
+  }
+  
+  /* Responsive input */
+  .input-responsive {
+    @apply w-full rounded-md border border-gray-300 dark:border-gray-600;
+    @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+    @apply px-3 py-2 text-sm;
+    @apply sm:px-4 sm:py-2;
+    @apply focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    @apply touch-manipulation;
+  }
+  
+  /* Responsive table container */
+  .table-container-responsive {
+    @apply overflow-x-auto -mx-3 sm:mx-0;
+    @apply overscroll-none;
+  }
+  
+  /* Responsive modal */
+  .modal-responsive {
+    @apply fixed inset-0 z-50 flex items-end sm:items-center justify-center;
+    @apply p-0 sm:p-4;
+  }
+  
+  .modal-content-responsive {
+    @apply bg-white dark:bg-gray-800 w-full max-h-[90vh] overflow-y-auto;
+    @apply rounded-t-2xl sm:rounded-lg;
+    @apply max-w-lg;
+  }
+  
+  /* Responsive navigation */
+  .nav-responsive {
+    @apply h-14 sm:h-16;
+    @apply px-2 sm:px-4;
+  }
+  
+  /* Responsive sidebar */
+  .sidebar-responsive {
+    @apply fixed inset-y-0 left-0 z-40;
+    @apply w-64 sm:w-72 md:w-80;
+    @apply transform -translate-x-full transition-transform duration-300;
+    @apply lg:translate-x-0 lg:static lg:w-64;
+  }
+  
+  .sidebar-responsive.open {
+    @apply translate-x-0;
+  }
+  
+  /* Responsive grid layouts */
+  .grid-responsive {
+    @apply grid gap-3 sm:gap-4 md:gap-6;
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  .grid-responsive-2 {
+    @apply grid gap-3 sm:gap-4 md:gap-6;
+    @apply grid-cols-1 md:grid-cols-2;
+  }
+  
+  .grid-responsive-3 {
+    @apply grid gap-3 sm:gap-4 md:gap-6;
+    @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+  
+  /* Responsive text sizes */
+  .text-responsive-sm {
+    @apply text-xs sm:text-sm md:text-base;
+  }
+  
+  .text-responsive-base {
+    @apply text-sm sm:text-base md:text-lg;
+  }
+  
+  .text-responsive-lg {
+    @apply text-base sm:text-lg md:text-xl;
+  }
+  
+  .text-responsive-xl {
+    @apply text-lg sm:text-xl md:text-2xl;
+  }
+  
+  /* Responsive spacing */
+  .spacing-responsive {
+    @apply p-3 sm:p-4 md:p-6 lg:p-8;
+  }
+  
+  .spacing-responsive-sm {
+    @apply p-2 sm:p-3 md:p-4;
+  }
+  
+  /* Responsive margin */
+  .margin-responsive {
+    @apply m-3 sm:m-4 md:m-6 lg:m-8;
+  }
+  
+  /* Responsive gap */
+  .gap-responsive {
+    @apply gap-2 sm:gap-3 md:gap-4 lg:gap-6;
+  }
+
+  /* Slow spin animation for polling indicator */
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  /* Toast animation */
+  @keyframes slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
   }
 }

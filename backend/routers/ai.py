@@ -3,11 +3,13 @@ AI Service Router - API endpoints for SOC Copilot AI features
 """
 
 import logging
+from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
@@ -85,15 +87,20 @@ class PlaybookRecommendationResponse(BaseModel):
 class ChatMessage(BaseModel):
     """Chat message."""
 
-    role: str = Field(..., regex="^(user|assistant|system)$")
+    role: str = Field(..., pattern="^(user|assistant|system)$")
     content: str
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class ChatRequest(BaseModel):
     """Request for chat."""
 
     message: str
+    model_id: Optional[str] = None
     conversation_history: Optional[List[ChatMessage]] = None
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class ChatResponse(BaseModel):
@@ -103,12 +110,16 @@ class ChatResponse(BaseModel):
     response: str
     conversation_id: Optional[str] = None
 
+    model_config = ConfigDict(protected_namespaces=())
+
 
 class ReportGenerationRequest(BaseModel):
     """Request for report generation."""
 
     alert_id: str
     investigation_data: dict
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 @router.post("/analyze-alert", response_model=AlertAnalysisResponse)
@@ -141,8 +152,6 @@ async def analyze_alert(
         analysis = await ai_service.analyze_alert_with_rag(
             alert_data=alert_data, use_rag=request.use_rag
         )
-
-        from datetime import datetime
 
         return AlertAnalysisResponse(
             alert_id=request.alert_id,
@@ -177,15 +186,13 @@ async def natural_language_query(
 
         user_context = {
             "username": current_user.username,
-            "role": current_user.role.value,
+            "role": current_user.role,
             "user_id": str(current_user.id),
         }
 
         result = await ai_service.natural_language_query(
             query=request.query, user_context=user_context
         )
-
-        from datetime import datetime
 
         return NaturalLanguageQueryResponse(
             query=request.query,
@@ -248,8 +255,6 @@ async def recommend_playbooks(
             alert_data=alert_data, available_playbooks=available_playbooks
         )
 
-        from datetime import datetime
-
         return PlaybookRecommendationResponse(
             alert_id=request.alert_id,
             recommendations=recommendations,
@@ -268,12 +273,52 @@ async def recommend_playbooks(
 async def chat(
     request: ChatRequest,
     current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
 ):
     """
     Chat with SOC Copilot AI assistant.
     """
     try:
         ai_service = get_enhanced_ai_service()
+
+        # Get model to use
+        model_id = request.model_id
+        model_provider = None
+
+        if model_id:
+            # User specified a model - verify it exists and is enabled
+            from repositories.ai_model_repository import AIModelRepository
+            model_repo = AIModelRepository(db)
+            model = await model_repo.get_by_id(model_id)
+            if not model or not model.enabled:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Model {model_id} not found or not enabled",
+                )
+            model_provider = model.provider
+            logger.info(f"Using requested model: {model_id} (provider: {model_provider})")
+        else:
+            # Use user's default model
+            from repositories.ai_model_repository import AIUserSettingRepository, AIModelRepository
+            setting_repo = AIUserSettingRepository(db)
+            model_repo = AIModelRepository(db)
+
+            # Get user's preferred model
+            user_settings = await setting_repo.get_by_user_id(str(current_user.id))
+            user_model_id = user_settings.default_model_id if user_settings else None
+
+            if user_model_id:
+                model = await model_repo.get_by_id(user_model_id)
+                if model and model.enabled:
+                    model_id = user_model_id
+                    model_provider = model.provider
+                    logger.info(f"Using user's default model: {model_id}")
+
+            # If no user default, fall back to service default
+            if not model_id:
+                model_id = None
+                model_provider = None
+                logger.info(f"Using service default provider: {ai_service.provider}")
 
         # Convert ChatMessage to dict format
         history = None
@@ -283,23 +328,28 @@ async def chat(
                 for msg in request.conversation_history
             ]
 
-        # Get response (streaming simulation)
-        response_chunks = []
-        async for chunk in ai_service.chat_stream(
-            message=request.message, conversation_history=history
-        ):
-            response_chunks.append(chunk)
+        # Get complete response directly
+        logger.info(f"Processing chat request: {request.message[:50]}...")
+        full_response = await ai_service.chat(
+            message=request.message,
+            conversation_history=history,
+            model_id=model_id,
+            model_provider=model_provider,
+        )
+        logger.info(f"Chat response received: {len(full_response)} chars")
 
-        full_response = "".join(response_chunks)
+        conversation_id = None
+        if request.conversation_history and len(request.conversation_history) > 0:
+            conversation_id = request.conversation_history[0].content
 
         return ChatResponse(
             message=request.message,
             response=full_response,
-            conversation_id=request.conversation_history[0].content
-            if request.conversation_history
-            else None,
+            conversation_id=conversation_id,
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error in chat: {e}")
         raise HTTPException(
@@ -348,9 +398,33 @@ async def get_ai_status(
     try:
         ai_service = get_enhanced_ai_service()
 
+        # Check if AI service is properly initialized
+        if not ai_service._initialized:
+            logger.warning(
+                f"AI service not initialized. Provider: {ai_service.provider}"
+            )
+            return {
+                "status": "unavailable",
+                "provider": ai_service.provider,
+                "version": "2.0",
+                "error": "AI service not initialized - please check API key configuration",
+                "features": [],
+            }
+
+        # Verify LLM is available
+        if not ai_service.llm:
+            logger.warning(f"LLM provider is None for: {ai_service.provider}")
+            return {
+                "status": "unavailable",
+                "provider": ai_service.provider,
+                "version": "2.0",
+                "error": f"No LLM instance for provider: {ai_service.provider}",
+                "features": [],
+            }
+
         return {
-            "status": "available" if ai_service._initialized else "unavailable",
-            "provider": ai_service.provider if ai_service._initialized else None,
+            "status": "available",
+            "provider": ai_service.provider,
             "version": "2.0",
             "features": [
                 "alert_analysis",
@@ -362,5 +436,12 @@ async def get_ai_status(
         }
 
     except Exception as e:
+        import traceback
+
         logger.error(f"Error getting AI status: {e}")
-        return {"status": "error", "error": str(e)}
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "provider": getattr(settings, "ai_provider", "unknown"),
+        }

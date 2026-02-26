@@ -2,7 +2,7 @@
 
 import hashlib
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 from passlib.context import CryptContext
 from jose import JWTError, jwt
@@ -12,14 +12,25 @@ from core.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing with configurable bcrypt rounds
+# Development: 10 rounds (faster, ~100ms)
+# Production: 12 rounds (default, ~250ms)
+bcrypt_rounds = 10 if settings.environment == "development" else 12
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=bcrypt_rounds
+)
 
-# JWT settings
-JWT_SECRET = settings.jwt_secret
+# JWT settings - always use fresh settings.jwt_secret, not cached constant
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_expire_minutes
 REFRESH_TOKEN_EXPIRE_MINUTES = settings.jwt_refresh_expire_minutes
+
+# Helper function to get JWT secret dynamically
+def get_jwt_secret() -> str:
+    """Get current JWT secret from settings."""
+    return settings.jwt_secret
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -35,37 +46,58 @@ def get_password_hash(password: str) -> str:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
+    now = datetime.now(UTC)
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire, "type": "access"})
-    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, get_jwt_secret(), algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
 
 def create_refresh_token(data: dict) -> str:
     """Create a JWT refresh token."""
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(UTC) + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire, "type": "refresh"})
-    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, get_jwt_secret(), algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
 
 def decode_token(token: str) -> Optional[dict]:
     """Decode and validate a JWT token."""
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
         return payload
     except JWTError as e:
         logger.debug(f"Token decode failed: {e}")
         return None
 
 
+# API Key hashing with salt - using bcrypt for security
 def hash_api_key(api_key: str) -> str:
-    """Hash an API key for storage."""
-    return hashlib.sha256(api_key.encode()).hexdigest()
+    """Hash an API key for storage using bcrypt (version 2).
+    
+    For backward compatibility, also supports legacy SHA256 (version 1).
+    New keys always use bcrypt.
+    """
+    # Use bcrypt for new keys (prefix with 'v2:' to identify)
+    return f"v2:{pwd_context.hash(api_key)}"
+
+
+def verify_api_key(plain_api_key: str, hashed_api_key: str) -> bool:
+    """Verify an API key against its hash.
+    
+    Supports both legacy SHA256 (v1) and new bcrypt (v2) hashes.
+    """
+    if hashed_api_key.startswith("v2:"):
+        # New bcrypt hash
+        return pwd_context.verify(plain_api_key, hashed_api_key[3:])
+    else:
+        # Legacy SHA256 hash - for backward compatibility
+        legacy_hash = hashlib.sha256(plain_api_key.encode()).hexdigest()
+        return legacy_hash == hashed_api_key
 
 
 def generate_api_key() -> str:

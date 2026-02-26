@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "title": "SOC Copilot - 安全运营中心",
+    "description": "AI驱动的安全运营中心平台"
+  },
+  "common": {
+    "search": "搜索",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "export": "导出",
+    "import": "导入",
+    "submit": "提交",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "close": "关闭",
+    "open": "打开",
+    "view": "查看",
+    "actions": "操作"
+  },
+  "nav": {
+    "home": "首页",
+    "runs": "剧本",
+    "ai": "AI助手",
+    "alerts": "告警",
+    "reports": "报告",
+    "threatIntel": "威胁情报",
+    "admin": "管理",
+    "settings": "设置"
+  },
+  "home": {
+    "title": "SOC Copilot",
+    "subtitle": "安全运营中心",
+    "tabs": {
+      "alertAnalyzer": "告警分析器",
+      "timelineBuilder": "时间线构建器",
+      "reportWriter": "报告编写器",
+      "assets": "资产管理"
+    }
+  },
+  "login": {
+    "title": "登录",
+    "subtitle": "输入您的凭据",
+    "username": "用户名",
+    "password": "密码",
+    "signIn": "登录",
+    "signingIn": "登录中...",
+    "error": "凭据无效",
+    "devMode": "开发模式"
+  },
+  "users": {
+    "title": "用户",
+    "subtitle": "管理用户账户和权限",
+    "createUser": "添加用户",
+    "editUser": "编辑用户",
+    "deleteUser": "删除用户",
+    "search": "搜索用户...",
+    "role": "角色",
+    "status": "状态",
+    "active": "活跃",
+    "inactive": "未激活",
+    "actions": "操作"
+  },
+  "admin": {
+    "title": "管理面板",
+    "settings": "设置",
+    "auditLogs": "审计日志",
+    "systemHealth": "系统健康",
+    "apiKeys": "API密钥"
+  },
+  "errors": {
+    "accessDenied": "访问被拒绝",
+    "accessDeniedMessage": "您没有权限访问此页面。",
+    "unauthorized": "未授权",
+    "pageNotFound": "页面未找到",
+    "serverError": "服务器错误"
+  },
+  "playbooks": {
+    "title": "剧本",
+    "execute": "执行",
+    "history": "运行历史",
+    "dag": "DAG可视化",
+    "create": "创建剧本",
+    "edit": "编辑剧本",
+    "delete": "删除剧本",
+    "running": "运行中",
+    "completed": "已完成",
+    "failed": "失败"
+  },
+  "alerts": {
+    "title": "告警",
+    "filter": "筛选告警",
+    "assign": "分配",
+    "status": "状态",
+    "severity": "严重级别",
+    "low": "低",
+    "medium": "中",
+    "high": "高",
+    "critical": "严重",
+    "open": "开放",
+    "investigating": "调查中",
+    "resolved": "已解决",
+    "closed": "已关闭"
+  },
+  "reports": {
+    "title": "报告",
+    "generate": "生成报告",
+    "download": "下载",
+    "history": "报告历史",
+    "templates": "模板",
+    "sharing": "分享",
+    "format": "格式",
+    "pdf": "PDF",
+    "html": "HTML",
+    "json": "JSON",
+    "csv": "CSV"
+  },
+  "ai": {
+    "title": "AI助手",
+    "sendMessage": "发送",
+    "clear": "清除",
+    "typing": "AI正在输入...",
+    "error": "AI服务错误",
+    "quickActions": "快速操作",
+    "analyzeAlert": "分析告警",
+    "extractIOCs": "提取IOC",
+    "suggestPlaybooks": "推荐剧本"
+  },
+  "threatIntel": {
+    "title": "威胁情报",
+    "query": "查询IOC",
+    "cache": "缓存管理",
+    "ipAddress": "IP地址",
+    "domain": "域名",
+    "url": "URL",
+    "hash": "文件哈希",
+    "pulse": "OTX Pulse",
+    "threatLevel": "威胁级别"
+  }
+}

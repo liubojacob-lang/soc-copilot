@@ -1,0 +1,10 @@
+{
+  "title": "SOC Backend Overview",
+  "panels": [
+    {"title": "API RPS", "type": "timeseries", "targets": [{"expr": "sum(rate(soc_api_requests_total[1m]))"}]},
+    {"title": "P95 API Latency", "type": "timeseries", "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(soc_api_request_duration_seconds_bucket[5m])))"}]},
+    {"title": "Queue Lag", "type": "timeseries", "targets": [{"expr": "max by (stream) (soc_queue_lag)"}]},
+    {"title": "Playbook Runs", "type": "timeseries", "targets": [{"expr": "sum by (status) (rate(soc_playbook_runs_total[5m]))"}]},
+    {"title": "Correlation Hits", "type": "timeseries", "targets": [{"expr": "sum by (rule_id) (rate(soc_correlation_rule_hit_total[5m]))"}]}
+  ]
+}

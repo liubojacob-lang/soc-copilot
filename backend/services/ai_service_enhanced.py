@@ -79,8 +79,8 @@ class EnhancedAIService:
     """Enhanced AI service with RAG capabilities."""
 
     def __init__(self):
-        self.max_retries = getattr(settings, "MAX_RETRIES", 2)
-        self.provider = getattr(settings, "AI_PROVIDER", "zhipu").lower()
+        self.max_retries = getattr(settings, "max_retries", 3)
+        self.provider = getattr(settings, "ai_provider", "zhipu").lower()
         self.llm: Optional[LLMProvider] = None
         self._initialized = False
 
@@ -121,6 +121,7 @@ User Input:
 
 Respond with JSON that matches the schema above:"""
 
+        content = None
         for attempt in range(self.max_retries + 1):
             try:
                 content = await self.llm.chat_completion(
@@ -138,12 +139,20 @@ Respond with JSON that matches the schema above:"""
                 # Type coercion for integer fields
                 if "properties" in schema:
                     for field_name, field_def in schema["properties"].items():
-                        if field_name in data:
-                            if field_def.get("type") == "integer" and isinstance(
+                        if field_name in data and isinstance(field_def, dict):
+                            field_type = field_def.get("type")
+                            # Handle anyOf (optional fields) - get the first non-null type
+                            if field_type is None and "anyOf" in field_def:
+                                for anyof_item in field_def["anyOf"]:
+                                    if anyof_item.get("type") != "null":
+                                        field_type = anyof_item.get("type")
+                                        break
+
+                            if field_type == "integer" and isinstance(
                                 data[field_name], float
                             ):
                                 data[field_name] = int(data[field_name])
-                            elif field_def.get("type") == "array" and not isinstance(
+                            elif field_type == "array" and not isinstance(
                                 data[field_name], list
                             ):
                                 data[field_name] = []
@@ -153,7 +162,8 @@ Respond with JSON that matches the schema above:"""
             except (ValidationError, json.JSONDecodeError) as e:
                 logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
                 if attempt == self.max_retries:
-                    logger.error(f"Failed to parse content: {content[:500]}...")
+                    error_msg = f"Failed to parse content: {content[:500] if content else 'empty'}..."
+                    logger.error(error_msg)
                     raise ValueError(
                         f"Failed to get valid JSON after {self.max_retries + 1} attempts"
                     )
@@ -161,6 +171,8 @@ Respond with JSON that matches the schema above:"""
             except Exception as e:
                 logger.error(f"AI service error: {str(e)}")
                 raise
+
+        raise RuntimeError("Unexpected end of generate_structured")
 
     async def analyze_alert_with_rag(
         self, alert_data: Dict[str, Any], use_rag: bool = True
@@ -280,11 +292,14 @@ Parse the query and extract:
                 user_prompt += f"\nUser: {user_context.get('username', 'unknown')}"
                 user_prompt += f"\nRole: {user_context.get('role', 'unknown')}"
 
-            return await self.generate_structured(
+            result = await self.generate_structured(
                 prompt=user_prompt,
                 response_model=NaturalLanguageQueryResult,
                 system_prompt=system_prompt,
             )
+
+            logger.info(f"Natural language query result: intent={result.intent}")
+            return result
 
         except Exception as e:
             logger.error(f"Error processing natural language query: {e}")
@@ -355,22 +370,39 @@ Provide your recommendations:"""
             logger.error(f"Error recommending playbooks: {e}")
             return []
 
-    async def chat_stream(
-        self, message: str, conversation_history: Optional[List[Dict[str, str]]] = None
-    ) -> AsyncGenerator[str, None]:
+    async def chat(
+        self,
+        message: str,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+        model_id: Optional[str] = None,
+        model_provider: Optional[str] = None,
+    ) -> str:
         """
-        Chat with AI assistant (streaming response).
+        Chat with AI assistant (non-streaming response).
 
         Args:
             message: User message
             conversation_history: Previous messages
+            model_id: Specific model ID to use (optional)
+            model_provider: Provider type for the model (optional)
 
-        Yields:
-            Response chunks
+        Returns:
+            Complete response string
         """
-        if not self.llm:
-            yield "I'm sorry, but the AI assistant is currently unavailable."
-            return
+        # Use specified model/provider if provided
+        llm = self.llm
+        if model_id and model_provider:
+            try:
+                llm = LLMFactory.create_provider_for_model(model_id, model_provider)
+                logger.info(f"Using model {model_id} from provider {model_provider}")
+            except Exception as e:
+                logger.error(f"Failed to create provider for model {model_id}: {e}")
+                if not self.llm:
+                    return "I'm sorry, but the AI assistant is currently unavailable."
+                llm = self.llm
+
+        if not llm:
+            return "I'm sorry, but the AI assistant is currently unavailable."
 
         try:
             system_prompt = """You are SOC Copilot, an AI assistant for security operations.
@@ -381,25 +413,25 @@ Be concise, professional, and helpful."""
 
             if conversation_history:
                 messages.extend(
-                    conversation_history[-5:]
-                )  # Keep last 5 messages for context
+                    conversation_history[-10:]
+                )  # Keep last 10 messages for context
 
             messages.append({"role": "user", "content": message})
 
-            # For non-streaming LLM, return complete response
-            response = await self.llm.chat_completion(
-                messages=messages, temperature=0.7, max_tokens=1500
+            # Get complete response
+            response = await llm.chat_completion(
+                messages=messages,
+                model=model_id,
+                temperature=0.5,
+                max_tokens=4096,
             )
 
-            # Simulate streaming by yielding chunks
-            chunk_size = 10
-            for i in range(0, len(response), chunk_size):
-                yield response[i : i + chunk_size]
-                await asyncio.sleep(0.01)  # Small delay for streaming effect
+            logger.info(f"Chat response length: {len(response)} chars")
+            return response
 
         except Exception as e:
             logger.error(f"Error in chat: {e}")
-            yield f"I'm sorry, I encountered an error: {str(e)}"
+            return f"I'm sorry, I encountered an error: {str(e)}"
 
     async def generate_investigation_report(
         self, alert_id: str, investigation_data: Dict[str, Any]

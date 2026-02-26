@@ -1,0 +1,174 @@
+{
+  "dashboard": {
+    "title": "SOC Copilot 安全告警中心",
+    "tags": ["soc", "security", "alerts"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "告警总数 (实时)",
+        "type": "stat",
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 6,
+          "h": 4
+        },
+        "targets": [
+          {
+            "expr": "count_over_time({job=\"soc-copilot\"}[1h])",
+            "refId": "A",
+            "legendFormat": "总数"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": null,
+                  "color": "green"
+                },
+                {
+                  "value": 10,
+                  "color": "yellow"
+                },
+                {
+                  "value": 50,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "高危告警趋势",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 6,
+          "y": 0,
+          "w": 12,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "count_over_time({job=\"soc-copilot\", level=\"critical\"}[5m])",
+            "refId": "A",
+            "legendFormat": "严重"
+          },
+          {
+            "expr": "count_over_time({job=\"soc-copilot\", level=\"high\"}[5m])",
+            "refId": "B",
+            "legendFormat": "高危"
+          },
+          {
+            "expr": "count_over_time({job=\"soc-copilot\", level=\"medium\"}[5m])",
+            "refId": "C",
+            "legendFormat": "中等"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "告警类型分布",
+        "type": "piechart",
+        "gridPos": {
+          "x": 0,
+          "y": 8,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "count by (event_type) ({job=\"soc-copilot\"})",
+            "refId": "A",
+            "legendFormat": "{{event_type}}"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "最新告警列表",
+        "type": "logs",
+        "gridPos": {
+          "x": 8,
+          "y": 8,
+          "w": 16,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "{job=\"soc-copilot\"}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showTime": true,
+          "showLabels": true,
+          "wrapLogMessage": false,
+          "sortOrder": "Descending",
+          "dedupStrategy": "none",
+          "enableLogDetails": true
+        }
+      },
+      {
+        "id": 5,
+        "title": "Top 源 IP",
+        "type": "table",
+        "gridPos": {
+          "x": 0,
+          "y": 16,
+          "w": 12,
+          "h": 6
+        },
+        "targets": [
+          {
+            "expr": "count by (source_ip) ({job=\"soc-copilot\"})",
+            "refId": "A",
+            "legendFormat": "{{source_ip}}"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "sortByName"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Top 攻击类型",
+        "type": "bargauge",
+        "gridPos": {
+          "x": 12,
+          "y": 16,
+          "w": 12,
+          "h": 6
+        },
+        "targets": [
+          {
+            "expr": "count by (event_type) ({job=\"soc-copilot\"})",
+            "refId": "A"
+          }
+        ]
+      }
+    ]
+  },
+  "overwrite": true
+}

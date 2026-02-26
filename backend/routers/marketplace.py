@@ -32,7 +32,7 @@ class PlaybookSearchRequest(BaseModel):
     tags: Optional[List[str]] = None
     min_rating: Optional[float] = Field(None, ge=0, le=5)
     verified_only: bool = False
-    sort_by: str = Field(default="rating", regex="^(rating|downloads|newest)$")
+    sort_by: str = Field(default="rating", pattern="^(rating|downloads|newest)$")
 
 
 class PlaybookResponse(BaseModel):
@@ -83,7 +83,7 @@ async def search_playbooks(
     tags: Optional[str] = None,  # comma-separated
     min_rating: Optional[float] = None,
     verified_only: bool = False,
-    sort_by: str = Query(default="rating", regex="^(rating|downloads|newest)$"),
+    sort_by: str = Query(default="rating", pattern="^(rating|downloads|newest)$"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     current_user: UserModel = Depends(get_current_user),

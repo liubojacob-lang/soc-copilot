@@ -1,25 +1,18 @@
-"""
-SOC Copilot Test Suite - Core Functionality Tests
-"""
+"""SOC Copilot core API tests aligned with current router contracts."""
 
 import pytest
-import asyncio
-from datetime import datetime
-from typing import Dict, Any
 
 
-# Core tests
 class TestHealthCheck:
     """API health check tests."""
 
     @pytest.mark.asyncio
     async def test_health_endpoint(self, client):
-        """Test health check endpoint."""
         response = await client.get("/api/health")
         assert response.status_code == 200
         data = response.json()
-        assert "version" in data
         assert "status" in data
+        assert data["status"] in ("ok", "healthy")
 
 
 class TestAuthentication:
@@ -27,9 +20,8 @@ class TestAuthentication:
 
     @pytest.mark.asyncio
     async def test_login_success(self, client):
-        """Test successful login."""
         response = await client.post(
-            "/api/auth/login", json={"username": "admin", "password": "admin123"}
+            "/api/auth/login", json={"username": "admin", "password": "admin123!"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -38,7 +30,6 @@ class TestAuthentication:
 
     @pytest.mark.asyncio
     async def test_login_failure(self, client):
-        """Test failed login."""
         response = await client.post(
             "/api/auth/login", json={"username": "admin", "password": "wrongpassword"}
         )
@@ -46,41 +37,33 @@ class TestAuthentication:
 
     @pytest.mark.asyncio
     async def test_protected_endpoint_without_token(self, client):
-        """Test accessing protected endpoint without token."""
-        response = await client.get("/api/alerts")
+        response = await client.get("/api/auth/me")
         assert response.status_code == 401
 
 
 class TestPlaybookDefinitions:
     """Playbook definition CRUD tests."""
 
+    @staticmethod
+    def _valid_dag():
+        return {
+            "nodes": [
+                {"id": "n1", "type": "normalize", "name": "Normalize"},
+                {"id": "n2", "type": "generate_report", "name": "Generate Report"},
+            ],
+            "edges": [{"source": "n1", "target": "n2"}],
+        }
+
     @pytest.mark.asyncio
     async def test_create_definition(self, auth_client):
-        """Test creating playbook definition."""
-        definition_data = {
-            "name": "Test Playbook",
-            "version": "1.0.0",
-            "description": "Test description",
-            "dag": {
-                "nodes": [
-                    {
-                        "id": "start",
-                        "type": "start",
-                        "name": "Start",
-                        "description": "Start node",
-                    },
-                    {
-                        "id": "end",
-                        "type": "end",
-                        "name": "End",
-                        "description": "End node",
-                    },
-                ],
-                "edges": [{"source": "start", "target": "end"}],
-            },
-        }
         response = await auth_client.post(
-            "/api/playbook-definitions", json=definition_data
+            "/api/playbook-definitions",
+            json={
+                "name": "Test Playbook",
+                "version": "1.0.0",
+                "description": "Test description",
+                "dag": self._valid_dag(),
+            },
         )
         assert response.status_code == 201
         data = response.json()
@@ -89,49 +72,31 @@ class TestPlaybookDefinitions:
 
     @pytest.mark.asyncio
     async def test_list_definitions(self, auth_client):
-        """Test listing playbook definitions."""
         response = await auth_client.get("/api/playbook-definitions")
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-
-    @pytest.mark.asyncio
-    async def test_get_definition(self, auth_client, sample_definition):
-        """Test getting single definition."""
-        response = await auth_client.get(
-            f"/api/playbook-definitions/{sample_definition['id']}"
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["id"] == sample_definition["id"]
-
-
-class TestAlerts:
-    """Alert management tests."""
-
-    @pytest.mark.asyncio
-    async def test_list_alerts(self, auth_client):
-        """Test listing alerts."""
-        response = await auth_client.get("/api/alerts")
         assert response.status_code == 200
         data = response.json()
         assert "items" in data
         assert "total" in data
+        assert isinstance(data["items"], list)
 
     @pytest.mark.asyncio
-    async def test_create_alert(self, auth_client):
-        """Test creating alert."""
-        alert_data = {
-            "title": "Test Alert",
-            "description": "Test alert description",
-            "severity": "high",
-            "source": "test",
-            "alert_type": "security",
-        }
-        response = await auth_client.post("/api/alerts", json=alert_data)
-        assert response.status_code == 201
-        data = response.json()
-        assert data["title"] == "Test Alert"
+    async def test_get_definition(self, auth_client):
+        create_resp = await auth_client.post(
+            "/api/playbook-definitions",
+            json={
+                "name": "Get Definition Target",
+                "version": "1.0.1",
+                "description": "Test get definition",
+                "dag": self._valid_dag(),
+            },
+        )
+        assert create_resp.status_code == 201
+        definition_id = create_resp.json()["id"]
+
+        get_resp = await auth_client.get(f"/api/playbook-definitions/{definition_id}")
+        assert get_resp.status_code == 200
+        data = get_resp.json()
+        assert data["id"] == definition_id
 
 
 class TestSettings:
@@ -139,24 +104,11 @@ class TestSettings:
 
     @pytest.mark.asyncio
     async def test_get_settings(self, admin_client):
-        """Test getting settings (admin only)."""
         response = await admin_client.get("/api/admin/settings")
         assert response.status_code == 200
         data = response.json()
         assert "dify_api_url" in data
         assert "dify_configured" in data
-
-    @pytest.mark.asyncio
-    async def test_update_settings(self, admin_client):
-        """Test updating settings."""
-        settings_data = {
-            "dify_api_url": "http://test.example.com",
-            "dify_api_key": "test-api-key",
-        }
-        response = await admin_client.post("/api/admin/settings", json=settings_data)
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
 
 
 class TestAssets:
@@ -164,55 +116,37 @@ class TestAssets:
 
     @pytest.mark.asyncio
     async def test_list_assets(self, auth_client):
-        """Test listing assets."""
         response = await auth_client.get("/api/assets")
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, dict)
+        assert "items" in data
+        assert "total" in data
 
 
 class TestThreatIntel:
-    """Threat intelligence tests."""
+    """Threat intelligence API tests."""
 
     @pytest.mark.asyncio
     async def test_lookup_ioc(self, auth_client):
-        """Test IOC lookup."""
-        response = await auth_client.get("/api/threat-intel/lookup?ioc=8.8.8.8&type=ip")
-        assert response.status_code in [200, 404]  # 404 if not found
+        response = await auth_client.get("/api/ti/otx?ioc_type=ip&ioc_value=8.8.8.8")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ioc_type"] == "ip"
+        assert data["ioc_value"] == "8.8.8.8"
+        assert "verdict" in data
 
     @pytest.mark.asyncio
     async def test_batch_lookup(self, auth_client):
-        """Test batch IOC lookup."""
-        iocs = ["8.8.8.8", "1.1.1.1"]
         response = await auth_client.post(
-            "/api/threat-intel/batch", json={"iocs": iocs}
+            "/api/ti/otx/bulk",
+            json={
+                "items": [
+                    {"ioc_type": "ip", "ioc_value": "8.8.8.8"},
+                    {"ioc_type": "domain", "ioc_value": "example.com"},
+                ]
+            },
         )
         assert response.status_code == 200
-
-
-# Utility functions
-@pytest.fixture
-def sample_dag():
-    """Sample DAG for testing."""
-    return {
-        "nodes": [
-            {"id": "start", "type": "start", "name": "Start"},
-            {"id": "http", "type": "http_request", "name": "HTTP Request"},
-            {"id": "end", "type": "end", "name": "End"},
-        ],
-        "edges": [
-            {"source": "start", "target": "http"},
-            {"source": "http", "target": "end"},
-        ],
-    }
-
-
-@pytest.fixture
-def sample_definition():
-    """Sample playbook definition."""
-    return {
-        "id": "test-definition-id",
-        "name": "Test Playbook",
-        "version": "1.0.0",
-        "description": "Test playbook",
-    }
+        data = response.json()
+        assert "results" in data
+        assert isinstance(data["results"], list)

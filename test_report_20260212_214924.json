@@ -1,0 +1,108 @@
+{
+  "test_summary": {
+    "total_tests": 13,
+    "passed_tests": 7,
+    "failed_tests": 6,
+    "pass_rate": "53.8%",
+    "test_date": "2026-02-12T21:49:24.820981",
+    "test_environment": "development"
+  },
+  "test_results": [
+    {
+      "test_name": "服务健康检查",
+      "status": "PASS",
+      "details": "后端服务正常运行",
+      "duration": 0,
+      "timestamp": "2026-02-12T21:48:49.960874"
+    },
+    {
+      "test_name": "用户登录 - 正确密码",
+      "status": "PASS",
+      "details": "获取到 token: eyJhbGciOiJIUzI1NiIs...",
+      "duration": 0.24550294876098633,
+      "timestamp": "2026-02-12T21:48:50.206505"
+    },
+    {
+      "test_name": "用户登录 - 错误密码",
+      "status": "PASS",
+      "details": "正确返回 401 未授权",
+      "duration": 0.24517011642456055,
+      "timestamp": "2026-02-12T21:48:51.452338"
+    },
+    {
+      "test_name": "AI对话 - 基本问候",
+      "status": "PASS",
+      "details": "响应长度: 233, 关键词匹配: 3/3",
+      "duration": 3.7552738189697266,
+      "timestamp": "2026-02-12T21:48:56.208429"
+    },
+    {
+      "test_name": "AI对话 - 安全分析",
+      "status": "FAIL",
+      "details": "响应质量不达标，关键词匹配: 1/3",
+      "duration": 7.469200611114502,
+      "timestamp": "2026-02-12T21:49:03.677737"
+    },
+    {
+      "test_name": "AI对话 - 中文支持",
+      "status": "PASS",
+      "details": "响应长度: 279, 关键词匹配: 3/3",
+      "duration": 3.987090826034546,
+      "timestamp": "2026-02-12T21:49:07.664944"
+    },
+    {
+      "test_name": "告警分析 - 防火墙日志",
+      "status": "FAIL",
+      "details": "分析结果质量不足，输出匹配: 0/4",
+      "duration": 0.3879857063293457,
+      "timestamp": "2026-02-12T21:49:09.053462"
+    },
+    {
+      "test_name": "告警分析 - EDR 进程",
+      "status": "FAIL",
+      "details": "分析结果质量不足，输出匹配: 0/3",
+      "duration": 0.060108184814453125,
+      "timestamp": "2026-02-12T21:49:09.113674"
+    },
+    {
+      "test_name": "威胁情报 - ip: 8.8.8.8",
+      "status": "FAIL",
+      "details": "判定结果不合理: suspicious",
+      "duration": 1.0299932956695557,
+      "timestamp": "2026-02-12T21:49:11.144210"
+    },
+    {
+      "test_name": "威胁情报 - ip: 203.0.113.50",
+      "status": "FAIL",
+      "details": "判定结果不合理: unknown",
+      "duration": 0.01383519172668457,
+      "timestamp": "2026-02-12T21:49:11.158143"
+    },
+    {
+      "test_name": "威胁情报 - domain: google.com",
+      "status": "FAIL",
+      "details": "判定结果不合理: suspicious",
+      "duration": 1.6056325435638428,
+      "timestamp": "2026-02-12T21:49:12.763874"
+    },
+    {
+      "test_name": "威胁情报 - domain: malware-example.com",
+      "status": "PASS",
+      "details": "判定结果: suspicious",
+      "duration": 1.2572245597839355,
+      "timestamp": "2026-02-12T21:49:14.021192"
+    },
+    {
+      "test_name": "性能测试 - 并发AI对话",
+      "status": "PASS",
+      "details": "成功率: 100.0%, 平均响应时间: 8.80s",
+      "duration": 8.798431396484375,
+      "timestamp": "2026-02-12T21:49:23.820252"
+    }
+  ],
+  "verdict": "不通过",
+  "recommendations": [
+    "存在失败的测试用例，需要修复相关功能",
+    "失败项目: AI对话 - 安全分析, 告警分析 - 防火墙日志, 告警分析 - EDR 进程, 威胁情报 - ip: 8.8.8.8, 威胁情报 - ip: 203.0.113.50, 威胁情报 - domain: google.com"
+  ]
+}

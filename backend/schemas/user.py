@@ -1,6 +1,6 @@
 """Schemas for user operations."""
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -33,8 +33,7 @@ class UserInDB(UserBase):
     updated_at: str
     last_login_at: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserResponse(UserInDB):
@@ -54,6 +53,8 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     user: UserResponse
+    csrf_token: Optional[str] = None  # CSRF token for protected requests
+    must_change_password: Optional[bool] = False  # Force password change on first login
 
 
 class TokenRefresh(BaseModel):

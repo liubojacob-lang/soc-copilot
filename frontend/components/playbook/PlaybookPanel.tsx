@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { api, Platform, TimeRange, GeneratePlaybookQueriesResponse, GenerateRemediationActionsResponse } from "@/lib/api";
 
 const RISK_COLORS: Record<string, string> = {
@@ -23,6 +24,8 @@ interface PlaybookPanelProps {
 }
 
 export function PlaybookPanel({ historyId, iocs, module = "analyzer" }: PlaybookPanelProps) {
+  const t = useTranslations('playbookPanel');
+  const tCommon = useTranslations('common');
   const [tab, setTab] = useState<"queries" | "actions">("queries");
   const [platform, setPlatform] = useState<Platform>("splunk");
   const [timeRange, setTimeRange] = useState<TimeRange>("last_24h");
@@ -42,7 +45,7 @@ export function PlaybookPanel({ historyId, iocs, module = "analyzer" }: Playbook
 
   const handleGenerateQueries = async () => {
     if (!hasIOCs && !historyId) {
-      setError("No IOCs available for query generation");
+      setError(t('errors.noIOCs'));
       return;
     }
 
@@ -60,7 +63,7 @@ export function PlaybookPanel({ historyId, iocs, module = "analyzer" }: Playbook
       );
       setQueriesResponse(response);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to generate queries");
+      setError(e instanceof Error ? e.message : t('errors.generateQueriesFailed'));
     } finally {
       setLoading(false);
     }
@@ -68,7 +71,7 @@ export function PlaybookPanel({ historyId, iocs, module = "analyzer" }: Playbook
 
   const handleGenerateActions = async () => {
     if (!historyId) {
-      setError("History ID required for action generation");
+      setError(t('errors.noHistoryId'));
       return;
     }
 
@@ -80,7 +83,7 @@ export function PlaybookPanel({ historyId, iocs, module = "analyzer" }: Playbook
       const response = await api.generateRemediationActions(historyId, policy, true);
       setActionsResponse(response);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to generate actions");
+      setError(e instanceof Error ? e.message : t('errors.generateActionsFailed'));
     } finally {
       setLoading(false);
     }
@@ -111,7 +114,7 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
 
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-slate-700 mb-3">Playbook</h3>
+      <h3 className="text-sm font-semibold text-slate-700 mb-3">{t('title')}</h3>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-4">
@@ -123,7 +126,7 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
               : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-soc-300"
           }`}
         >
-          SIEM Queries
+          {t('tabs.queries')}
         </button>
         <button
           onClick={() => setTab("actions")}
@@ -136,7 +139,7 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
           }`}
           disabled={!historyId}
         >
-          Remediation Actions
+          {t('tabs.actions')}
         </button>
       </div>
 
@@ -151,27 +154,27 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
           {/* Query Controls */}
           <div className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Platform</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('queries.platform')}</label>
               <select
                 value={platform}
                 onChange={(e) => setPlatform(e.target.value as Platform)}
                 className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-soc-500"
               >
-                <option value="splunk">Splunk (SPL)</option>
-                <option value="elastic_kql">Elastic / Kibana (KQL)</option>
-                <option value="sentinel_kql">Microsoft Sentinel (KQL)</option>
+                <option value="splunk">{t('queries.platforms.splunk')}</option>
+                <option value="elastic_kql">{t('queries.platforms.elastic_kql')}</option>
+                <option value="sentinel_kql">{t('queries.platforms.sentinel_kql')}</option>
               </select>
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Time Range</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('queries.timeRange')}</label>
               <select
                 value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value as TimeRange)}
                 className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-soc-500"
               >
-                <option value="last_1h">Last 1 Hour</option>
-                <option value="last_24h">Last 24 Hours</option>
-                <option value="last_7d">Last 7 Days</option>
+                <option value="last_1h">{t('queries.timeRanges.last_1h')}</option>
+                <option value="last_24h">{t('queries.timeRanges.last_24h')}</option>
+                <option value="last_7d">{t('queries.timeRanges.last_7d')}</option>
               </select>
             </div>
             <button
@@ -179,7 +182,7 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
               disabled={loading || (!hasIOCs && !historyId)}
               className="px-4 py-2 bg-soc-600 text-white font-medium rounded-lg hover:bg-soc-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Generating..." : "Generate Queries"}
+              {loading ? t('queries.generating') : t('queries.generate')}
             </button>
           </div>
 
@@ -197,7 +200,7 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
                           {query.time_range}
                         </span>
                         <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">
-                          {query.fields_expected.length} fields
+                          {query.fields_expected.length} {t('queries.fields')}
                         </span>
                       </div>
                     </div>
@@ -205,17 +208,17 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
                       onClick={() => copyQuery(query.query)}
                       className="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded transition-colors"
                     >
-                      Copy
+                      {tCommon('copy')}
                     </button>
                   </div>
                   <div className="bg-slate-900 text-green-400 p-3 rounded-lg font-mono text-xs overflow-x-auto">
                     <pre>{query.query}</pre>
                   </div>
                   <p className="text-xs text-slate-500 mt-2">
-                    <strong>Prerequisite:</strong> {query.prerequisite}
+                    <strong>{t('queries.prerequisite')}</strong> {query.prerequisite}
                   </p>
                   <p className="text-xs text-slate-500">
-                    <strong>Expected fields:</strong> {query.fields_expected.join(", ")}
+                    <strong>{t('queries.expectedFields')}</strong> {query.fields_expected.join(", ")}
                   </p>
                 </div>
               ))}
@@ -229,15 +232,15 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
           {/* Action Controls */}
           <div className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Policy</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('actions.policy')}</label>
               <select
                 value={policy}
                 onChange={(e) => setPolicy(e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-soc-500"
               >
-                <option value="safe">Safe (Defensive Only)</option>
-                <option value="moderate">Moderate</option>
-                <option value="aggressive">Aggressive</option>
+                <option value="safe">{t('actions.policies.safe')}</option>
+                <option value="moderate">{t('actions.policies.moderate')}</option>
+                <option value="aggressive">{t('actions.policies.aggressive')}</option>
               </select>
             </div>
             <button
@@ -245,7 +248,7 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
               disabled={loading || !historyId}
               className="px-4 py-2 bg-soc-600 text-white font-medium rounded-lg hover:bg-soc-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Generating..." : "Generate Actions"}
+              {loading ? t('actions.generating') : t('actions.generate')}
             </button>
           </div>
 
@@ -263,24 +266,24 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
                       onClick={() => copyActionAsMarkdown(action)}
                       className="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded transition-colors"
                     >
-                      Copy MD
+                      {t('actions.copyMD')}
                     </button>
                   </div>
                   <div className="flex gap-2 flex-wrap mb-3">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium border ${RISK_COLORS[action.risk]}`}>
-                      {action.risk.toUpperCase()} RISK
+                      {action.risk.toUpperCase()} {t('actions.risk')}
                     </span>
                     <span className={`px-2 py-0.5 rounded text-xs ${CATEGORY_COLORS[action.category]}`}>
                       {action.category}
                     </span>
                     <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">
-                      Priority: {action.priority}
+                      {t('actions.priority')} {action.priority}
                     </span>
                   </div>
 
                   <div className="space-y-3 text-sm">
                     <div>
-                      <h5 className="text-xs font-semibold text-slate-600 uppercase">Steps</h5>
+                      <h5 className="text-xs font-semibold text-slate-600 uppercase">{t('actions.steps')}</h5>
                       <ol className="mt-1 space-y-2">
                         {action.steps.map((step, stepIdx) => (
                           <li key={stepIdx} className="bg-slate-50 p-2 rounded">
@@ -297,7 +300,7 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
                     </div>
 
                     <div>
-                      <h5 className="text-xs font-semibold text-green-600 uppercase">Verification</h5>
+                      <h5 className="text-xs font-semibold text-green-600 uppercase">{t('actions.verification')}</h5>
                       <ul className="mt-1 space-y-1">
                         {action.verification.map((v, vIdx) => (
                           <li key={vIdx} className="text-xs text-slate-600 flex items-start">
@@ -309,7 +312,7 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
                     </div>
 
                     <div>
-                      <h5 className="text-xs font-semibold text-amber-600 uppercase">Rollback</h5>
+                      <h5 className="text-xs font-semibold text-amber-600 uppercase">{t('actions.rollback')}</h5>
                       <ul className="mt-1 space-y-1">
                         {action.rollback.map((r, rIdx) => (
                           <li key={rIdx} className="text-xs text-slate-600 flex items-start">

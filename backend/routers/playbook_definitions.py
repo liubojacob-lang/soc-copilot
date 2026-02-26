@@ -66,7 +66,7 @@ async def create_definition(
         name=data.name,
         version=data.version,
         description=data.description,
-        dag_json=data.dag.model_dump(),
+        dag_json=data.dag,
         created_by_user_id=current_user.id,
         is_active=data.is_active,
     )
@@ -184,7 +184,7 @@ async def update_definition(
     # Validate DAG if provided
     if data.dag:
         try:
-            await DAGCompiler.validate_and_compile(data.dag.model_dump())
+            await DAGCompiler.validate_and_compile(data.dag)
         except DAGValidationError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
@@ -192,7 +192,7 @@ async def update_definition(
     definition = await repo.update(
         definition_id,
         **{k: v for k, v in update_data.items() if k != "dag"},
-        dag_json=data.dag.model_dump() if data.dag else None,
+        dag_json=data.dag if data.dag else None,
     )
 
     if not definition:
@@ -374,6 +374,7 @@ async def run_dag_playbook(
                 run_id=run.id,
                 compiled_dag=compiled,
                 input_context=data.input_context,
+                mode=data.mode,
                 failure_strategy=data.failure_strategy,
                 created_by_user_id=str(run.created_by_user_id) if run.created_by_user_id else None,
             )

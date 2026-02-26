@@ -1,0 +1,22 @@
+[run]
+source = .
+omit =
+    tests/*
+    */tests/*
+    check_db.py
+    migrate.py
+    start_server.py
+    import_phishing_playbook.py
+    conftest.py
+    __pycache__/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if TYPE_CHECKING:
+    @abstractmethod
+fail_under = 80

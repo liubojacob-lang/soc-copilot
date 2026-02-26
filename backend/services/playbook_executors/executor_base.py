@@ -1,8 +1,8 @@
 """Base executor for playbook nodes."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, Optional
 
 
 @dataclass
@@ -13,6 +13,11 @@ class ExecutorContext:
     node_def: dict[str, Any]
     input_json: dict[str, Any]
     attempt_no: int = 1
+    # v0.8.2: User context for approval nodes and audit
+    user_id: Optional[str] = None
+    username: Optional[str] = None
+    # Session for database operations (optional, can be injected)
+    session: Optional[Any] = field(default=None, repr=False)
 
 
 class BaseExecutor(ABC):
