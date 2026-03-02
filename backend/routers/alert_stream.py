@@ -11,7 +11,14 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import logging
 
-from services.wazuh_stream_service import (
+from services.alert_stream_service import (
+    get_wazuh_stream_service,
+    init_wazuh_stream_service
+)
+from schemas.wazuh_stream import (
+    get_wazuh_stream_service,
+    init_wazuh_stream_service
+)
     get_wazuh_stream_service,
     init_wazuh_stream_service
 )

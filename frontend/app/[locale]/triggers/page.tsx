@@ -298,7 +298,7 @@ export default function TriggersPage() {
                               onClick={() => handleCopyWebhookUrl(trigger.webhook_url!)}
                               className="text-blue-600 hover:text-blue-700 text-xs"
                             >
-                              Copy
+                              {tCommon('copy')}
                             </button>
                           </div>
                         )}

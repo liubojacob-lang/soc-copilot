@@ -80,7 +80,7 @@ export default function NotificationSettingsPage() {
       setQueueStats(queueData);
       setHealth(healthData);
     } catch (err: any) {
-      setError(err.message || "Failed to load notification status");
+      setError(err.message || t('failedToLoad'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -206,12 +206,12 @@ export default function NotificationSettingsPage() {
 
         {/* Health */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Service Health</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{t('serviceHealth')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-            <HealthCell label="Redis" healthy={!!health?.redis} />
-            <HealthCell label="Streams" healthy={!!health?.streams} />
+            <HealthCell label={t('redis')} healthy={!!health?.redis} />
+            <HealthCell label={t('streams')} healthy={!!health?.streams} />
             <HealthCell
-              label="Channels Configured"
+              label={t('channelsConfigured')}
               healthy={!!health?.channels && Object.values(health.channels).some(Boolean)}
             />
           </div>

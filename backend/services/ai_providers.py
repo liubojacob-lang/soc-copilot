@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import httpx
 from core.config import settings
 from core.logger import get_logger
+from core.http_client import get_http_client
 
 logger = get_logger(__name__)
 
@@ -45,7 +46,12 @@ class LLMProvider:
     def __init__(self, api_key: str, base_url: Optional[str] = None):
         self.api_key = api_key
         self.base_url = base_url
-        self.client = httpx.AsyncClient(timeout=60.0)
+        self._client: Optional[httpx.AsyncClient] = None
+
+    @property
+    def client(self) -> httpx.AsyncClient:
+        """Get the shared HTTP client."""
+        return get_http_client()
 
     async def chat_completion(
         self,
@@ -80,27 +86,32 @@ class ZhipuAIProvider(LLMProvider):
     ) -> str:
         """Generate chat completion using Zhipu AI."""
         try:
-            # Use provided model or default from initialization
             actual_model = model or self.model
-            
-            # Use custom timeout if provided
-            client = self.client
+
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": actual_model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+
             if timeout:
-                client = httpx.AsyncClient(timeout=timeout)
-            
-            response = await client.post(
-                f"{self.base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": actual_model,
-                    "messages": messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                },
-            )
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    response = await client.post(
+                        f"{self.base_url}/chat/completions",
+                        headers=headers,
+                        json=payload,
+                    )
+            else:
+                response = await self.client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["message"]["content"]

@@ -6,6 +6,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   LineChart,
   Line,
@@ -53,6 +54,8 @@ export function TrendsChart({
   showLegend = true,
   height = 300,
 }: TrendsChartProps) {
+  const tSeverity = useTranslations('severity');
+
   // 格式化数据
   const chartData = useMemo(() => {
     return data.map(item => ({
@@ -118,7 +121,7 @@ export function TrendsChart({
               stroke={COLORS.critical}
               strokeWidth={2}
               dot={{ r: 3 }}
-              name="Critical"
+              name={tSeverity('critical')}
             />
             <Line
               type="monotone"
@@ -126,7 +129,7 @@ export function TrendsChart({
               stroke={COLORS.high}
               strokeWidth={2}
               dot={{ r: 3 }}
-              name="High"
+              name={tSeverity('high')}
             />
             <Line
               type="monotone"
@@ -134,7 +137,7 @@ export function TrendsChart({
               stroke={COLORS.medium}
               strokeWidth={2}
               dot={{ r: 3 }}
-              name="Medium"
+              name={tSeverity('medium')}
             />
             <Line
               type="monotone"
@@ -142,7 +145,7 @@ export function TrendsChart({
               stroke={COLORS.low}
               strokeWidth={2}
               dot={{ r: 3 }}
-              name="Low"
+              name={tSeverity('low')}
             />
           </LineChart>
         );
@@ -161,10 +164,10 @@ export function TrendsChart({
             <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
             <Tooltip content={<CustomTooltip />} />
             {showLegend && <Legend />}
-            <Bar dataKey="critical" fill={COLORS.critical} name="Critical" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="high" fill={COLORS.high} name="High" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="medium" fill={COLORS.medium} name="Medium" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="low" fill={COLORS.low} name="Low" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="critical" fill={COLORS.critical} name={tSeverity('critical')} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="high" fill={COLORS.high} name={tSeverity('high')} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="medium" fill={COLORS.medium} name={tSeverity('medium')} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="low" fill={COLORS.low} name={tSeverity('low')} radius={[4, 4, 0, 0]} />
           </BarChart>
         );
 
@@ -207,7 +210,7 @@ export function TrendsChart({
               stroke={COLORS.critical}
               strokeWidth={2}
               fill="url(#colorCritical)"
-              name="Critical"
+              name={tSeverity('critical')}
             />
             <Area
               type="monotone"
@@ -215,7 +218,7 @@ export function TrendsChart({
               stroke={COLORS.high}
               strokeWidth={2}
               fill="url(#colorHigh)"
-              name="High"
+              name={tSeverity('high')}
             />
             <Area
               type="monotone"
@@ -223,7 +226,7 @@ export function TrendsChart({
               stroke={COLORS.medium}
               strokeWidth={2}
               fill="url(#colorMedium)"
-              name="Medium"
+              name={tSeverity('medium')}
             />
             <Area
               type="monotone"
@@ -231,7 +234,7 @@ export function TrendsChart({
               stroke={COLORS.low}
               strokeWidth={2}
               fill="url(#colorLow)"
-              name="Low"
+              name={tSeverity('low')}
             />
           </AreaChart>
         );

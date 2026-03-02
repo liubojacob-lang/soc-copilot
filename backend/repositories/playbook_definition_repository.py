@@ -185,7 +185,7 @@ try:
 
             return entity
 
-        async def list_active_cached(self) -> List[PlaybookDefinitionModel]:
+        async def list_active_cached(self) -> list[PlaybookDefinitionModel]:
             """List active playbooks with cache"""
             cache = get_cache()
             cache_key = CacheKeys.PLAYBOOK_DEFINITIONS_LIST

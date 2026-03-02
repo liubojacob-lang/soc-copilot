@@ -3,8 +3,9 @@
 import { useRouter, usePathname } from "next/navigation";
 import { loadAuthState, logout, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
 import { useState, useRef, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown, ShieldCheck } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useTranslations } from 'next-intl';
 
 interface NavigationProps {
   title: string;
@@ -29,6 +30,8 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
   const pathname = usePathname();
   const authState = loadAuthState();
   const user = authState?.user;
+  const t = useTranslations('navigation');
+  const tCommon = useTranslations('common');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredDropdown, setHoveredDropdown] = useState<string | null>(null);
   const dropdownTimeoutRef = useRef<NodeJS.Timeout>();
@@ -44,7 +47,6 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 清理 timeout
   useEffect(() => {
     return () => {
       if (dropdownTimeoutRef.current) {
@@ -61,55 +63,50 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
       case "admin":
-        return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
+        return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300";
       case "analyst":
-        return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300";
+        return "bg-soc-100 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300";
       case "auditor":
-        return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+        return "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300";
       default:
         return "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300";
     }
   };
 
-  // Main navigation items
   const mainNavItems: NavItem[] = [
-    { label: "Home", path: "/" },
-    { label: "Runs", path: "/playbooks" },
-    { label: "Definitions", path: "/playbooks/definitions" },
+    { label: t('home'), path: "/" },
+    { label: t('runs'), path: "/playbooks" },
+    { label: t('definitions'), path: "/playbooks/definitions" },
   ];
 
-  // Analytics dropdown group
   const analyticsGroup: NavGroup = {
-    label: "Analytics",
+    label: t('analytics'),
     items: [
-      { label: "AI Copilot", path: "/ai-assistant" },
-      { label: "UEBA", path: "/ueba" },
-      { label: "Threat Hunting", path: "/threat-hunting" },
+      { label: t('aiCopilot'), path: "/ai-assistant" },
+      { label: t('ueba'), path: "/ueba" },
+      { label: t('threatHunting'), path: "/threat-hunting" },
     ],
   };
 
-  // Ecosystem dropdown group
   const ecosystemGroup: NavGroup = {
-    label: "Ecosystem",
+    label: t('ecosystem'),
     items: [
-      { label: "Marketplace", path: "/marketplace" },
-      { label: "Cloud Native", path: "/cloud-native" },
-      { label: "Dify", path: "/dify" },
-      { label: "Alerts", path: "/alerts" },
-      { label: "Triggers", path: "/triggers" },
+      { label: t('marketplace'), path: "/marketplace" },
+      { label: t('cloudNative'), path: "/cloud-native" },
+      { label: t('alerts'), path: "/alerts" },
+      { label: t('triggers'), path: "/triggers" },
     ],
   };
 
-  // Admin items
   const adminItems: NavItem[] = [
     ...(isAdmin(user ?? null) ? [
-      { label: "Dashboard", path: "/admin/dashboard" },
-      { label: "Settings", path: "/settings" }
+      { label: t('dashboard'), path: "/admin/dashboard" },
+      { label: t('settings'), path: "/settings" }
     ] : []),
-    { label: "AI Models", path: "/settings/ai-models" },
-    { label: "API Keys", path: "/settings/api-keys" },
-    ...(isAdmin(user ?? null) || isAnalystOrAdmin(user ?? null) ? [{ label: "Audit", path: "/audit" }] : []),
-    ...(isAdmin(user ?? null) ? [{ label: "Users", path: "/admin/users" }] : []),
+    { label: t('aiModels'), path: "/settings/ai-models" },
+    { label: t('apiKeys'), path: "/settings/api-keys" },
+    ...(isAdmin(user ?? null) || isAnalystOrAdmin(user ?? null) ? [{ label: t('audit'), path: "/audit" }] : []),
+    ...(isAdmin(user ?? null) ? [{ label: t('users'), path: "/admin/users" }] : []),
   ];
 
   const isLinkActive = (linkPath: string) => {
@@ -122,7 +119,7 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
     return group.items.some(item => isLinkActive(item.path));
   };
 
-  const renderDropdown = (group: NavGroup) => {
+  const renderDropdown = (group: NavGroup, alignRight = false) => {
     const isActive = isGroupActive(group);
     const isHovered = hoveredDropdown === group.label;
 
@@ -147,18 +144,19 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
         onMouseLeave={handleMouseLeave}
       >
         <button
-          className={`flex items-center gap-1 px-3 py-2 text-sm rounded-md whitespace-nowrap transition-colors ${
+          className={`flex items-center gap-1 px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
             isActive
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium"
-              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+              : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
           }`}
         >
           {group.label}
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isHovered ? 'rotate-180' : ''}`} />
         </button>
 
         {isHovered && (
           <div
-            className="absolute top-full left-0 pt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+            className={`absolute ${alignRight ? 'right-0' : 'left-0'} top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-2 z-50 animate-fade-in overflow-hidden`}
             onMouseEnter={() => {
               if (dropdownTimeoutRef.current) {
                 clearTimeout(dropdownTimeoutRef.current);
@@ -173,10 +171,10 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
                   router.push(item.path);
                   setHoveredDropdown(null);
                 }}
-                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 ${
                   isLinkActive(item.path)
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-medium"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"
                 }`}
               >
                 {item.label}
@@ -189,75 +187,75 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="sticky top-0 z-50 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl shadow-sm border-b border-gray-200/70 dark:border-gray-700/70">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex justify-between items-center h-16">
-          {/* Left: Logo and Title */}
           <div className="flex items-center space-x-4">
             <button
               onClick={() => router.push("/")}
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold text-lg whitespace-nowrap"
+              className="flex items-center gap-2.5 text-soc-600 hover:text-soc-700 dark:text-soc-400 dark:hover:text-soc-300 font-bold text-base whitespace-nowrap transition-colors"
             >
-              SOC Copilot
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-soc-500 to-soc-700 flex items-center justify-center shadow-lg shadow-soc-500/25">
+                <ShieldCheck className="w-4.5 h-4.5 text-white" />
+              </div>
+              <span className="hidden sm:inline tracking-tight">SOC Copilot</span>
             </button>
-            <div className="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
-            <div className="hidden sm:block">
-              <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate max-w-xs lg:max-w-md">{title}</h1>
+            <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+            <div className="hidden md:block">
+              <h1 className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[10rem] lg:max-w-[15rem]">{title}</h1>
               {subtitle && (
                 <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>
               )}
             </div>
           </div>
 
-          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center justify-between flex-1">
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1.5 ml-6">
               {user && (
                 <>
-                  {/* API Status */}
                   {apiStatus && (
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium mr-2 ${
-                        apiStatus === "healthy"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                          : apiStatus === "checking"
-                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
-                          : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-                      }`}
-                    >
-                      {apiStatus === "healthy" ? "API OK" : apiStatus === "checking" ? "..." : "API Err"}
-                    </span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full mr-2 bg-gray-75 dark:bg-gray-700/50">
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${
+                          apiStatus === "healthy"
+                            ? "bg-success-500 animate-pulse-soft"
+                            : apiStatus === "checking"
+                            ? "bg-warning-500 animate-pulse-soft"
+                            : "bg-danger-500"
+                        }`}
+                      />
+                      <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 hidden xl:inline">
+                        {apiStatus === "healthy" ? "API OK" : apiStatus === "checking" ? "..." : "Err"}
+                      </span>
+                    </div>
                   )}
 
-                {/* Main Nav Items */}
                 {mainNavItems.map((link) => (
                   <button
                     key={link.path}
                     onClick={() => router.push(link.path)}
-                    className={`px-3 py-2 text-sm rounded-md whitespace-nowrap transition-colors ${
+                    className={`px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
                       isLinkActive(link.path)
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                     }`}
                   >
                     {link.label}
                   </button>
                 ))}
 
-                {/* Dropdown Groups */}
                 {renderDropdown(analyticsGroup)}
                 {renderDropdown(ecosystemGroup)}
 
-                {/* Admin Items */}
                 {adminItems.length > 0 && (
                   <div
                     className="relative"
-                    ref={hoveredDropdown === "Admin" ? dropdownRef : undefined}
+                    ref={hoveredDropdown === "adminGroup" ? dropdownRef : undefined}
                     onMouseEnter={() => {
                       if (dropdownTimeoutRef.current) {
                         clearTimeout(dropdownTimeoutRef.current);
                       }
-                      setHoveredDropdown("Admin");
+                      setHoveredDropdown("adminGroup");
                     }}
                     onMouseLeave={() => {
                       dropdownTimeoutRef.current = setTimeout(() => {
@@ -266,18 +264,19 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
                     }}
                   >
                     <button
-                      className={`flex items-center gap-1 px-3 py-2 text-sm rounded-md whitespace-nowrap transition-colors ${
+                      className={`flex items-center gap-1 px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
                         adminItems.some(item => isLinkActive(item.path))
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                       }`}
                     >
-                      Admin
+                      {tCommon('admin')}
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${hoveredDropdown === "adminGroup" ? 'rotate-180' : ''}`} />
                     </button>
 
-                    {hoveredDropdown === "Admin" && (
+                    {hoveredDropdown === "adminGroup" && (
                       <div
-                        className="absolute top-full right-0 pt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+                        className="absolute right-0 top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-2 z-50 animate-fade-in overflow-hidden"
                         onMouseEnter={() => {
                           if (dropdownTimeoutRef.current) {
                             clearTimeout(dropdownTimeoutRef.current);
@@ -296,10 +295,10 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
                               router.push(item.path);
                               setHoveredDropdown(null);
                             }}
-                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                            className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 ${
                               isLinkActive(item.path)
-                                ? "bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-medium"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"
                             }`}
                           >
                             {item.label}
@@ -314,53 +313,51 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
             )}
             </div>
 
-            {/* Right Side Controls */}
             <div className="flex items-center space-x-2">
-              {/* Language Switcher */}
               <LanguageSwitcher />
 
-              <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-1"></div>
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-0.5"></div>
 
-              {/* User Info */}
               {user && (
                 <>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeClass(user.role)}`}>
-                    {user.role}
-                  </span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-24">
-                    {user.username}
-                  </span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-75 dark:bg-gray-700/50">
+                    <span className={`px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${getRoleBadgeClass(user.role)}`}>
+                      {user.role}
+                    </span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[5rem] xl:max-w-[8rem]">
+                      {user.username}
+                    </span>
+                  </div>
                   <button
                     onClick={handleLogout}
-                    className="px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
+                    className="px-3 py-2 text-sm text-danger-600 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-xl transition-all duration-300"
                   >
-                    Logout
+                    {t('logout')}
                   </button>
                 </>
               )}
             </div>
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="lg:hidden flex items-center space-x-2">
             {user && (
               <>
                 {apiStatus && (
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      apiStatus === "healthy"
-                        ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                        : apiStatus === "checking"
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
-                        : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-                    }`}
-                  >
-                    {apiStatus === "healthy" ? "OK" : apiStatus === "checking" ? "..." : "Err"}
-                  </span>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-full">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        apiStatus === "healthy"
+                          ? "bg-success-500"
+                          : apiStatus === "checking"
+                          ? "bg-warning-500"
+                          : "bg-danger-500"
+                      }`}
+                    />
+                  </div>
                 )}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="p-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-300"
                 >
                   {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
@@ -369,11 +366,9 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="lg:hidden py-4 border-t border-gray-200 dark:border-gray-700 animate-fade-in-up">
             <div className="space-y-1">
-              {/* Main Items */}
               {mainNavItems.map((link) => (
                 <button
                   key={link.path}
@@ -381,19 +376,18 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
                     router.push(link.path);
                     setMobileMenuOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-2 text-sm rounded-md transition-colors ${
+                  className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 ${
                     isLinkActive(link.path)
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                   }`}
                 >
                   {link.label}
                 </button>
               ))}
 
-              {/* Analytics Group */}
-              <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Analytics
+              <div className="px-4 py-2.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-2">
+                {t('analytics')}
               </div>
               {analyticsGroup.items.map((item) => (
                 <button
@@ -402,19 +396,18 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
                     router.push(item.path);
                     setMobileMenuOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-2 text-sm rounded-md transition-colors pl-8 ${
+                  className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 pl-8 ${
                     isLinkActive(item.path)
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                   }`}
                 >
                   {item.label}
                 </button>
               ))}
 
-              {/* Ecosystem Group */}
-              <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Ecosystem
+              <div className="px-4 py-2.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-2">
+                {t('ecosystem')}
               </div>
               {ecosystemGroup.items.map((item) => (
                 <button
@@ -423,21 +416,20 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
                     router.push(item.path);
                     setMobileMenuOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-2 text-sm rounded-md transition-colors pl-8 ${
+                  className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 pl-8 ${
                     isLinkActive(item.path)
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                   }`}
                 >
                   {item.label}
                 </button>
               ))}
 
-              {/* Admin Items */}
               {adminItems.length > 0 && (
                 <>
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Admin
+                  <div className="px-4 py-2.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-2">
+                    {tCommon('admin')}
                   </div>
                   {adminItems.map((item) => (
                     <button
@@ -446,10 +438,10 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
                         router.push(item.path);
                         setMobileMenuOpen(false);
                       }}
-                      className={`block w-full text-left px-4 py-2 text-sm rounded-md transition-colors pl-8 ${
+                      className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 pl-8 ${
                         isLinkActive(item.path)
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                       }`}
                     >
                       {item.label}
@@ -459,30 +451,30 @@ export default function Navigation({ title, subtitle, apiStatus }: NavigationPro
               )}
             </div>
 
-            <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4 space-y-4 px-4">
-              {/* Language Switcher for Mobile */}
+            <div className="border-t border-gray-200 dark:border-gray-700 mt-5 pt-5 space-y-4 px-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Language</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Language</span>
                 <LanguageSwitcher />
               </div>
 
-              {/* User Info and Logout */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeClass(user?.role ?? "")}`}>
-                    {user?.role}
-                  </span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {user?.username}
-                  </span>
+              {user && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${getRoleBadgeClass(user?.role ?? "")}`}>
+                      {user?.role}
+                    </span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                      {user?.username}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2.5 text-sm text-danger-600 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-xl transition-all duration-300"
+                  >
+                    Logout
+                  </button>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
-                >
-                  Logout
-                </button>
-              </div>
+              )}
             </div>
           </div>
         )}

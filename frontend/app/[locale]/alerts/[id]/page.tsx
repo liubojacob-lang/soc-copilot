@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react';
 import { loadAuthState, authFetchJSON } from '@/lib/auth';
 import { useToast } from '@/components/Toast';
@@ -126,6 +126,7 @@ function normalizeCorrelationStatus(status?: string): 'new' | 'investigating' | 
 
 export default function AlertDetailsPage() {
   const locale = useLocale();
+  const t = useTranslations('alertDetails');
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
@@ -359,7 +360,7 @@ export default function AlertDetailsPage() {
           agent_name: incoming?.agent_name ?? prev.agent_name,
         };
       });
-      showToast('Alert updated in real time', 'info');
+      showToast(t('realtimeUpdate'), 'info');
     },
   });
 
@@ -562,8 +563,8 @@ export default function AlertDetailsPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <ThreatIntelCard
                 data={{
-                  iocs: alert.iocs || [],
-                  mitre_tactics: alert.mitre_tactics || [],
+                  iocs: (alert.iocs || []) as any,
+                  mitre_tactics: (alert.mitre_tactics || []) as any,
                   threat_score: alert.threat_score || 0,
                   enrichment_status: alert.enriched_at ? 'enriched' : 'pending',
                   enriched_at: alert.enriched_at,
@@ -575,14 +576,14 @@ export default function AlertDetailsPage() {
             {/* MITRE ATT&CK */}
             {alert.mitre_tactics && alert.mitre_tactics.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <MITREMapping tactics={alert.mitre_tactics || []} />
+                <MITREMapping tactics={(alert.mitre_tactics || []) as any} />
               </div>
             )}
 
             {/* Quick Timeline */}
             {alert.timeline && alert.timeline.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <RecentTimeline events={alert.timeline} limit={5} />
+                <RecentTimeline events={alert.timeline as any} limit={5} />
               </div>
             )}
 

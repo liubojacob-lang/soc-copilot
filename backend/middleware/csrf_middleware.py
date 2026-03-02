@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from core.logger import get_logger
-from services.cookie_auth import validate_csrf_token
+from services.user.cookie_auth import validate_csrf_token
 
 logger = get_logger(__name__)
 

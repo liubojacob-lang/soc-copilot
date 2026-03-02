@@ -118,9 +118,6 @@ class PlaybookDefinitionOut(BaseModel):
     )
     current_version_no: int = Field(1, description="Current version number")
 
-    # v0.7.5: Dify integration
-    dify_app_id: Optional[str] = Field(None, description="Linked Dify workflow app ID")
-
     # Computed fields
     node_count: int = Field(0, description="Number of nodes")
     edge_count: int = Field(0, description="Number of edges")

@@ -322,7 +322,7 @@ async def get_system_dashboard(
     # Feature flags
     features = {
         "redis_enabled": REDIS_AVAILABLE and bool(settings.redis_url),
-        "ai_copilot": bool(settings.openai_api_key or settings.dify_api_key),
+        "ai_copilot": bool(settings.openai_api_key),
         "threat_intel": bool(settings.otx_api_key),
         "audit_archive": True,
         "websocket": True,
@@ -432,7 +432,7 @@ async def get_feature_flags(
     """Get current feature flag status."""
     return {
         "redis_enabled": REDIS_AVAILABLE and bool(settings.redis_url),
-        "ai_copilot": bool(settings.openai_api_key or settings.dify_api_key),
+        "ai_copilot": bool(settings.openai_api_key),
         "threat_intel": bool(settings.otx_api_key),
         "audit_archive": True,
         "websocket": True,

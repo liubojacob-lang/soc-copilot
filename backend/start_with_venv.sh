@@ -6,6 +6,9 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Set PYTHONPATH to include backend directory
+export PYTHONPATH="$SCRIPT_DIR:$PYTHONPATH"
+
 # Activate virtual environment
 if [ -d "venv" ]; then
     source venv/bin/activate

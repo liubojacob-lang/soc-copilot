@@ -24,6 +24,7 @@ from schemas.security_alert import (
 # Message Queue Integration
 from services.message_queue_manager import get_message_queue_manager
 from services.security_alert_schema import ensure_security_alerts_schema
+from services.query_cache import cached, invalidate_cache
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1/security-alerts", tags=["security-alerts"])
@@ -116,6 +117,8 @@ async def ingest_alert(
             f"New alert ingested: id={new_alert.id}, source={alert_data.source}, "
             f"severity={alert_data.severity}, title={alert_data.title}"
         )
+
+        invalidate_cache("alert_stats")
 
         # Publish to message queue for async processing
         try:
@@ -312,6 +315,8 @@ async def update_alert(
 
         logger.info(f"Alert {alert_id} updated: status={alert.status}")
 
+        invalidate_cache("alert_stats")
+
         return alert
 
     except HTTPException:
@@ -323,6 +328,7 @@ async def update_alert(
 
 
 @router.get("/stats/summary", response_model=SecurityAlertStats)
+@cached(ttl=60, prefix="alert_stats")
 async def get_alert_statistics(
     session: AsyncSession = Depends(get_session),
 ) -> SecurityAlertStats:
@@ -421,6 +427,8 @@ async def delete_alert(
         await session.commit()
 
         logger.info(f"Alert {alert_id} deleted")
+
+        invalidate_cache("alert_stats")
 
         return {
             "status": "success",

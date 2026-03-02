@@ -183,3 +183,5 @@ function SkeletonList({ items = 5 }: { items?: number }) {
     </div>
   );
 }
+
+export { SkeletonTable, SkeletonCard, SkeletonList };

@@ -79,6 +79,35 @@ exceptions_total = Counter(
     ["exception_type", "path"],
 )
 
+# Cache metrics
+cache_hits_total = Counter(
+    "soc_cache_hits_total",
+    "Total cache hits",
+    ["cache_name"],
+)
+cache_misses_total = Counter(
+    "soc_cache_misses_total",
+    "Total cache misses",
+    ["cache_name"],
+)
+cache_size = Gauge(
+    "soc_cache_size",
+    "Current cache size",
+    ["cache_name"],
+)
+
+# Security alert metrics
+security_alerts_total = Counter(
+    "soc_security_alerts_total",
+    "Total security alerts ingested",
+    ["source", "severity", "tenant_id"],
+)
+security_alerts_by_status = Gauge(
+    "soc_security_alerts_by_status",
+    "Current security alerts by status",
+    ["status", "tenant_id"],
+)
+
 
 def setup_metrics(app: FastAPI) -> None:
     """Expose Prometheus endpoint and default instrumentator metrics."""
@@ -132,3 +161,23 @@ def observe_correlation_rule_hit(rule_id: str, tenant_id: str = "default") -> No
 
 def observe_exception(exception_type: str, path: str) -> None:
     exceptions_total.labels(exception_type, path).inc()
+
+
+def observe_cache_hit(cache_name: str = "query_cache") -> None:
+    cache_hits_total.labels(cache_name).inc()
+
+
+def observe_cache_miss(cache_name: str = "query_cache") -> None:
+    cache_misses_total.labels(cache_name).inc()
+
+
+def set_cache_size(size: int, cache_name: str = "query_cache") -> None:
+    cache_size.labels(cache_name).set(size)
+
+
+def observe_security_alert_ingested(source: str, severity: str, tenant_id: str = "default") -> None:
+    security_alerts_total.labels(source, severity, tenant_id).inc()
+
+
+def set_security_alerts_by_status(status: str, count: int, tenant_id: str = "default") -> None:
+    security_alerts_by_status.labels(status, tenant_id).set(count)

@@ -6,7 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
-import { SkeletonTable } from "@/components/common/Skeleton";
+import { SkeletonTable } from "@/components/common/LoadingState";
 import { STATUS_COLORS, MODE_COLORS } from './constants';
 import { usePlaybooks } from './hooks/usePlaybooks';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -151,7 +151,7 @@ export default function PlaybooksPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search by name or ID..."
+                    placeholder={t('searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -212,8 +212,8 @@ export default function PlaybooksPage() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                   <Play className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">No playbook runs found</p>
-                <p className="text-gray-400 dark:text-gray-500 text-sm">Run a playbook to see it here</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">{t('noPlaybookRuns')}</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm">{t('runPlaybookHint')}</p>
               </div>
             ) : (
               <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
@@ -331,7 +331,7 @@ export default function PlaybooksPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('definitions.name')}</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('definitions.description')}</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('definitions.version')}</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('definitions.status')}</th>

@@ -30,7 +30,7 @@ interface CreateKeyResponse {
 export default function APIKeysPage() {
   const router = useRouter();
   const t = useTranslations('settings');
-  const tApiKeys = useTranslations('settings.apiKeys');
+  const tApiKeys = useTranslations('settingsApiKeys');
   const tCommon = useTranslations('common');
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,16 +177,16 @@ export default function APIKeysPage() {
         {/* Page Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Your API Keys</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{tApiKeys('yourApiKeys')}</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Manage your API keys for programmatic access to SOC Copilot
+              {tApiKeys('manageApiKeys')}
             </p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
           >
-            Create New Key
+            {tApiKeys('createNewKey')}
           </button>
         </div>
 
@@ -194,7 +194,7 @@ export default function APIKeysPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
           {apiKeys.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-gray-500 dark:text-gray-400">No API keys found. Create your first key to get started.</p>
+              <p className="text-gray-500 dark:text-gray-400">{tApiKeys('noApiKeysFound')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -202,25 +202,25 @@ export default function APIKeysPage() {
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Key Prefix
+                      {tApiKeys('keyPrefix')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Description
+                      {tApiKeys('description')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Status
+                      {tApiKeys('status')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Created
+                      {tApiKeys('created')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Last Used
+                      {tApiKeys('lastUsed')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Expires
+                      {tApiKeys('expires')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Actions
+                      {tApiKeys('actions')}
                     </th>
                   </tr>
                 </thead>
@@ -233,20 +233,20 @@ export default function APIKeysPage() {
                         </code>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {key.description || <span className="text-gray-400 italic">No description</span>}
+                        {key.description || <span className="text-gray-400 italic">{tApiKeys('noDescription')}</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {isExpired(key.expires_at) ? (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                            Expired
+                            {tCommon('expired')}
                           </span>
                         ) : key.is_active ? (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Active
+                            {tCommon('active')}
                           </span>
                         ) : (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            Disabled
+                            {tCommon('disabled')}
                           </span>
                         )}
                       </td>
@@ -257,7 +257,7 @@ export default function APIKeysPage() {
                         {formatDate(key.last_used_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {key.expires_at ? formatDate(key.expires_at) : "Never"}
+                        {key.expires_at ? formatDate(key.expires_at) : tCommon('never')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {key.is_active ? (
@@ -265,21 +265,21 @@ export default function APIKeysPage() {
                             onClick={() => handleDisableKey(key.id)}
                             className="text-orange-600 hover:text-orange-900 mr-3"
                           >
-                            Disable
+                            {tCommon('disable')}
                           </button>
                         ) : (
                           <button
                             onClick={() => handleEnableKey(key.id)}
                             className="text-green-600 hover:text-green-900 mr-3"
                           >
-                            Enable
+                            {tCommon('enable')}
                           </button>
                         )}
                         <button
                           onClick={() => handleDeleteKey(key.id)}
                           className="text-red-600 hover:text-red-900"
                         >
-                          Delete
+                          {tCommon('delete')}
                         </button>
                       </td>
                     </tr>
@@ -292,11 +292,11 @@ export default function APIKeysPage() {
 
         {/* Info Box */}
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">About API Keys</h3>
+          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">{tApiKeys('aboutApiKeys')}</h3>
           <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
-            <li>API keys are shown only once during creation. Store them securely.</li>
-            <li>Use the <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">X-API-Key</code> header to authenticate requests.</li>
-            <li>Keys can be disabled or deleted but cannot be recovered once deleted.</li>
+            <li>{tApiKeys('aboutApiKeysInfo1')}</li>
+            <li>{tApiKeys('aboutApiKeysInfo2')}</li>
+            <li>{tApiKeys('aboutApiKeysInfo3')}</li>
           </ul>
         </div>
       </main>
@@ -305,12 +305,12 @@ export default function APIKeysPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Create New API Key</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{tApiKeys('createNewApiKey')}</h3>
 
             <form onSubmit={handleCreateKey} className="space-y-4">
               <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
+                  {tApiKeys('description')}
                 </label>
                 <input
                   id="description"
@@ -319,13 +319,13 @@ export default function APIKeysPage() {
                   value={newKeyDescription}
                   onChange={(e) => setNewKeyDescription(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="e.g., Development key for monitoring script"
+                  placeholder={tApiKeys('descriptionPlaceholder')}
                 />
               </div>
 
               <div>
                 <label htmlFor="expires" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Expires In Days (Optional)
+                  {tApiKeys('expiresInDays')}
                 </label>
                 <input
                   id="expires"
@@ -334,7 +334,7 @@ export default function APIKeysPage() {
                   value={newKeyExpiresInDays ?? ""}
                   onChange={(e) => setNewKeyExpiresInDays(e.target.value ? parseInt(e.target.value) : null)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="Leave empty for no expiration"
+                  placeholder={tApiKeys('expiresPlaceholder')}
                 />
               </div>
 
@@ -344,14 +344,14 @@ export default function APIKeysPage() {
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
                 >
-                  Cancel
+                  {tCommon('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {creating ? "Creating..." : "Create Key"}
+                  {creating ? tApiKeys('creating') : tApiKeys('createKey')}
                 </button>
               </div>
             </form>
@@ -369,15 +369,15 @@ export default function APIKeysPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white text-center">API Key Created</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white text-center">{tApiKeys('apiKeyCreated')}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
-                Copy this key now. You won't be able to see it again.
+                {tApiKeys('copyKeyNow')}
               </p>
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Your API Key
+                {tApiKeys('yourApiKey')}
               </label>
               <div className="flex">
                 <input
@@ -390,7 +390,7 @@ export default function APIKeysPage() {
                   onClick={handleCopyKey}
                   className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-r-md hover:bg-blue-700"
                 >
-                  {copied ? "Copied!" : "Copy"}
+                  {copied ? tCommon('copied') : tCommon('copy')}
                 </button>
               </div>
             </div>
@@ -399,7 +399,7 @@ export default function APIKeysPage() {
               onClick={() => setShowKeyModal(false)}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
             >
-              I've Saved My Key
+              {tApiKeys('iveSavedMyKey')}
             </button>
           </div>
         </div>

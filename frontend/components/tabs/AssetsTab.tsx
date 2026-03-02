@@ -238,7 +238,7 @@ export function AssetsTab() {
                 <div className="flex items-center gap-2">
                   <Server className="w-4 h-4 text-gray-400" />
                   <span className="font-medium text-gray-900 dark:text-white text-sm">
-                    {asset.hostname || asset.ip || "Unknown"}
+                    {asset.hostname || asset.ip || t('unknown')}
                   </span>
                 </div>
                 <span

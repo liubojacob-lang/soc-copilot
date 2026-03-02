@@ -282,22 +282,3 @@ def validate_id_format(id_value: str, field_name: str = "id") -> str:
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {field_name} format"
     )
-
-    # 检查是否为UUID格式（标准UUID v1-v5）
-    uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-    # 检查是否为UUID格式（无连字符）
-    uuid_pattern_nodash = r"^[0-9a-f]{32}$"
-    # 检查是否为纯数字
-    numeric_pattern = r"^[0-9]+$"
-
-    # 允许的格式：标准UUID、无连字符UUID、数字ID
-    if (
-        re.match(uuid_pattern, id_value)
-        or re.match(uuid_pattern_nodash, id_value.lower())
-        or id_value.isdigit()
-    ):
-        return id_value
-
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {field_name} format"
-    )

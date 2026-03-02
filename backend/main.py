@@ -1,4 +1,15 @@
-"""SOC Copilot API - Main application entry point."""
+"""SOC Copilot API - Main application entry point.
+
+Refactored with lifecycle management for cleaner startup/shutdown.
+"""
+
+import sys
+from pathlib import Path
+
+# Add backend directory to Python path
+backend_dir = Path(__file__).parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
@@ -10,11 +21,11 @@ from core.logger import get_logger
 from observability.logging import setup_json_logging
 from observability.tracing import setup_tracing
 from core.config import settings
-from db.session import init_db, AsyncSessionLocal
+from db.session import AsyncSessionLocal
 from routers import (
     alert,
     report,
-    ai_models,  # AI model management
+    ai_models,
     timeline,
     history,
     assets,
@@ -30,26 +41,25 @@ from routers import (
     triggers,
     secrets,
     admin_settings,
-    dify,  # v0.7.4: Dify workflow integration
-    ai,  # Phase 2: AI Copilot
-    ai_tasks,  # v0.7.7: AI background task queue
-    ueba,  # Phase 3: UEBA analytics
-    threat_hunting,  # Phase 3: Threat hunting
-    marketplace,  # Phase 4: Playbook marketplace
-    cloud_native,  # Phase 4: Cloud native security
-    health,  # v0.8.2: Enhanced health check and metrics
-    monitor,  # Real-time monitoring dashboard
-    correlation,  # v0.8.0: Event correlation engine
-    security_alerts,  # v0.9.0: External security alert ingestion
-    alert_enrichment,  # v0.9.0: Threat intelligence enrichment
-    notifications,  # v0.9.x: Notification channels and queue status
-    alert_stream,  # v1.2.0: Real-time alert stream (replaces Wazuh)
+    ai,
+    ai_tasks,
+    ueba,
+    threat_hunting,
+    marketplace,
+    cloud_native,
+    health,
+    monitor,
+    correlation,
+    security_alerts,
+    alert_enrichment,
+    notifications,
+    security_vulnerabilities,
 )
-from routers import websocket as ws_router  # v0.8.5: WebSocket real-time alerts
-from routers import websocket_filters  # v0.9.0: WebSocket filter management
-from routers import monitoring_alerts  # v0.9.1: Monitoring alert rules
-from routers import export  # v0.8.5: Data export functionality
-from routers import system_dashboard  # v0.8.5: System health dashboard
+from routers import websocket as ws_router
+from routers import websocket_filters
+from routers import monitoring_alerts
+from routers import export
+from routers import system_dashboard
 from middleware import (
     AuditMiddleware,
     TraceIDMiddleware,
@@ -59,24 +69,21 @@ from middleware import (
     setup_trace_logging,
     setup_exception_handlers,
     ResourceAuthorizationMiddleware,
-    IdempotencyMiddleware,  # P0-3: Request deduplication
+    IdempotencyMiddleware,
 )
 from middleware.tenant_middleware import TenantMiddleware
-from middleware.rate_limiter import init_rate_limiter, close_rate_limiter  # v0.8.5: Async rate limiter
-from middleware.performance import PerformanceMiddleware  # v0.8.5: Performance monitoring
+from middleware.performance import PerformanceMiddleware
 
 setup_json_logging(settings.log_level)
 logger = get_logger(__name__)
 
 
-# Custom middleware to add credentials header for specific origins
 class AddCredentialsMiddleware(BaseHTTPMiddleware):
     """Add credentials header for specific origins."""
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         origin = request.headers.get("origin", "")
-        # Allow credentials for localhost origins
         if "localhost" in origin or "127.0.0.1" in origin:
             response.headers["Access-Control-Allow-Credentials"] = "true"
         return response
@@ -107,13 +114,12 @@ async def create_bootstrap_admin():
                 email=settings.bootstrap_admin_email,
                 hashed_password=hashed_password,
                 role=UserRole.ADMIN,
-                must_change_password=True,  # v0.8.4: Force password change on first login
+                must_change_password=True,
             )
 
             logger.info(f"Bootstrap admin created with ID: {admin_user.id}")
             logger.warning("Bootstrap admin must change password on first login!")
 
-            # Create audit log
             from repositories.audit_repository import AuditRepository
 
             audit_repo = AuditRepository(session)
@@ -145,11 +151,9 @@ async def run_migrations():
         try:
             config = Config(str(ini_path))
             config.set_main_option("script_location", str(alembic_dir))
-            # Disable fileConfig to avoid logging conflicts
             import logging
 
             logging.getLogger("alembic").setLevel(logging.WARNING)
-            # Run migrations in a separate process to avoid event loop conflicts
             import subprocess
             import sys
 
@@ -167,11 +171,55 @@ async def run_migrations():
             logger.warning(f"Migration failed (might be ok if already applied): {e}")
 
 
+def register_lifecycle_services():
+    """Register all lifecycle services with the manager.
+    
+    Services are registered in order of priority:
+    1. CRITICAL: Database
+    2. ESSENTIAL: Queue Manager, Cron Scheduler, Rate Limiter
+    3. NORMAL: AI Task Processor, WebSocket Monitoring, Alert Evaluator
+    4. OPTIONAL: Audit Archive
+    """
+    from services.lifecycle import get_lifecycle_manager
+    from services.lifecycle import (
+        DatabaseService,
+        QueueManagerService,
+        CronSchedulerServiceWrapper,
+        AITaskProcessorService,
+        RateLimiterService,
+        WebSocketMonitoringService,
+        AlertEvaluatorService,
+        AuditArchiveService,
+    )
+    
+    manager = get_lifecycle_manager()
+    
+    # CRITICAL priority
+    manager.register(DatabaseService())
+    
+    # ESSENTIAL priority
+    manager.register(QueueManagerService())
+    manager.register(CronSchedulerServiceWrapper())
+    manager.register(RateLimiterService())
+    
+    # NORMAL priority
+    manager.register(AITaskProcessorService())
+    manager.register(WebSocketMonitoringService())
+    manager.register(AlertEvaluatorService())
+    
+    # OPTIONAL priority
+    if settings.audit_log_cleanup_enabled:
+        manager.register(AuditArchiveService())
+    
+    return manager
+
+
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
-    """Application lifespan manager.
-
-    Initializes database on startup and creates bootstrap admin if needed.
+    """Application lifespan manager using lifecycle services.
+    
+    This refactored version uses the LifecycleManager for cleaner
+    startup and shutdown of all services.
     """
     # Startup
     logger.info(f"Initializing SOC Copilot API v0.8.0")
@@ -187,7 +235,7 @@ async def lifespan(app_instance: FastAPI):
     logger.info(f"RBAC: ENABLED (admin, analyst, auditor)")
     logger.info(f"Audit Logging: ENABLED")
 
-    # P1: 生产环境敏感配置校验
+    # Production security checks
     from core.security_validators import run_production_security_checks
     
     security_errors = run_production_security_checks()
@@ -200,25 +248,18 @@ async def lifespan(app_instance: FastAPI):
             msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=true to fail)"
         )
 
-    # Run migrations before initializing database
+    # Run migrations
     await run_migrations()
-    await init_db()
-    logger.info("Database initialized")
 
-    # Create bootstrap admin if no users exist
+    # Register and start all lifecycle services
+    manager = register_lifecycle_services()
+    started_services = await manager.start_all()
+    logger.info(f"Started {len(started_services)} lifecycle services")
+
+    # Create bootstrap admin
     await create_bootstrap_admin()
 
-    # v0.7.4: Initialize queue manager
-    from services.run_queue_manager import RunQueueManager, set_run_queue_manager
-
-    queue_manager = RunQueueManager(AsyncSessionLocal)
-    set_run_queue_manager(queue_manager)
-    await queue_manager.recover_runs()
-    logger.info(
-        f"Run queue manager initialized (max_concurrent={settings.run_queue_max})"
-    )
-
-    # v0.7.4: Load node plugins
+    # Load node plugins
     from pathlib import Path
     from playbook_engine.v7_dag.registry import NodeRegistry, get_node_registry
 
@@ -227,99 +268,12 @@ async def lifespan(app_instance: FastAPI):
     plugin_count = node_registry.auto_load_plugins(plugin_dir)
     logger.info(f"Loaded {plugin_count} node plugins")
 
-    # Start cron scheduler
-    from services.cron_scheduler_service import CronSchedulerService, set_cron_scheduler
-
-    cron_scheduler = CronSchedulerService(AsyncSessionLocal)
-    set_cron_scheduler(cron_scheduler)
-    await cron_scheduler.start()
-    logger.info("Cron scheduler started")
-
-    # v0.7.4: Start queue processor
-    await queue_manager.start_background_processor()
-
-    # v0.7.7: Start AI task processor
-    from services.ai_task_service import start_ai_task_processor, stop_ai_task_processor
-    await start_ai_task_processor()
-    logger.info("AI task processor started")
-
-    # v0.8.5: Initialize async rate limiter
-    await init_rate_limiter()
-    logger.info("Rate limiter initialized")
-
-    # v0.9.1: Start WebSocket monitoring service
-    from services.websocket_monitoring import start_websocket_monitoring
-    await start_websocket_monitoring()
-    logger.info("WebSocket monitoring service started")
-
-    # v0.9.1: Initialize alert evaluator
-    from services.alert_evaluator import start_alert_evaluator
-    await start_alert_evaluator()
-    logger.info("Alert evaluator initialized")
-
-    # v0.9.2: Initialize message compression service
-    from services.websocket_compression import start_compression_service
-    await start_compression_service()
-    logger.info("Message compression service initialized")
-
-    # v0.9.2: Start message batch service
-    from services.message_batch_service import start_batch_service
-    await start_batch_service()
-    logger.info("Message batch service initialized")
-
-    # v0.9.2: Start connection pool service
-    from services.websocket_connection_pool import start_connection_pool
-    await start_connection_pool()
-    logger.info("Connection pool service initialized")
-
-    # v0.8.5: Start audit log archival background task
-    if settings.audit_log_cleanup_enabled:
-        from services.audit_archive_service import run_scheduled_archival
-        import asyncio
-        archival_task = asyncio.create_task(run_scheduled_archival(AsyncSessionLocal))
-        logger.info("Audit log archival service started")
-
-    # v1.2.0: Initialize real-time alert stream service (replaces Wazuh)
-    from services.alert_stream_service import init_alert_stream_service
-
-    try:
-        stream_service = await init_alert_stream_service(
-            aggregation_window_seconds=60,  # 1 minute aggregation window
-            max_buffer_size=10000,  # Max 10k alerts in buffer
-            max_history_size=1000  # Keep last 1000 alerts
-        )
-        logger.info("Real-time alert stream service initialized")
-    except Exception as e:
-        logger.warning(f"Alert stream service initialization failed: {e}")
-        # Continue without alert stream
-
     yield
 
     # Shutdown
     logger.info("Shutting down SOC Copilot API")
-
-    # v0.8.5: Close rate limiter
-    await close_rate_limiter()
-    logger.info("Rate limiter closed")
-
-    # v0.9.1: Stop WebSocket monitoring service
-    from services.websocket_monitoring import get_websocket_monitoring
-    monitoring_service = get_websocket_monitoring()
-    await monitoring_service.stop()
-    logger.info("WebSocket monitoring service stopped")
-
-    # v0.7.7: Stop AI task processor
-    await stop_ai_task_processor()
-    logger.info("AI task processor stopped")
-    
-    if cron_scheduler:
-        await cron_scheduler.stop()
-        logger.info("Cron scheduler stopped")
-
-    # v0.7.4: Stop queue processor
-    if queue_manager:
-        await queue_manager.stop_background_processor()
-        logger.info("Queue processor stopped")
+    await manager.stop_all()
+    logger.info("Shutdown complete")
 
 
 app = FastAPI(
@@ -403,6 +357,9 @@ app.add_middleware(
 # Add credentials header for localhost origins
 app.add_middleware(AddCredentialsMiddleware)
 
+# P1: Gzip compression middleware - REMOVED due to compatibility issues
+# Use uvicorn's built-in gzip or nginx gzip compression instead
+
 # v0.8.5: Performance monitoring middleware (should be early to capture all requests)
 if settings.performance_monitoring_enabled:
     app.add_middleware(
@@ -454,7 +411,6 @@ app.include_router(webhooks.router)
 app.include_router(triggers.router)
 app.include_router(secrets.router)  # v0.7.4: Secrets management
 app.include_router(admin_settings.router)  # System settings
-app.include_router(dify.router)  # v0.7.4: Dify workflow integration
 app.include_router(ai.router)  # Phase 2: AI Copilot service
 app.include_router(ai_tasks.router)  # v0.7.7: AI background task queue
 app.include_router(ueba.router)  # Phase 3: UEBA analytics
@@ -472,7 +428,7 @@ app.include_router(websocket_filters.router)  # v0.9.0: WebSocket filter managem
 app.include_router(monitoring_alerts.router)  # v0.9.1: Monitoring alert rules
 app.include_router(export.router)  # v0.8.5: Data export functionality
 app.include_router(system_dashboard.router)  # v0.8.5: System health dashboard
-app.include_router(alert_stream.router)  # v1.2.0: Real-time alert stream (replaces Wazuh)
+app.include_router(security_vulnerabilities.router)  # v0.9.2: Security vulnerability management
 
 
 # Global OPTIONS handler for CORS preflight

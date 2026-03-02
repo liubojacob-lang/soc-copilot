@@ -131,35 +131,35 @@ export default function AdminHealthPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Resources</h3>
+                <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">{t('resources')}</h3>
                 <div className="space-y-2 text-sm">
-                  <Row label="CPU" value={`${resources?.cpu_percent ?? 0}%`} />
+                  <Row label={t('cpu')} value={`${resources?.cpu_percent ?? 0}%`} />
                   <Row
-                    label="Memory"
+                    label={t('memory')}
                     value={`${resources?.memory?.percent_used ?? 0}% (${resources?.memory?.used_gb ?? 0} / ${resources?.memory?.total_gb ?? 0} GB)`}
                   />
                   <Row
-                    label="Disk"
+                    label={t('disk')}
                     value={`${resources?.disk?.percent_used ?? 0}% (${resources?.disk?.used_gb ?? 0} / ${resources?.disk?.total_gb ?? 0} GB)`}
                   />
-                  <Row label="Platform" value={resources?.platform || "-"} />
+                  <Row label={t('platform')} value={resources?.platform || "-"} />
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                 <h3 className="font-semibold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
                   <Settings className="w-4 h-4" />
-                  Features
+                  {t('features')}
                 </h3>
                 <div className="space-y-2 text-sm">
                   {Object.keys(features).length === 0 ? (
-                    <div className="text-gray-500">No feature flags returned.</div>
+                    <div className="text-gray-500">{t('noFeatures')}</div>
                   ) : (
                     Object.entries(features).map(([key, enabled]) => (
                       <div key={key} className="flex items-center justify-between">
                         <span className="text-gray-600 dark:text-gray-300">{key}</span>
                         <span className={enabled ? "text-green-600" : "text-gray-500"}>
-                          {enabled ? "Enabled" : "Disabled"}
+                          {enabled ? t('enabled') : t('disabled')}
                         </span>
                       </div>
                     ))

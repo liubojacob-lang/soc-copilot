@@ -1,10 +1,11 @@
 """Global exception handlers for unified error responses.
 
 This module provides:
-- Unified error response format
+- Unified error response format using schemas.common.ErrorResponse
 - Proper HTTP status codes
 - Trace ID inclusion for debugging
 - Sensitive information filtering
+- APIException integration with error codes
 """
 
 import traceback
@@ -16,56 +17,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 
 from core.logger import get_logger
+from core.exceptions import APIException
 from middleware.trace_middleware import get_trace_id
+from schemas.common import ErrorResponse, ErrorDetail
 
 logger = get_logger(__name__)
-
-
-class ErrorResponse:
-    """Standard error response format.
-    
-    Attributes:
-        error: Error type identifier
-        message: Human-readable error message
-        detail: Additional error details (optional)
-        trace_id: Request trace ID for debugging
-        status_code: HTTP status code
-    """
-    
-    def __init__(
-        self,
-        error: str,
-        message: str,
-        status_code: int,
-        detail: Any = None,
-        trace_id: str = None,
-    ):
-        self.error = error
-        self.message = message
-        self.status_code = status_code
-        self.detail = detail
-        self.trace_id = trace_id or get_trace_id()
-    
-    def to_dict(self) -> dict:
-        """Convert to dictionary for JSON response."""
-        result = {
-            "error": self.error,
-            "code": self.error,
-            "message": self.message,
-            "trace_id": self.trace_id,
-            "request_id": getattr(self, "request_id", None),
-        }
-        if self.detail is not None:
-            result["detail"] = self.detail
-        return result
-    
-    def to_response(self) -> JSONResponse:
-        """Create JSON response."""
-        return JSONResponse(
-            status_code=self.status_code,
-            content=self.to_dict(),
-            headers={"X-Trace-ID": self.trace_id} if self.trace_id else None,
-        )
 
 
 def sanitize_error_detail(detail: Any) -> Any:
@@ -102,6 +58,54 @@ def sanitize_error_detail(detail: Any) -> Any:
     return detail
 
 
+async def api_exception_handler(request: Request, exc: APIException) -> JSONResponse:
+    """Handle APIException with unified error response format.
+    
+    Args:
+        request: The request that caused error
+        exc: The APIException
+        
+    Returns:
+        JSON response with error details using ErrorResponse format
+    """
+    trace_id = get_trace_id()
+    
+    # Extract error details from APIException
+    error_code = str(exc.code)
+    error_message = exc.detail.get("message", "Error") if isinstance(exc.detail, dict) else str(exc.detail)
+    error_detail = exc.details if hasattr(exc, 'details') else None
+    
+    # Sanitize error details
+    if error_detail:
+        error_detail = sanitize_error_detail(error_detail)
+    
+    # Log based on status code severity
+    if exc.status_code >= 500:
+        logger.error(
+            f"[{trace_id}] API Exception: {error_code} - {error_message}",
+            extra={"path": request.url.path, "code": error_code, "detail": error_detail}
+        )
+    elif exc.status_code >= 400:
+        logger.warning(
+            f"[{trace_id}] API Exception: {error_code} - {error_message}",
+            extra={"path": request.url.path, "code": error_code}
+        )
+    
+    error = ErrorResponse(
+        code=error_code,
+        message=error_message,
+        detail=error_detail,
+        trace_id=trace_id,
+        request_id=request.headers.get("X-Request-ID")
+    )
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error.model_dump(mode='json'),
+        headers={"X-Trace-ID": trace_id} if trace_id else None
+    )
+
+
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Handle Pydantic validation errors.
     
@@ -110,7 +114,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         exc: The validation error
         
     Returns:
-        JSON response with validation error details
+        JSON response with validation error details using ErrorResponse format
     """
     trace_id = get_trace_id()
     
@@ -129,44 +133,48 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
     
     error = ErrorResponse(
-        error="validation_error",
+        code="VALIDATION_ERROR",
         message="Request validation failed",
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         detail=errors,
         trace_id=trace_id,
+        request_id=request.headers.get("X-Request-ID")
     )
-    error.request_id = request.headers.get("X-Request-ID")
-    return error.to_response()
+    
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=error.model_dump(mode='json'),
+        headers={"X-Trace-ID": trace_id} if trace_id else None
+    )
 
 
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     """Handle HTTP exceptions.
     
     Args:
-        request: The request that caused the error
+        request: The request that caused error
         exc: The HTTP exception
         
     Returns:
-        JSON response with error details
+        JSON response with error details using ErrorResponse format
     """
     trace_id = get_trace_id()
     
     # Map status codes to error types
     error_type_map = {
-        400: "bad_request",
-        401: "unauthorized",
-        403: "forbidden",
-        404: "not_found",
-        405: "method_not_allowed",
-        409: "conflict",
-        422: "unprocessable_entity",
-        429: "rate_limited",
-        500: "internal_error",
-        502: "bad_gateway",
-        503: "service_unavailable",
+        400: "BAD_REQUEST",
+        401: "UNAUTHORIZED",
+        403: "FORBIDDEN",
+        404: "NOT_FOUND",
+        405: "METHOD_NOT_ALLOWED",
+        409: "CONFLICT",
+        422: "UNPROCESSABLE_ENTITY",
+        429: "RATE_LIMITED",
+        500: "INTERNAL_ERROR",
+        502: "BAD_GATEWAY",
+        503: "SERVICE_UNAVAILABLE",
     }
     
-    error_type = error_type_map.get(exc.status_code, "http_error")
+    error_code = error_type_map.get(exc.status_code, "HTTP_ERROR")
     
     # Log based on status code severity
     if exc.status_code >= 500:
@@ -181,24 +189,28 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         )
     
     error = ErrorResponse(
-        error=error_type,
+        code=error_code,
         message=str(exc.detail) if exc.detail else "HTTP error",
-        status_code=exc.status_code,
         trace_id=trace_id,
+        request_id=request.headers.get("X-Request-ID")
     )
-    error.request_id = request.headers.get("X-Request-ID")
-    return error.to_response()
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error.model_dump(mode='json'),
+        headers={"X-Trace-ID": trace_id} if trace_id else None
+    )
 
 
 async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
     """Handle SQLAlchemy database errors.
     
     Args:
-        request: The request that caused the error
+        request: The request that caused error
         exc: The SQLAlchemy error
         
     Returns:
-        JSON response with generic database error message
+        JSON response with generic database error message using ErrorResponse format
     """
     trace_id = get_trace_id()
     
@@ -214,13 +226,17 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -
     
     # Return generic message to avoid exposing database details
     error = ErrorResponse(
-        error="database_error",
+        code="DATABASE_ERROR",
         message="A database error occurred. Please try again later.",
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         trace_id=trace_id,
+        request_id=request.headers.get("X-Request-ID")
     )
-    error.request_id = request.headers.get("X-Request-ID")
-    return error.to_response()
+    
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=error.model_dump(mode='json'),
+        headers={"X-Trace-ID": trace_id} if trace_id else None
+    )
 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -229,11 +245,11 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     This is the catch-all handler for any exception not caught by more specific handlers.
     
     Args:
-        request: The request that caused the error
+        request: The request that caused error
         exc: The exception
         
     Returns:
-        JSON response with generic error message
+        JSON response with generic error message using ErrorResponse format
     """
     trace_id = get_trace_id()
     
@@ -249,25 +265,37 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     
     # Return generic message to avoid exposing internal details
     error = ErrorResponse(
-        error="internal_error",
+        code="INTERNAL_ERROR",
         message="An unexpected error occurred. Please try again later.",
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         trace_id=trace_id,
+        request_id=request.headers.get("X-Request-ID")
     )
-    error.request_id = request.headers.get("X-Request-ID")
-    return error.to_response()
+    
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=error.model_dump(mode='json'),
+        headers={"X-Trace-ID": trace_id} if trace_id else None
+    )
 
 
 def setup_exception_handlers(app):
     """Register all exception handlers with the FastAPI app.
     
+    Handlers are registered in order of specificity:
+    1. APIException - Custom application exceptions with error codes
+    2. RequestValidationError - Pydantic validation errors
+    3. HTTPException - FastAPI HTTP exceptions
+    4. SQLAlchemyError - Database errors
+    5. Exception - Catch-all for unhandled exceptions
+    
     Args:
         app: FastAPI application instance
     """
     # Register handlers in order of specificity
+    app.add_exception_handler(APIException, api_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)
     
-    logger.info("Global exception handlers registered")
+    logger.info("Global exception handlers registered (including APIException handler)")

@@ -10,6 +10,7 @@ from typing import Any, Optional, Callable, Dict
 from functools import wraps
 from collections import OrderedDict
 from core.logger import get_logger
+from observability.metrics import observe_cache_hit, observe_cache_miss, set_cache_size
 
 logger = get_logger(__name__)
 
@@ -24,22 +25,26 @@ class TTLCache:
         self.max_size = max_size
         self.default_ttl = default_ttl
     
-    def get(self, key: str) -&gt; Optional[Any]:
+    def get(self, key: str) -> Optional[Any]:
         """Get a value from cache if it exists and hasn't expired."""
         if key not in self.cache:
+            observe_cache_miss("query_cache")
             return None
         
         item = self.cache[key]
-        if time.time() &gt; item["expires_at"]:
+        if time.time() > item["expires_at"]:
             del self.cache[key]
+            observe_cache_miss("query_cache")
+            set_cache_size(len(self.cache), "query_cache")
             return None
         
         self.cache.move_to_end(key)
+        observe_cache_hit("query_cache")
         return item["value"]
     
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -&gt; None:
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
         """Set a value in cache with optional TTL."""
-        if len(self.cache) &gt;= self.max_size:
+        if len(self.cache) >= self.max_size:
             self.cache.popitem(last=False)
         
         ttl = ttl or self.default_ttl
@@ -48,17 +53,20 @@ class TTLCache:
             "expires_at": time.time() + ttl,
         }
         self.cache.move_to_end(key)
+        set_cache_size(len(self.cache), "query_cache")
     
-    def delete(self, key: str) -&gt; None:
+    def delete(self, key: str) -> None:
         """Delete a value from cache."""
         if key in self.cache:
             del self.cache[key]
+            set_cache_size(len(self.cache), "query_cache")
     
-    def clear(self) -&gt; None:
+    def clear(self) -> None:
         """Clear all cached values."""
         self.cache.clear()
+        set_cache_size(0, "query_cache")
     
-    def get_stats(self) -&gt; Dict[str, Any]:
+    def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics."""
         return {
             "size": len(self.cache),
@@ -70,12 +78,12 @@ class TTLCache:
 _query_cache = TTLCache(max_size=1000, default_ttl=300)
 
 
-def get_query_cache() -&gt; TTLCache:
+def get_query_cache() -> TTLCache:
     """Get the global query cache instance."""
     return _query_cache
 
 
-def generate_cache_key(prefix: str, *args, **kwargs) -&gt; str:
+def generate_cache_key(prefix: str, *args, **kwargs) -> str:
     """Generate a unique cache key from function arguments."""
     key_data = {
         "prefix": prefix,
@@ -133,7 +141,7 @@ def cached(ttl: int = 300, prefix: Optional[str] = None):
     return decorator
 
 
-def invalidate_cache(pattern: str) -&gt; int:
+def invalidate_cache(pattern: str) -> int:
     """
     Invalidate all cache keys matching a pattern.
     
@@ -146,4 +154,6 @@ def invalidate_cache(pattern: str) -&gt; int:
     keys_to_delete = [key for key in _query_cache.cache.keys() if key.startswith(pattern)]
     for key in keys_to_delete:
         del _query_cache.cache[key]
+    if keys_to_delete:
+        set_cache_size(len(_query_cache.cache), "query_cache")
     return len(keys_to_delete)

@@ -117,13 +117,14 @@ class PlaybookRunRepository:
         if conditions:
             stmt = stmt.where(and_(*conditions))
 
-        # Count total
-        count_stmt = select(PlaybookRunModel.id)
+        # Count total using func.count() for efficiency
+        from sqlalchemy import func
+        count_stmt = select(func.count(PlaybookRunModel.id))
         if conditions:
             count_stmt = count_stmt.where(and_(*conditions))
 
         count_result = await self.session.execute(count_stmt)
-        total = len(count_result.all())
+        total = count_result.scalar() or 0
 
         # Apply ordering and pagination
         stmt = stmt.order_by(PlaybookRunModel.started_at.desc()).offset(offset).limit(limit)

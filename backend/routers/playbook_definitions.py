@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
+from core.config import settings
 from db.session import get_session
 from dependencies.auth import get_current_user
 from models.user import UserModel, UserRole
@@ -135,7 +136,13 @@ async def get_queue_stats(
     """Get run queue statistics (all authenticated users)."""
     queue_manager = get_run_queue_manager()
     if not queue_manager:
-        return {"running": 0, "queued": 0, "max_concurrent": 3, "has_capacity": True}
+        # Use configured max concurrent value for consistency
+        return {
+            "running": 0,
+            "queued": 0,
+            "max_concurrent": settings.run_queue_max,
+            "has_capacity": True
+        }
 
     return await queue_manager.get_queue_stats()
 

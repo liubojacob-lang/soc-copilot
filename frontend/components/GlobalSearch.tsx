@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Search, X, FileText, AlertTriangle, Play, Users, Settings, Link } from "lucide-react";
 
 interface SearchResult {
@@ -12,22 +12,25 @@ interface SearchResult {
   icon: React.ReactNode;
 }
 
-const NAV_ITEMS: SearchResult[] = [
-  { type: "page", title: "Dashboard", url: "/", icon: <FileText className="w-4 h-4" /> },
-  { type: "page", title: "Alerts", url: "/alerts", icon: <AlertTriangle className="w-4 h-4" /> },
-  { type: "page", title: "Assets", url: "/assets", icon: <FileText className="w-4 h-4" /> },
-  { type: "page", title: "Playbooks", url: "/playbooks", icon: <Play className="w-4 h-4" /> },
-  { type: "page", title: "Triggers", url: "/triggers", icon: <Link className="w-4 h-4" /> },
-  { type: "page", title: "Audit Logs", url: "/audit", icon: <FileText className="w-4 h-4" /> },
-  { type: "page", title: "Reports", url: "/reports", icon: <FileText className="w-4 h-4" /> },
-  { type: "page", title: "AI Assistant", url: "/ai-assistant", icon: <FileText className="w-4 h-4" /> },
-  { type: "page", title: "Admin Users", url: "/admin/users", icon: <Users className="w-4 h-4" /> },
-  { type: "page", title: "Settings", url: "/settings", icon: <Settings className="w-4 h-4" /> },
-];
-
 export function GlobalSearch() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('nav');
+  const tCommon = useTranslations('common');
+
+  // Use useMemo to create NAV_ITEMS with translations
+  const NAV_ITEMS: SearchResult[] = useMemo(() => [
+    { type: "page", title: t('home'), url: "/", icon: <FileText className="w-4 h-4" /> },
+    { type: "page", title: t('alerts'), url: "/alerts", icon: <AlertTriangle className="w-4 h-4" /> },
+    { type: "page", title: t('assets') || "Assets", url: "/assets", icon: <FileText className="w-4 h-4" /> },
+    { type: "page", title: t('runs'), url: "/playbooks", icon: <Play className="w-4 h-4" /> },
+    { type: "page", title: t('triggers'), url: "/triggers", icon: <Link className="w-4 h-4" /> },
+    { type: "page", title: t('audit'), url: "/audit", icon: <FileText className="w-4 h-4" /> },
+    { type: "page", title: t('reports'), url: "/reports", icon: <FileText className="w-4 h-4" /> },
+    { type: "page", title: t('ai'), url: "/ai-assistant", icon: <FileText className="w-4 h-4" /> },
+    { type: "page", title: t('users') || "Users", url: "/admin/users", icon: <Users className="w-4 h-4" /> },
+    { type: "page", title: t('settings'), url: "/settings", icon: <Settings className="w-4 h-4" /> },
+  ], [t, tCommon]);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);

@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { RefreshCw, Download, Calendar, Filter } from 'lucide-react';
 import Navigation from '@/components/Navigation';
+import { Skeleton, SkeletonCard } from '@/components/common/Skeleton';
 
 // Components
 import { TrendsChart, SimpleTrendChart } from '@/components/monitor/TrendsChart';
@@ -187,91 +188,132 @@ export default function ThreatIntelDashboardPage() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <KPICard
-            label="Total Alerts"
-            value={410}
-            change="+12%"
-            trend="up"
-            color="blue"
-          />
-          <KPICard
-            label="Critical Threats"
-            value={20}
-            change="+5%"
-            trend="up"
-            color="red"
-          />
-          <KPICard
-            label="Malicious IOCs"
-            value={45}
-            change="-8%"
-            trend="down"
-            color="orange"
-          />
-          <KPICard
-            label="Active Campaigns"
-            value={8}
-            change="+2"
-            trend="up"
-            color="purple"
-          />
+          {loading ? (
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                  <Skeleton height="1rem" width="60%" className="mb-2" />
+                  <Skeleton height="2rem" width="40%" className="mb-1" />
+                  <Skeleton height="0.875rem" width="30%" />
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <KPICard
+                label="Total Alerts"
+                value={410}
+                change="+12%"
+                trend="up"
+                color="blue"
+              />
+              <KPICard
+                label="Critical Threats"
+                value={20}
+                change="+5%"
+                trend="up"
+                color="red"
+              />
+              <KPICard
+                label="Malicious IOCs"
+                value={45}
+                change="-8%"
+                trend="down"
+                color="orange"
+              />
+              <KPICard
+                label="Active Campaigns"
+                value={8}
+                change="+2"
+                trend="up"
+                color="purple"
+              />
+            </>
+          )}
         </div>
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Trends Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Alert Trends (Last 7 Days)
-            </h3>
-            <TrendsChart data={mockTrendData} type="area" height={250} />
-          </div>
+          {loading ? (
+            <>
+              <SkeletonCard hasHeader lines={0} className="h-[350px]" />
+              <SkeletonCard hasHeader lines={0} className="h-[350px]" />
+            </>
+          ) : (
+            <>
+              {/* Trends Chart */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Alert Trends (Last 7 Days)
+                </h3>
+                <TrendsChart data={mockTrendData} type="area" height={250} />
+              </div>
 
-          {/* Severity Distribution */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Severity Distribution
-            </h3>
-            <SeverityDistribution data={mockSeverityData} type="donut" height={250} />
-          </div>
+              {/* Severity Distribution */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Severity Distribution
+                </h3>
+                <SeverityDistribution data={mockSeverityData} type="donut" height={250} />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Middle Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Top Threat Sources */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Top Threat Sources
-            </h3>
-            <TopSources sources={mockTopSources} limit={8} />
-          </div>
+          {loading ? (
+            <>
+              <SkeletonCard hasHeader lines={5} className="lg:col-span-2" />
+              <SkeletonCard hasHeader lines={3} />
+            </>
+          ) : (
+            <>
+              {/* Top Threat Sources */}
+              <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Top Threat Sources
+                </h3>
+                <TopSources sources={mockTopSources} limit={8} />
+              </div>
 
-          {/* Severity Breakdown */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Severity Breakdown
-            </h3>
-            <SeverityBars data={mockSeverityData} limit={5} />
-          </div>
+              {/* Severity Breakdown */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Severity Breakdown
+                </h3>
+                <SeverityBars data={mockSeverityData} limit={5} />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* MITRE ATT&CK Heatmap */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              MITRE ATT&CK Coverage
-            </h3>
-            <MITREHeatmap data={mockMITREData} />
-          </div>
+          {loading ? (
+            <>
+              <SkeletonCard hasHeader lines={4} />
+              <SkeletonCard hasHeader lines={4} />
+            </>
+          ) : (
+            <>
+              {/* MITRE ATT&CK Heatmap */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  MITRE ATT&CK Coverage
+                </h3>
+                <MITREHeatmap data={mockMITREData} />
+              </div>
 
-          {/* IOC Statistics */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              IOC Statistics
-            </h3>
-            <IOCStats stats={mockIOCStats} breakdown={mockIOCBreakdown} />
-          </div>
+              {/* IOC Statistics */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  IOC Statistics
+                </h3>
+                <IOCStats stats={mockIOCStats} breakdown={mockIOCBreakdown} />
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

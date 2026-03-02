@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { loadAuthState, logout, isAdmin } from "@/lib/auth";
+import { useTranslations } from 'next-intl';
 import {
   X,
   Shield,
@@ -28,6 +29,9 @@ interface NavGroup {
 export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('navigation');
+  const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -45,29 +49,28 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   // Navigation groups
   const navGroups: NavGroup[] = [
     {
-      label: "Core Operations",
+      label: tNav('dashboard'),
       items: [
-        { label: "Home", path: "/" },
-        { label: "Runs", path: "/playbooks" },
-        { label: "Definitions", path: "/playbooks/definitions" },
-        { label: "Approvals", path: "/playbooks/approvals" },
+        { label: tNav('home'), path: "/" },
+        { label: tNav('runs'), path: "/playbooks" },
+        { label: tNav('definitions'), path: "/playbooks/definitions" },
+        { label: t('approvals'), path: "/playbooks/approvals" },
       ],
     },
     {
-      label: "Analysis Tools",
+      label: tNav('analysis'),
       items: [
-        { label: "AI", path: "/ai-assistant" },
-        { label: "UEBA", path: "/ueba" },
-        { label: "Hunting", path: "/threat-hunting" },
+        { label: tNav('ai'), path: "/ai-assistant" },
+        { label: tNav('ueba'), path: "/ueba" },
+        { label: tNav('threatHunting'), path: "/threat-hunting" },
       ],
     },
     {
-      label: "Integrations",
+      label: tNav('ecosystem'),
       items: [
-        { label: "Market", path: "/marketplace" },
-        { label: "Cloud", path: "/cloud-native" },
-        { label: "Dify", path: "/dify" },
-        { label: "Triggers", path: "/triggers" },
+        { label: tNav('marketplace'), path: "/marketplace" },
+        { label: tNav('cloudNative'), path: "/cloud-native" },
+        { label: t('triggers'), path: "/triggers" },
       ],
     },
   ];
@@ -75,10 +78,10 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   // Admin items
   const adminItems: NavItem[] = isAdmin(user ?? null)
     ? [
-        { label: "Settings", path: "/settings" },
-        { label: "Users", path: "/admin/users" },
-        { label: "Secrets", path: "/admin/secrets" },
-        { label: "Audit", path: "/audit" },
+        { label: t('settings'), path: "/settings" },
+        { label: t('users'), path: "/admin/users" },
+        { label: tCommon('secrets'), path: "/admin/secrets" },
+        { label: t('audit'), path: "/audit" },
       ]
     : [];
 
@@ -253,7 +256,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                 }
                 className="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                Admin
+                {tCommon('admin')}
                 <ChevronRight
                   className={`w-4 h-4 transition-transform ${
                     expandedGroup === "admin" ? "rotate-90" : ""
@@ -290,7 +293,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             className="w-full py-2 px-4 flex items-center justify-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
           >
             <LogOut className="w-5 h-5" />
-            <span>Logout</span>
+            <span>{t('logout')}</span>
           </button>
         </div>
       </div>

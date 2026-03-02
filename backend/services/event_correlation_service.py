@@ -24,6 +24,24 @@ from core.logger import get_logger
 logger = get_logger(__name__)
 
 
+# Risk scoring constants
+SEVERITY_SCORES = {
+    "critical": 90,  # 90/100
+    "high": 70,      # 70/100
+    "medium": 50,    # 50/100
+    "low": 30,       # 30/100
+    "info": 10,      # 10/100
+}
+
+CRITICALITY_WEIGHTS = {
+    "critical": 1.5,  # 50% increase
+    "high": 1.3,     # 30% increase
+    "medium": 1.0,   # no change
+    "low": 0.8,      # 20% decrease
+    None: 1.0,       # unknown asset = medium
+}
+
+
 class EventCorrelationService:
     """Service for correlating related events into incidents."""
 
@@ -348,7 +366,14 @@ class EventCorrelationService:
         self,
         events: List[Dict[str, Any]]
     ) -> float:
-        """Calculate Jaccard similarity between event messages."""
+        """Calculate Jaccard similarity between event messages.
+
+        Optimized to avoid O(n²) complexity for large event sets.
+        Uses sampling when event count exceeds threshold.
+        """
+        MAX_EVENTS_FOR_EXACT = 50  # Threshold for exact calculation
+        SAMPLE_SIZE = 30  # Sample size for large event sets
+
         messages = [
             set(str(e.get("message", "")).lower().split())
             for e in events
@@ -357,10 +382,23 @@ class EventCorrelationService:
         if not messages or not any(messages):
             return 0.0
 
-        # Calculate pairwise similarities
+        # For small sets, use exact calculation
+        if len(messages) <= MAX_EVENTS_FOR_EXACT:
+            return self._calculate_pairwise_jaccard(messages)
+
+        # For large sets, use sampling to avoid O(n²)
+        import random
+        sampled_indices = random.sample(range(len(messages)), min(SAMPLE_SIZE, len(messages)))
+        sampled_messages = [messages[i] for i in sampled_indices]
+        return self._calculate_pairwise_jaccard(sampled_messages)
+
+    def _calculate_pairwise_jaccard(self, messages: List[set]) -> float:
+        """Calculate pairwise Jaccard similarity for a list of message sets."""
         similarities = []
-        for i in range(len(messages)):
-            for j in range(i + 1, len(messages)):
+        n = len(messages)
+
+        for i in range(n):
+            for j in range(i + 1, n):
                 intersection = messages[i] & messages[j]
                 union = messages[i] | messages[j]
                 if union:
@@ -487,6 +525,13 @@ class EventCorrelationService:
         )
         severity = ["info", "low", "medium", "high", "critical"][max_severity_level]
 
+        # Calculate risk score based on severity and asset criticality
+        risk_score = self._calculate_risk_score(
+            severity=severity,
+            common_entities=common_entities,
+            event_count=len(events)
+        )
+
         # Create correlated event
         import uuid
         correlated = CorrelatedEvent(
@@ -503,11 +548,50 @@ class EventCorrelationService:
             first_seen=first_seen,
             last_seen=last_seen,
             status="open",
-            risk_score=50.0,  # TODO: Calculate based on severity + asset criticality
+            risk_score=risk_score,
             created_at=datetime.now(timezone.utc).isoformat(),
         )
 
         return correlated
+
+    def _calculate_risk_score(
+        self,
+        severity: str,
+        common_entities: Dict[str, List[str]],
+        event_count: int
+    ) -> float:
+        """Calculate risk score based on severity and asset criticality.
+
+        Args:
+            severity: Event severity (critical/high/medium/low/info)
+            common_entities: Extracted entities (IPs, hosts, users)
+            event_count: Number of correlated events
+
+        Returns:
+            Risk score between 0 and 100
+        """
+        # Base score from severity
+        base_score = SEVERITY_SCORES.get(severity.lower(), 50)
+
+        # Determine maximum asset criticality from entities
+        # For now, use default (medium) since we don't have asset lookup here
+        # In the future, this could query the asset service
+        max_criticality = "medium"  # Default assumption
+
+        # Apply asset criticality weight
+        criticality_weight = CRITICALITY_WEIGHTS.get(max_criticality, 1.0)
+
+        # Calculate weighted score
+        weighted_score = base_score * criticality_weight
+
+        # Event count multiplier (more events = higher risk)
+        # Cap at 1.5x for 10+ events
+        event_multiplier = min(1.0 + (event_count - 1) * 0.05, 1.5)
+
+        # Final risk score
+        final_score = min(weighted_score * event_multiplier, 100.0)
+
+        return round(final_score, 1)
 
     def _extract_common_entities(
         self,

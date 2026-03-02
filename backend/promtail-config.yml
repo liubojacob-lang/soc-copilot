@@ -14,4 +14,4 @@ scrape_configs:
           - localhost
         labels:
           job: soc-copilot
-          __path__: /var/log/backend/server.log
+          __path__: /var/log/backend/*.log

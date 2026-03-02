@@ -121,6 +121,61 @@ export function SkeletonPlaybookRun({ className = '' }: { className?: string }) 
   );
 }
 
+export function SkeletonChart({ type = 'bar', className = '' }: {
+  type?: 'bar' | 'line' | 'pie' | 'area';
+  className?: string;
+}) {
+  if (type === 'pie') {
+    return (
+      <div className={`flex items-center justify-center p-6 ${className}`}>
+        <Skeleton width="12rem" height="12rem" rounded="full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`p-4 ${className}`}>
+      <div className="flex items-end justify-between gap-2 h-48">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <Skeleton
+            key={i}
+            height={`${30 + Math.random() * 70}%`}
+            width="100%"
+            rounded="md"
+          />
+        ))}
+      </div>
+      <div className="flex justify-between mt-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} height="0.75rem" width="3rem" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function SkeletonStatGrid({ count = 4, className = '' }: {
+  count?: number;
+  className?: string;
+}) {
+  return (
+    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg" style={{ animationDelay: `${i * 100}ms` }}>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <Skeleton height="0.875rem" width="60%" className="mb-2" />
+              <Skeleton height="1.5rem" width="70%" className="mb-1" />
+              <Skeleton height="0.75rem" width="40%" />
+            </div>
+            <Skeleton width="2.5rem" height="2.5rem" rounded="lg" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SkeletonPage({ className = '' }: { className?: string }) {
   return (
     <div className={`p-6 ${className}`}>
@@ -134,10 +189,12 @@ export function SkeletonPage({ className = '' }: { className?: string }) {
           <Skeleton height="2.5rem" width="8rem" rounded="md" />
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <SkeletonStatGrid className="mb-6" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <SkeletonCard /><SkeletonCard /><SkeletonCard />
       </div>
-      <SkeletonTable className="mt-6" />
+      <SkeletonChart className="mb-6" />
+      <SkeletonTable />
     </div>
   );
 }

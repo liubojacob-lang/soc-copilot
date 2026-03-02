@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { api, AssetResponse, Criticality } from "@/lib/api";
+import { SkeletonTable } from "@/components/common/LoadingState";
+import { useTranslations } from "next-intl";
 
 export default function AssetsPage() {
+  const t = useTranslations('assets');
+  const tCommon = useTranslations('common');
   const [assets, setAssets] = useState<AssetResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -15,13 +19,13 @@ export default function AssetsPage() {
   const [importJson, setImportJson] = useState("");
 
   const filteredAssets = assets.filter(asset => {
-    const matchesSearch = !search || 
+    const matchesSearch = !search ||
       (asset.hostname?.toLowerCase().includes(search.toLowerCase()) ||
       asset.ip?.toLowerCase().includes(search.toLowerCase()) ||
       asset.owner?.toLowerCase().includes(search.toLowerCase()) ||
       asset.business?.toLowerCase().includes(search.toLowerCase()));
     const matchesCriticality = criticalityFilter === "all" || asset.criticality === criticalityFilter;
-    const matchesStatus = statusFilter === "all" || 
+    const matchesStatus = statusFilter === "all" ||
       (statusFilter === "active" && asset.is_active) ||
       (statusFilter === "inactive" && !asset.is_active);
     return matchesSearch && matchesCriticality && matchesStatus;
@@ -48,13 +52,13 @@ export default function AssetsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this asset?")) return;
+    if (!confirm(t('deleteConfirm'))) return;
     try {
       await api.deleteAsset(id);
       loadAssets();
     } catch (error) {
       console.error("Failed to delete asset:", error);
-      alert("Failed to delete asset");
+      alert(t('deleteFailed'));
     }
   };
 
@@ -67,7 +71,7 @@ export default function AssetsPage() {
     try {
       const data = JSON.parse(importJson);
       const result = await api.importAssets({ assets: data });
-      alert(`Imported: ${result.imported}, Failed: ${result.failed}`);
+      alert(t('importSuccess', { imported: result.imported, failed: result.failed }));
       if (result.errors.length > 0) {
         console.error("Import errors:", result.errors);
       }
@@ -76,7 +80,7 @@ export default function AssetsPage() {
       loadAssets();
     } catch (error) {
       console.error("Import failed:", error);
-      alert("Invalid JSON or import failed");
+      alert(t('importFailed'));
     }
   };
 
@@ -93,19 +97,19 @@ export default function AssetsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Assets Management</h1>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
         <div className="space-x-2">
           <button
             onClick={() => setShowForm(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            + Add Asset
+            + {t('addAsset')}
           </button>
           <button
             onClick={() => setShowImport(true)}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
-            Import JSON
+            {t('importJson')}
           </button>
         </div>
       </div>
@@ -115,7 +119,7 @@ export default function AssetsPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by hostname, IP, owner, business..."
+          placeholder={t('searchPlaceholder')}
           className="flex-1 min-w-[200px] px-4 py-2 border rounded"
         />
         <select
@@ -123,49 +127,51 @@ export default function AssetsPage() {
           onChange={(e) => setCriticalityFilter(e.target.value)}
           className="px-3 py-2 border rounded"
         >
-          <option value="all">All Criticality</option>
-          <option value="critical">Critical</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
+          <option value="all">{t('allCriticality')}</option>
+          <option value="critical">{tCommon('critical')}</option>
+          <option value="high">{tCommon('high')}</option>
+          <option value="medium">{tCommon('medium')}</option>
+          <option value="low">{tCommon('low')}</option>
         </select>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-3 py-2 border rounded"
         >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="all">{t('allStatus')}</option>
+          <option value="active">{tCommon('active')}</option>
+          <option value="inactive">{tCommon('inactive')}</option>
         </select>
         <button
           type="submit"
           className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
         >
-          Search
+          {tCommon('search')}
         </button>
       </form>
 
       {loading ? (
-        <div className="text-center py-8">Loading...</div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <SkeletonTable rows={8} columns={6} />
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left border">Hostname</th>
-                <th className="px-4 py-2 text-left border">IP</th>
-                <th className="px-4 py-2 text-left border">Owner</th>
-                <th className="px-4 py-2 text-left border">Business</th>
-                <th className="px-4 py-2 text-left border">Criticality</th>
-                <th className="px-4 py-2 text-left border">Actions</th>
+                <th className="px-4 py-2 text-left border">{t('hostname')}</th>
+                <th className="px-4 py-2 text-left border">{t('ipAddress')}</th>
+                <th className="px-4 py-2 text-left border">{t('owner')}</th>
+                <th className="px-4 py-2 text-left border">{t('businessUnit')}</th>
+                <th className="px-4 py-2 text-left border">{t('criticality')}</th>
+                <th className="px-4 py-2 text-left border">{tCommon('actions')}</th>
               </tr>
             </thead>
             <tbody>
               {assets.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                    No assets found
+                    {t('noAssetsFound')}
                   </td>
                 </tr>
               ) : (
@@ -185,13 +191,13 @@ export default function AssetsPage() {
                         onClick={() => handleEdit(asset)}
                         className="text-blue-600 hover:text-blue-800 mr-2"
                       >
-                        Edit
+                        {tCommon('edit')}
                       </button>
                       <button
                         onClick={() => handleDelete(asset.id)}
                         className="text-red-600 hover:text-red-800"
                       >
-                        Delete
+                        {tCommon('delete')}
                       </button>
                     </td>
                   </tr>
@@ -206,11 +212,11 @@ export default function AssetsPage() {
       {showImport && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Import Assets (JSON)</h2>
+            <h2 className="text-xl font-bold mb-4">{t('importTitle')}</h2>
             <textarea
               value={importJson}
               onChange={(e) => setImportJson(e.target.value)}
-              placeholder='[{"hostname": "web-prod-01", "ip": "10.0.1.10", "criticality": "high"}]'
+              placeholder={t('importPlaceholder')}
               className="w-full h-64 px-3 py-2 border rounded font-mono text-sm"
             />
             <div className="mt-4 flex justify-end space-x-2">
@@ -218,13 +224,13 @@ export default function AssetsPage() {
                 onClick={() => setShowImport(false)}
                 className="px-4 py-2 border rounded hover:bg-gray-100"
               >
-                Cancel
+                {tCommon('cancel')}
               </button>
               <button
                 onClick={handleImport}
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
               >
-                Import
+                {tCommon('import')}
               </button>
             </div>
           </div>
@@ -259,6 +265,9 @@ function AssetForm({
   onClose: () => void;
   onSave: () => void;
 }) {
+  const t = useTranslations('assets');
+  const tCommon = useTranslations('common');
+
   const [formData, setFormData] = useState({
     hostname: asset?.hostname || "",
     ip: asset?.ip || "",
@@ -287,7 +296,7 @@ function AssetForm({
       onSave();
     } catch (error: unknown) {
       const err = error as { status?: number; message: string };
-      alert(err.message || "Failed to save asset");
+      alert(err.message || t('saveFailed'));
     }
   };
 
@@ -295,11 +304,11 @@ function AssetForm({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
         <h2 className="text-xl font-bold mb-4">
-          {asset ? "Edit Asset" : "Add Asset"}
+          {asset ? t('editAsset') : t('addAssetTitle')}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Hostname</label>
+            <label className="block text-sm font-medium mb-1">{t('hostname')}</label>
             <input
               type="text"
               value={formData.hostname}
@@ -308,7 +317,7 @@ function AssetForm({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">IP Address</label>
+            <label className="block text-sm font-medium mb-1">{t('ipAddress')}</label>
             <input
               type="text"
               value={formData.ip}
@@ -317,7 +326,7 @@ function AssetForm({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Owner</label>
+            <label className="block text-sm font-medium mb-1">{t('owner')}</label>
             <input
               type="text"
               value={formData.owner}
@@ -326,7 +335,7 @@ function AssetForm({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Business Unit</label>
+            <label className="block text-sm font-medium mb-1">{t('businessUnit')}</label>
             <input
               type="text"
               value={formData.business}
@@ -335,20 +344,20 @@ function AssetForm({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Criticality</label>
+            <label className="block text-sm font-medium mb-1">{t('criticality')}</label>
             <select
               value={formData.criticality}
               onChange={(e) => setFormData({ ...formData, criticality: e.target.value as Criticality })}
               className="w-full px-3 py-2 border rounded"
             >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
+              <option value="low">{tCommon('low')}</option>
+              <option value="medium">{tCommon('medium')}</option>
+              <option value="high">{tCommon('high')}</option>
+              <option value="critical">{tCommon('critical')}</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Tags (comma-separated)</label>
+            <label className="block text-sm font-medium mb-1">{t('tags')}</label>
             <input
               type="text"
               value={formData.tags}
@@ -357,7 +366,7 @@ function AssetForm({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Notes</label>
+            <label className="block text-sm font-medium mb-1">{t('notes')}</label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -373,7 +382,7 @@ function AssetForm({
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
               className="mr-2"
             />
-            <label htmlFor="isActive" className="text-sm">Active</label>
+            <label htmlFor="isActive" className="text-sm">{t('active')}</label>
           </div>
           <div className="flex justify-end space-x-2 pt-4">
             <button
@@ -381,13 +390,13 @@ function AssetForm({
               onClick={onClose}
               className="px-4 py-2 border rounded hover:bg-gray-100"
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              Save
+              {tCommon('save')}
             </button>
           </div>
         </form>

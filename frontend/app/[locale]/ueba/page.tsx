@@ -19,6 +19,8 @@ export default function UEBAPage() {
   const locale = useLocale();
   const t = useTranslations('uebaPage');
   const tCommon = useTranslations('common');
+  const tRiskFactors = useTranslations('uebaPage.riskFactors');
+  const tRiskLevel = useTranslations('uebaPage.riskLevel');
   const [mounted, setMounted] = useState(false);
   const [dashboard, setDashboard] = useState<any>(null);
   const [highRiskUsers, setHighRiskUsers] = useState<any[]>([]);
@@ -180,7 +182,7 @@ export default function UEBAPage() {
                               <p className="text-xs text-gray-500">{t('riskScore')}</p>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRiskColor(user.risk_score)}`}>
-                              {user.risk_level === 'high' ? 'High' : user.risk_level === 'medium' ? 'Medium' : 'Low'}
+                              {user.risk_level === 'high' ? tRiskLevel('high') : user.risk_level === 'medium' ? tRiskLevel('medium') : tRiskLevel('low')}
                             </span>
                           </div>
                         </div>
@@ -204,8 +206,8 @@ export default function UEBAPage() {
                       <div key={index} className="flex items-center justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           {factor.factor === 'off_hours_login' ? t('offHoursLogin') :
-                           factor.factor === 'unusual_data_access' ? 'Unusual Data Access' :
-                           factor.factor === 'geolocation_anomaly' ? 'Geolocation Anomaly' :
+                           factor.factor === 'unusual_data_access' ? tRiskFactors('unusualDataAccess') :
+                           factor.factor === 'geolocation_anomaly' ? tRiskFactors('geolocationAnomaly') :
                            factor.factor}
                         </span>
                         <span className="text-sm font-medium text-gray-900 dark:text-white">

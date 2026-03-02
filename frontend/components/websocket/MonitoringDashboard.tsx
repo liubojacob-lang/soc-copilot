@@ -246,14 +246,14 @@ export function MonitoringDashboard() {
 
         {/* Performance Metrics */}
         <MetricCard
-          title="Latency"
+          title={t('latency')}
           icon={Zap}
           value={`${metrics.performance.avg_latency_ms.toFixed(1)}ms`}
-          label="Average"
+          label={t('average')}
           color="purple"
           details={[
-            { label: 'P95', value: `${metrics.performance.p95_latency_ms.toFixed(1)}ms` },
-            { label: 'P99', value: `${metrics.performance.p99_latency_ms.toFixed(1)}ms` },
+            { label: t('p95'), value: `${metrics.performance.p95_latency_ms.toFixed(1)}ms` },
+            { label: t('p99'), value: `${metrics.performance.p99_latency_ms.toFixed(1)}ms` },
           ]}
           highlight={metrics.performance.p95_latency_ms > 500}
         />
@@ -263,47 +263,47 @@ export function MonitoringDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Connection Details */}
         <DetailsCard
-          title="Connection Details"
+          title={t('connectionDetails')}
           icon={Network}
           data={[
-            { label: 'Active Connections', value: metrics.connection.active_connections },
-            { label: 'Total Connections', value: metrics.connection.total_connections },
-            { label: 'Total Disconnections', value: metrics.connection.total_disconnections },
-            { label: 'Connection Failures', value: metrics.connection.total_connection_failures },
-            { label: 'Avg Duration', value: `${metrics.connection.avg_connection_duration_seconds.toFixed(1)}s` },
+            { label: t('activeConnections'), value: metrics.connection.active_connections },
+            { label: t('totalConnections'), value: metrics.connection.total_connections },
+            { label: t('totalDisconnections'), value: metrics.connection.total_disconnections },
+            { label: t('connectionFailures'), value: metrics.connection.total_connection_failures },
+            { label: t('avgDuration'), value: `${metrics.connection.avg_connection_duration_seconds.toFixed(1)}s` },
           ]}
         />
 
         {/* Message Details */}
         <DetailsCard
-          title="Message Details"
+          title={t('messageDetails')}
           icon={MessageSquare}
           data={[
-            { label: 'Messages Sent', value: metrics.message.total_messages_sent },
-            { label: 'Messages Received', value: metrics.message.total_messages_received },
-            { label: 'Messages Filtered', value: metrics.message.total_messages_filtered },
-            { label: 'Messages Queued', value: metrics.message.total_messages_queued },
-            { label: 'Send Rate', value: `${metrics.message.current_send_rate.toFixed(1)}/s` },
-            { label: 'Receive Rate', value: `${metrics.message.current_receive_rate.toFixed(1)}/s` },
+            { label: t('messagesSent'), value: metrics.message.total_messages_sent },
+            { label: t('messagesReceived'), value: metrics.message.total_messages_received },
+            { label: t('messagesFiltered'), value: metrics.message.total_messages_filtered },
+            { label: t('messagesQueued'), value: metrics.message.total_messages_queued },
+            { label: t('sendRate'), value: `${metrics.message.current_send_rate.toFixed(1)}/s` },
+            { label: t('receiveRate'), value: `${metrics.message.current_receive_rate.toFixed(1)}/s` },
           ]}
         />
 
         {/* Performance Details */}
         <DetailsCard
-          title="Performance Details"
+          title={t('performanceDetails')}
           icon={Clock}
           data={[
-            { label: 'Avg Latency', value: `${metrics.performance.avg_latency_ms.toFixed(2)}ms` },
-            { label: 'P50 Latency', value: `${metrics.performance.p50_latency_ms.toFixed(2)}ms` },
-            { label: 'P95 Latency', value: `${metrics.performance.p95_latency_ms.toFixed(2)}ms` },
-            { label: 'P99 Latency', value: `${metrics.performance.p99_latency_ms.toFixed(2)}ms` },
-            { label: 'Max Latency', value: `${metrics.performance.max_latency_ms.toFixed(2)}ms` },
+            { label: t('avgLatency'), value: `${metrics.performance.avg_latency_ms.toFixed(2)}ms` },
+            { label: t('p50Latency'), value: `${metrics.performance.p50_latency_ms.toFixed(2)}ms` },
+            { label: t('p95Latency'), value: `${metrics.performance.p95_latency_ms.toFixed(2)}ms` },
+            { label: t('p99Latency'), value: `${metrics.performance.p99_latency_ms.toFixed(2)}ms` },
+            { label: t('maxLatency'), value: `${metrics.performance.max_latency_ms.toFixed(2)}ms` },
           ]}
         />
 
         {/* Error Breakdown */}
         <DetailsCard
-          title="Error Breakdown"
+          title={t('errorBreakdown')}
           icon={AlertTriangle}
           data={Object.entries(metrics.error.errors_by_type).map(([type, count]) => ({
             label: type,

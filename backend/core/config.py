@@ -65,11 +65,6 @@ class Settings(BaseSettings):
     run_queue_policy: str = "fifo"  # Queue policy: fifo or priority
     http_allowed_hosts: str = ""  # Comma-separated allowed hostnames for HTTP sandbox
 
-    # v0.7.4: Dify Workflow Integration
-    dify_api_url: str = ""  # Dify API base URL (e.g., http://localhost:3001)
-    dify_api_key: str = ""  # Dify API key for authentication
-    dify_workspace_id: str = ""  # Dify workspace ID
-
     # v0.8.1: API Timeouts (unified configuration)
     api_timeout_analysis_ms: int = 120000  # 2 minutes for AI analysis
     api_timeout_default_ms: int = 30000    # 30 seconds for normal requests

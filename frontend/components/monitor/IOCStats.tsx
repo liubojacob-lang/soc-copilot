@@ -6,6 +6,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { Shield, AlertTriangle, CheckCircle, HelpCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
@@ -74,15 +75,49 @@ const TYPE_ICONS = {
 };
 
 export function IOCStats({ stats, breakdown, showTrend = true }: IOCStatsProps) {
+  const tReputation = useTranslations('reputation');
+  const tCommon = useTranslations('common');
+  const tMonitor = useTranslations('monitor');
+  const tSeverity = useTranslations('severity');
+  const tIoc = useTranslations('ioc');
+
+  // 使用 useMemo 创建 REPUTATION_CONFIG，使其可以访问翻译函数
+  const reputationConfig = useMemo(() => ({
+    malicious: {
+      label: tReputation('malicious'),
+      icon: AlertTriangle,
+      color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      iconColor: 'text-red-500',
+    },
+    suspicious: {
+      label: tReputation('suspicious'),
+      icon: Shield,
+      color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+      iconColor: 'text-orange-500',
+    },
+    benign: {
+      label: tReputation('benign'),
+      icon: CheckCircle,
+      color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      iconColor: 'text-green-500',
+    },
+    unknown: {
+      label: tReputation('unknown'),
+      icon: HelpCircle,
+      color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+      iconColor: 'text-gray-500',
+    },
+  }), [tReputation]);
+
   // 饼图数据
   const chartData = useMemo(() => {
     return [
-      { name: 'Malicious', value: stats.malicious, color: REPUTATION_COLORS.malicious },
-      { name: 'Suspicious', value: stats.suspicious, color: REPUTATION_COLORS.suspicious },
-      { name: 'Benign', value: stats.benign, color: REPUTATION_COLORS.benign },
-      { name: 'Unknown', value: stats.unknown, color: REPUTATION_COLORS.unknown },
+      { name: tReputation('malicious'), value: stats.malicious, color: REPUTATION_COLORS.malicious },
+      { name: tReputation('suspicious'), value: stats.suspicious, color: REPUTATION_COLORS.suspicious },
+      { name: tReputation('benign'), value: stats.benign, color: REPUTATION_COLORS.benign },
+      { name: tReputation('unknown'), value: stats.unknown, color: REPUTATION_COLORS.unknown },
     ].filter(item => item.value > 0);
-  }, [stats]);
+  }, [stats, tReputation]);
 
   // 自定义 Tooltip
   const CustomTooltip = ({ active, payload }: any) => {
@@ -104,11 +139,11 @@ export function IOCStats({ stats, breakdown, showTrend = true }: IOCStatsProps) 
         </div>
         <div className="space-y-1 text-xs">
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 dark:text-gray-400">Count:</span>
+            <span className="text-gray-600 dark:text-gray-400">{tMonitor('count')}:</span>
             <span className="font-semibold text-gray-900 dark:text-white">{data.value}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 dark:text-gray-400">Percentage:</span>
+            <span className="text-gray-600 dark:text-gray-400">{tMonitor('percentage')}:</span>
             <span className="font-semibold text-gray-900 dark:text-white">{percentage}%</span>
           </div>
         </div>
@@ -126,25 +161,25 @@ export function IOCStats({ stats, breakdown, showTrend = true }: IOCStatsProps) 
       {/* 总览卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          label="Total IOCs"
+          label={tIoc('totalIocs')}
           value={stats.total}
           icon={Shield}
           color="blue"
         />
         <StatCard
-          label="Malicious"
+          label={tIoc('malicious')}
           value={stats.malicious}
           icon={AlertTriangle}
           color="red"
         />
         <StatCard
-          label="Suspicious"
+          label={tIoc('suspicious')}
           value={stats.suspicious}
           icon={Shield}
           color="orange"
         />
         <StatCard
-          label="Benign"
+          label={tIoc('benign')}
           value={stats.benign}
           icon={CheckCircle}
           color="green"
@@ -154,7 +189,7 @@ export function IOCStats({ stats, breakdown, showTrend = true }: IOCStatsProps) 
       {/* 威胁级别指示器 */}
       <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Threat Level</h4>
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{tMonitor('threatLevel')}</h4>
           <span className={`text-2xl font-bold ${
             threatPercentage >= 30
               ? 'text-red-600 dark:text-red-400'
@@ -178,9 +213,9 @@ export function IOCStats({ stats, breakdown, showTrend = true }: IOCStatsProps) 
           />
         </div>
         <div className="flex justify-between mt-2 text-xs text-gray-600 dark:text-gray-400">
-          <span>Safe</span>
-          <span>Warning</span>
-          <span>Critical</span>
+          <span>{tMonitor('safe')}</span>
+          <span>{tMonitor('warning')}</span>
+          <span>{tSeverity('critical')}</span>
         </div>
       </div>
 
@@ -189,7 +224,7 @@ export function IOCStats({ stats, breakdown, showTrend = true }: IOCStatsProps) 
         {/* 饼图 */}
         <div>
           <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-            Reputation Distribution
+            {tMonitor('reputationDistribution')}
           </h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -224,7 +259,7 @@ export function IOCStats({ stats, breakdown, showTrend = true }: IOCStatsProps) 
         {/* 详细统计 */}
         <div className="space-y-3">
           <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-            Breakdown by Type
+            {tMonitor('breakdownByType')}
           </h4>
           {breakdown?.map((item) => (
             <IOCBreakdownCard key={item.type} data={item} showTrend={showTrend} />

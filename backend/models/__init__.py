@@ -24,6 +24,7 @@ from models.correlated_event import CorrelatedEvent
 from models.event_similarity import EventSimilarity
 from models.root_cause_analysis import RootCauseAnalysis
 from models.security_alert import SecurityAlert
+from models.alert_note import AlertNoteModel
 from models.rbac import Role, Permission
 
 __all__ = [
@@ -58,6 +59,7 @@ __all__ = [
     "EventSimilarity",
     "RootCauseAnalysis",
     "SecurityAlert",
+    "AlertNoteModel",
     "Role",
     "Permission",
 ]

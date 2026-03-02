@@ -9,8 +9,12 @@ from middleware.trace_middleware import (
     setup_trace_logging,
 )
 from middleware.exception_handler import (
-    ErrorResponse,
     setup_exception_handlers,
+    api_exception_handler,
+    validation_exception_handler,
+    http_exception_handler,
+    sqlalchemy_exception_handler,
+    generic_exception_handler,
 )
 from middleware.idempotency_middleware import IdempotencyMiddleware
 from middleware.authorization_middleware import (
@@ -34,8 +38,12 @@ __all__ = [
     "get_trace_id",
     "set_trace_id",
     "setup_trace_logging",
-    "ErrorResponse",
     "setup_exception_handlers",
+    "api_exception_handler",
+    "validation_exception_handler",
+    "http_exception_handler",
+    "sqlalchemy_exception_handler",
+    "generic_exception_handler",
     "IdempotencyMiddleware",
     "ResourceAuthorizationMiddleware",
     "ResourceOwnerChecker",

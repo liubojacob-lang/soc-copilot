@@ -67,17 +67,9 @@ router = APIRouter(prefix="/api/admin/settings", tags=["admin", "settings"])
 class SettingsUpdateRequest(BaseModel):
     """Request model for updating system settings."""
 
-    dify_api_url: Optional[str] = Field(None, description="Dify API base URL")
-    dify_api_key: Optional[str] = Field(None, description="Dify API key")
-    dify_workspace_id: Optional[str] = Field(None, description="Dify workspace ID")
-
 
 class SettingsResponse(BaseModel):
     """Response model for system settings."""
-
-    dify_api_url: str
-    dify_workspace_id: Optional[str] = None
-    dify_configured: bool
 
 
 class TimeoutConfigResponse(BaseModel):
@@ -104,11 +96,7 @@ async def get_settings(
             status_code=403, detail="Only administrators can view settings"
         )
 
-    return SettingsResponse(
-        dify_api_url=getattr(settings, "dify_api_url", ""),
-        dify_workspace_id=getattr(settings, "dify_workspace_id", None),
-        dify_configured=bool(getattr(settings, "dify_api_url", "")),
-    )
+    return SettingsResponse()
 
 
 @router.post("")
@@ -132,23 +120,6 @@ async def update_settings(
     try:
         # Update settings in-memory and persist to .env file
         updated_fields = []
-
-        if request.dify_api_url is not None:
-            settings.dify_api_url = request.dify_api_url
-            _update_env_file("DIFY_API_URL", request.dify_api_url)
-            updated_fields.append("dify_api_url")
-            logger.info(f"Updated dify_api_url: {request.dify_api_url}")
-
-        if request.dify_api_key is not None:
-            settings.dify_api_key = request.dify_api_key
-            _update_env_file("DIFY_API_KEY", request.dify_api_key)
-            updated_fields.append("dify_api_key")
-            logger.info(f"Updated dify_api_key: {request.dify_api_key[:20]}...")
-
-        if request.dify_workspace_id is not None:
-            settings.dify_workspace_id = request.dify_workspace_id
-            _update_env_file("DIFY_WORKSPACE_ID", request.dify_workspace_id or "")
-            updated_fields.append("dify_workspace_id")
 
         logger.info(f"Settings updated by {current_user.username}: {updated_fields}")
 

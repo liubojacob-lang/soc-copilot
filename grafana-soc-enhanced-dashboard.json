@@ -24,8 +24,8 @@
   "panels": [
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "fieldConfig": {
         "defaults": {
@@ -115,8 +115,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "count_over_time({job=\"soc-copilot\"}[1h])",
           "refId": "A",
@@ -128,8 +128,8 @@
     },
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "fieldConfig": {
         "defaults": {
@@ -178,8 +178,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "count_over_time({job=\"soc-copilot\", level=\"critical\"}[1h])",
           "refId": "A",
@@ -191,8 +191,8 @@
     },
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "fieldConfig": {
         "defaults": {
@@ -241,8 +241,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "count_over_time({job=\"soc-copilot\", level=\"high\"}[1h])",
           "refId": "A",
@@ -254,8 +254,8 @@
     },
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "fieldConfig": {
         "defaults": {
@@ -330,8 +330,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "sum(count_over_time({job=\"soc-copilot\", level=\"critical\"}[5m]))",
           "refId": "A",
@@ -340,8 +340,8 @@
         },
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "sum(count_over_time({job=\"soc-copilot\", level=\"high\"}[5m]))",
           "refId": "B",
@@ -350,8 +350,8 @@
         },
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "sum(count_over_time({job=\"soc-copilot\", level=\"medium\"}[5m]))",
           "refId": "C",
@@ -364,8 +364,8 @@
     },
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "fieldConfig": {
         "defaults": {
@@ -406,8 +406,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "count by (event_type) ({job=\"soc-copilot\"})",
           "refId": "A",
@@ -419,8 +419,8 @@
     },
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "fieldConfig": {
         "defaults": {
@@ -523,8 +523,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "count by (level) ({job=\"soc-copilot\"})",
           "refId": "A",
@@ -543,8 +543,8 @@
     },
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "fieldConfig": {
         "defaults": {
@@ -625,8 +625,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "topk(10, sum by (source_ip) ({job=\"soc-copilot\"}))",
           "refId": "A",
@@ -657,8 +657,8 @@
     },
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "fieldConfig": {
         "defaults": {
@@ -718,8 +718,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "topk(10, count by (event_type) ({job=\"soc-copilot\"}))",
           "refId": "A",
@@ -750,8 +750,8 @@
     },
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "fieldConfig": {
         "defaults": {
@@ -819,8 +819,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "topk(5, count by (agent_id) ({job=\"soc-copilot\"}))",
           "refId": "A",
@@ -832,8 +832,8 @@
     },
     {
       "datasource": {
-      "type": "loki",
-      "uid": "bfedbqw7nppfkd"
+      "type": "loki", "name": "Loki",
+      "uid": "${DS_LOKI}"
     },
       "gridPos": {
         "h": 16,
@@ -856,8 +856,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "bfedbqw7nppfkd"
+            "type": "loki", "name": "Loki",
+            "uid": "${DS_LOKI}"
           },
           "expr": "{job=\"soc-copilot\"} |= \"\"",
           "refId": "A",

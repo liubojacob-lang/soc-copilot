@@ -14,33 +14,33 @@ interface ReportTemplate {
   icon: string;
 }
 
-const TEMPLATES: ReportTemplate[] = [
-  {
-    id: "ticket",
-    name: "Incident Ticket",
-    description: "Create a formatted incident ticket for tracking and escalation",
-    icon: "🎫"
-  },
-  {
-    id: "daily",
-    name: "Daily SOC Report",
-    description: "Daily security operations center summary report",
-    icon: "📊"
-  },
-  {
-    id: "postmortem",
-    name: "Post-Incident Report",
-    description: "Detailed post-incident analysis and lessons learned",
-    icon: "📋"
-  }
-];
-
 export default function ReportsPage() {
   const t = useTranslations('reports');
   const tCommon = useTranslations('common');
   const locale = useLocale();
   const router = useRouter();
-  
+
+  const TEMPLATES: ReportTemplate[] = [
+    {
+      id: "ticket",
+      name: t('templates.ticket.name'),
+      description: t('templates.ticket.description'),
+      icon: "🎫"
+    },
+    {
+      id: "daily",
+      name: t('templates.daily.name'),
+      description: t('templates.daily.description'),
+      icon: "📊"
+    },
+    {
+      id: "postmortem",
+      name: t('templates.postmortem.name'),
+      description: t('templates.postmortem.description'),
+      icon: "📋"
+    }
+  ];
+
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [alertId, setAlertId] = useState("");
@@ -62,7 +62,7 @@ export default function ReportsPage() {
 
   const generateReports = async () => {
     if (!alertId.trim()) {
-      setError("Please enter an alert ID");
+      setError(t('enterAlertId'));
       return;
     }
 
@@ -72,7 +72,7 @@ export default function ReportsPage() {
 
     try {
       const alertData = await authFetchJSON<any>(`/api/alerts/${alertId}`);
-      
+
       const response = await authFetchJSON<any>("/api/generate-report", {
         method: "POST",
         body: JSON.stringify({
@@ -80,10 +80,10 @@ export default function ReportsPage() {
           additional_notes: additionalNotes
         })
       });
-      
+
       setGeneratedReports(response);
     } catch (err: any) {
-      setError(err.message || "Failed to generate reports");
+      setError(err.message || t('generateFailed'));
     } finally {
       setGenerating(false);
     }
@@ -97,7 +97,7 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t('title')} subtitle="Generate and manage security reports" />
+      <Navigation title={t('title')} subtitle={t('subtitle')} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
@@ -111,34 +111,34 @@ export default function ReportsPage() {
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Generate Reports
+                {t('generateReports')}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Enter an alert ID to generate three report templates using AI
+                {t('description')}
               </p>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Alert ID
+                    {t('alertId')}
                   </label>
                   <input
                     type="text"
                     value={alertId}
                     onChange={(e) => setAlertId(e.target.value)}
-                    placeholder="e.g., alert-123"
+                    placeholder={t('alertIdPlaceholder')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Additional Notes (optional)
+                    {t('additionalNotes')}
                   </label>
                   <textarea
                     value={additionalNotes}
                     onChange={(e) => setAdditionalNotes(e.target.value)}
-                    placeholder="Any specific requirements or notes..."
+                    placeholder={t('notesPlaceholder')}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
                   />
@@ -150,7 +150,7 @@ export default function ReportsPage() {
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {generating ? (
-                    <>Generating...</>
+                    <>{t('generating')}</>
                   ) : (
                     <>
                       <Plus className="w-4 h-4" />
@@ -164,7 +164,7 @@ export default function ReportsPage() {
             {/* Report Templates Info */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
               <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3">
-                Available Templates
+                {t('availableTemplates')}
               </h3>
               <div className="space-y-3">
                 {TEMPLATES.map((template) => (
@@ -193,14 +193,14 @@ export default function ReportsPage() {
                     <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                       <div className="flex items-center gap-2">
                         <span className="text-xl">🎫</span>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">Incident Ticket</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{t('templates.ticket.name')}</h3>
                       </div>
                       <button
                         onClick={() => copyToClipboard(generatedReports.ticket_template!, "ticket")}
                         className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                       >
                         {copiedTemplate === "ticket" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        {copiedTemplate === "copied" ? "Copied!" : "Copy"}
+                        {copiedTemplate === "ticket" ? tCommon('copied') : tCommon('copy')}
                       </button>
                     </div>
                     <pre className="p-4 text-sm text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
@@ -214,14 +214,14 @@ export default function ReportsPage() {
                     <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                       <div className="flex items-center gap-2">
                         <span className="text-xl">📊</span>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">Daily SOC Report</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{t('templates.daily.name')}</h3>
                       </div>
                       <button
                         onClick={() => copyToClipboard(generatedReports.daily_report_template!, "daily")}
                         className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                       >
                         {copiedTemplate === "daily" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        Copy
+                        {copiedTemplate === "daily" ? tCommon('copied') : tCommon('copy')}
                       </button>
                     </div>
                     <pre className="p-4 text-sm text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
@@ -235,14 +235,14 @@ export default function ReportsPage() {
                     <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                       <div className="flex items-center gap-2">
                         <span className="text-xl">📋</span>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">Post-Incident Report</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{t('templates.postmortem.name')}</h3>
                       </div>
                       <button
                         onClick={() => copyToClipboard(generatedReports.postmortem_template!, "postmortem")}
                         className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                       >
                         {copiedTemplate === "postmortem" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        Copy
+                        {copiedTemplate === "postmortem" ? tCommon('copied') : tCommon('copy')}
                       </button>
                     </div>
                     <pre className="p-4 text-sm text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
@@ -255,10 +255,10 @@ export default function ReportsPage() {
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
                 <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  No Reports Generated
+                  {t('noReportsGenerated')}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Enter an alert ID and click Generate to create report templates
+                  {t('noReportsDescription')}
                 </p>
               </div>
             )}

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useTranslations } from 'next-intl';
 import { loadAuthState } from '@/lib/auth';
 import { getWazuhWebSocketClient, WazuhWebSocketClient } from '@/lib/wazuhWebSocket';
 import { AlertData, SeverityLevel } from '@/types/wazuh';
+import { VirtualList } from '@/components/common/VirtualList';
 import {
   Bell,
   BellOff,
@@ -165,16 +166,13 @@ export function WazuhAlertStream({
     });
   }, [alerts, filters]);
 
-  // Statistics
+  // Statistics - optimized with single reduce
   const stats = useMemo(() => {
-    return {
-      total: alerts.length,
-      critical: alerts.filter(a => a.severity === 'critical').length,
-      high: alerts.filter(a => a.severity === 'high').length,
-      medium: alerts.filter(a => a.severity === 'medium').length,
-      low: alerts.filter(a => a.severity === 'low').length,
-      info: alerts.filter(a => a.severity === 'info').length,
-    };
+    return alerts.reduce((acc, alert) => {
+      acc.total++;
+      acc[alert.severity] = (acc[alert.severity] || 0) + 1;
+      return acc;
+    }, { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 } as Record<string, number>);
   }, [alerts]);
 
   // Handle connection toggle
@@ -444,15 +442,25 @@ export function WazuhAlertStream({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
-            {filteredAlerts.map((alert) => (
+          <VirtualList
+            items={filteredAlerts}
+            itemHeight={120}
+            containerHeight={600}
+            overscan={5}
+            renderItem={(alert, index) => (
               <AlertItem
                 key={alert.id}
                 alert={alert}
                 onClick={() => onAlertClick?.(alert)}
               />
-            ))}
-          </div>
+            )}
+            emptyComponent={
+              <div className="p-8 text-center">
+                <Bell className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">{t('noAlerts')}</p>
+              </div>
+            }
+          />
         )}
       </div>
     </div>
@@ -464,7 +472,7 @@ interface AlertItemProps {
   onClick?: () => void;
 }
 
-function AlertItem({ alert, onClick }: AlertItemProps) {
+const AlertItem = memo(function AlertItem({ alert, onClick }: AlertItemProps) {
   return (
     <div
       onClick={onClick}
@@ -532,4 +540,4 @@ function AlertItem({ alert, onClick }: AlertItemProps) {
       </div>
     </div>
   );
-}
+});

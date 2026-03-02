@@ -7,6 +7,8 @@ import BackToTop from "@/components/BackToTop";
 import { ResponsiveProvider } from "@/components/common/ResponsiveLayout";
 import { PageErrorBoundary } from "@/components/common/ErrorBoundary";
 import { ClientLayout } from "@/components/ClientLayout";
+import { WebVitals } from "@/components/WebVitals";
+import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { locales, type Locale } from '@/i18n';
 
 export async function generateMetadata({
@@ -82,8 +84,10 @@ export default async function LocaleLayout({
               </ClientLayout>
             </PageErrorBoundary>
             <BackToTop />
+            <KeyboardShortcutsHelp />
           </ResponsiveProvider>
         </NextIntlClientProvider>
+        <WebVitals />
       </body>
     </html>
   );

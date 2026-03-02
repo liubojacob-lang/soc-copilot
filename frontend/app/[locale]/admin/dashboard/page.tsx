@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import Navigation from '@/components/Navigation';
 import {
   Activity,
@@ -88,6 +89,8 @@ interface SystemDashboard {
 }
 
 export default function SystemDashboardPage() {
+  const t = useTranslations('adminDashboard');
+  const tCommon = useTranslations('common');
   const [dashboard, setDashboard] = useState<SystemDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -183,7 +186,7 @@ export default function SystemDashboardPage() {
         <XCircle className="w-16 h-16 text-red-500" />
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Failed to load dashboard
+            {t('error', { default: 'Failed to load dashboard' })}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mt-2">{error}</p>
         </div>
@@ -191,7 +194,7 @@ export default function SystemDashboardPage() {
           onClick={fetchDashboard}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
-          Retry
+          {tCommon('retry')}
         </button>
       </div>
     );
@@ -201,16 +204,16 @@ export default function SystemDashboardPage() {
 
   return (
     <>
-      <Navigation title="System Dashboard" />
+      <Navigation title={t('title')} />
       <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              System Dashboard
+              {t('title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              System health monitoring and resource usage
+              {t('subtitle')}
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -219,7 +222,7 @@ export default function SystemDashboardPage() {
           </div>
           {/* Auto-refresh toggle switch */}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Auto-refresh</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('autoRefresh', { default: 'Auto-refresh' })}</span>
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
@@ -241,7 +244,7 @@ export default function SystemDashboardPage() {
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            <span>{tCommon('refresh')}</span>
           </button>
         </div>
       </div>
@@ -253,26 +256,26 @@ export default function SystemDashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
               <Database className="w-5 h-5 text-blue-500" />
-              <h3 className="font-semibold text-gray-900 dark:text-white">Database</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('database', { default: 'Database' })}</h3>
             </div>
             {getStatusIcon(dashboard.database.status)}
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Status</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('status', { default: 'Status' })}</span>
               <span className={`font-medium ${getStatusColor(dashboard.database.status)}`}>
                 {dashboard.database.status.toUpperCase()}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Latency</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('latency', { default: 'Latency' })}</span>
               <span className="font-medium text-gray-900 dark:text-white">
                 {dashboard.database.latency_ms.toFixed(2)} ms
               </span>
             </div>
             {dashboard.database.version && (
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Version</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('version', { default: 'Version' })}</span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {dashboard.database.version}
                 </span>
@@ -280,7 +283,7 @@ export default function SystemDashboardPage() {
             )}
             {dashboard.database.database_size && (
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Size</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('size', { default: 'Size' })}</span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {dashboard.database.database_size}
                 </span>
@@ -300,14 +303,14 @@ export default function SystemDashboardPage() {
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Status</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('status', { default: 'Status' })}</span>
               <span className={`font-medium ${getStatusColor(dashboard.redis.status)}`}>
                 {dashboard.redis.status.toUpperCase()}
               </span>
             </div>
             {dashboard.redis.latency_ms && (
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Latency</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('latency', { default: 'Latency' })}</span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {dashboard.redis.latency_ms.toFixed(2)} ms
                 </span>
@@ -315,7 +318,7 @@ export default function SystemDashboardPage() {
             )}
             {dashboard.redis.used_memory && (
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Memory</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('memory', { default: 'Memory' })}</span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {dashboard.redis.used_memory}
                 </span>
@@ -339,7 +342,7 @@ export default function SystemDashboardPage() {
           </div>
           <div className="space-y-2">
             <div className="flex items-end justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Usage</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('usage', { default: 'Usage' })}</span>
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
                 {dashboard.system.cpu_percent.toFixed(1)}%
               </span>
@@ -364,7 +367,7 @@ export default function SystemDashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
               <MemoryStick className="w-5 h-5 text-green-500" />
-              <h3 className="font-semibold text-gray-900 dark:text-white">Memory</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('memory', { default: 'Memory' })}</h3>
             </div>
             {dashboard.system.memory.percent_used > 80 ? (
               <AlertTriangle className="w-5 h-5 text-yellow-500" />
@@ -374,13 +377,13 @@ export default function SystemDashboardPage() {
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Used</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('used', { default: 'Used' })}</span>
               <span className="font-medium text-gray-900 dark:text-white">
                 {dashboard.system.memory.used_gb.toFixed(2)} GB
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Total</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('total', { default: 'Total' })}</span>
               <span className="font-medium text-gray-900 dark:text-white">
                 {dashboard.system.memory.total_gb.toFixed(2)} GB
               </span>
@@ -407,31 +410,31 @@ export default function SystemDashboardPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <Database className="w-5 h-5 mr-2 text-blue-500" />
-            Database Details
+            {t('databaseDetails', { default: 'Database Details' })}
           </h2>
           {dashboard.database.pool ? (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
-                  <div className="text-gray-600 dark:text-gray-400">Pool Size</div>
+                  <div className="text-gray-600 dark:text-gray-400">{t('poolSize', { default: 'Pool Size' })}</div>
                   <div className="text-lg font-semibold text-gray-900 dark:text-white">
                     {dashboard.database.pool.size}
                   </div>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
-                  <div className="text-gray-600 dark:text-gray-400">Checked In</div>
+                  <div className="text-gray-600 dark:text-gray-400">{t('checkedIn', { default: 'Checked In' })}</div>
                   <div className="text-lg font-semibold text-gray-900 dark:text-white">
                     {dashboard.database.pool.checked_in}
                   </div>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
-                  <div className="text-gray-600 dark:text-gray-400">Checked Out</div>
+                  <div className="text-gray-600 dark:text-gray-400">{t('checkedOut', { default: 'Checked Out' })}</div>
                   <div className="text-lg font-semibold text-gray-900 dark:text-white">
                     {dashboard.database.pool.checked_out}
                   </div>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
-                  <div className="text-gray-600 dark:text-gray-400">Overflow</div>
+                  <div className="text-gray-600 dark:text-gray-400">{t('overflow', { default: 'Overflow' })}</div>
                   <div className="text-lg font-semibold text-gray-900 dark:text-white">
                     {dashboard.database.pool.overflow}
                   </div>
@@ -440,7 +443,7 @@ export default function SystemDashboardPage() {
             </div>
           ) : (
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Connection pool information not available
+              {t('poolInfoNotAvailable', { default: 'Connection pool information not available' })}
             </p>
           )}
         </div>
@@ -449,30 +452,30 @@ export default function SystemDashboardPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <HardDrive className="w-5 h-5 mr-2 text-orange-500" />
-            Disk Usage
+            {t('diskUsage', { default: 'Disk Usage' })}
           </h2>
           <div className="space-y-4">
             <div className="flex items-end justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Used Space</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('usedSpace', { default: 'Used Space' })}</span>
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
                 {dashboard.system.disk.used_gb.toFixed(2)} GB
               </span>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Total</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('total', { default: 'Total' })}</span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {dashboard.system.disk.total_gb.toFixed(2)} GB
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Free</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('free', { default: 'Free' })}</span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {dashboard.system.disk.free_gb.toFixed(2)} GB
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Usage</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('usage', { default: 'Usage' })}</span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {dashboard.system.disk.percent_used.toFixed(1)}%
                 </span>
@@ -497,7 +500,7 @@ export default function SystemDashboardPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <Zap className="w-5 h-5 mr-2 text-yellow-500" />
-            AI Models
+            {t('aiModels', { default: 'AI Models' })}
           </h2>
           <div className="space-y-3">
             {dashboard.ai_models.length > 0 ? (
@@ -513,23 +516,23 @@ export default function SystemDashboardPage() {
                       </span>
                       {model.is_active ? (
                         <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 rounded-full">
-                          Active
+                          {t('active', { default: 'Active' })}
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 rounded-full">
-                          Inactive
+                          {t('inactive', { default: 'Inactive' })}
                         </span>
                       )}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {model.provider} • {model.total_requests} requests
+                      {model.provider} • {model.total_requests} {t('requests', { default: 'requests' })}
                     </div>
                   </div>
                 </div>
               ))
             ) : (
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                No AI models configured
+                {t('noAiModels', { default: 'No AI models configured' })}
               </p>
             )}
           </div>
@@ -539,11 +542,11 @@ export default function SystemDashboardPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <Server className="w-5 h-5 mr-2 text-gray-500" />
-            System Information
+            {t('systemInfo', { default: 'System Information' })}
           </h2>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Platform</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('platform', { default: 'Platform' })}</span>
               <span className="font-medium text-gray-900 dark:text-white">
                 {dashboard.system.platform}
               </span>
@@ -557,14 +560,14 @@ export default function SystemDashboardPage() {
             <div className="flex justify-between items-center">
               <span className="text-gray-600 dark:text-gray-400 flex items-center">
                 <Clock className="w-4 h-4 mr-1" />
-                Uptime
+                {t('uptime', { default: 'Uptime' })}
               </span>
               <span className="font-medium text-gray-900 dark:text-white">
                 {formatUptime(dashboard.system.uptime_seconds)}
               </span>
             </div>
             <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Features</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('features', { default: 'Features' })}</div>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(dashboard.features).map(([key, value]) => (
                   <div key={key} className="flex items-center space-x-2">
@@ -586,7 +589,7 @@ export default function SystemDashboardPage() {
 
       {/* Last Updated */}
       <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-        Last updated: {new Date(dashboard.timestamp).toLocaleString()}
+        {t('lastUpdated', { default: 'Last updated' })}: {new Date(dashboard.timestamp).toLocaleString()}
       </div>
     </div>
     </>

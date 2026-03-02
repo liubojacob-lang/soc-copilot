@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from 'next-intl';
 import Navigation from "@/components/Navigation";
-import { SkeletonTable } from "@/components/common/Skeleton";
+import { SkeletonTable } from "@/components/common/LoadingState";
 import { loadAuthState } from "@/lib/auth";
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Search, RefreshCw, BookOpen, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, Plus, AlertCircle } from "lucide-react";

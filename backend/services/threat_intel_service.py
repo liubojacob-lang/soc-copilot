@@ -338,13 +338,17 @@ class ThreatIntelService:
             process_items = allowed_items
             skip_items = []
 
-        # Look up each allowed IOC
-        for item in process_items:
-            result = await self.lookup(
+        # Look up each allowed IOC concurrently
+        import asyncio
+        lookup_tasks = [
+            self.lookup(
                 ioc_type=item["ioc_type"],
                 ioc_value=item["ioc_value"],
             )
-            results.append(result)
+            for item in process_items
+        ]
+        results = await asyncio.gather(*lookup_tasks, return_exceptions=True)
+        results = [r for r in results if not isinstance(r, Exception)]
 
         # Create rate-limited skipped items
         for item in skip_items:

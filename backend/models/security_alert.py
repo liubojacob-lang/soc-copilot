@@ -13,6 +13,7 @@ from sqlalchemy import (
     JSON,
     Index,
 )
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from db.session import Base
@@ -101,6 +102,9 @@ class SecurityAlert(Base):
     closed_at = resolved_at
     closed_by = resolved_by
     resolution = resolution_note
+
+    # Relationships
+    notes = relationship("AlertNoteModel", back_populates="alert", cascade="all, delete-orphan")
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, index=True)

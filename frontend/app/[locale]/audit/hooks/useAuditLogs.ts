@@ -1,102 +1,132 @@
-/** Custom hook for managing audit logs data and fetching */
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { authFetchJSON } from '@/lib/auth';
-import type { AuditLog, AuditLogStats, AuditFilters } from '../types';
+import type { AuditLog } from '../types';
+
+interface AuditLogStats {
+  total_requests: number;
+  last_24h_requests: number;
+  failed_requests: number;
+}
 
 interface UseAuditLogsOptions {
-  page: number;
-  pageSize: number;
-  filters: AuditFilters;
-  autoFetch?: boolean;
+  page?: number;
+  pageSize?: number;
+  filterAction?: string;
+  filterPath?: string;
+  filterStatusCode?: string;
+  filterDateFrom?: string;
+  filterDateTo?: string;
+  filterUserId?: string;
+  filterIpAddress?: string;
 }
 
 interface UseAuditLogsResult {
   logs: AuditLog[];
   stats: AuditLogStats | null;
-  total: number;
   loading: boolean;
   error: string;
-  fetchLogs: () => Promise<void>;
-  fetchStats: () => Promise<void>;
+  total: number;
+  page: number;
+  pageSize: number;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
   refresh: () => Promise<void>;
 }
 
-export function useAuditLogs({
-  page,
-  pageSize,
-  filters,
-  autoFetch = true
-}: UseAuditLogsOptions): UseAuditLogsResult {
+export function useAuditLogs(options: UseAuditLogsOptions = {}): UseAuditLogsResult {
+  const {
+    page: initialPage = 1,
+    pageSize: initialPageSize = 50,
+    filterAction = '',
+    filterPath = '',
+    filterStatusCode = '',
+    filterDateFrom = '',
+    filterDateTo = '',
+    filterUserId = '',
+    filterIpAddress = '',
+  } = options;
+
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [stats, setStats] = useState<AuditLogStats | null>(null);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
+  const [page, setPage] = useState(initialPage);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [total, setTotal] = useState(0);
 
-  const fetchLogs = useCallback(async () => {
+  const buildQueryParams = useCallback(() => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', pageSize.toString());
+
+    if (filterAction) params.append('action', filterAction);
+    if (filterPath) params.append('path', filterPath);
+    if (filterStatusCode) params.append('status_code', filterStatusCode);
+    if (filterDateFrom) params.append('date_from', filterDateFrom);
+    if (filterDateTo) params.append('date_to', filterDateTo);
+    if (filterUserId) params.append('user_id', filterUserId);
+    if (filterIpAddress) params.append('ip_address', filterIpAddress);
+
+    return params.toString();
+  }, [
+    page,
+    pageSize,
+    filterAction,
+    filterPath,
+    filterStatusCode,
+    filterDateFrom,
+    filterDateTo,
+    filterUserId,
+    filterIpAddress,
+  ]);
+
+  const fetchAuditLogs = useCallback(async () => {
+    setLoading(true);
+    setError('');
+
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        page_size: pageSize.toString(),
-      });
+      const queryParams = buildQueryParams();
+      const response = await authFetchJSON(`/api/audit?${queryParams}`);
 
-      if (filters.action) params.append("action", filters.action);
-      if (filters.path) params.append("path", filters.path);
-      if (filters.statusCode) params.append("status_code", filters.statusCode);
-      if (filters.dateFrom) params.append("date_from", filters.dateFrom);
-      if (filters.dateTo) params.append("date_to", filters.dateTo);
-
-      const data = await authFetchJSON<{ items: AuditLog[]; total: number }>(
-        `/api/audit-logs?${params.toString()}`
-      );
-
-      setLogs(data.items);
-      setTotal(data.total);
-      setError("");
-    } catch (err: any) {
-      setError(err.message || "Failed to load audit logs");
+      if (response.ok) {
+        const data = await response.json();
+        setLogs(data.logs || []);
+        setTotal(data.total || 0);
+        setStats(data.stats || null);
+      } else {
+        setError('Failed to fetch audit logs');
+        setLogs([]);
+        setTotal(0);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      setLogs([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, filters]);
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const data = await authFetchJSON<AuditLogStats>("/api/audit-logs/stats/summary");
-      setStats(data);
-    } catch (err: any) {
-      console.error("Failed to load stats:", err);
-    }
-  }, []);
+  }, [buildQueryParams]);
 
   const refresh = useCallback(async () => {
-    await Promise.all([fetchLogs(), fetchStats()]);
-  }, [fetchLogs, fetchStats]);
+    await fetchAuditLogs();
+  }, [fetchAuditLogs]);
 
-  // Initial fetch
   useEffect(() => {
-    if (autoFetch) {
-      fetchLogs();
-      fetchStats();
-    }
-  }, []);
-
-  // Refetch when dependencies change
-  useEffect(() => {
-    if (!loading) {
-      fetchLogs();
-    }
-  }, [page, pageSize, filters.action, filters.path, filters.statusCode, filters.dateFrom, filters.dateTo]);
+    fetchAuditLogs();
+  }, [fetchAuditLogs]);
 
   return {
     logs,
     stats,
-    total,
     loading,
     error,
-    fetchLogs,
-    fetchStats,
-    refresh
+    total,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    refresh,
   };
 }

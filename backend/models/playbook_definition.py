@@ -50,9 +50,7 @@ class PlaybookDefinitionModel(Base):
     current_version_no: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     # v0.7.4: Dify workflow integration
-    dify_app_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
-    dify_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    execution_engine: Mapped[str] = mapped_column(String(20), default="native", nullable=False)  # native | dify
+    execution_engine: Mapped[str] = mapped_column(String(20), default="native", nullable=False)  # native
 
     # Relationships
     nodes = relationship("PlaybookNodeModel", back_populates="definition", cascade="all, delete-orphan")

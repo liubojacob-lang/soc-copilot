@@ -111,7 +111,7 @@ export default function LoginPage() {
             {process.env.NODE_ENV === "development" && (
               <p className="text-sm text-yellow-600 dark:text-yellow-400">
                 {t('devMode')}:{" "}
-                <span className="text-xs">admin / admin123!</span>
+                <span className="text-xs">{t('checkServerLogs')}</span>
               </p>
             )}
           </div>
