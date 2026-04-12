@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "@/lib/api";
-import { convertToHistoryMessage } from "../utils";
+import { convertToHistoryMessage, convertFromHistoryMessage } from "../utils";
 import type { Message, AIChatResponse } from "../types";
 import type { ChatConversation } from "@/hooks/useChatHistory";
 
@@ -180,7 +180,6 @@ export function useAIChat({
         return;
       }
 
-      const { convertFromHistoryMessage } = require("../utils");
       const loadedMessages = conv.messages
         .filter((msg) => msg && msg.role && msg.content)
         .map(convertFromHistoryMessage) as Message[];

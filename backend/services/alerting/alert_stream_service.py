@@ -11,7 +11,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
-from routers.websocket import get_manager
+from routers.websocket import get_manager, push_alert
 from schemas.wazuh_stream import (
     AlertAggregation,
     AlertStreamFilter,
@@ -146,11 +146,21 @@ class WazuhStreamService:
             logger.error(f"Error streaming alert {alert.id}: {e}")
             return False
 
-    async def _broadcast_alert(self, alert: WazuhAlertStream):
-        """Broadcast alert to all subscribed clients."""
-        logger.info(f"Broadcasting alert: {alert.id} via WebSocket")
+    def _matches_filter(self, alert: WazuhAlertStream, filters: AlertStreamFilter) -> bool:
+        if filters.min_severity:
+            if self._severity_order(alert.severity) > self._severity_order(filters.min_severity):
+                return False
+        if filters.agent_ids and alert.agent.id not in filters.agent_ids:
+            return False
+        if filters.event_types and alert.event_type not in filters.event_types:
+            return False
+        if filters.source_ips and alert.source_ip not in filters.source_ips:
+            return False
+        if filters.has_mitre and not alert.mitre:
+            return False
+        return True
 
-        # Use model_dump with json mode to serialize datetime objects
+    async def _broadcast_alert(self, alert: WazuhAlertStream):
         alert_data = alert.model_dump(mode="json")
 
         message = WazuhStreamMessage(
@@ -160,11 +170,25 @@ class WazuhStreamService:
             channel="wazuh",
         )
 
-        # Broadcast via existing WebSocket manager
-        from routers.websocket import push_alert
-
-        await push_alert(alert_data)
-        logger.info(f"Alert {alert.id} broadcasted to WebSocket")
+        if not self._subscriptions:
+            await push_alert(alert_data)
+        else:
+            for client_id, filters in list(self._subscriptions.items()):
+                if self._matches_filter(alert, filters):
+                    try:
+                        manager = get_manager()
+                        ws = next(
+                            (
+                                ws
+                                for ws, info in manager.active_connections.items()
+                                if info.get("user_id") == client_id
+                            ),
+                            None,
+                        )
+                        if ws:
+                            await ws.send_json(message.model_dump(mode="json"))
+                    except Exception as e:
+                        logger.warning(f"Failed to send filtered alert to {client_id}: {e}")
 
     async def _try_aggregate(self, alert: WazuhAlertStream) -> bool:
         """
@@ -195,9 +219,7 @@ class WazuhStreamService:
                 return True
             else:
                 # Create new aggregation entry
-                entry = AlertBufferEntry(
-                    alert=alert, count=1, first_seen=now, last_seen=now
-                )
+                entry = AlertBufferEntry(alert=alert, count=1, first_seen=now, last_seen=now)
                 self._aggregation_buffer[key] = entry
 
                 # Prune buffer if too large
@@ -220,7 +242,13 @@ class WazuhStreamService:
             alert.agent.id,
             alert.event_type,
             alert.source_ip or "no-src-ip",
-            str(alert.rule.id) if alert.rule else "no-rule",
+            str(
+                alert.rule.get("id", "no-rule")
+                if isinstance(alert.rule, dict)
+                else getattr(alert.rule, "id", "no-rule")
+            )
+            if alert.rule
+            else "no-rule",
         ]
         return "|".join(parts)
 
@@ -238,9 +266,7 @@ class WazuhStreamService:
     def _prune_buffer(self):
         """Prune oldest entries from aggregation buffer."""
         # Remove oldest entries based on last_seen time
-        sorted_entries = sorted(
-            self._aggregation_buffer.items(), key=lambda x: x[1].last_seen
-        )
+        sorted_entries = sorted(self._aggregation_buffer.items(), key=lambda x: x[1].last_seen)
 
         # Remove 10% of buffer
         to_remove = int(len(sorted_entries) * 0.1)
@@ -253,9 +279,7 @@ class WazuhStreamService:
         """Background task to process aggregated alerts."""
         while self._running:
             try:
-                await asyncio.sleep(
-                    self.aggregation_window.seconds / 2
-                )  # Check twice per window
+                await asyncio.sleep(self.aggregation_window.seconds / 2)  # Check twice per window
 
                 async with self._buffer_lock:
                     now = datetime.now(UTC)
@@ -278,7 +302,6 @@ class WazuhStreamService:
                 logger.error(f"Error in aggregation processing: {e}")
 
     async def _stream_aggregated_alert(self, key: str, entry: AlertBufferEntry):
-        """Stream an aggregated alert."""
         aggregation = AlertAggregation(
             aggregation_key=key,
             alert_count=entry.count,
@@ -289,24 +312,34 @@ class WazuhStreamService:
             iocs=entry.alert.iocs,
         )
 
-        # Use model_dump with json mode to serialize datetime objects
         aggregation_data = aggregation.model_dump(mode="json")
-
-        logger.info(f"Streaming aggregated alert: {key} with {entry.count} alerts")
-
-        # Broadcast the aggregated alert data
-        from routers.websocket import WebSocketMessage
-
-        manager = get_manager()
-
-        # Send as aggregated_alert type
         message = WebSocketMessage(
             type="aggregated_alert",
             data=aggregation_data,
             timestamp=datetime.now(UTC).isoformat(),
             channel="alerts",
         )
-        await manager.broadcast_to_channel("alerts", message)
+
+        manager = get_manager()
+
+        if not self._subscriptions:
+            await manager.broadcast_to_channel("alerts", message)
+        else:
+            for client_id, filters in list(self._subscriptions.items()):
+                if self._matches_filter(entry.alert, filters):
+                    try:
+                        ws = next(
+                            (
+                                ws
+                                for ws, info in manager.active_connections.items()
+                                if info.get("user_id") == client_id
+                            ),
+                            None,
+                        )
+                        if ws:
+                            await ws.send_json(message.model_dump(mode="json"))
+                    except Exception as e:
+                        logger.warning(f"Failed to send aggregated alert to {client_id}: {e}")
 
     async def _cleanup_old_data(self):
         """Background task to clean up old data."""
@@ -319,9 +352,7 @@ class WazuhStreamService:
 
                 async with self._stats_lock:
                     # Reset counters if needed
-                    if (
-                        datetime.now(UTC) - self._stats["stream_start_time"]
-                    ) > timedelta(hours=24):
+                    if (datetime.now(UTC) - self._stats["stream_start_time"]) > timedelta(hours=24):
                         self._stats["stream_start_time"] = datetime.now(UTC)
                         self._stats["total_alerts"] = 0
                         self._stats["alerts_by_severity"].clear()

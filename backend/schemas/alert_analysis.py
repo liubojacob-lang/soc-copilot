@@ -3,7 +3,7 @@
 SOC Copilot - Security Operations Center Intelligent Analysis Platform
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -154,7 +154,7 @@ class Entities(BaseModel):
 
 class EvidencePoint(BaseModel):
     id: str = ""
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     source: EvidenceSource = EvidenceSource.LOG
     description: str = ""
     raw_content: str = ""
@@ -162,7 +162,7 @@ class EvidencePoint(BaseModel):
 
 
 class TimelineEvent(BaseModel):
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     event_type: str = ""
     source_ip: str | None = None
     target_ip: str | None = None
@@ -225,7 +225,7 @@ class AlertAnalysisResult(BaseModel):
     )
 
     analysis_version: str = "1.0"
-    analysis_timestamp: datetime = Field(default_factory=datetime.utcnow)
+    analysis_timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     model_used: str = ""
     analysis_duration_ms: int = 0
 

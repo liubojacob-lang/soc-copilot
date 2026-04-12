@@ -2,6 +2,7 @@
 AI Service Router - API endpoints for SOC Copilot AI features
 """
 
+import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -295,9 +296,7 @@ async def chat(
                     detail=f"Model {model_id} not found or not enabled",
                 )
             model_provider = model.provider
-            logger.info(
-                f"Using requested model: {model_id} (provider: {model_provider})"
-            )
+            logger.info(f"Using requested model: {model_id} (provider: {model_provider})")
         else:
             # Use user's default model
             from repositories.ai_model_repository import (
@@ -329,8 +328,7 @@ async def chat(
         history = None
         if request.conversation_history:
             history = [
-                {"role": msg.role, "content": msg.content}
-                for msg in request.conversation_history
+                {"role": msg.role, "content": msg.content} for msg in request.conversation_history
             ]
 
         # Get complete response directly
@@ -343,9 +341,7 @@ async def chat(
         )
         logger.info(f"Chat response received: {len(full_response)} chars")
 
-        conversation_id = None
-        if request.conversation_history and len(request.conversation_history) > 0:
-            conversation_id = request.conversation_history[0].content
+        conversation_id = str(uuid.uuid4())
 
         return ChatResponse(
             message=request.message,
@@ -405,9 +401,7 @@ async def get_ai_status(
 
         # Check if AI service is properly initialized
         if not ai_service._initialized:
-            logger.warning(
-                f"AI service not initialized. Provider: {ai_service.provider}"
-            )
+            logger.warning(f"AI service not initialized. Provider: {ai_service.provider}")
             return {
                 "status": "unavailable",
                 "provider": ai_service.provider,
