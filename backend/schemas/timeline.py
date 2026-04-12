@@ -1,7 +1,9 @@
 """Schemas for timeline building."""
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional, Dict, Any
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from schemas.impact import ImpactAnalysis
 from schemas.threat_intel import ThreatIntelAnalysis
 
@@ -11,10 +13,10 @@ class IOCsFinal(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    ips: List[str] = Field(default_factory=list)
-    domains: List[str] = Field(default_factory=list)
-    urls: List[str] = Field(default_factory=list)
-    hashes: List[str] = Field(default_factory=list)
+    ips: list[str] = Field(default_factory=list)
+    domains: list[str] = Field(default_factory=list)
+    urls: list[str] = Field(default_factory=list)
+    hashes: list[str] = Field(default_factory=list)
 
 
 class IOCsLocal(BaseModel):
@@ -22,10 +24,10 @@ class IOCsLocal(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    ips: List[str] = Field(default_factory=list)
-    domains: List[str] = Field(default_factory=list)
-    urls: List[str] = Field(default_factory=list)
-    hashes: List[str] = Field(default_factory=list)
+    ips: list[str] = Field(default_factory=list)
+    domains: list[str] = Field(default_factory=list)
+    urls: list[str] = Field(default_factory=list)
+    hashes: list[str] = Field(default_factory=list)
 
 
 class IOCsLLM(BaseModel):
@@ -33,10 +35,10 @@ class IOCsLLM(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    ips: List[str] = Field(default_factory=list)
-    domains: List[str] = Field(default_factory=list)
-    urls: List[str] = Field(default_factory=list)
-    hashes: List[str] = Field(default_factory=list)
+    ips: list[str] = Field(default_factory=list)
+    domains: list[str] = Field(default_factory=list)
+    urls: list[str] = Field(default_factory=list)
+    hashes: list[str] = Field(default_factory=list)
 
 
 class IOCCount(BaseModel):
@@ -57,7 +59,7 @@ class TimelineEvent(BaseModel):
     timestamp: str
     type: str
     description: str
-    key_fields: Dict[str, Any]
+    key_fields: dict[str, Any]
 
 
 class SuspiciousEvent(BaseModel):
@@ -73,7 +75,9 @@ class TimelineRequest(BaseModel):
     """Request for timeline building."""
 
     raw_log: str = Field(..., description="Raw log content", min_length=1)
-    log_type: Optional[str] = Field(None, description="Log type: sysmon/windows/linux/nginx")
+    log_type: str | None = Field(
+        None, description="Log type: sysmon/windows/linux/nginx"
+    )
 
 
 class TimelineResponse(BaseModel):
@@ -81,9 +85,9 @@ class TimelineResponse(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    timeline: List[TimelineEvent]
-    suspicious_top5: List[SuspiciousEvent]
-    next_steps: List[str]
+    timeline: list[TimelineEvent]
+    suspicious_top5: list[SuspiciousEvent]
+    next_steps: list[str]
 
     # v0.2: IOC fields
     iocs: IOCsFinal
@@ -92,14 +96,18 @@ class TimelineResponse(BaseModel):
     ioc_count: IOCCount
 
     # Metadata fields (v0.2)
-    request_id: Optional[str] = Field(None, description="Unique request ID for tracing")
-    model_used: Optional[str] = Field(None, description="AI model used")
+    request_id: str | None = Field(None, description="Unique request ID for tracing")
+    model_used: str | None = Field(None, description="AI model used")
     degraded: bool = Field(False, description="Whether degraded mode was used")
-    error_reason: Optional[str] = Field(None, description="Error reason if degraded")
-    history_id: Optional[str] = Field(None, description="History record ID for this timeline")
+    error_reason: str | None = Field(None, description="Error reason if degraded")
+    history_id: str | None = Field(
+        None, description="History record ID for this timeline"
+    )
 
     # Impact analysis (v0.3)
     impact_analysis: ImpactAnalysis = Field(..., description="Impact analysis result")
 
     # Threat intelligence (v0.4)
-    threat_intel: ThreatIntelAnalysis = Field(..., description="Threat intelligence analysis")
+    threat_intel: ThreatIntelAnalysis = Field(
+        ..., description="Threat intelligence analysis"
+    )

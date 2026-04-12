@@ -51,17 +51,24 @@ class DAGNodeSpec:
 class PlaybookDAGEngine:
     """High-level orchestration semantics, compatible with existing DAG runtime."""
 
-    async def evaluate_next_nodes(self, ctx: ExecutionContext, nodes: dict[str, DAGNodeSpec]) -> list[str]:
+    async def evaluate_next_nodes(
+        self, ctx: ExecutionContext, nodes: dict[str, DAGNodeSpec]
+    ) -> list[str]:
         ready: list[str] = []
         for node_id, spec in nodes.items():
             if ctx.node_status.get(node_id) is not None:
                 continue
-            deps_ok = all(ctx.node_status.get(dep) == NodeStatus.SUCCESS for dep in spec.depends_on)
+            deps_ok = all(
+                ctx.node_status.get(dep) == NodeStatus.SUCCESS
+                for dep in spec.depends_on
+            )
             if deps_ok:
                 ready.append(node_id)
         return ready
 
-    async def mark_failure(self, ctx: ExecutionContext, node_id: str, nodes: dict[str, DAGNodeSpec]) -> list[str]:
+    async def mark_failure(
+        self, ctx: ExecutionContext, node_id: str, nodes: dict[str, DAGNodeSpec]
+    ) -> list[str]:
         ctx.node_status[node_id] = NodeStatus.FAILED
         rollback_nodes: list[str] = []
         spec = nodes.get(node_id)

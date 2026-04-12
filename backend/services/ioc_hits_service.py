@@ -1,6 +1,6 @@
 """IOC Hits service for business logic."""
 
-from typing import List, Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -8,10 +8,6 @@ from repositories.ioc_hit_repository import IOCHitRepository
 from schemas.ioc_hit import (
     IOCHitCreate,
     IOCHitResponse,
-    IOCHitListRequest,
-    IOCHitListResponse,
-    IOCType,
-    IOCSource,
 )
 
 logger = get_logger(__name__)
@@ -42,7 +38,7 @@ class IOCHitsService:
         logger.info(f"Created IOC hit: {hit.id} for IOC: {data.ioc_value}")
         return self._to_response(hit)
 
-    async def get_by_id(self, hit_id: str) -> Optional[IOCHitResponse]:
+    async def get_by_id(self, hit_id: str) -> IOCHitResponse | None:
         """Get IOC hit by ID.
 
         Args:
@@ -58,7 +54,7 @@ class IOCHitsService:
 
     async def list_by_ioc(
         self, ioc_value: str, limit: int = 100
-    ) -> tuple[List[IOCHitResponse], int]:
+    ) -> tuple[list[IOCHitResponse], int]:
         """List IOC hits by IOC value.
 
         Args:
@@ -74,7 +70,7 @@ class IOCHitsService:
 
     async def list_by_asset(
         self, asset_id: str, limit: int = 100
-    ) -> tuple[List[IOCHitResponse], int]:
+    ) -> tuple[list[IOCHitResponse], int]:
         """List IOC hits by asset ID.
 
         Args:
@@ -89,7 +85,7 @@ class IOCHitsService:
 
     async def list_by_history(
         self, history_id: str, limit: int = 100
-    ) -> List[IOCHitResponse]:
+    ) -> list[IOCHitResponse]:
         """List IOC hits by history ID.
 
         Args:
@@ -103,8 +99,8 @@ class IOCHitsService:
         return [self._to_response(h) for h in hits]
 
     async def get_hits_by_iocs(
-        self, ioc_values: List[str], limit: int = 20
-    ) -> List[IOCHitResponse]:
+        self, ioc_values: list[str], limit: int = 20
+    ) -> list[IOCHitResponse]:
         """Get recent IOC hits for given IOC values.
 
         Args:
@@ -123,10 +119,10 @@ class IOCHitsService:
         ioc_type: str,
         ioc_value: str,
         source: str,
-        asset_id: Optional[str] = None,
+        asset_id: str | None = None,
         confidence: int = 60,
-        context_snippet: Optional[str] = None,
-    ) -> Optional[IOCHitResponse]:
+        context_snippet: str | None = None,
+    ) -> IOCHitResponse | None:
         """Create IOC hit from analysis result.
 
         Args:
@@ -153,7 +149,7 @@ class IOCHitsService:
             )
             return await self.create(data)
         except Exception as e:
-            logger.warning(f"Failed to create IOC hit for {ioc_value}: {str(e)}")
+            logger.warning(f"Failed to create IOC hit for {ioc_value}: {e!s}")
             return None
 
     def _to_response(self, hit) -> IOCHitResponse:

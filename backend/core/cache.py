@@ -4,12 +4,11 @@ Provides distributed caching for SOC Copilot application
 """
 
 import json
-import logging
-from typing import Optional, Any, List
-from datetime import timedelta
+from typing import Any
 
 try:
     import redis.asyncio as aioredis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -25,10 +24,10 @@ class RedisCache:
     """Redis cache wrapper with automatic connection management"""
 
     def __init__(self):
-        self._client: Optional[aioredis.Redis] = None
+        self._client: aioredis.Redis | None = None
         self._enabled = settings.redis_enabled and REDIS_AVAILABLE
 
-    async def _get_client(self) -> Optional[aioredis.Redis]:
+    async def _get_client(self) -> aioredis.Redis | None:
         """Get or create Redis client"""
         if not self._enabled:
             return None
@@ -50,7 +49,7 @@ class RedisCache:
 
         return self._client
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Get value from cache"""
         if not self._enabled:
             return None
@@ -72,12 +71,7 @@ class RedisCache:
             logger.error(f"Cache get error: {e}")
             return None
 
-    async def set(
-        self,
-        key: str,
-        value: Any,
-        ttl: int = 300
-    ) -> bool:
+    async def set(self, key: str, value: Any, ttl: int = 300) -> bool:
         """Set value in cache with TTL (seconds)"""
         if not self._enabled:
             return False
@@ -173,7 +167,7 @@ class RedisCache:
 
 
 # Singleton instance
-_cache: Optional[RedisCache] = None
+_cache: RedisCache | None = None
 
 
 def get_cache() -> RedisCache:
@@ -195,12 +189,7 @@ async def close_cache():
 class CacheDecorator:
     """Decorator for caching function results"""
 
-    def __init__(
-        self,
-        key_prefix: str,
-        ttl: int = 300,
-        serialize: bool = True
-    ):
+    def __init__(self, key_prefix: str, ttl: int = 300, serialize: bool = True):
         self.key_prefix = key_prefix
         self.ttl = ttl
         self.serialize = serialize
@@ -261,7 +250,7 @@ class CacheKeys:
     THREAT_INTEL_TTL = None  # Use configured TTL
 
 
-async def invalidate_playbook_cache(definition_id: Optional[str] = None):
+async def invalidate_playbook_cache(definition_id: str | None = None):
     """Invalidate playbook cache"""
     cache = get_cache()
 
@@ -291,9 +280,8 @@ async def invalidate_ai_cache():
 
 async def warm_up_cache():
     """Warm up cache with frequently accessed data"""
-    from repositories.user_repository import UserRepository
-    from repositories.playbook_repository import PlaybookDefinitionRepository
     from db.session import get_session
+    from repositories.playbook_repository import PlaybookDefinitionRepository
 
     cache = get_cache()
 
@@ -309,7 +297,7 @@ async def warm_up_cache():
                 await cache.set(
                     f"{CacheKeys.PLAYBOOK_DEFINITION}:{playbook.id}",
                     playbook.to_dict(),
-                    CacheKeys.PLAYBOOK_TTL
+                    CacheKeys.PLAYBOOK_TTL,
                 )
 
             logger.info(f"Warmed up {len(active_playbooks)} playbook definitions")

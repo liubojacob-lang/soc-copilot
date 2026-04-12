@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from .base import NotificationProvider
 
@@ -23,7 +23,9 @@ class NotificationRegistry:
     def all_names(self) -> list[str]:
         return list(self._providers.keys())
 
-    def iter_selected(self, channels: list[str] | None) -> Iterable[NotificationProvider]:
+    def iter_selected(
+        self, channels: list[str] | None
+    ) -> Iterable[NotificationProvider]:
         providers = self.configured()
         if not channels:
             return providers.values()

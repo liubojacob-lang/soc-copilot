@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Callable, Type
-
 from utils.retry import with_retry, with_sync_retry
 
 

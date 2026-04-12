@@ -3,10 +3,9 @@ SOC Copilot v0.7 DAG-Based Playbook Engine - Verification Tests
 Python version for Windows compatibility
 """
 
-import requests
-import json
 import time
-from typing import Optional
+
+import requests
 
 
 class DAGTester:
@@ -58,8 +57,7 @@ class DAGTester:
         self.log_test("List Playbook Definitions")
         try:
             response = self.session.get(
-                f"{self.api_base}/api/playbook/definitions",
-                headers=self.get_headers()
+                f"{self.api_base}/api/playbook/definitions", headers=self.get_headers()
             )
             data = response.json()
             definitions = data.get("definitions", [])
@@ -69,19 +67,19 @@ class DAGTester:
             self.log_error(f"✗ Failed to list definitions: {e}")
             return False
 
-    def test_3_create_definition(self) -> Optional[str]:
+    def test_3_create_definition(self) -> str | None:
         """Test 3: Create DAG definition."""
         self.log_test("Create DAG Definition")
         definition_data = {
             "nodes": [
                 {"id": "extract", "step_id": "ioc_extract", "name": "Extract IOCs"},
                 {"id": "ti_lookup", "step_id": "ti_lookup_otx", "name": "OTX Lookup"},
-                {"id": "enrich", "step_id": "asset_enrich", "name": "Enrich Assets"}
+                {"id": "enrich", "step_id": "asset_enrich", "name": "Enrich Assets"},
             ],
             "edges": [
                 {"source": "extract", "target": "ti_lookup"},
-                {"source": "extract", "target": "enrich"}
-            ]
+                {"source": "extract", "target": "enrich"},
+            ],
         }
 
         try:
@@ -90,13 +88,13 @@ class DAGTester:
             params = {
                 "name": "Test DAG Playbook",
                 "description": "Test DAG for verification",
-                "version": "1.0.0"
+                "version": "1.0.0",
             }
             response = self.session.post(
                 url,
                 params=params,
                 json={"definition_json": definition_data},
-                headers=self.get_headers()
+                headers=self.get_headers(),
             )
             data = response.json()
             definition_id = data.get("id")
@@ -116,7 +114,7 @@ class DAGTester:
         try:
             response = self.session.get(
                 f"{self.api_base}/api/playbook/definitions/{definition_id}",
-                headers=self.get_headers()
+                headers=self.get_headers(),
             )
             data = response.json()
             if "definition_json" in data:
@@ -129,17 +127,14 @@ class DAGTester:
             self.log_error(f"✗ Failed to get definition: {e}")
             return False
 
-    def test_5_execute_dag(self, definition_id: str) -> Optional[str]:
+    def test_5_execute_dag(self, definition_id: str) -> str | None:
         """Test 5: Execute DAG (dry run)."""
         self.log_test("Execute DAG (Dry Run)")
         try:
             url = f"{self.api_base}/api/playbook/definitions/{definition_id}/run"
             params = {"mode": "dry_run"}
             response = self.session.post(
-                url,
-                params=params,
-                json={"input_json": {}},
-                headers=self.get_headers()
+                url, params=params, json={"input_json": {}}, headers=self.get_headers()
             )
             data = response.json()
             run_id = data.get("run_id")
@@ -160,7 +155,7 @@ class DAGTester:
         try:
             response = self.session.get(
                 f"{self.api_base}/api/playbook/runs/{run_id}/nodes",
-                headers=self.get_headers()
+                headers=self.get_headers(),
             )
             data = response.json()
             nodes = data.get("nodes", [])
@@ -195,9 +190,9 @@ class DAGTester:
                 json={
                     "playbook_name": "phishing_triage",
                     "mode": "dry_run",
-                    "input_json": {"raw_log": "test email content"}
+                    "input_json": {"raw_log": "test email content"},
                 },
-                headers=self.get_headers()
+                headers=self.get_headers(),
             )
             data = response.json()
             if data.get("id"):
@@ -216,14 +211,16 @@ class DAGTester:
         try:
             response = self.session.get(
                 f"{self.api_base}/api/playbook/runs/{run_id}",
-                headers=self.get_headers()
+                headers=self.get_headers(),
             )
             data = response.json()
             if data.get("execution_mode") == "dag":
                 self.log_info("✓ Execution mode field present (dag)")
                 return True
             else:
-                self.log_error(f"✗ Execution mode field not found: {data.get('execution_mode')}")
+                self.log_error(
+                    f"✗ Execution mode field not found: {data.get('execution_mode')}"
+                )
                 return False
         except Exception as e:
             self.log_error(f"✗ Failed to verify execution mode: {e}")
@@ -240,7 +237,7 @@ class DAGTester:
                     url,
                     params={"mode": "dry_run"},
                     json={"input_json": {}},
-                    headers=self.get_headers()
+                    headers=self.get_headers(),
                 )
                 data = response.json()
                 run_id = data.get("run_id")

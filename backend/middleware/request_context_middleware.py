@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -17,9 +17,18 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     """Populate request context for logging and observability correlation."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        request_id = request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex[:24]}"
-        trace_id = getattr(request.state, "trace_id", None) or request.headers.get("X-Trace-ID") or get_trace_id() or ""
-        tenant_id = getattr(request.state, "tenant_id", None) or request.headers.get("x-tenant-id", "default")
+        request_id = (
+            request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex[:24]}"
+        )
+        trace_id = (
+            getattr(request.state, "trace_id", None)
+            or request.headers.get("X-Trace-ID")
+            or get_trace_id()
+            or ""
+        )
+        tenant_id = getattr(request.state, "tenant_id", None) or request.headers.get(
+            "x-tenant-id", "default"
+        )
 
         user_id = getattr(request.state, "user_id", "")
         user_role = getattr(request.state, "user_role", "")

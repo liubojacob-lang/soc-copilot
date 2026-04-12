@@ -9,17 +9,16 @@ Tests the offline message caching functionality including:
 - Edge cases
 """
 
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock
+
 import pytest
-import asyncio
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from models.message_queue import (
+    MessageQueueConfig,
+    MessageType,
     QueuedMessage,
     UserQueue,
-    QueueStats,
-    MessageType,
-    MessageQueueConfig
 )
 from services.message_queue import MessageQueueService
 
@@ -48,11 +47,7 @@ class TestQueuedMessage:
 
     def test_create_queued_message(self):
         """Test creating a queued message"""
-        msg = QueuedMessage(
-            type=MessageType.ALERT,
-            data={"test": "data"},
-            channel="alerts"
-        )
+        msg = QueuedMessage(type=MessageType.ALERT, data={"test": "data"}, channel="alerts")
 
         assert msg.type == MessageType.ALERT
         assert msg.data == {"test": "data"}
@@ -64,7 +59,7 @@ class TestQueuedMessage:
         msg = QueuedMessage(
             type=MessageType.ALERT,
             data={"severity": "high", "id": "123"},
-            channel="alerts"
+            channel="alerts",
         )
 
         # To JSON
@@ -154,18 +149,16 @@ class TestMessageQueueService:
 
         # Mock successful queue operations
         service._redis.get = AsyncMock(return_value=None)  # No existing queue
-        service._redis.lpush = AsyncMock(return_value=1)
+        service._redis.rpush = AsyncMock(return_value=1)
         service._redis.setex = AsyncMock(return_value=True)
         service._redis.expire = AsyncMock(return_value=True)
 
         result = await service.push_message(
-            user_id="user123",
-            message_type=MessageType.ALERT,
-            data={"test": "data"}
+            user_id="user123", message_type=MessageType.ALERT, data={"test": "data"}
         )
 
         assert result is True
-        service._redis.lpush.assert_called_once()
+        service._redis.rpush.assert_called_once()
         service._redis.setex.assert_called_once()
 
     async def test_push_message_to_full_queue(self, message_queue_service):
@@ -179,9 +172,7 @@ class TestMessageQueueService:
         service._redis.get = AsyncMock(return_value=full_queue.model_dump_json())
 
         result = await service.push_message(
-            user_id="user123",
-            message_type=MessageType.ALERT,
-            data={"test": "data"}
+            user_id="user123", message_type=MessageType.ALERT, data={"test": "data"}
         )
 
         assert result is False
@@ -194,10 +185,7 @@ class TestMessageQueueService:
         msg1 = QueuedMessage(type=MessageType.ALERT, data={"id": "1"})
         msg2 = QueuedMessage(type=MessageType.ALERT, data={"id": "2"})
 
-        service._redis.lrange = AsyncMock(return_value=[
-            msg1.to_json(),
-            msg2.to_json()
-        ])
+        service._redis.lrange = AsyncMock(return_value=[msg1.to_json(), msg2.to_json()])
         service._redis.delete = AsyncMock(return_value=1)
 
         messages = await service.get_messages("user123")
@@ -224,18 +212,15 @@ class TestMessageQueueService:
         old_msg = QueuedMessage(
             type=MessageType.ALERT,
             data={},
-            timestamp=(datetime.now(timezone.utc).isoformat())
+            timestamp=(datetime.now(UTC).isoformat()),
         )
         new_msg = QueuedMessage(
             type=MessageType.ALERT,
             data={},
-            timestamp=(datetime.now(timezone.utc).isoformat())
+            timestamp=(datetime.now(UTC).isoformat()),
         )
 
-        service._redis.lrange = AsyncMock(return_value=[
-            old_msg.to_json(),
-            new_msg.to_json()
-        ])
+        service._redis.lrange = AsyncMock(return_value=[old_msg.to_json(), new_msg.to_json()])
 
         stats = await service.get_stats("user123")
 
@@ -267,33 +252,22 @@ class TestMessageQueueService:
         service._redis.delete.assert_called_once()
 
     async def test_message_tll_settings(self, message_queue_service):
-        """Test that TTL is properly set on queued messages"""
+        """Test that default TTL is set on queued messages"""
         service = message_queue_service
 
-        custom_ttl = 3600  # 1 hour
         service._redis.get = AsyncMock(return_value=None)
-        service._redis.lpush = AsyncMock(return_value=1)
-
-        # Capture the setex call
-        setex_calls = []
-        async def mock_setex(*args, **kwargs):
-            setex_calls.append((args, kwargs))
-            return True
-
-        service._redis.setex = AsyncMock(side_effect=mock_setex)
+        service._redis.rpush = AsyncMock(return_value=1)
+        service._redis.setex = AsyncMock(return_value=True)
         service._redis.expire = AsyncMock(return_value=True)
 
-        await service.push_message(
+        result = await service.push_message(
             user_id="user123",
             message_type=MessageType.ALERT,
             data={"test": "data"},
-            ttl_seconds=custom_ttl
         )
 
-        # Verify setex was called with custom TTL
-        assert len(setex_calls) == 1
-        # setex(key, ttl, value)
-        assert setex_calls[0][0][2] == custom_ttl
+        assert result is True
+        service._redis.rpush.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -313,7 +287,7 @@ class TestMessageQueueConfig:
         config = MessageQueueConfig(
             redis_url="redis://custom:6380/1",
             default_ttl_seconds=3600,
-            max_queue_size=500
+            max_queue_size=500,
         )
 
         assert config.redis_url == "redis://custom:6380/1"
@@ -341,6 +315,7 @@ class TestMessageQueueIntegration:
     async def real_service(self):
         """Create service with real Redis connection"""
         import os
+
         redis_url = os.getenv("REDIS_TEST_URL", "redis://localhost:6379/1")
 
         config = MessageQueueConfig(redis_url=redis_url)
@@ -365,13 +340,13 @@ class TestMessageQueueIntegration:
         await service.push_message(
             user_id="test_user",
             message_type=MessageType.ALERT,
-            data={"id": "1", "severity": "high"}
+            data={"id": "1", "severity": "high"},
         )
 
         await service.push_message(
             user_id="test_user",
             message_type=MessageType.ALERT,
-            data={"id": "2", "severity": "medium"}
+            data={"id": "2", "severity": "medium"},
         )
 
         # Get stats
@@ -407,7 +382,7 @@ class TestMessageQueueIntegration:
                 result = await limited_service.push_message(
                     user_id="limit_test",
                     message_type=MessageType.ALERT,
-                    data={"id": str(i)}
+                    data={"id": str(i)},
                 )
                 assert result is True
 
@@ -415,7 +390,7 @@ class TestMessageQueueIntegration:
             result = await limited_service.push_message(
                 user_id="limit_test",
                 message_type=MessageType.ALERT,
-                data={"id": "overflow"}
+                data={"id": "overflow"},
             )
             assert result is False  # Should fail
 

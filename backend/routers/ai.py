@@ -2,23 +2,21 @@
 AI Service Router - API endpoints for SOC Copilot AI features
 """
 
-import logging
 from datetime import datetime
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
-from models.user import UserModel, UserRole
+from models.user import UserModel
 from services.ai_service_enhanced import (
-    get_enhanced_ai_service,
     AIAnalysisResult,
-    NaturalLanguageQueryResult,
     PlaybookRecommendation,
+    get_enhanced_ai_service,
 )
 
 logger = get_logger(__name__)
@@ -30,7 +28,7 @@ router = APIRouter(prefix="/api/ai", tags=["ai", "copilot"])
 class AlertAnalysisRequest(BaseModel):
     """Request for alert analysis."""
 
-    alert_id: Optional[str] = None
+    alert_id: str | None = None
     title: str
     description: str
     severity: str = "medium"
@@ -43,7 +41,7 @@ class AlertAnalysisRequest(BaseModel):
 class AlertAnalysisResponse(BaseModel):
     """Response for alert analysis."""
 
-    alert_id: Optional[str]
+    alert_id: str | None
     analysis: AIAnalysisResult
     processed_at: str
 
@@ -52,7 +50,7 @@ class NaturalLanguageQueryRequest(BaseModel):
     """Request for natural language query."""
 
     query: str = Field(..., description="Natural language query")
-    conversation_id: Optional[str] = None
+    conversation_id: str | None = None
 
 
 class NaturalLanguageQueryResponse(BaseModel):
@@ -69,7 +67,7 @@ class NaturalLanguageQueryResponse(BaseModel):
 class PlaybookRecommendationRequest(BaseModel):
     """Request for playbook recommendations."""
 
-    alert_id: Optional[str] = None
+    alert_id: str | None = None
     title: str
     description: str
     severity: str
@@ -79,8 +77,8 @@ class PlaybookRecommendationRequest(BaseModel):
 class PlaybookRecommendationResponse(BaseModel):
     """Response for playbook recommendations."""
 
-    alert_id: Optional[str]
-    recommendations: List[PlaybookRecommendation]
+    alert_id: str | None
+    recommendations: list[PlaybookRecommendation]
     generated_at: str
 
 
@@ -97,8 +95,8 @@ class ChatRequest(BaseModel):
     """Request for chat."""
 
     message: str
-    model_id: Optional[str] = None
-    conversation_history: Optional[List[ChatMessage]] = None
+    model_id: str | None = None
+    conversation_history: list[ChatMessage] | None = None
 
     model_config = ConfigDict(protected_namespaces=())
 
@@ -108,7 +106,7 @@ class ChatResponse(BaseModel):
 
     message: str
     response: str
-    conversation_id: Optional[str] = None
+    conversation_id: str | None = None
 
     model_config = ConfigDict(protected_namespaces=())
 
@@ -163,7 +161,7 @@ async def analyze_alert(
         logger.error(f"Error analyzing alert: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to analyze alert: {str(e)}",
+            detail=f"Failed to analyze alert: {e!s}",
         )
 
 
@@ -207,7 +205,7 @@ async def natural_language_query(
         logger.error(f"Error processing query: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process query: {str(e)}",
+            detail=f"Failed to process query: {e!s}",
         )
 
 
@@ -265,7 +263,7 @@ async def recommend_playbooks(
         logger.error(f"Error recommending playbooks: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to recommend playbooks: {str(e)}",
+            detail=f"Failed to recommend playbooks: {e!s}",
         )
 
 
@@ -288,6 +286,7 @@ async def chat(
         if model_id:
             # User specified a model - verify it exists and is enabled
             from repositories.ai_model_repository import AIModelRepository
+
             model_repo = AIModelRepository(db)
             model = await model_repo.get_by_id(model_id)
             if not model or not model.enabled:
@@ -296,10 +295,16 @@ async def chat(
                     detail=f"Model {model_id} not found or not enabled",
                 )
             model_provider = model.provider
-            logger.info(f"Using requested model: {model_id} (provider: {model_provider})")
+            logger.info(
+                f"Using requested model: {model_id} (provider: {model_provider})"
+            )
         else:
             # Use user's default model
-            from repositories.ai_model_repository import AIUserSettingRepository, AIModelRepository
+            from repositories.ai_model_repository import (
+                AIModelRepository,
+                AIUserSettingRepository,
+            )
+
             setting_repo = AIUserSettingRepository(db)
             model_repo = AIModelRepository(db)
 
@@ -354,7 +359,7 @@ async def chat(
         logger.error(f"Error in chat: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Chat error: {str(e)}",
+            detail=f"Chat error: {e!s}",
         )
 
 
@@ -384,7 +389,7 @@ async def generate_report(
         logger.error(f"Error generating report: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate report: {str(e)}",
+            detail=f"Failed to generate report: {e!s}",
         )
 
 

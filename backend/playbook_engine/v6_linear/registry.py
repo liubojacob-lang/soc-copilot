@@ -1,6 +1,5 @@
 """Step registry for managing playbook step implementations."""
 
-from typing import Dict, Type, Optional
 from .models import BaseStep
 
 
@@ -9,9 +8,9 @@ class StepRegistry:
 
     def __init__(self) -> None:
         """Initialize the step registry."""
-        self._steps: Dict[str, Type[BaseStep]] = {}
+        self._steps: dict[str, type[BaseStep]] = {}
 
-    def register(self, step_id: str, step_class: Type[BaseStep]) -> None:
+    def register(self, step_id: str, step_class: type[BaseStep]) -> None:
         """Register a step implementation.
 
         Args:
@@ -82,7 +81,7 @@ def get_registry() -> StepRegistry:
     return _registry
 
 
-def register_step(step_id: str, step_class: Type[BaseStep]) -> None:
+def register_step(step_id: str, step_class: type[BaseStep]) -> None:
     """Register a step with the global registry.
 
     Args:

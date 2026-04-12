@@ -8,18 +8,16 @@ Tests cover:
 4. N+1 query optimization verification
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-import asyncio
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, AsyncMock
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Security validators tests
 from core.security_validators import (
-    validate_password_strength,
-    validate_jwt_secret,
     run_production_security_checks,
+    validate_jwt_secret,
+    validate_password_strength,
 )
 
 
@@ -37,7 +35,7 @@ class TestPasswordValidator:
             "letmein",
             "welcome",
         ]
-        
+
         for password in weak_passwords:
             is_valid, errors = validate_password_strength(password)
             assert not is_valid
@@ -50,7 +48,7 @@ class TestPasswordValidator:
             "C0mpl3x_P@ssw0rd!",
             "S3cur3#Answ3r$",
         ]
-        
+
         for password in strong_passwords:
             is_valid, errors = validate_password_strength(password)
             assert is_valid, f"Password '{password}' should be valid, errors: {errors}"
@@ -61,7 +59,7 @@ class TestPasswordValidator:
         is_valid, errors = validate_password_strength("Sh0rt!")
         assert not is_valid
         assert any("8 characters" in error for error in errors)
-        
+
         # Long enough
         is_valid, errors = validate_password_strength("L0ngEn0ugh!Pass")
         assert is_valid, f"Errors: {errors}"
@@ -73,27 +71,27 @@ class TestPasswordValidator:
         # This should pass because it has 3 of 4 categories
         # Actually let me check - lowercase, digit, special = 3 categories
         # So it should be valid
-        
+
         # Missing lowercase
         is_valid, errors = validate_password_strength("UPPERCASE123!")
         # uppercase, digit, special = 3 categories, should be valid
-        
+
         # Missing digits
         is_valid, errors = validate_password_strength("NoDigitsHere!")
         # lowercase, uppercase, special = 3 categories, should be valid
-        
+
         # Missing special - only lowercase, uppercase, digit = 3 categories
         is_valid, errors = validate_password_strength("NoSpecial123")
         # This should be valid (3 of 4 categories)
-        
+
         # Only lowercase - should fail
         is_valid, errors = validate_password_strength("onlylowercase")
         assert not is_valid
-        
+
         # Only digits - should fail
         is_valid, errors = validate_password_strength("12345678")
         assert not is_valid
-        
+
         # All requirements met
         result = validator.validate("AllRequirements1!")
         assert result.is_valid
@@ -101,25 +99,28 @@ class TestPasswordValidator:
     def test_password_strength_scoring(self):
         """Test password strength scoring."""
         validator = PasswordValidator()
-        
+
         # Weak
         result = validator.validate("password")
         assert result.strength == PasswordStrength.WEAK
         assert result.score < 40
-        
+
         # Fair
         result = validator.validate("Password1")
         assert result.strength == PasswordStrength.FAIR
         assert 40 <= result.score < 60
-        
+
         # Good
         result = validator.validate("Password1!")
         assert result.strength == PasswordStrength.GOOD
         assert 60 <= result.score < 80
-        
+
         # Strong
         result = validator.validate("MyV3ryStr0ng!Pass#2024")
-        assert result.strength in [PasswordStrength.STRONG, PasswordStrength.VERY_STRONG]
+        assert result.strength in [
+            PasswordStrength.STRONG,
+            PasswordStrength.VERY_STRONG,
+        ]
         assert result.score >= 80
 
 
@@ -135,7 +136,7 @@ class TestJWTSecretValidation:
             "jwt-secret",
             "my-secret-key",
         ]
-        
+
         for secret in weak_secrets:
             is_valid, issues = validate_jwt_secret(secret)
             assert not is_valid
@@ -147,7 +148,7 @@ class TestJWTSecretValidation:
             "aB3dE7fG9hJ2kL5mN8pQ1rS4tU6vW0xY!",  # 32 chars, mixed
             "zY8wX6vU4tS2rQ0pO9nM7lK5jI3hG1fE",  # 32 chars alphanumeric
         ]
-        
+
         for secret in strong_secrets:
             is_valid, issues = validate_jwt_secret(secret)
             assert is_valid, f"Secret should be valid: {issues}"
@@ -170,22 +171,26 @@ class TestJWTSecretValidation:
 class TestProductionSecurityChecks:
     """Tests for production security checks."""
 
-    @patch.dict('os.environ', {}, clear=True)
+    @patch.dict("os.environ", {}, clear=True)
     def test_missing_jwt_secret_in_production(self):
         """Test that missing JWT secret is caught in production."""
         issues = run_production_security_checks(environment="production")
         assert any("jwt" in issue.lower() for issue in issues)
 
-    @patch.dict('os.environ', {'JWT_SECRET': 'weak-secret'}, clear=True)
+    @patch.dict("os.environ", {"JWT_SECRET": "weak-secret"}, clear=True)
     def test_weak_jwt_secret_in_production(self):
         """Test that weak JWT secret is caught in production."""
         issues = run_production_security_checks(environment="production")
         assert any("jwt" in issue.lower() for issue in issues)
 
-    @patch.dict('os.environ', {
-        'JWT_SECRET': 'aB3dE7fG9hJ2kL5mN8pQ1rS4tU6vW0xY!',
-        'ENVIRONMENT': 'production',
-    }, clear=True)
+    @patch.dict(
+        "os.environ",
+        {
+            "JWT_SECRET": "aB3dE7fG9hJ2kL5mN8pQ1rS4tU6vW0xY!",
+            "ENVIRONMENT": "production",
+        },
+        clear=True,
+    )
     def test_passing_security_checks(self):
         """Test that passing configuration has no issues."""
         issues = run_production_security_checks(environment="production")
@@ -196,17 +201,15 @@ class TestProductionSecurityChecks:
 
 # DAG Exception tests
 from playbook_engine.dag.exceptions import (
-    DAGExecutionError,
     DAGCycleError,
     DAGTimeoutError,
-    NodeExecutionError,
-    NodeTimeoutError,
-    DependencyError,
-    ExternalServiceError,
     DataValidationError,
     ErrorCategory,
-    ErrorSeverity,
     ErrorHandler,
+    ErrorSeverity,
+    ExternalServiceError,
+    NodeExecutionError,
+    NodeTimeoutError,
 )
 
 
@@ -219,11 +222,11 @@ class TestDAGExceptions:
             message="Cycle detected in DAG",
             cycle_path=["node_a", "node_b", "node_a"],
         )
-        
+
         assert error.category == ErrorCategory.VALIDATION
         assert error.severity == ErrorSeverity.CRITICAL
         assert "node_a" in str(error)
-        
+
         error_dict = error.to_dict()
         assert error_dict["error_type"] == "DAGCycleError"
         assert error_dict["cycle_path"] == ["node_a", "node_b", "node_a"]
@@ -235,11 +238,11 @@ class TestDAGExceptions:
             timeout_seconds=300,
             elapsed_seconds=305,
         )
-        
+
         assert error.category == ErrorCategory.TIMEOUT
         assert error.severity == ErrorSeverity.HIGH
         assert error.timeout_seconds == 300
-        
+
         error_dict = error.to_dict()
         assert error_dict["timeout_seconds"] == 300
         assert error_dict["elapsed_seconds"] == 305
@@ -252,11 +255,11 @@ class TestDAGExceptions:
             node_type="otx_lookup",
             original_error="Connection refused",
         )
-        
+
         assert error.category == ErrorCategory.EXECUTION
         assert error.node_id == "node_123"
         assert error.original_error == "Connection refused"
-        
+
         error_dict = error.to_dict()
         assert error_dict["node_id"] == "node_123"
         assert error_dict["node_type"] == "otx_lookup"
@@ -269,11 +272,11 @@ class TestDAGExceptions:
             status_code=503,
             retry_after=60,
         )
-        
+
         assert error.category == ErrorCategory.EXTERNAL
         assert error.service_name == "otx"
         assert error.retry_after == 60
-        
+
         error_dict = error.to_dict()
         assert error_dict["service_name"] == "otx"
         assert error_dict["status_code"] == 503
@@ -281,12 +284,12 @@ class TestDAGExceptions:
     def test_error_handler_classification(self):
         """Test error handler classification."""
         handler = ErrorHandler()
-        
+
         # Test cycle error classification
         error = ValueError("Cycle detected in graph")
         classified = handler.classify_error(error, context={"cycle": True})
         assert isinstance(classified, DAGCycleError)
-        
+
         # Test timeout error classification
         error = TimeoutError("Operation timed out")
         classified = handler.classify_error(error, context={"node_id": "node_1"})
@@ -295,7 +298,7 @@ class TestDAGExceptions:
     def test_error_handler_retry_decision(self):
         """Test error handler retry decision."""
         handler = ErrorHandler()
-        
+
         # External service error with retry_after
         error = ExternalServiceError(
             message="Service unavailable",
@@ -304,7 +307,7 @@ class TestDAGExceptions:
             retry_after=30,
         )
         assert handler.should_retry(error) is True
-        
+
         # Validation error - no retry
         error = DataValidationError(
             message="Invalid data format",
@@ -318,6 +321,7 @@ from middleware.authorization_middleware import (
     ResourceAuthorizationMiddleware,
     ResourceOwnerChecker,
 )
+
 # RESOURCE_CONFIG is a class attribute, not a module-level export
 RESOURCE_CONFIG = ResourceAuthorizationMiddleware.RESOURCE_CONFIG
 
@@ -339,17 +343,17 @@ class TestResourceAuthorization:
             owner_field="created_by_user_id",
             admin_bypass=True,
         )
-        
+
         # Mock resource
         resource = Mock()
         resource.created_by_user_id = "user_123"
-        
+
         # Owner should pass
         assert await checker.check_ownership(resource, "user_123", "analyst") is True
-        
+
         # Non-owner should fail
         assert await checker.check_ownership(resource, "user_456", "analyst") is False
-        
+
         # Admin should bypass
         assert await checker.check_ownership(resource, "user_456", "admin") is True
 
@@ -362,30 +366,32 @@ class TestQueryOptimization:
     async def test_playbook_runs_count_query(self, db_session: AsyncSession):
         """Test that playbook runs list uses efficient COUNT query."""
         from repositories.playbook_run_repository import PlaybookRunRepository
-        
+
         repo = PlaybookRunRepository(db_session)
-        
+
         # This should use func.count() not len(query.all())
         result = await repo.list_runs(page=1, page_size=10)
-        
+
         # Verify pagination metadata exists
         assert "total" in result
         assert "total_pages" in result
         assert "items" in result
-        
+
         # Verify total is an integer (not a list length)
         assert isinstance(result["total"], int)
 
     @pytest.mark.asyncio
     async def test_playbook_definitions_count_query(self, db_session: AsyncSession):
         """Test that playbook definitions list uses efficient COUNT query."""
-        from repositories.playbook_definition_repository import PlaybookDefinitionRepository
-        
+        from repositories.playbook_definition_repository import (
+            PlaybookDefinitionRepository,
+        )
+
         repo = PlaybookDefinitionRepository(db_session)
-        
+
         # This should use func.count() not len(query.all())
         result = await repo.list_definitions(page=1, page_size=10)
-        
+
         # Verify pagination metadata exists
         assert "total" in result
         assert "total_pages" in result
@@ -399,11 +405,11 @@ class TestSecurityIntegration:
     @pytest.mark.asyncio
     async def test_password_change_flow(self, db_session: AsyncSession):
         """Test complete password change flow with validation."""
-        from models.user import User
         from core.security_validators import PasswordValidator
-        
+        from models.user import User
+
         validator = PasswordValidator()
-        
+
         # Create test user
         user = User(
             username="testuser",
@@ -412,11 +418,11 @@ class TestSecurityIntegration:
         )
         db_session.add(user)
         await db_session.commit()
-        
+
         # Test new password validation
         result = validator.validate("NewStr0ng!Pass")
         assert result.is_valid
-        
+
         # Test weak password rejection
         result = validator.validate("weak")
         assert not result.is_valid
@@ -424,17 +430,17 @@ class TestSecurityIntegration:
     @pytest.mark.asyncio
     async def test_api_key_authentication_flow(self, db_session: AsyncSession):
         """Test API key authentication and validation."""
-        from models.api_key import APIKey
         from core.security import create_api_key, verify_api_key
-        
+        from models.api_key import APIKey
+
         # Create API key
         user_id = "test_user_123"
         key_hash, key_prefix, raw_key = create_api_key(user_id, "Test Key")
-        
+
         # Verify key format
         assert key_prefix == raw_key[:8]
         assert len(raw_key) >= 32
-        
+
         # Store key
         api_key = APIKey(
             user_id=user_id,
@@ -444,7 +450,7 @@ class TestSecurityIntegration:
         )
         db_session.add(api_key)
         await db_session.commit()
-        
+
         # Verify key
         assert verify_api_key(raw_key, key_hash) is True
         assert verify_api_key("invalid_key", key_hash) is False
@@ -455,7 +461,7 @@ class TestSecurityIntegration:
 async def db_session():
     """Create a test database session."""
     from db.session import AsyncSessionLocal
-    
+
     async with AsyncSessionLocal() as session:
         yield session
 

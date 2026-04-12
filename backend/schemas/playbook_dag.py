@@ -1,8 +1,9 @@
 """Pydantic schemas for DAG-based playbooks."""
 
 from datetime import datetime
-from typing import Any, Optional, Literal
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # Node and Edge schemas for DAG definition
@@ -21,7 +22,7 @@ class NodeSchema(BaseModel):
         default_factory=dict,
         description="Node input mapping (legacy, for backward compatibility)",
     )
-    retry_policy: Optional[dict[str, Any]] = Field(
+    retry_policy: dict[str, Any] | None = Field(
         None, description="Retry policy configuration"
     )
     timeout_seconds: int = Field(300, description="Execution timeout")
@@ -47,7 +48,7 @@ class EdgeSchema(BaseModel):
 
     source: str = Field(..., description="Source node ID")
     target: str = Field(..., description="Target node ID")
-    condition: Optional[str] = Field(
+    condition: str | None = Field(
         None, description="Condition expression (e.g., '$.output.score > 50')"
     )
 
@@ -58,7 +59,7 @@ class DAGSchema(BaseModel):
     nodes: list[NodeSchema] = Field(default_factory=list, description="DAG nodes")
     edges: list[EdgeSchema] = Field(default_factory=list, description="DAG edges")
 
-    def get_node(self, node_id: str) -> Optional[NodeSchema]:
+    def get_node(self, node_id: str) -> NodeSchema | None:
         """Get node by ID."""
         for node in self.nodes:
             if node.id == node_id:
@@ -80,18 +81,18 @@ class PlaybookDefinitionCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     version: str = Field("1.0.0", description="Version string")
-    description: Optional[str] = Field(None, description="Playbook description")
+    description: str | None = Field(None, description="Playbook description")
     dag: DAGSchema = Field(..., description="DAG definition")
 
 
 class PlaybookDefinitionUpdate(BaseModel):
     """Schema for updating a playbook definition."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    version: Optional[str] = Field(None, description="Version string")
-    description: Optional[str] = Field(None, description="Playbook description")
-    dag: Optional[DAGSchema] = Field(None, description="DAG definition")
-    is_active: Optional[bool] = Field(None, description="Active status")
+    name: str | None = Field(None, min_length=1, max_length=200)
+    version: str | None = Field(None, description="Version string")
+    description: str | None = Field(None, description="Playbook description")
+    dag: DAGSchema | None = Field(None, description="DAG definition")
+    is_active: bool | None = Field(None, description="Active status")
 
 
 class PlaybookDefinitionOut(BaseModel):
@@ -102,9 +103,9 @@ class PlaybookDefinitionOut(BaseModel):
     id: str
     name: str
     version: str
-    description: Optional[str]
+    description: str | None
     dag: DAGSchema = Field(..., alias="dag_json")
-    created_by_user_id: Optional[str]
+    created_by_user_id: str | None
     created_at: datetime
     updated_at: datetime
     is_active: bool
@@ -113,7 +114,7 @@ class PlaybookDefinitionOut(BaseModel):
     status: str = Field(
         "draft", description="Playbook status (draft/published/archived)"
     )
-    published_at: Optional[datetime] = Field(
+    published_at: datetime | None = Field(
         None, description="When this was published"
     )
     current_version_no: int = Field(1, description="Current version number")
@@ -144,10 +145,10 @@ class NodeRunStatus(BaseModel):
     node_name: str
     node_type: str
     status: Literal["pending", "running", "success", "failed", "skipped", "cancelled"]
-    started_at: Optional[datetime]
-    finished_at: Optional[datetime]
+    started_at: datetime | None
+    finished_at: datetime | None
     attempt_count: int
-    last_error: Optional[str]
+    last_error: str | None
     output: dict[str, Any] = Field(default_factory=dict, alias="output_json")
     input: dict[str, Any] = Field(default_factory=dict, alias="input_json")
 
@@ -161,12 +162,12 @@ class NodeAttemptOut(BaseModel):
     node_run_id: str
     attempt_no: int
     status: str
-    started_at: Optional[datetime]
-    finished_at: Optional[datetime]
-    duration_ms: Optional[int]
-    log_text: Optional[str]
+    started_at: datetime | None
+    finished_at: datetime | None
+    duration_ms: int | None
+    log_text: str | None
     output: dict[str, Any] = Field(default_factory=dict, alias="output_json")
-    error: Optional[str] = Field(None, alias="error_text")
+    error: str | None = Field(None, alias="error_text")
 
 
 class NodeRunWithAttempts(NodeRunStatus):
@@ -186,11 +187,11 @@ class PlaybookRunStatus(BaseModel):
     status: str
     failure_strategy: str
     started_at: datetime
-    finished_at: Optional[datetime]
-    error_message: Optional[str]
+    finished_at: datetime | None
+    error_message: str | None
 
     # DAG-specific fields
-    definition_id: Optional[str]
+    definition_id: str | None
     execution_mode: str
 
     # Node runs summary
@@ -210,13 +211,13 @@ class PlaybookRunStatus(BaseModel):
 class PlaybookRunCancel(BaseModel):
     """Schema for cancelling a run."""
 
-    reason: Optional[str] = Field(None, description="Cancellation reason")
+    reason: str | None = Field(None, description="Cancellation reason")
 
 
 class PlaybookRunResume(BaseModel):
     """Schema for resuming a run."""
 
-    from_node_id: Optional[str] = Field(
+    from_node_id: str | None = Field(
         None, description="Resume from specific node (null = from failed)"
     )
 
@@ -257,23 +258,23 @@ class PlaybookDefinitionVersionOut(BaseModel):
     playbook_definition_id: str
     version_no: int
     dag_json: dict[str, Any]
-    name: Optional[str]
-    description: Optional[str]
-    created_by_user_id: Optional[str]
+    name: str | None
+    description: str | None
+    created_by_user_id: str | None
     created_at: datetime
-    change_note: Optional[str]
+    change_note: str | None
 
 
 class PlaybookDefinitionPublish(BaseModel):
     """Schema for publishing a playbook definition."""
 
-    change_note: Optional[str] = Field(None, description="Change note for this version")
+    change_note: str | None = Field(None, description="Change note for this version")
 
 
 class PlaybookDefinitionRestore(BaseModel):
     """Schema for restoring a playbook definition from version."""
 
-    change_note: Optional[str] = Field(
+    change_note: str | None = Field(
         None, description="Change note for the restoration"
     )
 
@@ -294,7 +295,7 @@ class PlaybookRunReplay(BaseModel):
     mode: Literal["dry_run", "apply"] = Field(
         "dry_run", description="Execution mode for replay"
     )
-    override_context: Optional[dict[str, Any]] = Field(
+    override_context: dict[str, Any] | None = Field(
         None, description="Optional context overrides"
     )
 
@@ -317,8 +318,8 @@ class ReplayChainNode(BaseModel):
     mode: str
     status: str
     started_at: datetime
-    finished_at: Optional[datetime]
-    replay_of_run_id: Optional[str]
+    finished_at: datetime | None
+    replay_of_run_id: str | None
 
 
 class ReplayChainResponse(BaseModel):
@@ -380,7 +381,7 @@ class PlaybookImportRequest(BaseModel):
 
     format: Literal["json", "yaml"] = Field("json", description="Import format")
     content: str = Field(..., description="Playbook definition content")
-    name: Optional[str] = Field(None, description="Override playbook name (optional)")
+    name: str | None = Field(None, description="Override playbook name (optional)")
     publish: bool = Field(
         False, description="Auto-publish after import (default: draft)"
     )
@@ -390,14 +391,14 @@ class PlaybookExportData(BaseModel):
     """Schema for playbook export data."""
 
     name: str
-    description: Optional[str]
+    description: str | None
     version: str
     status: str
     current_version_no: int
     dag: DAGSchema
     created_at: datetime
     updated_at: datetime
-    created_by_user_id: Optional[str]
+    created_by_user_id: str | None
 
 
 class PlaybookImportResponse(BaseModel):

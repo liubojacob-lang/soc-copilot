@@ -4,9 +4,11 @@ Loki 告警发送服务
 """
 
 import json
-import httpx
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any
+
+import httpx
+
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -14,21 +16,18 @@ logger = get_logger(__name__)
 
 class LokiAlertSender:
     """Loki 告警发送器"""
-    
-    def __init__(
-        self,
-        loki_url: str = "http://localhost:3100/loki/api/v1/push"
-    ):
+
+    def __init__(self, loki_url: str = "http://localhost:3100/loki/api/v1/push"):
         self.loki_url = loki_url
         self.client = httpx.AsyncClient(timeout=10.0)
-        
-    async def send_alert(self, alert: Dict[str, Any]) -> bool:
+
+    async def send_alert(self, alert: dict[str, Any]) -> bool:
         """
         发送告警到 Loki
-        
+
         Args:
             alert: 告警数据字典
-            
+
         Returns:
             bool: 发送成功返回 True
         """
@@ -42,25 +41,22 @@ class LokiAlertSender:
                             "level": alert.get("severity", "info"),
                             "event_type": alert.get("event_type", "unknown"),
                             "agent_id": alert.get("agent_id", "system"),
-                            "source": alert.get("source", "soc-copilot")
+                            "source": alert.get("source", "soc-copilot"),
                         },
                         "values": [
-                            [
-                                self._get_timestamp_ns(),
-                                self._format_log_entry(alert)
-                            ]
-                        ]
+                            [self._get_timestamp_ns(), self._format_log_entry(alert)]
+                        ],
                     }
                 ]
             }
-            
+
             # 发送到 Loki
             response = await self.client.post(
                 self.loki_url,
                 json=payload,
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
-            
+
             if response.status_code == 204:
                 logger.info(f"Alert sent to Loki: {alert.get('event_type')}")
                 return True
@@ -69,27 +65,29 @@ class LokiAlertSender:
                     f"Failed to send to Loki: {response.status_code} - {response.text}"
                 )
                 return False
-                
+
         except Exception as e:
             logger.error(f"Error sending alert to Loki: {e}")
             return False
-    
+
     def _get_timestamp_ns(self) -> str:
         """获取纳秒时间戳"""
         return str(int(datetime.utcnow().timestamp() * 1_000_000_000))
-    
-    def _format_log_entry(self, alert: Dict[str, Any]) -> str:
+
+    def _format_log_entry(self, alert: dict[str, Any]) -> str:
         """格式化日志条目"""
-        return json.dumps({
-            "timestamp": alert.get("timestamp", datetime.utcnow().isoformat()),
-            "event_type": alert.get("event_type"),
-            "severity": alert.get("severity"),
-            "agent_id": alert.get("agent_id"),
-            "source_ip": alert.get("source_ip"),
-            "description": alert.get("description"),
-            "details": alert.get("details", {})
-        })
-    
+        return json.dumps(
+            {
+                "timestamp": alert.get("timestamp", datetime.utcnow().isoformat()),
+                "event_type": alert.get("event_type"),
+                "severity": alert.get("severity"),
+                "agent_id": alert.get("agent_id"),
+                "source_ip": alert.get("source_ip"),
+                "description": alert.get("description"),
+                "details": alert.get("details", {}),
+            }
+        )
+
     async def send_test_alert(self) -> bool:
         """发送测试告警"""
         test_alert = {
@@ -99,18 +97,18 @@ class LokiAlertSender:
             "agent_id": "test-001",
             "source_ip": "127.0.0.1",
             "description": "Test alert from SOC Copilot",
-            "details": {"test": True}
+            "details": {"test": True},
         }
-        
+
         return await self.send_alert(test_alert)
-    
+
     async def close(self):
         """关闭客户端"""
         await self.client.aclose()
 
 
 # 全局实例
-_loki_sender: Optional[LokiAlertSender] = None
+_loki_sender: LokiAlertSender | None = None
 
 
 def get_loki_sender() -> LokiAlertSender:

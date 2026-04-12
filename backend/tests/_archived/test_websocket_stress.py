@@ -13,12 +13,13 @@ Tests:
 """
 
 import asyncio
-import pytest
 import time
-import psutil
 import tracemalloc
-from datetime import datetime, timezone
-from typing import List, Dict, Any
+from datetime import UTC, datetime
+from typing import Any
+
+import psutil
+import pytest
 
 from routers.websocket import ConnectionManager, WebSocketMessage
 
@@ -28,12 +29,12 @@ class MockWebSocket:
 
     def __init__(self, conn_id: str):
         self.conn_id = conn_id
-        self.messages: List[Dict[str, Any]] = []
+        self.messages: list[dict[str, Any]] = []
         self.closed = False
         self.send_count = 0
         self.last_send_time = None
 
-    async def send_json(self, message: Dict[str, Any]) -> None:
+    async def send_json(self, message: dict[str, Any]) -> None:
         """Send a JSON message."""
         if self.closed:
             raise RuntimeError("WebSocket is closed")
@@ -56,21 +57,23 @@ class StressTestMetrics:
         self.peak_cpu_percent = 0.0
         self.total_messages_sent = 0
         self.total_bytes_sent = 0
-        self.errors: List[str] = []
+        self.errors: list[str] = []
 
     def finish(self):
         """Mark test as finished."""
         self.end_time = time.time()
         self.duration = self.end_time - self.start_time
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get test summary."""
         return {
             "duration_seconds": self.duration,
             "peak_memory_mb": self.peak_memory_mb,
             "peak_cpu_percent": self.peak_cpu_percent,
             "total_messages_sent": self.total_messages_sent,
-            "messages_per_second": self.total_messages_sent / self.duration if self.duration else 0,
+            "messages_per_second": (
+                self.total_messages_sent / self.duration if self.duration else 0
+            ),
             "total_errors": len(self.errors),
             "error_rate": len(self.errors) / max(1, self.total_messages_sent),
         }
@@ -118,8 +121,10 @@ async def test_concurrent_connections():
             current_cpu = process.cpu_percent()
             metrics.peak_cpu_percent = max(metrics.peak_cpu_percent, current_cpu)
 
-            print(f"  Created connections {batch_start}-{batch_end} in {batch_time:.2f}s "
-                  f"({manager.get_connection_count()} total, {current_memory:.1f} MB RAM)")
+            print(
+                f"  Created connections {batch_start}-{batch_end} in {batch_time:.2f}s "
+                f"({manager.get_connection_count()} total, {current_memory:.1f} MB RAM)"
+            )
 
         assert manager.get_connection_count() == connection_count
         print(f"\n✓ Successfully created {connection_count} concurrent connections")
@@ -133,8 +138,8 @@ async def test_concurrent_connections():
         test_message = WebSocketMessage(
             type="system",
             data={"message": "Stress test broadcast"},
-            timestamp=datetime.now(timezone.utc).isoformat(),
-            channel="system"
+            timestamp=datetime.now(UTC).isoformat(),
+            channel="system",
         )
 
         await manager.broadcast_to_channel("system", test_message)
@@ -144,8 +149,7 @@ async def test_concurrent_connections():
 
         # Verify all connections received
         received_count = sum(
-            1 for ws in manager.active_connections.keys()
-            if len(ws.messages) > 0
+            1 for ws in manager.active_connections.keys() if len(ws.messages) > 0
         )
         print(f"  {received_count}/{connection_count} connections received message")
 
@@ -168,10 +172,14 @@ async def test_concurrent_connections():
         print(f"  Duration: {summary['duration_seconds']:.2f}s")
         print(f"  Peak memory: {summary['peak_memory_mb']:.1f} MB")
         print(f"  Peak CPU: {summary['peak_cpu_percent']:.1f}%")
-        print(f"  Memory per connection: {summary['peak_memory_mb'] / connection_count:.2f} MB")
+        print(
+            f"  Memory per connection: {summary['peak_memory_mb'] / connection_count:.2f} MB"
+        )
 
         # Assert acceptable resource usage
-        assert summary['peak_memory_mb'] < 1000, f"Memory usage too high: {summary['peak_memory_mb']:.1f} MB"
+        assert (
+            summary["peak_memory_mb"] < 1000
+        ), f"Memory usage too high: {summary['peak_memory_mb']:.1f} MB"
         assert manager.get_connection_count() == 0, "All connections should be closed"
 
         print("\n✅ Concurrent connections stress test passed!")
@@ -228,12 +236,14 @@ async def test_high_throughput_messaging():
             message = WebSocketMessage(
                 type="alert",
                 data={"id": f"alert_{i}", "severity": "high"},
-                timestamp=datetime.now(timezone.utc).isoformat(),
-                channel="alerts"
+                timestamp=datetime.now(UTC).isoformat(),
+                channel="alerts",
             )
 
             await manager.broadcast_to_channel("alerts", message)
-            metrics.total_messages_sent += connection_count  # Each message sent to all connections
+            metrics.total_messages_sent += (
+                connection_count  # Each message sent to all connections
+            )
 
         end_time = time.time()
         duration = end_time - start_time
@@ -245,7 +255,7 @@ async def test_high_throughput_messaging():
             "message_count": message_count,
             "duration": duration,
             "throughput": messages_per_second,
-            "total_messages": total_messages_sent
+            "total_messages": total_messages_sent,
         }
 
         print(f"  Sent {message_count} messages to {connection_count} connections")
@@ -272,7 +282,9 @@ async def test_high_throughput_messaging():
     print(f"  Average throughput: {summary['messages_per_second']:,.1f} msg/s")
 
     # Assert minimum throughput
-    assert summary['messages_per_second'] >= 5000, f"Throughput too low: {summary['messages_per_second']:.1f} msg/s"
+    assert (
+        summary["messages_per_second"] >= 5000
+    ), f"Throughput too low: {summary['messages_per_second']:.1f} msg/s"
 
     print("\n✅ High throughput stress test passed!")
 
@@ -309,7 +321,9 @@ async def test_memory_stability():
     check_interval = 30  # Check every 30 seconds
     message_batch = 100
 
-    print(f"\nRunning for {test_duration} seconds, checking every {check_interval} seconds...")
+    print(
+        f"\nRunning for {test_duration} seconds, checking every {check_interval} seconds..."
+    )
 
     memory_samples = []
     start_time = time.time()
@@ -323,8 +337,8 @@ async def test_memory_stability():
             message = WebSocketMessage(
                 type="alert",
                 data={"id": f"alert_{iteration}_{i}", "data": "x" * 100},
-                timestamp=datetime.now(timezone.utc).isoformat(),
-                channel="alerts"
+                timestamp=datetime.now(UTC).isoformat(),
+                channel="alerts",
             )
             await manager.broadcast_to_channel("alerts", message)
 
@@ -358,7 +372,7 @@ async def test_memory_stability():
     print(f"  Growth rate: {memory_growth_rate:+.2f} MB/hour")
 
     # Compare snapshots
-    top_stats = snapshot2.compare_to(snapshot1, 'lineno')
+    top_stats = snapshot2.compare_to(snapshot1, "lineno")
     print("\nTop 10 memory allocations:")
     for stat in top_stats[:10]:
         print(f"  {stat}")
@@ -400,13 +414,17 @@ async def test_reconnect_stress():
 
             # Add new connection
             new_ws = MockWebSocket(f"cycle_conn_{cycle}")
-            await manager.connect(new_ws, f"cycle_user_{cycle % 100}", "analyst", {"alerts"})
+            await manager.connect(
+                new_ws, f"cycle_user_{cycle % 100}", "analyst", {"alerts"}
+            )
             connection_pool.append(new_ws)
 
             if (cycle + 1) % 100 == 0:
                 current_count = manager.get_connection_count()
                 current_memory = psutil.Process().memory_info().rss / 1024 / 1024
-                print(f"  Cycle {cycle + 1}: {current_count} connections, {current_memory:.1f} MB RAM")
+                print(
+                    f"  Cycle {cycle + 1}: {current_count} connections, {current_memory:.1f} MB RAM"
+                )
 
         assert manager.get_connection_count() == concurrent_connections
 
@@ -437,7 +455,7 @@ def test_stress_summary():
     print("\n" + "=" * 80)
     print("WebSocket Stress Test Suite")
     print("=" * 80)
-    print(f"\nGenerated at: {datetime.now(timezone.utc).isoformat()}")
+    print(f"\nGenerated at: {datetime.now(UTC).isoformat()}")
 
     print("\nStress Test Categories:")
     print("  1. Concurrent Connections - 1000+ simultaneous connections")

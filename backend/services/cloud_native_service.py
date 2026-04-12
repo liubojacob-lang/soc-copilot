@@ -3,15 +3,13 @@ Cloud Native Security Service
 Kubernetes, container, and cloud security monitoring
 """
 
-import json
-import logging
-from typing import Any, Dict, List, Optional
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
+from typing import Any
 
-from core.logger import get_logger
 from core.config import settings
+from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -42,10 +40,10 @@ class K8sResource:
     name: str
     namespace: str
     kind: str  # Pod, Deployment, Service, etc.
-    labels: Dict[str, str]
-    annotations: Dict[str, str]
-    spec: Dict[str, Any]
-    status: Dict[str, Any]
+    labels: dict[str, str]
+    annotations: dict[str, str]
+    spec: dict[str, Any]
+    status: dict[str, Any]
 
 
 @dataclass
@@ -57,7 +55,7 @@ class ContainerVulnerability:
     cve_id: str
     severity: str
     package_name: str
-    fixed_version: Optional[str]
+    fixed_version: str | None
     description: str
     published_date: datetime
 
@@ -88,7 +86,7 @@ class CloudSecurityEvent:
     resource_id: str
     resource_type: str
     description: str
-    raw_event: Dict[str, Any]
+    raw_event: dict[str, Any]
     timestamp: datetime
 
 
@@ -97,7 +95,7 @@ class CloudNativeSecurityService:
 
     def __init__(self):
         self.k8s_connected = False
-        self.cloud_connections: Dict[CloudProvider, bool] = {}
+        self.cloud_connections: dict[CloudProvider, bool] = {}
         self._initialize_connections()
 
     def _initialize_connections(self):
@@ -128,7 +126,7 @@ class CloudNativeSecurityService:
 
     async def scan_container_image(
         self, image: str, image_tag: str = "latest"
-    ) -> List[ContainerVulnerability]:
+    ) -> list[ContainerVulnerability]:
         """
         Scan container image for vulnerabilities.
 
@@ -170,8 +168,8 @@ class CloudNativeSecurityService:
         return sample_vulns
 
     async def scan_kubernetes_cluster(
-        self, cluster_name: str, namespace: Optional[str] = None
-    ) -> List[K8sSecurityFinding]:
+        self, cluster_name: str, namespace: str | None = None
+    ) -> list[K8sSecurityFinding]:
         """
         Scan Kubernetes cluster for security issues.
 
@@ -250,8 +248,8 @@ class CloudNativeSecurityService:
         return findings
 
     async def get_kubernetes_resources(
-        self, resource_type: str, namespace: Optional[str] = None
-    ) -> List[K8sResource]:
+        self, resource_type: str, namespace: str | None = None
+    ) -> list[K8sResource]:
         """
         Get Kubernetes resources.
 
@@ -291,7 +289,7 @@ class CloudNativeSecurityService:
 
     async def collect_cloud_trails(
         self, provider: CloudProvider, hours: int = 24
-    ) -> List[CloudSecurityEvent]:
+    ) -> list[CloudSecurityEvent]:
         """
         Collect cloud audit logs/trails.
 
@@ -349,8 +347,8 @@ class CloudNativeSecurityService:
         return sample_events
 
     async def get_security_compliance_report(
-        self, cluster_name: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, cluster_name: str | None = None
+    ) -> dict[str, Any]:
         """
         Generate security compliance report.
 
@@ -398,7 +396,7 @@ class CloudNativeSecurityService:
             ],
         }
 
-    async def get_connected_clouds(self) -> List[Dict[str, Any]]:
+    async def get_connected_clouds(self) -> list[dict[str, Any]]:
         """Get list of connected cloud providers."""
         connected = []
         for provider, is_connected in self.cloud_connections.items():
@@ -407,16 +405,18 @@ class CloudNativeSecurityService:
                     {
                         "provider": provider.value,
                         "connected": True,
-                        "services": ["EC2", "S3", "IAM"]
-                        if provider == CloudProvider.AWS
-                        else ["Compute", "Storage"],
+                        "services": (
+                            ["EC2", "S3", "IAM"]
+                            if provider == CloudProvider.AWS
+                            else ["Compute", "Storage"]
+                        ),
                     }
                 )
         return connected
 
 
 # Global service instance
-_cloud_native_service: Optional[CloudNativeSecurityService] = None
+_cloud_native_service: CloudNativeSecurityService | None = None
 
 
 def get_cloud_native_service() -> CloudNativeSecurityService:

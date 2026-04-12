@@ -1,8 +1,9 @@
 """Risk scoring step implementation."""
 
 from typing import Any
-from .base_step import BaseStepImpl
+
 from ..registry import register_step
+from .base_step import BaseStepImpl
 
 
 class RiskScoreStep(BaseStepImpl):
@@ -69,12 +70,12 @@ class RiskScoreStep(BaseStepImpl):
             medium_count = summary.get("medium", 0)
 
             criticality_score = (
-                critical_count * 100 +
-                high_count * 75 +
-                medium_count * 50
+                critical_count * 100 + high_count * 75 + medium_count * 50
             )
             total_assets = max(summary.get("total", 1), 1)
-            risk_factors["asset_criticality_score"] = min(criticality_score / total_assets, 100)
+            risk_factors["asset_criticality_score"] = min(
+                criticality_score / total_assets, 100
+            )
 
         # Calculate IOC count score
         ioc_count = sum(len(v) for v in iocs.values())
@@ -89,8 +90,7 @@ class RiskScoreStep(BaseStepImpl):
         }
 
         composite_score = sum(
-            risk_factors[factor] * weights[factor]
-            for factor in weights
+            risk_factors[factor] * weights[factor] for factor in weights
         )
 
         # Determine risk level

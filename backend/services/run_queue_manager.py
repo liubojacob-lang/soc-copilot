@@ -10,33 +10,33 @@ This service manages the execution queue for playbook runs, providing:
 
 import asyncio
 import hashlib
-from typing import Optional, Dict, Any, Tuple
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
+from typing import Any, Optional
 
-from sqlalchemy import select, and_, func
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.playbook_run import PlaybookRunModel
 from core.config import settings
 from core.logger import get_logger
+from models.playbook_run import PlaybookRunModel
 
 logger = get_logger(__name__)
 
 
 class IdempotencyResult:
     """Result of idempotency check operation."""
-    
+
     def __init__(
         self,
         is_unique: bool,
-        existing_run_id: Optional[str] = None,
-        existing_status: Optional[str] = None,
+        existing_run_id: str | None = None,
+        existing_status: str | None = None,
     ):
         self.is_unique = is_unique
         self.existing_run_id = existing_run_id
         self.existing_status = existing_status
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API responses."""
         return {
             "is_unique": self.is_unique,
@@ -50,7 +50,7 @@ _queue_manager: Optional["RunQueueManager"] = None
 
 # In-memory idempotency cache for fast lookups (backed by DB for persistence)
 # Format: {idempotency_key: (run_id, status, timestamp)}
-_idempotency_cache: Dict[str, Tuple[str, str, datetime]] = {}
+_idempotency_cache: dict[str, tuple[str, str, datetime]] = {}
 
 # Cache TTL in seconds (5 minutes)
 IDEMPOTENCY_CACHE_TTL = 300
@@ -72,7 +72,7 @@ class RunQueueManager:
         self.session_factory = session_factory
         self.max_concurrent = settings.run_queue_max
         self.policy = settings.run_queue_policy
-        self._processing_task: Optional[asyncio.Task] = None
+        self._processing_task: asyncio.Task | None = None
         # Thread safety: lock for queue operations to prevent race conditions
         self._queue_lock = asyncio.Lock()
 
@@ -87,12 +87,12 @@ class RunQueueManager:
         """
         async with self.session_factory() as session:
             # Find orphaned running runs (started > 1 hour ago with no finish time)
-            cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+            cutoff = datetime.now(UTC) - timedelta(hours=1)
             stmt = select(PlaybookRunModel).where(
                 and_(
                     PlaybookRunModel.status == "running",
                     PlaybookRunModel.started_at < cutoff,
-                    PlaybookRunModel.finished_at.is_(None)
+                    PlaybookRunModel.finished_at.is_(None),
                 )
             )
             result = await session.execute(stmt)
@@ -101,12 +101,14 @@ class RunQueueManager:
             for run in orphaned:
                 run.status = "failed"
                 run.error_message = "Run interrupted by server restart"
-                run.finished_at = datetime.now(timezone.utc)
+                run.finished_at = datetime.now(UTC)
 
             await session.commit()
 
             if orphaned:
-                logger.warning(f"Recovered {len(orphaned)} orphaned runs from previous session")
+                logger.warning(
+                    f"Recovered {len(orphaned)} orphaned runs from previous session"
+                )
 
             return len(orphaned)
 
@@ -160,7 +162,7 @@ class RunQueueManager:
                 "has_capacity": running_count < self.max_concurrent,
             }
 
-    async def process_queue(self) -> Optional[str]:
+    async def process_queue(self) -> str | None:
         """Process the queue and start the next pending run if capacity available.
 
         Returns:
@@ -173,11 +175,12 @@ class RunQueueManager:
 
             async with self.session_factory() as session:
                 # Get oldest queued run (FIFO)
-                stmt = select(PlaybookRunModel).where(
-                    PlaybookRunModel.status == "queued"
-                ).order_by(
-                    PlaybookRunModel.queued_at
-                ).limit(1)
+                stmt = (
+                    select(PlaybookRunModel)
+                    .where(PlaybookRunModel.status == "queued")
+                    .order_by(PlaybookRunModel.queued_at)
+                    .limit(1)
+                )
 
                 result = await session.execute(stmt)
                 queued_run = result.scalar_one_or_none()
@@ -187,7 +190,7 @@ class RunQueueManager:
 
                 # Update status to running
                 queued_run.status = "running"
-                queued_run.started_at = datetime.now(timezone.utc)
+                queued_run.started_at = datetime.now(UTC)
 
                 await session.commit()
 
@@ -207,15 +210,13 @@ class RunQueueManager:
             run_id: ID of the run to queue
         """
         async with self.session_factory() as session:
-            stmt = select(PlaybookRunModel).where(
-                PlaybookRunModel.id == run_id
-            )
+            stmt = select(PlaybookRunModel).where(PlaybookRunModel.id == run_id)
             result = await session.execute(stmt)
             run = result.scalar_one_or_none()
 
             if run:
                 run.status = "queued"
-                run.queued_at = datetime.now(timezone.utc)
+                run.queued_at = datetime.now(UTC)
                 await session.commit()
 
                 logger.info(f"Queued run {run_id} (playbook: {run.playbook_name})")
@@ -254,8 +255,8 @@ class RunQueueManager:
         self,
         playbook_name: str,
         trigger_source: str,
-        trigger_id: Optional[str] = None,
-        input_hash: Optional[str] = None,
+        trigger_id: str | None = None,
+        input_hash: str | None = None,
     ) -> str:
         """Generate a deterministic idempotency key for a playbook run.
 
@@ -283,7 +284,7 @@ class RunQueueManager:
         key_string = ":".join(components)
         return hashlib.sha256(key_string.encode()).hexdigest()[:32]
 
-    def compute_input_hash(self, input_data: Dict[str, Any]) -> str:
+    def compute_input_hash(self, input_data: dict[str, Any]) -> str:
         """Compute a hash of input data for deduplication.
 
         Args:
@@ -301,7 +302,7 @@ class RunQueueManager:
     async def check_idempotency(
         self,
         idempotency_key: str,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
         ttl_seconds: int = 300,
     ) -> IdempotencyResult:
         """Check if a run with the given idempotency key already exists.
@@ -318,7 +319,7 @@ class RunQueueManager:
         Returns:
             IdempotencyResult with uniqueness status and existing run info
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cutoff = now - timedelta(seconds=ttl_seconds)
 
         # Check in-memory cache first (fast path)
@@ -339,13 +340,18 @@ class RunQueueManager:
         async def _check_db(db_session: AsyncSession) -> IdempotencyResult:
             # Look for runs with matching idempotency key in input_json
             # or matching trigger_id within the TTL window
-            stmt = select(PlaybookRunModel).where(
-                and_(
-                    PlaybookRunModel.input_json["_idempotency_key"].as_string() == idempotency_key,
-                    PlaybookRunModel.started_at > cutoff,
-                    PlaybookRunModel.status.in_(["running", "queued", "completed"]),
+            stmt = (
+                select(PlaybookRunModel)
+                .where(
+                    and_(
+                        PlaybookRunModel.input_json["_idempotency_key"].as_string()
+                        == idempotency_key,
+                        PlaybookRunModel.started_at > cutoff,
+                        PlaybookRunModel.status.in_(["running", "queued", "completed"]),
+                    )
                 )
-            ).limit(1)
+                .limit(1)
+            )
 
             result = await db_session.execute(stmt)
             existing_run = result.scalar_one_or_none()
@@ -388,7 +394,7 @@ class RunQueueManager:
             run_id: The run ID associated with this key
             status: Current status of the run
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         _idempotency_cache[idempotency_key] = (run_id, status, now)
         logger.debug(
             f"Registered idempotency key {idempotency_key[:8]}... for run {run_id}"
@@ -403,11 +409,12 @@ class RunQueueManager:
         Returns:
             Number of entries cleared
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cutoff = now - timedelta(seconds=ttl_seconds)
 
         expired_keys = [
-            key for key, (_, _, timestamp) in _idempotency_cache.items()
+            key
+            for key, (_, _, timestamp) in _idempotency_cache.items()
             if timestamp < cutoff
         ]
 
@@ -415,7 +422,9 @@ class RunQueueManager:
             del _idempotency_cache[key]
 
         if expired_keys:
-            logger.debug(f"Cleared {len(expired_keys)} expired idempotency cache entries")
+            logger.debug(
+                f"Cleared {len(expired_keys)} expired idempotency cache entries"
+            )
 
         return len(expired_keys)
 
@@ -423,12 +432,12 @@ class RunQueueManager:
         self,
         playbook_name: str,
         trigger_source: str,
-        trigger_id: Optional[str] = None,
-        input_data: Optional[Dict[str, Any]] = None,
-        idempotency_key: Optional[str] = None,
+        trigger_id: str | None = None,
+        input_data: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
         idempotency_ttl: int = 300,
         **kwargs: Any,
-    ) -> Tuple[Optional[str], IdempotencyResult]:
+    ) -> tuple[str | None, IdempotencyResult]:
         """Queue a run with idempotency check.
 
         This is the main entry point for queueing runs with deduplication.
@@ -485,7 +494,11 @@ class RunQueueManager:
                 input_json=run_input_data,
                 trigger_source=trigger_source,
                 trigger_id=trigger_id,
-                **{k: v for k, v in kwargs.items() if k not in ["playbook_version", "mode"]},
+                **{
+                    k: v
+                    for k, v in kwargs.items()
+                    if k not in ["playbook_version", "mode"]
+                },
             )
 
             await session.commit()
@@ -511,12 +524,12 @@ def set_run_queue_manager(manager: RunQueueManager) -> None:
     _queue_manager = manager
 
 
-def get_run_queue_manager() -> Optional[RunQueueManager]:
+def get_run_queue_manager() -> RunQueueManager | None:
     """Get the global queue manager instance."""
     return _queue_manager
 
 
-def get_idempotency_cache_stats() -> Dict[str, Any]:
+def get_idempotency_cache_stats() -> dict[str, Any]:
     """Get statistics about the idempotency cache.
 
     Returns:

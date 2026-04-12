@@ -122,13 +122,17 @@ def setup_metrics(app: FastAPI) -> None:
     instrumentator.expose(app, endpoint="/metrics/prometheus", include_in_schema=False)
 
 
-def observe_api_request(method: str, path: str, status: int, tenant_id: str, duration_s: float) -> None:
+def observe_api_request(
+    method: str, path: str, status: int, tenant_id: str, duration_s: float
+) -> None:
     api_requests_total.labels(method, path, str(status), tenant_id).inc()
     api_request_duration_seconds.labels(method, path, tenant_id).observe(duration_s)
     REQUEST_DURATION_HISTOGRAM.labels(method, path, str(status)).observe(duration_s)
 
 
-def observe_queue_consume(stream: str, group: str, result: str, duration_s: float | None = None) -> None:
+def observe_queue_consume(
+    stream: str, group: str, result: str, duration_s: float | None = None
+) -> None:
     queue_consume_total.labels(stream, group, result).inc()
     if duration_s is not None:
         queue_processing_seconds.labels(stream, group).observe(duration_s)
@@ -146,12 +150,16 @@ def set_queue_lag(stream: str, size: int) -> None:
     queue_lag.labels(stream).set(size)
 
 
-def observe_playbook_run(playbook_name: str, status: str, mode: str, tenant_id: str, duration_s: float) -> None:
+def observe_playbook_run(
+    playbook_name: str, status: str, mode: str, tenant_id: str, duration_s: float
+) -> None:
     playbook_runs_total.labels(playbook_name, status, mode, tenant_id).inc()
     playbook_run_duration_seconds.labels(playbook_name, tenant_id).observe(duration_s)
 
 
-def observe_playbook_error(playbook_name: str, error_type: str, tenant_id: str = "default") -> None:
+def observe_playbook_error(
+    playbook_name: str, error_type: str, tenant_id: str = "default"
+) -> None:
     playbook_errors_total.labels(playbook_name, error_type, tenant_id).inc()
 
 
@@ -175,9 +183,13 @@ def set_cache_size(size: int, cache_name: str = "query_cache") -> None:
     cache_size.labels(cache_name).set(size)
 
 
-def observe_security_alert_ingested(source: str, severity: str, tenant_id: str = "default") -> None:
+def observe_security_alert_ingested(
+    source: str, severity: str, tenant_id: str = "default"
+) -> None:
     security_alerts_total.labels(source, severity, tenant_id).inc()
 
 
-def set_security_alerts_by_status(status: str, count: int, tenant_id: str = "default") -> None:
+def set_security_alerts_by_status(
+    status: str, count: int, tenant_id: str = "default"
+) -> None:
     security_alerts_by_status.labels(status, tenant_id).set(count)

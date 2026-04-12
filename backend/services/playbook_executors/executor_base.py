@@ -2,22 +2,23 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
 class ExecutorContext:
     """Context passed to node executors."""
+
     run_id: str
     node_id: str
     node_def: dict[str, Any]
     input_json: dict[str, Any]
     attempt_no: int = 1
     # v0.8.2: User context for approval nodes and audit
-    user_id: Optional[str] = None
-    username: Optional[str] = None
+    user_id: str | None = None
+    username: str | None = None
     # Session for database operations (optional, can be injected)
-    session: Optional[Any] = field(default=None, repr=False)
+    session: Any | None = field(default=None, repr=False)
 
 
 class BaseExecutor(ABC):
@@ -38,7 +39,9 @@ class BaseExecutor(ABC):
         """
         pass
 
-    def _get_input(self, context: ExecutorContext, key: str, default: Any = None) -> Any:
+    def _get_input(
+        self, context: ExecutorContext, key: str, default: Any = None
+    ) -> Any:
         """Get input value from context."""
         return context.input_json.get(key, default)
 

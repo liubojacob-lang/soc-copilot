@@ -1,12 +1,13 @@
 """Cookie-based authentication with httpOnly cookies for XSS protection."""
 
-from datetime import timedelta
 from fastapi import Response
+
 from core.config import settings
 
 # Cookie configuration
 COOKIE_ACCESS_TOKEN_NAME = "access_token"
 COOKIE_REFRESH_TOKEN_NAME = "refresh_token"
+
 
 # Cookie security settings
 def get_cookie_settings() -> dict:
@@ -21,20 +22,13 @@ def get_cookie_settings() -> dict:
     }
 
 
-def set_auth_cookies(
-    response: Response,
-    access_token: str,
-    refresh_token: str
-) -> None:
+def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
     """Set authentication cookies on response."""
     cookie_settings = get_cookie_settings()
 
     # Set access token cookie
     response.set_cookie(
-        key=COOKIE_ACCESS_TOKEN_NAME,
-        value=access_token,
-        path="/",
-        **cookie_settings
+        key=COOKIE_ACCESS_TOKEN_NAME, value=access_token, path="/", **cookie_settings
     )
 
     # Set refresh token cookie (longer expiry)
@@ -44,7 +38,7 @@ def set_auth_cookies(
         key=COOKIE_REFRESH_TOKEN_NAME,
         value=refresh_token,
         path="/",
-        **refresh_cookie_settings
+        **refresh_cookie_settings,
     )
 
 

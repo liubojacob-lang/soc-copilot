@@ -10,11 +10,10 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from datetime import datetime, timezone
 from services.event_correlation_service import (
-    EventCorrelationService,
-    SEVERITY_SCORES,
     CRITICALITY_WEIGHTS,
+    SEVERITY_SCORES,
+    EventCorrelationService,
 )
 
 
@@ -52,8 +51,12 @@ def test_risk_score_calculation():
     # Test case 1: Critical severity, single event
     score1 = service._calculate_risk_score(
         severity="critical",
-        common_entities={"ip_addresses": ["192.168.1.1"], "usernames": [], "hostnames": []},
-        event_count=1
+        common_entities={
+            "ip_addresses": ["192.168.1.1"],
+            "usernames": [],
+            "hostnames": [],
+        },
+        event_count=1,
     )
     expected1 = 90 * 1.0 * 1.0  # base * weight * multiplier
     assert abs(score1 - expected1) < 0.1, f"Expected {expected1}, got {score1}"
@@ -63,7 +66,7 @@ def test_risk_score_calculation():
     score2 = service._calculate_risk_score(
         severity="high",
         common_entities={"ip_addresses": [], "usernames": ["admin"], "hostnames": []},
-        event_count=1
+        event_count=1,
     )
     expected2 = 70 * 1.0 * 1.0
     assert abs(score2 - expected2) < 0.1, f"Expected {expected2}, got {score2}"
@@ -72,10 +75,16 @@ def test_risk_score_calculation():
     # Test case 3: Medium severity, multiple events
     score3 = service._calculate_risk_score(
         severity="medium",
-        common_entities={"ip_addresses": ["10.0.0.1", "10.0.0.2"], "usernames": [], "hostnames": []},
-        event_count=5
+        common_entities={
+            "ip_addresses": ["10.0.0.1", "10.0.0.2"],
+            "usernames": [],
+            "hostnames": [],
+        },
+        event_count=5,
     )
-    expected3 = 50 * 1.0 * min(1.0 + (5 - 1) * 0.05, 1.5)  # base * weight * multiplier(1.2)
+    expected3 = (
+        50 * 1.0 * min(1.0 + (5 - 1) * 0.05, 1.5)
+    )  # base * weight * multiplier(1.2)
     assert abs(score3 - expected3) < 0.1, f"Expected {expected3}, got {score3}"
     print(f"✅ Medium, 5 events: {score3}")
 
@@ -83,7 +92,7 @@ def test_risk_score_calculation():
     score4 = service._calculate_risk_score(
         severity="low",
         common_entities={"ip_addresses": [], "usernames": [], "hostnames": ["server1"]},
-        event_count=15
+        event_count=15,
     )
     expected4 = 30 * 1.0 * 1.5  # multiplier capped at 1.5
     assert abs(score4 - expected4) < 0.1, f"Expected {expected4}, got {score4}"
@@ -93,7 +102,7 @@ def test_risk_score_calculation():
     score5 = service._calculate_risk_score(
         severity="info",
         common_entities={"ip_addresses": [], "usernames": [], "hostnames": []},
-        event_count=1
+        event_count=1,
     )
     expected5 = 10 * 1.0 * 1.0
     assert abs(score5 - expected5) < 0.1, f"Expected {expected5}, got {score5}"
@@ -103,7 +112,7 @@ def test_risk_score_calculation():
     score6 = service._calculate_risk_score(
         severity="critical",
         common_entities={"ip_addresses": [], "usernames": [], "hostnames": []},
-        event_count=50  # Many events
+        event_count=50,  # Many events
     )
     assert score6 <= 100.0, f"Score should not exceed 100, got {score6}"
     print(f"✅ Critical, 50 events (capped at 100): {score6}")
@@ -113,9 +122,9 @@ def test_risk_score_calculation():
 
 def test_scoring_formula():
     """Test and document the scoring formula."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("RISK SCORING FORMULA")
-    print("="*60)
+    print("=" * 60)
     print("\n1. Base Score (from severity):")
     print("   - Critical: 90")
     print("   - High: 70")
@@ -137,7 +146,7 @@ def test_scoring_formula():
 
     print("\n4. Final Formula:")
     print("   risk_score = min(base × weight × multiplier, 100)")
-    print("="*60)
+    print("=" * 60)
 
     # Example calculation
     print("\nEXAMPLE: Critical severity, 3 events, medium asset")
@@ -146,19 +155,19 @@ def test_scoring_formula():
     multiplier = 1.0 + (3 - 1) * 0.05  # 1.1
     result = min(base * weight * multiplier, 100)
     print(f"   {base} × {weight} × {multiplier:.2f} = {result:.1f}")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
 
 if __name__ == "__main__":
-    print("="*60)
+    print("=" * 60)
     print("RISK SCORE CALCULATION TEST SUITE")
-    print("="*60)
+    print("=" * 60)
 
     test_severity_scores()
     test_criticality_weights()
     test_risk_score_calculation()
     test_scoring_formula()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🎉 ALL TESTS PASSED!")
-    print("="*60)
+    print("=" * 60)

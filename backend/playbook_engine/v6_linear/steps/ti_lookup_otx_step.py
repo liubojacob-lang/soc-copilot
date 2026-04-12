@@ -1,9 +1,9 @@
 """Threat intelligence lookup step implementation."""
 
 from typing import Any
-import httpx
-from .base_step import BaseStepImpl
+
 from ..registry import register_step
+from .base_step import BaseStepImpl
 
 
 class TILookupOTXStep(BaseStepImpl):
@@ -59,16 +59,24 @@ class TILookupOTXStep(BaseStepImpl):
         # In dry run mode, simulate results
         if mode == "dry_run":
             results["matches"] = self._simulate_lookup(iocs)
-            results["summary"]["malicious"] = len([r for r in results["matches"] if r.get("threat_level") == "malicious"])
-            results["summary"]["suspicious"] = len([r for r in results["matches"] if r.get("threat_level") == "suspicious"])
+            results["summary"]["malicious"] = len(
+                [r for r in results["matches"] if r.get("threat_level") == "malicious"]
+            )
+            results["summary"]["suspicious"] = len(
+                [r for r in results["matches"] if r.get("threat_level") == "suspicious"]
+            )
             return results
 
         # In apply mode, perform actual lookups
         # Note: This requires OTX API key configuration
         try:
             results["matches"] = self._perform_lookup(iocs)
-            results["summary"]["malicious"] = len([r for r in results["matches"] if r.get("threat_level") == "malicious"])
-            results["summary"]["suspicious"] = len([r for r in results["matches"] if r.get("threat_level") == "suspicious"])
+            results["summary"]["malicious"] = len(
+                [r for r in results["matches"] if r.get("threat_level") == "malicious"]
+            )
+            results["summary"]["suspicious"] = len(
+                [r for r in results["matches"] if r.get("threat_level") == "suspicious"]
+            )
         except Exception as e:
             results["error"] = str(e)
 
@@ -88,24 +96,28 @@ class TILookupOTXStep(BaseStepImpl):
         for ip in iocs.get("ips", [])[:3]:
             threat_level = known_bad.get(ip, "unknown")
             if threat_level != "unknown":
-                matches.append({
-                    "indicator": ip,
-                    "type": "ip",
-                    "threat_level": threat_level,
-                    "source": "otx",
-                    "description": f"{threat_level.capitalize()} indicator detected",
-                })
+                matches.append(
+                    {
+                        "indicator": ip,
+                        "type": "ip",
+                        "threat_level": threat_level,
+                        "source": "otx",
+                        "description": f"{threat_level.capitalize()} indicator detected",
+                    }
+                )
 
         for domain in iocs.get("domains", [])[:3]:
             threat_level = known_bad.get(domain, "unknown")
             if threat_level != "unknown":
-                matches.append({
-                    "indicator": domain,
-                    "type": "domain",
-                    "threat_level": threat_level,
-                    "source": "otx",
-                    "description": f"{threat_level.capitalize()} indicator detected",
-                })
+                matches.append(
+                    {
+                        "indicator": domain,
+                        "type": "domain",
+                        "threat_level": threat_level,
+                        "source": "otx",
+                        "description": f"{threat_level.capitalize()} indicator detected",
+                    }
+                )
 
         return matches
 

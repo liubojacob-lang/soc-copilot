@@ -4,11 +4,11 @@ This module provides dynamic plugin loading for playbook nodes,
 allowing new node types to be added without modifying core code.
 """
 
-from .registry import NodeRegistry
 from .base_node import BaseNodePlugin, NodeExecutionContext
+from .registry import NodeRegistry
 
 __all__ = [
-    "NodeRegistry",
     "BaseNodePlugin",
     "NodeExecutionContext",
+    "NodeRegistry",
 ]

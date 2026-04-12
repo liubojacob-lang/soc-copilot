@@ -1,8 +1,9 @@
 """Action plan step implementation."""
 
 from typing import Any
-from .base_step import BaseStepImpl
+
 from ..registry import register_step
+from .base_step import BaseStepImpl
 
 
 class ActionPlanStep(BaseStepImpl):
@@ -73,177 +74,197 @@ class ActionPlanStep(BaseStepImpl):
         actions["summary"]["eradication"] = len(eradication_actions)
 
         # Generate recovery actions
-        recovery_actions = self._generate_recovery_actions(
-            risk_level, asset_results
-        )
+        recovery_actions = self._generate_recovery_actions(risk_level, asset_results)
         actions["actions"].extend(recovery_actions)
         actions["summary"]["recovery"] = len(recovery_actions)
 
         # Sort by priority and category
         priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-        actions["actions"].sort(key=lambda x: (
-            priority_order.get(x.get("risk", "medium"), 2),
-            {"containment": 0, "eradication": 1, "recovery": 2}.get(x.get("category", "recovery"), 2)
-        ))
+        actions["actions"].sort(
+            key=lambda x: (
+                priority_order.get(x.get("risk", "medium"), 2),
+                {"containment": 0, "eradication": 1, "recovery": 2}.get(
+                    x.get("category", "recovery"), 2
+                ),
+            )
+        )
 
         actions["summary"]["total_actions"] = len(actions["actions"])
 
         return actions
 
-    def _generate_containment_actions(self, risk_level: str, asset_results: dict, iocs: dict, alert_data: dict) -> list[dict]:
+    def _generate_containment_actions(
+        self, risk_level: str, asset_results: dict, iocs: dict, alert_data: dict
+    ) -> list[dict]:
         """Generate containment actions."""
         actions = []
 
         # Network containment
         for ip in iocs.get("ips", [])[:3]:
-            actions.append({
-                "title": f"Block malicious IP: {ip}",
-                "category": "containment",
-                "risk": risk_level,
-                "priority": "1" if risk_level in ["critical", "high"] else "2",
-                "rationale": f"Prevent communication with known malicious IP address {ip}",
-                "steps": [
-                    {
-                        "action": "Add firewall rule",
-                        "method": "Firewall / Security Group",
-                        "command": f"iptables -A INPUT -s {ip} -j DROP",
-                    },
-                ],
-                "verification": [
-                    f"Verify no traffic from {ip} in firewall logs",
-                    "Confirm outbound connections to {ip} are blocked",
-                ],
-                "rollback": [
-                    f"Remove firewall rule for IP {ip}",
-                    "Document in change control system",
-                ],
-            })
+            actions.append(
+                {
+                    "title": f"Block malicious IP: {ip}",
+                    "category": "containment",
+                    "risk": risk_level,
+                    "priority": "1" if risk_level in ["critical", "high"] else "2",
+                    "rationale": f"Prevent communication with known malicious IP address {ip}",
+                    "steps": [
+                        {
+                            "action": "Add firewall rule",
+                            "method": "Firewall / Security Group",
+                            "command": f"iptables -A INPUT -s {ip} -j DROP",
+                        },
+                    ],
+                    "verification": [
+                        f"Verify no traffic from {ip} in firewall logs",
+                        "Confirm outbound connections to {ip} are blocked",
+                    ],
+                    "rollback": [
+                        f"Remove firewall rule for IP {ip}",
+                        "Document in change control system",
+                    ],
+                }
+            )
 
         # Host containment
         hostname = alert_data.get("hostname")
         if hostname and risk_level in ["critical", "high"]:
-            actions.append({
-                "title": f"Isolate compromised host: {hostname}",
-                "category": "containment",
-                "risk": risk_level,
-                "priority": "1",
-                "rationale": f"Prevent lateral movement from potentially compromised host {hostname}",
-                "steps": [
-                    {
-                        "action": "Network isolation",
-                        "method": "EDR / Network ACL",
-                        "command": f"# Isolate host via EDR console\n# Host: {hostname}",
-                    },
-                ],
-                "verification": [
-                    f"Confirm {hostname} cannot communicate with other internal systems",
-                    "Verify only EDR/management connectivity remains",
-                ],
-                "rollback": [
-                    f"Restore network connectivity for {hostname}",
-                    "Monitor for suspicious activity post-restoration",
-                ],
-            })
+            actions.append(
+                {
+                    "title": f"Isolate compromised host: {hostname}",
+                    "category": "containment",
+                    "risk": risk_level,
+                    "priority": "1",
+                    "rationale": f"Prevent lateral movement from potentially compromised host {hostname}",
+                    "steps": [
+                        {
+                            "action": "Network isolation",
+                            "method": "EDR / Network ACL",
+                            "command": f"# Isolate host via EDR console\n# Host: {hostname}",
+                        },
+                    ],
+                    "verification": [
+                        f"Confirm {hostname} cannot communicate with other internal systems",
+                        "Verify only EDR/management connectivity remains",
+                    ],
+                    "rollback": [
+                        f"Restore network connectivity for {hostname}",
+                        "Monitor for suspicious activity post-restoration",
+                    ],
+                }
+            )
 
         return actions
 
-    def _generate_eradication_actions(self, risk_level: str, iocs: dict, alert_data: dict) -> list[dict]:
+    def _generate_eradication_actions(
+        self, risk_level: str, iocs: dict, alert_data: dict
+    ) -> list[dict]:
         """Generate eradication actions."""
         actions = []
 
         # Domain blocking
         for domain in iocs.get("domains", [])[:3]:
-            actions.append({
-                "title": f"Block malicious domain: {domain}",
+            actions.append(
+                {
+                    "title": f"Block malicious domain: {domain}",
+                    "category": "eradication",
+                    "risk": risk_level,
+                    "priority": "2",
+                    "rationale": f"Prevent connections to malicious domain {domain}",
+                    "steps": [
+                        {
+                            "action": "Add DNS sinkhole rule",
+                            "method": "DNS / RPZ",
+                            "command": f'zone "{domain}" {{ type master; file "blocked.zone"; }};',
+                        },
+                    ],
+                    "verification": [
+                        f"Verify DNS queries for {domain} return sinkhole address",
+                        "Monitor DNS logs for blocked queries",
+                    ],
+                    "rollback": [
+                        f"Remove DNS sinkhole rule for {domain}",
+                        "Clear DNS cache if necessary",
+                    ],
+                }
+            )
+
+        # Threat hunting action
+        actions.append(
+            {
+                "title": "Hunt for additional compromised systems",
                 "category": "eradication",
-                "risk": risk_level,
+                "risk": "high" if risk_level == "critical" else "medium",
                 "priority": "2",
-                "rationale": f"Prevent connections to malicious domain {domain}",
+                "rationale": "Identify all potentially compromised systems using extracted IOCs",
                 "steps": [
                     {
-                        "action": "Add DNS sinkhole rule",
-                        "method": "DNS / RPZ",
-                        "command": f'zone "{domain}" {{ type master; file "blocked.zone"; }};',
+                        "action": "Execute threat hunt queries",
+                        "method": "SIEM",
+                        "command": "# Run SIEM queries with extracted IOCs across 30-day window",
                     },
                 ],
                 "verification": [
-                    f"Verify DNS queries for {domain} return sinkhole address",
-                    "Monitor DNS logs for blocked queries",
+                    "Review search results for additional matches",
+                    "Correlate findings across multiple data sources",
                 ],
-                "rollback": [
-                    f"Remove DNS sinkhole rule for {domain}",
-                    "Clear DNS cache if necessary",
-                ],
-            })
-
-        # Threat hunting action
-        actions.append({
-            "title": "Hunt for additional compromised systems",
-            "category": "eradication",
-            "risk": "high" if risk_level == "critical" else "medium",
-            "priority": "2",
-            "rationale": "Identify all potentially compromised systems using extracted IOCs",
-            "steps": [
-                {
-                    "action": "Execute threat hunt queries",
-                    "method": "SIEM",
-                    "command": "# Run SIEM queries with extracted IOCs across 30-day window",
-                },
-            ],
-            "verification": [
-                "Review search results for additional matches",
-                "Correlate findings across multiple data sources",
-            ],
-            "rollback": [],
-        })
+                "rollback": [],
+            }
+        )
 
         return actions
 
-    def _generate_recovery_actions(self, risk_level: str, asset_results: dict) -> list[dict]:
+    def _generate_recovery_actions(
+        self, risk_level: str, asset_results: dict
+    ) -> list[dict]:
         """Generate recovery actions."""
         actions = []
 
         # Incident documentation
-        actions.append({
-            "title": "Document incident findings",
-            "category": "recovery",
-            "risk": "low",
-            "priority": "3",
-            "rationale": "Create comprehensive incident report for stakeholders",
-            "steps": [
-                {
-                    "action": "Compile incident report",
-                    "method": "Documentation",
-                    "command": "# Document timeline, IOCs, affected assets, and actions taken",
-                },
-            ],
-            "verification": [
-                "Review report completeness with incident response team",
-                "Obtain management sign-off",
-            ],
-            "rollback": [],
-        })
+        actions.append(
+            {
+                "title": "Document incident findings",
+                "category": "recovery",
+                "risk": "low",
+                "priority": "3",
+                "rationale": "Create comprehensive incident report for stakeholders",
+                "steps": [
+                    {
+                        "action": "Compile incident report",
+                        "method": "Documentation",
+                        "command": "# Document timeline, IOCs, affected assets, and actions taken",
+                    },
+                ],
+                "verification": [
+                    "Review report completeness with incident response team",
+                    "Obtain management sign-off",
+                ],
+                "rollback": [],
+            }
+        )
 
         # Post-incident review
-        actions.append({
-            "title": "Schedule post-incident review",
-            "category": "recovery",
-            "risk": "low",
-            "priority": "3",
-            "rationale": "Identify lessons learned and improve detection/response capabilities",
-            "steps": [
-                {
-                    "action": "Schedule review meeting",
-                    "method": "Planning",
-                    "command": "# Schedule within 5 business days with all stakeholders",
-                },
-            ],
-            "verification": [
-                "Review meeting scheduled and attendees confirmed",
-                "Action items assigned and tracked",
-            ],
-            "rollback": [],
-        })
+        actions.append(
+            {
+                "title": "Schedule post-incident review",
+                "category": "recovery",
+                "risk": "low",
+                "priority": "3",
+                "rationale": "Identify lessons learned and improve detection/response capabilities",
+                "steps": [
+                    {
+                        "action": "Schedule review meeting",
+                        "method": "Planning",
+                        "command": "# Schedule within 5 business days with all stakeholders",
+                    },
+                ],
+                "verification": [
+                    "Review meeting scheduled and attendees confirmed",
+                    "Action items assigned and tracked",
+                ],
+                "rollback": [],
+            }
+        )
 
         return actions
 

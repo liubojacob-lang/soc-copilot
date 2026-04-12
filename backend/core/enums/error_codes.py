@@ -241,7 +241,6 @@ ERROR_MESSAGES = {
     AuthError.LOGOUT_FAILED: "Logout failed",
     AuthError.UNAUTHORIZED: "Authentication required",
     AuthError.FORBIDDEN: "Access forbidden",
-
     # Resource errors
     ResourceError.NOT_FOUND: "Resource not found",
     ResourceError.ALREADY_EXISTS: "Resource already exists",
@@ -249,14 +248,12 @@ ERROR_MESSAGES = {
     ResourceError.LOCKED: "Resource is locked",
     ResourceError.DEPENDENCY_EXISTS: "Resource has dependencies",
     ResourceError.VERSION_CONFLICT: "Resource version conflict",
-
     # Definition errors
     DefinitionError.NOT_FOUND: "Playbook definition not found",
     DefinitionError.INVALID_FORMAT: "Invalid playbook definition format",
     DefinitionError.INVALID_DAG: "Invalid DAG structure",
     DefinitionError.CYCLE_DETECTED: "Cycle detected in playbook DAG",
     DefinitionError.MISSING_REQUIRED_FIELD: "Missing required field in definition",
-
     # Execution errors
     ExecutionError.NOT_FOUND: "Execution not found",
     ExecutionError.ALREADY_RUNNING: "Execution is already running",
@@ -267,7 +264,6 @@ ERROR_MESSAGES = {
     ExecutionError.QUEUE_FULL: "Execution queue is full",
     ExecutionError.INVALID_STATE: "Invalid execution state",
     ExecutionError.NOT_APPROVED: "Execution not approved",
-
     # Trigger errors
     TriggerError.NOT_FOUND: "Trigger not found",
     TriggerError.INVALID_TYPE: "Invalid trigger type",
@@ -275,7 +271,6 @@ ERROR_MESSAGES = {
     TriggerError.ALREADY_ACTIVE: "Trigger is already active",
     TriggerError.CREATION_FAILED: "Failed to create trigger",
     TriggerError.WEBHOOK_FAILED: "Webhook execution failed",
-
     # Validation errors
     ValidationError.INVALID_INPUT: "Invalid input",
     ValidationError.MISSING_REQUIRED_FIELD: "Missing required field",
@@ -284,14 +279,12 @@ ERROR_MESSAGES = {
     ValidationError.OUT_OF_RANGE: "Value out of range",
     ValidationError.INVALID_JSON: "Invalid JSON format",
     ValidationError.INVALID_QUERY_PARAM: "Invalid query parameter",
-
     # Config errors
     ConfigError.NOT_CONFIGURED: "Not configured",
     ConfigError.INVALID_VALUE: "Invalid configuration value",
     ConfigError.MISSING_REQUIRED: "Missing required configuration",
     ConfigError.LOAD_FAILED: "Failed to load configuration",
     ConfigError.SAVE_FAILED: "Failed to save configuration",
-
     # Service errors
     ServiceError.UNAVAILABLE: "Service unavailable",
     ServiceError.TIMEOUT: "Service request timed out",
@@ -300,14 +293,12 @@ ERROR_MESSAGES = {
     ServiceError.RATE_LIMITED: "Service rate limit exceeded",
     ServiceError.DIFY_CONNECTION_FAILED: "Failed to connect to Dify",
     ServiceError.AI_MODEL_ERROR: "AI model error",
-
     # Database errors
     DatabaseError.CONNECTION_FAILED: "Database connection failed",
     DatabaseError.QUERY_FAILED: "Database query failed",
     DatabaseError.CONSTRAINT_VIOLATION: "Database constraint violation",
     DatabaseError.TRANSACTION_FAILED: "Database transaction failed",
     DatabaseError.ALREADY_EXISTS: "Database record already exists",
-
     # File errors
     FileError.NOT_FOUND: "File not found",
     FileError.PERMISSION_DENIED: "File permission denied",
@@ -315,28 +306,23 @@ ERROR_MESSAGES = {
     FileError.INVALID_TYPE: "Invalid file type",
     FileError.UPLOAD_FAILED: "File upload failed",
     FileError.DOWNLOAD_FAILED: "File download failed",
-
     # Marketplace errors
     MarketplaceError.DOWNLOAD_FAILED: "Failed to download from marketplace",
     MarketplaceError.INVALID_URL: "Invalid marketplace URL",
     MarketplaceError.REPO_NOT_FOUND: "Repository not found",
     MarketplaceError.INSTALL_FAILED: "Failed to install from marketplace",
-
     # Secret errors
     SecretError.NOT_FOUND: "Secret not found",
     SecretError.DECRYPTION_FAILED: "Failed to decrypt secret",
     SecretError.ENCRYPTION_FAILED: "Failed to encrypt secret",
     SecretError.KEY_MISSING: "Encryption key missing",
-
     # Audit errors
     AuditError.LOG_FAILED: "Failed to write audit log",
     AuditError.RETRIEVE_FAILED: "Failed to retrieve audit logs",
-
     # Notification errors
     NotificationError.SEND_FAILED: "Failed to send notification",
     NotificationError.CONFIG_INVALID: "Invalid notification configuration",
     NotificationError.CHANNEL_NOT_CONFIGURED: "Notification channel not configured",
-
     # General errors
     GeneralError.INTERNAL_ERROR: "Internal server error",
     GeneralError.NOT_IMPLEMENTED: "Feature not implemented",

@@ -14,28 +14,25 @@ Tests:
 """
 
 import asyncio
-import pytest
-import time
 import gzip
 import json
-from typing import List, Dict, Any
-from collections import defaultdict
-from datetime import datetime, timezone
+import time
+from datetime import UTC, datetime
+from typing import Any
 
-from services.websocket_compression import (
-    MessageCompressionService,
-    CompressionConfig,
-    get_compression_service
-)
+import pytest
+
 from services.message_batch_service import (
-    MessageBatchService,
     BatchConfig,
-    get_batch_service
+    MessageBatchService,
+)
+from services.websocket_compression import (
+    CompressionConfig,
+    MessageCompressionService,
 )
 from services.websocket_connection_pool import (
     ConnectionPoolService,
     PoolConfig,
-    get_connection_pool
 )
 
 
@@ -43,10 +40,10 @@ class PerformanceMetrics:
     """Container for performance test metrics."""
 
     def __init__(self):
-        self.durations: List[float] = []
-        self.sizes: List[int] = []
-        self.counts: List[int] = []
-        self.errors: List[str] = []
+        self.durations: list[float] = []
+        self.sizes: list[int] = []
+        self.counts: list[int] = []
+        self.errors: list[str] = []
 
     def add_duration(self, duration_ms: float) -> None:
         """Add a duration measurement."""
@@ -96,7 +93,7 @@ class PerformanceMetrics:
         """Calculate total count."""
         return sum(self.counts)
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get performance summary."""
         return {
             "total_samples": len(self.durations),
@@ -122,11 +119,7 @@ async def test_message_compression_performance():
     print("=" * 80)
 
     metrics = PerformanceMetrics()
-    config = CompressionConfig(
-        enabled=True,
-        min_size_bytes=1024,
-        compression_level=6
-    )
+    config = CompressionConfig(enabled=True, min_size_bytes=1024, compression_level=6)
     service = MessageCompressionService(config)
 
     # Test with various message sizes
@@ -134,7 +127,10 @@ async def test_message_compression_performance():
 
     for size in test_sizes:
         # Create test message
-        test_data = {"data": "x" * size, "timestamp": datetime.now(timezone.utc).isoformat()}
+        test_data = {
+            "data": "x" * size,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
 
         # Measure compression time
         start = time.time()
@@ -146,8 +142,10 @@ async def test_message_compression_performance():
         if compressed_data:
             metrics.add_size(len(compressed_data))
             compression_ratio = 1.0 - (len(compressed_data) / size)
-            print(f"Size: {size:5d} -> {len(compressed_data):5d} bytes "
-                  f"({compression_ratio:6.2%} reduction, {duration_ms:6.2f}ms)")
+            print(
+                f"Size: {size:5d} -> {len(compressed_data):5d} bytes "
+                f"({compression_ratio:6.2%} reduction, {duration_ms:6.2f}ms)"
+            )
         else:
             print(f"Size: {size:5d} -> skipped (below threshold)")
 
@@ -165,7 +163,7 @@ async def test_message_compression_performance():
     print(f"  Bytes saved: {stats.bytes_saved}")
 
     # Assert reasonable performance
-    assert summary['p95_duration_ms'] < 50.0, "P95 compression time should be < 50ms"
+    assert summary["p95_duration_ms"] < 50.0, "P95 compression time should be < 50ms"
 
 
 @pytest.mark.asyncio
@@ -178,10 +176,7 @@ async def test_batch_sending_performance():
 
     metrics = PerformanceMetrics()
     config = BatchConfig(
-        enabled=True,
-        max_batch_size=100,
-        max_batch_delay_ms=100,
-        min_batch_size=5
+        enabled=True, max_batch_size=100, max_batch_delay_ms=100, min_batch_size=5
     )
     service = MessageBatchService(config)
     await service.start()
@@ -189,7 +184,7 @@ async def test_batch_sending_performance():
     # Mock send callback
     sent_batches = []
 
-    async def mock_send(channel: str, messages: List[dict]):
+    async def mock_send(channel: str, messages: list[dict]):
         sent_batches.append((channel, messages))
 
     service.set_send_callback(mock_send)
@@ -201,11 +196,14 @@ async def test_batch_sending_performance():
         start = time.time()
 
         for i in range(count):
-            await service.add_message("test", {
-                "id": i,
-                "data": f"message {i}",
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            })
+            await service.add_message(
+                "test",
+                {
+                    "id": i,
+                    "data": f"message {i}",
+                    "timestamp": datetime.now(UTC).isoformat(),
+                },
+            )
 
         # Wait for batch processing
         await asyncio.sleep(0.2)
@@ -215,9 +213,11 @@ async def test_batch_sending_performance():
         metrics.add_count(count)
 
         throughput = count / (duration_ms / 1000)
-        print(f"Messages: {count:4d} | Time: {duration_ms:7.2f}ms | "
-              f"Throughput: {throughput:7.1f} msg/s | "
-              f"Batches: {len(sent_batches)}")
+        print(
+            f"Messages: {count:4d} | Time: {duration_ms:7.2f}ms | "
+            f"Throughput: {throughput:7.1f} msg/s | "
+            f"Batches: {len(sent_batches)}"
+        )
 
         sent_batches.clear()
 
@@ -226,11 +226,13 @@ async def test_batch_sending_performance():
     # Print summary
     summary = metrics.get_summary()
     print("\nBatch Sending Performance Summary:")
-    print(f"  Average throughput: {metrics.total_count / (summary['avg_duration_ms'] / 1000):.1f} msg/s")
+    print(
+        f"  Average throughput: {metrics.total_count / (summary['avg_duration_ms'] / 1000):.1f} msg/s"
+    )
     print(f"  Average batch size: {service.stats.avg_batch_size:.1f}")
 
     # Assert reasonable performance
-    assert summary['avg_duration_ms'] < 1000.0, "Average batch time should be < 1s"
+    assert summary["avg_duration_ms"] < 1000.0, "Average batch time should be < 1s"
 
 
 @pytest.mark.asyncio
@@ -246,7 +248,7 @@ async def test_connection_pool_performance():
         enabled=True,
         max_pool_size=1000,
         max_idle_time_seconds=300,
-        health_check_interval_seconds=60
+        health_check_interval_seconds=60,
     )
     service = ConnectionPoolService(config)
     await service.start()
@@ -276,9 +278,11 @@ async def test_connection_pool_performance():
         metrics.add_count(count)
 
         ops_per_sec = count / (duration_ms / 1000)
-        print(f"Connections: {count:4d} | Time: {duration_ms:7.2f}ms | "
-              f"Rate: {ops_per_sec:7.1f} conn/s | "
-              f"Pool size: {service.stats.total_connections}")
+        print(
+            f"Connections: {count:4d} | Time: {duration_ms:7.2f}ms | "
+            f"Rate: {ops_per_sec:7.1f} conn/s | "
+            f"Pool size: {service.stats.total_connections}"
+        )
 
         # Clean up
         for i in range(count):
@@ -289,11 +293,15 @@ async def test_connection_pool_performance():
     # Print summary
     summary = metrics.get_summary()
     print("\nConnection Pool Performance Summary:")
-    print(f"  Average add rate: {metrics.total_count / (summary['avg_duration_ms'] / 1000):.1f} conn/s")
+    print(
+        f"  Average add rate: {metrics.total_count / (summary['avg_duration_ms'] / 1000):.1f} conn/s"
+    )
     print(f"  P95 add time: {summary['p95_duration_ms']:.2f}ms")
 
     # Assert reasonable performance
-    assert summary['p95_duration_ms'] < 500.0, "P95 connection add time should be < 500ms"
+    assert (
+        summary["p95_duration_ms"] < 500.0
+    ), "P95 connection add time should be < 500ms"
 
 
 @pytest.mark.asyncio
@@ -314,7 +322,7 @@ async def test_message_serialization_performance():
         test_message = {
             "type": "alert",
             "data": {"payload": "x" * size},
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         # Measure serialization time
@@ -323,7 +331,7 @@ async def test_message_serialization_performance():
 
         for _ in range(100):
             start = time.time()
-            serialized = json.dumps(test_message).encode('utf-8')
+            serialized = json.dumps(test_message).encode("utf-8")
             duration_ms = (time.time() - start) * 1000
 
             times.append(duration_ms)
@@ -336,10 +344,12 @@ async def test_message_serialization_performance():
         metrics.add_duration(avg_time)
         metrics.add_size(int(avg_size))
 
-        print(f"Payload: {size:5d} bytes | "
-              f"Serialized: {int(avg_size):5d} bytes | "
-              f"Avg time: {avg_time:6.3f}ms | "
-              f"P95 time: {p95_time:6.3f}ms")
+        print(
+            f"Payload: {size:5d} bytes | "
+            f"Serialized: {int(avg_size):5d} bytes | "
+            f"Avg time: {avg_time:6.3f}ms | "
+            f"P95 time: {p95_time:6.3f}ms"
+        )
 
     # Print summary
     summary = metrics.get_summary()
@@ -348,7 +358,7 @@ async def test_message_serialization_performance():
     print(f"  P95 serialization time: {summary['p95_duration_ms']:.3f}ms")
 
     # Assert reasonable performance
-    assert summary['p95_duration_ms'] < 5.0, "P95 serialization time should be < 5ms"
+    assert summary["p95_duration_ms"] < 5.0, "P95 serialization time should be < 5ms"
 
 
 @pytest.mark.asyncio
@@ -360,11 +370,13 @@ async def test_gzip_compression_benchmark():
     print("=" * 80)
 
     # Test data
-    test_data = json.dumps({
-        "type": "alert",
-        "data": {"message": "x" * 5000},
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }).encode('utf-8')
+    test_data = json.dumps(
+        {
+            "type": "alert",
+            "data": {"message": "x" * 5000},
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    ).encode("utf-8")
 
     original_size = len(test_data)
 
@@ -392,7 +404,9 @@ async def test_gzip_compression_benchmark():
         avg_time = sum(times) / len(times)
         compression_ratio = 1.0 - (avg_size / original_size)
 
-        print(f"{level:<6} {int(avg_size):>8} {compression_ratio:>7.2%} {avg_time:>9.3f}ms")
+        print(
+            f"{level:<6} {int(avg_size):>8} {compression_ratio:>7.2%} {avg_time:>9.3f}ms"
+        )
 
     print("\nRecommendation: Level 6 provides good balance")
 
@@ -402,7 +416,7 @@ def test_performance_report():
     print("\n" + "=" * 80)
     print("WebSocket Performance Test Report")
     print("=" * 80)
-    print(f"\nGenerated at: {datetime.now(timezone.utc).isoformat()}")
+    print(f"\nGenerated at: {datetime.now(UTC).isoformat()}")
 
     print("\nTest Categories:")
     print("  1. Message Compression Performance")

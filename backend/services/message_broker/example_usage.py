@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from services.message_broker import ConsumerConfig, EventEnvelope, EventPriority, get_message_broker
+from services.message_broker import (
+    ConsumerConfig,
+    EventEnvelope,
+    EventPriority,
+    get_message_broker,
+)
 
 
 async def publish_alert_event(alert: dict) -> str | None:
@@ -28,4 +33,6 @@ async def consume_events(worker_name: str = "worker_1") -> None:
             _ = msg.envelope.payload
             await broker.ack(msg.stream, msg.message_id, cfg.consumer_group)
         except Exception as exc:
-            await broker.nack(msg.stream, msg.message_id, cfg.consumer_group, msg.envelope, str(exc))
+            await broker.nack(
+                msg.stream, msg.message_id, cfg.consumer_group, msg.envelope, str(exc)
+            )

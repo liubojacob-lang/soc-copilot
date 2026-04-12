@@ -2,14 +2,14 @@
 
 ## 文档信息
 
-| 字段 | 值 |
-|------|-----|
-| **报告编号** | {{report_id}} |
-| **事件名称** | {{incident_name}} |
+| 字段         | 值                 |
+| ------------ | ------------------ |
+| **报告编号** | {{report_id}}      |
+| **事件名称** | {{incident_name}}  |
 | **事件级别** | {{incident_level}} |
 | **发现时间** | {{discovery_time}} |
-| **响应时间** | {{response_time}} |
-| **主分析师** | {{lead_analyst}} |
+| **响应时间** | {{response_time}}  |
+| **主分析师** | {{lead_analyst}}   |
 
 ---
 
@@ -19,21 +19,21 @@
 
 ### 关键指标
 
-| 指标 | 数值 |
-|------|------|
-| 影响范围 | {{impact_scope}} |
-| 受影响系统 | {{affected_systems}} |
-| 数据泄露 | {{data_exfiltration}} |
+| 指标       | 数值                  |
+| ---------- | --------------------- |
+| 影响范围   | {{impact_scope}}      |
+| 受影响系统 | {{affected_systems}}  |
+| 数据泄露   | {{data_exfiltration}} |
 
 ---
 
 ## 时间线摘要
 
-| 阶段 | 时间 | 时长 |
-|------|------|------|
-| 初始入侵 | {{initial_compromise}} | - |
-| 发现 | {{discovery}} | {{ttd}} |
-| 响应 | {{response}} | {{ttr}} |
+| 阶段     | 时间                   | 时长    |
+| -------- | ---------------------- | ------- |
+| 初始入侵 | {{initial_compromise}} | -       |
+| 发现     | {{discovery}}          | {{ttd}} |
+| 响应     | {{response}}           | {{ttr}} |
 
 ---
 
@@ -61,17 +61,18 @@
 
 ### 业务影响
 
-| 维度 | 评估 |
-|------|------|
-| 业务连续性 | {{business_impact}} |
-| 财务影响 | {{financial_impact}} |
-| 声誉影响 | {{reputational_impact}} |
+| 维度       | 评估                    |
+| ---------- | ----------------------- |
+| 业务连续性 | {{business_impact}}     |
+| 财务影响   | {{financial_impact}}    |
+| 声誉影响   | {{reputational_impact}} |
 
 ### 受影响实体
 
 {% for entity in affected_entities %}
+
 - **{{entity.type}}**: {{entity.name}} ({{entity.status}})
-{% endfor %}
+  {% endfor %}
 
 ---
 
@@ -80,20 +81,23 @@
 ### 遏制
 
 {% for action in containment_actions %}
+
 - {{action}}
-{% endfor %}
+  {% endfor %}
 
 ### 根除
 
 {% for action in eradication_actions %}
+
 - {{action}}
-{% endfor %}
+  {% endfor %}
 
 ### 恢复
 
 {% for action in recovery_actions %}
+
 - {{action}}
-{% endfor %}
+  {% endfor %}
 
 ---
 
@@ -102,14 +106,16 @@
 ### 做得好
 
 {% for item in what_went_well %}
+
 - {{item}}
-{% endfor %}
+  {% endfor %}
 
 ### 需要改进
 
 {% for item in improvements %}
+
 - {{item}}
-{% endfor %}
+  {% endfor %}
 
 ---
 
@@ -118,24 +124,27 @@
 ### 立即行动 (0-30天)
 
 {% for action in immediate_actions %}
+
 - **{{action.priority}}** {{action.description}} (负责人: {{action.owner}})
-{% endfor %}
+  {% endfor %}
 
 ### 长期改进 (90天+)
 
 {% for action in long_term_actions %}
+
 - **{{action.priority}}** {{action.description}} (负责人: {{action.owner}})
-{% endfor %}
+  {% endfor %}
 
 ---
 
 ## 签署
 
-| 角色 | 姓名 | 日期 |
-|------|------|------|
-| 主分析师 | | |
-| SOC经理 | | |
-| 安全总监 | | |
+| 角色     | 姓名 | 日期 |
+| -------- | ---- | ---- |
+| 主分析师 |      |      |
+| SOC经理  |      |      |
+| 安全总监 |      |      |
 
 ---
-*报告生成时间: {{generated_at}}*
+
+_报告生成时间: {{generated_at}}_

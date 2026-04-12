@@ -1,18 +1,18 @@
 """Audit log API endpoints."""
 
-from typing import List, Optional, Annotated
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from typing import Annotated
 
-from db.session import get_session
-from models.user import UserModel
-from models.audit_log import AuditLogModel
-from schemas.audit import AuditLogResponse, AuditLogListResponse, AuditLogFilter
-from repositories.audit_repository import AuditRepository
-from dependencies.auth import get_current_user, require_role
-from models.user import UserRole
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.logger import get_logger
+from db.session import get_session
+from dependencies.auth import get_current_user, require_role
+from models.audit_log import AuditLogModel
+from models.user import UserModel, UserRole
+from repositories.audit_repository import AuditRepository
+from schemas.audit import AuditLogListResponse, AuditLogResponse
 
 logger = get_logger(__name__)
 
@@ -21,12 +21,17 @@ router = APIRouter(prefix="/api/audit-logs", tags=["Audit Logs"])
 
 @router.get("", response_model=AuditLogListResponse)
 async def list_audit_logs(
-    user_id: Optional[str] = Query(None),
-    action: Optional[str] = Query(None),
-    path: Optional[str] = Query(None),
-    status_code: Annotated[Optional[str], Query(description="Status code or category (e.g., '200', '4xx', 'error', 'success')")] = None,
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
+    user_id: str | None = Query(None),
+    action: str | None = Query(None),
+    path: str | None = Query(None),
+    status_code: Annotated[
+        str | None,
+        Query(
+            description="Status code or category (e.g., '200', '4xx', 'error', 'success')"
+        ),
+    ] = None,
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     current_user: UserModel = Depends(get_current_user),
@@ -55,16 +60,18 @@ async def list_audit_logs(
         date_to=date_to,
     )
 
-    # Get usernames for logs
+    # Batch fetch usernames (avoid N+1 queries)
+    user_ids = {log.user_id for log in logs if log.user_id}
+    username_map: dict[str, str | None] = {}
+    if user_ids:
+        user_result = await session.execute(
+            select(UserModel.id, UserModel.username).where(UserModel.id.in_(user_ids))
+        )
+        username_map = dict(user_result.all())
+
     response_logs = []
     for log in logs:
-        username = None
-        if log.user_id:
-            # Get username
-            user_result = await session.execute(
-                select(UserModel.username).where(UserModel.id == log.user_id)
-            )
-            username = user_result.scalar_one_or_none()
+        username = username_map.get(log.user_id) if log.user_id else None
 
         response_logs.append(
             AuditLogResponse(
@@ -99,8 +106,9 @@ async def get_audit_stats(
     session: AsyncSession = Depends(get_session),
 ):
     """Get audit log statistics summary."""
-    from sqlalchemy import func, and_
     from datetime import datetime, timedelta
+
+    from sqlalchemy import func
 
     # Time range: last 7 days
     week_ago = (datetime.now() - timedelta(days=7)).isoformat()
@@ -126,16 +134,17 @@ async def get_audit_stats(
     last_24h = day_result.scalar_one() or 0
 
     # Top actions
-    from sqlalchemy import Label
+
     action_query = select(
-        AuditLogModel.action,
-        func.count(AuditLogModel.id).label("count")
+        AuditLogModel.action, func.count(AuditLogModel.id).label("count")
     )
     if current_user.role != UserRole.ADMIN and current_user.role != UserRole.AUDITOR:
         action_query = action_query.where(AuditLogModel.user_id == current_user.id)
-    action_query = action_query.group_by(AuditLogModel.action).order_by(
-        func.count(AuditLogModel.id).desc()
-    ).limit(10)
+    action_query = (
+        action_query.group_by(AuditLogModel.action)
+        .order_by(func.count(AuditLogModel.id).desc())
+        .limit(10)
+    )
     action_result = await session.execute(action_query)
     top_actions = [{"action": row[0], "count": row[1]} for row in action_result.all()]
 
@@ -206,4 +215,3 @@ async def cleanup_old_logs(
     await session.commit()
 
     return {"message": f"Deleted {deleted} old audit logs"}
-

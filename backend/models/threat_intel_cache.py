@@ -2,8 +2,8 @@
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Text, Integer, DateTime, Index
-from sqlalchemy.orm import declarative_base
+
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text
 
 from db.session import Base
 
@@ -31,7 +31,7 @@ class ThreatIntelCacheDB(Base):
     error_reason = Column(Text, nullable=True)
 
     __table_args__ = (
-        Index('ix_ti_provider_ioc', 'provider', 'ioc_type', 'ioc_value', unique=True),
+        Index("ix_ti_provider_ioc", "provider", "ioc_type", "ioc_value", unique=True),
     )
 
 

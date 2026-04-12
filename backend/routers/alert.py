@@ -1,14 +1,14 @@
 """Alert analysis API endpoint."""
 
-from typing import Annotated
-from fastapi import APIRouter, HTTPException, Depends
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.logger import get_logger
 from db.session import get_session
 from schemas.alert import AlertAnalysisRequest, AlertAnalysisResponse
-from services.alert_service import AlertService
-from core.logger import get_logger
-import uuid
+from services.alerting.alert_service import AlertService
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["alert"])
@@ -36,8 +36,8 @@ async def analyze_alert(
         result = await service.analyze(request.raw_log)
         return result
     except ValueError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(status_code=422, detail=str(e))
+        logger.error(f"Validation error: {e!s}")
+        raise HTTPException(status_code=422, detail="Invalid request")
     except Exception as e:
-        logger.error(f"Analysis error: {str(e)}")
+        logger.error(f"Analysis error: {e!s}")
         raise HTTPException(status_code=500, detail="Analysis failed")

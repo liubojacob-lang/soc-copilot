@@ -9,18 +9,16 @@ Provides:
 """
 
 import time
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Response
 from pydantic import BaseModel
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.session import AsyncSessionLocal
 from core.config import settings
 from core.logger import get_logger
-from core.token_blacklist import get_token_blacklist, REDIS_AVAILABLE
+from core.token_blacklist import REDIS_AVAILABLE, get_token_blacklist
+from db.session import AsyncSessionLocal
 
 logger = get_logger(__name__)
 
@@ -29,6 +27,7 @@ router = APIRouter(tags=["health"])
 
 class HealthStatus(BaseModel):
     """Health status response model."""
+
     status: str  # "ok", "degraded", "error"
     version: str
     timestamp: str
@@ -38,10 +37,11 @@ class HealthStatus(BaseModel):
 
 class ComponentHealth(BaseModel):
     """Individual component health."""
+
     status: str  # "ok", "error", "disabled"
-    latency_ms: Optional[float] = None
-    message: Optional[str] = None
-    details: Optional[dict] = None
+    latency_ms: float | None = None
+    message: str | None = None
+    details: dict | None = None
 
 
 # Track startup time
@@ -56,7 +56,7 @@ async def check_database() -> ComponentHealth:
             # Simple query to check connection
             result = await session.execute(text("SELECT 1"))
             result.fetchone()
-        
+
         latency = (time.time() - start) * 1000
         return ComponentHealth(
             status="ok",
@@ -80,18 +80,18 @@ async def check_redis() -> ComponentHealth:
             status="disabled",
             message="Redis package not installed, using in-memory fallback",
         )
-    
+
     if not settings.redis_url:
         return ComponentHealth(
             status="disabled",
             message="Redis not configured, using in-memory fallback",
         )
-    
+
     start = time.time()
     try:
         blacklist = get_token_blacklist()
         info = await blacklist.get_blacklist_info()
-        
+
         latency = (time.time() - start) * 1000
         if info.get("redis_available"):
             return ComponentHealth(
@@ -121,7 +121,7 @@ async def check_token_blacklist() -> ComponentHealth:
     try:
         blacklist = get_token_blacklist()
         info = await blacklist.get_blacklist_info()
-        
+
         return ComponentHealth(
             status="ok",
             message="Token blacklist operational",
@@ -138,7 +138,7 @@ async def check_token_blacklist() -> ComponentHealth:
 @router.get("/health/live")
 async def liveness() -> dict:
     """Liveness probe - checks if the service is running.
-    
+
     Used by Kubernetes to determine if the container should be restarted.
     """
     return {"status": "alive"}
@@ -147,40 +147,40 @@ async def liveness() -> dict:
 @router.get("/health/ready")
 async def readiness() -> dict:
     """Readiness probe - checks if the service is ready to accept traffic.
-    
+
     Used by Kubernetes to determine if the container should receive requests.
     """
     # Check database
     db_health = await check_database()
-    
+
     if db_health.status == "error":
         return {
             "status": "not_ready",
             "reason": "database_unavailable",
             "message": db_health.message,
         }
-    
+
     return {"status": "ready"}
 
 
 @router.get("/api/health")
 async def health_detailed() -> HealthStatus:
     """Detailed health check with all components.
-    
+
     Returns comprehensive status of all system components.
     """
     # Check all components
     db_health = await check_database()
     redis_health = await check_redis()
     blacklist_health = await check_token_blacklist()
-    
+
     # Determine overall status
     components = {
         "database": db_health.model_dump(),
         "redis": redis_health.model_dump(),
         "token_blacklist": blacklist_health.model_dump(),
     }
-    
+
     # Calculate overall status
     statuses = [c["status"] for c in components.values()]
     if "error" in statuses:
@@ -189,11 +189,11 @@ async def health_detailed() -> HealthStatus:
         overall_status = "degraded"
     else:
         overall_status = "ok"
-    
+
     return HealthStatus(
         status=overall_status,
         version="0.8.2",
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         uptime_seconds=round(time.time() - _startup_time, 2),
         components=components,
     )
@@ -232,14 +232,14 @@ def status_to_metric(status: str) -> float:
 @router.get("/metrics")
 async def metrics() -> Response:
     """Prometheus metrics endpoint.
-    
+
     Returns metrics in Prometheus text format.
     """
     # Get health data
     db_health = await check_database()
     redis_health = await check_redis()
     blacklist_health = await check_token_blacklist()
-    
+
     metrics_text = METRICS_TEMPLATE.format(
         environment=settings.environment,
         uptime=round(time.time() - _startup_time, 2),
@@ -249,7 +249,7 @@ async def metrics() -> Response:
         db_latency=db_health.latency_ms or 0,
         redis_latency=redis_health.latency_ms or 0,
     )
-    
+
     return Response(
         content=metrics_text,
         media_type="text/plain; version=0.0.4; charset=utf-8",

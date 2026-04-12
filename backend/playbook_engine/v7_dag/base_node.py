@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any
 
 
 @dataclass
@@ -12,10 +12,10 @@ class NodeExecutionContext:
     run_id: str
     node_id: str
     node_name: str
-    input_json: Dict[str, Any]
+    input_json: dict[str, Any]
     mode: str  # dry_run or apply
-    secrets: Dict[str, str] = field(default_factory=dict)  # Resolved secrets
-    context: Dict[str, Any] = field(default_factory=dict)  # Current run context
+    secrets: dict[str, str] = field(default_factory=dict)  # Resolved secrets
+    context: dict[str, Any] = field(default_factory=dict)  # Current run context
 
 
 class BaseNodePlugin(ABC):
@@ -49,7 +49,7 @@ class BaseNodePlugin(ABC):
         return ""
 
     @abstractmethod
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Execute the node logic.
 
         Args:
@@ -63,7 +63,7 @@ class BaseNodePlugin(ABC):
         """
         ...
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution.
 
         Override this method to provide custom validation.

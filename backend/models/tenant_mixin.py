@@ -5,4 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 
 class TenantMixin:
-    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True, default="default")
+    tenant_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, index=True, default="default"
+    )

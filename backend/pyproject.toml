@@ -1,0 +1,164 @@
+[project]
+name = "soc-copilot-backend"
+version = "0.8.4"
+description = "SOC Copilot - AI-Powered Security Operations Center"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "SOC Copilot Team" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: FastAPI",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+
+dependencies = [
+    "fastapi==0.135.1",
+    "uvicorn[standard]==0.41.0",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.13.1",
+    "python-dotenv==1.2.2",
+    "httpx==0.27.2",
+    "anthropic==0.84.0",
+    "python-json-logger==3.2.1",
+    "sqlalchemy[asyncio]>=2.0.47",
+    "aiosqlite==0.20.0",
+    "numpy>=1.22.5,<2.0",
+    "redis==7.2.1",
+    "tenacity==8.2.3",
+    "requests==2.31.0",
+    "passlib[bcrypt]==1.7.4",
+    "python-jose[cryptography]==3.3.0",
+    "bcrypt>=5.0.0",
+    "croniter==3.0.3",
+    "alembic==1.14.0",
+    "chromadb==1.5.2",
+    "scikit-learn==1.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.1",
+    "httpx>=0.27",
+    "ruff>=0.4",
+    "asgi-lifespan>=2.1",
+]
+postgres = [
+    "asyncpg>=0.29",
+    "psycopg2-binary>=2.9",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "*.egg-info",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "migrations_alembic",
+    "data",
+]
+src = ["."]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "ARG",
+    "SIM",
+    "TCH",
+    "PTH",
+    "ERA",
+    "RUF",
+]
+ignore = [
+    "E501",
+    "B008",
+    "B904",
+    "ARG001",
+    "ARG002",
+    "SIM108",
+    "PTH123",
+    "ERA001",
+]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG", "S101", "PLR2004"]
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "core",
+    "models",
+    "routers",
+    "services",
+    "middleware",
+    "dependencies",
+    "db",
+    "schemas",
+    "repositories",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (slower, may use external services)",
+    "e2e: End-to-end tests (slowest, full system tests)",
+    "slow: Slow-running tests",
+    "api: API endpoint tests",
+    "auth: Authentication and authorization tests",
+    "ai: AI service tests",
+    "ti: Threat intelligence tests",
+    "playbook: Playbook engine tests",
+    "audit: Audit logging tests",
+    "redis: Tests requiring Redis",
+    "database: Tests requiring database",
+    "network: Tests requiring network access",
+    "performance: Performance benchmark tests",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = [
+    "core*",
+    "models*",
+    "routers*",
+    "services*",
+    "middleware*",
+    "dependencies*",
+    "db*",
+    "schemas*",
+    "repositories*",
+    "playbook_engine*",
+    "utils*",
+]

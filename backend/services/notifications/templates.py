@@ -7,7 +7,9 @@ from typing import Any
 
 def render_alert_template(alert: dict[str, Any]) -> tuple[str, str, str]:
     severity = str(alert.get("severity", "medium")).lower()
-    title = f"[{alert.get('source', 'SOC').upper()}] {alert.get('title', 'Security Alert')}"
+    title = (
+        f"[{alert.get('source', 'SOC').upper()}] {alert.get('title', 'Security Alert')}"
+    )
     body = (
         f"Alert ID: {alert.get('id', 'N/A')}\n"
         f"Severity: {severity.upper()}\n"

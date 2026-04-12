@@ -13,27 +13,26 @@ Features:
 - Queue statistics
 """
 
-import json
 import asyncio
-import logging
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 try:
     import redis
     from redis.asyncio import Redis as AsyncRedis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
 
-from models.message_queue import (
-    QueuedMessage,
-    UserQueue,
-    QueueStats,
-    MessageQueueConfig,
-    MessageType
-)
 from core.logger import get_logger
+from models.message_queue import (
+    MessageQueueConfig,
+    MessageType,
+    QueuedMessage,
+    QueueStats,
+    UserQueue,
+)
 
 logger = get_logger(__name__)
 
@@ -49,10 +48,10 @@ class MessageQueueService:
     - TTL set on individual messages and queue metadata
     """
 
-    def __init__(self, config: Optional[MessageQueueConfig] = None):
+    def __init__(self, config: MessageQueueConfig | None = None):
         self.config = config or MessageQueueConfig()
-        self._redis: Optional[AsyncRedis] = None
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._redis: AsyncRedis | None = None
+        self._cleanup_task: asyncio.Task | None = None
 
     async def start(self):
         """Initialize Redis connection and start cleanup task"""
@@ -62,9 +61,7 @@ class MessageQueueService:
 
         try:
             self._redis = AsyncRedis.from_url(
-                self.config.redis_url,
-                encoding="utf-8",
-                decode_responses=True
+                self.config.redis_url, encoding="utf-8", decode_responses=True
             )
 
             # Test connection
@@ -105,8 +102,8 @@ class MessageQueueService:
         self,
         user_id: str,
         message_type: MessageType,
-        data: Dict[str, Any],
-        channel: str = "alerts"
+        data: dict[str, Any],
+        channel: str = "alerts",
     ) -> bool:
         """
         Push a message to user's queue.
@@ -137,29 +134,27 @@ class MessageQueueService:
                     logger.debug(f"Queue full for user {user_id}")
                     return False
             else:
-                # Create new queue metadata
-                queue_meta = UserQueue(user_id=user_id)
+                # Create new queue metadata with configured max_size
+                queue_meta = UserQueue(user_id=user_id, max_size=self.config.max_queue_size)
 
             # Create queued message
             queued_msg = QueuedMessage(
                 type=message_type,
                 data=data,
                 channel=channel,
-                ttl_seconds=self.config.default_ttl_seconds
+                ttl_seconds=self.config.default_ttl_seconds,
             )
 
-            # Push to queue
-            await self._redis.lpush(queue_key, queued_msg.to_json())
+            # Push to queue (rpush for FIFO ordering)
+            await self._redis.rpush(queue_key, queued_msg.to_json())
 
             # Update metadata
             if queue_meta.add_message():
                 await self._redis.setex(
-                    meta_key,
-                    self.config.ttl_seconds,
-                    queue_meta.model_dump_json()
+                    meta_key, self.config.default_ttl_seconds, queue_meta.model_dump_json()
                 )
                 # Set TTL on queue key to match metadata
-                await self._redis.expire(queue_key, self.config.ttl_seconds)
+                await self._redis.expire(queue_key, self.config.default_ttl_seconds)
 
             logger.debug(f"Queued message for user {user_id}: {message_type}")
             return True
@@ -168,7 +163,7 @@ class MessageQueueService:
             logger.error(f"Error pushing message for user {user_id}: {e}")
             return False
 
-    async def get_messages(self, user_id: str, count: Optional[int] = None) -> List[QueuedMessage]:
+    async def get_messages(self, user_id: str, count: int | None = None) -> list[QueuedMessage]:
         """
         Get queued messages for a user.
 
@@ -206,7 +201,7 @@ class MessageQueueService:
             logger.error(f"Error getting messages for user {user_id}: {e}")
             return []
 
-    async def get_stats(self, user_id: str) -> Optional[QueueStats]:
+    async def get_stats(self, user_id: str) -> QueueStats | None:
         """
         Get statistics for user's queue.
 
@@ -245,12 +240,12 @@ class MessageQueueService:
                 try:
                     oldest_msg = QueuedMessage.from_json(messages_json[0])
                     oldest_ts = datetime.fromisoformat(oldest_msg.timestamp)
-                    oldest_age = (datetime.now(timezone.utc) - oldest_ts).total_seconds()
+                    oldest_age = (datetime.now(UTC) - oldest_ts).total_seconds()
 
                     if len(messages_json) > 1:
                         newest_msg = QueuedMessage.from_json(messages_json[1])
                         newest_ts = datetime.fromisoformat(newest_msg.timestamp)
-                        newest_age = (datetime.now(timezone.utc) - newest_ts).total_seconds()
+                        newest_age = (datetime.now(UTC) - newest_ts).total_seconds()
                 except Exception:
                     pass
 
@@ -260,7 +255,7 @@ class MessageQueueService:
                 queue_size_bytes=size_bytes,
                 oldest_message_age_seconds=oldest_age,
                 newest_message_age_seconds=newest_age,
-                is_full=queue_meta.is_full()
+                is_full=queue_meta.is_full(),
             )
 
         except Exception as e:
@@ -322,10 +317,12 @@ class MessageQueueService:
 
 
 # Global instance
-_message_queue_service: Optional[MessageQueueService] = None
+_message_queue_service: MessageQueueService | None = None
 
 
-def get_message_queue_service(config: Optional[MessageQueueConfig] = None) -> MessageQueueService:
+def get_message_queue_service(
+    config: MessageQueueConfig | None = None,
+) -> MessageQueueService:
     """Get or create the global message queue service instance"""
     global _message_queue_service
     if _message_queue_service is None:
@@ -333,7 +330,9 @@ def get_message_queue_service(config: Optional[MessageQueueConfig] = None) -> Me
     return _message_queue_service
 
 
-async def start_message_queue(config: Optional[MessageQueueConfig] = None) -> MessageQueueService:
+async def start_message_queue(
+    config: MessageQueueConfig | None = None,
+) -> MessageQueueService:
     """Initialize and start the message queue service"""
     service = get_message_queue_service(config)
     await service.start()

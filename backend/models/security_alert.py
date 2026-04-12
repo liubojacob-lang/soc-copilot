@@ -2,19 +2,19 @@
 Security Alert data model for ingested alerts from external security tools.
 """
 
-from typing import Optional, Dict, Any
 from datetime import datetime
+from typing import Any
+
 from sqlalchemy import (
+    JSON,
     Column,
+    DateTime,
+    Index,
     Integer,
     String,
     Text,
-    DateTime,
-    JSON,
-    Index,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 
 from db.session import Base
 
@@ -31,12 +31,16 @@ class SecurityAlert(Base):
 
     # Source identification
     tenant_id = Column(String(64), nullable=False, index=True, default="default")
-    source = Column(String(50), nullable=False, index=True)  # wazuh, snort, osquery, etc
+    source = Column(
+        String(50), nullable=False, index=True
+    )  # wazuh, snort, osquery, etc
     external_event_id = Column(String(255), nullable=False, index=True)
 
     # Event details
     event_type = Column(String(100), nullable=False, index=True)
-    severity = Column(String(20), nullable=False, index=True)  # critical, high, medium, low, info
+    severity = Column(
+        String(20), nullable=False, index=True
+    )  # critical, high, medium, low, info
     title = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
 
@@ -65,7 +69,9 @@ class SecurityAlert(Base):
     raw_data = Column(JSON, nullable=True)  # Original alert data
 
     # Status and workflow
-    status = Column(String(20), default="new", nullable=False, index=True)  # new, investigating, resolved, false_positive, escalated
+    status = Column(
+        String(20), default="new", nullable=False, index=True
+    )  # new, investigating, resolved, false_positive, escalated
     assigned_to = Column(String(255), nullable=True, index=True)  # User assigned to
     assigned_at = Column(DateTime(timezone=True), nullable=True)  # Assignment timestamp
 
@@ -90,13 +96,23 @@ class SecurityAlert(Base):
 
     # Tags and classification
     tags = Column(JSON, nullable=True)  # User-defined tags
-    classification = Column(String(50), nullable=True)  # True positive, false positive, etc
-    
+    classification = Column(
+        String(50), nullable=True
+    )  # True positive, false positive, etc
+
     # Deduplication and Aggregation
-    fingerprint = Column(String(64), nullable=True, index=True)  # Alert fingerprint for deduplication
-    aggregated_count = Column(Integer, default=1, nullable=False)  # Number of aggregated alerts
-    last_seen_at = Column(DateTime(timezone=True), nullable=True)  # Last time this alert was seen
-    is_aggregated = Column(Integer, default=0, nullable=False)  # Whether this is an aggregated alert (0=no, 1=yes)
+    fingerprint = Column(
+        String(64), nullable=True, index=True
+    )  # Alert fingerprint for deduplication
+    aggregated_count = Column(
+        Integer, default=1, nullable=False
+    )  # Number of aggregated alerts
+    last_seen_at = Column(
+        DateTime(timezone=True), nullable=True
+    )  # Last time this alert was seen
+    is_aggregated = Column(
+        Integer, default=0, nullable=False
+    )  # Whether this is an aggregated alert (0=no, 1=yes)
 
     # Legacy fields (for backward compatibility)
     closed_at = resolved_at
@@ -104,26 +120,35 @@ class SecurityAlert(Base):
     resolution = resolution_note
 
     # Relationships
-    notes = relationship("AlertNoteModel", back_populates="alert", cascade="all, delete-orphan")
+    notes = relationship(
+        "AlertNoteModel", back_populates="alert", cascade="all, delete-orphan"
+    )
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = Column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Event timestamp (from source system)
     event_timestamp = Column(DateTime(timezone=True), nullable=True, index=True)
 
     # Indexes for common queries
     __table_args__ = (
-        Index('ix_security_alerts_source_event_id', 'source', 'external_event_id', unique=True),
-        Index('ix_security_alerts_severity_status', 'severity', 'status'),
-        Index('ix_security_alerts_created_at', 'created_at'),
+        Index(
+            "ix_security_alerts_source_event_id",
+            "source",
+            "external_event_id",
+            unique=True,
+        ),
+        Index("ix_security_alerts_severity_status", "severity", "status"),
+        Index("ix_security_alerts_created_at", "created_at"),
     )
 
     def __repr__(self):
         return f"<SecurityAlert(id={self.id}, source={self.source}, title={self.title[:50]}...)>"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert alert to dictionary representation."""
         return {
             "id": self.id,
@@ -141,8 +166,8 @@ class SecurityAlert(Base):
             "agent_ip": self.agent_ip,
             "rule_id": self.rule_id,
             "rule_level": self.rule_level,
-            "rule_groups": self.rule_groups.split(',') if self.rule_groups else [],
-            "rule_mitre": self.rule_mitre.split(',') if self.rule_mitre else [],
+            "rule_groups": self.rule_groups.split(",") if self.rule_groups else [],
+            "rule_mitre": self.rule_mitre.split(",") if self.rule_mitre else [],
             "full_log": self.full_log,
             "location": self.location,
             "geoip": self.geoip,
@@ -154,5 +179,7 @@ class SecurityAlert(Base):
             "closed_by": self.closed_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "event_timestamp": self.event_timestamp.isoformat() if self.event_timestamp else None,
+            "event_timestamp": (
+                self.event_timestamp.isoformat() if self.event_timestamp else None
+            ),
         }

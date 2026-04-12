@@ -7,19 +7,16 @@ Groups related security events into incidents using:
 - Rule-based correlation (custom conditions)
 """
 
-import asyncio
-from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any, Optional, Set
 from collections import defaultdict
-import logging
+from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.correlation_rule import CorrelationRule
-from models.correlated_event import CorrelatedEvent
-from models.event_similarity import EventSimilarity
 from core.logger import get_logger
+from models.correlated_event import CorrelatedEvent
+from models.correlation_rule import CorrelationRule
 
 logger = get_logger(__name__)
 
@@ -27,18 +24,18 @@ logger = get_logger(__name__)
 # Risk scoring constants
 SEVERITY_SCORES = {
     "critical": 90,  # 90/100
-    "high": 70,      # 70/100
-    "medium": 50,    # 50/100
-    "low": 30,       # 30/100
-    "info": 10,      # 10/100
+    "high": 70,  # 70/100
+    "medium": 50,  # 50/100
+    "low": 30,  # 30/100
+    "info": 10,  # 10/100
 }
 
 CRITICALITY_WEIGHTS = {
     "critical": 1.5,  # 50% increase
-    "high": 1.3,     # 30% increase
-    "medium": 1.0,   # no change
-    "low": 0.8,      # 20% decrease
-    None: 1.0,       # unknown asset = medium
+    "high": 1.3,  # 30% increase
+    "medium": 1.0,  # no change
+    "low": 0.8,  # 20% decrease
+    None: 1.0,  # unknown asset = medium
 }
 
 
@@ -49,10 +46,8 @@ class EventCorrelationService:
         self.db = db
 
     async def correlate_events(
-        self,
-        events: List[Dict[str, Any]],
-        rule_ids: Optional[List[str]] = None
-    ) -> List[CorrelatedEvent]:
+        self, events: list[dict[str, Any]], rule_ids: list[str] | None = None
+    ) -> list[CorrelatedEvent]:
         """
         Correlate a batch of events into incidents.
 
@@ -92,7 +87,9 @@ class EventCorrelationService:
         logger.info(f"Generated {len(merged_events)} correlated incidents")
         return merged_events
 
-    async def _get_rules(self, rule_ids: Optional[List[str]] = None) -> List[CorrelationRule]:
+    async def _get_rules(
+        self, rule_ids: list[str] | None = None
+    ) -> list[CorrelationRule]:
         """Fetch correlation rules from database."""
         query = select(CorrelationRule).where(CorrelationRule.enabled == True)
 
@@ -105,9 +102,8 @@ class EventCorrelationService:
         return list(result.scalars().all())
 
     async def _extract_entities(
-        self,
-        events: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, events: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """
         Extract entities (IPs, users, hostnames) from events.
 
@@ -129,13 +125,13 @@ class EventCorrelationService:
 
         return enriched_events
 
-    def _extract_ips(self, event: Dict[str, Any]) -> Set[str]:
+    def _extract_ips(self, event: dict[str, Any]) -> set[str]:
         """Extract IP addresses from event."""
         ips = set()
 
         # Common IP fields
         for field in ["source_ip", "dest_ip", "ip_address", "src_ip", "dst_ip"]:
-            if field in event and event[field]:
+            if event.get(field):
                 ips.add(event[field])
 
         # Check nested fields
@@ -147,40 +143,39 @@ class EventCorrelationService:
 
         return ips
 
-    def _extract_usernames(self, event: Dict[str, Any]) -> Set[str]:
+    def _extract_usernames(self, event: dict[str, Any]) -> set[str]:
         """Extract usernames from event."""
         users = set()
 
         for field in ["username", "user", "actor", "account"]:
-            if field in event and event[field]:
+            if event.get(field):
                 users.add(str(event[field]))
 
         return users
 
-    def _extract_hostnames(self, event: Dict[str, Any]) -> Set[str]:
+    def _extract_hostnames(self, event: dict[str, Any]) -> set[str]:
         """Extract hostnames from event."""
         hosts = set()
 
         for field in ["hostname", "host", "device", "computer"]:
-            if field in event and event[field]:
+            if event.get(field):
                 hosts.add(str(event[field]))
 
         return hosts
 
-    def _extract_domains(self, event: Dict[str, Any]) -> Set[str]:
+    def _extract_domains(self, event: dict[str, Any]) -> set[str]:
         """Extract domain names from event."""
         domains = set()
 
         for field in ["domain", "fqdn", "dns_query"]:
-            if field in event and event[field]:
+            if event.get(field):
                 domains.add(str(event[field]))
 
         return domains
 
     async def _group_by_time(
-        self,
-        events: List[Dict[str, Any]]
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        self, events: list[dict[str, Any]]
+    ) -> dict[str, list[dict[str, Any]]]:
         """
         Group events into time buckets.
 
@@ -210,10 +205,8 @@ class EventCorrelationService:
         return dict(time_groups)
 
     async def _apply_rule(
-        self,
-        rule: CorrelationRule,
-        time_groups: Dict[str, List[Dict[str, Any]]]
-    ) -> List[CorrelatedEvent]:
+        self, rule: CorrelationRule, time_groups: dict[str, list[dict[str, Any]]]
+    ) -> list[CorrelatedEvent]:
         """
         Apply a single correlation rule to time-grouped events.
 
@@ -254,10 +247,8 @@ class EventCorrelationService:
         return correlated
 
     def _expand_time_windows(
-        self,
-        time_groups: Dict[str, List[Dict[str, Any]]],
-        window_seconds: int
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        self, time_groups: dict[str, list[dict[str, Any]]], window_seconds: int
+    ) -> dict[str, list[dict[str, Any]]]:
         """
         Expand time groups to include events within sliding windows.
 
@@ -288,10 +279,8 @@ class EventCorrelationService:
         return dict(expanded)
 
     async def _group_by_entities(
-        self,
-        events: List[Dict[str, Any]],
-        entity_types: Dict[str, bool]
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        self, events: list[dict[str, Any]], entity_types: dict[str, bool]
+    ) -> dict[str, list[dict[str, Any]]]:
         """
         Group events by common entities.
 
@@ -308,10 +297,8 @@ class EventCorrelationService:
         return dict(entity_groups)
 
     def _compute_entity_key(
-        self,
-        event: Dict[str, Any],
-        entity_types: Dict[str, bool]
-    ) -> Optional[str]:
+        self, event: dict[str, Any], entity_types: dict[str, bool]
+    ) -> str | None:
         """Compute a key for grouping events by entities."""
         key_parts = []
 
@@ -328,10 +315,7 @@ class EventCorrelationService:
 
         return "|".join(key_parts) if key_parts else None
 
-    async def _calculate_group_similarity(
-        self,
-        events: List[Dict[str, Any]]
-    ) -> float:
+    async def _calculate_group_similarity(self, events: list[dict[str, Any]]) -> float:
         """
         Calculate similarity score for a group of events.
 
@@ -355,17 +339,14 @@ class EventCorrelationService:
         # Weighted average
         weights = {"message": 0.5, "category": 0.3, "severity": 0.2}
         total_similarity = (
-            weights["message"] * message_similarity +
-            weights["category"] * category_similarity +
-            weights["severity"] * severity_similarity
+            weights["message"] * message_similarity
+            + weights["category"] * category_similarity
+            + weights["severity"] * severity_similarity
         )
 
         return min(1.0, max(0.0, total_similarity))
 
-    async def _jaccard_similarity_messages(
-        self,
-        events: List[Dict[str, Any]]
-    ) -> float:
+    async def _jaccard_similarity_messages(self, events: list[dict[str, Any]]) -> float:
         """Calculate Jaccard similarity between event messages.
 
         Optimized to avoid O(n²) complexity for large event sets.
@@ -374,10 +355,7 @@ class EventCorrelationService:
         MAX_EVENTS_FOR_EXACT = 50  # Threshold for exact calculation
         SAMPLE_SIZE = 30  # Sample size for large event sets
 
-        messages = [
-            set(str(e.get("message", "")).lower().split())
-            for e in events
-        ]
+        messages = [set(str(e.get("message", "")).lower().split()) for e in events]
 
         if not messages or not any(messages):
             return 0.0
@@ -388,11 +366,14 @@ class EventCorrelationService:
 
         # For large sets, use sampling to avoid O(n²)
         import random
-        sampled_indices = random.sample(range(len(messages)), min(SAMPLE_SIZE, len(messages)))
+
+        sampled_indices = random.sample(
+            range(len(messages)), min(SAMPLE_SIZE, len(messages))
+        )
         sampled_messages = [messages[i] for i in sampled_indices]
         return self._calculate_pairwise_jaccard(sampled_messages)
 
-    def _calculate_pairwise_jaccard(self, messages: List[set]) -> float:
+    def _calculate_pairwise_jaccard(self, messages: list[set]) -> float:
         """Calculate pairwise Jaccard similarity for a list of message sets."""
         similarities = []
         n = len(messages)
@@ -407,12 +388,11 @@ class EventCorrelationService:
 
         return sum(similarities) / len(similarities) if similarities else 0.0
 
-    async def _category_match_score(
-        self,
-        events: List[Dict[str, Any]]
-    ) -> float:
+    async def _category_match_score(self, events: list[dict[str, Any]]) -> float:
         """Calculate category match score (1.0 if all same, 0.0 if all different)."""
-        categories = [e.get("category") or e.get("attack_type", "unknown") for e in events]
+        categories = [
+            e.get("category") or e.get("attack_type", "unknown") for e in events
+        ]
 
         if len(set(categories)) == 1:
             return 1.0
@@ -423,15 +403,11 @@ class EventCorrelationService:
             unique_ratio = len(set(categories)) / len(categories)
             return 1.0 - unique_ratio
 
-    async def _severity_proximity_score(
-        self,
-        events: List[Dict[str, Any]]
-    ) -> float:
+    async def _severity_proximity_score(self, events: list[dict[str, Any]]) -> float:
         """Calculate severity proximity score."""
         severity_map = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
         severities = [
-            severity_map.get(e.get("severity", "low").lower(), 0)
-            for e in events
+            severity_map.get(e.get("severity", "low").lower(), 0) for e in events
         ]
 
         if not severities:
@@ -448,9 +424,7 @@ class EventCorrelationService:
         return proximity
 
     async def _check_conditions(
-        self,
-        events: List[Dict[str, Any]],
-        conditions: Optional[Dict[str, Any]]
+        self, events: list[dict[str, Any]], conditions: dict[str, Any] | None
     ) -> bool:
         """Check if events match custom conditions."""
         if not conditions:
@@ -476,8 +450,7 @@ class EventCorrelationService:
 
             for event in events:
                 event_severity = severity_map.get(
-                    event.get("severity", "low").lower(),
-                    0
+                    event.get("severity", "low").lower(), 0
                 )
                 if event_severity < min_level:
                     return False
@@ -493,10 +466,7 @@ class EventCorrelationService:
         return True
 
     async def _create_correlated_event(
-        self,
-        rule: CorrelationRule,
-        events: List[Dict[str, Any]],
-        similarity: float
+        self, rule: CorrelationRule, events: list[dict[str, Any]], similarity: float
     ) -> CorrelatedEvent:
         """Create a CorrelatedEvent from grouped events."""
         # Extract common entities
@@ -504,13 +474,15 @@ class EventCorrelationService:
 
         # Determine time range
         timestamps = [
-            datetime.fromisoformat(e.get("timestamp", e.get("created_at", "")).replace("Z", "+00:00"))
+            datetime.fromisoformat(
+                e.get("timestamp", e.get("created_at", "")).replace("Z", "+00:00")
+            )
             for e in events
             if e.get("timestamp") or e.get("created_at")
         ]
 
         if not timestamps:
-            first_seen = last_seen = datetime.now(timezone.utc).isoformat()
+            first_seen = last_seen = datetime.now(UTC).isoformat()
         else:
             first_seen = min(timestamps).isoformat()
             last_seen = max(timestamps).isoformat()
@@ -518,22 +490,18 @@ class EventCorrelationService:
         # Determine severity (use max)
         severity_map = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
         max_severity_level = max(
-            [
-                severity_map.get(e.get("severity", "low").lower(), 0)
-                for e in events
-            ]
+            [severity_map.get(e.get("severity", "low").lower(), 0) for e in events]
         )
         severity = ["info", "low", "medium", "high", "critical"][max_severity_level]
 
         # Calculate risk score based on severity and asset criticality
         risk_score = self._calculate_risk_score(
-            severity=severity,
-            common_entities=common_entities,
-            event_count=len(events)
+            severity=severity, common_entities=common_entities, event_count=len(events)
         )
 
         # Create correlated event
         import uuid
+
         correlated = CorrelatedEvent(
             id=str(uuid.uuid4()),
             rule_id=rule.id,
@@ -549,16 +517,13 @@ class EventCorrelationService:
             last_seen=last_seen,
             status="open",
             risk_score=risk_score,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
 
         return correlated
 
     def _calculate_risk_score(
-        self,
-        severity: str,
-        common_entities: Dict[str, List[str]],
-        event_count: int
+        self, severity: str, common_entities: dict[str, list[str]], event_count: int
     ) -> float:
         """Calculate risk score based on severity and asset criticality.
 
@@ -594,9 +559,8 @@ class EventCorrelationService:
         return round(final_score, 1)
 
     def _extract_common_entities(
-        self,
-        events: List[Dict[str, Any]]
-    ) -> Dict[str, List[str]]:
+        self, events: list[dict[str, Any]]
+    ) -> dict[str, list[str]]:
         """Extract entities common to all events."""
         all_ips = set()
         all_users = set()
@@ -615,9 +579,8 @@ class EventCorrelationService:
         }
 
     async def _merge_correlations(
-        self,
-        correlated_events: List[CorrelatedEvent]
-    ) -> List[CorrelatedEvent]:
+        self, correlated_events: list[CorrelatedEvent]
+    ) -> list[CorrelatedEvent]:
         """
         Merge overlapping correlated events.
 
@@ -666,8 +629,7 @@ class EventCorrelationService:
         return merged
 
     async def _merge_multiple_events(
-        self,
-        events: List[CorrelatedEvent]
+        self, events: list[CorrelatedEvent]
     ) -> CorrelatedEvent:
         """Merge multiple correlated events into one."""
         # Use the largest event as base
@@ -696,9 +658,9 @@ class EventCorrelationService:
         # Update time range
         timestamps = [
             datetime.fromisoformat(ts)
-            for ts in [base.first_seen, base.last_seen] +
-            [e.first_seen for e in events if e.first_seen] +
-            [e.last_seen for e in events if e.last_seen]
+            for ts in [base.first_seen, base.last_seen]
+            + [e.first_seen for e in events if e.first_seen]
+            + [e.last_seen for e in events if e.last_seen]
         ]
         base.first_seen = min(timestamps).isoformat()
         base.last_seen = max(timestamps).isoformat()
@@ -708,9 +670,8 @@ class EventCorrelationService:
 
 # Convenience function
 async def correlate_events_batch(
-    events: List[Dict[str, Any]],
-    db: AsyncSession
-) -> List[CorrelatedEvent]:
+    events: list[dict[str, Any]], db: AsyncSession
+) -> list[CorrelatedEvent]:
     """
     Correlate a batch of events.
 

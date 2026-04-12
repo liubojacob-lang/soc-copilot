@@ -1,8 +1,8 @@
 """Parse JSON node plugin (v0.7.4)."""
 
 import json
-from typing import Any, Dict
 import logging
+from typing import Any
 
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
@@ -31,12 +31,12 @@ class ParseJsonPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Parse JSON string into structured data"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         if "json_string" not in input_json and "data" not in input_json:
             raise ValueError("json_string or data is required")
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Execute JSON parsing.
 
         Args:
@@ -45,7 +45,9 @@ class ParseJsonPlugin(BaseNodePlugin):
         Returns:
             Parsed JSON data
         """
-        json_string = context.input_json.get("json_string") or context.input_json.get("data", "{}")
+        json_string = context.input_json.get("json_string") or context.input_json.get(
+            "data", "{}"
+        )
         json_path = context.input_json.get("path", "")
 
         logger.info(f"[{context.run_id}] Parsing JSON (path: {json_path or 'root'})")
@@ -67,15 +69,19 @@ class ParseJsonPlugin(BaseNodePlugin):
                 "status": "success",
                 "parsed": result,
                 "original_type": type(json_string).__name__,
-                "path_applied": json_path
+                "path_applied": json_path,
             }
 
         except json.JSONDecodeError as e:
             logger.error(f"[{context.run_id}] JSON parse error: {e}")
             return {
                 "status": "error",
-                "error": f"Invalid JSON: {str(e)}",
-                "input": json_string[:200] if isinstance(json_string, str) else str(json_string)[:200]
+                "error": f"Invalid JSON: {e!s}",
+                "input": (
+                    json_string[:200]
+                    if isinstance(json_string, str)
+                    else str(json_string)[:200]
+                ),
             }
 
     def _apply_path(self, data: Any, path: str) -> Any:

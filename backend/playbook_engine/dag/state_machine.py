@@ -1,7 +1,6 @@
 """State machine for DAG node execution states."""
 
 from enum import Enum
-from typing import Dict, Set
 
 
 class NodeState(str, Enum):
@@ -19,7 +18,7 @@ class NodeState(str, Enum):
 
 
 # Valid state transitions
-VALID_TRANSITIONS: Dict[NodeState, Set[NodeState]] = {
+VALID_TRANSITIONS: dict[NodeState, set[NodeState]] = {
     NodeState.PENDING: {NodeState.QUEUED, NodeState.SKIPPED, NodeState.CANCELLED},
     NodeState.QUEUED: {NodeState.RUNNING, NodeState.CANCELLED, NodeState.SKIPPED},
     NodeState.RUNNING: {
@@ -29,7 +28,11 @@ VALID_TRANSITIONS: Dict[NodeState, Set[NodeState]] = {
         NodeState.TIMEOUT,
         NodeState.CANCELLED,
     },
-    NodeState.WAITING_APPROVAL: {NodeState.RUNNING, NodeState.CANCELLED, NodeState.FAILED},
+    NodeState.WAITING_APPROVAL: {
+        NodeState.RUNNING,
+        NodeState.CANCELLED,
+        NodeState.FAILED,
+    },
     NodeState.SUCCESS: set(),
     NodeState.FAILED: set(),
     NodeState.CANCELLED: set(),
@@ -109,7 +112,11 @@ class NodeStateMachine:
         Returns:
             True if executing, False otherwise
         """
-        return self._state in {NodeState.QUEUED, NodeState.RUNNING, NodeState.WAITING_APPROVAL}
+        return self._state in {
+            NodeState.QUEUED,
+            NodeState.RUNNING,
+            NodeState.WAITING_APPROVAL,
+        }
 
     def is_finished(self) -> bool:
         """Check if the node has finished execution (success or failure).

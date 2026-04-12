@@ -1,10 +1,12 @@
-import json
 import asyncio
+import json
 import re
-from typing import Type, TypeVar
-from pydantic import BaseModel, ValidationError
-from core import get_settings, setup_logger
+from typing import TypeVar
+
 import httpx
+from pydantic import BaseModel, ValidationError
+
+from core import get_settings, setup_logger
 
 logger = setup_logger(__name__)
 settings = get_settings()
@@ -34,7 +36,7 @@ def clean_json_content(content: str) -> str:
 
     # Remove control characters that could break JSON parsing
     # Keep \n, \r, \t as they might be part of JSON string escapes
-    content = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', content)
+    content = re.sub(r"[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]", "", content)
 
     return content
 
@@ -50,6 +52,7 @@ class AIService:
             self.model = "glm-4-plus"  # Changed from glm-4-flash to glm-4-plus
         else:  # anthropic
             from anthropic import AsyncAnthropic
+
             self.client = AsyncAnthropic(api_key=settings.anthropic_api_key)
             self.model = "claude-3-5-sonnet-20241022"
 
@@ -60,7 +63,7 @@ class AIService:
     async def generate_structured(
         self,
         prompt: str,
-        response_model: Type[T],
+        response_model: type[T],
         system_prompt: str = "You are a cybersecurity expert assistant.",
     ) -> T:
         schema = response_model.model_json_schema()
@@ -92,25 +95,29 @@ Respond with JSON that matches the schema above:"""
                 if "properties" in schema:
                     for field_name, field_def in schema["properties"].items():
                         if field_name in data:
-                            if field_def.get("type") == "integer" and isinstance(data[field_name], float):
+                            if field_def.get("type") == "integer" and isinstance(
+                                data[field_name], float
+                            ):
                                 data[field_name] = int(data[field_name])
-                            elif field_def.get("type") == "array" and not isinstance(data[field_name], list):
+                            elif field_def.get("type") == "array" and not isinstance(
+                                data[field_name], list
+                            ):
                                 data[field_name] = []
 
                 return response_model(**data)
 
             except (ValidationError, json.JSONDecodeError) as e:
-                logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+                logger.warning(f"Attempt {attempt + 1} failed: {e!s}")
                 if attempt == self.max_retries:
                     # Log the problematic content for debugging
                     logger.error(f"Failed to parse content: {content[:500]}...")
                     raise ValueError(
                         f"Failed to get valid JSON after {self.max_retries + 1} attempts. "
-                        f"Last error: {str(e)}"
+                        f"Last error: {e!s}"
                     )
                 await asyncio.sleep(0.5)
             except Exception as e:
-                logger.error(f"AI service error: {str(e)}")
+                logger.error(f"AI service error: {e!s}")
                 raise
 
     async def _call_zhipu(self, system_prompt: str, user_prompt: str) -> str:
@@ -169,7 +176,9 @@ class IncidentAnalysisResult(BaseModel):
 class AIIncidentAnalyzer:
     """Adapter interface for future LLM-backed incident analysis providers."""
 
-    async def analyze_incident(self, request: IncidentAnalysisRequest) -> IncidentAnalysisResult:
+    async def analyze_incident(
+        self, request: IncidentAnalysisRequest
+    ) -> IncidentAnalysisResult:
         raise NotImplementedError
 
 
@@ -179,5 +188,7 @@ class VectorStoreProvider:
     async def upsert_documents(self, namespace: str, documents: list[dict]) -> None:
         raise NotImplementedError
 
-    async def similarity_search(self, namespace: str, query: str, top_k: int = 5) -> list[dict]:
+    async def similarity_search(
+        self, namespace: str, query: str, top_k: int = 5
+    ) -> list[dict]:
         raise NotImplementedError

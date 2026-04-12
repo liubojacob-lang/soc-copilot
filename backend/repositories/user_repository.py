@@ -1,11 +1,11 @@
 """Repository for user operations."""
 
-from typing import Optional, List
+from datetime import UTC, datetime
+
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
 
 from models.user import UserModel, UserRole
-from core.security import get_password_hash
 
 
 class UserRepository:
@@ -35,35 +35,29 @@ class UserRepository:
         await self.session.refresh(user)
         return user
 
-    async def get_by_id(self, user_id: str) -> Optional[UserModel]:
+    async def get_by_id(self, user_id: str) -> UserModel | None:
         """Get user by ID."""
-        result = await self.session.execute(
-            select(UserModel).where(UserModel.id == user_id)
-        )
+        result = await self.session.execute(select(UserModel).where(UserModel.id == user_id))
         return result.scalar_one_or_none()
 
-    async def get_by_username(self, username: str) -> Optional[UserModel]:
+    async def get_by_username(self, username: str) -> UserModel | None:
         """Get user by username."""
-        result = await self.session.execute(
-            select(UserModel).where(UserModel.username == username)
-        )
+        result = await self.session.execute(select(UserModel).where(UserModel.username == username))
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[UserModel]:
+    async def get_by_email(self, email: str) -> UserModel | None:
         """Get user by email."""
-        result = await self.session.execute(
-            select(UserModel).where(UserModel.email == email)
-        )
+        result = await self.session.execute(select(UserModel).where(UserModel.email == email))
         return result.scalar_one_or_none()
 
     async def list(
         self,
         skip: int = 0,
         limit: int = 100,
-        role: Optional[UserRole] = None,
-        is_active: Optional[bool] = None,
-        search: Optional[str] = None,
-    ) -> tuple[List[UserModel], int]:
+        role: UserRole | None = None,
+        is_active: bool | None = None,
+        search: str | None = None,
+    ) -> tuple[list[UserModel], int]:
         """List users with optional filters."""
         query = select(UserModel)
 
@@ -100,10 +94,10 @@ class UserRepository:
     async def update(
         self,
         user_id: str,
-        role: Optional[UserRole] = None,
-        is_active: Optional[bool] = None,
-    ) -> Optional[UserModel]:
-        """Update user fields."""
+        role: UserRole | None = None,
+        is_active: bool | None = None,
+    ) -> UserModel | None:
+        """Update user fields and refresh updated_at for token invalidation."""
         user = await self.get_by_id(user_id)
         if not user:
             return None
@@ -113,6 +107,8 @@ class UserRepository:
         if is_active is not None:
             user.is_active = is_active
 
+        user.updated_at = datetime.now(UTC).isoformat()
+
         self.session.add(user)
         await self.session.flush()
         await self.session.refresh(user)
@@ -120,32 +116,31 @@ class UserRepository:
 
     async def update_last_login(self, user_id: str) -> None:
         """Update user's last login timestamp."""
-        from datetime import datetime
         user = await self.get_by_id(user_id)
         if user:
-            user.last_login_at = datetime.now().isoformat()
+            user.last_login_at = datetime.now(UTC).isoformat()
             self.session.add(user)
             await self.session.flush()
 
     async def update_password(self, user_id: str, hashed_password: str) -> bool:
         """Update user's password and clear must_change_password flag."""
-        from datetime import datetime
         user = await self.get_by_id(user_id)
         if not user:
             return False
         user.hashed_password = hashed_password
-        user.must_change_password = False  # Clear flag after password change
-        user.password_changed_at = datetime.now().isoformat()
+        user.must_change_password = False
+        user.password_changed_at = datetime.now(UTC).isoformat()
         self.session.add(user)
         await self.session.flush()
         return True
 
     async def delete(self, user_id: str) -> bool:
-        """Soft delete (disable) a user."""
+        """Soft delete (disable) a user and update timestamp for token invalidation."""
         user = await self.get_by_id(user_id)
         if not user:
             return False
         user.is_active = False
+        user.updated_at = datetime.now(UTC).isoformat()
         self.session.add(user)
         await self.session.flush()
         return True

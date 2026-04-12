@@ -1,9 +1,7 @@
 """Cron scheduler service for automated playbook execution."""
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Optional, Set
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import UTC, datetime
 
 from core.logger import get_logger
 
@@ -21,8 +19,8 @@ class CronSchedulerService:
         """
         self.session_factory = session_factory
         self._running = False
-        self._task: Optional[asyncio.Task] = None
-        self._pending_triggers: Set[str] = set()  # Prevent duplicate executions
+        self._task: asyncio.Task | None = None
+        self._pending_triggers: set[str] = set()  # Prevent duplicate executions
         self._check_interval = 30  # seconds
 
     async def start(self) -> None:
@@ -67,9 +65,10 @@ class CronSchedulerService:
 
     async def _check_and_execute_triggers(self) -> None:
         """Check all cron triggers and execute those that are due."""
+        from croniter import croniter
+
         from repositories.trigger_repository import TriggerRepository
         from services.trigger_service import TriggerService
-        from croniter import croniter
 
         async with self.session_factory() as session:
             trigger_repo = TriggerRepository(session)
@@ -78,7 +77,7 @@ class CronSchedulerService:
             # Get all active cron triggers
             triggers = await trigger_repo.get_active_cron_triggers()
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             executed_count = 0
             skipped_count = 0
 
@@ -104,7 +103,9 @@ class CronSchedulerService:
                         cron = croniter(trigger.cron_expr, now)
                         prev_run = cron.get_prev(datetime)
                         # If previous scheduled execution was within the last check interval, run it
-                        should_run = (now - prev_run).total_seconds() < self._check_interval * 2
+                        should_run = (
+                            now - prev_run
+                        ).total_seconds() < self._check_interval * 2
 
                     if should_run:
                         # Add to pending set to prevent duplicate execution
@@ -120,7 +121,9 @@ class CronSchedulerService:
                                 f"({trigger.name}) -> run {run_id}"
                             )
                         else:
-                            logger.warning(f"Cron trigger {trigger.id} execution returned None")
+                            logger.warning(
+                                f"Cron trigger {trigger.id} execution returned None"
+                            )
 
                         # Remove from pending set after a short delay
                         asyncio.create_task(self._remove_from_pending(trigger.id))
@@ -182,10 +185,10 @@ class CronSchedulerService:
 
 
 # Global instance singleton
-_cron_scheduler: Optional[CronSchedulerService] = None
+_cron_scheduler: CronSchedulerService | None = None
 
 
-def get_cron_scheduler() -> Optional[CronSchedulerService]:
+def get_cron_scheduler() -> CronSchedulerService | None:
     """Get the global cron scheduler instance."""
     return _cron_scheduler
 

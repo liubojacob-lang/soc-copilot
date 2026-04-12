@@ -3,11 +3,11 @@
 v0.8.3: Added automatic retry with exponential backoff.
 """
 
+from typing import Any
+
 import httpx
-from typing import Optional, List, Dict, Any
-from datetime import datetime
+
 from core.logger import get_logger
-from utils.retry import with_retry
 
 logger = get_logger(__name__)
 
@@ -30,7 +30,7 @@ class OTXClient:
         """
         self.api_key = api_key
         self.timeout = timeout
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client.
@@ -55,7 +55,7 @@ class OTXClient:
         if self._client and not self._client.is_closed:
             await self._client.aclose()
 
-    async def lookup_ip(self, ip: str) -> Dict[str, Any]:
+    async def lookup_ip(self, ip: str) -> dict[str, Any]:
         """Lookup IP reputation in OTX.
 
         Args:
@@ -82,7 +82,7 @@ class OTXClient:
             logger.error(f"OTX IP lookup error for {ip}: {e}")
             return self._error_response("ip", ip, str(e))
 
-    async def lookup_domain(self, domain: str) -> Dict[str, Any]:
+    async def lookup_domain(self, domain: str) -> dict[str, Any]:
         """Lookup domain reputation in OTX.
 
         Args:
@@ -107,7 +107,7 @@ class OTXClient:
             logger.error(f"OTX domain lookup error for {domain}: {e}")
             return self._error_response("domain", domain, str(e))
 
-    async def lookup_url(self, url: str) -> Dict[str, Any]:
+    async def lookup_url(self, url: str) -> dict[str, Any]:
         """Lookup URL reputation in OTX.
 
         Args:
@@ -134,7 +134,7 @@ class OTXClient:
             logger.error(f"OTX URL lookup error for {url}: {e}")
             return self._error_response("url", url, str(e))
 
-    async def lookup_hash(self, hash_value: str) -> Dict[str, Any]:
+    async def lookup_hash(self, hash_value: str) -> dict[str, Any]:
         """Lookup file hash reputation in OTX.
 
         Args:
@@ -159,7 +159,7 @@ class OTXClient:
             logger.error(f"OTX hash lookup error for {hash_value}: {e}")
             return self._error_response("hash", hash_value, str(e))
 
-    def _parse_ip_response(self, ip: str, data: Dict) -> Dict[str, Any]:
+    def _parse_ip_response(self, ip: str, data: dict) -> dict[str, Any]:
         """Parse OTX IP response.
 
         Args:
@@ -206,7 +206,7 @@ class OTXClient:
             "raw": data,
         }
 
-    def _parse_domain_response(self, domain: str, data: Dict) -> Dict[str, Any]:
+    def _parse_domain_response(self, domain: str, data: dict) -> dict[str, Any]:
         """Parse OTX domain response."""
         score = self._calculate_score_from_sections(data)
 
@@ -241,7 +241,7 @@ class OTXClient:
             "raw": data,
         }
 
-    def _parse_url_response(self, url: str, data: Dict) -> Dict[str, Any]:
+    def _parse_url_response(self, url: str, data: dict) -> dict[str, Any]:
         """Parse OTX URL response."""
         score = self._calculate_score_from_sections(data)
 
@@ -268,7 +268,7 @@ class OTXClient:
             "raw": data,
         }
 
-    def _parse_hash_response(self, hash_value: str, data: Dict) -> Dict[str, Any]:
+    def _parse_hash_response(self, hash_value: str, data: dict) -> dict[str, Any]:
         """Parse OTX hash response."""
         score = self._calculate_score_from_sections(data)
 
@@ -308,7 +308,7 @@ class OTXClient:
             "raw": data,
         }
 
-    def _calculate_score_from_sections(self, data: Dict) -> int:
+    def _calculate_score_from_sections(self, data: dict) -> int:
         """Calculate threat score from OTX section data.
 
         Args:
@@ -363,16 +363,14 @@ class OTXClient:
         """
         if score >= 70:
             return "malicious"
-        elif score >= 40:
-            return "suspicious"
-        elif has_tags:
+        elif score >= 40 or has_tags:
             return "suspicious"
         elif score > 0:
             return "unknown"
         else:
             return "benign"
 
-    def _not_found_response(self, ioc_type: str, ioc_value: str) -> Dict[str, Any]:
+    def _not_found_response(self, ioc_type: str, ioc_value: str) -> dict[str, Any]:
         """Return not found response.
 
         Args:
@@ -393,7 +391,9 @@ class OTXClient:
             "raw": {},
         }
 
-    def _error_response(self, ioc_type: str, ioc_value: str, error: str) -> Dict[str, Any]:
+    def _error_response(
+        self, ioc_type: str, ioc_value: str, error: str
+    ) -> dict[str, Any]:
         """Return error response.
 
         Args:

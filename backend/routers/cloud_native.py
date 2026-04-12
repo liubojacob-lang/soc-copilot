@@ -3,18 +3,18 @@ Cloud Native Security Router
 Kubernetes and cloud security API endpoints
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, Field
 from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 
 from core.logger import get_logger
 from dependencies.auth import get_current_user
-from models.user import UserModel, UserRole
+from models.user import UserModel
 from services.cloud_native_service import (
-    get_cloud_native_service,
     CloudProvider,
     SecurityFindingSeverity,
+    get_cloud_native_service,
 )
 
 logger = get_logger(__name__)
@@ -40,7 +40,7 @@ class VulnerabilityResponse(BaseModel):
     cve_id: str
     severity: str
     package_name: str
-    fixed_version: Optional[str]
+    fixed_version: str | None
     description: str
     published_date: datetime
 
@@ -49,7 +49,7 @@ class K8sScanRequest(BaseModel):
     """Kubernetes scan request."""
 
     cluster_name: str
-    namespace: Optional[str] = None
+    namespace: str | None = None
 
 
 class K8sFindingResponse(BaseModel):
@@ -116,7 +116,7 @@ async def scan_container_image(
         logger.error(f"Error scanning container: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Scan failed: {str(e)}",
+            detail=f"Scan failed: {e!s}",
         )
 
 
@@ -189,14 +189,14 @@ async def scan_kubernetes_cluster(
         logger.error(f"Error scanning K8s cluster: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Scan failed: {str(e)}",
+            detail=f"Scan failed: {e!s}",
         )
 
 
 @router.get("/kubernetes/resources/{resource_type}")
 async def get_kubernetes_resources(
     resource_type: str,
-    namespace: Optional[str] = None,
+    namespace: str | None = None,
     current_user: UserModel = Depends(get_current_user),
 ):
     """
@@ -231,7 +231,7 @@ async def get_kubernetes_resources(
         logger.error(f"Error getting K8s resources: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get resources: {str(e)}",
+            detail=f"Failed to get resources: {e!s}",
         )
 
 
@@ -254,7 +254,7 @@ async def get_cloud_connections(
         logger.error(f"Error getting cloud connections: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get connections: {str(e)}",
+            detail=f"Failed to get connections: {e!s}",
         )
 
 
@@ -306,13 +306,13 @@ async def get_cloud_security_events(
         logger.error(f"Error getting cloud events: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get events: {str(e)}",
+            detail=f"Failed to get events: {e!s}",
         )
 
 
 @router.get("/compliance/report")
 async def get_compliance_report(
-    cluster_name: Optional[str] = None,
+    cluster_name: str | None = None,
     current_user: UserModel = Depends(get_current_user),
 ):
     """
@@ -331,7 +331,7 @@ async def get_compliance_report(
         logger.error(f"Error generating compliance report: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate report: {str(e)}",
+            detail=f"Failed to generate report: {e!s}",
         )
 
 
@@ -379,5 +379,5 @@ async def get_cloud_native_dashboard(
         logger.error(f"Error getting dashboard: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get dashboard: {str(e)}",
+            detail=f"Failed to get dashboard: {e!s}",
         )

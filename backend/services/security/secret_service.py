@@ -5,11 +5,10 @@ symmetric encryption. Secrets are stored encrypted in the database and
 only decrypted when needed for playbook execution.
 """
 
-from typing import Optional
 import logging
 
-from cryptography.fernet import Fernet, InvalidToken
 from cryptography.exceptions import InvalidKey
+from cryptography.fernet import Fernet, InvalidToken
 
 from core.config import settings
 
@@ -72,9 +71,11 @@ class SecretService:
         try:
             decrypted = self.fernet.decrypt(encrypted_value.encode())
             return decrypted.decode()
-        except (InvalidToken, InvalidKey) as e:
+        except (InvalidToken, InvalidKey):
             logger.error("Failed to decrypt secret - invalid key or corrupted data")
-            raise ValueError("Failed to decrypt secret. The encryption key may have changed.")
+            raise ValueError(
+                "Failed to decrypt secret. The encryption key may have changed."
+            )
 
     def encrypt_dict(self, data: dict) -> dict:
         """Encrypt all string values in a dictionary.
@@ -120,13 +121,19 @@ class SecretService:
         """
         return {
             "configured": bool(settings.secret_encryption_key),
-            "valid": self.validate_encryption_key() if settings.secret_encryption_key else False,
-            "key_preview": "***CONFIGURED***" if settings.secret_encryption_key else None,
+            "valid": (
+                self.validate_encryption_key()
+                if settings.secret_encryption_key
+                else False
+            ),
+            "key_preview": (
+                "***CONFIGURED***" if settings.secret_encryption_key else None
+            ),
         }
 
 
 # Singleton instance
-_secret_service: Optional[SecretService] = None
+_secret_service: SecretService | None = None
 
 
 def get_secret_service() -> SecretService:

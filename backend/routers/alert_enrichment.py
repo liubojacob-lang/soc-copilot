@@ -3,13 +3,16 @@ Alert Enrichment API
 Manually trigger or manage threat intelligence enrichment
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Dict, Any
 
-from db.session import get_session
 from core.logger import get_logger
-from services.alert_enrichment import AlertEnrichmentService
+from db.session import get_session
+from dependencies import get_current_user
+from models.user import UserModel
+from services.alerting.alert_enrichment import AlertEnrichmentService
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1/alert-enrichment", tags=["alert-enrichment"])
@@ -19,7 +22,8 @@ router = APIRouter(prefix="/api/v1/alert-enrichment", tags=["alert-enrichment"])
 async def process_single_alert(
     alert_id: int,
     session: AsyncSession = Depends(get_session),
-) -> Dict[str, Any]:
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Manually trigger enrichment for a specific alert
 
@@ -45,14 +49,15 @@ async def process_single_alert(
 
     except Exception as e:
         logger.error(f"Error processing alert {alert_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/process-recent")
 async def process_recent_alerts(
     hours: int = 1,
     session: AsyncSession = Depends(get_session),
-) -> Dict[str, Any]:
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Manually trigger enrichment for recent alerts
 
@@ -62,8 +67,7 @@ async def process_recent_alerts(
     try:
         if hours < 1 or hours > 24:
             raise HTTPException(
-                status_code=400,
-                detail="Hours must be between 1 and 24"
+                status_code=400, detail="Hours must be between 1 and 24"
             )
 
         service = AlertEnrichmentService()
@@ -79,13 +83,14 @@ async def process_recent_alerts(
         raise
     except Exception as e:
         logger.error(f"Error processing recent alerts: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/stats")
 async def get_enrichment_stats(
     session: AsyncSession = Depends(get_session),
-) -> Dict[str, Any]:
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Get statistics about alert enrichment
 
@@ -96,7 +101,8 @@ async def get_enrichment_stats(
     - Alerts by threat score
     """
     try:
-        from sqlalchemy import select, func, case
+        from sqlalchemy import func, select
+
         from models.security_alert import SecurityAlert
 
         # Total alerts
@@ -110,35 +116,35 @@ async def get_enrichment_stats(
         all_alerts = result.scalars().all()
 
         enriched_count = 0
-        threat_scores = {'clean': 0, 'suspicious': 0, 'malicious': 0, 'unknown': 0}
+        threat_scores = {"clean": 0, "suspicious": 0, "malicious": 0, "unknown": 0}
 
         for alert in all_alerts:
-            if alert.raw_data and alert.raw_data.get('threat_intel'):
+            if alert.raw_data and alert.raw_data.get("threat_intel"):
                 enriched_count += 1
 
                 # Check threat scores
-                ti = alert.raw_data['threat_intel']
-                indicators = ti.get('indicators', {})
+                ti = alert.raw_data["threat_intel"]
+                indicators = ti.get("indicators", {})
 
                 has_malicious = False
                 has_suspicious = False
 
                 for indicator_type, indicator_data in indicators.items():
                     if isinstance(indicator_data, dict):
-                        reputation = indicator_data.get('reputation', 'unknown')
-                        if reputation == 'malicious':
+                        reputation = indicator_data.get("reputation", "unknown")
+                        if reputation == "malicious":
                             has_malicious = True
-                        elif reputation in ['suspicious', 'unknown']:
+                        elif reputation in ["suspicious", "unknown"]:
                             has_suspicious = True
 
                 if has_malicious:
-                    threat_scores['malicious'] += 1
+                    threat_scores["malicious"] += 1
                 elif has_suspicious:
-                    threat_scores['suspicious'] += 1
+                    threat_scores["suspicious"] += 1
                 else:
-                    threat_scores['clean'] += 1
+                    threat_scores["clean"] += 1
 
-        threat_scores['unknown'] = total - enriched_count
+        threat_scores["unknown"] = total - enriched_count
 
         enrichment_rate = (enriched_count / total * 100) if total > 0 else 0
 
@@ -152,4 +158,4 @@ async def get_enrichment_stats(
 
     except Exception as e:
         logger.error(f"Error getting enrichment stats: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

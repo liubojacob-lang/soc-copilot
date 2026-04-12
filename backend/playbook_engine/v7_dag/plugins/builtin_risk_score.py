@@ -1,7 +1,7 @@
 """Risk scoring node plugin (v0.7.4)."""
 
-from typing import Any, Dict
 import logging
+from typing import Any
 
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
@@ -30,12 +30,12 @@ class RiskScorePlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Calculate risk score based on threat indicators"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         # Risk scoring can work with various inputs
         pass
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Execute risk calculation.
 
         Args:
@@ -87,11 +87,15 @@ class RiskScorePlugin(BaseNodePlugin):
             "risk_level": risk_level,
             "breakdown": {
                 "base_score": min(base_score, 10),
-                "ti_factor": len(ti_results.get("matches", [])) if isinstance(ti_results, dict) else 0,
+                "ti_factor": (
+                    len(ti_results.get("matches", []))
+                    if isinstance(ti_results, dict)
+                    else 0
+                ),
                 "ioc_factor": min(ioc_count, 3),
                 "severity_factor": severity_map.get(severity.lower(), 0),
             },
-            "recommendation": self._get_recommendation(risk_level)
+            "recommendation": self._get_recommendation(risk_level),
         }
 
     def _get_recommendation(self, risk_level: str) -> str:
@@ -101,6 +105,6 @@ class RiskScorePlugin(BaseNodePlugin):
             "high": "Rapid investigation and containment preparation",
             "medium": "Standard investigation procedures",
             "low": "Monitor and document",
-            "informational": "Log for future reference"
+            "informational": "Log for future reference",
         }
         return recommendations.get(risk_level, "Review findings")

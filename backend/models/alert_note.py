@@ -5,8 +5,9 @@ Stores user notes and comments on security alerts.
 """
 
 import uuid
-from datetime import datetime, timezone
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer
+from datetime import UTC, datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from db.session import Base
@@ -20,7 +21,12 @@ class AlertNoteModel(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
     # Foreign key to security alert
-    alert_id = Column(Integer, ForeignKey("security_alerts.id", ondelete="CASCADE"), nullable=False, index=True)
+    alert_id = Column(
+        Integer,
+        ForeignKey("security_alerts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
 
     # User information
     user_id = Column(String(255), nullable=False, index=True)
@@ -30,8 +36,17 @@ class AlertNoteModel(Base):
     content = Column(Text, nullable=False)
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     # Relationships
     alert = relationship("SecurityAlert", back_populates="notes")

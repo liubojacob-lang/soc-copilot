@@ -1,16 +1,15 @@
 """Router for secrets management (v0.7.4)."""
 
-from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
 from models.user import UserModel, UserRole
 from repositories.secret_repository import SecretRepository
-from services.secret_service import get_secret_service
+from services.security.secret_service import get_secret_service
 
 logger = get_logger(__name__)
 
@@ -19,24 +18,34 @@ router = APIRouter(prefix="/api/secrets", tags=["secrets"])
 
 # ============ Schemas ============
 
+
 class SecretCreate(BaseModel):
     """Schema for creating a secret."""
-    name: str = Field(..., min_length=1, max_length=100, description="Unique secret name")
-    value: str = Field(..., min_length=1, description="Secret value (will be encrypted)")
+
+    name: str = Field(
+        ..., min_length=1, max_length=100, description="Unique secret name"
+    )
+    value: str = Field(
+        ..., min_length=1, description="Secret value (will be encrypted)"
+    )
 
 
 class SecretUpdate(BaseModel):
     """Schema for updating a secret."""
-    value: str = Field(..., min_length=1, description="New secret value (will be encrypted)")
+
+    value: str = Field(
+        ..., min_length=1, description="New secret value (will be encrypted)"
+    )
 
 
 class SecretResponse(BaseModel):
     """Schema for secret response."""
+
     id: str
     name: str
     created_at: str
     updated_at: str
-    created_by_user_id: Optional[str] = None
+    created_by_user_id: str | None = None
     value_preview: str = Field(..., description="Masked preview of secret value")
 
     model_config = {"from_attributes": True}
@@ -44,6 +53,7 @@ class SecretResponse(BaseModel):
 
 class SecretListResponse(BaseModel):
     """Schema for secret list response."""
+
     items: list[SecretResponse]
     total: int
     page: int
@@ -52,12 +62,14 @@ class SecretListResponse(BaseModel):
 
 class SecretKeyStatusResponse(BaseModel):
     """Schema for encryption key status."""
+
     configured: bool
     valid: bool
-    key_preview: Optional[str] = None
+    key_preview: str | None = None
 
 
 # ============ Helper Functions ============
+
 
 def mask_secret_value(value: str, visible_chars: int = 4) -> str:
     """Mask a secret value for display.
@@ -75,6 +87,7 @@ def mask_secret_value(value: str, visible_chars: int = 4) -> str:
 
 
 # ============ CRUD Endpoints ============
+
 
 @router.post("", response_model=SecretResponse, status_code=status.HTTP_201_CREATED)
 async def create_secret(
@@ -94,7 +107,9 @@ async def create_secret(
     # Check if secret already exists
     existing = await repo.get_by_name(data.name)
     if existing:
-        raise HTTPException(status_code=400, detail=f"Secret '{data.name}' already exists")
+        raise HTTPException(
+            status_code=400, detail=f"Secret '{data.name}' already exists"
+        )
 
     # Encrypt the value
     secret_service = get_secret_service()

@@ -3,17 +3,17 @@ Enhanced AI Service for SOC Copilot - Phase 2
 Adds RAG (Retrieval Augmented Generation) and advanced AI capabilities
 """
 
-import json
 import asyncio
+import json
 import re
-from typing import Any, Dict, List, Optional, AsyncGenerator, Type, TypeVar
-from datetime import datetime
+from typing import Any, TypeVar
+
 from pydantic import BaseModel, ValidationError
 
-from core.logger import get_logger
 from core.config import settings
+from core.logger import get_logger
 from services.ai_providers import LLMFactory, LLMProvider
-from services.vector_store import get_vector_store, Document, SearchResult
+from services.vector_store import get_vector_store
 
 logger = get_logger(__name__)
 
@@ -49,20 +49,20 @@ class AIAnalysisResult(BaseModel):
 
     summary: str
     root_cause: str
-    recommendations: List[str]
+    recommendations: list[str]
     confidence: float
-    severity_assessment: Optional[str] = None
-    attack_techniques: Optional[List[str]] = None
+    severity_assessment: str | None = None
+    attack_techniques: list[str] | None = None
 
 
 class NaturalLanguageQueryResult(BaseModel):
     """Natural language query result."""
 
     intent: str
-    parameters: Dict[str, Any]
-    filter_criteria: Dict[str, Any]
+    parameters: dict[str, Any]
+    filter_criteria: dict[str, Any]
     response: str
-    sql_query: Optional[str] = None
+    sql_query: str | None = None
 
 
 class PlaybookRecommendation(BaseModel):
@@ -72,7 +72,7 @@ class PlaybookRecommendation(BaseModel):
     playbook_name: str
     confidence: float
     reason: str
-    estimated_time: Optional[str] = None
+    estimated_time: str | None = None
 
 
 class EnhancedAIService:
@@ -81,7 +81,7 @@ class EnhancedAIService:
     def __init__(self):
         self.max_retries = getattr(settings, "max_retries", 3)
         self.provider = getattr(settings, "ai_provider", "zhipu").lower()
-        self.llm: Optional[LLMProvider] = None
+        self.llm: LLMProvider | None = None
         self._initialized = False
 
         # Initialize LLM provider
@@ -102,7 +102,7 @@ class EnhancedAIService:
     async def generate_structured(
         self,
         prompt: str,
-        response_model: Type[T],
+        response_model: type[T],
         system_prompt: str = "You are a cybersecurity expert assistant.",
     ) -> T:
         """Generate structured response using AI."""
@@ -160,7 +160,7 @@ Respond with JSON that matches the schema above:"""
                 return response_model(**data)
 
             except (ValidationError, json.JSONDecodeError) as e:
-                logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+                logger.warning(f"Attempt {attempt + 1} failed: {e!s}")
                 if attempt == self.max_retries:
                     error_msg = f"Failed to parse content: {content[:500] if content else 'empty'}..."
                     logger.error(error_msg)
@@ -169,13 +169,13 @@ Respond with JSON that matches the schema above:"""
                     )
                 await asyncio.sleep(0.5)
             except Exception as e:
-                logger.error(f"AI service error: {str(e)}")
+                logger.error(f"AI service error: {e!s}")
                 raise
 
         raise RuntimeError("Unexpected end of generate_structured")
 
     async def analyze_alert_with_rag(
-        self, alert_data: Dict[str, Any], use_rag: bool = True
+        self, alert_data: dict[str, Any], use_rag: bool = True
     ) -> AIAnalysisResult:
         """
         Analyze alert using AI with optional RAG enhancement.
@@ -252,7 +252,7 @@ Respond in JSON format with these fields:
             )
 
     async def natural_language_query(
-        self, query: str, user_context: Optional[Dict[str, Any]] = None
+        self, query: str, user_context: dict[str, Any] | None = None
     ) -> NaturalLanguageQueryResult:
         """
         Process natural language query and convert to structured intent.
@@ -307,12 +307,12 @@ Parse the query and extract:
                 intent="unknown",
                 parameters={},
                 filter_criteria={},
-                response=f"I'm sorry, I couldn't understand your query: {str(e)}",
+                response=f"I'm sorry, I couldn't understand your query: {e!s}",
             )
 
     async def recommend_playbooks(
-        self, alert_data: Dict[str, Any], available_playbooks: List[Dict[str, Any]]
-    ) -> List[PlaybookRecommendation]:
+        self, alert_data: dict[str, Any], available_playbooks: list[dict[str, Any]]
+    ) -> list[PlaybookRecommendation]:
         """
         Recommend playbooks based on alert characteristics.
 
@@ -373,9 +373,9 @@ Provide your recommendations:"""
     async def chat(
         self,
         message: str,
-        conversation_history: Optional[List[Dict[str, str]]] = None,
-        model_id: Optional[str] = None,
-        model_provider: Optional[str] = None,
+        conversation_history: list[dict[str, str]] | None = None,
+        model_id: str | None = None,
+        model_provider: str | None = None,
     ) -> str:
         """
         Chat with AI assistant (non-streaming response).
@@ -431,10 +431,10 @@ Be concise, professional, and helpful."""
 
         except Exception as e:
             logger.error(f"Error in chat: {e}")
-            return f"I'm sorry, I encountered an error: {str(e)}"
+            return f"I'm sorry, I encountered an error: {e!s}"
 
     async def generate_investigation_report(
-        self, alert_id: str, investigation_data: Dict[str, Any]
+        self, alert_id: str, investigation_data: dict[str, Any]
     ) -> str:
         """
         Generate investigation report in Markdown format.
@@ -480,11 +480,11 @@ Format the report in Markdown."""
 
         except Exception as e:
             logger.error(f"Error generating report: {e}")
-            return f"Error generating report: {str(e)}"
+            return f"Error generating report: {e!s}"
 
 
 # Global service instance
-_enhanced_ai_service: Optional[EnhancedAIService] = None
+_enhanced_ai_service: EnhancedAIService | None = None
 
 
 def get_enhanced_ai_service() -> EnhancedAIService:

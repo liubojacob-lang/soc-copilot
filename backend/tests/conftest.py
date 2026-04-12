@@ -9,11 +9,13 @@ import os
 os.environ["ENVIRONMENT"] = "test"
 os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
 os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
+os.environ["SECRET_KEY"] = "test-secret-key-min-32-characters-long-for-testing-purposes"
+os.environ["DB_PASSWORD"] = "test-db-password-min-32-characters"
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
 from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
 
 from main import app
 
@@ -26,6 +28,8 @@ def pytest_configure(config):
     os.environ["ENVIRONMENT"] = "test"
     os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
     os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
+    os.environ["SECRET_KEY"] = "test-secret-key-min-32-characters-long-for-testing-purposes"
+    os.environ["DB_PASSWORD"] = "test-db-password-min-32-characters"
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -46,15 +50,15 @@ async def auth_client(client):
     )
     assert response.status_code == 200, response.text
     token = response.json()["access_token"]
-    
+
     # Store original headers
     original_headers = dict(client.headers)
-    
+
     # Set auth header
     client.headers["Authorization"] = f"Bearer {token}"
-    
+
     yield client
-    
+
     # Restore original headers
     client.headers.clear()
     client.headers.update(original_headers)
@@ -69,15 +73,15 @@ async def admin_client(client):
     )
     assert response.status_code == 200, response.text
     token = response.json()["access_token"]
-    
+
     # Store original headers
     original_headers = dict(client.headers)
-    
+
     # Set auth header
     client.headers["Authorization"] = f"Bearer {token}"
-    
+
     yield client
-    
+
     # Restore original headers
     client.headers.clear()
     client.headers.update(original_headers)

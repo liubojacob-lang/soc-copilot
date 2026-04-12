@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -21,5 +21,8 @@ class ExceptionCaptureMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         except Exception as exc:
             observe_exception(type(exc).__name__, request.url.path)
-            logger.error("Unhandled exception intercepted", extra={"path": request.url.path, "error": str(exc)})
+            logger.error(
+                "Unhandled exception intercepted",
+                extra={"path": request.url.path, "error": str(exc)},
+            )
             raise

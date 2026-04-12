@@ -3,17 +3,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
-from core.config import settings
 from schemas.alert import AlertAnalysisResponse
-from schemas.impact import ImpactAnalysis, DegradedImpactAnalysis, Severity as ImpactSeverity
-from schemas.threat_intel import ThreatIntelAnalysis
-from utils.ioc_extract import extract_iocs, get_ioc_count, IOCs
-from services.llm_retry import get_llm_retry_service
+from services.asset_service import AssetService
 from services.history_service import HistoryService
 from services.impact_service import ImpactAnalysisService, get_degraded_impact
-from services.asset_service import AssetService
 from services.ioc_hits_service import IOCHitsService
+from services.llm_retry import get_llm_retry_service
 from services.threat_intel_service import ThreatIntelService, get_degraded_threat_intel
+from utils.ioc_extract import IOCs, extract_iocs
 
 logger = get_logger(__name__)
 
@@ -94,10 +91,12 @@ class AlertService:
 
         # Step 1: Extract IOCs locally
         local_iocs: IOCs = extract_iocs(raw_log)
-        logger.info(f"Local IOC extraction: {len(local_iocs.ips)} IPs, "
-                   f"{len(local_iocs.domains)} domains, "
-                   f"{len(local_iocs.urls)} URLs, "
-                   f"{len(local_iocs.hashes)} hashes")
+        logger.info(
+            f"Local IOC extraction: {len(local_iocs.ips)} IPs, "
+            f"{len(local_iocs.domains)} domains, "
+            f"{len(local_iocs.urls)} URLs, "
+            f"{len(local_iocs.hashes)} hashes"
+        )
 
         # Build prompt with local IOC context
         prompt = f"""Analyze this security alert/log:
@@ -163,7 +162,7 @@ Provide structured analysis including:
                 error_reason=result.error_reason,
             )
             history_id = history.id
-            
+
             # v0.8.1: Return history_id in response to avoid extra API call
             result.history_id = history_id
 
@@ -218,7 +217,9 @@ Provide structured analysis including:
             # Match by hostname (from entities or input text)
             hostnames = result.entities.hosts if result.entities.hosts else []
             if hostnames:
-                assets_by_hostname = await self.asset_service.get_by_hostnames(hostnames)
+                assets_by_hostname = await self.asset_service.get_by_hostnames(
+                    hostnames
+                )
                 for asset in assets_by_hostname:
                     if asset not in related_assets:
                         related_assets.append(asset)
@@ -394,7 +395,9 @@ Provide structured analysis including:
             "domains": len(merged_iocs["domains"]),
             "urls": len(merged_iocs["urls"]),
             "hashes": len(merged_iocs["hashes"]),
-            "total": sum(len(merged_iocs[k]) for k in ["ips", "domains", "urls", "hashes"]),
+            "total": sum(
+                len(merged_iocs[k]) for k in ["ips", "domains", "urls", "hashes"]
+            ),
         }
 
         return AlertAnalysisResponse.model_validate(result_dict)
@@ -409,62 +412,74 @@ Provide structured analysis including:
             Markdown formatted string
         """
         lines = [
-            f"# Alert Analysis",
-            f"",
+            "# Alert Analysis",
+            "",
             f"**Event Type:** {result.event_type}",
             f"**Severity:** {result.severity}",
             f"**Confidence:** {result.confidence}%",
-            f"",
-            f"## Summary",
+            "",
+            "## Summary",
             f"{result.summary}",
-            f"",
-            f"## IOCs",
+            "",
+            "## IOCs",
         ]
 
         for ioc_type, items in result.iocs.model_dump().items():
             if items:
                 lines.append(f"- **{ioc_type}:** {', '.join(items)}")
 
-        lines.extend([
-            "",
-            "## Entities",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Entities",
+            ]
+        )
 
         for entity_type, items in result.entities.model_dump().items():
             if items:
                 lines.append(f"- **{entity_type}:** {', '.join(items)}")
 
-        lines.extend([
-            "",
-            "## Evidence",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Evidence",
+            ]
+        )
 
         for point in result.evidence_points:
             lines.append(f"- {point}")
 
-        lines.extend([
-            "",
-            "## Recommended Actions",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Recommended Actions",
+            ]
+        )
 
         for action in result.recommended_actions:
             if isinstance(action, dict):
-                lines.extend([
-                    f"- **{action.get('action', 'Unknown')}** [{action.get('priority', 'N/A')}]",
-                    f"  - {action.get('details', '')}",
-                    f"  - *Verification:* {action.get('verification', 'N/A')}",
-                ])
+                lines.extend(
+                    [
+                        f"- **{action.get('action', 'Unknown')}** [{action.get('priority', 'N/A')}]",
+                        f"  - {action.get('details', '')}",
+                        f"  - *Verification:* {action.get('verification', 'N/A')}",
+                    ]
+                )
 
-        lines.extend([
-            "",
-            f"**Escalation Required:** {'Yes' if result.escalation_needed else 'No'}",
-        ])
+        lines.extend(
+            [
+                "",
+                f"**Escalation Required:** {'Yes' if result.escalation_needed else 'No'}",
+            ]
+        )
 
         if result.degraded:
-            lines.extend([
-                "",
-                "---",
-                f"*⚠️ Degraded mode: {result.error_reason or 'Unknown error'}*",
-            ])
+            lines.extend(
+                [
+                    "",
+                    "---",
+                    f"*⚠️ Degraded mode: {result.error_reason or 'Unknown error'}*",
+                ]
+            )
 
         return "\n".join(lines)

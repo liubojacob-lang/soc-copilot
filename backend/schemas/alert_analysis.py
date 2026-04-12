@@ -4,9 +4,9 @@ SOC Copilot - Security Operations Center Intelligent Analysis Platform
 """
 
 from datetime import datetime
-from typing import List, Optional, Dict
-from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, Field
 
 try:
     from playbook_engine.triggers.alert_triggers import AlertTriggerConfig
@@ -121,12 +121,12 @@ class EvidenceSource(str, Enum):
 
 
 class IOCs(BaseModel):
-    ips: List[str] = Field(default_factory=list)
-    domains: List[str] = Field(default_factory=list)
-    urls: List[str] = Field(default_factory=list)
-    hashes: List[str] = Field(default_factory=list)
-    emails: List[str] = Field(default_factory=list)
-    file_paths: List[str] = Field(default_factory=list)
+    ips: list[str] = Field(default_factory=list)
+    domains: list[str] = Field(default_factory=list)
+    urls: list[str] = Field(default_factory=list)
+    hashes: list[str] = Field(default_factory=list)
+    emails: list[str] = Field(default_factory=list)
+    file_paths: list[str] = Field(default_factory=list)
 
 
 class IOCStatistics(BaseModel):
@@ -135,7 +135,7 @@ class IOCStatistics(BaseModel):
     domain_count: int = 0
     url_count: int = 0
     hash_count: int = 0
-    unique_countries: List[str] = Field(default_factory=list)
+    unique_countries: list[str] = Field(default_factory=list)
     is_research_related: bool = False
 
 
@@ -146,10 +146,10 @@ class Entity(BaseModel):
 
 
 class Entities(BaseModel):
-    users: List[Entity] = Field(default_factory=list)
-    hosts: List[Entity] = Field(default_factory=list)
-    accounts: List[Entity] = Field(default_factory=list)
-    processes: List[Entity] = Field(default_factory=list)
+    users: list[Entity] = Field(default_factory=list)
+    hosts: list[Entity] = Field(default_factory=list)
+    accounts: list[Entity] = Field(default_factory=list)
+    processes: list[Entity] = Field(default_factory=list)
 
 
 class EvidencePoint(BaseModel):
@@ -158,31 +158,31 @@ class EvidencePoint(BaseModel):
     source: EvidenceSource = EvidenceSource.LOG
     description: str = ""
     raw_content: str = ""
-    key_fields: Dict = Field(default_factory=dict)
+    key_fields: dict = Field(default_factory=dict)
 
 
 class TimelineEvent(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     event_type: str = ""
-    source_ip: Optional[str] = None
-    target_ip: Optional[str] = None
+    source_ip: str | None = None
+    target_ip: str | None = None
     description: str = ""
     severity: SeverityLevel = SeverityLevel.LOW
 
 
 class AffectedAsset(BaseModel):
     asset_id: str = ""
-    hostname: Optional[str] = None
-    ip_addresses: List[str] = Field(default_factory=list)
+    hostname: str | None = None
+    ip_addresses: list[str] = Field(default_factory=list)
     criticality: AssetCriticality = AssetCriticality.MEDIUM
     is_compromised: bool = False
 
 
 class ImpactAssessment(BaseModel):
-    affected_assets: List[AffectedAsset] = Field(default_factory=list)
+    affected_assets: list[AffectedAsset] = Field(default_factory=list)
     business_impact_level: SeverityLevel = SeverityLevel.LOW
-    data_at_risk: Optional[str] = None
-    estimated_recovery_time: Optional[str] = None
+    data_at_risk: str | None = None
+    estimated_recovery_time: str | None = None
     contains_pii: bool = False
     contains_phi: bool = False
 
@@ -193,9 +193,9 @@ class RemediationAction(BaseModel):
     priority: ResponsePriority = ResponsePriority.P3
     title: str = ""
     description: str = ""
-    commands: List[str] = Field(default_factory=list)
-    verification_steps: List[str] = Field(default_factory=list)
-    rollback_steps: List[str] = Field(default_factory=list)
+    commands: list[str] = Field(default_factory=list)
+    verification_steps: list[str] = Field(default_factory=list)
+    rollback_steps: list[str] = Field(default_factory=list)
 
 
 class ThreatIntelResult(BaseModel):
@@ -204,19 +204,19 @@ class ThreatIntelResult(BaseModel):
     verdict: str = ""
     confidence: float = 0.0
     provider: str = ""
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
 class RootCauseAnalysis(BaseModel):
     primary_cause: str = ""
-    contributing_factors: List[str] = Field(default_factory=list)
+    contributing_factors: list[str] = Field(default_factory=list)
     attack_vector: str = ""
     initial_compromise_method: str = ""
     attack_phase: AttackPhase = AttackPhase.RECONNAISSANCE
-    privilege_escalation_path: List[str] = Field(default_factory=list)
-    lateral_movement_path: List[str] = Field(default_factory=list)
-    data_accessed: List[str] = Field(default_factory=list)
-    data_exfiltrated: List[str] = Field(default_factory=list)
+    privilege_escalation_path: list[str] = Field(default_factory=list)
+    lateral_movement_path: list[str] = Field(default_factory=list)
+    data_accessed: list[str] = Field(default_factory=list)
+    data_exfiltrated: list[str] = Field(default_factory=list)
 
 
 class AlertAnalysisResult(BaseModel):
@@ -229,15 +229,15 @@ class AlertAnalysisResult(BaseModel):
     model_used: str = ""
     analysis_duration_ms: int = 0
 
-    alert_id: Optional[str] = None
+    alert_id: str | None = None
     alert_name: str = ""
     alert_source: AlertSource = AlertSource.OTHER
     original_raw_log: str = ""
 
     event_category: EventCategory = EventCategory.UNKNOWN
     event_subcategory: EventSubCategory = EventSubCategory.UNKNOWN
-    attack_technique_ids: List[str] = Field(default_factory=list)
-    attack_tactic_ids: List[str] = Field(default_factory=list)
+    attack_technique_ids: list[str] = Field(default_factory=list)
+    attack_tactic_ids: list[str] = Field(default_factory=list)
 
     verdict: Verdict = Verdict.NEEDS_INVESTIGATION
     severity: SeverityLevel = SeverityLevel.LOW
@@ -246,29 +246,29 @@ class AlertAnalysisResult(BaseModel):
 
     iocs: IOCs = Field(default_factory=IOCs)
     ioc_statistics: IOCStatistics = Field(default_factory=IOCStatistics)
-    enriched_iocs: List[ThreatIntelResult] = Field(default_factory=list)
+    enriched_iocs: list[ThreatIntelResult] = Field(default_factory=list)
 
     entities: Entities = Field(default_factory=Entities)
-    evidence_points: List[EvidencePoint] = Field(default_factory=list)
-    timeline: List[TimelineEvent] = Field(default_factory=list)
+    evidence_points: list[EvidencePoint] = Field(default_factory=list)
+    timeline: list[TimelineEvent] = Field(default_factory=list)
 
     impact: ImpactAssessment = Field(default_factory=ImpactAssessment)
-    root_cause: Optional[RootCauseAnalysis] = None
+    root_cause: RootCauseAnalysis | None = None
 
-    recommended_actions: List[RemediationAction] = Field(default_factory=list)
-    suggested_playbooks: List[str] = Field(default_factory=list)
+    recommended_actions: list[RemediationAction] = Field(default_factory=list)
+    suggested_playbooks: list[str] = Field(default_factory=list)
     escalation_required: bool = False
-    escalation_level: Optional[str] = None
+    escalation_level: str | None = None
 
     summary: str = ""
     full_narrative: str = ""
-    key_findings: List[str] = Field(default_factory=list)
-    next_investigation_steps: List[str] = Field(default_factory=list)
-    references: List[str] = Field(default_factory=list)
+    key_findings: list[str] = Field(default_factory=list)
+    next_investigation_steps: list[str] = Field(default_factory=list)
+    references: list[str] = Field(default_factory=list)
 
     request_id: str = ""
     degraded_mode: bool = False
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
     def get_severity_icon(self) -> str:
         icons = {
@@ -286,9 +286,9 @@ class AlertAnalysisResult(BaseModel):
 
 class AlertAnalysisRequest(BaseModel):
     raw_log: str = Field(..., min_length=10)
-    alert_id: Optional[str] = None
-    alert_name: Optional[str] = None
-    alert_source: Optional[AlertSource] = None
+    alert_id: str | None = None
+    alert_name: str | None = None
+    alert_source: AlertSource | None = None
 
 
 # Playbook 联动常量
@@ -339,7 +339,7 @@ TRIGGER_CONDITION_TEMPLATES = {
 }
 
 
-def get_matching_triggers(analysis_result: AlertAnalysisResult) -> List[str]:
+def get_matching_triggers(analysis_result: AlertAnalysisResult) -> list[str]:
     """
     根据告警分析结果返回匹配的触发器ID列表
 

@@ -3,7 +3,7 @@ AI Model Management Router - API endpoints for model selection and testing
 """
 
 import time
-from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,7 +52,9 @@ async def list_models(
 
         # Get user's preferred default model
         user_settings = await setting_repo.get_by_user_id(str(current_user.id))
-        user_default_model_id = user_settings.default_model_id if user_settings else None
+        user_default_model_id = (
+            user_settings.default_model_id if user_settings else None
+        )
 
         # If no user default, get global default
         if not user_default_model_id:
@@ -69,7 +71,7 @@ async def list_models(
         logger.error(f"Error listing models: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list models: {str(e)}",
+            detail=f"Failed to list models: {e!s}",
         )
 
 
@@ -117,7 +119,7 @@ async def get_default_model(
         logger.error(f"Error getting default model: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get default model: {str(e)}",
+            detail=f"Failed to get default model: {e!s}",
         )
 
 
@@ -167,7 +169,7 @@ async def set_default_model(
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to set default model: {str(e)}",
+            detail=f"Failed to set default model: {e!s}",
         )
 
 
@@ -204,7 +206,6 @@ async def test_model(
 
         # Import here to avoid circular imports
         from services.ai_providers import LLMFactory
-        from core.config import settings
 
         # Test the model
         start_time = time.time()
@@ -217,9 +218,7 @@ async def test_model(
             provider = LLMFactory.create_provider_for_model(model.id, model.provider)
 
             # Test with a minimal prompt
-            test_messages = [
-                {"role": "user", "content": "Respond with exactly: OK"}
-            ]
+            test_messages = [{"role": "user", "content": "Respond with exactly: OK"}]
 
             response = await provider.chat_completion(
                 messages=test_messages,
@@ -258,7 +257,7 @@ async def test_model(
 
         except Exception as e:
             latency_ms = (time.time() - start_time) * 1000
-            error_message = f"{type(e).__name__}: {str(e)}"
+            error_message = f"{type(e).__name__}: {e!s}"
             logger.error(f"Error testing model {request.model_id}: {e}")
 
             return TestModelResponse(
@@ -273,12 +272,13 @@ async def test_model(
         return TestModelResponse(
             success=False,
             model_id=request.model_id,
-            error_message=f"Test failed: {str(e)}",
+            error_message=f"Test failed: {e!s}",
         )
 
 
 class RefreshModelsResponse(BaseModel):
     """Response for model refresh."""
+
     success: bool
     message: str
     models_added: int = 0
@@ -297,7 +297,6 @@ async def refresh_models(
     Admin only.
     """
     from models.user import UserRole
-    from dependencies.auth import require_role
 
     # Check admin permission
     if current_user.role != UserRole.ADMIN:
@@ -317,92 +316,112 @@ async def refresh_models(
 
         # Anthropic models
         if settings.anthropic_api_key:
-            available_models.extend([
-                {
-                    "id": "claude-3-5-sonnet-20241022",
-                    "provider": "anthropic",
-                    "display_name": "Claude 3.5 Sonnet",
-                    "description": "Latest Anthropic model with enhanced capabilities",
-                    "capabilities": {"chat": True, "json": True, "vision": True, "tools": True},
-                    "max_tokens": 200000,
-                },
-                {
-                    "id": "claude-3-opus-20240229",
-                    "provider": "anthropic",
-                    "display_name": "Claude 3 Opus",
-                    "description": "High-performance model for complex tasks",
-                    "capabilities": {"chat": True, "json": True, "vision": True, "tools": True},
-                    "max_tokens": 200000,
-                },
-            ])
+            available_models.extend(
+                [
+                    {
+                        "id": "claude-3-5-sonnet-20241022",
+                        "provider": "anthropic",
+                        "display_name": "Claude 3.5 Sonnet",
+                        "description": "Latest Anthropic model with enhanced capabilities",
+                        "capabilities": {
+                            "chat": True,
+                            "json": True,
+                            "vision": True,
+                            "tools": True,
+                        },
+                        "max_tokens": 200000,
+                    },
+                    {
+                        "id": "claude-3-opus-20240229",
+                        "provider": "anthropic",
+                        "display_name": "Claude 3 Opus",
+                        "description": "High-performance model for complex tasks",
+                        "capabilities": {
+                            "chat": True,
+                            "json": True,
+                            "vision": True,
+                            "tools": True,
+                        },
+                        "max_tokens": 200000,
+                    },
+                ]
+            )
 
         # Zhipu models
         if settings.zhipu_api_key:
-            available_models.extend([
-                {
-                    "id": "glm-4",
-                    "provider": "zhipu",
-                    "display_name": "GLM-4",
-                    "description": "Zhipu AI's flagship model",
-                    "capabilities": {"chat": True, "json": True, "tools": True},
-                    "max_tokens": 128000,
-                },
-            ])
+            available_models.extend(
+                [
+                    {
+                        "id": "glm-4",
+                        "provider": "zhipu",
+                        "display_name": "GLM-4",
+                        "description": "Zhipu AI's flagship model",
+                        "capabilities": {"chat": True, "json": True, "tools": True},
+                        "max_tokens": 128000,
+                    },
+                ]
+            )
 
         # NVIDIA models
         if settings.nvidia_api_key:
-            available_models.extend([
-                {
-                    "id": "meta/llama-3.1-405b-instruct",
-                    "provider": "nvidia",
-                    "display_name": "Llama 3.1 405B",
-                    "description": "Open-source model hosted on NVIDIA NIM",
-                    "capabilities": {"chat": True, "json": True, "tools": True},
-                    "max_tokens": 131072,
-                },
-                {
-                    "id": "minimaxai/minimax-m2.1",
-                    "provider": "nvidia",
-                    "display_name": "MiniMax M2.1",
-                    "description": "MiniMax M2.1 model hosted on NVIDIA NIM",
-                    "capabilities": {"chat": True, "json": True, "tools": True},
-                    "max_tokens": 8192,
-                },
-                {
-                    "id": "moonshotai/kimi-k2.5",
-                    "provider": "nvidia",
-                    "display_name": "Kimi K2.5",
-                    "description": "Moonshot AI Kimi K2.5 model hosted on NVIDIA NIM",
-                    "capabilities": {"chat": True, "json": True, "tools": True},
-                    "max_tokens": 131072,
-                },
-            ])
+            available_models.extend(
+                [
+                    {
+                        "id": "meta/llama-3.1-405b-instruct",
+                        "provider": "nvidia",
+                        "display_name": "Llama 3.1 405B",
+                        "description": "Open-source model hosted on NVIDIA NIM",
+                        "capabilities": {"chat": True, "json": True, "tools": True},
+                        "max_tokens": 131072,
+                    },
+                    {
+                        "id": "minimaxai/minimax-m2.1",
+                        "provider": "nvidia",
+                        "display_name": "MiniMax M2.1",
+                        "description": "MiniMax M2.1 model hosted on NVIDIA NIM",
+                        "capabilities": {"chat": True, "json": True, "tools": True},
+                        "max_tokens": 8192,
+                    },
+                    {
+                        "id": "moonshotai/kimi-k2.5",
+                        "provider": "nvidia",
+                        "display_name": "Kimi K2.5",
+                        "description": "Moonshot AI Kimi K2.5 model hosted on NVIDIA NIM",
+                        "capabilities": {"chat": True, "json": True, "tools": True},
+                        "max_tokens": 131072,
+                    },
+                ]
+            )
 
         # Moonshot models
         if settings.moonshot_api_key:
-            available_models.extend([
-                {
-                    "id": "moonshot-v1-8k",
-                    "provider": "moonshot",
-                    "display_name": "Moonshot v1 8K",
-                    "description": "Moonshot AI's Chinese-optimized model",
-                    "capabilities": {"chat": True, "json": True, "tools": True},
-                    "max_tokens": 32000,
-                },
-            ])
+            available_models.extend(
+                [
+                    {
+                        "id": "moonshot-v1-8k",
+                        "provider": "moonshot",
+                        "display_name": "Moonshot v1 8K",
+                        "description": "Moonshot AI's Chinese-optimized model",
+                        "capabilities": {"chat": True, "json": True, "tools": True},
+                        "max_tokens": 32000,
+                    },
+                ]
+            )
 
         # OpenRouter models
         if settings.openrouter_api_key:
-            available_models.extend([
-                {
-                    "id": "moonshotai/kimi-k2.5",
-                    "provider": "openrouter",
-                    "display_name": "Kimi K2.5 (via OpenRouter)",
-                    "description": "Moonshot Kimi model through OpenRouter",
-                    "capabilities": {"chat": True, "json": True, "tools": True},
-                    "max_tokens": 131072,
-                },
-            ])
+            available_models.extend(
+                [
+                    {
+                        "id": "moonshotai/kimi-k2.5",
+                        "provider": "openrouter",
+                        "display_name": "Kimi K2.5 (via OpenRouter)",
+                        "description": "Moonshot Kimi model through OpenRouter",
+                        "capabilities": {"chat": True, "json": True, "tools": True},
+                        "max_tokens": 131072,
+                    },
+                ]
+            )
 
         models_added = 0
         models_updated = 0
@@ -441,5 +460,5 @@ async def refresh_models(
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to refresh models: {str(e)}",
+            detail=f"Failed to refresh models: {e!s}",
         )

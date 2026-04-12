@@ -14,9 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from models.user import UserModel, UserRole
-from models.playbook_run import PlaybookRunModel
 from dependencies.auth import get_current_user
+from models.playbook_run import PlaybookRunModel
+from models.user import UserModel, UserRole
 from repositories.audit_repository import AuditRepository
 
 logger = get_logger(__name__)
@@ -27,6 +27,7 @@ router = APIRouter(tags=["playbook-versions"])
 # ============================================
 # Version Management Endpoints
 # ============================================
+
 
 @router.post("/definitions/{definition_id}/publish")
 async def publish_playbook_definition(
@@ -43,9 +44,11 @@ async def publish_playbook_definition(
     - RBAC: admin and analyst can publish
     """
     if current_user.role not in [UserRole.ADMIN, UserRole.ANALYST]:
-        raise HTTPException(status_code=403, detail="Only admin and analyst can publish definitions")
+        raise HTTPException(
+            status_code=403, detail="Only admin and analyst can publish definitions"
+        )
 
-    from services.playbook_version_service import PlaybookVersionService
+    from services.playbook.playbook_version_service import PlaybookVersionService
 
     version_service = PlaybookVersionService(session)
     change_note = (request or {}).get("change_note") if request else None
@@ -54,7 +57,7 @@ async def publish_playbook_definition(
         definition = await version_service.publish_definition(
             definition_id=definition_id,
             change_note=change_note,
-            created_by_user_id=current_user.id
+            created_by_user_id=current_user.id,
         )
 
         # Audit log
@@ -80,10 +83,12 @@ async def publish_playbook_definition(
             "definition_id": definition_id,
             "version_no": definition.current_version_no,
             "status": definition.status,
-            "published_at": definition.published_at.isoformat() if definition.published_at else None,
+            "published_at": (
+                definition.published_at.isoformat() if definition.published_at else None
+            ),
         }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Bad request")
 
 
 @router.get("/definitions/{definition_id}/versions")
@@ -96,7 +101,7 @@ async def get_playbook_version_history(
 
     - RBAC: All authenticated users can view version history
     """
-    from services.playbook_version_service import PlaybookVersionService
+    from services.playbook.playbook_version_service import PlaybookVersionService
 
     version_service = PlaybookVersionService(session)
 
@@ -105,12 +110,12 @@ async def get_playbook_version_history(
 
         return {
             "definition_id": definition_id,
-            "versions": [v.model_dump(mode='json') for v in history.versions],
+            "versions": [v.model_dump(mode="json") for v in history.versions],
             "total": history.total,
             "current_version_no": history.current_version_no,
         }
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
 
 
 @router.post("/definitions/{definition_id}/restore/{version_no}")
@@ -129,9 +134,11 @@ async def restore_playbook_definition_version(
     - RBAC: admin and analyst can restore versions
     """
     if current_user.role not in [UserRole.ADMIN, UserRole.ANALYST]:
-        raise HTTPException(status_code=403, detail="Only admin and analyst can restore versions")
+        raise HTTPException(
+            status_code=403, detail="Only admin and analyst can restore versions"
+        )
 
-    from services.playbook_version_service import PlaybookVersionService
+    from services.playbook.playbook_version_service import PlaybookVersionService
 
     version_service = PlaybookVersionService(session)
     change_note = (request or {}).get("change_note") if request else None
@@ -141,7 +148,7 @@ async def restore_playbook_definition_version(
             definition_id=definition_id,
             version_no=version_no,
             change_note=change_note or f"Restored from version {version_no}",
-            created_by_user_id=current_user.id
+            created_by_user_id=current_user.id,
         )
 
         # Audit log
@@ -169,13 +176,14 @@ async def restore_playbook_definition_version(
             "new_version_no": definition.current_version_no,
             "status": definition.status,
         }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Bad request")
 
 
 # ============================================
 # Replay Endpoints
 # ============================================
+
 
 @router.post("/runs/{run_id}/replay")
 async def replay_playbook_run(
@@ -206,7 +214,7 @@ async def replay_playbook_run(
             detail="Playbook replay with apply mode requires admin role",
         )
 
-    from services.playbook_replay_service import get_replay_service
+    from services.playbook.playbook_replay_service import get_replay_service
 
     # Check if user can replay this run
     stmt = select(PlaybookRunModel).where(PlaybookRunModel.id == run_id)
@@ -217,8 +225,10 @@ async def replay_playbook_run(
         raise HTTPException(status_code=404, detail="Run not found")
 
     # Check permissions
-    if (original_run.created_by_user_id != current_user.id and
-        current_user.role not in [UserRole.ADMIN, UserRole.AUDITOR]):
+    if (
+        original_run.created_by_user_id != current_user.id
+        and current_user.role not in [UserRole.ADMIN, UserRole.AUDITOR]
+    ):
         raise HTTPException(
             status_code=403,
             detail="You can only replay your own runs",
@@ -231,7 +241,7 @@ async def replay_playbook_run(
             run_id=run_id,
             mode=mode,
             override_context=request.get("override_context"),
-            created_by_user_id=current_user.id
+            created_by_user_id=current_user.id,
         )
 
         # Audit log
@@ -258,8 +268,8 @@ async def replay_playbook_run(
             "status": replay_result.status,
             "message": replay_result.message,
         }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Bad request")
 
 
 @router.get("/runs/{run_id}/replay-chain")
@@ -274,7 +284,7 @@ async def get_playbook_replay_chain(
 
     - RBAC: All authenticated users can view replay chains
     """
-    from services.playbook_replay_service import get_replay_service
+    from services.playbook.playbook_replay_service import get_replay_service
 
     replay_service = get_replay_service(session)
 
@@ -283,17 +293,18 @@ async def get_playbook_replay_chain(
 
         return {
             "root_run_id": chain.root_run_id,
-            "chain": [node.model_dump(mode='json') for node in chain.chain],
+            "chain": [node.model_dump(mode="json") for node in chain.chain],
             "total": chain.total,
             "depth": chain.depth,
         }
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
 
 
 # ============================================
 # Import/Export Endpoints
 # ============================================
+
 
 @router.get("/definitions/{definition_id}/export")
 async def export_playbook_definition(
@@ -313,14 +324,15 @@ async def export_playbook_definition(
     Returns:
         Export data with content and mime_type
     """
-    from services.playbook_import_export_service import get_import_export_service
+    from services.playbook.playbook_import_export_service import (
+        get_import_export_service,
+    )
 
     export_service = get_import_export_service(session)
 
     try:
         content, mime_type = await export_service.export_definition(
-            definition_id=definition_id,
-            format=format
+            definition_id=definition_id, format=format
         )
 
         # Audit log
@@ -343,8 +355,8 @@ async def export_playbook_definition(
             "content": content,
             "mime_type": mime_type,
         }
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
 
 
 @router.post("/definitions/import")
@@ -371,9 +383,13 @@ async def import_playbook_definition(
         Imported definition details
     """
     if current_user.role not in [UserRole.ADMIN, UserRole.ANALYST]:
-        raise HTTPException(status_code=403, detail="Only admin and analyst can import definitions")
+        raise HTTPException(
+            status_code=403, detail="Only admin and analyst can import definitions"
+        )
 
-    from services.playbook_import_export_service import get_import_export_service
+    from services.playbook.playbook_import_export_service import (
+        get_import_export_service,
+    )
 
     import_service = get_import_export_service(session)
 
@@ -391,7 +407,7 @@ async def import_playbook_definition(
             format=format,
             name_override=name_override,
             publish=publish,
-            created_by_user_id=current_user.id
+            created_by_user_id=current_user.id,
         )
 
         # Audit log
@@ -419,5 +435,5 @@ async def import_playbook_definition(
             "status": result.status,
             "message": result.message,
         }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Bad request")

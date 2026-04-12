@@ -13,18 +13,19 @@ Features:
 
 import asyncio
 import time
-from typing import Dict, Set, Optional, List, Any
-from datetime import datetime, timezone, timedelta
 from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel
 
 from core.logger import get_logger
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
 
 class ConnectionState(str, Enum):
     """States of a connection in the pool."""
+
     IDLE = "idle"
     ACTIVE = "active"
     CLOSING = "closing"
@@ -34,6 +35,7 @@ class ConnectionState(str, Enum):
 
 class PoolConfig(BaseModel):
     """Configuration for connection pool."""
+
     enabled: bool = True
     max_pool_size: int = 1000  # Maximum connections in pool
     max_idle_time_seconds: int = 300  # Close idle connections after 5 minutes
@@ -44,6 +46,7 @@ class PoolConfig(BaseModel):
 
 class PoolStats(BaseModel):
     """Statistics for connection pool."""
+
     total_connections: int = 0
     active_connections: int = 0
     idle_connections: int = 0
@@ -93,21 +96,21 @@ class ConnectionPoolService:
     automatic cleanup of idle connections.
     """
 
-    def __init__(self, config: Optional[PoolConfig] = None):
+    def __init__(self, config: PoolConfig | None = None):
         self.config = config or PoolConfig()
         self.stats = PoolStats()
 
         # Connection pool: {connection_id: PooledConnection}
-        self.pool: Dict[str, PooledConnection] = {}
+        self.pool: dict[str, PooledConnection] = {}
 
         # User connections: {user_id: set of connection_ids}
-        self.user_connections: Dict[str, Set[str]] = {}
+        self.user_connections: dict[str, set[str]] = {}
 
         # WebSocket to connection_id mapping
-        self.websocket_to_connection: Dict[Any, str] = {}
+        self.websocket_to_connection: dict[Any, str] = {}
 
         self._lock = asyncio.Lock()
-        self._health_check_task: Optional[asyncio.Task] = None
+        self._health_check_task: asyncio.Task | None = None
         self._running = False
 
     async def start(self) -> None:
@@ -146,10 +149,7 @@ class ConnectionPoolService:
         logger.info("Connection pool service stopped")
 
     async def add_connection(
-        self,
-        websocket: Any,
-        user_id: str,
-        connection_id: str
+        self, websocket: Any, user_id: str, connection_id: str
     ) -> None:
         """
         Add a connection to the pool.
@@ -283,10 +283,7 @@ class ConnectionPoolService:
 
                 logger.debug(f"Marked connection as active: {connection_id}")
 
-    async def get_user_connection(
-        self,
-        user_id: str
-    ) -> Optional[PooledConnection]:
+    async def get_user_connection(self, user_id: str) -> PooledConnection | None:
         """
         Get an existing idle connection for a user.
 
@@ -334,13 +331,19 @@ class ConnectionPoolService:
 
             for connection_id, pooled_conn in self.pool.items():
                 # Check if connection is idle for too long
-                if (pooled_conn.state == ConnectionState.IDLE and
-                    pooled_conn.get_idle_time_seconds() > self.config.max_idle_time_seconds):
+                if (
+                    pooled_conn.state == ConnectionState.IDLE
+                    and pooled_conn.get_idle_time_seconds()
+                    > self.config.max_idle_time_seconds
+                ):
                     unhealthy_connections.append(connection_id)
 
                 # Mark unhealthy if old and idle
-                if (pooled_conn.get_age_seconds() > 3600 and
-                    pooled_conn.get_idle_time_seconds() > self.config.max_idle_time_seconds):
+                if (
+                    pooled_conn.get_age_seconds() > 3600
+                    and pooled_conn.get_idle_time_seconds()
+                    > self.config.max_idle_time_seconds
+                ):
                     pooled_conn.state = ConnectionState.UNHEALTHY
                     self.stats.unhealthy_connections += 1
                     self.stats.idle_connections -= 1
@@ -353,14 +356,14 @@ class ConnectionPoolService:
     async def _close_idle_connections(self) -> None:
         """Close idle connections to free up pool space."""
         idle_connections = [
-            conn_id for conn_id, conn in self.pool.items()
+            conn_id
+            for conn_id, conn in self.pool.items()
             if conn.state == ConnectionState.IDLE
         ]
 
         # Close oldest idle connections first
         idle_connections.sort(
-            key=lambda cid: self.pool[cid].get_idle_time_seconds(),
-            reverse=True
+            key=lambda cid: self.pool[cid].get_idle_time_seconds(), reverse=True
         )
 
         # Close up to 10% of pool
@@ -403,7 +406,7 @@ class ConnectionPoolService:
 
 
 # Global instance
-_pool_service: Optional[ConnectionPoolService] = None
+_pool_service: ConnectionPoolService | None = None
 
 
 def get_connection_pool() -> ConnectionPoolService:

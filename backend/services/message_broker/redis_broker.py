@@ -5,18 +5,25 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import redis
 
-from .base import MessageBroker
-from .schemas import BrokerMessage, ConsumerConfig, EventEnvelope, EventPriority, PublishOptions
 from observability.metrics import (
     observe_queue_consume,
     observe_queue_dlq,
     observe_queue_retry,
     set_queue_lag,
+)
+
+from .base import MessageBroker
+from .schemas import (
+    BrokerMessage,
+    ConsumerConfig,
+    EventEnvelope,
+    EventPriority,
+    PublishOptions,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,7 +50,9 @@ class RedisBroker(MessageBroker):
         all_streams = list(self.streams.values()) + [self.dlq_stream, self.retry_stream]
         for stream in all_streams:
             try:
-                self.redis_client.xgroup_create(stream, self.consumer_group, id="0", mkstream=True)
+                self.redis_client.xgroup_create(
+                    stream, self.consumer_group, id="0", mkstream=True
+                )
             except redis.ResponseError as exc:
                 if "BUSYGROUP" not in str(exc):
                     logger.error("Unable to create group on %s: %s", stream, exc)
@@ -51,10 +60,12 @@ class RedisBroker(MessageBroker):
     def _stream_for_priority(self, priority: str) -> str:
         return self.streams.get(priority, self.streams[EventPriority.MEDIUM.value])
 
-    async def publish(self, envelope: EventEnvelope, options: PublishOptions | None = None) -> str | None:
+    async def publish(
+        self, envelope: EventEnvelope, options: PublishOptions | None = None
+    ) -> str | None:
         options = options or PublishOptions()
         try:
-            envelope.timestamp = envelope.timestamp or datetime.now(timezone.utc)
+            envelope.timestamp = envelope.timestamp or datetime.now(UTC)
             stream = self._stream_for_priority(envelope.priority.value)
             serialized = envelope.model_dump(mode="json")
             raw = json.dumps(serialized, ensure_ascii=False, default=str)
@@ -64,7 +75,7 @@ class RedisBroker(MessageBroker):
                 delayed_payload = {
                     "target_stream": stream,
                     "envelope": raw,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_at": datetime.now(UTC).isoformat(),
                 }
                 delayed_id = self.redis_client.xadd(
                     "events:delayed:storage",
@@ -72,7 +83,11 @@ class RedisBroker(MessageBroker):
                     maxlen=options.max_length,
                 )
                 self.redis_client.zadd(self.delayed_zset, {delayed_id: execute_at})
-                return delayed_id.decode() if isinstance(delayed_id, bytes) else str(delayed_id)
+                return (
+                    delayed_id.decode()
+                    if isinstance(delayed_id, bytes)
+                    else str(delayed_id)
+                )
 
             message_id = self.redis_client.xadd(
                 stream,
@@ -82,17 +97,25 @@ class RedisBroker(MessageBroker):
                     "source": envelope.source,
                     "tenant_id": envelope.tenant_id,
                     "priority": envelope.priority.value,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
                 maxlen=options.max_length,
             )
-            return message_id.decode() if isinstance(message_id, bytes) else str(message_id)
+            return (
+                message_id.decode()
+                if isinstance(message_id, bytes)
+                else str(message_id)
+            )
         except Exception as exc:
             logger.error("Redis publish failed: %s", exc)
             return None
 
-    async def consume(self, config: ConsumerConfig, priority_order: bool = True) -> list[BrokerMessage]:
-        ordered = ["critical", "high", "medium", "low"] if priority_order else ["medium"]
+    async def consume(
+        self, config: ConsumerConfig, priority_order: bool = True
+    ) -> list[BrokerMessage]:
+        ordered = (
+            ["critical", "high", "medium", "low"] if priority_order else ["medium"]
+        )
         out: list[BrokerMessage] = []
 
         # reclaim idle pending messages first (failure replay)
@@ -112,13 +135,22 @@ class RedisBroker(MessageBroker):
                 if not result:
                     continue
                 for stream_name, messages in result:
-                    stream_label = stream_name.decode() if isinstance(stream_name, bytes) else str(stream_name)
+                    stream_label = (
+                        stream_name.decode()
+                        if isinstance(stream_name, bytes)
+                        else str(stream_name)
+                    )
                     for message_id, data in messages:
                         consume_start = time.perf_counter()
                         parsed = self._decode_message(stream_name, message_id, data)
                         if parsed:
                             out.append(parsed)
-                            observe_queue_consume(stream_label, config.consumer_group, "success", time.perf_counter() - consume_start)
+                            observe_queue_consume(
+                                stream_label,
+                                config.consumer_group,
+                                "success",
+                                time.perf_counter() - consume_start,
+                            )
                 if out and priority_order:
                     break
             except Exception as exc:
@@ -127,7 +159,9 @@ class RedisBroker(MessageBroker):
 
         return out
 
-    def _claim_idle_pending(self, stream: str, config: ConsumerConfig) -> list[BrokerMessage]:
+    def _claim_idle_pending(
+        self, stream: str, config: ConsumerConfig
+    ) -> list[BrokerMessage]:
         claimed: list[BrokerMessage] = []
         try:
             pending = self.redis_client.xpending_range(
@@ -157,19 +191,30 @@ class RedisBroker(MessageBroker):
             logger.debug("Claim pending skipped for %s: %s", stream, exc)
         return claimed
 
-    def _decode_message(self, stream: Any, message_id: Any, data: dict[bytes, bytes]) -> BrokerMessage | None:
+    def _decode_message(
+        self, stream: Any, message_id: Any, data: dict[bytes, bytes]
+    ) -> BrokerMessage | None:
         try:
             raw = data.get(b"envelope", b"{}")
             envelope_payload = json.loads(raw.decode("utf-8"))
             envelope = EventEnvelope.model_validate(envelope_payload)
             stream_name = stream.decode() if isinstance(stream, bytes) else str(stream)
-            msg_id = message_id.decode() if isinstance(message_id, bytes) else str(message_id)
-            return BrokerMessage(message_id=msg_id, stream=stream_name, envelope=envelope, raw_data={
-                (k.decode() if isinstance(k, bytes) else str(k)): (
-                    v.decode() if isinstance(v, bytes) else v
-                )
-                for k, v in data.items()
-            })
+            msg_id = (
+                message_id.decode()
+                if isinstance(message_id, bytes)
+                else str(message_id)
+            )
+            return BrokerMessage(
+                message_id=msg_id,
+                stream=stream_name,
+                envelope=envelope,
+                raw_data={
+                    (k.decode() if isinstance(k, bytes) else str(k)): (
+                        v.decode() if isinstance(v, bytes) else v
+                    )
+                    for k, v in data.items()
+                },
+            )
         except Exception as exc:
             logger.error("Message decode failed: %s", exc)
             return None
@@ -193,16 +238,18 @@ class RedisBroker(MessageBroker):
         try:
             envelope.retry_count += 1
             envelope.metadata["last_error"] = reason
-            envelope.metadata["failed_at"] = datetime.now(timezone.utc).isoformat()
+            envelope.metadata["failed_at"] = datetime.now(UTC).isoformat()
 
             self.redis_client.xack(stream, consumer_group, message_id)
 
             if envelope.retry_count > envelope.max_retries:
                 return await self._push_to_dlq(envelope, reason)
 
-            retry_delay = min(2 ** envelope.retry_count, 300)
+            retry_delay = min(2**envelope.retry_count, 300)
             observe_queue_retry(stream)
-            return bool(await self.publish(envelope, PublishOptions(delay_seconds=retry_delay)))
+            return bool(
+                await self.publish(envelope, PublishOptions(delay_seconds=retry_delay))
+            )
         except Exception as exc:
             logger.error("NACK failed for %s: %s", message_id, exc)
             return False
@@ -211,7 +258,7 @@ class RedisBroker(MessageBroker):
         try:
             payload = envelope.model_dump(mode="json")
             payload["dlq_reason"] = reason
-            payload["dlq_at"] = datetime.now(timezone.utc).isoformat()
+            payload["dlq_at"] = datetime.now(UTC).isoformat()
             self.redis_client.xadd(
                 self.dlq_stream,
                 {
@@ -226,16 +273,24 @@ class RedisBroker(MessageBroker):
             logger.error("DLQ push failed: %s", exc)
             return False
 
-    async def replay_dlq(self, dlq_stream: str, target_stream: str, limit: int = 100) -> int:
+    async def replay_dlq(
+        self, dlq_stream: str, target_stream: str, limit: int = 100
+    ) -> int:
         replayed = 0
         try:
             msgs = self.redis_client.xrange(dlq_stream, min="-", max="+", count=limit)
             for message_id, data in msgs:
                 envelope_raw = data.get(b"envelope", b"{}")
-                envelope = EventEnvelope.model_validate(json.loads(envelope_raw.decode("utf-8")))
+                envelope = EventEnvelope.model_validate(
+                    json.loads(envelope_raw.decode("utf-8"))
+                )
                 envelope.retry_count = 0
                 envelope.metadata["replayed_from_dlq"] = True
-                envelope.priority = EventPriority(target_stream.split(":")[-1]) if target_stream.split(":")[-1] in self.streams else EventPriority.MEDIUM
+                envelope.priority = (
+                    EventPriority(target_stream.split(":")[-1])
+                    if target_stream.split(":")[-1] in self.streams
+                    else EventPriority.MEDIUM
+                )
                 if await self.publish(envelope):
                     self.redis_client.xdel(dlq_stream, message_id)
                     replayed += 1
@@ -247,12 +302,16 @@ class RedisBroker(MessageBroker):
         moved = 0
         now_ts = int(time.time())
         try:
-            due_ids = self.redis_client.zrangebyscore(self.delayed_zset, "-inf", now_ts, start=0, num=limit)
+            due_ids = self.redis_client.zrangebyscore(
+                self.delayed_zset, "-inf", now_ts, start=0, num=limit
+            )
             if not due_ids:
                 return moved
 
             for delayed_id in due_ids:
-                entries = self.redis_client.xrange("events:delayed:storage", min=delayed_id, max=delayed_id, count=1)
+                entries = self.redis_client.xrange(
+                    "events:delayed:storage", min=delayed_id, max=delayed_id, count=1
+                )
                 if not entries:
                     self.redis_client.zrem(self.delayed_zset, delayed_id)
                     continue
@@ -274,9 +333,15 @@ class RedisBroker(MessageBroker):
             pending = 0
             try:
                 length = self.redis_client.xlen(stream)
-                pendings = self.redis_client.xpending_range(stream, self.consumer_group, min="-", max="+", count=100)
+                pendings = self.redis_client.xpending_range(
+                    stream, self.consumer_group, min="-", max="+", count=100
+                )
                 pending = len(pendings or [])
-                stats[priority] = {"stream": stream, "length": int(length), "pending": int(pending)}
+                stats[priority] = {
+                    "stream": stream,
+                    "length": int(length),
+                    "pending": int(pending),
+                }
                 set_queue_lag(stream, int(length))
             except Exception:
                 stats[priority] = {"stream": stream, "length": -1, "pending": -1}

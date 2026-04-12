@@ -6,20 +6,19 @@ Supports exporting audit logs, reports, and other data in multiple formats:
 - XLSX (for business reporting)
 """
 
-import io
 import csv
+import io
 import json
 from datetime import datetime
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, Query, Response
-from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
 from models.user import UserModel
 from repositories.audit_repository import AuditRepository
-from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -62,7 +61,7 @@ def audit_log_to_dict(log) -> dict:
     }
 
 
-def generate_csv(data: List[dict], columns: List[str]) -> str:
+def generate_csv(data: list[dict], columns: list[str]) -> str:
     """Generate CSV content from data."""
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=columns, extrasaction="ignore")
@@ -75,14 +74,14 @@ def generate_csv(data: List[dict], columns: List[str]) -> str:
     return output.getvalue()
 
 
-async def generate_xlsx(data: List[dict], columns: List[str]) -> bytes:
+async def generate_xlsx(data: list[dict], columns: list[str]) -> bytes:
     """Generate XLSX content from data.
-    
+
     Note: Requires openpyxl package. Falls back to CSV if not available.
     """
     try:
         from openpyxl import Workbook
-        from openpyxl.styles import Font, PatternFill, Alignment
+        from openpyxl.styles import Alignment, Font, PatternFill
 
         wb = Workbook()
         ws = wb.active
@@ -90,7 +89,9 @@ async def generate_xlsx(data: List[dict], columns: List[str]) -> bytes:
 
         # Header style
         header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        header_fill = PatternFill(
+            start_color="4472C4", end_color="4472C4", fill_type="solid"
+        )
         header_alignment = Alignment(horizontal="center", vertical="center")
 
         # Write headers
@@ -116,7 +117,9 @@ async def generate_xlsx(data: List[dict], columns: List[str]) -> bytes:
                 cell_value = ws.cell(row=row_idx, column=col_idx).value
                 if cell_value:
                     max_length = max(max_length, len(str(cell_value)) + 2)
-            ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width = min(max_length, 50)
+            ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width = (
+                min(max_length, 50)
+            )
 
         # Save to bytes
         output = io.BytesIO()
@@ -131,14 +134,26 @@ async def generate_xlsx(data: List[dict], columns: List[str]) -> bytes:
 
 @router.get("/audit-logs", summary="Export audit logs")
 async def export_audit_logs(
-    format: str = Query(default=ExportFormat.JSON, description="Export format: json, csv, xlsx"),
-    user_id: Optional[str] = Query(default=None, description="Filter by user ID"),
-    action: Optional[str] = Query(default=None, description="Filter by action (supports wildcards)"),
-    path: Optional[str] = Query(default=None, description="Filter by path (supports wildcards)"),
-    status_code: Optional[str] = Query(default=None, description="Filter by status code (2xx, 4xx, 5xx, etc.)"),
-    date_from: Optional[str] = Query(default=None, description="Start date (ISO format)"),
-    date_to: Optional[str] = Query(default=None, description="End date (ISO format)"),
-    limit: int = Query(default=10000, ge=1, le=50000, description="Maximum records to export"),
+    format: str = Query(
+        default=ExportFormat.JSON, description="Export format: json, csv, xlsx"
+    ),
+    user_id: str | None = Query(default=None, description="Filter by user ID"),
+    action: str | None = Query(
+        default=None, description="Filter by action (supports wildcards)"
+    ),
+    path: str | None = Query(
+        default=None, description="Filter by path (supports wildcards)"
+    ),
+    status_code: str | None = Query(
+        default=None, description="Filter by status code (2xx, 4xx, 5xx, etc.)"
+    ),
+    date_from: str | None = Query(
+        default=None, description="Start date (ISO format)"
+    ),
+    date_to: str | None = Query(default=None, description="End date (ISO format)"),
+    limit: int = Query(
+        default=10000, ge=1, le=50000, description="Maximum records to export"
+    ),
     current_user: UserModel = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
@@ -164,7 +179,7 @@ async def export_audit_logs(
     if current_user.role != "admin" and user_id and user_id != current_user.id:
         logger.warning(
             "Non-admin user attempted to export other user's logs",
-            extra={"user_id": current_user.id, "target_user_id": user_id}
+            extra={"user_id": current_user.id, "target_user_id": user_id},
         )
         user_id = current_user.id  # Force to own logs
 
@@ -190,9 +205,18 @@ async def export_audit_logs(
 
     # Define columns for export
     columns = [
-        "id", "user_id", "action", "method", "path", "status_code",
-        "target_type", "target_id", "ip_address", "user_agent",
-        "duration_ms", "created_at"
+        "id",
+        "user_id",
+        "action",
+        "method",
+        "path",
+        "status_code",
+        "target_type",
+        "target_id",
+        "ip_address",
+        "user_agent",
+        "duration_ms",
+        "created_at",
     ]
 
     # Generate filename
@@ -205,8 +229,13 @@ async def export_audit_logs(
             "user_id": current_user.id,
             "format": format,
             "record_count": len(data),
-            "filters": {"user_id": user_id, "action": action, "path": path, "status_code": status_code}
-        }
+            "filters": {
+                "user_id": user_id,
+                "action": action,
+                "path": path,
+                "status_code": status_code,
+            },
+        },
     )
 
     # Return based on format
@@ -215,9 +244,7 @@ async def export_audit_logs(
         return Response(
             content=content,
             media_type=get_content_type(ExportFormat.CSV),
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}.csv"'
-            }
+            headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'},
         )
 
     elif format == ExportFormat.XLSX:
@@ -228,7 +255,7 @@ async def export_audit_logs(
                 media_type=get_content_type(ExportFormat.XLSX),
                 headers={
                     "Content-Disposition": f'attachment; filename="{filename}.xlsx"'
-                }
+                },
             )
         except ImportError:
             # Fall back to CSV
@@ -238,27 +265,33 @@ async def export_audit_logs(
                 media_type=get_content_type(ExportFormat.CSV),
                 headers={
                     "Content-Disposition": f'attachment; filename="{filename}.csv"'
-                }
+                },
             )
 
     else:  # JSON
         return Response(
             content=json.dumps(data, indent=2, default=str),
             media_type=get_content_type(ExportFormat.JSON),
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}.json"'
-            }
+            headers={"Content-Disposition": f'attachment; filename="{filename}.json"'},
         )
 
 
 @router.get("/playbook-runs", summary="Export playbook run history")
 async def export_playbook_runs(
-    format: str = Query(default=ExportFormat.JSON, description="Export format: json, csv, xlsx"),
-    playbook_id: Optional[str] = Query(default=None, description="Filter by playbook ID"),
-    status: Optional[str] = Query(default=None, description="Filter by status"),
-    date_from: Optional[str] = Query(default=None, description="Start date (ISO format)"),
-    date_to: Optional[str] = Query(default=None, description="End date (ISO format)"),
-    limit: int = Query(default=10000, ge=1, le=50000, description="Maximum records to export"),
+    format: str = Query(
+        default=ExportFormat.JSON, description="Export format: json, csv, xlsx"
+    ),
+    playbook_id: str | None = Query(
+        default=None, description="Filter by playbook ID"
+    ),
+    status: str | None = Query(default=None, description="Filter by status"),
+    date_from: str | None = Query(
+        default=None, description="Start date (ISO format)"
+    ),
+    date_to: str | None = Query(default=None, description="End date (ISO format)"),
+    limit: int = Query(
+        default=10000, ge=1, le=50000, description="Maximum records to export"
+    ),
     current_user: UserModel = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
@@ -270,6 +303,7 @@ async def export_playbook_runs(
     - Non-admin users can only export their own runs
     """
     from sqlalchemy import select
+
     from models.playbook_run import PlaybookRunModel
 
     # Build query
@@ -297,25 +331,35 @@ async def export_playbook_runs(
     # Convert to dict
     data = []
     for run in runs:
-        data.append({
-            "id": run.id,
-            "playbook_id": run.playbook_id,
-            "playbook_name": run.playbook_name,
-            "status": run.status,
-            "triggered_by": run.triggered_by,
-            "trigger_type": run.trigger_type,
-            "alert_id": run.alert_id,
-            "started_at": run.started_at,
-            "completed_at": run.completed_at,
-            "error_message": run.error_message,
-            "created_at": run.created_at,
-        })
+        data.append(
+            {
+                "id": run.id,
+                "playbook_id": run.playbook_id,
+                "playbook_name": run.playbook_name,
+                "status": run.status,
+                "triggered_by": run.triggered_by,
+                "trigger_type": run.trigger_type,
+                "alert_id": run.alert_id,
+                "started_at": run.started_at,
+                "completed_at": run.completed_at,
+                "error_message": run.error_message,
+                "created_at": run.created_at,
+            }
+        )
 
     # Define columns
     columns = [
-        "id", "playbook_id", "playbook_name", "status", "triggered_by",
-        "trigger_type", "alert_id", "started_at", "completed_at",
-        "error_message", "created_at"
+        "id",
+        "playbook_id",
+        "playbook_name",
+        "status",
+        "triggered_by",
+        "trigger_type",
+        "alert_id",
+        "started_at",
+        "completed_at",
+        "error_message",
+        "created_at",
     ]
 
     # Generate filename
@@ -328,7 +372,7 @@ async def export_playbook_runs(
             "user_id": current_user.id,
             "format": format,
             "record_count": len(data),
-        }
+        },
     )
 
     # Return based on format
@@ -337,7 +381,7 @@ async def export_playbook_runs(
         return Response(
             content=content,
             media_type=get_content_type(ExportFormat.CSV),
-            headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'}
+            headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'},
         )
 
     elif format == ExportFormat.XLSX:
@@ -346,32 +390,42 @@ async def export_playbook_runs(
             return Response(
                 content=content,
                 media_type=get_content_type(ExportFormat.XLSX),
-                headers={"Content-Disposition": f'attachment; filename="{filename}.xlsx"'}
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}.xlsx"'
+                },
             )
         except ImportError:
             content = generate_csv(data, columns)
             return Response(
                 content=content,
                 media_type=get_content_type(ExportFormat.CSV),
-                headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'}
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}.csv"'
+                },
             )
 
     else:  # JSON
         return Response(
             content=json.dumps(data, indent=2, default=str),
             media_type=get_content_type(ExportFormat.JSON),
-            headers={"Content-Disposition": f'attachment; filename="{filename}.json"'}
+            headers={"Content-Disposition": f'attachment; filename="{filename}.json"'},
         )
 
 
 @router.get("/alerts", summary="Export alert history")
 async def export_alerts(
-    format: str = Query(default=ExportFormat.JSON, description="Export format: json, csv, xlsx"),
-    severity: Optional[str] = Query(default=None, description="Filter by severity"),
-    status: Optional[str] = Query(default=None, description="Filter by status"),
-    date_from: Optional[str] = Query(default=None, description="Start date (ISO format)"),
-    date_to: Optional[str] = Query(default=None, description="End date (ISO format)"),
-    limit: int = Query(default=10000, ge=1, le=50000, description="Maximum records to export"),
+    format: str = Query(
+        default=ExportFormat.JSON, description="Export format: json, csv, xlsx"
+    ),
+    severity: str | None = Query(default=None, description="Filter by severity"),
+    status: str | None = Query(default=None, description="Filter by status"),
+    date_from: str | None = Query(
+        default=None, description="Start date (ISO format)"
+    ),
+    date_to: str | None = Query(default=None, description="End date (ISO format)"),
+    limit: int = Query(
+        default=10000, ge=1, le=50000, description="Maximum records to export"
+    ),
     current_user: UserModel = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
@@ -381,6 +435,7 @@ async def export_alerts(
     - Requires authenticated user
     """
     from sqlalchemy import select
+
     from models.history import HistoryModel
 
     # Build query
@@ -404,22 +459,31 @@ async def export_alerts(
     # Convert to dict
     data = []
     for alert in alerts:
-        data.append({
-            "id": alert.id,
-            "alert_id": alert.alert_id,
-            "title": alert.title,
-            "severity": alert.severity,
-            "status": alert.status,
-            "source": alert.source,
-            "assigned_to": alert.assigned_to,
-            "created_at": alert.created_at,
-            "updated_at": alert.updated_at,
-        })
+        data.append(
+            {
+                "id": alert.id,
+                "alert_id": alert.alert_id,
+                "title": alert.title,
+                "severity": alert.severity,
+                "status": alert.status,
+                "source": alert.source,
+                "assigned_to": alert.assigned_to,
+                "created_at": alert.created_at,
+                "updated_at": alert.updated_at,
+            }
+        )
 
     # Define columns
     columns = [
-        "id", "alert_id", "title", "severity", "status",
-        "source", "assigned_to", "created_at", "updated_at"
+        "id",
+        "alert_id",
+        "title",
+        "severity",
+        "status",
+        "source",
+        "assigned_to",
+        "created_at",
+        "updated_at",
     ]
 
     # Generate filename
@@ -432,7 +496,7 @@ async def export_alerts(
             "user_id": current_user.id,
             "format": format,
             "record_count": len(data),
-        }
+        },
     )
 
     # Return based on format
@@ -441,7 +505,7 @@ async def export_alerts(
         return Response(
             content=content,
             media_type=get_content_type(ExportFormat.CSV),
-            headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'}
+            headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'},
         )
 
     elif format == ExportFormat.XLSX:
@@ -450,19 +514,23 @@ async def export_alerts(
             return Response(
                 content=content,
                 media_type=get_content_type(ExportFormat.XLSX),
-                headers={"Content-Disposition": f'attachment; filename="{filename}.xlsx"'}
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}.xlsx"'
+                },
             )
         except ImportError:
             content = generate_csv(data, columns)
             return Response(
                 content=content,
                 media_type=get_content_type(ExportFormat.CSV),
-                headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'}
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}.csv"'
+                },
             )
 
     else:  # JSON
         return Response(
             content=json.dumps(data, indent=2, default=str),
             media_type=get_content_type(ExportFormat.JSON),
-            headers={"Content-Disposition": f'attachment; filename="{filename}.json"'}
+            headers={"Content-Disposition": f'attachment; filename="{filename}.json"'},
         )

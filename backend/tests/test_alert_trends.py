@@ -13,7 +13,7 @@ sys.path.insert(0, str(backend_dir))
 
 def test_time_format_logic():
     """Test the time format logic for different intervals."""
-    from datetime import datetime, timedelta
+    from datetime import datetime
 
     print("Testing time interval formats...")
 
@@ -81,6 +81,7 @@ def test_aggregation_query_structure():
 def test_trend_data_structure():
     """Test the expected structure of trend data."""
     from datetime import datetime
+
     from schemas.alert_lifecycle import AlertTrend
 
     print("\nTesting trend data structure...")
@@ -95,7 +96,7 @@ def test_trend_data_structure():
             "medium": 30,
             "low": 40,
             "info": 10,
-        }
+        },
     )
 
     assert trend.count == 100
@@ -103,8 +104,8 @@ def test_trend_data_structure():
     assert trend.by_severity["high"] == 15
     assert sum(trend.by_severity.values()) == 100
 
-    print(f"✅ Trend structure validated")
-    print(f"\nSample trend:")
+    print("✅ Trend structure validated")
+    print("\nSample trend:")
     print(f"  Timestamp: {trend.timestamp}")
     print(f"  Total: {trend.count}")
     print(f"  Critical: {trend.by_severity['critical']}")
@@ -168,9 +169,9 @@ def test_sqlite_compatibility():
 
 def document_formulas():
     """Document the time series aggregation formulas."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TIME SERIES AGGREGATION FORMULAS")
-    print("="*60)
+    print("=" * 60)
 
     print("\n1. Hour Interval:")
     print("   Format: 'YYYY-MM-DD HH:00:00'")
@@ -207,13 +208,13 @@ def document_formulas():
     print("     }")
     print("   }")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
 
 
 if __name__ == "__main__":
-    print("="*60)
+    print("=" * 60)
     print("ALERT TRENDS TIME SERIES TEST SUITE")
-    print("="*60)
+    print("=" * 60)
 
     test_time_format_logic()
     test_aggregation_query_structure()
@@ -222,9 +223,9 @@ if __name__ == "__main__":
     test_sqlite_compatibility()
     document_formulas()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🎉 ALL TESTS PASSED!")
-    print("="*60)
+    print("=" * 60)
     print("\n⚠️  Note: Implementation is SQLite-specific")
     print("   For PostgreSQL, use DATE_TRUNC() instead")
-    print("="*60)
+    print("=" * 60)

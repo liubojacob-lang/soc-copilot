@@ -6,27 +6,27 @@ This service handles:
 - Format validation and conversion
 """
 
-import uuid
 import json
 import logging
-from datetime import datetime, timezone
-from typing import Optional, Literal
-from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
+from datetime import UTC, datetime
+from typing import Literal
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
 
 from models.playbook_definition import PlaybookDefinitionModel, PlaybookDefinitionStatus
 from schemas.playbook_dag import (
+    DAGSchema,
     PlaybookExportData,
     PlaybookImportResponse,
-    DAGSchema,
-    NodeSchema,
-    EdgeSchema
 )
 
 logger = logging.getLogger(__name__)
@@ -39,9 +39,7 @@ class PlaybookImportExportService:
         self.session = session
 
     async def export_definition(
-        self,
-        definition_id: str,
-        format: Literal["json", "yaml"] = "json"
+        self, definition_id: str, format: Literal["json", "yaml"] = "json"
     ) -> tuple[str, str]:
         """
         Export a playbook definition to JSON or YAML.
@@ -73,24 +71,25 @@ class PlaybookImportExportService:
             dag=DAGSchema(**definition.definition_json),
             created_at=definition.created_at,
             updated_at=definition.updated_at,
-            created_by_user_id=definition.created_by
+            created_by_user_id=definition.created_by,
         )
 
         # Serialize
         if format == "yaml":
             if not YAML_AVAILABLE:
-                raise ValueError("YAML format not available. Install pyyaml: pip install pyyaml")
+                raise ValueError(
+                    "YAML format not available. Install pyyaml: pip install pyyaml"
+                )
 
             content = yaml.dump(
-                export_data.model_dump(mode='json', exclude_none=True),
+                export_data.model_dump(mode="json", exclude_none=True),
                 default_flow_style=False,
-                sort_keys=False
+                sort_keys=False,
             )
             mime_type = "text/yaml"
         else:  # json
             content = json.dumps(
-                export_data.model_dump(mode='json', exclude_none=True),
-                indent=2
+                export_data.model_dump(mode="json", exclude_none=True), indent=2
             )
             mime_type = "application/json"
 
@@ -102,9 +101,9 @@ class PlaybookImportExportService:
         self,
         content: str,
         format: Literal["json", "yaml"] = "json",
-        name_override: Optional[str] = None,
+        name_override: str | None = None,
         publish: bool = False,
-        created_by_user_id: Optional[str] = None
+        created_by_user_id: str | None = None,
     ) -> PlaybookImportResponse:
         """
         Import a playbook definition from JSON or YAML.
@@ -122,17 +121,19 @@ class PlaybookImportExportService:
         # Parse content
         if format == "yaml":
             if not YAML_AVAILABLE:
-                raise ValueError("YAML format not available. Install pyyaml: pip install pyyaml")
+                raise ValueError(
+                    "YAML format not available. Install pyyaml: pip install pyyaml"
+                )
 
             try:
                 data = yaml.safe_load(content)
             except yaml.YAMLError as e:
-                raise ValueError(f"Invalid YAML: {str(e)}")
+                raise ValueError(f"Invalid YAML: {e!s}")
         else:  # json
             try:
                 data = json.loads(content)
             except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON: {str(e)}")
+                raise ValueError(f"Invalid JSON: {e!s}")
 
         # Validate structure
         validated = self._validate_import_data(data)
@@ -148,13 +149,17 @@ class PlaybookImportExportService:
             description=validated.description,
             version=validated.version,
             definition_json=validated.dag.model_dump(),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             created_by=created_by_user_id,
             is_active=True,
-            status=PlaybookDefinitionStatus.PUBLISHED if publish else PlaybookDefinitionStatus.DRAFT,
-            published_at=datetime.now(timezone.utc) if publish else None,
-            current_version_no=1
+            status=(
+                PlaybookDefinitionStatus.PUBLISHED
+                if publish
+                else PlaybookDefinitionStatus.DRAFT
+            ),
+            published_at=datetime.now(UTC) if publish else None,
+            current_version_no=1,
         )
 
         self.session.add(definition)
@@ -170,7 +175,7 @@ class PlaybookImportExportService:
             name=definition.name,
             version=definition.version,
             status=definition.status,
-            message=f"Successfully imported '{definition.name}'"
+            message=f"Successfully imported '{definition.name}'",
         )
 
     def _validate_import_data(self, data: dict) -> PlaybookExportData:
@@ -208,7 +213,7 @@ class PlaybookImportExportService:
         try:
             return PlaybookExportData(**data)
         except Exception as e:
-            raise ValueError(f"Invalid playbook structure: {str(e)}")
+            raise ValueError(f"Invalid playbook structure: {e!s}")
 
     def _auto_migrate_dag_schema(self, dag_data: dict) -> dict:
         """
@@ -241,7 +246,9 @@ class PlaybookImportExportService:
 
         return migrated
 
-    async def validate_import_format(self, content: str, format: Literal["json", "yaml"]) -> bool:
+    async def validate_import_format(
+        self, content: str, format: Literal["json", "yaml"]
+    ) -> bool:
         """
         Validate if content is valid JSON or YAML.
 
@@ -260,7 +267,7 @@ class PlaybookImportExportService:
             else:  # json
                 json.loads(content)
             return True
-        except:
+        except (ValueError, json.JSONDecodeError):
             return False
 
 

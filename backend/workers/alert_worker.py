@@ -14,26 +14,26 @@ Alert Worker - 消费告警并发送通知
     LOG_LEVEL: 日志级别 (默认: INFO)
 """
 
-import sys
-import os
 import asyncio
 import logging
+import os
 import signal
+import sys
 from datetime import datetime
 
 # 添加项目根目录到 Python 路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from services.message_queue_manager import get_message_queue_manager
 from services.notification_service import get_notification_service
 
 # 配置日志
 logging.basicConfig(
-    level=os.getenv('LOG_LEVEL', 'INFO'),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),
-    ]
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ class AlertWorker:
                         worker_id=self.worker_id,
                         count=1,
                         block=5000,  # 5秒超时
-                        priority_order=True  # 优先处理 critical 告警
+                        priority_order=True,  # 优先处理 critical 告警
                     )
 
                     if messages:
@@ -96,7 +96,9 @@ class AlertWorker:
                             await self._process_message(message)
                             self.processed_count += 1
                     else:
-                        logger.debug(f"Worker {self.worker_id}: No messages, waiting...")
+                        logger.debug(
+                            f"Worker {self.worker_id}: No messages, waiting..."
+                        )
 
                 except Exception as e:
                     logger.error(f"Error in worker loop: {e}")
@@ -108,7 +110,9 @@ class AlertWorker:
         finally:
             self.running = False
             stats_task.cancel()
-            logger.info(f"Worker {self.worker_id} stopped. Processed: {self.processed_count}, Errors: {self.error_count}")
+            logger.info(
+                f"Worker {self.worker_id} stopped. Processed: {self.processed_count}, Errors: {self.error_count}"
+            )
 
     async def _process_message(self, message: dict):
         """
@@ -117,10 +121,10 @@ class AlertWorker:
         Args:
             message: 消息数据
         """
-        message_id = message.get('message_id', 'unknown')
-        stream = message.get('stream', 'unknown')
-        alert = message.get('alert', {})
-        severity = message.get('severity', 'medium')
+        message_id = message.get("message_id", "unknown")
+        stream = message.get("stream", "unknown")
+        alert = message.get("alert", {})
+        severity = message.get("severity", "medium")
 
         try:
             logger.info(f"📨 Processing alert {message_id} (severity: {severity})")
@@ -134,11 +138,13 @@ class AlertWorker:
 
             if total_count > 0:
                 if success_count == total_count:
-                    logger.info(f"  ✓ All notifications sent successfully")
+                    logger.info("  ✓ All notifications sent successfully")
                 else:
-                    logger.warning(f"  ⚠ {success_count}/{total_count} notifications succeeded")
+                    logger.warning(
+                        f"  ⚠ {success_count}/{total_count} notifications succeeded"
+                    )
             else:
-                logger.warning(f"  ⚠ No notifications configured")
+                logger.warning("  ⚠ No notifications configured")
 
             # 确认消息处理完成
             ack_success = await self.mq_manager.acknowledge_async(stream, message_id)
@@ -172,8 +178,10 @@ class AlertWorker:
                 # 打印队列统计
                 queue_stats = self.mq_manager.get_queue_stats()
                 for severity, stats in queue_stats.items():
-                    if stats['length'] > 0:
-                        logger.info(f"  Queue {severity}: {stats['length']} messages, {stats['pending']} pending")
+                    if stats["length"] > 0:
+                        logger.info(
+                            f"  Queue {severity}: {stats['length']} messages, {stats['pending']} pending"
+                        )
 
     def _signal_handler(self, signum, frame):
         """信号处理器"""
@@ -184,7 +192,7 @@ class AlertWorker:
 async def main():
     """主函数"""
     # 获取 Worker ID
-    worker_id = os.getenv('WORKER_ID', '1')
+    worker_id = os.getenv("WORKER_ID", "1")
 
     # 也可以从命令行参数获取
     if len(sys.argv) > 1:
@@ -202,5 +210,5 @@ async def main():
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

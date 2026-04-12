@@ -1,14 +1,14 @@
 """Cron scheduler for time-based playbook triggers."""
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Optional, Set
+from datetime import UTC, datetime
+
 from croniter import croniter
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
-from models.playbook_definition import PlaybookTriggerModel, PlaybookDefinitionModel
+from models.playbook_definition import PlaybookDefinitionModel, PlaybookTriggerModel
 
 logger = get_logger(__name__)
 
@@ -30,8 +30,8 @@ class CronScheduler:
         self.session_factory = session_factory
         self.check_interval = check_interval
         self._running = False
-        self._task: Optional[asyncio.Task] = None
-        self._pending_triggers: Set[str] = set()
+        self._task: asyncio.Task | None = None
+        self._pending_triggers: set[str] = set()
 
     async def start(self) -> None:
         """Start the cron scheduler background task."""
@@ -80,13 +80,15 @@ class CronScheduler:
             result = await session.execute(stmt)
             triggers = result.scalars().all()
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             for trigger in triggers:
                 try:
                     cron_expr = trigger.config_json.get("cron_expression")
                     if not cron_expr:
-                        logger.warning(f"Cron trigger {trigger.id} missing cron_expression")
+                        logger.warning(
+                            f"Cron trigger {trigger.id} missing cron_expression"
+                        )
                         continue
 
                     # Check if trigger is due
@@ -139,7 +141,9 @@ class CronScheduler:
                 logger.error(f"Playbook definition not found: {trigger.definition_id}")
                 return
 
-            logger.info(f"Executing cron trigger {trigger_id} for playbook {definition.name}")
+            logger.info(
+                f"Executing cron trigger {trigger_id} for playbook {definition.name}"
+            )
 
             # Execute the playbook
             from .dag import DAGBuilder, DAGExecutionEngine
@@ -148,9 +152,9 @@ class CronScheduler:
             engine = DAGExecutionEngine(session)
 
             # Create run record
-            from models.playbook_run import PlaybookRunModel
-            from repositories.playbook_run_repository import PlaybookRunRepository
             import uuid
+
+            from repositories.playbook_run_repository import PlaybookRunRepository
 
             run_repo = PlaybookRunRepository(session)
             run_id = str(uuid.uuid4())
@@ -180,7 +184,9 @@ class CronScheduler:
                 mode="dry_run",
             )
 
-            logger.info(f"Cron trigger {trigger_id} completed with status: {result['status']}")
+            logger.info(
+                f"Cron trigger {trigger_id} completed with status: {result['status']}"
+            )
 
             # Update last run time
             trigger.config_json["last_run"] = now.isoformat()
@@ -194,7 +200,7 @@ class CronScheduler:
     async def get_next_run_time(
         self,
         trigger_id: str,
-    ) -> Optional[datetime]:
+    ) -> datetime | None:
         """Get the next scheduled run time for a trigger.
 
         Args:
@@ -218,15 +224,15 @@ class CronScheduler:
             if not cron_expr:
                 return None
 
-            cron = croniter(cron_expr, datetime.now(timezone.utc))
+            cron = croniter(cron_expr, datetime.now(UTC))
             return cron.get_next(datetime)
 
 
 # Global scheduler instance
-_scheduler: Optional[CronScheduler] = None
+_scheduler: CronScheduler | None = None
 
 
-def get_scheduler() -> Optional[CronScheduler]:
+def get_scheduler() -> CronScheduler | None:
     """Get the global cron scheduler instance.
 
     Returns:

@@ -1,11 +1,12 @@
 """Repository for AI model operations."""
 
-from typing import Optional, List
 from datetime import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, update as sql_update
 
-from models.ai_model import AIModelModel, AIProvider
+from sqlalchemy import and_, select
+from sqlalchemy import update as sql_update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from models.ai_model import AIModelModel
 from models.ai_user_setting import AIUserSettingModel
 
 
@@ -15,7 +16,7 @@ class AIModelRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, model_id: str) -> Optional[AIModelModel]:
+    async def get_by_id(self, model_id: str) -> AIModelModel | None:
         """Get model by ID."""
         result = await self.session.execute(
             select(AIModelModel).where(AIModelModel.id == model_id)
@@ -24,8 +25,8 @@ class AIModelRepository:
 
     async def list_enabled(
         self,
-        provider: Optional[str] = None,
-    ) -> List[AIModelModel]:
+        provider: str | None = None,
+    ) -> list[AIModelModel]:
         """List all enabled models."""
         conditions = [AIModelModel.enabled == True]
         if provider:
@@ -39,24 +40,29 @@ class AIModelRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-    ) -> tuple[List[AIModelModel], int]:
+    ) -> tuple[list[AIModelModel], int]:
         """List all models with pagination."""
         # Get total count
         count_result = await self.session.execute(select(AIModelModel.id))
         total = len(count_result.all())
 
         # Get paginated results
-        query = select(AIModelModel).order_by(
-            AIModelModel.is_default.desc(),
-            AIModelModel.provider.asc(),
-            AIModelModel.display_name.asc(),
-        ).offset(skip).limit(limit)
+        query = (
+            select(AIModelModel)
+            .order_by(
+                AIModelModel.is_default.desc(),
+                AIModelModel.provider.asc(),
+                AIModelModel.display_name.asc(),
+            )
+            .offset(skip)
+            .limit(limit)
+        )
         result = await self.session.execute(query)
         models = list(result.scalars().all())
 
         return models, total
 
-    async def get_default_model(self) -> Optional[AIModelModel]:
+    async def get_default_model(self) -> AIModelModel | None:
         """Get the default model."""
         result = await self.session.execute(
             select(AIModelModel).where(AIModelModel.is_default == True)
@@ -66,9 +72,7 @@ class AIModelRepository:
     async def set_default_model(self, model_id: str) -> bool:
         """Set a model as default (unsets others)."""
         # First, unset all defaults
-        await self.session.execute(
-            sql_update(AIModelModel).values(is_default=False)
-        )
+        await self.session.execute(sql_update(AIModelModel).values(is_default=False))
 
         # Set new default
         model = await self.get_by_id(model_id)
@@ -86,11 +90,11 @@ class AIModelRepository:
         id: str,
         provider: str,
         display_name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         enabled: bool = True,
-        capabilities: Optional[dict] = None,
-        max_tokens: Optional[int] = None,
-        config: Optional[dict] = None,
+        capabilities: dict | None = None,
+        max_tokens: int | None = None,
+        config: dict | None = None,
     ) -> AIModelModel:
         """Create a new model."""
         model = AIModelModel(
@@ -111,13 +115,13 @@ class AIModelRepository:
     async def update_model(
         self,
         model_id: str,
-        display_name: Optional[str] = None,
-        description: Optional[str] = None,
-        enabled: Optional[bool] = None,
-        capabilities: Optional[dict] = None,
-        max_tokens: Optional[int] = None,
-        config: Optional[dict] = None,
-    ) -> Optional[AIModelModel]:
+        display_name: str | None = None,
+        description: str | None = None,
+        enabled: bool | None = None,
+        capabilities: dict | None = None,
+        max_tokens: int | None = None,
+        config: dict | None = None,
+    ) -> AIModelModel | None:
         """Update a model."""
         model = await self.get_by_id(model_id)
         if not model:
@@ -149,7 +153,7 @@ class AIUserSettingRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_user_id(self, user_id: str) -> Optional[AIUserSettingModel]:
+    async def get_by_user_id(self, user_id: str) -> AIUserSettingModel | None:
         """Get user's AI settings."""
         result = await self.session.execute(
             select(AIUserSettingModel).where(AIUserSettingModel.user_id == user_id)
@@ -166,7 +170,9 @@ class AIUserSettingRepository:
             await self.session.refresh(settings)
         return settings
 
-    async def set_default_model(self, user_id: str, model_id: str) -> AIUserSettingModel:
+    async def set_default_model(
+        self, user_id: str, model_id: str
+    ) -> AIUserSettingModel:
         """Set user's default model."""
         settings = await self.get_or_create(user_id)
         settings.default_model_id = model_id
@@ -176,7 +182,7 @@ class AIUserSettingRepository:
         await self.session.refresh(settings)
         return settings
 
-    async def get_default_model(self, user_id: str) -> Optional[str]:
+    async def get_default_model(self, user_id: str) -> str | None:
         """Get user's default model ID."""
         settings = await self.get_by_user_id(user_id)
         return settings.default_model_id if settings else None

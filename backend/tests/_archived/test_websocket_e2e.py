@@ -14,30 +14,36 @@ Tests:
 - Alert rules
 """
 
-import asyncio
-import pytest
 import json
 import time
-from datetime import datetime, timezone
-from typing import Dict, Any, List
+from datetime import UTC, datetime
+from typing import Any
 
-from services.message_queue import get_message_queue_service, MessageQueueService
-from services.message_filter import get_filter_service, FilterService
-from services.websocket_monitoring import get_websocket_monitoring
-from services.alert_evaluator import get_alert_evaluator
-from models.message_filters import FilterRule, FilterSet, SeverityLevel, StringFilter
-from models.monitoring_alerts import AlertRule, AlertCondition, MetricType, AlertOperator, AlertSeverity
+import pytest
+
+from models.message_filters import FilterRule, FilterSet, SeverityLevel
+from models.monitoring_alerts import (
+    AlertCondition,
+    AlertOperator,
+    AlertRule,
+    AlertSeverity,
+    MetricType,
+)
+from services.alerting.alert_evaluator import get_alert_evaluator
+from services.message_filter import get_filter_service
+from services.message_queue import get_message_queue_service
+from services.observability.websocket_monitoring import get_websocket_monitoring
 
 
 class MockWebSocket:
     """Mock WebSocket for testing."""
 
     def __init__(self):
-        self.messages: List[Dict[str, Any]] = []
+        self.messages: list[dict[str, Any]] = []
         self.closed = False
         self.client_id = f"mock_{int(time.time() * 1000)}"
 
-    async def send_json(self, message: Dict[str, Any]) -> None:
+    async def send_json(self, message: dict[str, Any]) -> None:
         """Send a JSON message."""
         if self.closed:
             raise RuntimeError("WebSocket is closed")
@@ -145,10 +151,10 @@ async def test_message_send_and_receive():
             "id": "alert_001",
             "severity": "high",
             "title": "Test Alert",
-            "description": "This is a test alert"
+            "description": "This is a test alert",
         },
-        timestamp=datetime.now(timezone.utc).isoformat(),
-        channel="alerts"
+        timestamp=datetime.now(UTC).isoformat(),
+        channel="alerts",
     )
 
     await manager.broadcast_to_channel("alerts", test_message)
@@ -190,7 +196,6 @@ async def test_offline_message_caching():
     print("=" * 80)
 
     from routers.websocket import ConnectionManager, WebSocketMessage
-    from models.message_queue import MessageType
 
     manager = ConnectionManager()
     message_queue = get_message_queue_service()
@@ -202,12 +207,12 @@ async def test_offline_message_caching():
     test_message = WebSocketMessage(
         type="alert",
         data={"id": "offline_alert_001", "title": "Offline Alert"},
-        timestamp=datetime.now(timezone.utc).isoformat(),
-        channel="alerts"
+        timestamp=datetime.now(UTC).isoformat(),
+        channel="alerts",
     )
 
     # Add user to known_users (simulate they were once online)
-    manager.known_users[user_id] = datetime.now(timezone.utc).isoformat()
+    manager.known_users[user_id] = datetime.now(UTC).isoformat()
 
     # Broadcast to channel (user is offline)
     await manager.broadcast_to_channel("alerts", test_message, message_queue)
@@ -229,7 +234,10 @@ async def test_offline_message_caching():
         # Find queued alert
         queued_alert = None
         for msg in ws.messages:
-            if msg.get("type") == "alert" and msg.get("data", {}).get("id") == "offline_alert_001":
+            if (
+                msg.get("type") == "alert"
+                and msg.get("data", {}).get("id") == "offline_alert_001"
+            ):
                 queued_alert = msg
                 break
 
@@ -263,14 +271,10 @@ async def test_message_filtering():
         description="Only receive high and critical severity alerts",
         priority=1,
         enabled=True,
-        min_severity=SeverityLevel.HIGH
+        min_severity=SeverityLevel.HIGH,
     )
 
-    filter_set = FilterSet(
-        user_id=user_id,
-        default_action="block",
-        rules=[rule]
-    )
+    filter_set = FilterSet(user_id=user_id, default_action="block", rules=[rule])
 
     await filter_service.set_user_filters(user_id, filter_set)
     print("✓ Filter rule created")
@@ -282,7 +286,7 @@ async def test_message_filtering():
     critical_msg = {
         "type": "alert",
         "data": {"severity": "critical", "title": "Critical Alert"},
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(UTC).isoformat(),
     }
     result1 = await filter_service.should_send_message(user_id, critical_msg)
     assert result1.should_send == True, "Critical alert should pass filter"
@@ -292,7 +296,7 @@ async def test_message_filtering():
     low_msg = {
         "type": "alert",
         "data": {"severity": "low", "title": "Low Alert"},
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(UTC).isoformat(),
     }
     result2 = await filter_service.should_send_message(user_id, low_msg)
     assert result2.should_send == False, "Low alert should be blocked"
@@ -334,8 +338,10 @@ async def test_monitoring_metrics():
     metrics = await monitoring.get_current_metrics()
     assert metrics.message.total_messages_sent >= 1
     assert metrics.message.total_messages_received >= 1
-    print(f"✓ Messages recorded: {metrics.message.total_messages_sent} sent, "
-          f"{metrics.message.total_messages_received} received")
+    print(
+        f"✓ Messages recorded: {metrics.message.total_messages_sent} sent, "
+        f"{metrics.message.total_messages_received} received"
+    )
 
     # Test 3: Record latency
     print("\n3. Recording performance metrics...")
@@ -345,8 +351,10 @@ async def test_monitoring_metrics():
 
     metrics = await monitoring.get_current_metrics()
     assert metrics.performance.avg_latency_ms > 0
-    print(f"✓ Latency recorded: avg={metrics.performance.avg_latency_ms:.2f}ms, "
-          f"p95={metrics.performance.p95_latency_ms:.2f}ms")
+    print(
+        f"✓ Latency recorded: avg={metrics.performance.avg_latency_ms:.2f}ms, "
+        f"p95={metrics.performance.p95_latency_ms:.2f}ms"
+    )
 
     # Test 4: Health score
     print("\n4. Calculating health score...")
@@ -384,13 +392,13 @@ async def test_alert_rules():
                 metric_type=MetricType.HEALTH_SCORE,
                 operator=AlertOperator.LESS_THAN,
                 threshold=50.0,
-                duration_seconds=60
+                duration_seconds=60,
             )
         ],
         require_all=True,
         severity=AlertSeverity.WARNING,
         enabled=True,
-        channels=["log"]
+        channels=["log"],
     )
 
     await evaluator.add_rule(rule)
@@ -401,11 +409,7 @@ async def test_alert_rules():
     from models.websocket_metrics import AggregatedMetrics
 
     low_health_metrics = AggregatedMetrics(
-        health_score=40.0,
-        connection=...,
-        message=...,
-        error=...,
-        performance=...
+        health_score=40.0, connection=..., message=..., error=..., performance=...
     )
 
     notifications = await evaluator.evaluate_metrics(low_health_metrics, user_id)
@@ -417,7 +421,9 @@ async def test_alert_rules():
     print("\n3. Getting alert statistics...")
     stats = await evaluator.get_stats(user_id)
     assert stats["total_rules"] >= 1
-    print(f"✓ Alert stats: {stats['total_rules']} rules, {stats['total_triggers']} triggers")
+    print(
+        f"✓ Alert stats: {stats['total_rules']} rules, {stats['total_triggers']} triggers"
+    )
 
     # Cleanup
     await evaluator.remove_rule(rule.id)
@@ -461,8 +467,8 @@ async def test_complete_user_scenario():
         WebSocketMessage(
             type="alert",
             data={"id": f"alert_{i}", "severity": "high", "title": f"Alert {i}"},
-            timestamp=datetime.now(timezone.utc).isoformat(),
-            channel="alerts"
+            timestamp=datetime.now(UTC).isoformat(),
+            channel="alerts",
         )
         for i in range(1, 6)
     ]
@@ -483,8 +489,8 @@ async def test_complete_user_scenario():
     offline_alert = WebSocketMessage(
         type="alert",
         data={"id": "offline_alert", "severity": "critical", "title": "Offline Alert"},
-        timestamp=datetime.now(timezone.utc).isoformat(),
-        channel="alerts"
+        timestamp=datetime.now(UTC).isoformat(),
+        channel="alerts",
     )
     await manager.broadcast_to_channel("alerts", offline_alert, message_queue)
     print("✓ User disconnected, offline alert queued")
@@ -504,7 +510,7 @@ async def test_complete_user_scenario():
         name="Critical Only",
         min_severity=SeverityLevel.CRITICAL,
         priority=1,
-        enabled=True
+        enabled=True,
     )
     filter_set = FilterSet(user_id=user_id, rules=[rule])
     await filter_service.set_user_filters(user_id, filter_set)
@@ -522,7 +528,7 @@ def test_e2e_summary():
     print("\n" + "=" * 80)
     print("WebSocket End-to-End Test Suite")
     print("=" * 80)
-    print(f"\nGenerated at: {datetime.now(timezone.utc).isoformat()}")
+    print(f"\nGenerated at: {datetime.now(UTC).isoformat()}")
 
     print("\nTest Scenarios:")
     print("  1. Connection Lifecycle - Connect, Disconnect, Reconnect")

@@ -26,8 +26,7 @@ BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
 
 # Logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -42,13 +41,11 @@ class WazuhLogForwarder:
     async def initialize(self):
         """Initialize connections"""
         es_url = f"https://{ELASTICSEARCH_USERNAME}:{ELASTICSEARCH_PASSWORD}@elasticsearch:9200"
-        
+
         self.es_client = AsyncElasticsearch(
-            es_url,
-            verify_certs=False,
-            ssl_show_warn=False
+            es_url, verify_certs=False, ssl_show_warn=False
         )
-        
+
         self.http_client = httpx.AsyncClient(timeout=30.0)
         logger.info("Connections initialized")
 
@@ -63,26 +60,17 @@ class WazuhLogForwarder:
         """Fetch new alerts from Wazuh/Elasticsearch"""
         try:
             query = {
-                "query": {
-                    "range": {
-                        "@timestamp": {
-                            "gte": ALERT_TIME_WINDOW
-                        }
-                    }
-                },
+                "query": {"range": {"@timestamp": {"gte": ALERT_TIME_WINDOW}}},
                 "size": BATCH_SIZE,
-                "sort": [{"@timestamp": {"order": "desc"}}]
+                "sort": [{"@timestamp": {"order": "desc"}}],
             }
 
-            response = await self.es_client.search(
-                index="wazuh-alerts-*",
-                body=query
-            )
+            response = await self.es_client.search(index="wazuh-alerts-*", body=query)
 
             alerts = []
-            for hit in response.get('hits', {}).get('hits', []):
-                source = hit['_source']
-                source['_id'] = hit['_id']
+            for hit in response.get("hits", {}).get("hits", []):
+                source = hit["_source"]
+                source["_id"] = hit["_id"]
                 alerts.append(source)
 
             logger.info(f"Fetched {len(alerts)} alerts from Wazuh")
@@ -95,44 +83,48 @@ class WazuhLogForwarder:
     def convert_to_soc_format(self, wazuh_alert: Dict[str, Any]) -> Dict[str, Any]:
         """Convert Wazuh alert format to SOC Copilot format"""
         try:
-            rule = wazuh_alert.get('rule', {})
-            agent = wazuh_alert.get('agent', {})
-            geoip = wazuh_alert.get('geoip', {})
-            data = wazuh_alert.get('data', {})
+            rule = wazuh_alert.get("rule", {})
+            agent = wazuh_alert.get("agent", {})
+            geoip = wazuh_alert.get("geoip", {})
+            data = wazuh_alert.get("data", {})
 
             mitre_tactics = []
-            rule_mitre = rule.get('mitre', {})
+            rule_mitre = rule.get("mitre", {})
             if isinstance(rule_mitre, dict):
-                tactics = rule_mitre.get('tactic', [])
+                tactics = rule_mitre.get("tactic", [])
                 if isinstance(tactics, list):
                     mitre_tactics = tactics
 
-            rule_groups = rule.get('groups', [])
+            rule_groups = rule.get("groups", [])
             if isinstance(rule_groups, str):
                 rule_groups = [rule_groups]
 
             soc_alert = {
                 "source": "wazuh",
-                "event_id": wazuh_alert.get('_id', f"wazuh-{datetime.utcnow().timestamp()}"),
-                "timestamp": wazuh_alert.get('@timestamp', datetime.utcnow().isoformat()),
+                "event_id": wazuh_alert.get(
+                    "_id", f"wazuh-{datetime.utcnow().timestamp()}"
+                ),
+                "timestamp": wazuh_alert.get(
+                    "@timestamp", datetime.utcnow().isoformat()
+                ),
                 "event_type": "security_event",
-                "severity": self._map_severity(rule.get('level', 0)),
-                "title": rule.get('description', 'Wazuh Alert'),
-                "description": rule.get('description', ''),
-                "source_ip": data.get('srcip') or geoip.get('src_ip'),
-                "destination_ip": data.get('dstip'),
-                "protocol": data.get('protocol'),
-                "agent_name": agent.get('name'),
-                "agent_id": str(agent.get('id', '')),
-                "agent_ip": agent.get('ip'),
-                "rule_id": str(rule.get('id', '')),
-                "rule_level": rule.get('level'),
+                "severity": self._map_severity(rule.get("level", 0)),
+                "title": rule.get("description", "Wazuh Alert"),
+                "description": rule.get("description", ""),
+                "source_ip": data.get("srcip") or geoip.get("src_ip"),
+                "destination_ip": data.get("dstip"),
+                "protocol": data.get("protocol"),
+                "agent_name": agent.get("name"),
+                "agent_id": str(agent.get("id", "")),
+                "agent_ip": agent.get("ip"),
+                "rule_id": str(rule.get("id", "")),
+                "rule_level": rule.get("level"),
                 "rule_groups": rule_groups,
                 "rule_mitre": mitre_tactics,
-                "full_log": wazuh_alert.get('full_log'),
-                "location": wazuh_alert.get('location'),
+                "full_log": wazuh_alert.get("full_log"),
+                "location": wazuh_alert.get("location"),
                 "geoip": geoip if geoip else None,
-                "raw_data": wazuh_alert
+                "raw_data": wazuh_alert,
             }
 
             return soc_alert
@@ -164,7 +156,7 @@ class WazuhLogForwarder:
             response = await self.http_client.post(
                 f"{SOC_COPILOT_API_URL}/api/v1/security-alerts/ingest",
                 json=alert,
-                headers=headers
+                headers=headers,
             )
 
             if response.status_code in [200, 201]:
@@ -180,7 +172,7 @@ class WazuhLogForwarder:
     async def process_alerts(self):
         """Process and forward new alerts"""
         wazuh_alerts = await self.fetch_new_alerts()
-        
+
         if not wazuh_alerts:
             return 0
 
@@ -202,7 +194,7 @@ async def main():
     try:
         await forwarder.initialize()
         logger.info("Wazuh Log Forwarder started")
-        
+
         await asyncio.sleep(30)  # Wait for services
 
         while True:

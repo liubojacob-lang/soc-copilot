@@ -14,22 +14,20 @@ Features:
 
 import asyncio
 import time
-import json
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
+from typing import Any
 
 from core.logger import get_logger
-from core.config import settings
 from models.websocket_metrics import (
-    ConnectionMetrics,
-    MessageMetrics,
-    ErrorMetrics,
-    PerformanceMetrics,
     AggregatedMetrics,
-    MetricsSnapshot,
+    ConnectionMetrics,
+    ErrorMetrics,
+    ErrorType,
+    MessageMetrics,
     MetricsQuery,
     MetricsReport,
-    ErrorType
+    MetricsSnapshot,
+    PerformanceMetrics,
 )
 
 logger = get_logger(__name__)
@@ -50,18 +48,18 @@ class WebSocketMetricsCollector:
         self.performance_metrics = PerformanceMetrics()
 
         # Active connections tracking: {connection_id: {"user_id": str, "connected_at": float}}
-        self.active_connections: Dict[str, Dict[str, Any]] = {}
+        self.active_connections: dict[str, dict[str, Any]] = {}
 
         # Connection start times for duration tracking
-        self.connection_start_times: Dict[str, float] = {}
+        self.connection_start_times: dict[str, float] = {}
 
         # Message rate tracking (last second)
-        self._messages_sent_last_second: List[float] = []
-        self._messages_received_last_second: List[float] = []
+        self._messages_sent_last_second: list[float] = []
+        self._messages_received_last_second: list[float] = []
 
         # Background tasks
-        self._collection_task: Optional[asyncio.Task] = None
-        self._persistence_task: Optional[asyncio.Task] = None
+        self._collection_task: asyncio.Task | None = None
+        self._persistence_task: asyncio.Task | None = None
         self._running = False
 
     async def start(self):
@@ -145,13 +143,12 @@ class WebSocketMetricsCollector:
 
         # Update rates
         self.message_metrics.current_send_rate = len(self._messages_sent_last_second)
-        self.message_metrics.current_receive_rate = len(self._messages_received_last_second)
+        self.message_metrics.current_receive_rate = len(
+            self._messages_received_last_second
+        )
 
     def record_connection_established(
-        self,
-        connection_id: str,
-        user_id: str,
-        user_role: str
+        self, connection_id: str, user_id: str, user_role: str
     ) -> None:
         """Record a new connection."""
         now = time.time()
@@ -160,7 +157,7 @@ class WebSocketMetricsCollector:
         self.active_connections[connection_id] = {
             "user_id": user_id,
             "user_role": user_role,
-            "connected_at": now
+            "connected_at": now,
         }
 
         # Track start time for duration calculation
@@ -173,9 +170,7 @@ class WebSocketMetricsCollector:
         logger.debug(f"Connection established: {connection_id} for user {user_id}")
 
     def record_connection_closed(
-        self,
-        connection_id: str,
-        reason: Optional[str] = None
+        self, connection_id: str, reason: str | None = None
     ) -> None:
         """Record a closed connection."""
         # Calculate connection duration
@@ -204,17 +199,13 @@ class WebSocketMetricsCollector:
         connection_id: str,
         message_type: str,
         size_bytes: int,
-        recipients: int = 1
+        recipients: int = 1,
     ) -> None:
         """Record a sent message."""
         self.message_metrics.record_message_sent(message_type, size_bytes, recipients)
         self._messages_sent_last_second.append(time.time())
 
-    def record_message_received(
-        self,
-        connection_id: str,
-        message_type: str
-    ) -> None:
+    def record_message_received(self, connection_id: str, message_type: str) -> None:
         """Record a received message."""
         self.message_metrics.record_message_received(message_type)
         self._messages_received_last_second.append(time.time())
@@ -228,7 +219,7 @@ class WebSocketMetricsCollector:
         error_type: ErrorType,
         message: str,
         is_critical: bool = False,
-        context: Optional[Dict[str, Any]] = None
+        context: dict[str, Any] | None = None,
     ) -> None:
         """Record an error."""
         self.error_metrics.record_error(error_type, message, is_critical, context)
@@ -243,7 +234,7 @@ class WebSocketMetricsCollector:
             connection=self.connection_metrics,
             message=self.message_metrics,
             error=self.error_metrics,
-            performance=self.performance_metrics
+            performance=self.performance_metrics,
         )
 
         # Calculate health score
@@ -263,7 +254,7 @@ class WebSocketMetricsCollector:
                 connection=self.connection_metrics,
                 message=self.message_metrics,
                 error=self.error_metrics,
-                performance=self.performance_metrics
+                performance=self.performance_metrics,
             )
 
             # Store in Redis (time series)
@@ -274,17 +265,10 @@ class WebSocketMetricsCollector:
             await redis_client.set(snapshot_key, snapshot_data, ex=7 * 24 * 3600)
 
             # Add to time series index
-            await redis_client.zadd(
-                "ws:metrics:timeline",
-                {snapshot_key: time.time()}
-            )
+            await redis_client.zadd("ws:metrics:timeline", {snapshot_key: time.time()})
 
             # Trim old snapshots (keep last 10000)
-            await redis_client.zremrangebyrank(
-                "ws:metrics:timeline",
-                0,
-                -10000
-            )
+            await redis_client.zremrangebyrank("ws:metrics:timeline", 0, -10000)
 
             logger.debug("Metrics snapshot persisted to Redis")
 
@@ -294,7 +278,7 @@ class WebSocketMetricsCollector:
     async def _evaluate_alerts(self):
         """Evaluate alert rules against current metrics."""
         try:
-            from services.alert_evaluator import get_alert_evaluator
+            from services.alerting.alert_evaluator import get_alert_evaluator
 
             evaluator = get_alert_evaluator()
 
@@ -305,7 +289,9 @@ class WebSocketMetricsCollector:
             notifications = await evaluator.evaluate_metrics(metrics)
 
             if notifications:
-                logger.info(f"Evaluated alerts: {len(notifications)} notifications sent")
+                logger.info(
+                    f"Evaluated alerts: {len(notifications)} notifications sent"
+                )
 
         except Exception as e:
             logger.error(f"Failed to evaluate alert rules: {e}")
@@ -338,18 +324,13 @@ class WebSocketMonitoringService:
 
     # Connection tracking
     async def record_connection_established(
-        self,
-        connection_id: str,
-        user_id: str,
-        user_role: str
+        self, connection_id: str, user_id: str, user_role: str
     ) -> None:
         """Record a new connection."""
         self.collector.record_connection_established(connection_id, user_id, user_role)
 
     async def record_connection_closed(
-        self,
-        connection_id: str,
-        reason: Optional[str] = None
+        self, connection_id: str, reason: str | None = None
     ) -> None:
         """Record a closed connection."""
         self.collector.record_connection_closed(connection_id, reason)
@@ -364,15 +345,15 @@ class WebSocketMonitoringService:
         connection_id: str,
         message_type: str,
         size_bytes: int,
-        recipients: int = 1
+        recipients: int = 1,
     ) -> None:
         """Record a sent message."""
-        self.collector.record_message_sent(connection_id, message_type, size_bytes, recipients)
+        self.collector.record_message_sent(
+            connection_id, message_type, size_bytes, recipients
+        )
 
     async def record_message_received(
-        self,
-        connection_id: str,
-        message_type: str
+        self, connection_id: str, message_type: str
     ) -> None:
         """Record a received message."""
         self.collector.record_message_received(connection_id, message_type)
@@ -387,7 +368,7 @@ class WebSocketMonitoringService:
         error_type: ErrorType,
         message: str,
         is_critical: bool = False,
-        context: Optional[Dict[str, Any]] = None
+        context: dict[str, Any] | None = None,
     ) -> None:
         """Record an error."""
         self.collector.record_error(error_type, message, is_critical, context)
@@ -402,7 +383,7 @@ class WebSocketMonitoringService:
         """Get current aggregated metrics."""
         return self.collector.get_aggregated_metrics()
 
-    async def get_metrics_summary(self) -> Dict[str, Any]:
+    async def get_metrics_summary(self) -> dict[str, Any]:
         """Get metrics summary."""
         aggregated = await self.get_current_metrics()
         return aggregated.get_summary()
@@ -413,9 +394,8 @@ class WebSocketMonitoringService:
         return aggregated.health_score
 
     async def get_historical_metrics(
-        self,
-        query: MetricsQuery
-    ) -> List[MetricsSnapshot]:
+        self, query: MetricsQuery
+    ) -> list[MetricsSnapshot]:
         """
         Get historical metrics snapshots.
 
@@ -450,7 +430,7 @@ class WebSocketMonitoringService:
                 start_timestamp,
                 end_timestamp,
                 start=query.offset,
-                num=query.limit
+                num=query.limit,
             )
 
             # Deserialize snapshots
@@ -468,9 +448,7 @@ class WebSocketMonitoringService:
             return []
 
     async def generate_report(
-        self,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None
+        self, start_time: str | None = None, end_time: str | None = None
     ) -> MetricsReport:
         """
         Generate a metrics report.
@@ -485,11 +463,7 @@ class WebSocketMonitoringService:
         import uuid
 
         # Get historical metrics
-        query = MetricsQuery(
-            start_time=start_time,
-            end_time=end_time,
-            limit=1000
-        )
+        query = MetricsQuery(start_time=start_time, end_time=end_time, limit=1000)
 
         snapshots = await self.get_historical_metrics(query)
 
@@ -499,32 +473,39 @@ class WebSocketMonitoringService:
         # Calculate summary
         summary = {
             "snapshot_count": len(snapshots),
-            "time_range": {
-                "start": start_time or "N/A",
-                "end": end_time or "N/A"
-            },
+            "time_range": {"start": start_time or "N/A", "end": end_time or "N/A"},
             "total_connections": current_metrics.connection.total_connections,
             "total_messages": current_metrics.message.total_messages_sent,
             "total_errors": current_metrics.error.total_errors,
-            "avg_health_score": sum(
-                s.health_score for s in snapshots
-            ) / len(snapshots) if snapshots else current_metrics.health_score
+            "avg_health_score": (
+                sum(s.health_score for s in snapshots) / len(snapshots)
+                if snapshots
+                else current_metrics.health_score
+            ),
         }
 
         # Generate recommendations
         recommendations = []
 
         if current_metrics.health_score < 70:
-            recommendations.append("Health score is below 70% - investigate errors and performance")
+            recommendations.append(
+                "Health score is below 70% - investigate errors and performance"
+            )
 
         if current_metrics.error.total_errors > 100:
-            recommendations.append(f"High error count ({current_metrics.error.total_errors}) - review error logs")
+            recommendations.append(
+                f"High error count ({current_metrics.error.total_errors}) - review error logs"
+            )
 
         if current_metrics.performance.p95_latency_ms > 500:
-            recommendations.append(f"High P95 latency ({current_metrics.performance.p95_latency_ms:.2f}ms) - investigate bottlenecks")
+            recommendations.append(
+                f"High P95 latency ({current_metrics.performance.p95_latency_ms:.2f}ms) - investigate bottlenecks"
+            )
 
         if current_metrics.connection.total_connection_failures > 10:
-            recommendations.append("Multiple connection failures - check network and authentication")
+            recommendations.append(
+                "Multiple connection failures - check network and authentication"
+            )
 
         # Generate report
         report = MetricsReport(
@@ -532,14 +513,14 @@ class WebSocketMonitoringService:
             time_range=summary["time_range"],
             summary=summary,
             recommendations=recommendations,
-            metrics=current_metrics
+            metrics=current_metrics,
         )
 
         return report
 
 
 # Global instance
-_monitoring_service: Optional[WebSocketMonitoringService] = None
+_monitoring_service: WebSocketMonitoringService | None = None
 
 
 def get_websocket_monitoring() -> WebSocketMonitoringService:

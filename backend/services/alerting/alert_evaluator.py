@@ -13,18 +13,18 @@ Features:
 
 import asyncio
 import time
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
+
 from httpx import AsyncClient
 
 from core.logger import get_logger
 from models.monitoring_alerts import (
-    AlertRule,
-    AlertNotification,
-    AlertHistory,
-    AlertSeverity,
     AlertChannelType,
-    MetricType
+    AlertHistory,
+    AlertNotification,
+    AlertRule,
+    AlertSeverity,
 )
 from models.websocket_metrics import AggregatedMetrics
 
@@ -100,11 +100,47 @@ class WebhookNotificationChannel(NotificationChannel):
 class EmailNotificationChannel(NotificationChannel):
     """Email-based notification channel."""
 
+    def __init__(self):
+        from services.notifications.email import EmailProvider
+
+        self.email_provider = EmailProvider()
+
     async def send(self, notification: AlertNotification) -> bool:
         """Send notification via email."""
-        # TODO: Implement email sending
-        logger.warning("Email notification channel not yet implemented")
-        return False
+        from services.notifications.base import NotificationMessage
+
+        if not self.email_provider.is_configured():
+            logger.warning(
+                "Email notification not configured. Set SMTP_SERVER, SMTP_USERNAME, SMTP_PASSWORD, and ALERT_EMAIL_TO environment variables."
+            )
+            return False
+
+        try:
+            message = NotificationMessage(
+                title=f"[{notification.severity.value.upper()}] {notification.rule_name}",
+                body=f"Alert: {notification.message}\n\nValue: {notification.value}\nThreshold: {notification.threshold}\nTime: {notification.timestamp}",
+                data={
+                    "alert_id": notification.id,
+                    "rule_id": notification.rule_id,
+                    "severity": notification.severity.value,
+                    "value": notification.value,
+                    "threshold": notification.threshold,
+                },
+            )
+
+            result = await self.email_provider.send(message)
+            if result:
+                logger.info(
+                    f"Email notification sent successfully for rule: {notification.rule_name}"
+                )
+            else:
+                logger.warning(
+                    f"Failed to send email notification for rule: {notification.rule_name}"
+                )
+            return result
+        except Exception as e:
+            logger.error(f"Failed to send email notification: {e}")
+            return False
 
 
 class AlertEvaluator:
@@ -114,11 +150,11 @@ class AlertEvaluator:
 
     def __init__(self):
         # Alert rules: {rule_id: AlertRule}
-        self.rules: Dict[str, AlertRule] = {}
+        self.rules: dict[str, AlertRule] = {}
         # Alert history
-        self.history: List[AlertHistory] = []
+        self.history: list[AlertHistory] = []
         # Notification channels
-        self.channels: Dict[AlertChannelType, NotificationChannel] = {
+        self.channels: dict[AlertChannelType, NotificationChannel] = {
             AlertChannelType.LOG: LogNotificationChannel(),
             AlertChannelType.WEBHOOK: WebhookNotificationChannel(),
             AlertChannelType.EMAIL: EmailNotificationChannel(),
@@ -134,7 +170,7 @@ class AlertEvaluator:
             self.rules[rule.id] = rule
             logger.info(f"Added alert rule: {rule.name} ({rule.id})")
 
-    async def update_rule(self, rule_id: str, updates: Dict[str, Any]) -> bool:
+    async def update_rule(self, rule_id: str, updates: dict[str, Any]) -> bool:
         """Update an existing alert rule."""
         async with self._lock:
             if rule_id not in self.rules:
@@ -146,7 +182,7 @@ class AlertEvaluator:
                 if hasattr(rule, key):
                     setattr(rule, key, value)
 
-            rule.updated_at = datetime.now(timezone.utc).isoformat()
+            rule.updated_at = datetime.now(UTC).isoformat()
             logger.info(f"Updated alert rule: {rule.name} ({rule_id})")
             return True
 
@@ -159,7 +195,7 @@ class AlertEvaluator:
                 return True
             return False
 
-    async def get_rules(self, user_id: Optional[str] = None) -> List[AlertRule]:
+    async def get_rules(self, user_id: str | None = None) -> list[AlertRule]:
         """Get alert rules, optionally filtered by user."""
         async with self._lock:
             rules = list(self.rules.values())
@@ -169,16 +205,14 @@ class AlertEvaluator:
 
             return rules
 
-    async def get_rule(self, rule_id: str) -> Optional[AlertRule]:
+    async def get_rule(self, rule_id: str) -> AlertRule | None:
         """Get a specific alert rule."""
         async with self._lock:
             return self.rules.get(rule_id)
 
     async def evaluate_metrics(
-        self,
-        metrics: AggregatedMetrics,
-        user_id: Optional[str] = None
-    ) -> List[AlertNotification]:
+        self, metrics: AggregatedMetrics, user_id: str | None = None
+    ) -> list[AlertNotification]:
         """
         Evaluate metrics against all rules and trigger notifications.
 
@@ -201,8 +235,7 @@ class AlertEvaluator:
         # Evaluate each rule
         for rule in rules:
             should_trigger, reason = rule.should_trigger(
-                metric_values,
-                current_time=time.time()
+                metric_values, current_time=time.time()
             )
 
             if should_trigger:
@@ -219,15 +252,16 @@ class AlertEvaluator:
                     if channel:
                         notification.channel = channel_type
                         notification.channel_config = rule.channel_config.get(
-                            channel_type.value,
-                            {}
+                            channel_type.value, {}
                         )
 
                         success = await channel.send(notification)
 
                         if success:
                             notification.status = "sent"
-                            notification.sent_at = datetime.now(timezone.utc).isoformat()
+                            notification.sent_at = datetime.now(
+                                UTC
+                            ).isoformat()
                         else:
                             notification.status = "failed"
 
@@ -238,7 +272,7 @@ class AlertEvaluator:
 
         return notifications
 
-    def _extract_metric_values(self, metrics: AggregatedMetrics) -> Dict[str, float]:
+    def _extract_metric_values(self, metrics: AggregatedMetrics) -> dict[str, float]:
         """Extract metric values from aggregated metrics."""
         return {
             "health_score": metrics.health_score,
@@ -258,9 +292,7 @@ class AlertEvaluator:
         }
 
     async def _create_notification(
-        self,
-        rule: AlertRule,
-        metrics: Dict[str, float]
+        self, rule: AlertRule, metrics: dict[str, float]
     ) -> AlertNotification:
         """Create an alert notification."""
         # Build title and message
@@ -303,8 +335,8 @@ class AlertEvaluator:
     async def _record_alert(
         self,
         rule: AlertRule,
-        metrics: Dict[str, float],
-        notifications: List[AlertNotification]
+        metrics: dict[str, float],
+        notifications: list[AlertNotification],
     ) -> None:
         """Record alert in history."""
         history_entry = AlertHistory(
@@ -312,7 +344,7 @@ class AlertEvaluator:
             rule_name=rule.name,
             user_id=rule.user_id,
             severity=rule.severity,
-            triggered_at=datetime.now(timezone.utc).isoformat(),
+            triggered_at=datetime.now(UTC).isoformat(),
             metrics_snapshot=metrics,
             notifications_sent=[n.id for n in notifications if n.id],
         )
@@ -324,10 +356,8 @@ class AlertEvaluator:
             self.history = self.history[-1000:]
 
     async def get_history(
-        self,
-        user_id: Optional[str] = None,
-        limit: int = 100
-    ) -> List[AlertHistory]:
+        self, user_id: str | None = None, limit: int = 100
+    ) -> list[AlertHistory]:
         """Get alert history."""
         history = self.history
 
@@ -337,7 +367,7 @@ class AlertEvaluator:
         # Return most recent first
         return list(reversed(history[-limit:]))
 
-    async def get_stats(self, user_id: Optional[str] = None) -> Dict[str, Any]:
+    async def get_stats(self, user_id: str | None = None) -> dict[str, Any]:
         """Get alert statistics."""
         rules = await self.get_rules(user_id)
         history = await self.get_history(user_id, limit=1000)
@@ -356,7 +386,7 @@ class AlertEvaluator:
 
 
 # Global instance
-_evaluator: Optional[AlertEvaluator] = None
+_evaluator: AlertEvaluator | None = None
 
 
 def get_alert_evaluator() -> AlertEvaluator:

@@ -1,8 +1,8 @@
 """Extract secondary IOCs from threat intelligence results (v0.7.4)."""
 
-from typing import Any, Dict, List
 import logging
 import re
+from typing import Any
 
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ExtractIOCsPlugin(BaseNodePlugin):
     """Extract secondary IOCs from OTX or other TI sources.
-    
+
     This node parses threat intelligence results to extract
     additional IOCs like IPs, domains, URLs, and hashes.
     """
@@ -32,13 +32,13 @@ class ExtractIOCsPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Extract secondary IOCs from threat intelligence results"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         ti_result = input_json.get("ti_result") or input_json.get("otx_result")
         if not ti_result:
             raise ValueError("ti_result or otx_result is required")
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Execute IOC extraction.
 
         Args:
@@ -47,39 +47,37 @@ class ExtractIOCsPlugin(BaseNodePlugin):
         Returns:
             Extracted IOCs organized by type
         """
-        ti_result = context.input_json.get("ti_result") or context.input_json.get("otx_result")
+        ti_result = context.input_json.get("ti_result") or context.input_json.get(
+            "otx_result"
+        )
         case_id = context.input_json.get("case_id", "unknown")
 
-        logger.info(f"[{context.run_id}] Extracting IOCs from TI result for case {case_id}")
+        logger.info(
+            f"[{context.run_id}] Extracting IOCs from TI result for case {case_id}"
+        )
 
-        extracted = {
-            "ips": [],
-            "domains": [],
-            "urls": [],
-            "hashes": [],
-            "emails": []
-        }
+        extracted = {"ips": [], "domains": [], "urls": [], "hashes": [], "emails": []}
 
         # Extract from OTX pulses
         if isinstance(ti_result, dict):
             pulses = ti_result.get("matches", [])
-            
+
             for pulse in pulses:
                 # Extract from pulse name and description
                 text_to_scan = f"{pulse.get('name', '')} {pulse.get('description', '')}"
-                
+
                 # Extract IPs
                 ips = self._extract_ips(text_to_scan)
                 extracted["ips"].extend(ips)
-                
+
                 # Extract domains
                 domains = self._extract_domains(text_to_scan)
                 extracted["domains"].extend(domains)
-                
+
                 # Extract URLs
                 urls = self._extract_urls(text_to_scan)
                 extracted["urls"].extend(urls)
-                
+
                 # Extract hashes
                 hashes = self._extract_hashes(text_to_scan)
                 extracted["hashes"].extend(hashes)
@@ -120,38 +118,46 @@ class ExtractIOCsPlugin(BaseNodePlugin):
                 "domains": len(extracted["domains"]),
                 "urls": len(extracted["urls"]),
                 "hashes": len(extracted["hashes"]),
-                "emails": len(extracted["emails"])
-            }
+                "emails": len(extracted["emails"]),
+            },
         }
 
-    def _extract_ips(self, text: str) -> List[str]:
+    def _extract_ips(self, text: str) -> list[str]:
         """Extract IPv4 addresses from text."""
-        pattern = r'\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b'
+        pattern = r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
         return list(set(re.findall(pattern, text)))
 
-    def _extract_domains(self, text: str) -> List[str]:
+    def _extract_domains(self, text: str) -> list[str]:
         """Extract domain names from text."""
-        pattern = r'\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b'
+        pattern = (
+            r"\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b"
+        )
         domains = re.findall(pattern, text)
         # Filter out common false positives
-        filtered = [d for d in domains if not any(x in d.lower() for x in ['.png', '.jpg', '.jpeg', '.gif', '.css', '.js'])]
+        filtered = [
+            d
+            for d in domains
+            if not any(
+                x in d.lower() for x in [".png", ".jpg", ".jpeg", ".gif", ".css", ".js"]
+            )
+        ]
         return list(set(filtered))
 
-    def _extract_urls(self, text: str) -> List[str]:
+    def _extract_urls(self, text: str) -> list[str]:
         """Extract URLs from text."""
         pattern = r'https?://[^\s<>"\']+|www\.[^\s<>"\']+'
         return list(set(re.findall(pattern, text)))
 
-    def _extract_hashes(self, text: str) -> List[str]:
+    def _extract_hashes(self, text: str) -> list[str]:
         """Extract file hashes (MD5, SHA1, SHA256) from text."""
         hashes = []
         # MD5
-        md5_pattern = r'\b[a-fA-F0-9]{32}\b'
+        md5_pattern = r"\b[a-fA-F0-9]{32}\b"
         hashes.extend(re.findall(md5_pattern, text))
         # SHA1
-        sha1_pattern = r'\b[a-fA-F0-9]{40}\b'
+        sha1_pattern = r"\b[a-fA-F0-9]{40}\b"
         hashes.extend(re.findall(sha1_pattern, text))
         # SHA256
-        sha256_pattern = r'\b[a-fA-F0-9]{64}\b'
+        sha256_pattern = r"\b[a-fA-F0-9]{64}\b"
         hashes.extend(re.findall(sha256_pattern, text))
         return list(set(hashes))

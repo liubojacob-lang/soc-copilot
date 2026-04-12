@@ -6,12 +6,13 @@ Moves AI calls from synchronous to background tasks to prevent blocking.
 import asyncio
 import uuid
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
-from models.ai_task import AITaskModel, AITaskStatus
 from db.session import get_session
+from models.ai_task import AITaskModel, AITaskStatus
 
 logger = get_logger(__name__)
 
@@ -26,19 +27,19 @@ class AIQueueManager:
             max_concurrent: Maximum number of concurrent AI tasks
         """
         self.max_concurrent = max_concurrent
-        self._running_tasks: Dict[str, asyncio.Task] = {}
-        self._queue: List[Dict[str, Any]] = []
-        self._task_history: Dict[str, Dict[str, Any]] = {}
+        self._running_tasks: dict[str, asyncio.Task] = {}
+        self._queue: list[dict[str, Any]] = []
+        self._task_history: dict[str, dict[str, Any]] = {}
 
     async def create_task(
         self,
         task_type: str,
-        input_data: Dict[str, Any],
+        input_data: dict[str, Any],
         session: AsyncSession,
         priority: int = 0,
-        user_id: Optional[str] = None,
-        model_id: Optional[str] = None,
-        provider: Optional[str] = None
+        user_id: str | None = None,
+        model_id: str | None = None,
+        provider: str | None = None,
     ) -> str:
         """Create a new AI task and queue it for execution.
 
@@ -60,7 +61,7 @@ class AIQueueManager:
         task_type_mapping = {
             "analyze_alert": "alert_analysis",
             "chat": "chat_completion",
-            "recommend_playbook": "alert_analysis"
+            "recommend_playbook": "alert_analysis",
         }
         db_task_type = task_type_mapping.get(task_type, task_type)
 
@@ -73,7 +74,7 @@ class AIQueueManager:
             priority=priority,
             user_id=user_id,
             model_id=model_id,
-            provider=provider
+            provider=provider,
         )
 
         session.add(task)
@@ -87,18 +88,14 @@ class AIQueueManager:
         return task_id
 
     async def _queue_task(
-        self,
-        task_id: str,
-        task_type: str,
-        input_data: Dict[str, Any],
-        priority: int
+        self, task_id: str, task_type: str, input_data: dict[str, Any], priority: int
     ):
         """Queue task for execution."""
         task_data = {
             "task_id": task_id,
             "task_type": task_type,
             "input_data": input_data,
-            "priority": priority
+            "priority": priority,
         }
 
         # Insert based on priority (higher priority first)
@@ -118,10 +115,8 @@ class AIQueueManager:
         asyncio.create_task(self._process_queue())
 
     async def get_task_status(
-        self,
-        task_id: str,
-        session: AsyncSession
-    ) -> Optional[Dict[str, Any]]:
+        self, task_id: str, session: AsyncSession
+    ) -> dict[str, Any] | None:
         """Get current status of a task.
 
         Args:
@@ -153,17 +148,15 @@ class AIQueueManager:
             "priority": task.priority,
             "created_at": task.created_at.isoformat() if task.created_at else None,
             "started_at": task.started_at.isoformat() if task.started_at else None,
-            "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+            "completed_at": (
+                task.completed_at.isoformat() if task.completed_at else None
+            ),
             "is_running": is_running,
             "user_id": task.user_id,
-            "retry_count": task.retry_count
+            "retry_count": task.retry_count,
         }
 
-    async def cancel_task(
-        self,
-        task_id: str,
-        session: AsyncSession
-    ) -> bool:
+    async def cancel_task(self, task_id: str, session: AsyncSession) -> bool:
         """Cancel a pending or queued task.
 
         Args:
@@ -177,7 +170,9 @@ class AIQueueManager:
 
         stmt = select(AITaskModel).where(
             AITaskModel.id == task_id,
-            AITaskModel.status.in_([AITaskStatus.PENDING.value, AITaskStatus.PROCESSING.value])
+            AITaskModel.status.in_(
+                [AITaskStatus.PENDING.value, AITaskStatus.PROCESSING.value]
+            ),
         )
         result = await session.execute(stmt)
         task = result.scalar_one_or_none()
@@ -197,7 +192,7 @@ class AIQueueManager:
 
         return False
 
-    async def get_queue_stats(self) -> Dict[str, int]:
+    async def get_queue_stats(self) -> dict[str, int]:
         """Get current queue statistics.
 
         Returns:
@@ -207,7 +202,7 @@ class AIQueueManager:
             "running": len(self._running_tasks),
             "queued": len(self._queue),
             "max_concurrent": self.max_concurrent,
-            "available": self.max_concurrent - len(self._running_tasks)
+            "available": self.max_concurrent - len(self._running_tasks),
         }
 
     async def _process_queue(self):
@@ -215,7 +210,9 @@ class AIQueueManager:
         while self._queue:
             # Wait for capacity
             if len(self._running_tasks) >= self.max_concurrent:
-                logger.info(f"Queue full: {len(self._running_tasks)}/{self.max_concurrent}")
+                logger.info(
+                    f"Queue full: {len(self._running_tasks)}/{self.max_concurrent}"
+                )
                 await asyncio.sleep(1)
                 continue
 
@@ -225,7 +222,7 @@ class AIQueueManager:
             # Execute in background
             asyncio.create_task(self._execute_task(task_data))
 
-    async def _execute_task(self, task_data: Dict[str, Any]):
+    async def _execute_task(self, task_data: dict[str, Any]):
         """Execute a single AI task.
 
         Args:
@@ -308,7 +305,9 @@ class AIQueueManager:
             if task_id in self._running_tasks:
                 del self._running_tasks[task_id]
 
-    async def _execute_analyze_alert(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_analyze_alert(
+        self, input_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Execute alert analysis AI task."""
         from services.ai_service_enhanced import get_enhanced_ai_service
 
@@ -320,12 +319,12 @@ class AIQueueManager:
             severity=input_data.get("severity", "medium"),
             source=input_data.get("source", "unknown"),
             alert_type=input_data.get("alert_type", "security"),
-            use_rag=input_data.get("use_rag", True)
+            use_rag=input_data.get("use_rag", True),
         )
 
         return result.dict()
 
-    async def _execute_chat(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_chat(self, input_data: dict[str, Any]) -> dict[str, Any]:
         """Execute AI chat task."""
         from services.ai_service_enhanced import get_enhanced_ai_service
 
@@ -335,13 +334,14 @@ class AIQueueManager:
         conversation_history = input_data.get("conversation_history", [])
 
         result = await ai_service.chat_with_history(
-            message=message,
-            conversation_history=conversation_history
+            message=message, conversation_history=conversation_history
         )
 
         return {"response": result}
 
-    async def _execute_recommend_playbook(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_recommend_playbook(
+        self, input_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Execute playbook recommendation AI task."""
         from services.ai_service_enhanced import get_enhanced_ai_service
 
@@ -352,16 +352,14 @@ class AIQueueManager:
             title=input_data.get("title", ""),
             description=input_data.get("description", ""),
             severity=input_data.get("severity", "medium"),
-            alert_type=input_data.get("alert_type", "security")
+            alert_type=input_data.get("alert_type", "security"),
         )
 
-        return {
-            "recommendations": [r.dict() for r in result]
-        }
+        return {"recommendations": [r.dict() for r in result]}
 
 
 # Global queue manager instance
-_ai_queue_manager: Optional[AIQueueManager] = None
+_ai_queue_manager: AIQueueManager | None = None
 
 
 def get_ai_queue_manager() -> AIQueueManager:

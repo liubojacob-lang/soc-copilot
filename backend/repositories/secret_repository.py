@@ -1,13 +1,12 @@
 """Secret Repository for database operations (v0.7.4)."""
 
-from typing import Optional, List
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.secret import SecretModel
 from core.logger import get_logger
+from models.secret import SecretModel
 
 logger = get_logger(__name__)
 
@@ -27,7 +26,7 @@ class SecretRepository:
         self,
         name: str,
         encrypted_value: str,
-        created_by_user_id: Optional[str] = None,
+        created_by_user_id: str | None = None,
     ) -> SecretModel:
         """Create a new secret.
 
@@ -54,7 +53,7 @@ class SecretRepository:
         logger.info(f"Created secret: {name}")
         return secret
 
-    async def get_by_name(self, name: str) -> Optional[SecretModel]:
+    async def get_by_name(self, name: str) -> SecretModel | None:
         """Get secret by name.
 
         Args:
@@ -67,7 +66,7 @@ class SecretRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_id(self, secret_id: str) -> Optional[SecretModel]:
+    async def get_by_id(self, secret_id: str) -> SecretModel | None:
         """Get secret by ID.
 
         Args:
@@ -84,7 +83,7 @@ class SecretRepository:
         self,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[SecretModel]:
+    ) -> list[SecretModel]:
         """List all secrets.
 
         Args:
@@ -110,6 +109,7 @@ class SecretRepository:
             Number of secrets
         """
         from sqlalchemy import func
+
         stmt = select(func.count(SecretModel.id))
         result = await self.session.execute(stmt)
         return result.scalar()
@@ -118,7 +118,7 @@ class SecretRepository:
         self,
         name: str,
         encrypted_value: str,
-    ) -> Optional[SecretModel]:
+    ) -> SecretModel | None:
         """Update an existing secret's value.
 
         Args:
@@ -133,7 +133,7 @@ class SecretRepository:
             .where(SecretModel.name == name)
             .values(
                 encrypted_value=encrypted_value,
-                updated_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(UTC),
             )
             .returning(SecretModel)
         )
@@ -154,7 +154,7 @@ class SecretRepository:
         result = await self.session.execute(stmt)
         return result.rowcount > 0
 
-    async def get_secret_names(self) -> List[str]:
+    async def get_secret_names(self) -> list[str]:
         """Get list of all secret names.
 
         Returns:

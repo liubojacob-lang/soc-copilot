@@ -1,14 +1,14 @@
 """Schemas for report generation."""
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ReportGenerationRequest(BaseModel):
     """Request for report generation."""
 
     alert_json: str = Field(..., description="JSON string from analyzer output")
-    additional_notes: Optional[str] = Field(None, description="Additional user notes")
+    additional_notes: str | None = Field(None, description="Additional user notes")
 
 
 class ReportGenerationResponse(BaseModel):
@@ -21,7 +21,7 @@ class ReportGenerationResponse(BaseModel):
     postmortem_template: str
 
     # Metadata fields (v0.2)
-    request_id: Optional[str] = Field(None, description="Unique request ID for tracing")
-    model_used: Optional[str] = Field(None, description="AI model used")
+    request_id: str | None = Field(None, description="Unique request ID for tracing")
+    model_used: str | None = Field(None, description="AI model used")
     degraded: bool = Field(False, description="Whether degraded mode was used")
-    error_reason: Optional[str] = Field(None, description="Error reason if degraded")
+    error_reason: str | None = Field(None, description="Error reason if degraded")

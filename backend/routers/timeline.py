@@ -1,14 +1,14 @@
 """Timeline building API endpoint."""
 
-from typing import Annotated
-from fastapi import APIRouter, HTTPException, Depends
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.logger import get_logger
 from db.session import get_session
 from schemas.timeline import TimelineRequest, TimelineResponse
 from services.timeline_service import TimelineService
-from core.logger import get_logger
-import uuid
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["timeline"])
@@ -36,7 +36,7 @@ async def build_timeline(
         result = await service.build(request.raw_log, request.log_type)
         return result
     except Exception as e:
-        logger.error(f"Timeline build error: {str(e)}")
+        logger.error(f"Timeline build error: {e!s}")
         raise HTTPException(status_code=500, detail="Timeline build failed")
 
 

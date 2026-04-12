@@ -1,24 +1,24 @@
 """Playbook service for generating queries and actions."""
 
 import uuid
-from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
-from repositories.playbook_repository import PlaybookRepository
+from playbooks.playbook_engine import (
+    generate_remediation_actions,
+    generate_siem_queries,
+)
 from repositories.history_repository import HistoryRepository
+from repositories.playbook_repository import PlaybookRepository
 from schemas.playbook import (
-    GenerateQueriesRequest,
-    GenerateQueriesResponse,
     GenerateActionsRequest,
     GenerateActionsResponse,
+    GenerateQueriesRequest,
+    GenerateQueriesResponse,
     PlatformQueries,
-    RemediationAction,
     PlaybookHistoryResponse,
-)
-from playbooks.playbook_engine import (
-    generate_siem_queries,
-    generate_remediation_actions,
+    RemediationAction,
 )
 
 logger = get_logger(__name__)
@@ -111,7 +111,9 @@ class PlaybookService:
                 error_reason=error_reason,
             )
 
-            logger.info(f"[{request_id}] Generated {len(platform_queries)} platform query sets")
+            logger.info(
+                f"[{request_id}] Generated {len(platform_queries)} platform query sets"
+            )
 
             return GenerateQueriesResponse(
                 request_id=request_id,
@@ -183,10 +185,17 @@ class PlaybookService:
                 affected_assets = impact_analysis["affected_assets"]
                 if affected_assets:
                     # Find highest criticality asset
-                    criticality_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+                    criticality_order = {
+                        "critical": 4,
+                        "high": 3,
+                        "medium": 2,
+                        "low": 1,
+                    }
                     primary_asset = max(
                         affected_assets,
-                        key=lambda a: criticality_order.get(a.get("criticality", "low"), 0),
+                        key=lambda a: criticality_order.get(
+                            a.get("criticality", "low"), 0
+                        ),
                         default=None,
                     )
 

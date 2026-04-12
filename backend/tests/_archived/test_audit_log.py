@@ -1,7 +1,7 @@
 """Audit log tests."""
 
+
 import pytest
-from datetime import datetime, timezone
 
 
 class TestAuditLog:
@@ -95,9 +95,9 @@ class TestAuditLogCreation:
                 "description": "Test audit logging",
                 "dag": {
                     "nodes": [{"id": "n1", "type": "start", "name": "Start"}],
-                    "edges": []
-                }
-            }
+                    "edges": [],
+                },
+            },
         )
 
         # Check if audit log was created
@@ -111,7 +111,9 @@ class TestAuditLogCreation:
         response = await auth_client.get("/api/admin/users")
         # Should create audit log even on failure
 
-        logs_response = await auth_client.get("/api/audit/logs?action=access_denied&limit=5")
+        logs_response = await auth_client.get(
+            "/api/audit/logs?action=access_denied&limit=5"
+        )
         assert logs_response.status_code == 200
 
 
@@ -167,12 +169,14 @@ class TestAuditLogMiddleware:
             json={
                 "current_password": "admin123!",
                 "new_password": "NewPassword123!",
-                "confirm_password": "NewPassword123!"
-            }
+                "confirm_password": "NewPassword123!",
+            },
         )
 
         # Check audit logs
-        logs_response = await auth_client.get("/api/audit/logs?action=change_password&limit=1")
+        logs_response = await auth_client.get(
+            "/api/audit/logs?action=change_password&limit=1"
+        )
         assert logs_response.status_code == 200
 
         data = logs_response.json()
@@ -191,11 +195,11 @@ class TestAuditLogExport:
     @pytest.mark.asyncio
     async def test_export_audit_logs_csv(self, auth_client):
         """Test exporting audit logs as CSV."""
-        response = await auth_client.get(
-            "/api/audit/logs/export?format=csv&limit=10"
-        )
-        # Should succeed or 404 if not implemented
-        assert response.status_code in [200, 404]
+        response = await auth_client.get("/api/audit/logs/export?format=csv&limit=10")
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Audit log CSV export endpoint not implemented")
+        assert response.status_code == 200
 
         if response.status_code == 200:
             assert "text/csv" in response.headers.get("content-type", "")
@@ -203,10 +207,11 @@ class TestAuditLogExport:
     @pytest.mark.asyncio
     async def test_export_audit_logs_json(self, auth_client):
         """Test exporting audit logs as JSON."""
-        response = await auth_client.get(
-            "/api/audit/logs/export?format=json&limit=10"
-        )
-        assert response.status_code in [200, 404]
+        response = await auth_client.get("/api/audit/logs/export?format=json&limit=10")
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Audit log JSON export endpoint not implemented")
+        assert response.status_code == 200
 
         if response.status_code == 200:
             assert "application/json" in response.headers.get("content-type", "")
@@ -215,8 +220,12 @@ class TestAuditLogExport:
     async def test_export_requires_admin(self, auth_client):
         """Test that export requires admin privileges."""
         response = await auth_client.get("/api/audit/logs/export")
-        # Non-admin may be denied
-        assert response.status_code in [200, 403, 404]
+        # Non-admin should be denied (403) or endpoint not implemented (404)
+        assert response.status_code in [
+            200,
+            403,
+            404,
+        ]  # 200 if admin, 403 forbidden, 404 not implemented
 
 
 class TestAuditLogRetention:
@@ -227,15 +236,19 @@ class TestAuditLogRetention:
         """Test cleanup of old audit logs."""
         # This would require admin privileges
         response = await admin_client.post("/api/audit/logs/cleanup")
-        # Should succeed or 404 if not implemented
-        assert response.status_code in [200, 404]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Audit log cleanup endpoint not implemented")
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_retention_policy(self, admin_client):
         """Test getting/setting retention policy."""
         response = await admin_client.get("/api/audit/retention-policy")
-        # Should succeed or 404 if not implemented
-        assert response.status_code in [200, 404]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Audit retention policy endpoint not implemented")
+        assert response.status_code == 200
 
 
 class TestAuditLogCompliance:
@@ -245,15 +258,19 @@ class TestAuditLogCompliance:
     async def test_compliance_report(self, admin_client):
         """Test generating compliance report."""
         response = await admin_client.get("/api/audit/compliance-report")
-        # Should succeed or 404 if not implemented
-        assert response.status_code in [200, 404]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Audit compliance report endpoint not implemented")
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_audit_trail_integrity(self, admin_client):
         """Test audit trail integrity checks."""
         response = await admin_client.get("/api/audit/integrity-check")
-        # Should succeed or 404 if not implemented
-        assert response.status_code in [200, 404]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Audit integrity check endpoint not implemented")
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_log_immunity(self, admin_client):
@@ -266,5 +283,7 @@ class TestAuditLogCompliance:
         if items and len(items) > 0:
             log_id = items[0].get("id")
             delete_response = await admin_client.delete(f"/api/audit/logs/{log_id}")
-            # Should be forbidden
-            assert delete_response.status_code in [403, 404, 405]
+            # Audit logs should be immutable - deletion should be forbidden
+            assert (
+                delete_response.status_code == 403
+            )  # Forbidden - audit logs cannot be deleted

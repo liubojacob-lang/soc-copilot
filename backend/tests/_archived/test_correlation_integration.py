@@ -8,17 +8,17 @@ Tests complete flow from raw events to correlated incidents:
 - Status updates
 """
 
-import pytest
-import asyncio
-from datetime import datetime, timezone, timedelta
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from datetime import UTC, datetime, timedelta
 
-from main import app
-from models.correlation_rule import CorrelationRule
-from models.correlated_event import CorrelatedEvent
+import pytest
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from db.session import get_session
+from main import app
+from models.correlated_event import CorrelatedEvent
+from models.correlation_rule import CorrelationRule
 
 
 # Test fixtures
@@ -32,9 +32,16 @@ async def db_session():
 
 @pytest.fixture
 async def test_client():
-    """Create test HTTP client."""
+    """Create test HTTP client with auth."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        login_resp = await client.post(
+            "/api/auth/login",
+            json={"username": "admin", "password": "admin123!TestPass"},
+        )
+        if login_resp.status_code == 200:
+            token = login_resp.json().get("access_token", "")
+            client.headers["Authorization"] = f"Bearer {token}"
         yield client
 
 
@@ -42,54 +49,54 @@ async def test_client():
 SAMPLE_EVENTS = [
     {
         "id": "alert-001",
-        "timestamp": (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat(),
+        "timestamp": (datetime.now(UTC) - timedelta(minutes=10)).isoformat(),
         "source_ip": "192.168.1.100",
         "username": "admin",
         "hostname": "server01",
         "severity": "high",
         "category": "authentication",
-        "message": "Login failed for user admin"
+        "message": "Login failed for user admin",
     },
     {
         "id": "alert-002",
-        "timestamp": (datetime.now(timezone.utc) - timedelta(minutes=8)).isoformat(),
+        "timestamp": (datetime.now(UTC) - timedelta(minutes=8)).isoformat(),
         "source_ip": "192.168.1.100",
         "username": "admin",
         "hostname": "server01",
         "severity": "high",
         "category": "authentication",
-        "message": "Login failed for user admin"
+        "message": "Login failed for user admin",
     },
     {
         "id": "alert-003",
-        "timestamp": (datetime.now(timezone.utc) - timedelta(minutes=6)).isoformat(),
+        "timestamp": (datetime.now(UTC) - timedelta(minutes=6)).isoformat(),
         "source_ip": "192.168.1.100",
         "username": "admin",
         "hostname": "server01",
         "severity": "high",
         "category": "authentication",
-        "message": "Login failed for user admin"
+        "message": "Login failed for user admin",
     },
     {
         "id": "alert-004",
-        "timestamp": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(),
+        "timestamp": (datetime.now(UTC) - timedelta(minutes=5)).isoformat(),
         "source_ip": "192.168.1.100",
         "username": "admin",
         "hostname": "server01",
         "severity": "high",
         "category": "authentication",
-        "message": "Login failed for user admin"
+        "message": "Login failed for user admin",
     },
     {
         "id": "alert-005",
-        "timestamp": (datetime.now(timezone.utc) - timedelta(minutes=3)).isoformat(),
+        "timestamp": (datetime.now(UTC) - timedelta(minutes=3)).isoformat(),
         "source_ip": "192.168.1.100",
         "username": "admin",
         "hostname": "server01",
         "severity": "high",
         "category": "authentication",
-        "message": "Login failed for user admin"
-    }
+        "message": "Login failed for user admin",
+    },
 ]
 
 
@@ -100,8 +107,7 @@ class TestCorrelationAPI:
     async def test_correlate_events_endpoint(self, test_client: AsyncClient):
         """Test POST /api/correlation/correlate endpoint."""
         response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": SAMPLE_EVENTS}
+            "/api/correlation/correlate", json={"events": SAMPLE_EVENTS}
         )
 
         assert response.status_code == 200
@@ -121,15 +127,12 @@ class TestCorrelationAPI:
 
     @pytest.mark.asyncio
     async def test_get_incidents_after_correlation(
-        self,
-        test_client: AsyncClient,
-        db_session: AsyncSession
+        self, test_client: AsyncClient, db_session: AsyncSession
     ):
         """Test GET /api/correlation/incidents after correlation."""
         # First correlate events
         correlate_response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": SAMPLE_EVENTS}
+            "/api/correlation/correlate", json={"events": SAMPLE_EVENTS}
         )
 
         # Then fetch incidents
@@ -150,15 +153,11 @@ class TestCorrelationAPI:
             assert "common_entities" in incident
 
     @pytest.mark.asyncio
-    async def test_get_incident_by_id(
-        self,
-        test_client: AsyncClient
-    ):
+    async def test_get_incident_by_id(self, test_client: AsyncClient):
         """Test GET /api/correlation/incidents/{id} endpoint."""
         # Correlate events first
         correlate_response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": SAMPLE_EVENTS}
+            "/api/correlation/correlate", json={"events": SAMPLE_EVENTS}
         )
         correlated_events = correlate_response.json()
 
@@ -175,15 +174,11 @@ class TestCorrelationAPI:
             assert "description" in incident
 
     @pytest.mark.asyncio
-    async def test_update_incident_status(
-        self,
-        test_client: AsyncClient
-    ):
+    async def test_update_incident_status(self, test_client: AsyncClient):
         """Test PUT /api/correlation/incidents/{id}/status endpoint."""
         # Correlate events first
         correlate_response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": SAMPLE_EVENTS}
+            "/api/correlation/correlate", json={"events": SAMPLE_EVENTS}
         )
         correlated_events = correlate_response.json()
 
@@ -193,7 +188,7 @@ class TestCorrelationAPI:
             # Update status
             response = await test_client.put(
                 f"/api/correlation/incidents/{incident_id}/status",
-                params={"status": "investigating", "assigned_to": "analyst1"}
+                params={"status": "investigating", "assigned_to": "analyst1"},
             )
 
             assert response.status_code == 200
@@ -205,10 +200,7 @@ class TestCorrelationAPI:
     async def test_get_correlation_stats(self, test_client: AsyncClient):
         """Test GET /api/correlation/stats endpoint."""
         # Correlate events first
-        await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": SAMPLE_EVENTS}
-        )
+        await test_client.post("/api/correlation/correlate", json={"events": SAMPLE_EVENTS})
 
         # Get stats
         response = await test_client.get("/api/correlation/stats")
@@ -239,7 +231,7 @@ class TestCorrelationAPI:
             "entity_types": {"ip_address": True, "username": False},
             "min_similarity": 0.7,
             "action": "aggregate",
-            "priority": 75
+            "priority": 75,
         }
 
         response = await test_client.post("/api/correlation/rules", json=new_rule)
@@ -262,18 +254,15 @@ class TestCorrelationAPI:
                 "time_window_seconds": 300,
                 "entity_types": {"ip_address": True},
                 "action": "aggregate",
-                "priority": 70
-            }
+                "priority": 70,
+            },
         )
         create_data = create_response.json()
         rule_id = create_data["rule_id"]
 
         # Update the rule
         update_data = {"priority": 85, "enabled": False}
-        response = await test_client.put(
-            f"/api/correlation/rules/{rule_id}",
-            json=update_data
-        )
+        response = await test_client.put(f"/api/correlation/rules/{rule_id}", json=update_data)
 
         assert response.status_code == 200
         updated_data = response.json()
@@ -292,8 +281,8 @@ class TestCorrelationAPI:
                 "time_window_seconds": 300,
                 "entity_types": {"ip_address": True},
                 "action": "aggregate",
-                "priority": 70
-            }
+                "priority": 70,
+            },
         )
         create_data = create_response.json()
         rule_id = create_data["rule_id"]
@@ -315,21 +304,14 @@ class TestDatabasePersistence:
 
     @pytest.mark.asyncio
     async def test_correlated_event_persistence(
-        self,
-        test_client: AsyncClient,
-        db_session: AsyncSession
+        self, test_client: AsyncClient, db_session: AsyncSession
     ):
         """Test that correlated events are persisted correctly."""
         # Correlate events
-        await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": SAMPLE_EVENTS}
-        )
+        await test_client.post("/api/correlation/correlate", json={"events": SAMPLE_EVENTS})
 
         # Query database directly
-        result = await db_session.execute(
-            select(CorrelatedEvent).limit(1)
-        )
+        result = await db_session.execute(select(CorrelatedEvent).limit(1))
         incident = result.scalar_one_or_none()
 
         assert incident is not None
@@ -339,11 +321,7 @@ class TestDatabasePersistence:
         assert incident.created_at is not None
 
     @pytest.mark.asyncio
-    async def test_rule_persistence(
-        self,
-        test_client: AsyncClient,
-        db_session: AsyncSession
-    ):
+    async def test_rule_persistence(self, test_client: AsyncClient, db_session: AsyncSession):
         """Test that custom rules are persisted correctly."""
         # Create rule via API
         response = await test_client.post(
@@ -353,8 +331,8 @@ class TestDatabasePersistence:
                 "time_window_seconds": 600,
                 "entity_types": {"ip_address": True},
                 "action": "aggregate",
-                "priority": 80
-            }
+                "priority": 80,
+            },
         )
 
         rule_data = response.json()
@@ -379,8 +357,7 @@ class TestEndToEndFlow:
         """Test full workflow from events to status update."""
         # Step 1: Correlate events
         correlate_response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": SAMPLE_EVENTS}
+            "/api/correlation/correlate", json={"events": SAMPLE_EVENTS}
         )
         assert correlate_response.status_code == 200
         correlated_events = correlate_response.json()
@@ -393,9 +370,7 @@ class TestEndToEndFlow:
         if len(incidents) > 0:
             # Step 3: Get specific incident
             incident_id = incidents[0]["id"]
-            incident_response = await test_client.get(
-                f"/api/correlation/incidents/{incident_id}"
-            )
+            incident_response = await test_client.get(f"/api/correlation/incidents/{incident_id}")
             assert incident_response.status_code == 200
             incident = incident_response.json()
             assert incident["id"] == incident_id
@@ -403,7 +378,7 @@ class TestEndToEndFlow:
             # Step 4: Update status
             update_response = await test_client.put(
                 f"/api/correlation/incidents/{incident_id}/status",
-                params={"status": "resolved", "assigned_to": "john.doe"}
+                params={"status": "resolved", "assigned_to": "john.doe"},
             )
             assert update_response.status_code == 200
             update_data = update_response.json()
@@ -411,9 +386,7 @@ class TestEndToEndFlow:
             assert update_data["assigned_to"] == "john.doe"
 
             # Step 5: Verify update
-            verify_response = await test_client.get(
-                f"/api/correlation/incidents/{incident_id}"
-            )
+            verify_response = await test_client.get(f"/api/correlation/incidents/{incident_id}")
             verify_data = verify_response.json()
             assert verify_data["status"] == "resolved"
 
@@ -424,12 +397,12 @@ class TestEndToEndFlow:
         batch1 = [
             {
                 "id": f"batch1-{i}",
-                "timestamp": (datetime.now(timezone.utc) - timedelta(minutes=15-i)).isoformat(),
+                "timestamp": (datetime.now(UTC) - timedelta(minutes=15 - i)).isoformat(),
                 "source_ip": "10.0.0.50",
                 "username": "analyst",
                 "severity": "medium",
                 "category": "network",
-                "message": f"Network event {i}"
+                "message": f"Network event {i}",
             }
             for i in range(5)
         ]
@@ -440,12 +413,12 @@ class TestEndToEndFlow:
         batch2 = [
             {
                 "id": f"batch2-{i}",
-                "timestamp": (datetime.now(timezone.utc) - timedelta(minutes=10-i)).isoformat(),
+                "timestamp": (datetime.now(UTC) - timedelta(minutes=10 - i)).isoformat(),
                 "source_ip": "10.0.0.99",
                 "username": "guest",
                 "severity": "low",
                 "category": "access",
-                "message": f"Access event {i}"
+                "message": f"Access event {i}",
             }
             for i in range(5)
         ]
@@ -464,10 +437,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_correlate_empty_events(self, test_client: AsyncClient):
         """Test correlating empty event list."""
-        response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": []}
-        )
+        response = await test_client.post("/api/correlation/correlate", json={"events": []})
 
         assert response.status_code == 200
         data = response.json()
@@ -487,7 +457,7 @@ class TestErrorHandling:
         """Test updating incident that doesn't exist."""
         response = await test_client.put(
             "/api/correlation/incidents/nonexistent-id/status",
-            params={"status": "resolved"}
+            params={"status": "resolved"},
         )
 
         assert response.status_code == 404
@@ -497,8 +467,7 @@ class TestErrorHandling:
         """Test updating with invalid status value."""
         # Create incident first
         correlate_response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": SAMPLE_EVENTS[:3]}
+            "/api/correlation/correlate", json={"events": SAMPLE_EVENTS[:3]}
         )
         correlated_events = correlate_response.json()
 
@@ -508,7 +477,7 @@ class TestErrorHandling:
             # Try invalid status
             response = await test_client.put(
                 f"/api/correlation/incidents/{incident_id}/status",
-                params={"status": "invalid_status"}
+                params={"status": "invalid_status"},
             )
 
             # Should return client error (400 or 422)

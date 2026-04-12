@@ -1,8 +1,8 @@
 """Sleep/delay node plugin (v0.7.4)."""
 
 import asyncio
-from typing import Any, Dict
 import logging
+from typing import Any
 
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
@@ -31,13 +31,13 @@ class SleepPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Pause execution for a specified duration"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         seconds = input_json.get("seconds", 0)
         if not isinstance(seconds, (int, float)) or seconds < 0:
             raise ValueError("seconds must be a non-negative number")
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Execute sleep.
 
         Args:
@@ -55,7 +55,7 @@ class SleepPlugin(BaseNodePlugin):
                 "status": "success",
                 "slept_seconds": 0,
                 "dry_run": True,
-                "message": f"[DRY_RUN] Would have slept for {seconds}s"
+                "message": f"[DRY_RUN] Would have slept for {seconds}s",
             }
 
         logger.info(f"[{context.run_id}] Sleeping for {seconds}s")
@@ -64,5 +64,5 @@ class SleepPlugin(BaseNodePlugin):
         return {
             "status": "success",
             "slept_seconds": seconds,
-            "message": f"Slept for {seconds}s"
+            "message": f"Slept for {seconds}s",
         }

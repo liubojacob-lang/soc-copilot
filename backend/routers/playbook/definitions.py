@@ -15,8 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from models.user import UserModel, UserRole
 from dependencies.auth import get_current_user
+from models.user import UserModel, UserRole
 from repositories.audit_repository import AuditRepository
 
 logger = get_logger(__name__)
@@ -44,8 +44,9 @@ async def list_playbook_definitions(
     Returns:
         Paginated list of playbook definitions
     """
-    from models.playbook_definition import PlaybookDefinitionModel
     from sqlalchemy import func
+
+    from models.playbook_definition import PlaybookDefinitionModel
 
     # Build base query with filter
     base_stmt = select(PlaybookDefinitionModel)
@@ -171,7 +172,9 @@ async def get_playbook_definition(
     definition = result.scalar_one_or_none()
 
     if not definition:
-        raise HTTPException(status_code=404, detail=f"Definition not found: {definition_id}")
+        raise HTTPException(
+            status_code=404, detail=f"Definition not found: {definition_id}"
+        )
 
     return {
         "id": definition.id,
@@ -216,8 +219,8 @@ async def execute_dag_definition(
         )
 
     from models.playbook_definition import PlaybookDefinitionModel
-    from repositories.playbook_run_repository import PlaybookRunRepository
     from playbook_engine.dag import DAGBuilder, DAGExecutionEngine
+    from repositories.playbook_run_repository import PlaybookRunRepository
 
     input_json = request.get("input_json", {})
 
@@ -229,7 +232,9 @@ async def execute_dag_definition(
     definition = result.scalar_one_or_none()
 
     if not definition:
-        raise HTTPException(status_code=404, detail=f"Definition not found: {definition_id}")
+        raise HTTPException(
+            status_code=404, detail=f"Definition not found: {definition_id}"
+        )
 
     if not definition.is_active:
         raise HTTPException(status_code=400, detail="Definition is not active")
@@ -321,9 +326,11 @@ async def get_playbook_run_nodes(
             raise HTTPException(status_code=403, detail="Permission denied")
 
     # Get node runs
-    stmt = select(PlaybookNodeRunModel).where(
-        PlaybookNodeRunModel.run_id == run_id
-    ).order_by(PlaybookNodeRunModel.created_at)
+    stmt = (
+        select(PlaybookNodeRunModel)
+        .where(PlaybookNodeRunModel.run_id == run_id)
+        .order_by(PlaybookNodeRunModel.created_at)
+    )
 
     result = await session.execute(stmt)
     node_runs = result.scalars().all()

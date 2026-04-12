@@ -9,7 +9,8 @@ v0.8.5: Added test database support for isolated testing.
 
 import os
 from pathlib import Path
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
 from core.config import settings
@@ -22,10 +23,7 @@ DATA_DIR.mkdir(exist_ok=True)
 IS_TEST_ENV = os.getenv("ENVIRONMENT") == "test"
 
 # Check if using PostgreSQL (from environment or docker-compose)
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    f"sqlite+aiosqlite:///{DATA_DIR / 'app.db'}"
-)
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DATA_DIR / 'app.db'}")
 
 # Determine database type
 IS_POSTGRESQL = DATABASE_URL.startswith("postgresql")
@@ -42,15 +40,15 @@ if IS_SQLITE or (IS_TEST_ENV):
     # SQLite: No connection pool parameters (not supported)
     # Use NullPool for SQLite to avoid connection issues
     from sqlalchemy.pool import NullPool
-    
+
     if IS_TEST_ENV:
         DB_PATH = Path(TEST_DB_PATH)
     else:
         DB_PATH = DATA_DIR / "app.db"
-    
+
     if not DATABASE_URL.startswith("sqlite+aiosqlite:///"):
         DATABASE_URL = f"sqlite+aiosqlite:///{DB_PATH}"
-    
+
     engine = create_async_engine(
         DATABASE_URL,
         echo=False,
@@ -63,8 +61,10 @@ elif IS_POSTGRESQL:
     if DATABASE_URL.startswith("postgresql://"):
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
     elif DATABASE_URL.startswith("postgresql+psycopg2://"):
-        DATABASE_URL = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
-    
+        DATABASE_URL = DATABASE_URL.replace(
+            "postgresql+psycopg2://", "postgresql+asyncpg://", 1
+        )
+
     engine = create_async_engine(
         DATABASE_URL,
         echo=False,
@@ -72,6 +72,7 @@ elif IS_POSTGRESQL:
         max_overflow=settings.db_max_overflow,
         pool_timeout=settings.db_pool_timeout,
         pool_recycle=settings.db_pool_recycle,
+        pool_pre_ping=settings.db_pool_pre_ping,
     )
 else:
     # Other databases (MySQL, etc.): Use default pool settings
@@ -82,6 +83,7 @@ else:
         max_overflow=settings.db_max_overflow,
         pool_timeout=settings.db_pool_timeout,
         pool_recycle=settings.db_pool_recycle,
+        pool_pre_ping=settings.db_pool_pre_ping,
     )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -98,17 +100,15 @@ async def get_session() -> AsyncSession:
 
     Uses explicit transaction management to ensure data is persisted.
     """
-    from core.logger import get_logger
-    logger = get_logger(__name__)
-
     session = AsyncSessionLocal()
     try:
         yield session
         # Explicit commit at the end
         await session.commit()
-        logger.debug("Session committed successfully")
     except Exception as e:
-        logger.error(f"Session error, rolling back: {e}")
+        import logging
+
+        logging.getLogger(__name__).error(f"Session error, rolling back: {e}")
         await session.rollback()
         raise
     finally:
@@ -118,14 +118,10 @@ async def get_session() -> AsyncSession:
 async def init_db() -> None:
     """Initialize database tables."""
     # Import all models to ensure they're registered with Base
-    from models import (
-        history, asset, ioc_hit, threat_intel_cache, playbook_output,
-        playbook_run, user, api_key, audit_log, security_alert, correlation_rule, rbac,
-    )  # noqa: F401
-    from models.playbook_run import PlaybookRunModel, PlaybookRunStepModel  # noqa: F401
-    from models.user import UserModel  # noqa: F401
     from models.api_key import APIKeyModel  # noqa: F401
     from models.audit_log import AuditLogModel  # noqa: F401
+    from models.playbook_run import PlaybookRunModel, PlaybookRunStepModel  # noqa: F401
+    from models.user import UserModel  # noqa: F401
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

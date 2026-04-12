@@ -11,11 +11,15 @@ class MessageBroker(ABC):
     """Abstract broker contract, supports Redis/Kafka interchangeable backends."""
 
     @abstractmethod
-    async def publish(self, envelope: EventEnvelope, options: PublishOptions | None = None) -> str | None:
+    async def publish(
+        self, envelope: EventEnvelope, options: PublishOptions | None = None
+    ) -> str | None:
         """Publish a unified event envelope and return broker message id."""
 
     @abstractmethod
-    async def consume(self, config: ConsumerConfig, priority_order: bool = True) -> list[BrokerMessage]:
+    async def consume(
+        self, config: ConsumerConfig, priority_order: bool = True
+    ) -> list[BrokerMessage]:
         """Consume events using consumer group semantics."""
 
     @abstractmethod
@@ -34,7 +38,9 @@ class MessageBroker(ABC):
         """Negative acknowledge: retry or route to DLQ."""
 
     @abstractmethod
-    async def replay_dlq(self, dlq_stream: str, target_stream: str, limit: int = 100) -> int:
+    async def replay_dlq(
+        self, dlq_stream: str, target_stream: str, limit: int = 100
+    ) -> int:
         """Replay DLQ messages back to target stream."""
 
     @abstractmethod

@@ -1,7 +1,7 @@
 """Asset enrichment node plugin (v0.7.4)."""
 
-from typing import Any, Dict
 import logging
+from typing import Any
 
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
@@ -30,12 +30,16 @@ class AssetEnrichPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Enrich assets with additional context from CMDB/EDR"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
-        if "asset" not in input_json and "hostname" not in input_json and "ip" not in input_json:
+        if (
+            "asset" not in input_json
+            and "hostname" not in input_json
+            and "ip" not in input_json
+        ):
             raise ValueError("asset, hostname, or ip is required")
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Execute asset enrichment.
 
         Args:
@@ -49,7 +53,9 @@ class AssetEnrichPlugin(BaseNodePlugin):
         ip_address = context.input_json.get("ip") or asset.get("ip")
         is_dry_run = context.mode == "dry_run"
 
-        logger.info(f"[{context.run_id}] Enriching asset: hostname={hostname}, ip={ip_address}")
+        logger.info(
+            f"[{context.run_id}] Enriching asset: hostname={hostname}, ip={ip_address}"
+        )
 
         if is_dry_run:
             # Mock enrichment data for dry_run
@@ -66,7 +72,7 @@ class AssetEnrichPlugin(BaseNodePlugin):
                     "edr_agent": "installed (mock)",
                     "patch_level": "latest (mock)",
                 },
-                "message": "[DRY_RUN] Mock asset enrichment"
+                "message": "[DRY_RUN] Mock asset enrichment",
             }
 
         # In apply mode, would query CMDB/EDR here
@@ -77,6 +83,6 @@ class AssetEnrichPlugin(BaseNodePlugin):
                 "hostname": hostname or "unknown-host",
                 "ip": ip_address or "0.0.0.0",
                 "enriched": True,
-                "source": "cmdb_mock"
-            }
+                "source": "cmdb_mock",
+            },
         }

@@ -18,13 +18,35 @@ depends_on = None
 
 def upgrade() -> None:
     # tenant columns
-    op.add_column("security_alerts", sa.Column("tenant_id", sa.String(length=64), nullable=False, server_default="default"))
-    op.create_index("ix_security_alerts_tenant_id", "security_alerts", ["tenant_id"], unique=False)
+    op.add_column(
+        "security_alerts",
+        sa.Column(
+            "tenant_id", sa.String(length=64), nullable=False, server_default="default"
+        ),
+    )
+    op.create_index(
+        "ix_security_alerts_tenant_id", "security_alerts", ["tenant_id"], unique=False
+    )
 
-    op.add_column("correlation_rules", sa.Column("tenant_id", sa.String(length=64), nullable=False, server_default="default"))
-    op.create_index("ix_correlation_rules_tenant_id", "correlation_rules", ["tenant_id"], unique=False)
+    op.add_column(
+        "correlation_rules",
+        sa.Column(
+            "tenant_id", sa.String(length=64), nullable=False, server_default="default"
+        ),
+    )
+    op.create_index(
+        "ix_correlation_rules_tenant_id",
+        "correlation_rules",
+        ["tenant_id"],
+        unique=False,
+    )
 
-    op.add_column("users", sa.Column("tenant_id", sa.String(length=64), nullable=False, server_default="default"))
+    op.add_column(
+        "users",
+        sa.Column(
+            "tenant_id", sa.String(length=64), nullable=False, server_default="default"
+        ),
+    )
     op.create_index("ix_users_tenant_id", "users", ["tenant_id"], unique=False)
 
     # RBAC core tables
@@ -48,9 +70,16 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_permissions_code", "permissions", ["code"], unique=True)
-    op.create_index("ix_permissions_resource", "permissions", ["resource"], unique=False)
+    op.create_index(
+        "ix_permissions_resource", "permissions", ["resource"], unique=False
+    )
     op.create_index("ix_permissions_action", "permissions", ["action"], unique=False)
-    op.create_index("ix_permissions_resource_action", "permissions", ["resource", "action"], unique=False)
+    op.create_index(
+        "ix_permissions_resource_action",
+        "permissions",
+        ["resource", "action"],
+        unique=False,
+    )
 
     op.create_table(
         "role_permissions",

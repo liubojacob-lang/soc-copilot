@@ -1,7 +1,8 @@
 """Repository for playbook run and step operations."""
 
-from typing import Any, Optional
-from sqlalchemy import select, and_
+from typing import Any
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -29,7 +30,7 @@ class PlaybookRunRepository:
         status: str = "running",
         input_json: dict[str, Any] | None = None,
         output_json: dict[str, Any] | None = None,
-        created_by_user_id: Optional[str] = None,
+        created_by_user_id: str | None = None,
         **kwargs: Any,
     ) -> PlaybookRunModel:
         """Create a new playbook run.
@@ -70,7 +71,7 @@ class PlaybookRunRepository:
         await self.session.refresh(run)
         return run
 
-    async def get_by_id(self, run_id: str) -> Optional[PlaybookRunModel]:
+    async def get_by_id(self, run_id: str) -> PlaybookRunModel | None:
         """Get a playbook run by ID.
 
         Args:
@@ -85,9 +86,9 @@ class PlaybookRunRepository:
 
     async def list_runs(
         self,
-        playbook_name: Optional[str] = None,
-        status: Optional[str] = None,
-        created_by_user_id: Optional[str] = None,
+        playbook_name: str | None = None,
+        status: str | None = None,
+        created_by_user_id: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[PlaybookRunModel], int]:
@@ -119,6 +120,7 @@ class PlaybookRunRepository:
 
         # Count total using func.count() for efficiency
         from sqlalchemy import func
+
         count_stmt = select(func.count(PlaybookRunModel.id))
         if conditions:
             count_stmt = count_stmt.where(and_(*conditions))
@@ -127,14 +129,20 @@ class PlaybookRunRepository:
         total = count_result.scalar() or 0
 
         # Apply ordering and pagination
-        stmt = stmt.order_by(PlaybookRunModel.started_at.desc()).offset(offset).limit(limit)
+        stmt = (
+            stmt.order_by(PlaybookRunModel.started_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
 
         result = await self.session.execute(stmt)
         runs = list(result.scalars().all())
 
         return runs, total
 
-    async def update(self, run_id: str, updates: dict[str, Any]) -> Optional[PlaybookRunModel]:
+    async def update(
+        self, run_id: str, updates: dict[str, Any]
+    ) -> PlaybookRunModel | None:
         """Update a playbook run.
 
         Args:
@@ -156,7 +164,9 @@ class PlaybookRunRepository:
         await self.session.refresh(run)
         return run
 
-    async def update_by_id(self, model_id: str, updates: dict[str, Any]) -> Optional[Any]:
+    async def update_by_id(
+        self, model_id: str, updates: dict[str, Any]
+    ) -> Any | None:
         """Update any model by ID (for steps).
 
         Args:
@@ -190,9 +200,11 @@ class PlaybookRunRepository:
         Returns:
             List of PlaybookRunStepModel instances
         """
-        stmt = select(PlaybookRunStepModel).where(
-            PlaybookRunStepModel.run_id == run_id
-        ).order_by(PlaybookRunStepModel.step_index)
+        stmt = (
+            select(PlaybookRunStepModel)
+            .where(PlaybookRunStepModel.run_id == run_id)
+            .order_by(PlaybookRunStepModel.step_index)
+        )
 
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -245,7 +257,7 @@ class PlaybookRunRepository:
         await self.session.refresh(step)
         return step
 
-    async def get_step_by_id(self, step_id: str) -> Optional[PlaybookRunStepModel]:
+    async def get_step_by_id(self, step_id: str) -> PlaybookRunStepModel | None:
         """Get a step by ID.
 
         Args:

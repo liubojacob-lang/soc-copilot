@@ -13,18 +13,19 @@ Features:
 
 import asyncio
 import time
-from typing import Dict, List, Any, Optional, Callable
-from datetime import datetime, timezone
-from collections import defaultdict
+from collections.abc import Callable
+from typing import Any
+
+from pydantic import BaseModel
 
 from core.logger import get_logger
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
 
 class BatchConfig(BaseModel):
     """Configuration for message batching."""
+
     enabled: bool = True
     max_batch_size: int = 100  # Maximum messages per batch
     max_batch_delay_ms: int = 100  # Maximum wait time before flushing (milliseconds)
@@ -33,6 +34,7 @@ class BatchConfig(BaseModel):
 
 class BatchStats(BaseModel):
     """Statistics for batch operations."""
+
     total_batches: int = 0
     total_messages_batched: int = 0
     avg_batch_size: float = 0.0
@@ -46,11 +48,11 @@ class MessageBatch:
     def __init__(self, channel: str, max_size: int = 100):
         self.channel = channel
         self.max_size = max_size
-        self.messages: List[Dict[str, Any]] = []
+        self.messages: list[dict[str, Any]] = []
         self.created_at = time.time()
         self.size_bytes = 0
 
-    def add_message(self, message: Dict[str, Any]) -> bool:
+    def add_message(self, message: dict[str, Any]) -> bool:
         """
         Add a message to the batch.
 
@@ -64,7 +66,7 @@ class MessageBatch:
             return False
 
         self.messages.append(message)
-        self.size_bytes += len(str(message).encode('utf-8'))
+        self.size_bytes += len(str(message).encode("utf-8"))
         return True
 
     def is_ready(self, min_size: int, max_delay_ms: int) -> bool:
@@ -97,7 +99,7 @@ class MessageBatch:
         """Check if batch can accept more messages."""
         return len(self.messages) < self.max_size
 
-    def get_messages(self) -> List[Dict[str, Any]]:
+    def get_messages(self) -> list[dict[str, Any]]:
         """Get all messages in the batch."""
         return self.messages
 
@@ -116,19 +118,19 @@ class MessageBatchService:
     network overhead.
     """
 
-    def __init__(self, config: Optional[BatchConfig] = None):
+    def __init__(self, config: BatchConfig | None = None):
         self.config = config or BatchConfig()
         self.stats = BatchStats()
 
         # Per-channel batches: {channel: MessageBatch}
-        self.batches: Dict[str, MessageBatch] = {}
+        self.batches: dict[str, MessageBatch] = {}
         self._lock = asyncio.Lock()
 
         # Send callback: async def send_batch(channel: str, messages: List[dict]) -> None
-        self._send_callback: Optional[Callable] = None
+        self._send_callback: Callable | None = None
 
         # Background flush task
-        self._flush_task: Optional[asyncio.Task] = None
+        self._flush_task: asyncio.Task | None = None
         self._running = False
 
     def set_send_callback(self, callback: Callable) -> None:
@@ -168,11 +170,7 @@ class MessageBatchService:
 
         logger.info("Message batch service stopped")
 
-    async def add_message(
-        self,
-        channel: str,
-        message: Dict[str, Any]
-    ) -> bool:
+    async def add_message(self, channel: str, message: dict[str, Any]) -> bool:
         """
         Add a message to the appropriate batch.
 
@@ -190,8 +188,7 @@ class MessageBatchService:
             # Get or create batch for channel
             if channel not in self.batches:
                 self.batches[channel] = MessageBatch(
-                    channel,
-                    max_size=self.config.max_batch_size
+                    channel, max_size=self.config.max_batch_size
                 )
 
             batch = self.batches[channel]
@@ -204,13 +201,14 @@ class MessageBatchService:
                 # Try adding again to new batch
                 batch = self.batches[channel]
                 if not batch.add_message(message):
-                    logger.warning(f"Failed to add message to batch for channel {channel}")
+                    logger.warning(
+                        f"Failed to add message to batch for channel {channel}"
+                    )
                     return False
 
             # Check if batch is ready to send
             if batch.is_ready(
-                self.config.min_batch_size,
-                self.config.max_batch_delay_ms
+                self.config.min_batch_size, self.config.max_batch_delay_ms
             ):
                 await self._flush_batch(channel)
 
@@ -234,8 +232,7 @@ class MessageBatchService:
                 batch = self.batches[channel]
 
                 if batch.is_ready(
-                    self.config.min_batch_size,
-                    self.config.max_batch_delay_ms
+                    self.config.min_batch_size, self.config.max_batch_delay_ms
                 ):
                     await self._flush_batch(channel)
 
@@ -299,7 +296,7 @@ class MessageBatchService:
 
 
 # Global instance
-_batch_service: Optional[MessageBatchService] = None
+_batch_service: MessageBatchService | None = None
 
 
 def get_batch_service() -> MessageBatchService:

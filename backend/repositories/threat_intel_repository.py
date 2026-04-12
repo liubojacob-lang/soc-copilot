@@ -1,13 +1,13 @@
 """Threat Intel Cache repository for database operations."""
 
 import json
-from datetime import datetime, timedelta, UTC
-from typing import Optional, List
-from sqlalchemy import select, and_
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.threat_intel_cache import ThreatIntelCacheDB
 from core.config import settings
+from models.threat_intel_cache import ThreatIntelCacheDB
 
 
 class ThreatIntelRepository:
@@ -19,7 +19,7 @@ class ThreatIntelRepository:
         provider: str,
         ioc_type: str,
         ioc_value: str,
-    ) -> Optional[ThreatIntelCacheDB]:
+    ) -> ThreatIntelCacheDB | None:
         """Get cached threat intel by provider, IOC type and value.
 
         Args:
@@ -52,7 +52,7 @@ class ThreatIntelRepository:
         status: str,
         response_json: dict,
         score: int = None,
-        tags: List[str] = None,
+        tags: list[str] = None,
         pulse_count: int = None,
         last_seen: datetime = None,
         error_reason: str = None,
@@ -102,7 +102,7 @@ class ThreatIntelRepository:
         status: str,
         response_json: dict,
         score: int = None,
-        tags: List[str] = None,
+        tags: list[str] = None,
         pulse_count: int = None,
         last_seen: datetime = None,
         error_reason: str = None,
@@ -176,9 +176,9 @@ class ThreatIntelRepository:
         total = total_result.scalar() or 0
 
         active_result = await session.execute(
-            select(func.count()).select_from(ThreatIntelCacheDB).where(
-                ThreatIntelCacheDB.expires_at > datetime.now(UTC)
-            )
+            select(func.count())
+            .select_from(ThreatIntelCacheDB)
+            .where(ThreatIntelCacheDB.expires_at > datetime.now(UTC))
         )
         active = active_result.scalar() or 0
 

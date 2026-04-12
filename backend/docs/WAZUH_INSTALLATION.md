@@ -26,6 +26,7 @@ This guide walks you through installing Wazuh (open-source SIEM) and integrating
 ### What is Wazuh?
 
 Wazuh is a unified XDR and SIEM platform that provides:
+
 - **Security Analytics**: Log analysis and threat detection
 - **Incident Response**: Automated responses to security events
 - **Compliance**: Pre-built regulatory compliance requirements
@@ -61,11 +62,13 @@ Wazuh is a unified XDR and SIEM platform that provides:
 ### System Requirements
 
 **Minimum**:
+
 - CPU: 2 cores
 - RAM: 4 GB
 - Disk: 20 GB
 
 **Recommended**:
+
 - CPU: 4+ cores
 - RAM: 8 GB
 - Disk: 50 GB SSD
@@ -122,6 +125,7 @@ chmod +x setup_wazuh.sh
 ```
 
 The script will:
+
 1. ✓ Verify Docker and Docker Compose are installed
 2. ✓ Create configuration directories
 3. ✓ Generate Wazuh configuration files
@@ -140,6 +144,7 @@ curl -k https://localhost:55000/healthcheck
 ```
 
 **Expected Output**:
+
 ```
 NAME                IMAGE                              STATUS
 wazuh.dashboard     wazuh/wazuh-dashboard:4.8.0       Up (healthy)
@@ -184,12 +189,13 @@ Edit `config/wazuh-manager/ossec.conf`:
     <email_from>wazuh@example.com</email_from>
     <smtp_server>smtp.example.com</smtp_server>
   </global>
-  
+
   <!-- Add custom rules and decoders here -->
 </ossec_config>
 ```
 
 Restart after changes:
+
 ```bash
 docker compose -f docker-compose.wazuh.yml restart wazuh.manager
 ```
@@ -205,6 +211,7 @@ docker compose -f docker-compose.wazuh.yml restart wazuh.manager
 ```
 
 This script will:
+
 1. ✓ Verify Wazuh is running
 2. ✓ Configure backend `.env` with Wazuh settings
 3. ✓ Test Wazuh API connection
@@ -333,17 +340,20 @@ cat .env.wazuh | grep WAZUH_API
 **Solutions**:
 
 1. **Check backend logs**:
+
 ```bash
 tail -f backend/server.err | grep -i wazuh
 ```
 
 2. **Verify Wazuh is enabled**:
+
 ```bash
 grep WAZUH_ENABLED backend/.env
 # Should be: WAZUH_ENABLED=true
 ```
 
 3. **Start stream service**:
+
 ```bash
 TOKEN="your_jwt_token"
 curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
@@ -351,6 +361,7 @@ curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
 ```
 
 4. **Check service status**:
+
 ```bash
 curl http://localhost:8000/api/v1/wazuh/stream/status \
   -H "Authorization: Bearer $TOKEN"
@@ -485,18 +496,20 @@ Edit `docker-compose.wazuh.yml`:
 ```yaml
 wazuh.indexer:
   environment:
-    - OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g  # Increase from 512m
+    - OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g # Increase from 512m
 ```
 
 ### Adjust Indexer Retention
 
 In Wazuh Dashboard → Stack Management → Index Patterns:
+
 - Set retention period (e.g., 30 days)
 - Configure index lifecycle management
 
 ### Optimize Log Parsing
 
 Edit `config/wazuh-manager/ossec.conf`:
+
 ```xml
 <ossec_config>
   <ruleset>
@@ -548,6 +561,7 @@ Edit `config/wazuh-manager/ossec.conf`:
 ## Support
 
 For issues or questions:
+
 1. Check logs: `docker compose -f docker-compose.wazuh.yml logs -f`
 2. Review troubleshooting section above
 3. Check Wazuh documentation

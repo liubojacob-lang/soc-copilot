@@ -7,6 +7,7 @@ Tests the complete flow of alert ingestion and retrieval.
 import asyncio
 import sys
 from datetime import datetime
+
 from db.session import AsyncSessionLocal
 from models.security_alert import SecurityAlert
 
@@ -43,34 +44,37 @@ async def list_alerts():
     async with AsyncSessionLocal() as session:
         from sqlalchemy import select
 
-        query = select(SecurityAlert).order_by(SecurityAlert.created_at.desc()).limit(10)
+        query = (
+            select(SecurityAlert).order_by(SecurityAlert.created_at.desc()).limit(10)
+        )
         result = await session.execute(query)
         alerts = result.scalars().all()
 
         print(f"\n📊 Total alerts in database: {len(alerts)} (showing latest 10)")
         for alert in alerts:
-            print(f"  - [{alert.id}] {alert.source}: {alert.title} ({alert.severity}) - {alert.status}")
+            print(
+                f"  - [{alert.id}] {alert.source}: {alert.title} ({alert.severity}) - {alert.status}"
+            )
 
 
 async def get_statistics():
     """Get alert statistics."""
     async with AsyncSessionLocal() as session:
-        from sqlalchemy import select, func
-        from datetime import timedelta
+
+        from sqlalchemy import func, select
 
         # Total count
         total_query = select(func.count()).select_from(SecurityAlert)
         total = (await session.execute(total_query)).scalar() or 0
 
         # By severity
-        severity_query = (
-            select(SecurityAlert.severity, func.count(SecurityAlert.id))
-            .group_by(SecurityAlert.severity)
-        )
+        severity_query = select(
+            SecurityAlert.severity, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.severity)
         severity_result = await session.execute(severity_query)
         by_severity = {row[0]: row[1] for row in severity_result.all()}
 
-        print(f"\n📈 Alert Statistics:")
+        print("\n📈 Alert Statistics:")
         print(f"  Total: {total}")
         print(f"  By Severity: {by_severity}")
 
@@ -102,6 +106,7 @@ async def main():
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

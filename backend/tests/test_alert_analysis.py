@@ -5,23 +5,17 @@ SOC Copilot v1.0
 功能测试和验收标准
 """
 
+
 import pytest
-from datetime import datetime
+
 from schemas.alert_analysis import (
-    AlertAnalysisResult,
     AlertAnalysisRequest,
-    AlertTriggerConfig,
+    AlertAnalysisResult,
+    EventCategory,
     SeverityLevel,
     Verdict,
-    EventCategory,
-    IOCs,
-    IOCStatistics,
-    Entities,
-    ImpactAssessment,
-    RootCauseAnalysis,
     get_matching_triggers,
 )
-
 
 # ============ 测试数据 ============
 
@@ -220,7 +214,9 @@ class TestAlertAnalysisSchema:
         """测试请求验证"""
         # 有效请求
         request = AlertAnalysisRequest(
-            raw_log="Test log content is long enough", alert_id="ALT-001", alert_name="Test"
+            raw_log="Test log content is long enough",
+            alert_id="ALT-001",
+            alert_name="Test",
         )
         assert request.raw_log == "Test log content is long enough"
 

@@ -3,28 +3,28 @@ Security Alert Ingestion Router
 Receives and manages alerts from external security monitoring tools (Wazuh, Snort, OSQuery, etc).
 """
 
-from typing import Optional, List
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
-from pydantic import ValidationError
 
-from db.session import get_session
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import ValidationError
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.logger import get_logger
+from db.session import get_session
 from models.security_alert import SecurityAlert
 from schemas.security_alert import (
     SecurityAlertIngest,
-    SecurityAlertResponse,
     SecurityAlertListResponse,
-    SecurityAlertUpdate,
+    SecurityAlertResponse,
     SecurityAlertStats,
+    SecurityAlertUpdate,
 )
 
 # Message Queue Integration
 from services.message_queue_manager import get_message_queue_manager
-from services.security_alert_schema import ensure_security_alerts_schema
 from services.query_cache import cached, invalidate_cache
+from services.security.security_alert_schema import ensure_security_alerts_schema
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1/security-alerts", tags=["security-alerts"])
@@ -55,18 +55,20 @@ async def ingest_alert(
 
         # Parse timestamp
         try:
-            event_timestamp = datetime.fromisoformat(alert_data.timestamp.replace('Z', '+00:00'))
+            event_timestamp = datetime.fromisoformat(
+                alert_data.timestamp.replace("Z", "+00:00")
+            )
         except ValueError:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid timestamp format: {alert_data.timestamp}. Use ISO 8601 format."
+                detail=f"Invalid timestamp format: {alert_data.timestamp}. Use ISO 8601 format.",
             )
 
         # Check for duplicate alert
         duplicate_query = select(SecurityAlert).where(
             and_(
                 SecurityAlert.source == alert_data.source,
-                SecurityAlert.external_event_id == alert_data.event_id
+                SecurityAlert.external_event_id == alert_data.event_id,
             )
         )
         duplicate_result = await session.execute(duplicate_query)
@@ -99,14 +101,18 @@ async def ingest_alert(
             agent_ip=alert_data.agent_ip,
             rule_id=alert_data.rule_id,
             rule_level=alert_data.rule_level,
-            rule_groups=','.join(alert_data.rule_groups) if alert_data.rule_groups else None,
-            rule_mitre=','.join(alert_data.rule_mitre) if alert_data.rule_mitre else None,
+            rule_groups=(
+                ",".join(alert_data.rule_groups) if alert_data.rule_groups else None
+            ),
+            rule_mitre=(
+                ",".join(alert_data.rule_mitre) if alert_data.rule_mitre else None
+            ),
             full_log=alert_data.full_log,
             location=alert_data.location,
             geoip=alert_data.geoip,
             raw_data=alert_data.raw_data,
             event_timestamp=event_timestamp,
-            status='new',
+            status="new",
         )
 
         session.add(new_alert)
@@ -127,30 +133,35 @@ async def ingest_alert(
 
             # Convert alert to dict for queue
             alert_dict = {
-                'id': new_alert.id,
-                'source': new_alert.source,
-                'event_type': new_alert.event_type,
-                'severity': new_alert.severity,
-                'title': new_alert.title,
-                'description': new_alert.description,
-                'source_ip': new_alert.source_ip,
-                'destination_ip': new_alert.destination_ip,
-                'agent_name': new_alert.agent_name,
-                'rule_id': new_alert.rule_id,
-                'rule_level': new_alert.rule_level,
-                'created_at': new_alert.created_at.isoformat() if new_alert.created_at else None,
-                'event_timestamp': new_alert.event_timestamp.isoformat() if new_alert.event_timestamp else None,
+                "id": new_alert.id,
+                "source": new_alert.source,
+                "event_type": new_alert.event_type,
+                "severity": new_alert.severity,
+                "title": new_alert.title,
+                "description": new_alert.description,
+                "source_ip": new_alert.source_ip,
+                "destination_ip": new_alert.destination_ip,
+                "agent_name": new_alert.agent_name,
+                "rule_id": new_alert.rule_id,
+                "rule_level": new_alert.rule_level,
+                "created_at": (
+                    new_alert.created_at.isoformat() if new_alert.created_at else None
+                ),
+                "event_timestamp": (
+                    new_alert.event_timestamp.isoformat()
+                    if new_alert.event_timestamp
+                    else None
+                ),
             }
 
             message_id = await mq_manager.publish_alert_async(
-                alert=alert_dict,
-                severity=queue_severity
+                alert=alert_dict, severity=queue_severity
             )
 
             if message_id:
                 logger.info(f"  ✓ Published to message queue: {message_id}")
             else:
-                logger.warning(f"  ⚠ Failed to publish to message queue")
+                logger.warning("  ⚠ Failed to publish to message queue")
 
         except Exception as e:
             logger.error(f"  ✗ Error publishing to message queue: {e}")
@@ -165,23 +176,23 @@ async def ingest_alert(
     except HTTPException:
         raise
     except ValidationError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(status_code=422, detail=str(e))
+        logger.error(f"Validation error: {e!s}")
+        raise HTTPException(status_code=422, detail="Invalid request")
     except Exception as e:
-        logger.error(f"Error ingesting alert: {str(e)}")
+        logger.error(f"Error ingesting alert: {e!s}")
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to ingest alert: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to ingest alert: {e!s}")
 
 
 @router.get("/", response_model=SecurityAlertListResponse)
 async def list_alerts(
-    source: Optional[str] = Query(None, description="Filter by source"),
-    severity: Optional[str] = Query(None, description="Filter by severity"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    agent_name: Optional[str] = Query(None, description="Filter by agent name"),
-    source_ip: Optional[str] = Query(None, description="Filter by source IP"),
-    event_type: Optional[str] = Query(None, description="Filter by event type"),
-    search: Optional[str] = Query(None, description="Search in title and description"),
+    source: str | None = Query(None, description="Filter by source"),
+    severity: str | None = Query(None, description="Filter by severity"),
+    status: str | None = Query(None, description="Filter by status"),
+    agent_name: str | None = Query(None, description="Filter by agent name"),
+    source_ip: str | None = Query(None, description="Filter by source IP"),
+    event_type: str | None = Query(None, description="Filter by event type"),
+    search: str | None = Query(None, description="Search in title and description"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     session: AsyncSession = Depends(get_session),
@@ -244,8 +255,8 @@ async def list_alerts(
         )
 
     except Exception as e:
-        logger.error(f"Error listing alerts: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to list alerts: {str(e)}")
+        logger.error(f"Error listing alerts: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to list alerts: {e!s}")
 
 
 @router.get("/{alert_id}", response_model=SecurityAlertResponse)
@@ -268,8 +279,8 @@ async def get_alert(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting alert {alert_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to get alert: {str(e)}")
+        logger.error(f"Error getting alert {alert_id}: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get alert: {e!s}")
 
 
 @router.patch("/{alert_id}", response_model=SecurityAlertResponse)
@@ -301,7 +312,7 @@ async def update_alert(
         if update_data.status:
             alert.status = update_data.status.lower()
             # Set closed_at if status is closed or false_positive
-            if alert.status in ['closed', 'false_positive'] and not alert.closed_at:
+            if alert.status in ["closed", "false_positive"] and not alert.closed_at:
                 alert.closed_at = datetime.utcnow()
 
         if update_data.assigned_to:
@@ -322,9 +333,9 @@ async def update_alert(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating alert {alert_id}: {str(e)}")
+        logger.error(f"Error updating alert {alert_id}: {e!s}")
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update alert: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update alert: {e!s}")
 
 
 @router.get("/stats/summary", response_model=SecurityAlertStats)
@@ -349,44 +360,47 @@ async def get_alert_statistics(
         total = total_result.scalar() or 0
 
         # By severity
-        severity_query = (
-            select(SecurityAlert.severity, func.count(SecurityAlert.id))
-            .group_by(SecurityAlert.severity)
-        )
+        severity_query = select(
+            SecurityAlert.severity, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.severity)
         severity_result = await session.execute(severity_query)
         by_severity = {row[0]: row[1] for row in severity_result.all()}
 
         # By status
-        status_query = (
-            select(SecurityAlert.status, func.count(SecurityAlert.id))
-            .group_by(SecurityAlert.status)
-        )
+        status_query = select(
+            SecurityAlert.status, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.status)
         status_result = await session.execute(status_query)
         by_status = {row[0]: row[1] for row in status_result.all()}
 
         # By source
-        source_query = (
-            select(SecurityAlert.source, func.count(SecurityAlert.id))
-            .group_by(SecurityAlert.source)
-        )
+        source_query = select(
+            SecurityAlert.source, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.source)
         source_result = await session.execute(source_query)
         by_source = {row[0]: row[1] for row in source_result.all()}
 
         # Time-based counts
         now = datetime.utcnow()
 
-        last_24h_query = select(func.count()).select_from(SecurityAlert).where(
-            SecurityAlert.created_at >= now - timedelta(hours=24)
+        last_24h_query = (
+            select(func.count())
+            .select_from(SecurityAlert)
+            .where(SecurityAlert.created_at >= now - timedelta(hours=24))
         )
         last_24h = (await session.execute(last_24h_query)).scalar() or 0
 
-        last_7d_query = select(func.count()).select_from(SecurityAlert).where(
-            SecurityAlert.created_at >= now - timedelta(days=7)
+        last_7d_query = (
+            select(func.count())
+            .select_from(SecurityAlert)
+            .where(SecurityAlert.created_at >= now - timedelta(days=7))
         )
         last_7d = (await session.execute(last_7d_query)).scalar() or 0
 
-        last_30d_query = select(func.count()).select_from(SecurityAlert).where(
-            SecurityAlert.created_at >= now - timedelta(days=30)
+        last_30d_query = (
+            select(func.count())
+            .select_from(SecurityAlert)
+            .where(SecurityAlert.created_at >= now - timedelta(days=30))
         )
         last_30d = (await session.execute(last_30d_query)).scalar() or 0
 
@@ -401,8 +415,10 @@ async def get_alert_statistics(
         )
 
     except Exception as e:
-        logger.error(f"Error getting alert statistics: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {str(e)}")
+        logger.error(f"Error getting alert statistics: {e!s}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get statistics: {e!s}"
+        )
 
 
 @router.delete("/{alert_id}", response_model=dict)
@@ -438,9 +454,9 @@ async def delete_alert(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting alert {alert_id}: {str(e)}")
+        logger.error(f"Error deleting alert {alert_id}: {e!s}")
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to delete alert: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete alert: {e!s}")
 
 
 def _map_severity_to_queue(severity: str) -> str:
@@ -454,10 +470,10 @@ def _map_severity_to_queue(severity: str) -> str:
         Queue severity level (critical/high/medium/low)
     """
     mapping = {
-        'critical': 'critical',
-        'high': 'high',
-        'medium': 'medium',
-        'low': 'low',
-        'info': 'low'
+        "critical": "critical",
+        "high": "high",
+        "medium": "medium",
+        "low": "low",
+        "info": "low",
     }
-    return mapping.get(severity.lower(), 'medium')
+    return mapping.get(severity.lower(), "medium")

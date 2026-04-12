@@ -4,17 +4,16 @@ Provides secure token storage using HttpOnly cookies to prevent XSS attacks.
 Includes CSRF protection for cross-site request forgery prevention.
 """
 
-import secrets
 import hashlib
-import time
-from datetime import datetime, timezone, timedelta
-from typing import Optional, Tuple
-from fastapi import Request, Response, HTTPException, status
+import secrets
+from datetime import datetime, timedelta
+
+from fastapi import HTTPException, Request, Response, status
 from pydantic import BaseModel
 
 from core.config import settings
 from core.logger import get_logger
-from core.security import create_access_token, create_refresh_token, decode_token
+from core.security import create_access_token, create_refresh_token
 
 logger = get_logger(__name__)
 
@@ -36,19 +35,21 @@ COOKIE_SAMESITE = "lax"  # Protect against CSRF
 
 class CSRFToken(BaseModel):
     """CSRF token model."""
+
     token: str
     expires_at: datetime
 
 
 class CookieAuthConfig(BaseModel):
     """Cookie authentication configuration."""
-    domain: Optional[str] = None
+
+    domain: str | None = None
     secure: bool = COOKIE_SECURE
     httponly: bool = COOKIE_HTTPONLY
     samesite: str = COOKIE_SAMESITE
 
 
-def get_cookie_domain(request: Request) -> Optional[str]:
+def get_cookie_domain(request: Request) -> str | None:
     """Get cookie domain based on request host."""
     host = request.headers.get("host", "")
     # In development, don't set domain
@@ -82,10 +83,10 @@ def set_auth_cookies(
     access_token: str,
     refresh_token: str,
     csrf_token: str,
-    request: Optional[Request] = None,
+    request: Request | None = None,
 ) -> None:
     """Set authentication cookies on response.
-    
+
     Args:
         response: FastAPI response object
         access_token: JWT access token
@@ -94,7 +95,7 @@ def set_auth_cookies(
         request: Optional request for domain detection
     """
     domain = get_cookie_domain(request) if request else None
-    
+
     # Set access token cookie (HttpOnly for XSS protection)
     response.set_cookie(
         key=ACCESS_TOKEN_COOKIE,
@@ -105,7 +106,7 @@ def set_auth_cookies(
         httponly=COOKIE_HTTPONLY,
         samesite=COOKIE_SAMESITE,
     )
-    
+
     # Set refresh token cookie (HttpOnly for XSS protection)
     response.set_cookie(
         key=REFRESH_TOKEN_COOKIE,
@@ -116,7 +117,7 @@ def set_auth_cookies(
         httponly=COOKIE_HTTPONLY,
         samesite=COOKIE_SAMESITE,
     )
-    
+
     # Set CSRF token cookie (NOT HttpOnly - needs JS access for headers)
     response.set_cookie(
         key=CSRF_TOKEN_COOKIE,
@@ -129,15 +130,15 @@ def set_auth_cookies(
     )
 
 
-def clear_auth_cookies(response: Response, request: Optional[Request] = None) -> None:
+def clear_auth_cookies(response: Response, request: Request | None = None) -> None:
     """Clear authentication cookies on logout.
-    
+
     Args:
         response: FastAPI response object
         request: Optional request for domain detection
     """
     domain = get_cookie_domain(request) if request else None
-    
+
     response.delete_cookie(
         key=ACCESS_TOKEN_COOKIE,
         domain=domain,
@@ -152,26 +153,30 @@ def clear_auth_cookies(response: Response, request: Optional[Request] = None) ->
     )
 
 
-def get_token_from_cookie(request: Request, token_type: str = "access") -> Optional[str]:
+def get_token_from_cookie(
+    request: Request, token_type: str = "access"
+) -> str | None:
     """Get token from cookie.
-    
+
     Args:
         request: FastAPI request object
         token_type: "access" or "refresh"
-        
+
     Returns:
         Token string or None
     """
-    cookie_name = ACCESS_TOKEN_COOKIE if token_type == "access" else REFRESH_TOKEN_COOKIE
+    cookie_name = (
+        ACCESS_TOKEN_COOKIE if token_type == "access" else REFRESH_TOKEN_COOKIE
+    )
     return request.cookies.get(cookie_name)
 
 
-def get_csrf_token_from_cookie(request: Request) -> Optional[str]:
+def get_csrf_token_from_cookie(request: Request) -> str | None:
     """Get CSRF token from cookie.
-    
+
     Args:
         request: FastAPI request object
-        
+
     Returns:
         CSRF token string or None
     """
@@ -180,16 +185,16 @@ def get_csrf_token_from_cookie(request: Request) -> Optional[str]:
 
 def validate_csrf_token(request: Request) -> bool:
     """Validate CSRF token from cookie against header.
-    
+
     The client must send the CSRF token in both:
     1. A cookie (csrf_token)
     2. A header (X-CSRF-Token)
-    
+
     This double-submit pattern protects against CSRF attacks.
-    
+
     Args:
         request: FastAPI request object
-        
+
     Returns:
         True if valid, False otherwise
     """
@@ -197,35 +202,35 @@ def validate_csrf_token(request: Request) -> bool:
     cookie_token = get_csrf_token_from_cookie(request)
     if not cookie_token:
         return False
-    
+
     # Get CSRF token from header
     header_token = request.headers.get("X-CSRF-Token")
     if not header_token:
         return False
-    
+
     # Compare tokens (constant-time comparison)
     return secrets.compare_digest(cookie_token, header_token)
 
 
 def require_csrf_validation(request: Request) -> None:
     """Require CSRF validation for mutating requests.
-    
+
     Raises HTTPException if CSRF validation fails.
-    
+
     Args:
         request: FastAPI request object
-        
+
     Raises:
         HTTPException: If CSRF validation fails
     """
     # Skip CSRF for GET, HEAD, OPTIONS
     if request.method in ["GET", "HEAD", "OPTIONS"]:
         return
-    
+
     # Skip CSRF for login endpoint (no auth yet)
     if request.url.path in ["/api/auth/login", "/api/auth/refresh"]:
         return
-    
+
     # Validate CSRF token
     if not validate_csrf_token(request):
         logger.warning(
@@ -233,7 +238,7 @@ def require_csrf_validation(request: Request) -> None:
             extra={
                 "path": request.url.path,
                 "method": request.method,
-            }
+            },
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -243,28 +248,28 @@ def require_csrf_validation(request: Request) -> None:
 
 class CookieAuthManager:
     """Manager for cookie-based authentication."""
-    
+
     def __init__(self, request: Request, response: Response):
         """Initialize cookie auth manager.
-        
+
         Args:
             request: FastAPI request object
             response: FastAPI response object
         """
         self.request = request
         self.response = response
-    
+
     def set_tokens(
         self,
         access_token: str,
         refresh_token: str,
     ) -> str:
         """Set authentication tokens as cookies.
-        
+
         Args:
             access_token: JWT access token
             refresh_token: JWT refresh token
-            
+
         Returns:
             CSRF token for client to use
         """
@@ -277,19 +282,19 @@ class CookieAuthManager:
             self.request,
         )
         return csrf_token
-    
+
     def clear_tokens(self) -> None:
         """Clear authentication tokens from cookies."""
         clear_auth_cookies(self.response, self.request)
-    
-    def get_access_token(self) -> Optional[str]:
+
+    def get_access_token(self) -> str | None:
         """Get access token from cookie."""
         return get_token_from_cookie(self.request, "access")
-    
-    def get_refresh_token(self) -> Optional[str]:
+
+    def get_refresh_token(self) -> str | None:
         """Get refresh token from cookie."""
         return get_token_from_cookie(self.request, "refresh")
-    
+
     def validate_csrf(self) -> bool:
         """Validate CSRF token."""
         return validate_csrf_token(self.request)
@@ -302,13 +307,13 @@ def create_token_response_with_cookies(
     user_role: str,
 ) -> dict:
     """Create tokens and set them as cookies.
-    
+
     Args:
         response: FastAPI response object
         request: FastAPI request object
         user_id: User ID
         user_role: User role
-        
+
     Returns:
         Dict with CSRF token for client
     """
@@ -317,14 +322,12 @@ def create_token_response_with_cookies(
         data={"sub": user_id, "role": user_role},
         expires_delta=timedelta(minutes=settings.jwt_expire_minutes),
     )
-    refresh_token = create_refresh_token(
-        data={"sub": user_id, "role": user_role}
-    )
-    
+    refresh_token = create_refresh_token(data={"sub": user_id, "role": user_role})
+
     # Set cookies
     manager = CookieAuthManager(request, response)
     csrf_token = manager.set_tokens(access_token, refresh_token)
-    
+
     return {
         "csrf_token": csrf_token,
         "token_type": "cookie",

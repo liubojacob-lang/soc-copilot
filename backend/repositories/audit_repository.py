@@ -1,9 +1,10 @@
 """Repository for audit log operations."""
 
-from typing import List, Optional
+import builtins
 from datetime import datetime, timedelta
+
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func
 
 from models.audit_log import AuditLogModel
 
@@ -20,13 +21,13 @@ class AuditRepository:
         method: str,
         path: str,
         status_code: int,
-        user_id: Optional[str] = None,
-        target_type: Optional[str] = None,
-        target_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        duration_ms: Optional[int] = None,
-        extra_json: Optional[dict] = None,
+        user_id: str | None = None,
+        target_type: str | None = None,
+        target_id: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        duration_ms: int | None = None,
+        extra_json: dict | None = None,
     ) -> AuditLogModel:
         """Create an audit log entry."""
         audit_log = AuditLogModel(
@@ -51,13 +52,13 @@ class AuditRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-        user_id: Optional[str] = None,
-        action: Optional[str] = None,
-        path: Optional[str] = None,
-        status_code: Optional[str] = None,  # Changed to str to support ranges
-        date_from: Optional[str] = None,
-        date_to: Optional[str] = None,
-    ) -> tuple[List[AuditLogModel], int]:
+        user_id: str | None = None,
+        action: str | None = None,
+        path: str | None = None,
+        status_code: str | None = None,  # Changed to str to support ranges
+        date_from: str | None = None,
+        date_to: str | None = None,
+    ) -> tuple[list[AuditLogModel], int]:
         """List audit logs with optional filters.
 
         Supports wildcard patterns:
@@ -129,7 +130,9 @@ class AuditRepository:
         total = count_result.scalar_one()
 
         # Get paginated results
-        query = query.order_by(AuditLogModel.created_at.desc()).offset(skip).limit(limit)
+        query = (
+            query.order_by(AuditLogModel.created_at.desc()).offset(skip).limit(limit)
+        )
         result = await self.session.execute(query)
         audit_logs = list(result.scalars().all())
 
@@ -140,7 +143,7 @@ class AuditRepository:
         user_id: str,
         skip: int = 0,
         limit: int = 100,
-    ) -> tuple[List[AuditLogModel], int]:
+    ) -> tuple[builtins.list[AuditLogModel], int]:
         """Get audit logs for a specific user."""
         return await self.list(skip=skip, limit=limit, user_id=user_id)
 
@@ -150,7 +153,7 @@ class AuditRepository:
         target_id: str,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[AuditLogModel]:
+    ) -> builtins.list[AuditLogModel]:
         """Get audit logs for a specific target."""
         result = await self.session.execute(
             select(AuditLogModel)
@@ -178,7 +181,7 @@ class AuditRepository:
         batch_size = 1000
         deleted = 0
         for i in range(0, len(old_ids), batch_size):
-            batch = old_ids[i:i + batch_size]
+            batch = old_ids[i : i + batch_size]
             await self.session.execute(
                 select(AuditLogModel).where(AuditLogModel.id.in_(batch))
             )

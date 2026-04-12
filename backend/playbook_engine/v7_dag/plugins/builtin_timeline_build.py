@@ -1,8 +1,8 @@
 """Timeline building node plugin (v0.7.4)."""
 
-from typing import Any, Dict, List
-from datetime import datetime, timezone
 import logging
+from datetime import UTC, datetime
+from typing import Any
 
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
@@ -31,11 +31,11 @@ class TimelineBuildPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Build chronological timeline from event data"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         pass
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Execute timeline building.
 
         Args:
@@ -55,23 +55,30 @@ class TimelineBuildPlugin(BaseNodePlugin):
 
         # Add alert creation time as starting point
         if alert:
-            timeline.append({
-                "timestamp": alert.get("created_at") or datetime.now(timezone.utc).isoformat(),
-                "event_type": "alert_created",
-                "description": f"Alert '{alert.get('name', 'unknown')}' created",
-                "source": "siem",
-                "severity": alert.get("severity", "unknown")
-            })
+            timeline.append(
+                {
+                    "timestamp": alert.get("created_at")
+                    or datetime.now(UTC).isoformat(),
+                    "event_type": "alert_created",
+                    "description": f"Alert '{alert.get('name', 'unknown')}' created",
+                    "source": "siem",
+                    "severity": alert.get("severity", "unknown"),
+                }
+            )
 
         # Add IOC extraction events
         if iocs:
-            timeline.append({
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "event_type": "ioc_extraction",
-                "description": f"Extracted {sum(len(v) if isinstance(v, list) else 1 for v in iocs.values())} IOCs",
-                "source": "analysis",
-                "details": {k: len(v) if isinstance(v, list) else 1 for k, v in iocs.items()}
-            })
+            timeline.append(
+                {
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "event_type": "ioc_extraction",
+                    "description": f"Extracted {sum(len(v) if isinstance(v, list) else 1 for v in iocs.values())} IOCs",
+                    "source": "analysis",
+                    "details": {
+                        k: len(v) if isinstance(v, list) else 1 for k, v in iocs.items()
+                    },
+                }
+            )
 
         # Sort by timestamp
         timeline.sort(key=lambda x: x.get("timestamp", ""))
@@ -87,11 +94,11 @@ class TimelineBuildPlugin(BaseNodePlugin):
             "summary": {
                 "earliest": timeline[0]["timestamp"] if timeline else None,
                 "latest": timeline[-1]["timestamp"] if timeline else None,
-                "duration_hours": self._calculate_duration(timeline)
-            }
+                "duration_hours": self._calculate_duration(timeline),
+            },
         }
 
-    def _calculate_duration(self, timeline: List[Dict[str, Any]]) -> float:
+    def _calculate_duration(self, timeline: list[dict[str, Any]]) -> float:
         """Calculate duration in hours between first and last event.
 
         Args:
@@ -104,8 +111,12 @@ class TimelineBuildPlugin(BaseNodePlugin):
             return 0
 
         try:
-            first = datetime.fromisoformat(timeline[0]["timestamp"].replace("Z", "+00:00"))
-            last = datetime.fromisoformat(timeline[-1]["timestamp"].replace("Z", "+00:00"))
+            first = datetime.fromisoformat(
+                timeline[0]["timestamp"].replace("Z", "+00:00")
+            )
+            last = datetime.fromisoformat(
+                timeline[-1]["timestamp"].replace("Z", "+00:00")
+            )
             return (last - first).total_seconds() / 3600
         except (ValueError, KeyError):
             return 0

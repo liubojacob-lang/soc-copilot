@@ -7,22 +7,21 @@ This service handles:
 - Restoring from historical versions
 """
 
-import uuid
 import logging
-from datetime import datetime, timezone
-from typing import Optional, List
-from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
+from datetime import UTC, datetime
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.playbook_definition import (
     PlaybookDefinitionModel,
+    PlaybookDefinitionStatus,
     PlaybookDefinitionVersionModel,
-    PlaybookDefinitionStatus
 )
-from models.user import UserModel
 from schemas.playbook_dag import (
     PlaybookDefinitionVersionOut,
-    PlaybookVersionListResponse
+    PlaybookVersionListResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,8 +36,8 @@ class PlaybookVersionService:
     async def create_version_snapshot(
         self,
         definition_id: str,
-        change_note: Optional[str] = None,
-        created_by_user_id: Optional[str] = None
+        change_note: str | None = None,
+        created_by_user_id: str | None = None,
     ) -> PlaybookDefinitionVersionModel:
         """
         Create a version snapshot of a playbook definition.
@@ -62,9 +61,13 @@ class PlaybookVersionService:
             raise ValueError(f"Playbook definition {definition_id} not found")
 
         # Get current max version number
-        version_stmt = select(PlaybookDefinitionVersionModel).where(
-            PlaybookDefinitionVersionModel.playbook_definition_id == definition_id
-        ).order_by(PlaybookDefinitionVersionModel.version_no.desc())
+        version_stmt = (
+            select(PlaybookDefinitionVersionModel)
+            .where(
+                PlaybookDefinitionVersionModel.playbook_definition_id == definition_id
+            )
+            .order_by(PlaybookDefinitionVersionModel.version_no.desc())
+        )
 
         version_result = await self.session.execute(version_stmt)
         last_version = version_result.first()
@@ -83,8 +86,8 @@ class PlaybookVersionService:
             name=definition.name,
             description=definition.description,
             created_by_user_id=created_by_user_id,
-            created_at=datetime.now(timezone.utc),
-            change_note=change_note
+            created_at=datetime.now(UTC),
+            change_note=change_note,
         )
 
         self.session.add(version)
@@ -94,15 +97,17 @@ class PlaybookVersionService:
 
         await self.session.flush()
 
-        logger.info(f"Created version snapshot v{new_version_no} for definition {definition_id}")
+        logger.info(
+            f"Created version snapshot v{new_version_no} for definition {definition_id}"
+        )
 
         return version
 
     async def publish_definition(
         self,
         definition_id: str,
-        change_note: Optional[str] = None,
-        created_by_user_id: Optional[str] = None
+        change_note: str | None = None,
+        created_by_user_id: str | None = None,
     ) -> PlaybookDefinitionModel:
         """
         Publish a draft playbook definition.
@@ -138,12 +143,12 @@ class PlaybookVersionService:
         await self.create_version_snapshot(
             definition_id=definition_id,
             change_note=change_note or "Published",
-            created_by_user_id=created_by_user_id
+            created_by_user_id=created_by_user_id,
         )
 
         # Update definition status
         definition.status = PlaybookDefinitionStatus.PUBLISHED
-        definition.published_at = datetime.now(timezone.utc)
+        definition.published_at = datetime.now(UTC)
 
         await self.session.flush()
 
@@ -152,8 +157,7 @@ class PlaybookVersionService:
         return definition
 
     async def get_version_history(
-        self,
-        definition_id: str
+        self, definition_id: str
     ) -> PlaybookVersionListResponse:
         """
         Get version history for a playbook definition.
@@ -175,9 +179,13 @@ class PlaybookVersionService:
             raise ValueError(f"Playbook definition {definition_id} not found")
 
         # Get all versions
-        version_stmt = select(PlaybookDefinitionVersionModel).where(
-            PlaybookDefinitionVersionModel.playbook_definition_id == definition_id
-        ).order_by(PlaybookDefinitionVersionModel.version_no.desc())
+        version_stmt = (
+            select(PlaybookDefinitionVersionModel)
+            .where(
+                PlaybookDefinitionVersionModel.playbook_definition_id == definition_id
+            )
+            .order_by(PlaybookDefinitionVersionModel.version_no.desc())
+        )
 
         version_result = await self.session.execute(version_stmt)
         versions = version_result.scalars().all()
@@ -191,15 +199,15 @@ class PlaybookVersionService:
             definition_id=definition_id,
             versions=version_outputs,
             total=len(version_outputs),
-            current_version_no=definition.current_version_no
+            current_version_no=definition.current_version_no,
         )
 
     async def restore_from_version(
         self,
         definition_id: str,
         version_no: int,
-        change_note: Optional[str] = None,
-        created_by_user_id: Optional[str] = None
+        change_note: str | None = None,
+        created_by_user_id: str | None = None,
     ) -> PlaybookDefinitionModel:
         """
         Restore a playbook definition from a historical version.
@@ -229,13 +237,15 @@ class PlaybookVersionService:
         # Get the version to restore
         version_stmt = select(PlaybookDefinitionVersionModel).where(
             PlaybookDefinitionVersionModel.playbook_definition_id == definition_id,
-            PlaybookDefinitionVersionModel.version_no == version_no
+            PlaybookDefinitionVersionModel.version_no == version_no,
         )
         version_result = await self.session.execute(version_stmt)
         version = version_result.scalar_one_or_none()
 
         if not version:
-            raise ValueError(f"Version {version_no} not found for definition {definition_id}")
+            raise ValueError(
+                f"Version {version_no} not found for definition {definition_id}"
+            )
 
         # If definition is published, we need to create a new version as draft
         if definition.status == PlaybookDefinitionStatus.PUBLISHED:
@@ -248,7 +258,7 @@ class PlaybookVersionService:
         definition.definition_json = version.dag_json.copy()
         definition.name = version.name or definition.name
         definition.description = version.description or definition.description
-        definition.updated_at = datetime.now(timezone.utc)
+        definition.updated_at = datetime.now(UTC)
 
         # Increment version number
         definition.current_version_no += 1
@@ -283,10 +293,7 @@ class PlaybookVersionService:
 
         return definition.can_modify
 
-    async def archive_definition(
-        self,
-        definition_id: str
-    ) -> PlaybookDefinitionModel:
+    async def archive_definition(self, definition_id: str) -> PlaybookDefinitionModel:
         """
         Archive a playbook definition.
 

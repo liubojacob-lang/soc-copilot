@@ -1,9 +1,11 @@
 """CSRF protection using double-submit cookie pattern."""
 
-import secrets
 import hashlib
-from fastapi import Request, HTTPException, status
+import secrets
+
+from fastapi import HTTPException, Request, status
 from fastapi.responses import Response
+
 from core.config import settings
 from core.logger import get_logger
 
@@ -61,7 +63,9 @@ async def validate_csrf(request: Request) -> None:
     # Get CSRF token from header
     csrf_token = request.headers.get(CSRF_HEADER_NAME)
     if not csrf_token:
-        logger.warning(f"CSRF token missing from header for {request.method} {request.url.path}")
+        logger.warning(
+            f"CSRF token missing from header for {request.method} {request.url.path}"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="CSRF token missing. Include X-CSRF-Token header.",

@@ -6,7 +6,7 @@ This module contains endpoints for:
 - Getting pending approval count
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -15,9 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from models.user import UserModel, UserRole
-from models.playbook_approval import PlaybookApprovalModel
 from dependencies.auth import get_current_user
+from models.playbook_approval import PlaybookApprovalModel
+from models.user import UserModel, UserRole
 from repositories.audit_repository import AuditRepository
 
 logger = get_logger(__name__)
@@ -27,6 +27,7 @@ router = APIRouter(tags=["playbook-approvals"])
 
 class ApprovalListResponse(BaseModel):
     """Response for approval list."""
+
     items: list[dict]
     total: int
     page: int
@@ -35,6 +36,7 @@ class ApprovalListResponse(BaseModel):
 
 class ApprovalActionRequest(BaseModel):
     """Request for approve/reject action."""
+
     comments: str | None = None
 
 
@@ -57,9 +59,7 @@ async def list_approvals(
     # Role-based filtering
     if current_user.role == UserRole.ANALYST:
         # Analysts can only see their own requests
-        stmt = stmt.where(
-            PlaybookApprovalModel.requested_by_user_id == current_user.id
-        )
+        stmt = stmt.where(PlaybookApprovalModel.requested_by_user_id == current_user.id)
     # admin and auditor can see all
 
     # Status filter
@@ -87,39 +87,53 @@ async def list_approvals(
         requested_by = None
         if approval.requested_by_user_id:
             user_result = await session.execute(
-                select(UserModel.username).where(UserModel.id == approval.requested_by_user_id)
+                select(UserModel.username).where(
+                    UserModel.id == approval.requested_by_user_id
+                )
             )
             requested_by = user_result.scalar_one_or_none()
 
         approved_by = None
         if approval.approved_by_user_id:
             user_result = await session.execute(
-                select(UserModel.username).where(UserModel.id == approval.approved_by_user_id)
+                select(UserModel.username).where(
+                    UserModel.id == approval.approved_by_user_id
+                )
             )
             approved_by = user_result.scalar_one_or_none()
 
         rejected_by = None
         if approval.rejected_by_user_id:
             user_result = await session.execute(
-                select(UserModel.username).where(UserModel.id == approval.rejected_by_user_id)
+                select(UserModel.username).where(
+                    UserModel.id == approval.rejected_by_user_id
+                )
             )
             rejected_by = user_result.scalar_one_or_none()
 
-        items.append({
-            "id": approval.id,
-            "run_id": approval.run_id,
-            "node_id": approval.node_id,
-            "status": approval.status,
-            "title": approval.title,
-            "message": approval.message,
-            "comments": approval.comments,
-            "requested_by": requested_by,
-            "approved_by": approved_by,
-            "rejected_by": rejected_by,
-            "created_at": approval.created_at.isoformat() if approval.created_at else None,
-            "decided_at": approval.decided_at.isoformat() if approval.decided_at else None,
-            "expires_at": approval.expires_at.isoformat() if approval.expires_at else None,
-        })
+        items.append(
+            {
+                "id": approval.id,
+                "run_id": approval.run_id,
+                "node_id": approval.node_id,
+                "status": approval.status,
+                "title": approval.title,
+                "message": approval.message,
+                "comments": approval.comments,
+                "requested_by": requested_by,
+                "approved_by": approved_by,
+                "rejected_by": rejected_by,
+                "created_at": (
+                    approval.created_at.isoformat() if approval.created_at else None
+                ),
+                "decided_at": (
+                    approval.decided_at.isoformat() if approval.decided_at else None
+                ),
+                "expires_at": (
+                    approval.expires_at.isoformat() if approval.expires_at else None
+                ),
+            }
+        )
 
     return ApprovalListResponse(
         items=items,
@@ -149,14 +163,11 @@ async def approve_approval(
     # Check permissions - only admin and auditor can approve
     if current_user.role not in [UserRole.ADMIN, UserRole.AUDITOR]:
         raise HTTPException(
-            status_code=403,
-            detail="Only admin and auditor roles can approve requests"
+            status_code=403, detail="Only admin and auditor roles can approve requests"
         )
 
     # Get approval
-    stmt = select(PlaybookApprovalModel).where(
-        PlaybookApprovalModel.id == approval_id
-    )
+    stmt = select(PlaybookApprovalModel).where(PlaybookApprovalModel.id == approval_id)
     result = await session.execute(stmt)
     approval = result.scalar_one_or_none()
 
@@ -166,11 +177,11 @@ async def approve_approval(
     if approval.status != "pending":
         raise HTTPException(
             status_code=400,
-            detail=f"Approval is not pending (current status: {approval.status})"
+            detail=f"Approval is not pending (current status: {approval.status})",
         )
 
     # Check if expired
-    if approval.expires_at and approval.expires_at < datetime.now(timezone.utc):
+    if approval.expires_at and approval.expires_at < datetime.now(UTC):
         approval.status = "expired"
         await session.commit()
         raise HTTPException(status_code=400, detail="Approval has expired")
@@ -178,7 +189,7 @@ async def approve_approval(
     # Update approval
     approval.status = "approved"
     approval.approved_by_user_id = current_user.id
-    approval.decided_at = datetime.now(timezone.utc)
+    approval.decided_at = datetime.now(UTC)
     approval.comments = request.comments
 
     # Audit log
@@ -202,7 +213,8 @@ async def approve_approval(
 
     # Resume playbook execution
     try:
-        from services.playbook_run_service import PlaybookRunService
+        from services.playbook.playbook_run_service import PlaybookRunService
+
         run_service = PlaybookRunService(session)
 
         await run_service.resume_from_approval(
@@ -243,14 +255,11 @@ async def reject_approval(
     # Check permissions - only admin and auditor can reject
     if current_user.role not in [UserRole.ADMIN, UserRole.AUDITOR]:
         raise HTTPException(
-            status_code=403,
-            detail="Only admin and auditor roles can reject requests"
+            status_code=403, detail="Only admin and auditor roles can reject requests"
         )
 
     # Get approval
-    stmt = select(PlaybookApprovalModel).where(
-        PlaybookApprovalModel.id == approval_id
-    )
+    stmt = select(PlaybookApprovalModel).where(PlaybookApprovalModel.id == approval_id)
     result = await session.execute(stmt)
     approval = result.scalar_one_or_none()
 
@@ -260,11 +269,11 @@ async def reject_approval(
     if approval.status != "pending":
         raise HTTPException(
             status_code=400,
-            detail=f"Approval is not pending (current status: {approval.status})"
+            detail=f"Approval is not pending (current status: {approval.status})",
         )
 
     # Check if expired
-    if approval.expires_at and approval.expires_at < datetime.now(timezone.utc):
+    if approval.expires_at and approval.expires_at < datetime.now(UTC):
         approval.status = "expired"
         await session.commit()
         raise HTTPException(status_code=400, detail="Approval has expired")
@@ -272,7 +281,7 @@ async def reject_approval(
     # Update approval
     approval.status = "rejected"
     approval.rejected_by_user_id = current_user.id
-    approval.decided_at = datetime.now(timezone.utc)
+    approval.decided_at = datetime.now(UTC)
     approval.comments = request.comments
 
     # Audit log
@@ -306,8 +315,10 @@ async def reject_approval(
 
     if node_run:
         node_run.status = "failed"
-        node_run.error_message = f"Approval rejected: {request.comments or 'No reason provided'}"
-        node_run.finished_at = datetime.now(timezone.utc)
+        node_run.error_message = (
+            f"Approval rejected: {request.comments or 'No reason provided'}"
+        )
+        node_run.finished_at = datetime.now(UTC)
         await session.commit()
 
     logger.info(
@@ -331,14 +342,14 @@ async def get_pending_approvals_count(
     - admin/auditor: count of all pending approvals
     - analyst: count of their own pending approvals
     """
-    stmt = select(func.count()).select_from(PlaybookApprovalModel).where(
-        PlaybookApprovalModel.status == "pending"
+    stmt = (
+        select(func.count())
+        .select_from(PlaybookApprovalModel)
+        .where(PlaybookApprovalModel.status == "pending")
     )
 
     if current_user.role == UserRole.ANALYST:
-        stmt = stmt.where(
-            PlaybookApprovalModel.requested_by_user_id == current_user.id
-        )
+        stmt = stmt.where(PlaybookApprovalModel.requested_by_user_id == current_user.id)
 
     result = await session.execute(stmt)
     count = result.scalar_one() or 0

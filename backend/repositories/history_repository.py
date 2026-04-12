@@ -1,15 +1,12 @@
 """Repository for history CRUD operations."""
 
-import json
-from typing import Any
-from sqlalchemy import select, delete, func, or_
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.history import HistoryModel
 from schemas.history import (
     HistoryCreate,
     HistoryResponse,
-    HistoryListResponse,
 )
 
 

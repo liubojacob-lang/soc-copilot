@@ -1,9 +1,10 @@
 """Timeline building step implementation."""
 
+from datetime import datetime, timedelta
 from typing import Any
-from datetime import datetime, timezone, timedelta
-from .base_step import BaseStepImpl
+
 from ..registry import register_step
+from .base_step import BaseStepImpl
 
 
 class TimelineBuildStep(BaseStepImpl):
@@ -57,8 +58,10 @@ class TimelineBuildStep(BaseStepImpl):
         if alert_time:
             if isinstance(alert_time, str):
                 try:
-                    alert_time = datetime.fromisoformat(alert_time.replace("Z", "+00:00"))
-                except:
+                    alert_time = datetime.fromisoformat(
+                        alert_time.replace("Z", "+00:00")
+                    )
+                except (ValueError, TypeError):
                     alert_time = datetime.now()
             elif not isinstance(alert_time, datetime):
                 alert_time = datetime.now()
@@ -69,60 +72,70 @@ class TimelineBuildStep(BaseStepImpl):
         events = []
 
         # Initial detection event
-        events.append({
-            "timestamp": alert_time.isoformat(),
-            "event_type": "detection",
-            "description": "Security alert generated",
-            "source": "SIEM/EDR",
-            "severity": alert_data.get("severity", "medium"),
-            "details": {
-                "alert_title": alert_data.get("title", "Unknown Alert"),
-                "alert_type": alert_data.get("alert_type", "Unknown"),
-            },
-        })
+        events.append(
+            {
+                "timestamp": alert_time.isoformat(),
+                "event_type": "detection",
+                "description": "Security alert generated",
+                "source": "SIEM/EDR",
+                "severity": alert_data.get("severity", "medium"),
+                "details": {
+                    "alert_title": alert_data.get("title", "Unknown Alert"),
+                    "alert_type": alert_data.get("alert_type", "Unknown"),
+                },
+            }
+        )
 
         # Estimated first compromise (typically 1-7 days before detection)
         estimated_compromise = alert_time - timedelta(days=3)
-        events.append({
-            "timestamp": estimated_compromise.isoformat(),
-            "event_type": "estimated_compromise",
-            "description": "Estimated initial compromise (based on industry dwell time averages)",
-            "source": "Estimated",
-            "severity": "high",
-            "details": {
-                "confidence": "low",
-                "method": "statistical_average",
-            },
-        })
+        events.append(
+            {
+                "timestamp": estimated_compromise.isoformat(),
+                "event_type": "estimated_compromise",
+                "description": "Estimated initial compromise (based on industry dwell time averages)",
+                "source": "Estimated",
+                "severity": "high",
+                "details": {
+                    "confidence": "low",
+                    "method": "statistical_average",
+                },
+            }
+        )
 
         # IOC first seen events
         for ip in iocs.get("ips", [])[:3]:
-            events.append({
-                "timestamp": (alert_time - timedelta(hours=24)).isoformat(),
-                "event_type": "ioc_observed",
-                "description": f"Malicious IP {ip} observed in network logs",
-                "source": "Network Logs",
-                "severity": "high",
-                "details": {
-                    "ioc_type": "ip",
-                    "ioc_value": ip,
-                },
-            })
+            events.append(
+                {
+                    "timestamp": (alert_time - timedelta(hours=24)).isoformat(),
+                    "event_type": "ioc_observed",
+                    "description": f"Malicious IP {ip} observed in network logs",
+                    "source": "Network Logs",
+                    "severity": "high",
+                    "details": {
+                        "ioc_type": "ip",
+                        "ioc_value": ip,
+                    },
+                }
+            )
 
         # Lateral movement events (estimated)
         if alert_data.get("hostname"):
             for i in range(1, min(len(iocs.get("ips", [])) + 1, 4)):
-                events.append({
-                    "timestamp": (alert_time - timedelta(hours=24-i*6)).isoformat(),
-                    "event_type": "lateral_movement",
-                    "description": f"Potential lateral movement to host #{i}",
-                    "source": "Estimated",
-                    "severity": "medium",
-                    "details": {
-                        "confidence": "low",
-                        "source_host": alert_data.get("hostname", "unknown"),
-                    },
-                })
+                events.append(
+                    {
+                        "timestamp": (
+                            alert_time - timedelta(hours=24 - i * 6)
+                        ).isoformat(),
+                        "event_type": "lateral_movement",
+                        "description": f"Potential lateral movement to host #{i}",
+                        "source": "Estimated",
+                        "severity": "medium",
+                        "details": {
+                            "confidence": "low",
+                            "source_host": alert_data.get("hostname", "unknown"),
+                        },
+                    }
+                )
 
         # Sort events by timestamp
         events.sort(key=lambda x: x["timestamp"])
@@ -140,7 +153,7 @@ class TimelineBuildStep(BaseStepImpl):
                 latest = datetime.fromisoformat(events[-1]["timestamp"])
                 time_span = (latest - earliest).total_seconds() / 3600
                 timeline["summary"]["time_span_hours"] = round(time_span, 2)
-            except:
+            except (ValueError, TypeError, KeyError, IndexError):
                 pass
 
         return timeline

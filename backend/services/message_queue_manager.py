@@ -15,7 +15,12 @@ import asyncio
 import logging
 from typing import Any
 
-from services.message_broker import ConsumerConfig, EventEnvelope, EventPriority, get_message_broker
+from services.message_broker import (
+    ConsumerConfig,
+    EventEnvelope,
+    EventPriority,
+    get_message_broker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,25 +38,33 @@ class MessageQueueManager:
             "low": "events:low",
         }
 
-    def publish_alert(self, alert: dict, severity: str = "medium", max_length: int = 10000) -> str | None:
+    def publish_alert(
+        self, alert: dict, severity: str = "medium", max_length: int = 10000
+    ) -> str | None:
         """Legacy synchronous publish API."""
         envelope = EventEnvelope(
             event_id=str(alert.get("id", "unknown")),
             event_type="alert.created",
             source=alert.get("source", "unknown"),
-            priority=EventPriority(severity if severity in EventPriority._value2member_map_ else "medium"),
+            priority=EventPriority(
+                severity if severity in EventPriority._value2member_map_ else "medium"
+            ),
             payload=alert,
             metadata={"compat": True, "max_length": max_length},
         )
         return self._run_async(self.broker.publish(envelope))
 
-    async def publish_alert_async(self, alert: dict, severity: str = "medium", max_length: int = 10000) -> str | None:
+    async def publish_alert_async(
+        self, alert: dict, severity: str = "medium", max_length: int = 10000
+    ) -> str | None:
         """Async publish API for new callers."""
         envelope = EventEnvelope(
             event_id=str(alert.get("id", "unknown")),
             event_type="alert.created",
             source=alert.get("source", "unknown"),
-            priority=EventPriority(severity if severity in EventPriority._value2member_map_ else "medium"),
+            priority=EventPriority(
+                severity if severity in EventPriority._value2member_map_ else "medium"
+            ),
             payload=alert,
             metadata={"compat": True, "max_length": max_length},
         )
@@ -96,7 +109,9 @@ class MessageQueueManager:
             count=count,
             block_ms=block,
         )
-        messages = self._run_async(self.broker.consume(cfg, priority_order=priority_order))
+        messages = self._run_async(
+            self.broker.consume(cfg, priority_order=priority_order)
+        )
         out = []
         for msg in messages:
             out.append(
@@ -117,12 +132,20 @@ class MessageQueueManager:
     async def acknowledge_async(self, stream: str, message_id: str) -> bool:
         return await self.broker.ack(stream, message_id, self.consumer_group)
 
-    def negative_acknowledge(self, stream: str, message_id: str, envelope: EventEnvelope, reason: str) -> bool:
-        return self._run_async(self.broker.nack(stream, message_id, self.consumer_group, envelope, reason))
+    def negative_acknowledge(
+        self, stream: str, message_id: str, envelope: EventEnvelope, reason: str
+    ) -> bool:
+        return self._run_async(
+            self.broker.nack(stream, message_id, self.consumer_group, envelope, reason)
+        )
 
-    def replay_failed_messages(self, target_priority: str = "medium", limit: int = 100) -> int:
+    def replay_failed_messages(
+        self, target_priority: str = "medium", limit: int = 100
+    ) -> int:
         target_stream = self.streams.get(target_priority, self.streams["medium"])
-        return self._run_async(self.broker.replay_dlq("events:dlq", target_stream, limit=limit))
+        return self._run_async(
+            self.broker.replay_dlq("events:dlq", target_stream, limit=limit)
+        )
 
     def process_delayed_queue(self, limit: int = 100) -> int:
         return self._run_async(self.broker.process_delayed_messages(limit=limit))
@@ -139,7 +162,9 @@ class MessageQueueManager:
             # For async contexts, callers should use async methods when available.
             # Keep compat by creating a task and waiting in a threadsafe way is not possible here,
             # so we fail loud and instruct migration.
-            raise RuntimeError("Cannot call sync queue API from an active event loop; use async queue APIs")
+            raise RuntimeError(
+                "Cannot call sync queue API from an active event loop; use async queue APIs"
+            )
         except RuntimeError as exc:
             if "active event loop" in str(exc):
                 raise

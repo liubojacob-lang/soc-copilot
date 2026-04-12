@@ -1,21 +1,22 @@
 """Service for playbook run operations."""
 
-from typing import Any, Optional
+from datetime import UTC
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
-from models.playbook_run import PlaybookRunModel, PlaybookRunStepModel
+from playbook_engine import PlaybookExecutionEngine
+from repositories.playbook_run_repository import PlaybookRunRepository
 from schemas.playbook_run import (
-    PlaybookRunCreateRequest,
-    PlaybookRunResponse,
-    PlaybookRunStepResponse,
-    PlaybookRunListResponse,
     PlaybookResumeRequest,
     PlaybookResumeResponse,
+    PlaybookRunCreateRequest,
+    PlaybookRunListResponse,
+    PlaybookRunResponse,
+    PlaybookRunStepResponse,
     PlaybookRunWithStepsResponse,
 )
-from repositories.playbook_run_repository import PlaybookRunRepository
-from playbook_engine import PlaybookExecutionEngine
 
 logger = get_logger(__name__)
 
@@ -36,7 +37,7 @@ class PlaybookRunService:
     async def create_run(
         self,
         request: PlaybookRunCreateRequest,
-        created_by_user_id: Optional[str] = None,
+        created_by_user_id: str | None = None,
     ) -> PlaybookRunResponse:
         """Create and start a new playbook run.
 
@@ -65,9 +66,9 @@ class PlaybookRunService:
 
     async def list_runs(
         self,
-        playbook_name: Optional[str] = None,
-        status: Optional[str] = None,
-        created_by_user_id: Optional[str] = None,
+        playbook_name: str | None = None,
+        status: str | None = None,
+        created_by_user_id: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> PlaybookRunListResponse:
@@ -101,7 +102,7 @@ class PlaybookRunService:
             page_size=page_size,
         )
 
-    async def get_run(self, run_id: str) -> Optional[PlaybookRunResponse]:
+    async def get_run(self, run_id: str) -> PlaybookRunResponse | None:
         """Get a playbook run by ID.
 
         Args:
@@ -118,7 +119,7 @@ class PlaybookRunService:
     async def get_run_with_steps(
         self,
         run_id: str,
-    ) -> Optional[PlaybookRunWithStepsResponse]:
+    ) -> PlaybookRunWithStepsResponse | None:
         """Get a playbook run with all steps.
 
         Args:
@@ -143,7 +144,7 @@ class PlaybookRunService:
         self,
         run_id: str,
         request: PlaybookResumeRequest,
-        created_by_user_id: Optional[str] = None,
+        created_by_user_id: str | None = None,
     ) -> PlaybookResumeResponse:
         """Resume a failed or partial playbook run.
 
@@ -185,6 +186,7 @@ class PlaybookRunService:
             Dictionary of available playbooks
         """
         from schemas.playbook_run import AVAILABLE_PLAYBOOKS
+
         return AVAILABLE_PLAYBOOKS
 
     async def resume_from_approval(
@@ -192,7 +194,7 @@ class PlaybookRunService:
         run_id: str,
         node_id: str,
         approved: bool,
-        comments: Optional[str] = None,
+        comments: str | None = None,
     ) -> dict[str, Any]:
         """Resume a playbook run after approval.
 
@@ -208,11 +210,15 @@ class PlaybookRunService:
         Raises:
             ValueError: If run or node not found
         """
-        from datetime import datetime, timezone
-        from models.playbook_node_run import PlaybookNodeRunModel
+        from datetime import datetime
+
         from sqlalchemy import select
 
-        logger.info(f"[{run_id}] Resuming from approval, node={node_id}, approved={approved}")
+        from models.playbook_node_run import PlaybookNodeRunModel
+
+        logger.info(
+            f"[{run_id}] Resuming from approval, node={node_id}, approved={approved}"
+        )
 
         # Update node run status
         stmt = select(PlaybookNodeRunModel).where(
@@ -228,11 +234,11 @@ class PlaybookRunService:
         if approved:
             # Update node to success and continue execution
             node_run.status = "success"
-            node_run.finished_at = datetime.now(timezone.utc)
+            node_run.finished_at = datetime.now(UTC)
             node_run.output_json = {
                 "approval_status": "approved",
                 "comments": comments,
-                "approved_at": datetime.now(timezone.utc).isoformat(),
+                "approved_at": datetime.now(UTC).isoformat(),
             }
 
             await self.session.commit()
@@ -262,4 +268,3 @@ class PlaybookRunService:
                 "status": "rejected",
                 "approved": False,
             }
-

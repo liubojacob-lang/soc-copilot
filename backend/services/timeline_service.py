@@ -4,15 +4,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from schemas.timeline import TimelineResponse
-from schemas.impact import ImpactAnalysis, DegradedImpactAnalysis, Severity as ImpactSeverity
-from schemas.threat_intel import ThreatIntelAnalysis
-from utils.ioc_extract import extract_iocs, get_ioc_count, IOCs
-from services.llm_retry import get_llm_retry_service
+from services.asset_service import AssetService
 from services.history_service import HistoryService
 from services.impact_service import ImpactAnalysisService, get_degraded_impact
-from services.asset_service import AssetService
 from services.ioc_hits_service import IOCHitsService
+from services.llm_retry import get_llm_retry_service
 from services.threat_intel_service import ThreatIntelService, get_degraded_threat_intel
+from utils.ioc_extract import IOCs, extract_iocs
 
 logger = get_logger(__name__)
 
@@ -68,8 +66,10 @@ class TimelineService:
 
         # Step 1: Extract IOCs locally
         local_iocs: IOCs = extract_iocs(raw_log)
-        logger.info(f"Local IOC extraction: {len(local_iocs.ips)} IPs, "
-                   f"{len(local_iocs.domains)} domains")
+        logger.info(
+            f"Local IOC extraction: {len(local_iocs.ips)} IPs, "
+            f"{len(local_iocs.domains)} domains"
+        )
 
         type_hint = f"\nLog Type: {log_type}" if log_type else "\nLog Type: Auto-detect"
 
@@ -136,7 +136,7 @@ For suspicious events, include:
                 error_reason=result.error_reason,
             )
             history_id = history.id
-            
+
             # v0.8.1: Return history_id in response to avoid extra API call
             result.history_id = history_id
 
@@ -191,12 +191,14 @@ For suspicious events, include:
             # Match by hostname
             hostnames = []
             for event in result.timeline:
-                for key, value in event.get('key_fields', {}).items():
-                    if 'host' in key.lower() and isinstance(value, str):
+                for key, value in event.get("key_fields", {}).items():
+                    if "host" in key.lower() and isinstance(value, str):
                         hostnames.append(value)
 
             if hostnames:
-                assets_by_hostname = await self.asset_service.get_by_hostnames(hostnames)
+                assets_by_hostname = await self.asset_service.get_by_hostnames(
+                    hostnames
+                )
                 for asset in assets_by_hostname:
                     if asset not in related_assets:
                         related_assets.append(asset)
@@ -368,7 +370,9 @@ For suspicious events, include:
             "domains": len(merged_iocs["domains"]),
             "urls": len(merged_iocs["urls"]),
             "hashes": len(merged_iocs["hashes"]),
-            "total": sum(len(merged_iocs[k]) for k in ["ips", "domains", "urls", "hashes"]),
+            "total": sum(
+                len(merged_iocs[k]) for k in ["ips", "domains", "urls", "hashes"]
+            ),
         }
 
         return TimelineResponse.model_validate(result_dict)
@@ -392,51 +396,61 @@ For suspicious events, include:
         ]
 
         for event in result.timeline:
-            lines.extend([
-                f"### {event.get('timestamp', 'Unknown')} - {event.get('type', 'Unknown')}",
-                "",
-                event.get('description', 'No description'),
-                "",
-            ])
+            lines.extend(
+                [
+                    f"### {event.get('timestamp', 'Unknown')} - {event.get('type', 'Unknown')}",
+                    "",
+                    event.get("description", "No description"),
+                    "",
+                ]
+            )
 
-            if event.get('key_fields'):
+            if event.get("key_fields"):
                 lines.append("**Key Fields:**")
-                for key, value in event['key_fields'].items():
+                for key, value in event["key_fields"].items():
                     lines.append(f"- `{key}`: {value}")
                 lines.append("")
 
-        lines.extend([
-            "---",
-            "",
-            "## Top 5 Suspicious Events",
-            "",
-        ])
+        lines.extend(
+            [
+                "---",
+                "",
+                "## Top 5 Suspicious Events",
+                "",
+            ]
+        )
 
         for i, event in enumerate(result.suspicious_top5, 1):
-            lines.extend([
-                f"### {i}. {event.get('timestamp', 'Unknown')} [{event.get('severity', 'N/A').upper()}]",
-                "",
-                event.get('description', 'No description'),
-                "",
-                f"**Reasoning:** {event.get('reasoning', 'N/A')}",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"### {i}. {event.get('timestamp', 'Unknown')} [{event.get('severity', 'N/A').upper()}]",
+                    "",
+                    event.get("description", "No description"),
+                    "",
+                    f"**Reasoning:** {event.get('reasoning', 'N/A')}",
+                    "",
+                ]
+            )
 
-        lines.extend([
-            "---",
-            "",
-            "## Next Steps",
-            "",
-        ])
+        lines.extend(
+            [
+                "---",
+                "",
+                "## Next Steps",
+                "",
+            ]
+        )
 
         for step in result.next_steps:
             lines.append(f"- {step}")
 
         if result.degraded:
-            lines.extend([
-                "",
-                "---",
-                f"*⚠️ Degraded mode: {result.error_reason or 'Unknown error'}*",
-            ])
+            lines.extend(
+                [
+                    "",
+                    "---",
+                    f"*⚠️ Degraded mode: {result.error_reason or 'Unknown error'}*",
+                ]
+            )
 
         return "\n".join(lines)

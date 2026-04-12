@@ -19,16 +19,14 @@ Features:
 
 import asyncio
 import time
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 from core.logger import get_logger
 from models.message_filters import (
-    FilterRule,
     FilterSet,
-    FilterValidationResult,
     FilterStats,
-    SeverityLevel
+    FilterValidationResult,
 )
 
 logger = get_logger(__name__)
@@ -44,9 +42,9 @@ class MessageFilterEngine:
 
     def __init__(self):
         # User filter sets: {user_id: FilterSet}
-        self.user_filters: Dict[str, FilterSet] = {}
+        self.user_filters: dict[str, FilterSet] = {}
         # Filter stats: {user_id: FilterStats}
-        self.filter_stats: Dict[str, FilterStats] = {}
+        self.filter_stats: dict[str, FilterStats] = {}
         self._lock = asyncio.Lock()
 
     async def set_filters(self, user_id: str, filter_set: FilterSet) -> None:
@@ -65,12 +63,12 @@ class MessageFilterEngine:
                 self.filter_stats[user_id] = FilterStats(
                     user_id=user_id,
                     total_rules=len(filter_set.rules),
-                    active_rules=len(filter_set.get_active_rules())
+                    active_rules=len(filter_set.get_active_rules()),
                 )
 
         logger.info(f"Set {len(filter_set.rules)} filter rules for user {user_id}")
 
-    async def get_filters(self, user_id: str) -> Optional[FilterSet]:
+    async def get_filters(self, user_id: str) -> FilterSet | None:
         """Get filter set for a user."""
         async with self._lock:
             return self.user_filters.get(user_id)
@@ -85,9 +83,7 @@ class MessageFilterEngine:
             return False
 
     async def evaluate_message(
-        self,
-        user_id: str,
-        message_data: Dict[str, Any]
+        self, user_id: str, message_data: dict[str, Any]
     ) -> FilterValidationResult:
         """
         Evaluate a message against user's filter rules.
@@ -110,7 +106,7 @@ class MessageFilterEngine:
                 return FilterValidationResult(
                     user_id=user_id,
                     should_send=True,
-                    processing_time_ms=(time.time() - start_time) * 1000
+                    processing_time_ms=(time.time() - start_time) * 1000,
                 )
 
             # Evaluate message against rules
@@ -121,7 +117,7 @@ class MessageFilterEngine:
                 if rule.matches(message_data):
                     matched_rules.append(rule.id or rule.name)
                     # Update last triggered time
-                    rule.last_triggered_at = datetime.now(timezone.utc).isoformat()
+                    rule.last_triggered_at = datetime.now(UTC).isoformat()
 
             # Make decision
             should_send = filter_set.should_send_message(message_data)
@@ -133,7 +129,7 @@ class MessageFilterEngine:
                 user_id=user_id,
                 should_send=should_send,
                 matched_rules=matched_rules,
-                processing_time_ms=(time.time() - start_time) * 1000
+                processing_time_ms=(time.time() - start_time) * 1000,
             )
 
         except Exception as e:
@@ -142,16 +138,16 @@ class MessageFilterEngine:
             return FilterValidationResult(
                 user_id=user_id,
                 should_send=True,
-                rejected_by=f"Error: {str(e)}",
-                processing_time_ms=(time.time() - start_time) * 1000
+                rejected_by=f"Error: {e!s}",
+                processing_time_ms=(time.time() - start_time) * 1000,
             )
 
     async def _update_stats(
         self,
         user_id: str,
         should_send: bool,
-        matched_rules: List[str],
-        start_time: float
+        matched_rules: list[str],
+        start_time: float,
     ) -> None:
         """Update filter statistics."""
         if user_id not in self.filter_stats:
@@ -169,15 +165,15 @@ class MessageFilterEngine:
         processing_time_ms = (time.time() - start_time) * 1000
         n = stats.total_messages_evaluated
         stats.avg_processing_time_ms = (
-            (stats.avg_processing_time_ms * (n - 1) + processing_time_ms) / n
-        )
+            stats.avg_processing_time_ms * (n - 1) + processing_time_ms
+        ) / n
 
         # Track most matched rule
         for rule_id in matched_rules:
             if stats.most_matched_rule is None:
                 stats.most_matched_rule = rule_id
 
-    async def get_stats(self, user_id: str) -> Optional[FilterStats]:
+    async def get_stats(self, user_id: str) -> FilterStats | None:
         """Get filter statistics for a user."""
         async with self._lock:
             return self.filter_stats.get(user_id)
@@ -190,7 +186,7 @@ class MessageFilterEngine:
                 return True
             return False
 
-    async def get_all_stats(self) -> Dict[str, FilterStats]:
+    async def get_all_stats(self) -> dict[str, FilterStats]:
         """Get statistics for all users."""
         async with self._lock:
             return dict(self.filter_stats)
@@ -206,13 +202,11 @@ class RateLimiter:
 
     def __init__(self):
         # Track message counts: {user_id: [(timestamp, count)]}
-        self.message_counts: Dict[str, List[datetime]] = {}
+        self.message_counts: dict[str, list[datetime]] = {}
         self._lock = asyncio.Lock()
 
     async def check_rate_limit(
-        self,
-        user_id: str,
-        max_per_minute: Optional[int]
+        self, user_id: str, max_per_minute: int | None
     ) -> bool:
         """
         Check if user is within their rate limit.
@@ -228,12 +222,13 @@ class RateLimiter:
             return True
 
         async with self._lock:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             # Clean old entries (older than 1 minute)
             if user_id in self.message_counts:
                 self.message_counts[user_id] = [
-                    ts for ts in self.message_counts[user_id]
+                    ts
+                    for ts in self.message_counts[user_id]
                     if (now - ts).total_seconds() < 60
                 ]
 
@@ -265,8 +260,8 @@ class FilterService:
     async def should_send_message(
         self,
         user_id: str,
-        message_data: Dict[str, Any],
-        max_per_minute: Optional[int] = None
+        message_data: dict[str, Any],
+        max_per_minute: int | None = None,
     ) -> FilterValidationResult:
         """
         Determine if a message should be sent to a user.
@@ -286,7 +281,7 @@ class FilterService:
                 user_id=user_id,
                 should_send=False,
                 rejected_by="Rate limit exceeded",
-                processing_time_ms=0.0
+                processing_time_ms=0.0,
             )
 
         # Then, evaluate filters
@@ -296,7 +291,7 @@ class FilterService:
         """Set filter rules for a user."""
         await self.filter_engine.set_filters(user_id, filter_set)
 
-    async def get_user_filters(self, user_id: str) -> Optional[FilterSet]:
+    async def get_user_filters(self, user_id: str) -> FilterSet | None:
         """Get filter rules for a user."""
         return await self.filter_engine.get_filters(user_id)
 
@@ -304,7 +299,7 @@ class FilterService:
         """Remove filter rules for a user."""
         return await self.filter_engine.remove_filters(user_id)
 
-    async def get_user_stats(self, user_id: str) -> Optional[FilterStats]:
+    async def get_user_stats(self, user_id: str) -> FilterStats | None:
         """Get filter statistics for a user."""
         return await self.filter_engine.get_stats(user_id)
 
@@ -312,13 +307,13 @@ class FilterService:
         """Reset filter statistics for a user."""
         return await self.filter_engine.reset_stats(user_id)
 
-    async def get_all_stats(self) -> Dict[str, FilterStats]:
+    async def get_all_stats(self) -> dict[str, FilterStats]:
         """Get statistics for all users."""
         return await self.filter_engine.get_all_stats()
 
 
 # Global instance
-_filter_service: Optional[FilterService] = None
+_filter_service: FilterService | None = None
 
 
 def get_filter_service() -> FilterService:

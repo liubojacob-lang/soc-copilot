@@ -2,8 +2,9 @@
 Schemas for Security Alert ingestion and management.
 """
 
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -14,31 +15,41 @@ class SecurityAlertIngest(BaseModel):
     event_id: str = Field(..., description="Unique event ID from source system")
     timestamp: str = Field(..., description="Event timestamp (ISO 8601 format)")
     event_type: str = Field(..., description="Event type/category")
-    severity: str = Field(..., description="Severity level (critical, high, medium, low, info)")
+    severity: str = Field(
+        ..., description="Severity level (critical, high, medium, low, info)"
+    )
     title: str = Field(..., description="Alert title")
-    description: Optional[str] = Field(None, description="Alert description")
+    description: str | None = Field(None, description="Alert description")
 
     # Network information
-    source_ip: Optional[str] = Field(None, description="Source IP address")
-    destination_ip: Optional[str] = Field(None, description="Destination IP address")
-    protocol: Optional[str] = Field(None, description="Network protocol")
+    source_ip: str | None = Field(None, description="Source IP address")
+    destination_ip: str | None = Field(None, description="Destination IP address")
+    protocol: str | None = Field(None, description="Network protocol")
 
     # Host/Agent information
-    agent_name: Optional[str] = Field(None, description="Agent/hostname")
-    agent_id: Optional[str] = Field(None, description="Agent ID")
-    agent_ip: Optional[str] = Field(None, description="Agent IP address")
+    agent_name: str | None = Field(None, description="Agent/hostname")
+    agent_id: str | None = Field(None, description="Agent ID")
+    agent_ip: str | None = Field(None, description="Agent IP address")
 
     # Rule information
-    rule_id: Optional[str] = Field(None, description="Rule ID that triggered")
-    rule_level: Optional[int] = Field(None, description="Rule level/severity")
-    rule_groups: List[str] = Field(default_factory=list, description="Rule groups/categories")
-    rule_mitre: List[str] = Field(default_factory=list, description="MITRE ATT&CK tactics")
+    rule_id: str | None = Field(None, description="Rule ID that triggered")
+    rule_level: int | None = Field(None, description="Rule level/severity")
+    rule_groups: list[str] = Field(
+        default_factory=list, description="Rule groups/categories"
+    )
+    rule_mitre: list[str] = Field(
+        default_factory=list, description="MITRE ATT&CK tactics"
+    )
 
     # Log and location
-    full_log: Optional[str] = Field(None, description="Full log message")
-    location: Optional[str] = Field(None, description="Log file location")
-    geoip: Optional[Dict[str, Any]] = Field(None, description="Geographic IP information")
-    raw_data: Optional[Dict[str, Any]] = Field(None, description="Original raw alert data")
+    full_log: str | None = Field(None, description="Full log message")
+    location: str | None = Field(None, description="Log file location")
+    geoip: dict[str, Any] | None = Field(
+        None, description="Geographic IP information"
+    )
+    raw_data: dict[str, Any] | None = Field(
+        None, description="Original raw alert data"
+    )
 
     class Config:
         json_schema_extra = {
@@ -72,21 +83,21 @@ class SecurityAlertResponse(BaseModel):
     event_type: str
     severity: str
     title: str
-    description: Optional[str]
-    source_ip: Optional[str]
-    destination_ip: Optional[str]
-    protocol: Optional[str]
-    agent_name: Optional[str]
-    agent_id: Optional[str]
-    agent_ip: Optional[str]
-    rule_id: Optional[str]
-    rule_level: Optional[int]
-    rule_groups: Optional[str]
-    rule_mitre: Optional[str]
+    description: str | None
+    source_ip: str | None
+    destination_ip: str | None
+    protocol: str | None
+    agent_name: str | None
+    agent_id: str | None
+    agent_ip: str | None
+    rule_id: str | None
+    rule_level: int | None
+    rule_groups: str | None
+    rule_mitre: str | None
     status: str
-    assigned_to: Optional[str]
+    assigned_to: str | None
     created_at: datetime
-    event_timestamp: Optional[datetime]
+    event_timestamp: datetime | None
 
     class Config:
         from_attributes = True
@@ -96,7 +107,7 @@ class SecurityAlertListResponse(BaseModel):
     """Schema for paginated alert list response."""
 
     total: int
-    alerts: List[SecurityAlertResponse]
+    alerts: list[SecurityAlertResponse]
     page: int
     page_size: int
 
@@ -104,18 +115,20 @@ class SecurityAlertListResponse(BaseModel):
 class SecurityAlertUpdate(BaseModel):
     """Schema for updating alert status and metadata."""
 
-    status: Optional[str] = Field(None, description="New status (open, investigating, closed, false_positive)")
-    assigned_to: Optional[str] = Field(None, description="User assigned to investigate")
-    resolution: Optional[str] = Field(None, description="Resolution notes")
+    status: str | None = Field(
+        None, description="New status (open, investigating, closed, false_positive)"
+    )
+    assigned_to: str | None = Field(None, description="User assigned to investigate")
+    resolution: str | None = Field(None, description="Resolution notes")
 
 
 class SecurityAlertStats(BaseModel):
     """Schema for alert statistics."""
 
     total: int
-    by_severity: Dict[str, int]
-    by_status: Dict[str, int]
-    by_source: Dict[str, int]
+    by_severity: dict[str, int]
+    by_status: dict[str, int]
+    by_source: dict[str, int]
     last_24h: int
     last_7d: int
     last_30d: int

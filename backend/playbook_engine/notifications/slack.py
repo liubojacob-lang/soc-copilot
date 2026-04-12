@@ -1,8 +1,8 @@
 """Slack notification service for playbook events."""
 
-import json
-from typing import Optional, Dict, Any
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
+
 import httpx
 
 from core.logger import get_logger
@@ -15,7 +15,7 @@ class SlackNotificationService:
 
     def __init__(
         self,
-        webhook_url: Optional[str] = None,
+        webhook_url: str | None = None,
         timeout: int = 10,
     ):
         """Initialize the Slack notification service.
@@ -32,7 +32,7 @@ class SlackNotificationService:
         run_id: str,
         playbook_name: str,
         mode: str,
-        webhook_url: Optional[str] = None,
+        webhook_url: str | None = None,
     ) -> bool:
         """Send notification when a playbook starts.
 
@@ -73,11 +73,11 @@ class SlackNotificationService:
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Status:*\n:hourglass: Running",
+                            "text": "*Status:*\n:hourglass: Running",
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Time:*\n{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
+                            "text": f"*Time:*\n{datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}",
                         },
                     ],
                 },
@@ -92,8 +92,8 @@ class SlackNotificationService:
         playbook_name: str,
         status: str,
         duration_ms: int,
-        outputs: Dict[str, Any],
-        webhook_url: Optional[str] = None,
+        outputs: dict[str, Any],
+        webhook_url: str | None = None,
     ) -> bool:
         """Send notification when a playbook completes.
 
@@ -121,7 +121,9 @@ class SlackNotificationService:
 
         # Format duration
         duration_sec = duration_ms / 1000
-        duration_str = f"{duration_sec:.2f}s" if duration_sec < 60 else f"{duration_sec/60:.1f}m"
+        duration_str = (
+            f"{duration_sec:.2f}s" if duration_sec < 60 else f"{duration_sec/60:.1f}m"
+        )
 
         message = {
             "text": f"{status_emoji} Playbook {status.title()}: *{playbook_name}*",
@@ -165,8 +167,8 @@ class SlackNotificationService:
         node_id: str,
         node_name: str,
         requested_by: str,
-        expires_at: Optional[datetime],
-        webhook_url: Optional[str] = None,
+        expires_at: datetime | None,
+        webhook_url: str | None = None,
     ) -> bool:
         """Send notification when manual approval is required.
 
@@ -201,10 +203,12 @@ class SlackNotificationService:
         ]
 
         if expires_at:
-            fields.append({
-                "type": "mrkdwn",
-                "text": f"*Expires:*\n{expires_at.strftime('%Y-%m-%d %H:%M:%S UTC')}",
-            })
+            fields.append(
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Expires:*\n{expires_at.strftime('%Y-%m-%d %H:%M:%S UTC')}",
+                }
+            )
 
         message = {
             "text": f":handshake: Approval Required for *{node_name}*",
@@ -237,9 +241,9 @@ class SlackNotificationService:
         run_id: str,
         playbook_name: str,
         status: str,
-        error_message: Optional[str] = None,
-        failed_nodes: Optional[list] = None,
-        webhook_url: Optional[str] = None,
+        error_message: str | None = None,
+        failed_nodes: list | None = None,
+        webhook_url: str | None = None,
     ) -> bool:
         """Send notification when a playbook run fails.
 
@@ -255,13 +259,18 @@ class SlackNotificationService:
             True if notification sent successfully, False otherwise
         """
         import os
+
         url = webhook_url or self.webhook_url or os.getenv("SLACK_WEBHOOK_DEFAULT")
         if not url:
             logger.debug("No Slack webhook URL configured for failure alert")
             return False
 
         # Check if failure alerts are enabled
-        enabled = os.getenv("ENABLE_RUN_FAILURE_NOTIFY", "false").lower() in ("true", "1", "yes")
+        enabled = os.getenv("ENABLE_RUN_FAILURE_NOTIFY", "false").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
         if not enabled:
             logger.debug("Run failure notifications are disabled")
             return False
@@ -302,7 +311,7 @@ class SlackNotificationService:
                     },
                     {
                         "type": "mrkdwn",
-                        "text": f"*Time:*\n{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
+                        "text": f"*Time:*\n{datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}",
                     },
                 ],
             },
@@ -310,35 +319,45 @@ class SlackNotificationService:
 
         # Add error message if provided
         if error_message:
-            blocks.append({
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"*Error:*\n```{error_message[:500]}```",
-                },
-            })
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*Error:*\n```{error_message[:500]}```",
+                    },
+                }
+            )
 
         # Add failed nodes if provided
         if failed_nodes:
-            blocks.append({
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"*Failed Nodes:*\n{', '.join(f"`{n}`" for n in failed_nodes[:10])}" +
-                        (f" and {len(failed_nodes) - 10} more..." if len(failed_nodes) > 10 else ""),
-                },
-            })
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*Failed Nodes:*\n{', '.join(f"`{n}`" for n in failed_nodes[:10])}"
+                        + (
+                            f" and {len(failed_nodes) - 10} more..."
+                            if len(failed_nodes) > 10
+                            else ""
+                        ),
+                    },
+                }
+            )
 
         # Add footer
-        blocks.append({
-            "type": "context",
-            "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": "SOC Copilot v0.7.2 | Automated Failure Alert",
-                },
-            ],
-        })
+        blocks.append(
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "SOC Copilot v0.7.2 | Automated Failure Alert",
+                    },
+                ],
+            }
+        )
 
         message = {
             "text": f"{status_emoji} Run Failure: {playbook_name} ({status})",
@@ -350,7 +369,7 @@ class SlackNotificationService:
     async def _send_message(
         self,
         webhook_url: str,
-        message: Dict[str, Any],
+        message: dict[str, Any],
     ) -> bool:
         """Send a message to Slack webhook.
 
@@ -369,7 +388,7 @@ class SlackNotificationService:
                 )
 
                 if response.status_code == 200:
-                    logger.info(f"Slack notification sent successfully")
+                    logger.info("Slack notification sent successfully")
                     return True
                 else:
                     logger.error(

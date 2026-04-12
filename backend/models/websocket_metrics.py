@@ -13,14 +13,16 @@ Models:
 - MetricsSnapshot: Time-series data point
 """
 
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
 class MetricType(str, Enum):
     """Types of metrics collected."""
+
     CONNECTION = "connection"
     MESSAGE = "message"
     ERROR = "error"
@@ -30,6 +32,7 @@ class MetricType(str, Enum):
 
 class ErrorType(str, Enum):
     """Types of errors tracked."""
+
     CONNECTION_ERROR = "connection_error"
     AUTHENTICATION_ERROR = "authentication_error"
     MESSAGE_PARSE_ERROR = "message_parse_error"
@@ -66,9 +69,11 @@ class ConnectionMetrics(BaseModel):
     unique_users_connected: int = 0
 
     # Timestamp
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
 
-    def increment_connection(self, user_id: Optional[str] = None) -> None:
+    def increment_connection(self, user_id: str | None = None) -> None:
         """Increment total connections counter."""
         self.total_connections += 1
         if user_id:
@@ -88,8 +93,8 @@ class ConnectionMetrics(BaseModel):
             # Update average
             n = self.total_disconnections
             self.avg_connection_duration_seconds = (
-                (self.avg_connection_duration_seconds * (n - 1) + duration_seconds) / n
-            )
+                self.avg_connection_duration_seconds * (n - 1) + duration_seconds
+            ) / n
             # Update max/min
             self.max_connection_duration_seconds = max(
                 self.max_connection_duration_seconds, duration_seconds
@@ -117,7 +122,7 @@ class MessageMetrics(BaseModel):
     total_messages_queued: int = 0  # Offline message queue
 
     # Message counts by type
-    messages_by_type: Dict[str, int] = Field(default_factory=dict)
+    messages_by_type: dict[str, int] = Field(default_factory=dict)
 
     # Message size statistics (bytes)
     avg_message_size_bytes: int = 0
@@ -133,7 +138,9 @@ class MessageMetrics(BaseModel):
     avg_broadcast_recipients: float = 0.0
 
     # Timestamp
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
 
     def record_message_sent(
         self, message_type: str, size_bytes: int, recipients: int = 1
@@ -160,8 +167,8 @@ class MessageMetrics(BaseModel):
             self.total_broadcasts += 1
             n = self.total_broadcasts
             self.avg_broadcast_recipients = (
-                (self.avg_broadcast_recipients * (n - 1) + recipients) / n
-            )
+                self.avg_broadcast_recipients * (n - 1) + recipients
+            ) / n
 
     def record_message_received(self, message_type: str) -> None:
         """Record a received message."""
@@ -192,24 +199,26 @@ class ErrorMetrics(BaseModel):
     total_critical_errors: int = 0  # Errors that cause connection loss
 
     # Errors by type
-    errors_by_type: Dict[str, int] = Field(default_factory=dict)
+    errors_by_type: dict[str, int] = Field(default_factory=dict)
 
     # Error details (last N errors)
-    recent_errors: List[Dict[str, Any]] = Field(default_factory=list)
+    recent_errors: list[dict[str, Any]] = Field(default_factory=list)
     max_recent_errors: int = 100
 
     # Error rate tracking
     current_error_rate: float = 0.0  # Errors per second
 
     # Timestamp
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
 
     def record_error(
         self,
         error_type: ErrorType,
         message: str,
         is_critical: bool = False,
-        context: Optional[Dict[str, Any]] = None
+        context: dict[str, Any] | None = None,
     ) -> None:
         """Record an error."""
         self.total_errors += 1
@@ -225,25 +234,25 @@ class ErrorMetrics(BaseModel):
 
         # Add to recent errors
         error_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "type": error_type_str,
             "message": message,
             "is_critical": is_critical,
-            "context": context or {}
+            "context": context or {},
         }
         self.recent_errors.append(error_entry)
 
         # Trim recent errors if needed
         if len(self.recent_errors) > self.max_recent_errors:
-            self.recent_errors = self.recent_errors[-self.max_recent_errors:]
+            self.recent_errors = self.recent_errors[-self.max_recent_errors :]
 
-    def get_error_summary(self) -> Dict[str, Any]:
+    def get_error_summary(self) -> dict[str, Any]:
         """Get summary of errors by type."""
         return {
             "total_errors": self.total_errors,
             "critical_errors": self.total_critical_errors,
             "errors_by_type": dict(self.errors_by_type),
-            "recent_error_count": len(self.recent_errors)
+            "recent_error_count": len(self.recent_errors),
         }
 
 
@@ -262,7 +271,7 @@ class PerformanceMetrics(BaseModel):
     max_latency_ms: float = 0.0
 
     # Latency samples for percentile calculation
-    latency_samples: List[float] = Field(default_factory=list)
+    latency_samples: list[float] = Field(default_factory=list)
     max_latency_samples: int = 1000
 
     # Throughput metrics
@@ -277,7 +286,9 @@ class PerformanceMetrics(BaseModel):
     cpu_usage_percent: float = 0.0
 
     # Timestamp
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
 
     def record_latency(self, latency_ms: float) -> None:
         """Record a latency measurement."""
@@ -310,7 +321,7 @@ class PerformanceMetrics(BaseModel):
         self.p95_latency_ms = sorted_samples[int(n * 0.95)]
         self.p99_latency_ms = sorted_samples[int(n * 0.99)]
 
-    def get_latency_summary(self) -> Dict[str, float]:
+    def get_latency_summary(self) -> dict[str, float]:
         """Get summary of latency metrics."""
         return {
             "avg_ms": self.avg_latency_ms,
@@ -318,7 +329,7 @@ class PerformanceMetrics(BaseModel):
             "p95_ms": self.p95_latency_ms,
             "p99_ms": self.p99_latency_ms,
             "max_ms": self.max_latency_ms,
-            "sample_count": len(self.latency_samples)
+            "sample_count": len(self.latency_samples),
         }
 
 
@@ -338,7 +349,9 @@ class AggregatedMetrics(BaseModel):
     health_score: float = 100.0
 
     # Timestamp
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
 
     def calculate_health_score(self) -> float:
         """
@@ -357,8 +370,8 @@ class AggregatedMetrics(BaseModel):
         """
         # Connection health
         total_conn_attempts = (
-            self.connection.total_connections +
-            self.connection.total_connection_failures
+            self.connection.total_connections
+            + self.connection.total_connection_failures
         )
         if total_conn_attempts > 0:
             connection_success_rate = (
@@ -384,20 +397,16 @@ class AggregatedMetrics(BaseModel):
         elif self.performance.p95_latency_ms > 1000:
             performance_score = 0.0
         else:
-            performance_score = 100 - (
-                (self.performance.p95_latency_ms - 100) / 9
-            )
+            performance_score = 100 - ((self.performance.p95_latency_ms - 100) / 9)
 
         # Weighted average
         self.health_score = (
-            connection_score * 0.3 +
-            error_score * 0.4 +
-            performance_score * 0.3
+            connection_score * 0.3 + error_score * 0.4 + performance_score * 0.3
         )
 
         return self.health_score
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get summary of all metrics."""
         return {
             "health_score": self.health_score,
@@ -406,7 +415,7 @@ class AggregatedMetrics(BaseModel):
             "total_errors": self.error.total_errors,
             "avg_latency_ms": self.performance.avg_latency_ms,
             "p95_latency_ms": self.performance.p95_latency_ms,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
         }
 
 
@@ -417,8 +426,10 @@ class MetricsSnapshot(BaseModel):
     Used for storing metrics over time for trend analysis.
     """
 
-    id: Optional[str] = None
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    id: str | None = None
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
 
     # Metrics data (serialized)
     connection: ConnectionMetrics
@@ -439,12 +450,12 @@ class MetricsQuery(BaseModel):
     Query parameters for fetching historical metrics.
     """
 
-    start_time: Optional[str] = None  # ISO format timestamp
-    end_time: Optional[str] = None  # ISO format timestamp
-    metric_types: List[MetricType] = Field(default_factory=list)
+    start_time: str | None = None  # ISO format timestamp
+    end_time: str | None = None  # ISO format timestamp
+    metric_types: list[MetricType] = Field(default_factory=list)
     limit: int = 100
     offset: int = 0
-    aggregate_by: Optional[str] = None  # "1m", "5m", "1h", etc.
+    aggregate_by: str | None = None  # "1m", "5m", "1h", etc.
 
 
 class MetricsReport(BaseModel):
@@ -453,17 +464,21 @@ class MetricsReport(BaseModel):
     """
 
     report_id: str
-    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    time_range: Dict[str, str] = Field(default_factory=dict)
+    generated_at: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
+    time_range: dict[str, str] = Field(default_factory=dict)
 
     # Summary statistics
-    summary: Dict[str, Any] = Field(default_factory=dict)
+    summary: dict[str, Any] = Field(default_factory=dict)
 
     # Trends
-    trends: Dict[str, str] = Field(default_factory=dict)  # "improving", "stable", "degrading"
+    trends: dict[str, str] = Field(
+        default_factory=dict
+    )  # "improving", "stable", "degrading"
 
     # Recommendations
-    recommendations: List[str] = Field(default_factory=list)
+    recommendations: list[str] = Field(default_factory=list)
 
     # Detailed metrics
     metrics: AggregatedMetrics

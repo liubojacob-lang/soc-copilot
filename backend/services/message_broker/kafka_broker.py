@@ -9,10 +9,14 @@ from .schemas import BrokerMessage, ConsumerConfig, EventEnvelope, PublishOption
 class KafkaBroker(MessageBroker):
     """Not implemented yet. Keeps extension point stable for future Kafka adoption."""
 
-    async def publish(self, envelope: EventEnvelope, options: PublishOptions | None = None) -> str | None:
+    async def publish(
+        self, envelope: EventEnvelope, options: PublishOptions | None = None
+    ) -> str | None:
         raise NotImplementedError("KafkaBroker is not implemented yet")
 
-    async def consume(self, config: ConsumerConfig, priority_order: bool = True) -> list[BrokerMessage]:
+    async def consume(
+        self, config: ConsumerConfig, priority_order: bool = True
+    ) -> list[BrokerMessage]:
         raise NotImplementedError("KafkaBroker is not implemented yet")
 
     async def ack(self, stream: str, message_id: str, consumer_group: str) -> bool:
@@ -28,7 +32,9 @@ class KafkaBroker(MessageBroker):
     ) -> bool:
         raise NotImplementedError("KafkaBroker is not implemented yet")
 
-    async def replay_dlq(self, dlq_stream: str, target_stream: str, limit: int = 100) -> int:
+    async def replay_dlq(
+        self, dlq_stream: str, target_stream: str, limit: int = 100
+    ) -> int:
         raise NotImplementedError("KafkaBroker is not implemented yet")
 
     async def process_delayed_messages(self, limit: int = 100) -> int:

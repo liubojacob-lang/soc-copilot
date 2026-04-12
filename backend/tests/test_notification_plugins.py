@@ -28,7 +28,10 @@ async def test_dynamic_provider_registration() -> None:
     dummy = DummyProvider()
     svc.register_provider(dummy)
 
-    results = await svc.send_alert({"id": "1", "source": "test", "title": "x", "severity": "low"}, channels=["dummy"])
+    results = await svc.send_alert(
+        {"id": "1", "source": "test", "title": "x", "severity": "low"},
+        channels=["dummy"],
+    )
 
     assert results["dummy"] is True
     assert dummy.calls == 1

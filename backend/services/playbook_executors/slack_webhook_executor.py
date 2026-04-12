@@ -1,12 +1,14 @@
 """Slack Webhook notification node executor."""
 
-import json
 import os
+from datetime import UTC
 from typing import Any
+
 import httpx
 
-from .executor_base import BaseExecutor, ExecutorContext
 from core.logger import get_logger
+
+from .executor_base import BaseExecutor, ExecutorContext
 
 logger = get_logger(__name__)
 
@@ -43,7 +45,9 @@ class SlackWebhookExecutor(BaseExecutor):
             }
 
         # Build message with template variables
-        message_template = config.get("message_template", "Playbook run {{run_id}} status: {{status}}")
+        message_template = config.get(
+            "message_template", "Playbook run {{run_id}} status: {{status}}"
+        )
         message = self._resolve_template(message_template, context)
 
         # Get fields to include from output
@@ -77,7 +81,9 @@ class SlackWebhookExecutor(BaseExecutor):
                 )
 
                 if response.status_code in (200, 204):
-                    logger.info(f"[{context.run_id}] Slack notification sent successfully")
+                    logger.info(
+                        f"[{context.run_id}] Slack notification sent successfully"
+                    )
                     return {
                         "status": "success",
                         "message": "Notification sent",
@@ -99,7 +105,7 @@ class SlackWebhookExecutor(BaseExecutor):
             # Don't fail the run - notification failure is non-critical
             return {
                 "status": "success",
-                "message": f"Notification error but continuing: {str(e)}",
+                "message": f"Notification error but continuing: {e!s}",
                 "notification_failed": True,
             }
 
@@ -159,27 +165,34 @@ class SlackWebhookExecutor(BaseExecutor):
                 value_str = str(value)
                 if len(value_str) > 100:
                     value_str = value_str[:100] + "..."
-                fields.append({
-                    "type": "mrkdwn",
-                    "text": f"*{key}:*\n{value_str}",
-                })
+                fields.append(
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*{key}:*\n{value_str}",
+                    }
+                )
 
             if fields:
-                blocks.append({
-                    "type": "section",
-                    "fields": fields[:4],  # Slack max 4 fields per section
-                })
+                blocks.append(
+                    {
+                        "type": "section",
+                        "fields": fields[:4],  # Slack max 4 fields per section
+                    }
+                )
 
         # Add footer with timestamp
-        from datetime import datetime, timezone
-        blocks.append({
-            "type": "context",
-            "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"Sent at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')} | SOC Copilot v0.7.2",
-                },
-            ],
-        })
+        from datetime import datetime
+
+        blocks.append(
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"Sent at {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')} | SOC Copilot v0.7.2",
+                    },
+                ],
+            }
+        )
 
         return blocks

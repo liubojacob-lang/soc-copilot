@@ -5,30 +5,24 @@ Wazuh Alert Stream API Routes
 API endpoints for real-time Wazuh alert streaming.
 """
 
-from fastapi import APIRouter, HTTPException, status, Query
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
-from datetime import datetime
 import logging
+from datetime import datetime
+from typing import Any
 
-from services.alert_stream_service import (
-    get_wazuh_stream_service,
-    init_wazuh_stream_service
-)
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+
+from dependencies import get_current_user
+from models.user import UserModel
 from schemas.wazuh_stream import (
-    get_wazuh_stream_service,
-    init_wazuh_stream_service
-)
-    get_wazuh_stream_service,
-    init_wazuh_stream_service
-)
-from services.wazuh_client import get_wazuh_client
-from schemas.wazuh_stream import (
-    WazuhAlertStream,
     AlertStreamFilter,
     AlertStreamStats,
-    WazuhStreamMessage,
-    SeverityLevel
+    SeverityLevel,
+    WazuhAlertStream,
+)
+from services.alerting.alert_stream_service import (
+    get_wazuh_stream_service,
+    init_wazuh_stream_service,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,6 +35,7 @@ router = APIRouter(prefix="/api/v1/wazuh/stream", tags=["Wazuh Stream"])
 
 class StreamConfig(BaseModel):
     """Stream service configuration."""
+
     aggregation_window_seconds: int = 60
     max_buffer_size: int = 10000
     max_history_size: int = 1000
@@ -48,18 +43,21 @@ class StreamConfig(BaseModel):
 
 class StreamStartRequest(BaseModel):
     """Request to start the stream service."""
-    config: Optional[StreamConfig] = None
+
+    config: StreamConfig | None = None
 
 
 class StreamStatusResponse(BaseModel):
     """Stream service status."""
+
     running: bool
-    stats: Optional[AlertStreamStats] = None
-    config: Optional[StreamConfig] = None
+    stats: AlertStreamStats | None = None
+    config: StreamConfig | None = None
 
 
 class TestStreamAlertRequest(BaseModel):
     """Request to send a test stream alert."""
+
     agent_id: str = "001"
     severity: SeverityLevel = SeverityLevel.HIGH
     event_type: str = "ssh_login"
@@ -70,7 +68,10 @@ class TestStreamAlertRequest(BaseModel):
 
 
 @router.post("/start", response_model=StreamStatusResponse)
-async def start_stream_service(request: StreamStartRequest = StreamStartRequest()):
+async def start_stream_service(
+    request: StreamStartRequest = StreamStartRequest(),
+    current_user: UserModel = Depends(get_current_user),
+):
     """
     Start the Wazuh alert stream service.
 
@@ -86,8 +87,8 @@ async def start_stream_service(request: StreamStartRequest = StreamStartRequest(
                 config=StreamConfig(
                     aggregation_window_seconds=service.aggregation_window.seconds,
                     max_buffer_size=service.max_buffer_size,
-                    max_history_size=service.max_history_size
-                )
+                    max_history_size=service.max_history_size,
+                ),
             )
 
         # Initialize with custom config if provided
@@ -95,7 +96,7 @@ async def start_stream_service(request: StreamStartRequest = StreamStartRequest(
             service = await init_wazuh_stream_service(
                 aggregation_window_seconds=request.config.aggregation_window_seconds,
                 max_buffer_size=request.config.max_buffer_size,
-                max_history_size=request.config.max_history_size
+                max_history_size=request.config.max_history_size,
             )
         else:
             service = await init_wazuh_stream_service()
@@ -103,19 +104,19 @@ async def start_stream_service(request: StreamStartRequest = StreamStartRequest(
         return StreamStatusResponse(
             running=True,
             stats=service.get_stats(),
-            config=request.config or StreamConfig()
+            config=request.config or StreamConfig(),
         )
 
     except Exception as e:
         logger.error(f"Error starting stream service: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start stream service: {str(e)}"
+            detail=f"Failed to start stream service: {e!s}",
         )
 
 
 @router.post("/stop", response_model=StreamStatusResponse)
-async def stop_stream_service():
+async def stop_stream_service(current_user: UserModel = Depends(get_current_user)):
     """
     Stop the Wazuh alert stream service.
     """
@@ -127,21 +128,18 @@ async def stop_stream_service():
 
         await service.stop()
 
-        return StreamStatusResponse(
-            running=False,
-            stats=service.get_stats()
-        )
+        return StreamStatusResponse(running=False, stats=service.get_stats())
 
     except Exception as e:
         logger.error(f"Error stopping stream service: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to stop stream service: {str(e)}"
+            detail=f"Failed to stop stream service: {e!s}",
         )
 
 
 @router.get("/status", response_model=StreamStatusResponse)
-async def get_stream_status():
+async def get_stream_status(current_user: UserModel = Depends(get_current_user)):
     """
     Get the current status of the Wazuh alert stream service.
     """
@@ -157,20 +155,20 @@ async def get_stream_status():
             config=StreamConfig(
                 aggregation_window_seconds=service.aggregation_window.seconds,
                 max_buffer_size=service.max_buffer_size,
-                max_history_size=service.max_history_size
-            )
+                max_history_size=service.max_history_size,
+            ),
         )
 
     except Exception as e:
         logger.error(f"Error getting stream status: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get stream status: {str(e)}"
+            detail=f"Failed to get stream status: {e!s}",
         )
 
 
 @router.get("/stats", response_model=AlertStreamStats)
-async def get_stream_stats():
+async def get_stream_stats(current_user: UserModel = Depends(get_current_user)):
     """
     Get detailed stream statistics.
     """
@@ -180,7 +178,7 @@ async def get_stream_stats():
         if not service._running:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Stream service is not running"
+                detail="Stream service is not running",
             )
 
         return service.get_stats()
@@ -191,13 +189,16 @@ async def get_stream_stats():
         logger.error(f"Error getting stream stats: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get stream stats: {str(e)}"
+            detail=f"Failed to get stream stats: {e!s}",
         )
 
 
-@router.get("/history", response_model=List[WazuhAlertStream])
+@router.get("/history", response_model=list[WazuhAlertStream])
 async def get_recent_alerts(
-    limit: int = Query(50, ge=1, le=1000, description="Maximum number of alerts to return")
+    limit: int = Query(
+        50, ge=1, le=1000, description="Maximum number of alerts to return"
+    ),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """
     Get recent alerts from the stream history.
@@ -210,7 +211,7 @@ async def get_recent_alerts(
         if not service._running:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Stream service is not running"
+                detail="Stream service is not running",
             )
 
         return service.get_recent_alerts(limit=limit)
@@ -221,12 +222,15 @@ async def get_recent_alerts(
         logger.error(f"Error getting recent alerts: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get recent alerts: {str(e)}"
+            detail=f"Failed to get recent alerts: {e!s}",
         )
 
 
-@router.post("/test-alert", response_model=Dict[str, Any])
-async def send_test_alert(request: TestStreamAlertRequest):
+@router.post("/test-alert", response_model=dict[str, Any])
+async def send_test_alert(
+    request: TestStreamAlertRequest,
+    current_user: UserModel = Depends(get_current_user),
+):
     """
     Send a test alert through the stream.
 
@@ -238,7 +242,7 @@ async def send_test_alert(request: TestStreamAlertRequest):
         if not service._running:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Stream service is not running"
+                detail="Stream service is not running",
             )
 
         # Create test alerts
@@ -256,25 +260,25 @@ async def send_test_alert(request: TestStreamAlertRequest):
                     "level": 10 if request.severity == SeverityLevel.HIGH else 5,
                     "description": f"Test alert for {request.event_type}",
                     "groups": ["test"],
-                    "mitre": {"id": ["T9999"], "technique": ["Test Technique"]}
+                    "mitre": {"id": ["T9999"], "technique": ["Test Technique"]},
                 },
                 agent={
                     "id": request.agent_id,
                     "name": f"test-agent-{request.agent_id}",
                     "ip": "10.0.0.100",
-                    "status": "active"
+                    "status": "active",
                 },
                 full_log=f"This is a test alert for {request.event_type}",
                 location="/var/log/test.log",
                 mitre={
                     "id": "T9999",
                     "technique": "Test Technique",
-                    "tactic": "Test Tactic"
+                    "tactic": "Test Tactic",
                 },
                 source_ip="203.0.113.45" if i == 0 else f"203.0.113.{45 + i}",
                 iocs=["203.0.113.45"],
                 analyzed=True,
-                risk_score=75.0
+                risk_score=75.0,
             )
 
             await service.stream_alert(test_alert)
@@ -284,7 +288,10 @@ async def send_test_alert(request: TestStreamAlertRequest):
             "success": True,
             "message": f"Sent {alerts_sent} test alert(s)",
             "alerts_sent": alerts_sent,
-            "alert_ids": [f"test-{datetime.utcnow().isoformat()}-{i}" for i in range(request.count)]
+            "alert_ids": [
+                f"test-{datetime.utcnow().isoformat()}-{i}"
+                for i in range(request.count)
+            ],
         }
 
     except HTTPException:
@@ -293,14 +300,15 @@ async def send_test_alert(request: TestStreamAlertRequest):
         logger.error(f"Error sending test alert: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to send test alert: {str(e)}"
+            detail=f"Failed to send test alert: {e!s}",
         )
 
 
-@router.post("/subscribe", response_model=Dict[str, str])
+@router.post("/subscribe", response_model=dict[str, str])
 async def subscribe_to_stream(
     client_id: str = Query(..., description="Unique client identifier"),
-    filters: AlertStreamFilter = None
+    filters: AlertStreamFilter = None,
+    current_user: UserModel = Depends(get_current_user),
 ):
     """
     Subscribe a client to the stream with optional filters.
@@ -313,7 +321,7 @@ async def subscribe_to_stream(
         if not service._running:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Stream service is not running"
+                detail="Stream service is not running",
             )
 
         if filters is None:
@@ -324,7 +332,7 @@ async def subscribe_to_stream(
         return {
             "message": "Subscribed to Wazuh alert stream",
             "client_id": client_id,
-            "filters": filters.dict() if filters else {}
+            "filters": filters.dict() if filters else {},
         }
 
     except HTTPException:
@@ -333,13 +341,14 @@ async def subscribe_to_stream(
         logger.error(f"Error subscribing to stream: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to subscribe to stream: {str(e)}"
+            detail=f"Failed to subscribe to stream: {e!s}",
         )
 
 
-@router.delete("/subscribe", response_model=Dict[str, str])
+@router.delete("/subscribe", response_model=dict[str, str])
 async def unsubscribe_from_stream(
-    client_id: str = Query(..., description="Client identifier to unsubscribe")
+    client_id: str = Query(..., description="Client identifier to unsubscribe"),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """
     Unsubscribe a client from the stream.
@@ -350,19 +359,19 @@ async def unsubscribe_from_stream(
 
         return {
             "message": "Unsubscribed from Wazuh alert stream",
-            "client_id": client_id
+            "client_id": client_id,
         }
 
     except Exception as e:
         logger.error(f"Error unsubscribing from stream: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to unsubscribe from stream: {str(e)}"
+            detail=f"Failed to unsubscribe from stream: {e!s}",
         )
 
 
-@router.get("/subscriptions", response_model=Dict[str, Dict[str, Any]])
-async def get_stream_subscriptions():
+@router.get("/subscriptions", response_model=dict[str, dict[str, Any]])
+async def get_stream_subscriptions(current_user: UserModel = Depends(get_current_user)):
     """
     Get all active stream subscriptions.
 
@@ -377,12 +386,12 @@ async def get_stream_subscriptions():
 
         return {
             "total_subscriptions": len(subscriptions),
-            "subscriptions": subscriptions
+            "subscriptions": subscriptions,
         }
 
     except Exception as e:
         logger.error(f"Error getting subscriptions: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get subscriptions: {str(e)}"
+            detail=f"Failed to get subscriptions: {e!s}",
         )

@@ -1,6 +1,6 @@
 """Webhook router for external playbook triggers."""
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -16,8 +16,12 @@ router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 async def receive_webhook(
     trigger_id: str,
     request: Request,
-    x_webhook_secret: str = Header(..., description="Webhook secret for authentication", alias="X-Webhook-Secret"),
-    x_idempotency_key: str | None = Header(None, description="Idempotency key", alias="X-Idempotency-Key"),
+    x_webhook_secret: str = Header(
+        ..., description="Webhook secret for authentication", alias="X-Webhook-Secret"
+    ),
+    x_idempotency_key: str | None = Header(
+        None, description="Idempotency key", alias="X-Idempotency-Key"
+    ),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, object]:
     """Receive external webhook to trigger playbook execution.
@@ -61,8 +65,8 @@ async def receive_webhook(
             "cached": result.get("cached", False),
         }
 
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Bad request")
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

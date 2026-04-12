@@ -2,11 +2,12 @@
 
 import json
 import uuid
-from typing import TypeVar, Type, Any
+from typing import Any, TypeVar
+
 from pydantic import BaseModel, ValidationError
 
-from core.logger import get_logger
 from core.config import settings
+from core.logger import get_logger
 from services.ai_service import AIService
 
 logger = get_logger(__name__)
@@ -48,7 +49,7 @@ Previous attempt was:
 Please provide the corrected JSON response:"""
 
     def _create_degraded_response(
-        self, response_class: Type[T], error_reason: str
+        self, response_class: type[T], error_reason: str
     ) -> dict[str, Any]:
         """Create minimal degraded response.
 
@@ -69,94 +70,112 @@ Please provide the corrected JSON response:"""
         class_name = response_class.__name__
 
         if "Alert" in class_name or "Analyzer" in class_name:
-            base_response.update({
-                "event_type": "unknown",
-                "severity": "low",
-                "confidence": 0,
-                "iocs": {"ips": [], "domains": [], "urls": [], "hashes": []},
-                "iocs_local": {"ips": [], "domains": [], "urls": [], "hashes": []},
-                "iocs_llm": {"ips": [], "domains": [], "urls": [], "hashes": []},
-                "ioc_count": {"ips": 0, "domains": 0, "urls": 0, "hashes": 0, "total": 0},
-                "entities": {"users": [], "hosts": [], "processes": []},
-                "summary": "Unable to analyze due to LLM output validation failure. "
-                          "Please try again or provide clearer input.",
-                "evidence_points": [
-                    "LLM output validation failed",
-                    "Local IOC extraction may still be available",
-                ],
-                "recommended_actions": [
-                    {
-                        "action": "Manual review required",
-                        "priority": "high",
-                        "details": "Automated analysis failed. Manual investigation required.",
-                        "verification": "Review logs manually and correlate with other events.",
-                    }
-                ],
-                "escalation_needed": False,
-                "impact_analysis": {
-                    "affected_assets": [],
-                    "business_impact": "Unable to perform impact analysis in degraded mode",
-                    "risk_score": 0,
+            base_response.update(
+                {
+                    "event_type": "unknown",
                     "severity": "low",
-                    "containment_priority": [],
-                    "recommended_next_queries": [],
-                },
-                "threat_intel": {
-                    "provider": "otx",
-                    "disabled": False,
-                    "degraded": True,
-                    "skipped": False,
-                    "items": [],
-                    "error_reason": "Unable to perform threat intel lookup in degraded mode",
-                },
-            })
+                    "confidence": 0,
+                    "iocs": {"ips": [], "domains": [], "urls": [], "hashes": []},
+                    "iocs_local": {"ips": [], "domains": [], "urls": [], "hashes": []},
+                    "iocs_llm": {"ips": [], "domains": [], "urls": [], "hashes": []},
+                    "ioc_count": {
+                        "ips": 0,
+                        "domains": 0,
+                        "urls": 0,
+                        "hashes": 0,
+                        "total": 0,
+                    },
+                    "entities": {"users": [], "hosts": [], "processes": []},
+                    "summary": "Unable to analyze due to LLM output validation failure. "
+                    "Please try again or provide clearer input.",
+                    "evidence_points": [
+                        "LLM output validation failed",
+                        "Local IOC extraction may still be available",
+                    ],
+                    "recommended_actions": [
+                        {
+                            "action": "Manual review required",
+                            "priority": "high",
+                            "details": "Automated analysis failed. Manual investigation required.",
+                            "verification": "Review logs manually and correlate with other events.",
+                        }
+                    ],
+                    "escalation_needed": False,
+                    "impact_analysis": {
+                        "affected_assets": [],
+                        "business_impact": "Unable to perform impact analysis in degraded mode",
+                        "risk_score": 0,
+                        "severity": "low",
+                        "containment_priority": [],
+                        "recommended_next_queries": [],
+                    },
+                    "threat_intel": {
+                        "provider": "otx",
+                        "disabled": False,
+                        "degraded": True,
+                        "skipped": False,
+                        "items": [],
+                        "error_reason": "Unable to perform threat intel lookup in degraded mode",
+                    },
+                }
+            )
 
         elif "Timeline" in class_name:
-            base_response.update({
-                "timeline": [],
-                "suspicious_top5": [],
-                "next_steps": [
-                    "Manual timeline reconstruction required",
-                    "Consider alternative analysis methods",
-                    "Review raw logs directly",
-                ],
-                "iocs": {"ips": [], "domains": [], "urls": [], "hashes": []},
-                "iocs_local": {"ips": [], "domains": [], "urls": [], "hashes": []},
-                "iocs_llm": {"ips": [], "domains": [], "urls": [], "hashes": []},
-                "ioc_count": {"ips": 0, "domains": 0, "urls": 0, "hashes": 0, "total": 0},
-                "impact_analysis": {
-                    "affected_assets": [],
-                    "business_impact": "Unable to perform impact analysis in degraded mode",
-                    "risk_score": 0,
-                    "severity": "low",
-                    "containment_priority": [],
-                    "recommended_next_queries": [],
-                },
-                "threat_intel": {
-                    "provider": "otx",
-                    "disabled": False,
-                    "degraded": True,
-                    "skipped": False,
-                    "items": [],
-                    "error_reason": "Unable to perform threat intel lookup in degraded mode",
-                },
-            })
+            base_response.update(
+                {
+                    "timeline": [],
+                    "suspicious_top5": [],
+                    "next_steps": [
+                        "Manual timeline reconstruction required",
+                        "Consider alternative analysis methods",
+                        "Review raw logs directly",
+                    ],
+                    "iocs": {"ips": [], "domains": [], "urls": [], "hashes": []},
+                    "iocs_local": {"ips": [], "domains": [], "urls": [], "hashes": []},
+                    "iocs_llm": {"ips": [], "domains": [], "urls": [], "hashes": []},
+                    "ioc_count": {
+                        "ips": 0,
+                        "domains": 0,
+                        "urls": 0,
+                        "hashes": 0,
+                        "total": 0,
+                    },
+                    "impact_analysis": {
+                        "affected_assets": [],
+                        "business_impact": "Unable to perform impact analysis in degraded mode",
+                        "risk_score": 0,
+                        "severity": "low",
+                        "containment_priority": [],
+                        "recommended_next_queries": [],
+                    },
+                    "threat_intel": {
+                        "provider": "otx",
+                        "disabled": False,
+                        "degraded": True,
+                        "skipped": False,
+                        "items": [],
+                        "error_reason": "Unable to perform threat intel lookup in degraded mode",
+                    },
+                }
+            )
 
         elif "Report" in class_name:
-            base_response.update({
-                "ticket_template": "# Incident Report\n\n"
-                                  "**Status**: Automated generation failed\n\n"
-                                  "Manual report creation required.",
-                "daily_report_template": "# Daily Security Report\n\n"
-                                       "Automated generation failed.",
-                "postmortem_template": "# Postmortem Report\n\n"
-                                     "Automated generation failed.",
-            })
+            base_response.update(
+                {
+                    "ticket_template": "# Incident Report\n\n"
+                    "**Status**: Automated generation failed\n\n"
+                    "Manual report creation required.",
+                    "daily_report_template": "# Daily Security Report\n\n"
+                    "Automated generation failed.",
+                    "postmortem_template": "# Postmortem Report\n\n"
+                    "Automated generation failed.",
+                }
+            )
 
         return base_response
 
     def _validate_safely(
-        self, response_class: Type[T], data: dict[str, Any]
+        self, response_class: type[T], data: dict[str, Any]
     ) -> tuple[T | None, str | None]:
         """Safely validate response, returning None with error if failed.
 
@@ -182,7 +201,7 @@ Please provide the corrected JSON response:"""
     async def generate_structured(
         self,
         prompt: str,
-        response_class: Type[T],
+        response_class: type[T],
         extracted_iocs: dict[str, list[str]] | None = None,
     ) -> tuple[T, str, bool]:
         """Generate structured response with retry and degraded fallback.
@@ -208,7 +227,9 @@ Please provide the corrected JSON response:"""
                         f"for request {request_id}"
                     )
                     # Add correction prompt
-                    correction = self._create_correction_prompt(last_error, last_attempt)
+                    correction = self._create_correction_prompt(
+                        last_error, last_attempt
+                    )
                     prompt = prompt + "\n" + correction
 
                 # Generate response
@@ -259,9 +280,7 @@ Please provide the corrected JSON response:"""
             f"All retries failed for request {request_id}, using degraded mode"
         )
 
-        degraded_data = self._create_degraded_response(
-            response_class, last_error
-        )
+        degraded_data = self._create_degraded_response(response_class, last_error)
         degraded_data["request_id"] = request_id
         degraded_data["model_used"] = settings.ai_provider
 
@@ -271,10 +290,16 @@ Please provide the corrected JSON response:"""
             return degraded_response, settings.ai_provider, True
         except ValidationError:
             # If even degraded fails, return minimal response
-            return response_class.model_validate({
-                **degraded_data,
-                "degraded": True,
-            }), settings.ai_provider, True
+            return (
+                response_class.model_validate(
+                    {
+                        **degraded_data,
+                        "degraded": True,
+                    }
+                ),
+                settings.ai_provider,
+                True,
+            )
 
 
 # Singleton instance

@@ -1,8 +1,8 @@
 """Schemas for impact analysis."""
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional
 from enum import Enum
+
+from pydantic import BaseModel, Field
 
 
 class Severity(str, Enum):
@@ -18,8 +18,8 @@ class AffectedAsset(BaseModel):
     """Affected asset information."""
 
     asset_id: str = Field(..., description="Asset ID")
-    hostname: Optional[str] = Field(None, description="Asset hostname")
-    ip: Optional[str] = Field(None, description="Asset IP")
+    hostname: str | None = Field(None, description="Asset hostname")
+    ip: str | None = Field(None, description="Asset IP")
     criticality: str = Field(..., description="Asset criticality")
     reason: str = Field(..., description="Reason for impact")
 
@@ -35,20 +35,20 @@ class ContainmentPriority(BaseModel):
 class ImpactAnalysis(BaseModel):
     """Impact analysis result."""
 
-    affected_assets: List[AffectedAsset] = Field(default_factory=list)
+    affected_assets: list[AffectedAsset] = Field(default_factory=list)
     business_impact: str = Field(..., description="Business impact description")
     risk_score: int = Field(..., ge=0, le=100, description="Risk score (0-100)")
     severity: Severity = Field(..., description="Impact severity")
-    containment_priority: List[ContainmentPriority] = Field(default_factory=list)
-    recommended_next_queries: List[str] = Field(default_factory=list)
+    containment_priority: list[ContainmentPriority] = Field(default_factory=list)
+    recommended_next_queries: list[str] = Field(default_factory=list)
 
 
 class DegradedImpactAnalysis(BaseModel):
     """Degraded mode impact analysis (minimal valid response)."""
 
-    affected_assets: List[AffectedAsset] = Field(default_factory=list)
+    affected_assets: list[AffectedAsset] = Field(default_factory=list)
     business_impact: str = "Unable to perform impact analysis in degraded mode"
     risk_score: int = Field(default=0, ge=0, le=100)
     severity: Severity = Field(default=Severity.low)
-    containment_priority: List[ContainmentPriority] = Field(default_factory=list)
-    recommended_next_queries: List[str] = Field(default_factory=list)
+    containment_priority: list[ContainmentPriority] = Field(default_factory=list)
+    recommended_next_queries: list[str] = Field(default_factory=list)

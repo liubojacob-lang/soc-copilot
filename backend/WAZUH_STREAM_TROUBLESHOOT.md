@@ -17,6 +17,7 @@
 1. **配置环境变量**
 
 编辑 `backend/.env`（或创建）：
+
 ```bash
 # 启用 Wazuh
 WAZUH_ENABLED=true
@@ -34,12 +35,14 @@ WAZUH_RECEIVER_AUTO_START=true
 ```
 
 2. **重启后端**
+
 ```bash
 cd backend
 python main.py
 ```
 
 3. **启动流服务**
+
 ```bash
 # 登录前端获取 JWT Token
 TOKEN="your_jwt_token"
@@ -50,6 +53,7 @@ curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
 ```
 
 4. **验证状态**
+
 ```bash
 curl http://localhost:8000/api/v1/wazuh/stream/status \
   -H "Authorization: Bearer $TOKEN"
@@ -60,12 +64,14 @@ curl http://localhost:8000/api/v1/wazuh/stream/status \
 如果暂时没有 Wazuh 服务器，可以用测试模式：
 
 1. **确保后端运行**
+
 ```bash
 cd backend
 python main.py
 ```
 
 2. **启动流服务**
+
 ```bash
 TOKEN="your_jwt_token"
 
@@ -74,6 +80,7 @@ curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
 ```
 
 3. **发送测试告警**
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/wazuh/stream/test-alert \
   -H "Authorization: Bearer $TOKEN" \
@@ -97,6 +104,7 @@ tail -f server.err
 ```
 
 查找 Wazuh 相关日志：
+
 ```
 - "Wazuh client initialized"
 - "Wazuh alert stream service initialized"
@@ -139,11 +147,13 @@ curl http://localhost:8000/api/v1/wazuh/stream/subscriptions
 #### 错误 3: "Disconnected" 持续显示
 
 **原因**:
+
 - 流服务未启动
 - Wazuh 集成未启用
 - 无告警数据推送
 
 **解决**:
+
 1. 确认 `WAZUH_ENABLED=true`
 2. 调用 `/api/v1/wazuh/stream/start` 启动服务
 3. 发送测试告警验证
@@ -152,6 +162,7 @@ curl http://localhost:8000/api/v1/wazuh/stream/subscriptions
 
 **原因**: 无实际的 Wazuh 告警数据源
 **解决**:
+
 - 配置真实的 Wazuh API 连接
 - 或使用测试告警 API 验证功能
 
@@ -173,6 +184,7 @@ chmod +x test_wazuh_stream.sh
 ---
 
 **需要帮助？**
+
 1. 检查后端日志: `tail -f backend/server.err`
 2. 检查服务状态: `curl http://localhost:8000/api/health`
 3. 查看浏览器控制台错误

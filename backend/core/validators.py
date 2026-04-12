@@ -4,7 +4,7 @@
 """
 
 import re
-from typing import Optional
+
 from fastapi import HTTPException, status
 
 
@@ -22,9 +22,7 @@ def validate_username(username: str) -> str:
     - 不允许特殊字符（除了下划线）
     """
     if not username:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Username is required"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is required")
 
     if len(username) < 3 or len(username) > 50:
         raise HTTPException(
@@ -49,9 +47,7 @@ def validate_password(password: str) -> str:
     - 必须包含大小写字母、数字
     """
     if not password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Password is required"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is required")
 
     if len(password) < 8:
         raise HTTPException(
@@ -78,16 +74,12 @@ def validate_email(email: str) -> str:
     验证邮箱格式
     """
     if not email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required")
 
     # 基本邮箱格式验证
     email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     if not re.match(email_pattern, email):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email format"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email format")
 
     return email.strip().lower()
 
@@ -96,7 +88,7 @@ def validate_sql_input(value: str, field_name: str = "input") -> str:
     """
     检测并阻止潜在的SQL注入攻击
     v0.8.4: 优化关键字检测，避免误判正常业务数据
-    
+
     - 检测SQL注入模式（精确匹配）
     - 检测危险字符组合
     - 不再简单拒绝包含常见单词的输入
@@ -144,8 +136,6 @@ def validate_sql_input(value: str, field_name: str = "input") -> str:
         r"sys\.(objects|tables|columns)",  # SQL Server系统表
     ]
 
-    value_lower = value.lower()
-
     # 检测SQL注入模式
     for pattern in sql_injection_patterns:
         if re.search(pattern, value, re.IGNORECASE):
@@ -161,7 +151,7 @@ def validate_sql_input(value: str, field_name: str = "input") -> str:
         (r"'\s*or\s*'", "OR-based injection"),
         (r"'\s*and\s*'", "AND-based injection"),
     ]
-    
+
     for pattern, desc in dangerous_patterns:
         if re.search(pattern, value, re.IGNORECASE):
             raise HTTPException(
@@ -172,7 +162,7 @@ def validate_sql_input(value: str, field_name: str = "input") -> str:
     return value
 
 
-def sanitize_string(value: str, max_length: Optional[int] = None) -> str:
+def sanitize_string(value: str, max_length: int | None = None) -> str:
     """
     清理字符串输入，移除潜在危险内容
     - 移除HTML标签
@@ -224,7 +214,7 @@ def validate_limit(
 
 
 def validate_pagination_params(
-    offset: Optional[int] = None, limit: Optional[int] = None
+    offset: int | None = None, limit: int | None = None
 ) -> tuple[int, int]:
     """
     验证分页参数
@@ -268,8 +258,6 @@ def validate_id_format(id_value: str, field_name: str = "id") -> str:
     uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     # 检查是否为UUID格式（无连字符，32个hex字符）
     uuid_pattern_nodash = r"^[0-9a-f]{32}$"
-    # 检查是否为纯数字
-    numeric_pattern = r"^[0-9]+$"
 
     # 允许的格式：标准UUID、无连字符UUID、数字ID
     if (

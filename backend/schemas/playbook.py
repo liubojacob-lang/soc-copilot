@@ -1,8 +1,9 @@
 """Schemas for playbook operations."""
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Any, Optional
 from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class QueryTemplate(BaseModel):
@@ -23,7 +24,9 @@ class PlatformQueries(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    platform: str = Field(..., description="Platform name: splunk, elastic_kql, sentinel_kql")
+    platform: str = Field(
+        ..., description="Platform name: splunk, elastic_kql, sentinel_kql"
+    )
     queries: list[QueryTemplate] = Field(..., description="List of queries")
 
 
@@ -33,15 +36,16 @@ class GenerateQueriesRequest(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
     module: str = Field(..., description="Source module: analyzer, timeline, report")
-    history_id: Optional[str] = Field(None, description="History record ID to load IOCs from")
-    iocs: Optional[dict[str, list[str]]] = Field(None, description="Direct IOC input")
+    history_id: str | None = Field(
+        None, description="History record ID to load IOCs from"
+    )
+    iocs: dict[str, list[str]] | None = Field(None, description="Direct IOC input")
     platforms: list[str] = Field(
         default=["splunk"],
-        description="Target platforms: splunk, elastic_kql, sentinel_kql"
+        description="Target platforms: splunk, elastic_kql, sentinel_kql",
     )
     time_ranges: list[str] = Field(
-        default=["last_24h"],
-        description="Time ranges: last_1h, last_24h, last_7d"
+        default=["last_24h"], description="Time ranges: last_1h, last_24h, last_7d"
     )
 
 
@@ -52,7 +56,7 @@ class GenerateQueriesResponse(BaseModel):
 
     request_id: str
     degraded: bool = False
-    error_reason: Optional[str] = None
+    error_reason: str | None = None
     results: list[PlatformQueries]
     meta: dict[str, Any] = Field(default_factory=dict)
 
@@ -64,7 +68,7 @@ class RemediationStep(BaseModel):
 
     action: str = Field(..., description="Action description")
     method: str = Field(..., description="Method or tool to use")
-    command: Optional[str] = Field(None, description="Command if applicable")
+    command: str | None = Field(None, description="Command if applicable")
 
 
 class RemediationAction(BaseModel):
@@ -74,7 +78,9 @@ class RemediationAction(BaseModel):
 
     title: str = Field(..., description="Action title")
     risk: str = Field(..., description="Risk level: low, medium, high, critical")
-    category: str = Field(..., description="Category: containment, eradication, recovery")
+    category: str = Field(
+        ..., description="Category: containment, eradication, recovery"
+    )
     priority: int = Field(..., description="Priority order (1=highest)")
     steps: list[RemediationStep] = Field(..., description="Action steps")
     verification: list[str] = Field(..., description="Verification steps")
@@ -90,9 +96,11 @@ class GenerateActionsRequest(BaseModel):
     history_id: str = Field(..., description="History record ID")
     policy: str = Field(
         default="safe",
-        description="Policy: safe (defensive only), moderate, aggressive"
+        description="Policy: safe (defensive only), moderate, aggressive",
     )
-    include_verification_steps: bool = Field(default=True, description="Include verification steps")
+    include_verification_steps: bool = Field(
+        default=True, description="Include verification steps"
+    )
 
 
 class GenerateActionsResponse(BaseModel):
@@ -102,7 +110,7 @@ class GenerateActionsResponse(BaseModel):
 
     request_id: str
     degraded: bool = False
-    error_reason: Optional[str] = None
+    error_reason: str | None = None
     actions: list[RemediationAction]
     meta: dict[str, Any] = Field(default_factory=dict)
 
@@ -114,13 +122,13 @@ class PlaybookOutputResponse(BaseModel):
 
     id: str
     created_at: datetime
-    history_id: Optional[str]
+    history_id: str | None
     output_type: str
-    platform: Optional[str]
+    platform: str | None
     output_json: dict[str, Any]
-    request_id: Optional[str]
+    request_id: str | None
     degraded: bool
-    error_reason: Optional[str]
+    error_reason: str | None
 
 
 class PlaybookHistoryResponse(BaseModel):

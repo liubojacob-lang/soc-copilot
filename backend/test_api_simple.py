@@ -1,9 +1,12 @@
 """Simple test to debug API response."""
+
 import asyncio
 import sys
-sys.path.insert(0, '/Users/levent/Desktop/sec/backend')
 
-from httpx import AsyncClient, ASGITransport
+sys.path.insert(0, "/Users/levent/Desktop/sec/backend")
+
+from httpx import ASGITransport, AsyncClient
+
 from main import app
 
 
@@ -20,7 +23,7 @@ async def test_correlate():
                 "hostname": "server01",
                 "severity": "high",
                 "category": "authentication",
-                "message": "Login failed"
+                "message": "Login failed",
             },
             {
                 "id": "test-002",
@@ -30,13 +33,12 @@ async def test_correlate():
                 "hostname": "server01",
                 "severity": "high",
                 "category": "authentication",
-                "message": "Login failed"
-            }
+                "message": "Login failed",
+            },
         ]
 
         response = await client.post(
-            "/api/correlation/correlate",
-            json={"events": test_events}
+            "/api/correlation/correlate", json={"events": test_events}
         )
 
         print(f"Status: {response.status_code}")

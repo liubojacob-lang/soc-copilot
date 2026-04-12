@@ -59,7 +59,9 @@ async def ensure_security_alerts_schema(session: AsyncSession) -> None:
         missing = {k: v for k, v in needed_columns.items() if k not in existing_columns}
         for column_name, column_def in missing.items():
             await session.execute(
-                text(f"ALTER TABLE security_alerts ADD COLUMN {column_name} {column_def}")
+                text(
+                    f"ALTER TABLE security_alerts ADD COLUMN {column_name} {column_def}"
+                )
             )
             logger.warning("Patched security_alerts missing column: %s", column_name)
 

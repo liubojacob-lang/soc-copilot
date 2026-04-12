@@ -1,19 +1,19 @@
 """Assets router for asset management API."""
 
-import json
-from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user
+from models.user import UserModel
 from schemas.asset import (
     AssetCreate,
-    AssetUpdate,
-    AssetResponse,
     AssetImportRequest,
     AssetImportResponse,
     AssetListResponse,
+    AssetResponse,
+    AssetUpdate,
 )
 from services.asset_service import AssetService
 
@@ -25,21 +25,23 @@ logger = get_logger(__name__)
 async def create_asset(
     data: AssetCreate,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> AssetResponse:
     """Create a new asset."""
     try:
         service = AssetService(session)
         return await service.create(data)
     except ValueError as e:
-        logger.warning(f"Asset creation failed: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.warning(f"Asset creation failed: {e!s}")
+        raise HTTPException(status_code=400, detail="Bad request")
 
 
 @router.get("", response_model=AssetListResponse)
 async def list_assets(
-    query: Optional[str] = Query(None, description="Search query"),
+    query: str | None = Query(None, description="Search query"),
     limit: int = Query(50, ge=1, le=500, description="Maximum results"),
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> AssetListResponse:
     """List assets with optional search."""
     service = AssetService(session)
@@ -51,6 +53,7 @@ async def list_assets(
 async def get_asset(
     asset_id: str,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> AssetResponse:
     """Get asset by ID."""
     service = AssetService(session)
@@ -65,33 +68,38 @@ async def update_asset(
     asset_id: str,
     data: AssetUpdate,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> AssetResponse:
     """Update an asset."""
     try:
         service = AssetService(session)
         return await service.update(asset_id, data)
     except ValueError as e:
-        logger.warning(f"Asset update failed: {str(e)}")
-        raise HTTPException(status_code=400 if "not found" in str(e) else 404, detail=str(e))
+        logger.warning(f"Asset update failed: {e!s}")
+        raise HTTPException(
+            status_code=400 if "not found" in str(e) else 404, detail="Bad request"
+        )
 
 
 @router.delete("/{asset_id}", status_code=204)
 async def delete_asset(
     asset_id: str,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> None:
     """Delete an asset."""
     try:
         service = AssetService(session)
         await service.delete(asset_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
 
 
 @router.post("/import", response_model=AssetImportResponse)
 async def import_assets(
     data: AssetImportRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> AssetImportResponse:
     """Import assets in bulk.
 

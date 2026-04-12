@@ -18,6 +18,7 @@ backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from db.session import Base
+
 # Import all models to ensure they are registered with Base
 import models.api_key
 import models.asset

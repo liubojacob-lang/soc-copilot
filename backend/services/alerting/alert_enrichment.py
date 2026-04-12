@@ -4,15 +4,15 @@ Automatically enrich security alerts with threat intelligence data
 """
 
 import asyncio
-from typing import Dict, Any, Optional
 from datetime import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-import httpx
+from typing import Any
 
+import httpx
+from sqlalchemy import select
+
+from core.logger import get_logger
 from db.session import AsyncSessionLocal
 from models.security_alert import SecurityAlert
-from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -23,9 +23,9 @@ class ThreatIntelEnricher:
     def __init__(self):
         self.client = None
         self.sources = {
-            'virustotal': False,  # Requires API key
-            'abuseipdb': False,   # Requires API key
-            'otx': True,          # OTX is free
+            "virustotal": False,  # Requires API key
+            "abuseipdb": False,  # Requires API key
+            "otx": True,  # OTX is free
         }
 
     async def __aenter__(self):
@@ -36,64 +36,68 @@ class ThreatIntelEnricher:
         if self.client:
             await self.client.aclose()
 
-    async def enrich_alert(self, alert: SecurityAlert) -> Dict[str, Any]:
+    async def enrich_alert(self, alert: SecurityAlert) -> dict[str, Any]:
         """
         Enrich a single alert with threat intelligence
 
         Returns enrichment data to be stored in alert
         """
         enrichment = {
-            'enriched_at': datetime.utcnow().isoformat(),
-            'indicators': {},
-            'threat_scores': {},
-            'tags': [],
+            "enriched_at": datetime.utcnow().isoformat(),
+            "indicators": {},
+            "threat_scores": {},
+            "tags": [],
         }
 
         # Enrich source IP
         if alert.source_ip:
             ip_data = await self._enrich_ip(alert.source_ip)
-            enrichment['indicators']['source_ip'] = ip_data
+            enrichment["indicators"]["source_ip"] = ip_data
 
         # Enrich destination IP
         if alert.destination_ip:
             ip_data = await self._enrich_ip(alert.destination_ip)
-            enrichment['indicators']['destination_ip'] = ip_data
+            enrichment["indicators"]["destination_ip"] = ip_data
 
         # Enrich based on MITRE tactics
         if alert.rule_mitre:
             tactic_info = await self._get_mitre_info(alert.rule_mitre)
-            enrichment['mitre_info'] = tactic_info
+            enrichment["mitre_info"] = tactic_info
 
         return enrichment
 
-    async def _enrich_ip(self, ip: str) -> Dict[str, Any]:
+    async def _enrich_ip(self, ip: str) -> dict[str, Any]:
         """Enrich an IP address with threat intelligence"""
         result = {
-            'ip': ip,
-            'reputation': 'unknown',
-            'scores': {},
-            'tags': [],
-            'first_seen': None,
-            'last_seen': None,
+            "ip": ip,
+            "reputation": "unknown",
+            "scores": {},
+            "tags": [],
+            "first_seen": None,
+            "last_seen": None,
         }
 
         # Check AbuseIPDB (if API key available)
-        if self.sources.get('abuseipdb'):
+        if self.sources.get("abuseipdb"):
             abuse_data = await self._check_abuseipdb(ip)
             if abuse_data:
-                result['scores']['abuseipdb'] = abuse_data.get('abuse_confidence_score', 0)
-                result['tags'].extend(abuse_data.get('reports', []))
+                result["scores"]["abuseipdb"] = abuse_data.get(
+                    "abuse_confidence_score", 0
+                )
+                result["tags"].extend(abuse_data.get("reports", []))
 
         # Check OTX AlienVault (always available)
         otx_data = await self._check_otx_ip(ip)
         if otx_data:
-            result['reputation'] = 'malicious' if otx_data.get('reputation', 0) > 0 else 'clean'
-            result['scores']['otx'] = otx_data.get('reputation', 0)
-            result['tags'].extend(otx_data.get('pulse_info', {}).get('pulses', []))
+            result["reputation"] = (
+                "malicious" if otx_data.get("reputation", 0) > 0 else "clean"
+            )
+            result["scores"]["otx"] = otx_data.get("reputation", 0)
+            result["tags"].extend(otx_data.get("pulse_info", {}).get("pulses", []))
 
         return result
 
-    async def _check_otx_ip(self, ip: str) -> Optional[Dict]:
+    async def _check_otx_ip(self, ip: str) -> dict | None:
         """Check IP reputation against AlienVault OTX"""
         try:
             url = f"https://otx.alienvault.com/api/v1/indicators/IPv4/{ip}/reputation"
@@ -102,22 +106,22 @@ class ThreatIntelEnricher:
             if response.status_code == 200:
                 data = response.json()
                 return {
-                    'reputation': data.get('reputation', 0),
-                    'pulse_info': data.get('pulse_info', {}),
+                    "reputation": data.get("reputation", 0),
+                    "pulse_info": data.get("pulse_info", {}),
                 }
         except Exception as e:
             logger.warning(f"OTX IP lookup failed for {ip}: {e}")
 
         return None
 
-    async def _check_abuseipdb(self, ip: str) -> Optional[Dict]:
+    async def _check_abuseipdb(self, ip: str) -> dict | None:
         """Check IP against AbuseIPDB (requires API key)"""
         # TODO: Add when API key is available
         return None
 
-    async def _get_mitre_info(self, mitre_csv: str) -> Dict[str, Any]:
+    async def _get_mitre_info(self, mitre_csv: str) -> dict[str, Any]:
         """Get information about MITRE ATT&CK tactics"""
-        tactics = [t.strip() for t in mitre_csv.split(',') if t.strip()]
+        tactics = [t.strip() for t in mitre_csv.split(",") if t.strip()]
 
         mitre_info = {}
         for tactic in tactics:
@@ -128,69 +132,69 @@ class ThreatIntelEnricher:
 
         return mitre_info
 
-    def _get_tactic_details(self, tactic_id: str) -> Optional[Dict]:
+    def _get_tactic_details(self, tactic_id: str) -> dict | None:
         """Get details about a MITRE tactic"""
         # Common MITRE ATT&CK tactics mapping
         tactics_db = {
-            'TA0001': {
-                'name': 'Initial Access',
-                'description': 'The adversary is trying to get into your network',
-                'techniques': ['T1190', 'T1078', 'T1133'],
+            "TA0001": {
+                "name": "Initial Access",
+                "description": "The adversary is trying to get into your network",
+                "techniques": ["T1190", "T1078", "T1133"],
             },
-            'TA0002': {
-                'name': 'Execution',
-                'description': 'The adversary is trying to run malicious code',
-                'techniques': ['T1203', 'T1059', 'T1204'],
+            "TA0002": {
+                "name": "Execution",
+                "description": "The adversary is trying to run malicious code",
+                "techniques": ["T1203", "T1059", "T1204"],
             },
-            'TA0003': {
-                'name': 'Persistence',
-                'description': 'The adversary is trying to maintain their foothold',
-                'techniques': ['T1543', 'T1053', 'T1547'],
+            "TA0003": {
+                "name": "Persistence",
+                "description": "The adversary is trying to maintain their foothold",
+                "techniques": ["T1543", "T1053", "T1547"],
             },
-            'TA0004': {
-                'name': 'Privilege Escalation',
-                'description': 'The adversary is trying to gain higher-level permissions',
-                'techniques': ['T1068', 'T1488', 'T1548'],
+            "TA0004": {
+                "name": "Privilege Escalation",
+                "description": "The adversary is trying to gain higher-level permissions",
+                "techniques": ["T1068", "T1488", "T1548"],
             },
-            'TA0005': {
-                'name': 'Defense Evasion',
-                'description': 'The adversary is trying to avoid being detected',
-                'techniques': ['T1562', 'T1070', 'T1027'],
+            "TA0005": {
+                "name": "Defense Evasion",
+                "description": "The adversary is trying to avoid being detected",
+                "techniques": ["T1562", "T1070", "T1027"],
             },
-            'TA0006': {
-                'name': 'Credential Access',
-                'description': 'The adversary is trying to steal account names and passwords',
-                'techniques': ['T1003', 'T1552', 'T1110'],
+            "TA0006": {
+                "name": "Credential Access",
+                "description": "The adversary is trying to steal account names and passwords",
+                "techniques": ["T1003", "T1552", "T1110"],
             },
-            'TA0007': {
-                'name': 'Discovery',
-                'description': 'The adversary is trying to figure out your environment',
-                'techniques': ['T1087', 'T1033', 'T1018'],
+            "TA0007": {
+                "name": "Discovery",
+                "description": "The adversary is trying to figure out your environment",
+                "techniques": ["T1087", "T1033", "T1018"],
             },
-            'TA0008': {
-                'name': 'Lateral Movement',
-                'description': 'The adversary is trying to move through your network',
-                'techniques': ['T1021', 'T1077', 'T1563'],
+            "TA0008": {
+                "name": "Lateral Movement",
+                "description": "The adversary is trying to move through your network",
+                "techniques": ["T1021", "T1077", "T1563"],
             },
-            'TA0009': {
-                'name': 'Collection',
-                'description': 'The adversary is trying to gather data of interest',
-                'techniques': ['T1005', 'T1113', 'T1125'],
+            "TA0009": {
+                "name": "Collection",
+                "description": "The adversary is trying to gather data of interest",
+                "techniques": ["T1005", "T1113", "T1125"],
             },
-            'TA0010': {
-                'name': 'Exfiltration',
-                'description': 'The adversary is trying to steal data',
-                'techniques': ['T1041', 'T1567', 'T1030'],
+            "TA0010": {
+                "name": "Exfiltration",
+                "description": "The adversary is trying to steal data",
+                "techniques": ["T1041", "T1567", "T1030"],
             },
-            'TA0011': {
-                'name': 'Command and Control',
-                'description': 'The adversary is trying to communicate with compromised systems',
-                'techniques': ['T1071', 'T1095', 'T1102'],
+            "TA0011": {
+                "name": "Command and Control",
+                "description": "The adversary is trying to communicate with compromised systems",
+                "techniques": ["T1071", "T1095", "T1102"],
             },
-            'TA0040': {
-                'name': 'Impact',
-                'description': 'The adversary is trying to manipulate, interrupt, or destroy your systems',
-                'techniques': ['T1486', 'T1485', 'T1489'],
+            "TA0040": {
+                "name": "Impact",
+                "description": "The adversary is trying to manipulate, interrupt, or destroy your systems",
+                "techniques": ["T1486", "T1485", "T1489"],
             },
         }
 
@@ -220,9 +224,9 @@ class AlertEnrichmentService:
                     return False
 
                 # Skip if already enriched recently
-                if alert.raw_data and alert.raw_data.get('enriched_at'):
+                if alert.raw_data and alert.raw_data.get("enriched_at"):
                     # Check if enriched in last 24h
-                    enriched_at = datetime.fromisoformat(alert.raw_data['enriched_at'])
+                    enriched_at = datetime.fromisoformat(alert.raw_data["enriched_at"])
                     if (datetime.utcnow() - enriched_at).days < 1:
                         logger.debug(f"Alert {alert_id} already enriched recently")
                         return False
@@ -235,7 +239,7 @@ class AlertEnrichmentService:
                 if not alert.raw_data:
                     alert.raw_data = {}
 
-                alert.raw_data['threat_intel'] = enrichment
+                alert.raw_data["threat_intel"] = enrichment
                 await session.commit()
 
                 logger.info(
@@ -260,9 +264,11 @@ class AlertEnrichmentService:
 
                 cutoff = datetime.utcnow() - timedelta(hours=hours)
 
-                query = select(SecurityAlert).where(
-                    SecurityAlert.created_at >= cutoff
-                ).order_by(SecurityAlert.created_at.desc())
+                query = (
+                    select(SecurityAlert)
+                    .where(SecurityAlert.created_at >= cutoff)
+                    .order_by(SecurityAlert.created_at.desc())
+                )
 
                 result = await session.execute(query)
                 alerts = result.scalars().all()

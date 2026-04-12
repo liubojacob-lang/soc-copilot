@@ -3,10 +3,10 @@ Base Repository
 Provides common CRUD operations for all repositories
 """
 
-from typing import Type, TypeVar, Generic, Optional, List, Dict, Any
+from typing import Any, Generic, TypeVar
+
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func
-from sqlalchemy.orm import Mapped
 
 from db.session import Base
 
@@ -25,37 +25,31 @@ class BaseRepository(Generic[ModelType]):
     - Caching integration
     """
 
-    def __init__(self, session: AsyncSession, model: Type[ModelType]):
+    def __init__(self, session: AsyncSession, model: type[ModelType]):
         self.session = session
         self.model = model
 
-    async def get(self, id: str) -> Optional[ModelType]:
+    async def get(self, id: str) -> ModelType | None:
         """Get entity by ID"""
         result = await self.session.execute(
             select(self.model).where(self.model.id == id)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_field(
-        self,
-        field_name: str,
-        value: Any
-    ) -> Optional[ModelType]:
+    async def get_by_field(self, field_name: str, value: Any) -> ModelType | None:
         """Get entity by field value"""
         field = getattr(self.model, field_name)
-        result = await self.session.execute(
-            select(self.model).where(field == value)
-        )
+        result = await self.session.execute(select(self.model).where(field == value))
         return result.scalar_one_or_none()
 
     async def list(
         self,
-        filters: Dict[str, Any] | None = None,
+        filters: dict[str, Any] | None = None,
         limit: int = 100,
         offset: int = 0,
         order_by: str | None = None,
-        ascending: bool = True
-    ) -> List[ModelType]:
+        ascending: bool = True,
+    ) -> list[ModelType]:
         """List entities with filters, pagination, and ordering"""
         query = select(self.model)
 
@@ -79,7 +73,7 @@ class BaseRepository(Generic[ModelType]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def count(self, filters: Dict[str, Any] | None = None) -> int:
+    async def count(self, filters: dict[str, Any] | None = None) -> int:
         """Count entities with filters"""
         query = select(func.count(self.model.id))
 
@@ -100,11 +94,7 @@ class BaseRepository(Generic[ModelType]):
         await self.session.refresh(entity)
         return entity
 
-    async def update(
-        self,
-        id: str,
-        **kwargs
-    ) -> Optional[ModelType]:
+    async def update(self, id: str, **kwargs) -> ModelType | None:
         """Update entity by ID"""
         entity = await self.get(id)
         if entity is None:
@@ -128,11 +118,7 @@ class BaseRepository(Generic[ModelType]):
         await self.session.flush()
         return True
 
-    async def bulk_update(
-        self,
-        filters: Dict[str, Any],
-        **kwargs
-    ) -> int:
+    async def bulk_update(self, filters: dict[str, Any], **kwargs) -> int:
         """Bulk update entities matching filters"""
         # Build update statement
         stmt = update(self.model)
@@ -149,10 +135,7 @@ class BaseRepository(Generic[ModelType]):
         await self.session.flush()
         return result.rowcount
 
-    async def bulk_delete(
-        self,
-        filters: Dict[str, Any]
-    ) -> int:
+    async def bulk_delete(self, filters: dict[str, Any]) -> int:
         """Bulk delete entities matching filters"""
         # Build delete statement
         stmt = delete(self.model)
@@ -169,20 +152,16 @@ class BaseRepository(Generic[ModelType]):
     async def exists(self, id: str) -> bool:
         """Check if entity exists"""
         result = await self.session.execute(
-            select(func.count(self.model.id))
-            .where(self.model.id == id)
+            select(func.count(self.model.id)).where(self.model.id == id)
         )
         return (result.scalar() or 0) > 0
 
     async def get_or_create(
-        self,
-        filters: Dict[str, Any],
-        defaults: Dict[str, Any] | None = None
+        self, filters: dict[str, Any], defaults: dict[str, Any] | None = None
     ) -> tuple[ModelType, bool]:
         """Get entity or create if not exists"""
         entity = await self.get_by_field(
-            list(filters.keys())[0],
-            list(filters.values())[0]
+            list(filters.keys())[0], list(filters.values())[0]
         )
 
         if entity is not None:

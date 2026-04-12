@@ -1,12 +1,13 @@
 """Unit tests for PlaybookDAGEngine."""
 
 import pytest
+
 from services.playbook_dag_engine import (
-    PlaybookDAGEngine,
-    ExecutionContext,
     DAGNodeSpec,
-    NodeType,
+    ExecutionContext,
     NodeStatus,
+    NodeType,
+    PlaybookDAGEngine,
 )
 
 
@@ -50,7 +51,7 @@ class TestExecutionContext:
             run_id="run-123",
             tenant_id="tenant-456",
         )
-        
+
         assert ctx.run_id == "run-123"
         assert ctx.tenant_id == "tenant-456"
         assert ctx.variables == {}
@@ -64,7 +65,7 @@ class TestExecutionContext:
             tenant_id="tenant-456",
             variables={"key": "value", "count": 42},
         )
-        
+
         assert ctx.variables["key"] == "value"
         assert ctx.variables["count"] == 42
 
@@ -75,7 +76,7 @@ class TestExecutionContext:
             tenant_id="tenant-456",
             node_status={"node-1": NodeStatus.SUCCESS, "node-2": NodeStatus.RUNNING},
         )
-        
+
         assert ctx.node_status["node-1"] == NodeStatus.SUCCESS
         assert ctx.node_status["node-2"] == NodeStatus.RUNNING
 
@@ -89,7 +90,7 @@ class TestDAGNodeSpec:
             id="node-1",
             node_type=NodeType.ACTION,
         )
-        
+
         assert spec.id == "node-1"
         assert spec.node_type == NodeType.ACTION
         assert spec.depends_on == []
@@ -107,7 +108,7 @@ class TestDAGNodeSpec:
             on_failure=["rollback-1"],
             rollback_node_id="rollback-1",
         )
-        
+
         assert spec.depends_on == ["node-1"]
         assert spec.on_success == ["node-3"]
         assert spec.on_failure == ["rollback-1"]
@@ -120,7 +121,7 @@ class TestDAGNodeSpec:
             node_type=NodeType.APPROVAL,
             depends_on=["action-1"],
         )
-        
+
         assert spec.node_type == NodeType.APPROVAL
 
 
@@ -145,11 +146,13 @@ class TestPlaybookDAGEngine:
         """Test evaluating nodes with no dependencies."""
         nodes = {
             "start": DAGNodeSpec(id="start", node_type=NodeType.ACTION),
-            "end": DAGNodeSpec(id="end", node_type=NodeType.ACTION, depends_on=["start"]),
+            "end": DAGNodeSpec(
+                id="end", node_type=NodeType.ACTION, depends_on=["start"]
+            ),
         }
-        
+
         ready = await engine.evaluate_next_nodes(context, nodes)
-        
+
         assert "start" in ready
         assert "end" not in ready
 
@@ -157,15 +160,19 @@ class TestPlaybookDAGEngine:
     async def test_evaluate_next_nodes_with_completed_deps(self, engine, context):
         """Test evaluating nodes with completed dependencies."""
         context.node_status["start"] = NodeStatus.SUCCESS
-        
+
         nodes = {
             "start": DAGNodeSpec(id="start", node_type=NodeType.ACTION),
-            "middle": DAGNodeSpec(id="middle", node_type=NodeType.ACTION, depends_on=["start"]),
-            "end": DAGNodeSpec(id="end", node_type=NodeType.ACTION, depends_on=["middle"]),
+            "middle": DAGNodeSpec(
+                id="middle", node_type=NodeType.ACTION, depends_on=["start"]
+            ),
+            "end": DAGNodeSpec(
+                id="end", node_type=NodeType.ACTION, depends_on=["middle"]
+            ),
         }
-        
+
         ready = await engine.evaluate_next_nodes(context, nodes)
-        
+
         assert "middle" in ready
         assert "end" not in ready
 
@@ -174,7 +181,7 @@ class TestPlaybookDAGEngine:
         """Test evaluating nodes with multiple dependencies."""
         context.node_status["node-1"] = NodeStatus.SUCCESS
         context.node_status["node-2"] = NodeStatus.SUCCESS
-        
+
         nodes = {
             "node-1": DAGNodeSpec(id="node-1", node_type=NodeType.ACTION),
             "node-2": DAGNodeSpec(id="node-2", node_type=NodeType.ACTION),
@@ -184,9 +191,9 @@ class TestPlaybookDAGEngine:
                 depends_on=["node-1", "node-2"],
             ),
         }
-        
+
         ready = await engine.evaluate_next_nodes(context, nodes)
-        
+
         assert "merge" in ready
 
     @pytest.mark.asyncio
@@ -194,7 +201,7 @@ class TestPlaybookDAGEngine:
         """Test evaluating nodes with partial dependencies completed."""
         context.node_status["node-1"] = NodeStatus.SUCCESS
         context.node_status["node-2"] = NodeStatus.RUNNING
-        
+
         nodes = {
             "node-1": DAGNodeSpec(id="node-1", node_type=NodeType.ACTION),
             "node-2": DAGNodeSpec(id="node-2", node_type=NodeType.ACTION),
@@ -204,9 +211,9 @@ class TestPlaybookDAGEngine:
                 depends_on=["node-1", "node-2"],
             ),
         }
-        
+
         ready = await engine.evaluate_next_nodes(context, nodes)
-        
+
         assert "merge" not in ready
 
     @pytest.mark.asyncio
@@ -214,14 +221,16 @@ class TestPlaybookDAGEngine:
         """Test that already processed nodes are not returned."""
         context.node_status["start"] = NodeStatus.SUCCESS
         context.node_status["middle"] = NodeStatus.FAILED
-        
+
         nodes = {
             "start": DAGNodeSpec(id="start", node_type=NodeType.ACTION),
-            "middle": DAGNodeSpec(id="middle", node_type=NodeType.ACTION, depends_on=["start"]),
+            "middle": DAGNodeSpec(
+                id="middle", node_type=NodeType.ACTION, depends_on=["start"]
+            ),
         }
-        
+
         ready = await engine.evaluate_next_nodes(context, nodes)
-        
+
         assert "start" not in ready
         assert "middle" not in ready
 
@@ -231,9 +240,9 @@ class TestPlaybookDAGEngine:
         nodes = {
             "action-1": DAGNodeSpec(id="action-1", node_type=NodeType.ACTION),
         }
-        
+
         rollback_nodes = await engine.mark_failure(context, "action-1", nodes)
-        
+
         assert context.node_status["action-1"] == NodeStatus.FAILED
         assert rollback_nodes == []
 
@@ -248,9 +257,9 @@ class TestPlaybookDAGEngine:
             ),
             "rollback-1": DAGNodeSpec(id="rollback-1", node_type=NodeType.ROLLBACK),
         }
-        
+
         rollback_nodes = await engine.mark_failure(context, "action-1", nodes)
-        
+
         assert context.node_status["action-1"] == NodeStatus.FAILED
         assert "rollback-1" in rollback_nodes
 
@@ -264,9 +273,9 @@ class TestPlaybookDAGEngine:
                 on_failure=["notify-1", "cleanup-1"],
             ),
         }
-        
+
         rollback_nodes = await engine.mark_failure(context, "action-1", nodes)
-        
+
         assert "notify-1" in rollback_nodes
         assert "cleanup-1" in rollback_nodes
 
@@ -281,9 +290,9 @@ class TestPlaybookDAGEngine:
                 on_failure=["notify-1"],
             ),
         }
-        
+
         rollback_nodes = await engine.mark_failure(context, "action-1", nodes)
-        
+
         assert "rollback-1" in rollback_nodes
         assert "notify-1" in rollback_nodes
 
@@ -313,19 +322,19 @@ class TestPlaybookDAGEngine:
                 depends_on=["merge"],
             ),
         }
-        
+
         ready = await engine.evaluate_next_nodes(context, nodes)
         assert ready == ["start"]
-        
+
         context.node_status["start"] = NodeStatus.SUCCESS
         ready = await engine.evaluate_next_nodes(context, nodes)
         assert set(ready) == {"parallel-1", "parallel-2"}
-        
+
         context.node_status["parallel-1"] = NodeStatus.SUCCESS
         context.node_status["parallel-2"] = NodeStatus.SUCCESS
         ready = await engine.evaluate_next_nodes(context, nodes)
         assert ready == ["merge"]
-        
+
         context.node_status["merge"] = NodeStatus.SUCCESS
         ready = await engine.evaluate_next_nodes(context, nodes)
         assert ready == ["end"]
@@ -346,10 +355,10 @@ class TestPlaybookDAGEngine:
                 depends_on=["approval"],
             ),
         }
-        
+
         ready = await engine.evaluate_next_nodes(context, nodes)
         assert ready == ["start"]
-        
+
         context.node_status["start"] = NodeStatus.SUCCESS
         ready = await engine.evaluate_next_nodes(context, nodes)
         assert ready == ["approval"]
@@ -377,10 +386,10 @@ class TestPlaybookDAGEngine:
                 depends_on=["condition"],
             ),
         }
-        
+
         ready = await engine.evaluate_next_nodes(context, nodes)
         assert ready == ["start"]
-        
+
         context.node_status["start"] = NodeStatus.SUCCESS
         ready = await engine.evaluate_next_nodes(context, nodes)
         assert ready == ["condition"]

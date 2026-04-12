@@ -1,25 +1,30 @@
 """Authentication API endpoints."""
 
-from datetime import timedelta, datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.session import get_session
-from models.user import UserModel, UserRole
-from schemas.user import UserLogin, TokenResponse, TokenRefresh, MeResponse
-from repositories.user_repository import UserRepository
+from core.config import settings
+from core.cookie_auth import clear_auth_cookies, set_auth_cookies
+from core.csrf import generate_csrf_token, set_csrf_cookie
+from core.logger import get_logger
 from core.security import (
-    verify_password,
     create_access_token,
     create_refresh_token,
     decode_token,
+    get_password_hash,
+    verify_password,
 )
-from core.cookie_auth import set_auth_cookies, clear_auth_cookies
-from core.csrf import generate_csrf_token, set_csrf_cookie
-from core.config import settings
-from dependencies.auth import get_current_user, get_current_user_optional, require_admin
-from dependencies.auth import user_to_response
-from core.logger import get_logger
+from db.session import get_session
+from dependencies.auth import (
+    get_current_user,
+    require_admin,
+    user_to_response,
+)
+from models.user import UserModel
+from repositories.user_repository import UserRepository
+from schemas.user import ChangePasswordRequest, MeResponse, TokenRefresh, TokenResponse, UserLogin
 
 logger = get_logger(__name__)
 
@@ -67,15 +72,15 @@ LOCKOUT_DURATION_MINUTES = 30
                             "id": "uuid",
                             "username": "admin",
                             "email": "admin@example.com",
-                            "role": "admin"
-                        }
+                            "role": "admin",
+                        },
                     }
                 }
-            }
+            },
         },
         401: {"description": "用户名或密码错误"},
         423: {"description": "账户已被锁定"},
-    }
+    },
 )
 async def login(
     credentials: UserLogin,
@@ -90,6 +95,7 @@ async def login(
     if not user:
         # Create audit log for failed login
         from repositories.audit_repository import AuditRepository
+
         audit_repo = AuditRepository(session)
         await audit_repo.create(
             action="login:failed",
@@ -111,6 +117,7 @@ async def login(
             # Account is still locked
             remaining_minutes = int((locked_until - datetime.now()).total_seconds() / 60)
             from repositories.audit_repository import AuditRepository
+
             audit_repo = AuditRepository(session)
             await audit_repo.create(
                 action="login:failed",
@@ -118,7 +125,10 @@ async def login(
                 path="/api/auth/login",
                 status_code=423,
                 user_id=user.id,
-                extra_json={"reason": "account_locked", "locked_until": user.locked_until},
+                extra_json={
+                    "reason": "account_locked",
+                    "locked_until": user.locked_until,
+                },
             )
             await session.commit()
             raise HTTPException(
@@ -142,6 +152,7 @@ async def login(
             user.locked_until = lockout_until.isoformat()
 
             from repositories.audit_repository import AuditRepository
+
             audit_repo = AuditRepository(session)
             await audit_repo.create(
                 action="account_locked",
@@ -152,7 +163,7 @@ async def login(
                 extra_json={
                     "reason": "max_login_attempts_exceeded",
                     "attempts": user.failed_login_attempts,
-                    "locked_until": user.locked_until
+                    "locked_until": user.locked_until,
                 },
             )
             await session.commit()
@@ -163,6 +174,7 @@ async def login(
 
         # Log failed attempt
         from repositories.audit_repository import AuditRepository
+
         audit_repo = AuditRepository(session)
         await audit_repo.create(
             action="login:failed",
@@ -173,7 +185,7 @@ async def login(
             extra_json={
                 "reason": "invalid_password",
                 "attempts": user.failed_login_attempts,
-                "max_attempts": MAX_LOGIN_ATTEMPTS
+                "max_attempts": MAX_LOGIN_ATTEMPTS,
             },
         )
         await session.commit()
@@ -185,6 +197,7 @@ async def login(
     # Check if user is active
     if not user.is_active:
         from repositories.audit_repository import AuditRepository
+
         audit_repo = AuditRepository(session)
         await audit_repo.create(
             action="login:failed",
@@ -209,13 +222,22 @@ async def login(
 
     # Create tokens with role for authorization
     access_token = create_access_token(
-        data={"sub": user.id, "role": user.role.value if hasattr(user.role, 'value') else user.role},
+        data={
+            "sub": user.id,
+            "role": user.role.value if hasattr(user.role, "value") else user.role,
+        },
         expires_delta=timedelta(minutes=settings.jwt_expire_minutes),
     )
-    refresh_token = create_refresh_token(data={"sub": user.id, "role": user.role.value if hasattr(user.role, 'value') else user.role})
+    refresh_token = create_refresh_token(
+        data={
+            "sub": user.id,
+            "role": user.role.value if hasattr(user.role, "value") else user.role,
+        }
+    )
 
     # Create audit log for successful login
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="login:success",
@@ -277,13 +299,22 @@ async def refresh_token(
 
     # Create new tokens with role for authorization
     access_token = create_access_token(
-        data={"sub": user.id, "role": user.role.value if hasattr(user.role, 'value') else user.role},
+        data={
+            "sub": user.id,
+            "role": user.role.value if hasattr(user.role, "value") else user.role,
+        },
         expires_delta=timedelta(minutes=settings.jwt_expire_minutes),
     )
-    new_refresh_token = create_refresh_token(data={"sub": user.id, "role": user.role.value if hasattr(user.role, 'value') else user.role})
+    new_refresh_token = create_refresh_token(
+        data={
+            "sub": user.id,
+            "role": user.role.value if hasattr(user.role, "value") else user.role,
+        }
+    )
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="token:refresh",
@@ -309,6 +340,7 @@ async def logout(
 ):
     """Logout user and clear httpOnly cookies."""
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="logout",
@@ -345,6 +377,39 @@ async def get_me(
     )
 
 
+@router.post("/change-password")
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: UserModel = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Change the current user's password."""
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+
+    if data.new_password != data.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password and confirmation do not match",
+        )
+
+    if data.new_password == data.current_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password",
+        )
+
+    user_repo = UserRepository(session)
+    hashed = get_password_hash(data.new_password)
+    await user_repo.update_password(current_user.id, hashed)
+    await session.commit()
+
+    return {"message": "Password changed successfully"}
+
+
 @router.post("/unlock-user/{username}")
 async def unlock_user_account(
     username: str,
@@ -370,6 +435,7 @@ async def unlock_user_account(
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="account_unlocked",

@@ -3,20 +3,16 @@ UEBA (User and Entity Behavior Analytics) Service
 Detects insider threats and anomalous behavior using ML
 """
 
-import json
-import logging
-from typing import Any, Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from enum import Enum
+from typing import Any
 
 import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
 from core.logger import get_logger
-from core.config import settings
-from db.session import get_session
 
 logger = get_logger(__name__)
 
@@ -47,9 +43,9 @@ class BehaviorBaseline:
 
     entity_id: str
     entity_type: str  # user, host, ip
-    login_times: List[int]  # Hour of day (0-23)
-    accessed_resources: List[str]
-    peer_group: List[str]
+    login_times: list[int]  # Hour of day (0-23)
+    accessed_resources: list[str]
+    peer_group: list[str]
     typical_data_volume: float
     typical_connections: int
     last_updated: datetime
@@ -64,8 +60,8 @@ class AnomalyDetection:
     anomaly_score: float
     risk_level: RiskLevel
     description: str
-    indicators: List[str]
-    recommended_actions: List[str]
+    indicators: list[str]
+    recommended_actions: list[str]
     detected_at: datetime
 
 
@@ -77,8 +73,8 @@ class UserRiskProfile:
     username: str
     overall_risk_score: float  # 0-100
     risk_level: RiskLevel
-    risk_factors: List[Dict[str, Any]]
-    anomalous_behaviors: List[AnomalyDetection]
+    risk_factors: list[dict[str, Any]]
+    anomalous_behaviors: list[AnomalyDetection]
     compromised_probability: float
     last_activity: datetime
 
@@ -87,7 +83,7 @@ class UEBAEngine:
     """UEBA detection engine."""
 
     def __init__(self):
-        self.baselines: Dict[str, BehaviorBaseline] = {}
+        self.baselines: dict[str, BehaviorBaseline] = {}
         self.scaler = StandardScaler()
         self.isolation_forest = IsolationForest(
             contamination=0.1,  # Expected 10% anomalies
@@ -129,8 +125,8 @@ class UEBAEngine:
         return baseline
 
     async def detect_anomalies(
-        self, entity_id: str, current_behavior: Dict[str, Any]
-    ) -> List[AnomalyDetection]:
+        self, entity_id: str, current_behavior: dict[str, Any]
+    ) -> list[AnomalyDetection]:
         """
         Detect anomalies in current behavior compared to baseline.
 
@@ -205,8 +201,8 @@ class UEBAEngine:
         return anomalies
 
     async def calculate_risk_score(
-        self, entity_id: str, recent_anomalies: List[AnomalyDetection]
-    ) -> Tuple[float, RiskLevel]:
+        self, entity_id: str, recent_anomalies: list[AnomalyDetection]
+    ) -> tuple[float, RiskLevel]:
         """
         Calculate overall risk score based on anomalies.
 
@@ -301,15 +297,15 @@ class UEBAEngine:
                 },
             ],
             anomalous_behaviors=sample_anomalies,
-            compromised_probability=0.3
-            if risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]
-            else 0.05,
+            compromised_probability=(
+                0.3 if risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL] else 0.05
+            ),
             last_activity=datetime.now(),
         )
 
     async def detect_peer_group_anomalies(
-        self, entity_id: str, peer_group: List[str]
-    ) -> List[AnomalyDetection]:
+        self, entity_id: str, peer_group: list[str]
+    ) -> list[AnomalyDetection]:
         """
         Detect when entity behaves differently from peer group.
 
@@ -327,7 +323,7 @@ class UEBAEngine:
 
         return anomalies
 
-    async def train_ml_models(self, historical_data: List[Dict[str, Any]]):
+    async def train_ml_models(self, historical_data: list[dict[str, Any]]):
         """
         Train ML models on historical data.
 
@@ -363,7 +359,7 @@ class UEBAEngine:
         except Exception as e:
             logger.error(f"Error training ML models: {e}")
 
-    async def predict_with_ml(self, behavior_vector: List[float]) -> Tuple[bool, float]:
+    async def predict_with_ml(self, behavior_vector: list[float]) -> tuple[bool, float]:
         """
         Predict if behavior is anomalous using ML.
 
@@ -394,7 +390,7 @@ class UEBAEngine:
 
 
 # Global UEBA engine instance
-_ueba_engine: Optional[UEBAEngine] = None
+_ueba_engine: UEBAEngine | None = None
 
 
 def get_ueba_engine() -> UEBAEngine:

@@ -8,7 +8,6 @@ from pathlib import Path
 backend_dir = Path(__file__).parent / "backend"
 sys.path.insert(0, str(backend_dir))
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from db.session import get_session
 from repositories.user_repository import UserRepository
 
@@ -36,7 +35,7 @@ async def unlock_user(username: str):
             await session.commit()
 
             print(f"\n✅ Account '{username}' has been unlocked!")
-            print(f"   You can now login again.")
+            print("   You can now login again.")
 
         except Exception as e:
             print(f"❌ Error: {e}")

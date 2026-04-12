@@ -5,10 +5,10 @@ loading and registration of node plugins from the plugins/ directory.
 """
 
 import importlib
+import logging
 import pkgutil
 from pathlib import Path
-from typing import Dict, Type, Optional, List
-import logging
+from typing import Optional
 
 from .base_node import BaseNodePlugin
 
@@ -24,9 +24,9 @@ class NodeRegistry:
 
     def __init__(self) -> None:
         """Initialize an empty node registry."""
-        self._plugins: Dict[str, Type[BaseNodePlugin]] = {}
+        self._plugins: dict[str, type[BaseNodePlugin]] = {}
 
-    def register(self, node_id: str, plugin_class: Type[BaseNodePlugin]) -> None:
+    def register(self, node_id: str, plugin_class: type[BaseNodePlugin]) -> None:
         """Register a node plugin class.
 
         Args:
@@ -54,12 +54,11 @@ class NodeRegistry:
         if node_id not in self._plugins:
             available = list(self._plugins.keys())
             raise ValueError(
-                f"Plugin not registered: {node_id}. "
-                f"Available plugins: {available}"
+                f"Plugin not registered: {node_id}. " f"Available plugins: {available}"
             )
         return self._plugins[node_id]()
 
-    def list_plugins(self) -> List[str]:
+    def list_plugins(self) -> list[str]:
         """Get list of all registered plugin IDs.
 
         Returns:
@@ -67,7 +66,7 @@ class NodeRegistry:
         """
         return list(self._plugins.keys())
 
-    def get_plugin_info(self, node_id: str) -> Dict[str, str]:
+    def get_plugin_info(self, node_id: str) -> dict[str, str]:
         """Get metadata about a registered plugin.
 
         Args:
@@ -90,7 +89,7 @@ class NodeRegistry:
             "description": plugin.description,
         }
 
-    def list_all_info(self) -> List[Dict[str, str]]:
+    def list_all_info(self) -> list[dict[str, str]]:
         """Get metadata for all registered plugins.
 
         Returns:
@@ -129,7 +128,9 @@ class NodeRegistry:
                         plugin = attr()
                         self._plugins[plugin.node_id] = attr
                         count += 1
-                        logger.info(f"Auto-loaded plugin: {plugin.node_id} from {module_name}")
+                        logger.info(
+                            f"Auto-loaded plugin: {plugin.node_id} from {module_name}"
+                        )
 
             except Exception as e:
                 logger.error(f"Failed to load plugin module {module_name}: {e}")
@@ -145,7 +146,7 @@ def set_node_registry(registry: NodeRegistry) -> None:
     _node_registry = registry
 
 
-def get_node_registry() -> Optional[NodeRegistry]:
+def get_node_registry() -> NodeRegistry | None:
     """Get the global node registry instance."""
     return _node_registry
 

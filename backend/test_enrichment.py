@@ -5,9 +5,11 @@ Test script for Alert Enrichment
 
 import asyncio
 import json
+
+from sqlalchemy import select
+
 from db.session import AsyncSessionLocal
 from models.security_alert import SecurityAlert
-from sqlalchemy import select
 
 
 async def show_enriched_alerts():
@@ -27,30 +29,32 @@ async def show_enriched_alerts():
             print(f"   Severity: {alert.severity}")
             print(f"   IP: {alert.source_ip}")
 
-            if alert.raw_data and alert.raw_data.get('threat_intel'):
-                ti = alert.raw_data['threat_intel']
-                print(f"\n   🎯 Threat Intel:")
+            if alert.raw_data and alert.raw_data.get("threat_intel"):
+                ti = alert.raw_data["threat_intel"]
+                print("\n   🎯 Threat Intel:")
 
                 # Show indicators
-                indicators = ti.get('indicators', {})
+                indicators = ti.get("indicators", {})
                 if indicators:
                     for indicator_type, data in indicators.items():
                         print(f"      {indicator_type}:")
                         if isinstance(data, dict):
-                            reputation = data.get('reputation', 'unknown')
-                            scores = data.get('scores', {})
+                            reputation = data.get("reputation", "unknown")
+                            scores = data.get("scores", {})
                             print(f"         Reputation: {reputation}")
                             if scores:
                                 print(f"         Scores: {scores}")
 
                 # Show MITRE info
-                mitre_info = ti.get('mitre_info', {})
+                mitre_info = ti.get("mitre_info", {})
                 if mitre_info:
-                    print(f"\n      MITRE ATT&CK Tactics:")
+                    print("\n      MITRE ATT&CK Tactics:")
                     for tactic_id, tactic_data in mitre_info.items():
-                        print(f"         {tactic_id}: {tactic_data.get('name', 'Unknown')}")
+                        print(
+                            f"         {tactic_id}: {tactic_data.get('name', 'Unknown')}"
+                        )
 
-                enriched_at = ti.get('enriched_at')
+                enriched_at = ti.get("enriched_at")
                 if enriched_at:
                     print(f"\n      Enriched at: {enriched_at}")
             else:
@@ -81,9 +85,9 @@ async def test_enrichment_api():
 
                 # Show the enriched data
                 await session.refresh(alert)
-                if alert.raw_data and alert.raw_data.get('threat_intel'):
-                    ti = alert.raw_data['threat_intel']
-                    print(f"\n📊 Enrichment Data:")
+                if alert.raw_data and alert.raw_data.get("threat_intel"):
+                    ti = alert.raw_data["threat_intel"]
+                    print("\n📊 Enrichment Data:")
                     print(json.dumps(ti, indent=2, default=str))
             else:
                 print("ℹ️  Alert was skipped (already enriched or not found)")
@@ -91,9 +95,10 @@ async def test_enrichment_api():
 
 async def get_enrichment_stats():
     """Get enrichment statistics"""
+    from sqlalchemy import func, select
+
     from db.session import AsyncSessionLocal
     from models.security_alert import SecurityAlert
-    from sqlalchemy import func, select
 
     print("\n📈 Enrichment Statistics")
     print("=" * 60)
@@ -108,7 +113,9 @@ async def get_enrichment_stats():
         result = await session.execute(query)
         alerts = result.scalars().all()
 
-        enriched = sum(1 for a in alerts if a.raw_data and a.raw_data.get('threat_intel'))
+        enriched = sum(
+            1 for a in alerts if a.raw_data and a.raw_data.get("threat_intel")
+        )
 
         print(f"\n   Total Alerts: {total}")
         print(f"   Enriched: {enriched}")
@@ -140,6 +147,7 @@ async def main():
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
 
 

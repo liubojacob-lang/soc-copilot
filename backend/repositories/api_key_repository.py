@@ -1,12 +1,12 @@
 """Repository for API key operations."""
 
-from typing import Optional, List
 from datetime import datetime, timedelta
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
 
+from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.security import generate_api_key, get_api_key_prefix, hash_api_key
 from models.api_key import APIKeyModel
-from core.security import hash_api_key, generate_api_key, get_api_key_prefix
 
 
 class APIKeyRepository:
@@ -19,7 +19,7 @@ class APIKeyRepository:
         self,
         user_id: str,
         description: str,
-        expires_in_days: Optional[int] = None,
+        expires_in_days: int | None = None,
     ) -> tuple[str, APIKeyModel]:
         """Create a new API key. Returns (plain_key, api_key_model)."""
         plain_key = generate_api_key()
@@ -43,14 +43,14 @@ class APIKeyRepository:
 
         return plain_key, api_key
 
-    async def get_by_id(self, api_key_id: str) -> Optional[APIKeyModel]:
+    async def get_by_id(self, api_key_id: str) -> APIKeyModel | None:
         """Get API key by ID."""
         result = await self.session.execute(
             select(APIKeyModel).where(APIKeyModel.id == api_key_id)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_hash(self, key_hash: str) -> Optional[APIKeyModel]:
+    async def get_by_hash(self, key_hash: str) -> APIKeyModel | None:
         """Get API key by hash."""
         result = await self.session.execute(
             select(APIKeyModel).where(APIKeyModel.key_hash == key_hash)
@@ -62,8 +62,8 @@ class APIKeyRepository:
         user_id: str,
         skip: int = 0,
         limit: int = 50,
-        is_active: Optional[bool] = None,
-    ) -> tuple[List[APIKeyModel], int]:
+        is_active: bool | None = None,
+    ) -> tuple[list[APIKeyModel], int]:
         """List API keys for a user."""
         query = select(APIKeyModel).where(APIKeyModel.user_id == user_id)
 
@@ -74,7 +74,9 @@ class APIKeyRepository:
         count_result = await self.session.execute(
             select(APIKeyModel.id)
             .where(APIKeyModel.user_id == user_id)
-            .where(APIKeyModel.is_active == is_active if is_active is not None else True)
+            .where(
+                APIKeyModel.is_active == is_active if is_active is not None else True
+            )
         )
         total = len(count_result.all())
 
@@ -88,10 +90,10 @@ class APIKeyRepository:
     async def update(
         self,
         api_key_id: str,
-        description: Optional[str] = None,
-        is_active: Optional[bool] = None,
-        expires_at: Optional[str] = None,
-    ) -> Optional[APIKeyModel]:
+        description: str | None = None,
+        is_active: bool | None = None,
+        expires_at: str | None = None,
+    ) -> APIKeyModel | None:
         """Update API key fields."""
         api_key = await self.get_by_id(api_key_id)
         if not api_key:

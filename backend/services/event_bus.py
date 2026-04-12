@@ -5,7 +5,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from services.message_broker import EventEnvelope, EventPriority, PublishOptions, get_message_broker
+from services.message_broker import (
+    EventEnvelope,
+    EventPriority,
+    PublishOptions,
+    get_message_broker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,12 +35,16 @@ class EventBus:
             event_type=event_type,
             source=source,
             tenant_id=tenant_id,
-            priority=EventPriority(priority if priority in EventPriority._value2member_map_ else "medium"),
+            priority=EventPriority(
+                priority if priority in EventPriority._value2member_map_ else "medium"
+            ),
             payload=payload,
             metadata=metadata or {},
         )
         broker = get_message_broker()
-        return await broker.publish(envelope, PublishOptions(delay_seconds=delay_seconds))
+        return await broker.publish(
+            envelope, PublishOptions(delay_seconds=delay_seconds)
+        )
 
     def broker_stats(self) -> dict[str, dict[str, int | str]]:
         return get_message_broker().get_queue_stats()

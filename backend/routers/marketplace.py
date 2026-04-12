@@ -2,19 +2,18 @@
 Marketplace Router - Playbook Marketplace API
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, Field
 from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 
 from core.logger import get_logger
 from dependencies.auth import get_current_user
-from models.user import UserModel, UserRole
+from models.user import UserModel
 from services.marketplace_service import (
-    get_marketplace,
     PlaybookCategory,
     PlaybookDifficulty,
-    MarketplacePlaybook,
+    get_marketplace,
 )
 
 logger = get_logger(__name__)
@@ -26,11 +25,11 @@ router = APIRouter(prefix="/api/marketplace", tags=["marketplace", "community"])
 class PlaybookSearchRequest(BaseModel):
     """Search request."""
 
-    query: Optional[str] = None
-    category: Optional[str] = None
-    difficulty: Optional[str] = None
-    tags: Optional[List[str]] = None
-    min_rating: Optional[float] = Field(None, ge=0, le=5)
+    query: str | None = None
+    category: str | None = None
+    difficulty: str | None = None
+    tags: list[str] | None = None
+    min_rating: float | None = Field(None, ge=0, le=5)
     verified_only: bool = False
     sort_by: str = Field(default="rating", pattern="^(rating|downloads|newest)$")
 
@@ -45,7 +44,7 @@ class PlaybookResponse(BaseModel):
     category: str
     difficulty: str
     author: str
-    tags: List[str]
+    tags: list[str]
     download_count: int
     rating_average: float
     rating_count: int
@@ -54,8 +53,8 @@ class PlaybookResponse(BaseModel):
     featured: bool
     created_at: datetime
     updated_at: datetime
-    required_plugins: List[str]
-    compatible_versions: List[str]
+    required_plugins: list[str]
+    compatible_versions: list[str]
 
 
 class ReviewSubmitRequest(BaseModel):
@@ -75,13 +74,13 @@ class ReviewResponse(BaseModel):
     created_at: datetime
 
 
-@router.get("/playbooks", response_model=List[PlaybookResponse])
+@router.get("/playbooks", response_model=list[PlaybookResponse])
 async def search_playbooks(
-    query: Optional[str] = None,
-    category: Optional[str] = None,
-    difficulty: Optional[str] = None,
-    tags: Optional[str] = None,  # comma-separated
-    min_rating: Optional[float] = None,
+    query: str | None = None,
+    category: str | None = None,
+    difficulty: str | None = None,
+    tags: str | None = None,  # comma-separated
+    min_rating: float | None = None,
     verified_only: bool = False,
     sort_by: str = Query(default="rating", pattern="^(rating|downloads|newest)$"),
     page: int = Query(default=1, ge=1),
@@ -144,7 +143,7 @@ async def search_playbooks(
         logger.error(f"Error searching playbooks: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Search failed: {str(e)}",
+            detail=f"Search failed: {e!s}",
         )
 
 
@@ -196,7 +195,7 @@ async def get_playbook_details(
         logger.error(f"Error getting playbook: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get playbook: {str(e)}",
+            detail=f"Failed to get playbook: {e!s}",
         )
 
 
@@ -234,7 +233,7 @@ async def download_playbook(
         logger.error(f"Error downloading playbook: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Download failed: {str(e)}",
+            detail=f"Download failed: {e!s}",
         )
 
 
@@ -284,7 +283,7 @@ async def get_playbook_reviews(
         logger.error(f"Error getting reviews: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get reviews: {str(e)}",
+            detail=f"Failed to get reviews: {e!s}",
         )
 
 
@@ -324,7 +323,7 @@ async def submit_review(
         logger.error(f"Error submitting review: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to submit review: {str(e)}",
+            detail=f"Failed to submit review: {e!s}",
         )
 
 
@@ -345,7 +344,7 @@ async def get_categories(
         logger.error(f"Error getting categories: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get categories: {str(e)}",
+            detail=f"Failed to get categories: {e!s}",
         )
 
 
@@ -382,7 +381,7 @@ async def get_featured_playbooks(
         logger.error(f"Error getting featured playbooks: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get featured playbooks: {str(e)}",
+            detail=f"Failed to get featured playbooks: {e!s}",
         )
 
 
@@ -405,9 +404,11 @@ async def get_trending_playbooks(
                 {
                     "id": p.id,
                     "name": p.name,
-                    "description": p.description[:100] + "..."
-                    if len(p.description) > 100
-                    else p.description,
+                    "description": (
+                        p.description[:100] + "..."
+                        if len(p.description) > 100
+                        else p.description
+                    ),
                     "category": p.category.value,
                     "download_count": p.download_count,
                     "rating_average": p.rating_average,
@@ -420,7 +421,7 @@ async def get_trending_playbooks(
         logger.error(f"Error getting trending playbooks: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get trending playbooks: {str(e)}",
+            detail=f"Failed to get trending playbooks: {e!s}",
         )
 
 
@@ -467,5 +468,5 @@ async def get_marketplace_dashboard(
         logger.error(f"Error getting dashboard: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get dashboard: {str(e)}",
+            detail=f"Failed to get dashboard: {e!s}",
         )

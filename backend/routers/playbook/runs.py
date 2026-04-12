@@ -12,18 +12,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user, get_current_user_optional
 from models.user import UserModel, UserRole
+from repositories.audit_repository import AuditRepository
 from schemas.playbook_run import (
-    PlaybookRunCreateRequest,
-    PlaybookRunResponse,
-    PlaybookRunListResponse,
     PlaybookResumeRequest,
     PlaybookResumeResponse,
+    PlaybookRunCreateRequest,
+    PlaybookRunListResponse,
+    PlaybookRunResponse,
     PlaybookRunWithStepsResponse,
 )
-from services.playbook_run_service import PlaybookRunService
-from dependencies.auth import get_current_user, get_current_user_optional
-from repositories.audit_repository import AuditRepository
+from services.playbook.playbook_run_service import PlaybookRunService
 
 logger = get_logger(__name__)
 
@@ -108,7 +108,11 @@ async def list_playbook_runs(
     service = PlaybookRunService(session)
 
     # Non-admin users can only see their own runs
-    user_id = None if current_user.role in [UserRole.ADMIN, UserRole.AUDITOR] else current_user.id
+    user_id = (
+        None
+        if current_user.role in [UserRole.ADMIN, UserRole.AUDITOR]
+        else current_user.id
+    )
 
     return await service.list_runs(
         playbook_name=playbook_name,
@@ -249,7 +253,9 @@ async def resume_playbook_run(
             )
 
     try:
-        result = await service.resume_run(run_id, request, created_by_user_id=current_user.id)
+        result = await service.resume_run(
+            run_id, request, created_by_user_id=current_user.id
+        )
 
         # Create audit log
         audit_repo = AuditRepository(session)
@@ -270,8 +276,8 @@ async def resume_playbook_run(
 
         return result
 
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Bad request")
 
 
 @router.get("/playbooks")

@@ -3,16 +3,14 @@ AI Service Module - SOC Copilot AI Assistant
 Provides intelligent analysis and recommendations using LLM
 """
 
-import json
-import logging
-from typing import Any, Dict, List, Optional, AsyncGenerator
-from datetime import datetime
 from dataclasses import dataclass
+from typing import Any
 
 import httpx
+
 from core.config import settings
-from core.logger import get_logger
 from core.http_client import get_http_client
+from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -23,10 +21,10 @@ class AIAnalysisResult:
 
     summary: str
     root_cause: str
-    recommendations: List[str]
+    recommendations: list[str]
     confidence: float
-    related_cases: List[Dict[str, Any]]
-    suggested_playbooks: List[str]
+    related_cases: list[dict[str, Any]]
+    suggested_playbooks: list[str]
 
 
 @dataclass
@@ -35,18 +33,18 @@ class NaturalLanguageQuery:
 
     query: str
     intent: str
-    parameters: Dict[str, Any]
-    sql_or_filter: Optional[str]
+    parameters: dict[str, Any]
+    sql_or_filter: str | None
     response: str
 
 
 class LLMProvider:
     """Base class for LLM providers."""
 
-    def __init__(self, api_key: str, base_url: Optional[str] = None):
+    def __init__(self, api_key: str, base_url: str | None = None):
         self.api_key = api_key
         self.base_url = base_url
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     @property
     def client(self) -> httpx.AsyncClient:
@@ -55,16 +53,16 @@ class LLMProvider:
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         model: str = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> str:
         """Generate chat completion."""
         raise NotImplementedError
 
-    async def embedding(self, text: str) -> List[float]:
+    async def embedding(self, text: str) -> list[float]:
         """Generate embedding for text."""
         raise NotImplementedError
 
@@ -78,11 +76,11 @@ class ZhipuAIProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         model: str = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> str:
         """Generate chat completion using Zhipu AI."""
         try:
@@ -119,7 +117,7 @@ class ZhipuAIProvider(LLMProvider):
             logger.error(f"Zhipu AI API error: {e}")
             raise
 
-    async def embedding(self, text: str) -> List[float]:
+    async def embedding(self, text: str) -> list[float]:
         """Generate embedding using Zhipu AI."""
         try:
             response = await self.client.post(
@@ -146,11 +144,11 @@ class ClaudeProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         model: str = "claude-3-opus-20240229",
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> str:
         """Generate chat completion using Claude."""
         try:
@@ -191,7 +189,7 @@ class ClaudeProvider(LLMProvider):
             logger.error(f"Claude API error: {e}")
             raise
 
-    async def embedding(self, text: str) -> List[float]:
+    async def embedding(self, text: str) -> list[float]:
         """Claude doesn't have embedding API, use OpenAI fallback."""
         raise NotImplementedError("Use OpenAI for embeddings with Claude")
 
@@ -204,11 +202,11 @@ class OpenAIProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         model: str = "gpt-4",
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> str:
         """Generate chat completion using OpenAI."""
         try:
@@ -216,7 +214,7 @@ class OpenAIProvider(LLMProvider):
             client = self.client
             if timeout:
                 client = httpx.AsyncClient(timeout=timeout)
-            
+
             response = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers={
@@ -239,7 +237,7 @@ class OpenAIProvider(LLMProvider):
 
     async def embedding(
         self, text: str, model: str = "text-embedding-ada-002"
-    ) -> List[float]:
+    ) -> list[float]:
         """Generate embedding using OpenAI."""
         try:
             response = await self.client.post(
@@ -268,22 +266,22 @@ class OpenRouterProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         model: str = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> str:
         """Generate chat completion using OpenRouter."""
         try:
             # Use provided model or default from initialization
             actual_model = model or self.model
-            
+
             # Use custom timeout if provided
             client = self.client
             if timeout:
                 client = httpx.AsyncClient(timeout=timeout)
-            
+
             response = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers={
@@ -306,7 +304,7 @@ class OpenRouterProvider(LLMProvider):
 
     async def embedding(
         self, text: str, model: str = "openai/text-embedding-ada-002"
-    ) -> List[float]:
+    ) -> list[float]:
         """Generate embedding using OpenRouter."""
         try:
             response = await self.client.post(
@@ -335,22 +333,22 @@ class MoonshotAIProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         model: str = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> str:
         """Generate chat completion using Moonshot AI (Kimi)."""
         try:
             # Use provided model or default from initialization
             actual_model = model or self.model
-            
+
             # Use custom timeout if provided
             client = self.client
             if timeout:
                 client = httpx.AsyncClient(timeout=timeout)
-            
+
             response = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers={
@@ -373,7 +371,7 @@ class MoonshotAIProvider(LLMProvider):
 
     async def embedding(
         self, text: str, model: str = "moonshot-embedding"
-    ) -> List[float]:
+    ) -> list[float]:
         """Generate embedding using Moonshot AI."""
         try:
             response = await self.client.post(
@@ -402,22 +400,22 @@ class NVIDIAProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         model: str = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> str:
         """Generate chat completion using NVIDIA API."""
         try:
             # Use provided model or default from initialization
             actual_model = model or self.model
-            
+
             # Use custom timeout if provided
             client = self.client
             if timeout:
                 client = httpx.AsyncClient(timeout=timeout)
-            
+
             response = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers={
@@ -440,7 +438,7 @@ class NVIDIAProvider(LLMProvider):
 
     async def embedding(
         self, text: str, model: str = "nvidia/nv-embedqa-e5-v5"
-    ) -> List[float]:
+    ) -> list[float]:
         """Generate embedding using NVIDIA API."""
         try:
             response = await self.client.post(
@@ -525,7 +523,7 @@ class LLMFactory:
             return provider_class(api_key)
 
     @staticmethod
-    def create_from_config() -> Optional[LLMProvider]:
+    def create_from_config() -> LLMProvider | None:
         """Create provider from configuration."""
         ai_provider = getattr(settings, "ai_provider", "zhipu")
 

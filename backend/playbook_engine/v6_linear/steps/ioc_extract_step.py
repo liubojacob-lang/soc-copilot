@@ -1,9 +1,10 @@
 """IOC extraction step implementation."""
 
-from typing import Any
 import re
-from .base_step import BaseStepImpl
+from typing import Any
+
 from ..registry import register_step
+from .base_step import BaseStepImpl
 
 
 class IOCExtractStep(BaseStepImpl):
@@ -52,21 +53,23 @@ class IOCExtractStep(BaseStepImpl):
         source_text = input_json.get("source_text", "")
 
         # Combine all text for extraction
-        all_text = " ".join([
-            str(alert_data),
-            source_text,
-            input_json.get("description", ""),
-            input_json.get("subject", ""),
-            input_json.get("body", ""),
-        ])
+        all_text = " ".join(
+            [
+                str(alert_data),
+                source_text,
+                input_json.get("description", ""),
+                input_json.get("subject", ""),
+                input_json.get("body", ""),
+            ]
+        )
 
         # Extract IPs
-        ip_pattern = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
+        ip_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
         ips = re.findall(ip_pattern, all_text)
         iocs["ips"] = list(set(ips))
 
         # Extract domains (use non-capturing groups to get full matches)
-        domain_pattern = r'\b[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}\b'
+        domain_pattern = r"\b[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}\b"
         domains = re.findall(domain_pattern, all_text)
         iocs["domains"] = list(set(domains))
 
@@ -77,9 +80,9 @@ class IOCExtractStep(BaseStepImpl):
 
         # Extract hashes (MD5, SHA1, SHA256)
         hash_patterns = [
-            (r'\b[a-f0-9]{32}\b', 'md5'),
-            (r'\b[a-f0-9]{40}\b', 'sha1'),
-            (r'\b[a-f0-9]{64}\b', 'sha256'),
+            (r"\b[a-f0-9]{32}\b", "md5"),
+            (r"\b[a-f0-9]{40}\b", "sha1"),
+            (r"\b[a-f0-9]{64}\b", "sha256"),
         ]
         for pattern, hash_type in hash_patterns:
             hashes = re.findall(pattern, all_text, re.IGNORECASE)

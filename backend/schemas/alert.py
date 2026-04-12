@@ -1,8 +1,9 @@
 """Schemas for alert analysis."""
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional, Dict
 from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from schemas.impact import ImpactAnalysis
 from schemas.threat_intel import ThreatIntelAnalysis
 
@@ -34,10 +35,10 @@ class IOCsFinal(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    ips: List[str] = Field(default_factory=list)
-    domains: List[str] = Field(default_factory=list)
-    urls: List[str] = Field(default_factory=list)
-    hashes: List[str] = Field(default_factory=list)
+    ips: list[str] = Field(default_factory=list)
+    domains: list[str] = Field(default_factory=list)
+    urls: list[str] = Field(default_factory=list)
+    hashes: list[str] = Field(default_factory=list)
 
 
 class IOCsLocal(BaseModel):
@@ -45,10 +46,10 @@ class IOCsLocal(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    ips: List[str] = Field(default_factory=list)
-    domains: List[str] = Field(default_factory=list)
-    urls: List[str] = Field(default_factory=list)
-    hashes: List[str] = Field(default_factory=list)
+    ips: list[str] = Field(default_factory=list)
+    domains: list[str] = Field(default_factory=list)
+    urls: list[str] = Field(default_factory=list)
+    hashes: list[str] = Field(default_factory=list)
 
 
 class IOCsLLM(BaseModel):
@@ -56,10 +57,10 @@ class IOCsLLM(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    ips: List[str] = Field(default_factory=list)
-    domains: List[str] = Field(default_factory=list)
-    urls: List[str] = Field(default_factory=list)
-    hashes: List[str] = Field(default_factory=list)
+    ips: list[str] = Field(default_factory=list)
+    domains: list[str] = Field(default_factory=list)
+    urls: list[str] = Field(default_factory=list)
+    hashes: list[str] = Field(default_factory=list)
 
 
 class IOCCount(BaseModel):
@@ -79,9 +80,9 @@ class Entities(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    users: List[str] = Field(default_factory=list)
-    hosts: List[str] = Field(default_factory=list)
-    processes: List[str] = Field(default_factory=list)
+    users: list[str] = Field(default_factory=list)
+    hosts: list[str] = Field(default_factory=list)
+    processes: list[str] = Field(default_factory=list)
 
 
 class RecommendedAction(BaseModel):
@@ -113,20 +114,24 @@ class AlertAnalysisResponse(BaseModel):
     ioc_count: IOCCount
     entities: Entities
     summary: str
-    evidence_points: List[str]
-    recommended_actions: List[RecommendedAction]
+    evidence_points: list[str]
+    recommended_actions: list[RecommendedAction]
     escalation_needed: bool
     confidence: int = Field(ge=0, le=100)
 
     # Metadata fields (v0.2)
-    request_id: Optional[str] = Field(None, description="Unique request ID for tracing")
-    model_used: Optional[str] = Field(None, description="AI model used")
+    request_id: str | None = Field(None, description="Unique request ID for tracing")
+    model_used: str | None = Field(None, description="AI model used")
     degraded: bool = Field(False, description="Whether degraded mode was used")
-    error_reason: Optional[str] = Field(None, description="Error reason if degraded")
-    history_id: Optional[str] = Field(None, description="History record ID for this analysis")
+    error_reason: str | None = Field(None, description="Error reason if degraded")
+    history_id: str | None = Field(
+        None, description="History record ID for this analysis"
+    )
 
     # Impact analysis (v0.3)
     impact_analysis: ImpactAnalysis = Field(..., description="Impact analysis result")
 
     # Threat intelligence (v0.4)
-    threat_intel: ThreatIntelAnalysis = Field(..., description="Threat intelligence analysis")
+    threat_intel: ThreatIntelAnalysis = Field(
+        ..., description="Threat intelligence analysis"
+    )

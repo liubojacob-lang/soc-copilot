@@ -2,10 +2,10 @@
 
 import hashlib
 import secrets
-from datetime import datetime, timedelta, UTC
-from typing import Optional
-from passlib.context import CryptContext
+from datetime import UTC, datetime, timedelta
+
 from jose import JWTError, jwt
+from passlib.context import CryptContext
 
 from core.config import settings
 from core.logger import get_logger
@@ -17,15 +17,14 @@ logger = get_logger(__name__)
 # Production: 12 rounds (default, ~250ms)
 bcrypt_rounds = 10 if settings.environment == "development" else 12
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__rounds=bcrypt_rounds
+    schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=bcrypt_rounds
 )
 
 # JWT settings - always use fresh settings.jwt_secret, not cached constant
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_expire_minutes
 REFRESH_TOKEN_EXPIRE_MINUTES = settings.jwt_refresh_expire_minutes
+
 
 # Helper function to get JWT secret dynamically
 def get_jwt_secret() -> str:
@@ -43,29 +42,50 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create a JWT access token."""
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """Create a JWT access token.
+
+    Security: Includes 'iat' (issued at) claim for token invalidation detection.
+    When user data changes (role, password), compare iat with user.updated_at
+    to detect if token was issued before the change.
+    """
     to_encode = data.copy()
     now = datetime.now(UTC)
     if expires_delta:
         expire = now + expires_delta
     else:
         expire = now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire, "type": "access"})
+    to_encode.update(
+        {
+            "exp": expire,
+            "iat": now,  # Issued at - for invalidation detection
+            "type": "access",
+        }
+    )
     encoded_jwt = jwt.encode(to_encode, get_jwt_secret(), algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
 
 def create_refresh_token(data: dict) -> str:
-    """Create a JWT refresh token."""
+    """Create a JWT refresh token.
+
+    Security: Includes 'iat' (issued at) claim for token invalidation detection.
+    """
     to_encode = data.copy()
-    expire = datetime.now(UTC) + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire, "type": "refresh"})
+    now = datetime.now(UTC)
+    expire = now + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+    to_encode.update(
+        {
+            "exp": expire,
+            "iat": now,  # Issued at - for invalidation detection
+            "type": "refresh",
+        }
+    )
     encoded_jwt = jwt.encode(to_encode, get_jwt_secret(), algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
 
-def decode_token(token: str) -> Optional[dict]:
+def decode_token(token: str) -> dict | None:
     """Decode and validate a JWT token."""
     try:
         payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
@@ -75,10 +95,75 @@ def decode_token(token: str) -> Optional[dict]:
         return None
 
 
+def is_token_invalidated_by_user_update(
+    token_payload: dict,
+    user_updated_at: str | None,
+) -> bool:
+    """Check if a token was issued before the user's last update.
+
+    This implements token invalidation without requiring a blacklist.
+    When a user's role, password, or other critical data changes,
+    their updated_at timestamp is updated. Tokens issued before
+    that timestamp are considered invalid.
+
+    Args:
+        token_payload: Decoded JWT payload containing 'iat' claim
+        user_updated_at: User's updated_at timestamp (ISO format)
+
+    Returns:
+        True if token was issued before user update (should be rejected)
+        False if token is still valid
+    """
+    if not user_updated_at:
+        return False  # No update timestamp, token is valid
+
+    token_iat = token_payload.get("iat")
+    if not token_iat:
+        return True  # No iat claim, reject token
+
+    # Parse user's updated_at (ISO format)
+    try:
+        if isinstance(user_updated_at, str):
+            user_updated = datetime.fromisoformat(user_updated_at)
+            if user_updated.tzinfo is None:
+                user_updated = user_updated.replace(tzinfo=UTC)
+        else:
+            user_updated = user_updated_at
+    except (ValueError, TypeError):
+        logger.warning(f"Invalid updated_at format: {user_updated_at}")
+        return False  # If we can't parse, allow token (fallback behavior)
+
+    # Parse token iat (may be float timestamp or datetime)
+    try:
+        if isinstance(token_iat, (int, float)):
+            token_issued = datetime.fromtimestamp(token_iat, tz=UTC)
+        else:
+            token_issued = token_iat
+            if isinstance(token_issued, str):
+                token_issued = datetime.fromisoformat(token_issued)
+                if token_issued.tzinfo is None:
+                    token_issued = token_issued.replace(tzinfo=UTC)
+    except (ValueError, TypeError, OSError):
+        logger.warning(f"Invalid iat format: {token_iat}")
+        return False  # If we can't parse, allow token (fallback behavior)
+
+    # Token is invalid if issued before user update
+    is_invalidated = token_issued < user_updated
+
+    if is_invalidated:
+        logger.info(
+            f"Token invalidated by user update: "
+            f"token_iat={token_issued.isoformat()}, "
+            f"user_updated={user_updated.isoformat()}"
+        )
+
+    return is_invalidated
+
+
 # API Key hashing with salt - using bcrypt for security
 def hash_api_key(api_key: str) -> str:
     """Hash an API key for storage using bcrypt (version 2).
-    
+
     For backward compatibility, also supports legacy SHA256 (version 1).
     New keys always use bcrypt.
     """
@@ -88,7 +173,7 @@ def hash_api_key(api_key: str) -> str:
 
 def verify_api_key(plain_api_key: str, hashed_api_key: str) -> bool:
     """Verify an API key against its hash.
-    
+
     Supports both legacy SHA256 (v1) and new bcrypt (v2) hashes.
     """
     if hashed_api_key.startswith("v2:"):

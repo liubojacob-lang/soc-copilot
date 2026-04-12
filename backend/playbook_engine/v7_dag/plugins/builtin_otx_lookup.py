@@ -1,12 +1,13 @@
 """OTX Threat Intelligence lookup node plugin (v0.7.4)."""
 
-from typing import Any, Dict
 import logging
+from typing import Any
 
 import aiohttp
 
-from ..base_node import BaseNodePlugin, NodeExecutionContext
 from core.config import settings
+
+from ..base_node import BaseNodePlugin, NodeExecutionContext
 
 logger = logging.getLogger(__name__)
 
@@ -34,19 +35,28 @@ class OtxLookupPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Query OTX (AlienVault) for threat intelligence on indicators"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         ioc = input_json.get("ioc")
         if not ioc:
             raise ValueError("ioc (indicator of compromise) is required")
 
         ioc_type = input_json.get("ioc_type", "auto")
-        valid_types = ("auto", "ipv4", "domain", "url", "hostname", "file_hash_md5",
-                       "file_hash_sha1", "file_hash_sha256", "email")
+        valid_types = (
+            "auto",
+            "ipv4",
+            "domain",
+            "url",
+            "hostname",
+            "file_hash_md5",
+            "file_hash_sha1",
+            "file_hash_sha256",
+            "email",
+        )
         if ioc_type not in valid_types:
             raise ValueError(f"ioc_type must be one of: {valid_types}")
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Execute OTX threat intelligence lookup.
 
         Args:
@@ -60,7 +70,9 @@ class OtxLookupPlugin(BaseNodePlugin):
 
         # Check if external TI is allowed
         if not settings.allow_external_ti:
-            logger.warning(f"[{context.run_id}] External TI is disabled, skipping OTX lookup")
+            logger.warning(
+                f"[{context.run_id}] External TI is disabled, skipping OTX lookup"
+            )
             return {
                 "status": "skipped",
                 "message": "External threat intelligence is disabled",
@@ -96,7 +108,9 @@ class OtxLookupPlugin(BaseNodePlugin):
         try:
             headers = {"X-OTX-API-KEY": api_key}
             async with aiohttp.ClientSession() as session:
-                async with session.get(endpoint, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                async with session.get(
+                    endpoint, headers=headers, timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
                         return self._parse_otx_response(data, ioc, ioc_type)
@@ -111,7 +125,9 @@ class OtxLookupPlugin(BaseNodePlugin):
                         }
                     else:
                         error_text = await response.text()
-                        logger.error(f"[{context.run_id}] OTX API error: {response.status} {error_text}")
+                        logger.error(
+                            f"[{context.run_id}] OTX API error: {response.status} {error_text}"
+                        )
                         return {
                             "status": "error",
                             "error": f"OTX API error: {response.status}",
@@ -131,11 +147,13 @@ class OtxLookupPlugin(BaseNodePlugin):
         import re
 
         # IPv4
-        if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ioc):
+        if re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ioc):
             return "ipv4"
 
         # Domain
-        if re.match(r'^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$', ioc):
+        if re.match(
+            r"^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$", ioc
+        ):
             return "domain"
 
         # URL
@@ -143,19 +161,19 @@ class OtxLookupPlugin(BaseNodePlugin):
             return "url"
 
         # MD5 hash
-        if re.match(r'^[a-fA-F0-9]{32}$', ioc):
+        if re.match(r"^[a-fA-F0-9]{32}$", ioc):
             return "file_hash_md5"
 
         # SHA1 hash
-        if re.match(r'^[a-fA-F0-9]{40}$', ioc):
+        if re.match(r"^[a-fA-F0-9]{40}$", ioc):
             return "file_hash_sha1"
 
         # SHA256 hash
-        if re.match(r'^[a-fA-F0-9]{64}$', ioc):
+        if re.match(r"^[a-fA-F0-9]{64}$", ioc):
             return "file_hash_sha256"
 
         # Email
-        if re.match(r'^[^@]+@[^@]+\.[^@]+$', ioc):
+        if re.match(r"^[^@]+@[^@]+\.[^@]+$", ioc):
             return "email"
 
         # Default to domain/hostname
@@ -178,7 +196,9 @@ class OtxLookupPlugin(BaseNodePlugin):
 
         return endpoints.get(ioc_type)
 
-    def _parse_otx_response(self, data: Dict[str, Any], ioc: str, ioc_type: str) -> Dict[str, Any]:
+    def _parse_otx_response(
+        self, data: dict[str, Any], ioc: str, ioc_type: str
+    ) -> dict[str, Any]:
         """Parse OTX API response into standard format."""
         # Extract threat score
         threat_score = data.get("threat_score", 0)
@@ -188,13 +208,15 @@ class OtxLookupPlugin(BaseNodePlugin):
 
         matches = []
         for pulse in pulses[:10]:  # Limit to 10 matches
-            matches.append({
-                "name": pulse.get("name", "Unknown"),
-                "description": pulse.get("description", ""),
-                "tags": pulse.get("tags", []),
-                "created": pulse.get("created", ""),
-                "malware_families": pulse.get("malware_families", []),
-            })
+            matches.append(
+                {
+                    "name": pulse.get("name", "Unknown"),
+                    "description": pulse.get("description", ""),
+                    "tags": pulse.get("tags", []),
+                    "created": pulse.get("created", ""),
+                    "malware_families": pulse.get("malware_families", []),
+                }
+            )
 
         return {
             "status": "success",

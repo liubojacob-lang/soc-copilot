@@ -2,38 +2,35 @@
 
 import traceback
 import uuid
-from typing import Any, Optional, Union
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any, Union
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.logger import get_logger
 from core.config import settings
+from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
 from models.user import UserModel, UserRole
 from repositories.playbook_definition_repository import PlaybookDefinitionRepository
-from repositories.playbook_run_repository import PlaybookRunRepository
 from repositories.playbook_node_run_repository import PlaybookNodeRunRepository
-from services.playbook_dag_compiler import DAGCompiler, DAGValidationError
-from services.playbook_dag_scheduler import DAGScheduler
-from services.run_queue_manager import get_run_queue_manager
+from repositories.playbook_run_repository import PlaybookRunRepository
 from schemas.playbook_run import (
-    PlaybookDefinitionCreate,
-    PlaybookDefinitionUpdate,
-    PlaybookDefinitionResponse,
-    PlaybookDefinitionListResponse,
+    DAGNodeRunResponse,
     DAGPlaybookRunCreate,
     DAGPlaybookRunResponse,
-    DAGPlaybookRunResponse as PlaybookRunOut,
-    NodeStatus,
-    DAGNodeRunResponse,
-    DAGNodeRunWithAttemptsResponse,
+    PlaybookDefinitionCreate,
+    PlaybookDefinitionListResponse,
+    PlaybookDefinitionResponse,
+    PlaybookDefinitionUpdate,
     PlaybookRunCancelRequest,
     PlaybookRunCancelResponse,
     PlaybookRunErrorResponse,
 )
+from services.playbook.playbook_dag_compiler import DAGCompiler, DAGValidationError
+from services.playbook.playbook_dag_scheduler import DAGScheduler
+from services.run_queue_manager import get_run_queue_manager
 
 logger = get_logger(__name__)
 
@@ -45,7 +42,10 @@ queue_router = APIRouter(prefix="/api/runs", tags=["runs"])
 
 # ============ Playbook Definition CRUD ============
 
-@router.post("", response_model=PlaybookDefinitionResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "", response_model=PlaybookDefinitionResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_definition(
     data: PlaybookDefinitionCreate,
     current_user: UserModel = Depends(get_current_user),
@@ -60,8 +60,8 @@ async def create_definition(
     # Validate and compile DAG
     try:
         compiled = await DAGCompiler.validate_and_compile(data.dag)
-    except DAGValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except DAGValidationError:
+        raise HTTPException(status_code=400, detail="Invalid playbook definition")
 
     definition = await repo.create(
         name=data.name,
@@ -89,7 +89,7 @@ async def create_definition(
 
 @router.get("", response_model=PlaybookDefinitionListResponse)
 async def list_definitions(
-    is_active: Optional[bool] = None,
+    is_active: bool | None = None,
     page: int = 1,
     page_size: int = 50,
     current_user: UserModel = Depends(get_current_user),
@@ -129,6 +129,7 @@ async def list_definitions(
 # ============ v0.7.4: Queue Stats ============
 # IMPORTANT: This route MUST be defined before /{definition_id} to avoid being matched as a definition_id
 
+
 @router.get("/queue-stats")
 async def get_queue_stats(
     current_user: UserModel = Depends(get_current_user),
@@ -141,7 +142,7 @@ async def get_queue_stats(
             "running": 0,
             "queued": 0,
             "max_concurrent": settings.run_queue_max,
-            "has_capacity": True
+            "has_capacity": True,
         }
 
     return await queue_manager.get_queue_stats()
@@ -192,8 +193,8 @@ async def update_definition(
     if data.dag:
         try:
             await DAGCompiler.validate_and_compile(data.dag)
-        except DAGValidationError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+        except DAGValidationError:
+            raise HTTPException(status_code=400, detail="Invalid playbook definition")
 
     update_data = data.model_dump(exclude_unset=True)
     definition = await repo.update(
@@ -228,21 +229,26 @@ async def delete_definition(
 ):
     """Delete a DAG playbook definition (admin only)."""
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Only admins can delete definitions")
+        raise HTTPException(
+            status_code=403, detail="Only admins can delete definitions"
+        )
 
     repo = PlaybookDefinitionRepository(db)
     success = await repo.delete(definition_id)
 
     if not success:
-        raise HTTPException(status_code=404, detail="Definition not found or has associated runs")
+        raise HTTPException(
+            status_code=404, detail="Definition not found or has associated runs"
+        )
 
 
 # ============ DAG Playbook Execution ============
 
+
 @router.post(
     "/{definition_id}/run",
     response_model=Union[DAGPlaybookRunResponse, PlaybookRunErrorResponse],
-    responses={500: {"model": PlaybookRunErrorResponse}}
+    responses={500: {"model": PlaybookRunErrorResponse}},
 )
 async def run_dag_playbook(
     definition_id: str,
@@ -264,7 +270,9 @@ async def run_dag_playbook(
     is_dry_run = data.mode == "dry_run"
 
     try:
-        logger.info(f"[{trace_id}] Starting playbook run: definition={definition_id}, mode={data.mode}, user={current_user.username}")
+        logger.info(
+            f"[{trace_id}] Starting playbook run: definition={definition_id}, mode={data.mode}, user={current_user.username}"
+        )
 
         # Permission check
         if data.mode == "apply" and current_user.role != UserRole.ADMIN:
@@ -299,7 +307,9 @@ async def run_dag_playbook(
         # Validate and compile DAG
         try:
             compiled = await DAGCompiler.validate_and_compile(definition.dag_json, db)
-            logger.info(f"[{trace_id}] DAG validated: {compiled.get('node_count', 0)} nodes, {compiled.get('edge_count', 0)} edges")
+            logger.info(
+                f"[{trace_id}] DAG validated: {compiled.get('node_count', 0)} nodes, {compiled.get('edge_count', 0)} edges"
+            )
         except DAGValidationError as e:
             return PlaybookRunErrorResponse(
                 success=False,
@@ -344,7 +354,7 @@ async def run_dag_playbook(
         # v0.7.4: Queue or start execution
         if not can_start:
             run.status = "queued"
-            run.queued_at = datetime.now(timezone.utc)
+            run.queued_at = datetime.now(UTC)
             await db.commit()
             logger.info(f"[{trace_id}] Run {run.id} queued (capacity reached)")
 
@@ -383,7 +393,9 @@ async def run_dag_playbook(
                 input_context=data.input_context,
                 mode=data.mode,
                 failure_strategy=data.failure_strategy,
-                created_by_user_id=str(run.created_by_user_id) if run.created_by_user_id else None,
+                created_by_user_id=(
+                    str(run.created_by_user_id) if run.created_by_user_id else None
+                ),
             )
             output = await scheduler.execute()
 
@@ -396,7 +408,9 @@ async def run_dag_playbook(
                 updates["error_message"] = "Cancelled by user"
             await run_repo.update(run.id, updates)
             run.status = final_status
-            logger.info(f"[{trace_id}] Run {run.id} completed with status {final_status}")
+            logger.info(
+                f"[{trace_id}] Run {run.id} completed with status {final_status}"
+            )
 
         except Exception as e:
             error_trace = traceback.format_exc()
@@ -434,12 +448,14 @@ async def run_dag_playbook(
     except Exception as e:
         # Catch-all for any unexpected errors
         error_trace = traceback.format_exc()
-        logger.error(f"[{trace_id}] Unexpected error in run_dag_playbook: {e}\n{error_trace}")
+        logger.error(
+            f"[{trace_id}] Unexpected error in run_dag_playbook: {e}\n{error_trace}"
+        )
 
         return PlaybookRunErrorResponse(
             success=False,
             error_code="PLAYBOOK_RUN_FAILED",
-            message=f"Internal error during playbook execution: {str(e)}",
+            message=f"Internal error during playbook execution: {e!s}",
             details={
                 "exception": str(e),
                 "definition_id": definition_id,
@@ -464,14 +480,14 @@ async def _execute_dry_run(
     - No external network calls
     - DAG validation + mock execution only
     """
+
     from playbook_engine.v7_dag.registry import get_node_registry
-    import time
 
     logger.info(f"[{trace_id}] Executing dry_run mode (no side effects)")
 
     nodes = compiled_dag.get("nodes", {})
     node_count = len(nodes)
-    start_time = datetime.now(timezone.utc)
+    start_time = datetime.now(UTC)
 
     # Mock node execution results
     mock_outputs = {}
@@ -508,7 +524,9 @@ async def _execute_dry_run(
                 }
                 completed_nodes.append(node_id)
 
-            logger.info(f"[{trace_id}] [DRY_RUN] Mock executed node {node_id} ({node_type})")
+            logger.info(
+                f"[{trace_id}] [DRY_RUN] Mock executed node {node_id} ({node_type})"
+            )
 
         except Exception as e:
             logger.warning(f"[{trace_id}] [DRY_RUN] Node {node_id} mock failed: {e}")
@@ -520,7 +538,7 @@ async def _execute_dry_run(
             }
             completed_nodes.append(node_id)
 
-    end_time = datetime.now(timezone.utc)
+    end_time = datetime.now(UTC)
     duration_ms = int((end_time - start_time).total_seconds() * 1000)
 
     return DAGPlaybookRunResponse(
@@ -556,6 +574,7 @@ async def _execute_dry_run(
 
 
 # ============ DAG Run Status ============
+
 
 @router.get("/runs/{run_id}", response_model=DAGPlaybookRunResponse)
 async def get_dag_run(
@@ -648,13 +667,19 @@ async def cancel_dag_run(
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
     if run.status not in ("pending", "running"):
-        raise HTTPException(status_code=400, detail=f"Cannot cancel run in status: {run.status}")
+        raise HTTPException(
+            status_code=400, detail=f"Cannot cancel run in status: {run.status}"
+        )
 
-    from services.playbook_dag_scheduler import get_running_scheduler
+    from services.playbook.playbook_dag_scheduler import get_running_scheduler
+
     scheduler = get_running_scheduler(run_id)
     if scheduler:
         await scheduler.cancel(data.reason or "Cancelled by user")
-    await run_repo.update(run_id, {"status": "cancelled", "error_message": data.reason or "Cancelled by user"})
+    await run_repo.update(
+        run_id,
+        {"status": "cancelled", "error_message": data.reason or "Cancelled by user"},
+    )
 
     return PlaybookRunCancelResponse(
         run_id=run_id,
@@ -666,11 +691,12 @@ async def cancel_dag_run(
 # ============ Internal API Endpoints for Playbook Nodes ============
 
 from pydantic import BaseModel
-from datetime import datetime
+
 
 class NormalizeRequest(BaseModel):
     ioc: str
     ioc_type: str = "auto"
+
 
 class NormalizeResponse(BaseModel):
     status: str
@@ -679,6 +705,7 @@ class NormalizeResponse(BaseModel):
     normalized_type: str
     is_valid: bool
 
+
 @router.post("/internal/normalize", response_model=NormalizeResponse)
 async def internal_normalize(
     data: NormalizeRequest,
@@ -686,37 +713,41 @@ async def internal_normalize(
 ):
     """Internal API: Normalize IOC input."""
     import re
-    
+
     ioc = data.ioc.strip().lower()
     ioc_type = data.ioc_type
-    
+
     # Auto-detect if needed
     if ioc_type == "auto":
-        if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ioc):
+        if re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ioc):
             ioc_type = "ip"
         elif ioc.startswith(("http://", "https://")):
             ioc_type = "url"
-        elif re.match(r'^[a-f0-9]{32}$', ioc) or re.match(r'^[a-f0-9]{40}$', ioc) or re.match(r'^[a-f0-9]{64}$', ioc):
+        elif (
+            re.match(r"^[a-f0-9]{32}$", ioc)
+            or re.match(r"^[a-f0-9]{40}$", ioc)
+            or re.match(r"^[a-f0-9]{64}$", ioc)
+        ):
             ioc_type = "hash"
         else:
             ioc_type = "domain"
-    
+
     # Normalize
     normalized = ioc
     if ioc_type == "url":
-        normalized = ioc.rstrip('/').split('#')[0]
+        normalized = ioc.rstrip("/").split("#")[0]
     elif ioc_type == "domain":
-        if normalized.startswith('www.'):
+        if normalized.startswith("www."):
             normalized = normalized[4:]
-    
+
     is_valid = bool(normalized)
-    
+
     return NormalizeResponse(
         status="success" if is_valid else "invalid",
         original_ioc=data.ioc,
         normalized_ioc=normalized,
         normalized_type=ioc_type,
-        is_valid=is_valid
+        is_valid=is_valid,
     )
 
 
@@ -724,11 +755,13 @@ class ExtractIOCsRequest(BaseModel):
     otx_result: dict
     case_id: str = ""
 
+
 class ExtractIOCsResponse(BaseModel):
     status: str
     total_extracted: int
     extracted_iocs: dict
     summary: dict
+
 
 @router.post("/internal/extract-iocs", response_model=ExtractIOCsResponse)
 async def internal_extract_iocs(
@@ -737,38 +770,42 @@ async def internal_extract_iocs(
 ):
     """Internal API: Extract secondary IOCs from OTX result."""
     import re
-    
+
     ti_result = data.otx_result
     extracted = {"ips": [], "domains": [], "urls": [], "hashes": [], "emails": []}
-    
+
     if isinstance(ti_result, dict):
         pulses = ti_result.get("matches", [])
         for pulse in pulses:
             text = f"{pulse.get('name', '')} {pulse.get('description', '')}"
-            
+
             # Extract IPs
-            ips = re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', text)
+            ips = re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", text)
             extracted["ips"].extend(ips)
-            
+
             # Extract domains
-            domains = re.findall(r'\b(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b', text)
+            domains = re.findall(
+                r"\b(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b", text
+            )
             extracted["domains"].extend(domains)
-            
+
             # Extract hashes
-            hashes = re.findall(r'\b[a-fA-F0-9]{32}\b|\b[a-fA-F0-9]{40}\b|\b[a-fA-F0-9]{64}\b', text)
+            hashes = re.findall(
+                r"\b[a-fA-F0-9]{32}\b|\b[a-fA-F0-9]{40}\b|\b[a-fA-F0-9]{64}\b", text
+            )
             extracted["hashes"].extend(hashes)
-    
+
     # Deduplicate
     for key in extracted:
         extracted[key] = list(set(extracted[key]))
-    
+
     total = sum(len(v) for v in extracted.values())
-    
+
     return ExtractIOCsResponse(
         status="success",
         total_extracted=total,
         extracted_iocs=extracted,
-        summary={k: len(v) for k, v in extracted.items()}
+        summary={k: len(v) for k, v in extracted.items()},
     )
 
 
@@ -778,6 +815,7 @@ class MockBlocklistRequest(BaseModel):
     case_id: str
     action: str = "block"
 
+
 class MockBlocklistResponse(BaseModel):
     status: str
     action: str
@@ -785,20 +823,23 @@ class MockBlocklistResponse(BaseModel):
     timestamp: str
     message: str
 
+
 @router.post("/internal/mock-blocklist", response_model=MockBlocklistResponse)
 async def internal_mock_blocklist(
     data: MockBlocklistRequest,
     current_user: UserModel = Depends(get_current_user),
 ):
     """Internal API: Mock blocklist action (for demo)."""
-    logger.info(f"[MOCK] Blocklist action: {data.action} {data.ioc_type} {data.ioc} for case {data.case_id}")
-    
+    logger.info(
+        f"[MOCK] Blocklist action: {data.action} {data.ioc_type} {data.ioc} for case {data.case_id}"
+    )
+
     return MockBlocklistResponse(
         status="success",
         action=data.action,
         ioc=data.ioc,
         timestamp=datetime.utcnow().isoformat(),
-        message=f"IOC {data.ioc} has been added to the blocklist (MOCK)"
+        message=f"IOC {data.ioc} has been added to the blocklist (MOCK)",
     )
 
 
@@ -814,6 +855,7 @@ class GenerateReportRequest(BaseModel):
     action_result: dict = {}
     note: str = ""
 
+
 class GenerateReportResponse(BaseModel):
     status: str
     report_id: str
@@ -822,18 +864,19 @@ class GenerateReportResponse(BaseModel):
     report_url: str
     threat_level: str
 
+
 @router.post("/internal/generate-report", response_model=GenerateReportResponse)
 async def internal_generate_report(
     data: GenerateReportRequest,
     current_user: UserModel = Depends(get_current_user),
 ):
     """Internal API: Generate markdown report."""
-    
+
     ti_result = data.otx_result if isinstance(data.otx_result, dict) else {}
     threat_score = ti_result.get("threat_score", 0)
     is_malicious = threat_score >= 3
     threat_level = "high" if is_malicious else "low"
-    
+
     # Generate markdown
     lines = [
         f"# Incident Response Report: {data.case_id}",
@@ -846,8 +889,8 @@ async def internal_generate_report(
         "",
         "## IOC Details",
         "",
-        f"| Field | Value |",
-        f"|-------|-------|",
+        "| Field | Value |",
+        "|-------|-------|",
         f"| **Case ID** | {data.case_id} |",
         f"| **IOC** | `{data.ioc}` |",
         f"| **Type** | {data.ioc_type} |",
@@ -862,33 +905,37 @@ async def internal_generate_report(
         "## Recommendations",
         "",
     ]
-    
+
     if is_malicious:
-        lines.extend([
-            "1. ✅ Block the IOC at network perimeter",
-            "2. 🔍 Hunt for secondary IOCs",
-            "3. 📧 Check for related phishing emails",
-        ])
+        lines.extend(
+            [
+                "1. ✅ Block the IOC at network perimeter",
+                "2. 🔍 Hunt for secondary IOCs",
+                "3. 📧 Check for related phishing emails",
+            ]
+        )
     else:
-        lines.extend([
-            "1. 👁️ Continue monitoring",
-            "2. 📊 Review alert source configuration",
-        ])
-    
+        lines.extend(
+            [
+                "1. 👁️ Continue monitoring",
+                "2. 📊 Review alert source configuration",
+            ]
+        )
+
     if data.note:
         lines.extend(["", "## Notes", "", data.note])
-    
+
     lines.extend(["", "---", "*Auto-generated by SOC Copilot*"])
-    
+
     report_id = f"RPT-{data.case_id}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
-    
+
     return GenerateReportResponse(
         status="success",
         report_id=report_id,
         case_id=data.case_id,
         markdown="\n".join(lines),
         report_url=f"/api/reports/{report_id}",
-        threat_level=threat_level
+        threat_level=threat_level,
     )
 
 
@@ -899,11 +946,13 @@ class CaseUpdateRequest(BaseModel):
     playbook_run_id: str = ""
     report_url: str = ""
 
+
 class CaseUpdateResponse(BaseModel):
     status: str
     case_id: str
     updated_at: str
     message: str
+
 
 @router.post("/internal/case-update", response_model=CaseUpdateResponse)
 async def internal_case_update(
@@ -912,10 +961,10 @@ async def internal_case_update(
 ):
     """Internal API: Mock case system callback."""
     logger.info(f"[MOCK] Case update: {data.case_id} -> {data.status}")
-    
+
     return CaseUpdateResponse(
         status="success",
         case_id=data.case_id,
         updated_at=datetime.utcnow().isoformat(),
-        message=f"Case {data.case_id} updated to {data.status}"
+        message=f"Case {data.case_id} updated to {data.status}",
     )

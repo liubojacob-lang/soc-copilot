@@ -12,14 +12,16 @@ Filter Features:
 - Aggregation control
 """
 
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from datetime import UTC, datetime
 from enum import Enum
-from pydantic import BaseModel, Field, validator
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class SeverityLevel(str, Enum):
     """Security alert severity levels"""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -27,7 +29,7 @@ class SeverityLevel(str, Enum):
     INFO = "info"
 
     @classmethod
-    def get_order(cls, severity: 'SeverityLevel') -> int:
+    def get_order(cls, severity: "SeverityLevel") -> int:
         """Get numeric order for severity (lower = more severe)."""
         order = {
             cls.CRITICAL: 0,
@@ -47,6 +49,7 @@ class SeverityLevel(str, Enum):
 
 class FilterOperator(str, Enum):
     """Filter matching operators"""
+
     EQUALS = "equals"
     CONTAINS = "contains"
     STARTS_WITH = "starts_with"
@@ -57,8 +60,9 @@ class FilterOperator(str, Enum):
 
 class StringFilter(BaseModel):
     """String filter with operator and value"""
+
     operator: FilterOperator = FilterOperator.EQUALS
-    values: List[str] = Field(default_factory=list)
+    values: list[str] = Field(default_factory=list)
     case_sensitive: bool = False
 
     def match(self, text: str) -> bool:
@@ -79,6 +83,7 @@ class StringFilter(BaseModel):
             return text in values
         elif self.operator == FilterOperator.REGEX:
             import re
+
             return any(re.search(v, text) for v in values)
 
         return False
@@ -91,46 +96,53 @@ class FilterRule(BaseModel):
     Users can create multiple rules to control which messages they receive.
     Rules are evaluated in order, first matching rule wins.
     """
-    id: Optional[str] = None
+
+    id: str | None = None
     user_id: str
 
     # Rule metadata
     name: str = Field(default="My Filter")
     description: str = Field(default="")
     enabled: bool = Field(default=True)
-    priority: int = Field(default=0, description="Higher priority rules evaluated first")
+    priority: int = Field(
+        default=0, description="Higher priority rules evaluated first"
+    )
 
     # Severity filter
-    min_severity: Optional[SeverityLevel] = None
-    max_severity: Optional[SeverityLevel] = None
+    min_severity: SeverityLevel | None = None
+    max_severity: SeverityLevel | None = None
 
     # Event type filter
-    event_types: Optional[StringFilter] = None
+    event_types: StringFilter | None = None
 
     # Agent filter
-    agent_ids: Optional[StringFilter] = None
+    agent_ids: StringFilter | None = None
 
     # Source IP filter
-    source_ips: Optional[StringFilter] = None
+    source_ips: StringFilter | None = None
 
     # Content filter (search in full_log)
-    content_search: Optional[StringFilter] = None
+    content_search: StringFilter | None = None
 
     # Aggregation control
     enable_aggregation: bool = Field(default=True)
 
     # Rate limiting
-    max_messages_per_minute: Optional[int] = Field(
+    max_messages_per_minute: int | None = Field(
         default=None,
-        description="Maximum messages to receive per minute (0 = unlimited)"
+        description="Maximum messages to receive per minute (0 = unlimited)",
     )
 
     # Metadata
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    last_triggered_at: Optional[str] = None
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
+    updated_at: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
+    last_triggered_at: str | None = None
 
-    def matches(self, message_data: Dict[str, Any]) -> bool:
+    def matches(self, message_data: dict[str, Any]) -> bool:
         """
         Check if a message matches this filter rule.
 
@@ -204,30 +216,35 @@ class FilterRule(BaseModel):
                 "event_types": {
                     "operator": "in",
                     "values": ["malware", "ssh_bruteforce", "ransomware"],
-                    "case_sensitive": False
+                    "case_sensitive": False,
                 },
-                "enable_aggregation": True
+                "enable_aggregation": True,
             }
         }
 
 
 class FilterSet(BaseModel):
     """A collection of filter rules for a user"""
-    user_id: str
-    rules: List[FilterRule] = Field(default_factory=list)
-    default_action: str = Field(default="allow", description="Default action if no rules match: allow or block")
-    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
-    def get_active_rules(self) -> List[FilterRule]:
+    user_id: str
+    rules: list[FilterRule] = Field(default_factory=list)
+    default_action: str = Field(
+        default="allow", description="Default action if no rules match: allow or block"
+    )
+    updated_at: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat()
+    )
+
+    def get_active_rules(self) -> list[FilterRule]:
         """Get enabled rules sorted by priority (highest first)"""
         return [r for r in self.rules if r.enabled]
 
-    def get_sorted_rules(self) -> List[FilterRule]:
+    def get_sorted_rules(self) -> list[FilterRule]:
         """Get enabled rules sorted by priority (highest first)"""
         active = self.get_active_rules()
         return sorted(active, key=lambda r: r.priority, reverse=True)
 
-    def should_send_message(self, message_data: Dict[str, Any]) -> bool:
+    def should_send_message(self, message_data: dict[str, Any]) -> bool:
         """
         Evaluate whether a message should be sent based on filter rules.
 
@@ -255,11 +272,11 @@ class FilterSet(BaseModel):
 
     def add_rule(self, rule: FilterRule) -> FilterRule:
         """Add a rule to the filter set"""
-        rule.id = f"rule_{datetime.now(timezone.utc).timestamp()}"
-        rule.created_at = datetime.now(timezone.utc).isoformat()
-        rule.updated_at = datetime.now(timezone.utc).isoformat()
+        rule.id = f"rule_{datetime.now(UTC).timestamp()}"
+        rule.created_at = datetime.now(UTC).isoformat()
+        rule.updated_at = datetime.now(UTC).isoformat()
         self.rules.append(rule)
-        self.updated_at = datetime.now(timezone.utc).isoformat()
+        self.updated_at = datetime.now(UTC).isoformat()
         return rule
 
     def remove_rule(self, rule_id: str) -> bool:
@@ -267,22 +284,24 @@ class FilterSet(BaseModel):
         for i, rule in enumerate(self.rules):
             if rule.id == rule_id:
                 self.rules.pop(i)
-                self.updated_at = datetime.now(timezone.utc).isoformat()
+                self.updated_at = datetime.now(UTC).isoformat()
                 return True
         return False
 
-    def update_rule(self, rule_id: str, updates: Dict[str, Any]) -> Optional[FilterRule]:
+    def update_rule(
+        self, rule_id: str, updates: dict[str, Any]
+    ) -> FilterRule | None:
         """Update a rule by ID"""
         for rule in self.rules:
             if rule.id == rule_id:
                 for key, value in updates.items():
                     setattr(rule, key, value)
-                rule.updated_at = datetime.now(timezone.utc).isoformat()
-                self.updated_at = datetime.now(timezone.utc).isoformat()
+                rule.updated_at = datetime.now(UTC).isoformat()
+                self.updated_at = datetime.now(UTC).isoformat()
                 return rule
         return None
 
-    def get_rule(self, rule_id: str) -> Optional[FilterRule]:
+    def get_rule(self, rule_id: str) -> FilterRule | None:
         """Get a rule by ID"""
         for rule in self.rules:
             if rule.id == rule_id:
@@ -292,20 +311,22 @@ class FilterSet(BaseModel):
 
 class FilterValidationResult(BaseModel):
     """Result of validating a message against filters"""
+
     user_id: str
     should_send: bool
-    matched_rules: List[str] = Field(default_factory=list)
-    rejected_by: Optional[str] = Field(default=None)
+    matched_rules: list[str] = Field(default_factory=list)
+    rejected_by: str | None = Field(default=None)
     processing_time_ms: float = 0.0
 
 
 class FilterStats(BaseModel):
     """Statistics for filter usage and performance"""
+
     user_id: str
     total_rules: int = 0
     active_rules: int = 0
     total_messages_evaluated: int = 0
     messages_allowed: int = 0
     messages_blocked: int = 0
-    most_matched_rule: Optional[str] = None
+    most_matched_rule: str | None = None
     avg_processing_time_ms: float = 0.0

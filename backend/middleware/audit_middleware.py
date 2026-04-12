@@ -1,14 +1,14 @@
 """Audit middleware for automatic request logging with sensitive data redaction."""
 
 import time
-import json
-from typing import Callable, Optional
+from collections.abc import Callable
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from core.logger import get_logger
-from core.sensitive_data import redact_request_body, redact_dict, redact_headers
+from core.sensitive_data import redact_dict, redact_headers, redact_request_body
 from repositories.audit_repository import AuditRepository
 
 logger = get_logger(__name__)
@@ -76,8 +76,10 @@ class AuditMiddleware(BaseHTTPMiddleware):
         # Capture request body for applicable methods
         request_body = None
         content_type = request.headers.get("content-type", "")
-        
-        if method in METHODS_WITH_BODY and not any(path.startswith(excluded) for excluded in self.body_excluded_paths):
+
+        if method in METHODS_WITH_BODY and not any(
+            path.startswith(excluded) for excluded in self.body_excluded_paths
+        ):
             request_body = await self._capture_request_body(request, content_type)
 
         try:
@@ -130,14 +132,16 @@ class AuditMiddleware(BaseHTTPMiddleware):
             # Re-raise the original exception to maintain error handling
             raise
 
-    async def _capture_request_body(self, request: Request, content_type: str) -> Optional[str]:
+    async def _capture_request_body(
+        self, request: Request, content_type: str
+    ) -> str | None:
         """
         Capture and redact request body.
-        
+
         Args:
             request: FastAPI request object
             content_type: Content-Type header value
-            
+
         Returns:
             Redacted request body string or None
         """
@@ -146,21 +150,21 @@ class AuditMiddleware(BaseHTTPMiddleware):
             content_length = int(request.headers.get("content-length", 0))
             if content_length > MAX_BODY_SIZE:
                 return f"[body too large: {content_length} bytes]"
-            
+
             if content_length == 0:
                 return None
-            
+
             # Read body
             body = await request.body()
             if not body:
                 return None
-            
+
             # Redact sensitive data
             return redact_request_body(body, content_type, MAX_BODY_SIZE)
-            
+
         except Exception as e:
             logger.warning(f"Failed to capture request body: {e}")
-            return f"[body capture failed: {str(e)}]"
+            return f"[body capture failed: {e!s}]"
 
     def _get_client_ip(self, request: Request) -> str:
         """Get client IP address from request."""
@@ -211,19 +215,19 @@ class AuditMiddleware(BaseHTTPMiddleware):
                     "query_params": query_params,
                     "trace_id": trace_id,
                 }
-                
+
                 # Add request body if captured
                 if request_body:
                     extra_json["request_body"] = request_body
-                
+
                 # Add response info
                 if response:
                     extra_json["response_status"] = status_code
-                    
+
                     # Capture response headers (redacted)
                     response_headers = dict(response.headers)
                     extra_json["response_headers"] = redact_headers(response_headers)
-                
+
                 if error:
                     extra_json["error"] = error
 

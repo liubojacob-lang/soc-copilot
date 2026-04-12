@@ -9,23 +9,20 @@ This service provides:
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
-from typing import Optional, Any, Dict, Callable
-from enum import Enum
+from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy import select, and_, update
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from models.ai_task import AITaskModel, AITaskStatus, AITaskType
 from core.logger import get_logger
-from core.config import settings
+from models.ai_task import AITaskModel, AITaskStatus, AITaskType
 from services.llm_retry import get_llm_retry_service
 
 logger = get_logger(__name__)
 
 # Global task queue
 _task_queue: asyncio.Queue = asyncio.Queue()
-_background_processor: Optional[asyncio.Task] = None
+_background_processor: asyncio.Task | None = None
 
 
 class AITaskQueueService:
@@ -38,18 +35,18 @@ class AITaskQueueService:
             session_factory: AsyncSessionLocal factory for DB access
         """
         self.session_factory = session_factory
-        self._processor_task: Optional[asyncio.Task] = None
-        self._running_tasks: Dict[str, asyncio.Task] = {}
+        self._processor_task: asyncio.Task | None = None
+        self._running_tasks: dict[str, asyncio.Task] = {}
         self._max_concurrent = 5  # Max concurrent AI tasks
 
     async def submit_task(
         self,
         task_type: AITaskType,
         prompt: str,
-        input_data: Optional[Dict[str, Any]] = None,
-        model_id: Optional[str] = None,
-        provider: Optional[str] = None,
-        user_id: Optional[str] = None,
+        input_data: dict[str, Any] | None = None,
+        model_id: str | None = None,
+        provider: str | None = None,
+        user_id: str | None = None,
         timeout_seconds: int = 300,
         priority: int = 0,
     ) -> str:
@@ -69,7 +66,7 @@ class AITaskQueueService:
             Task ID for status polling
         """
         task_id = str(uuid.uuid4())
-        
+
         async with self.session_factory() as session:
             task = AITaskModel(
                 id=task_id,
@@ -85,14 +82,14 @@ class AITaskQueueService:
             )
             session.add(task)
             await session.commit()
-        
+
         # Add to processing queue
         await _task_queue.put((task_id, priority))
         logger.info(f"Submitted AI task {task_id} type={task_type.value}")
-        
+
         return task_id
 
-    async def get_task_status(self, task_id: str) -> Optional[Dict[str, Any]]:
+    async def get_task_status(self, task_id: str) -> dict[str, Any] | None:
         """Get the current status of an AI task.
 
         Args:
@@ -105,20 +102,22 @@ class AITaskQueueService:
             stmt = select(AITaskModel).where(AITaskModel.id == task_id)
             result = await session.execute(stmt)
             task = result.scalar_one_or_none()
-            
+
             if not task:
                 return None
-            
+
             # Check for timeout
             if task.is_timeout:
                 task.status = AITaskStatus.TIMEOUT.value
-                task.error_message = f"Task timed out after {task.timeout_seconds} seconds"
-                task.completed_at = datetime.now(timezone.utc)
+                task.error_message = (
+                    f"Task timed out after {task.timeout_seconds} seconds"
+                )
+                task.completed_at = datetime.now(UTC)
                 await session.commit()
-            
+
             return task.to_dict()
 
-    async def get_task_result(self, task_id: str) -> Optional[Dict[str, Any]]:
+    async def get_task_result(self, task_id: str) -> dict[str, Any] | None:
         """Get the result of a completed AI task.
 
         Args:
@@ -130,10 +129,10 @@ class AITaskQueueService:
         status = await self.get_task_status(task_id)
         if not status:
             return None
-        
+
         if status["status"] != AITaskStatus.COMPLETED.value:
             return None
-        
+
         return status.get("result")
 
     async def cancel_task(self, task_id: str) -> bool:
@@ -149,20 +148,20 @@ class AITaskQueueService:
             stmt = select(AITaskModel).where(AITaskModel.id == task_id)
             result = await session.execute(stmt)
             task = result.scalar_one_or_none()
-            
+
             if not task or task.is_terminal:
                 return False
-            
+
             task.status = AITaskStatus.FAILED.value
             task.error_message = "Task cancelled by user"
-            task.completed_at = datetime.now(timezone.utc)
+            task.completed_at = datetime.now(UTC)
             await session.commit()
-            
+
             # Cancel running asyncio task if exists
             if task_id in self._running_tasks:
                 self._running_tasks[task_id].cancel()
                 del self._running_tasks[task_id]
-            
+
             logger.info(f"Cancelled AI task {task_id}")
             return True
 
@@ -177,20 +176,20 @@ class AITaskQueueService:
             stmt = select(AITaskModel).where(AITaskModel.id == task_id)
             result = await session.execute(stmt)
             task = result.scalar_one_or_none()
-            
+
             if not task:
                 logger.warning(f"Task {task_id} not found")
                 return
-            
+
             # Update status
             task.status = AITaskStatus.PROCESSING.value
-            task.started_at = datetime.now(timezone.utc)
+            task.started_at = datetime.now(UTC)
             await session.commit()
-        
+
         try:
             # Process based on task type
             llm_service = get_llm_retry_service()
-            
+
             if task.task_type in [
                 AITaskType.ALERT_ANALYSIS.value,
                 AITaskType.TIMELINE_ANALYSIS.value,
@@ -209,22 +208,28 @@ class AITaskQueueService:
                     llm_service.ai_service.generate(task.prompt),
                     timeout=task.timeout_seconds,
                 )
-            
+
             # Update with result
             async with self.session_factory() as session:
                 stmt = select(AITaskModel).where(AITaskModel.id == task_id)
                 result_db = await session.execute(stmt)
                 task = result_db.scalar_one_or_none()
-                
+
                 if task:
                     task.status = AITaskStatus.COMPLETED.value
-                    task.result = result if isinstance(result, dict) else {"content": result}
-                    task.completed_at = datetime.now(timezone.utc)
+                    task.result = (
+                        result if isinstance(result, dict) else {"content": result}
+                    )
+                    task.completed_at = datetime.now(UTC)
                     await session.commit()
                     logger.info(f"Completed AI task {task_id}")
-        
-        except asyncio.TimeoutError:
-            await self._handle_task_error(task_id, f"Task timed out after {task.timeout_seconds} seconds", is_timeout=True)
+
+        except TimeoutError:
+            await self._handle_task_error(
+                task_id,
+                f"Task timed out after {task.timeout_seconds} seconds",
+                is_timeout=True,
+            )
         except asyncio.CancelledError:
             await self._handle_task_error(task_id, "Task was cancelled")
         except Exception as e:
@@ -232,17 +237,23 @@ class AITaskQueueService:
             # Retry if possible
             await self._maybe_retry_task(task_id)
 
-    async def _handle_task_error(self, task_id: str, error_message: str, is_timeout: bool = False) -> None:
+    async def _handle_task_error(
+        self, task_id: str, error_message: str, is_timeout: bool = False
+    ) -> None:
         """Handle task error and update status."""
         async with self.session_factory() as session:
             stmt = select(AITaskModel).where(AITaskModel.id == task_id)
             result = await session.execute(stmt)
             task = result.scalar_one_or_none()
-            
+
             if task:
-                task.status = AITaskStatus.TIMEOUT.value if is_timeout else AITaskStatus.FAILED.value
+                task.status = (
+                    AITaskStatus.TIMEOUT.value
+                    if is_timeout
+                    else AITaskStatus.FAILED.value
+                )
                 task.error_message = error_message
-                task.completed_at = datetime.now(timezone.utc)
+                task.completed_at = datetime.now(UTC)
                 await session.commit()
                 logger.error(f"AI task {task_id} failed: {error_message}")
 
@@ -252,7 +263,7 @@ class AITaskQueueService:
             stmt = select(AITaskModel).where(AITaskModel.id == task_id)
             result = await session.execute(stmt)
             task = result.scalar_one_or_none()
-            
+
             if task and task.retry_count < task.max_retries:
                 task.retry_count += 1
                 task.status = AITaskStatus.PENDING.value
@@ -260,16 +271,18 @@ class AITaskQueueService:
                 task.completed_at = None
                 task.started_at = None
                 await session.commit()
-                
+
                 # Re-queue
                 await _task_queue.put((task_id, task.priority))
-                logger.info(f"Retrying AI task {task_id} (attempt {task.retry_count}/{task.max_retries})")
+                logger.info(
+                    f"Retrying AI task {task_id} (attempt {task.retry_count}/{task.max_retries})"
+                )
 
     async def start_background_processor(self) -> None:
         """Start the background task processor."""
         if self._processor_task and not self._processor_task.done():
             return
-        
+
         self._processor_task = asyncio.create_task(self._processor_loop())
         logger.info("AI task background processor started")
 
@@ -290,24 +303,25 @@ class AITaskQueueService:
             try:
                 # Get next task from queue
                 task_id, priority = await _task_queue.get()
-                
+
                 # Wait if at max concurrent
                 while len(self._running_tasks) >= self._max_concurrent:
                     await asyncio.sleep(0.5)
-                
+
                 # Start processing
                 task = asyncio.create_task(self._process_task(task_id))
                 self._running_tasks[task_id] = task
-                
+
                 # Clean up when done
                 def cleanup(t_id, t_task):
                     def done_callback(fut):
                         if t_id in self._running_tasks:
                             del self._running_tasks[t_id]
+
                     t_task.add_done_callback(done_callback)
-                
+
                 cleanup(task_id, task)
-                
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -316,7 +330,7 @@ class AITaskQueueService:
 
 
 # Global instance
-_ai_task_service: Optional[AITaskQueueService] = None
+_ai_task_service: AITaskQueueService | None = None
 
 
 def get_ai_task_service() -> AITaskQueueService:
@@ -324,6 +338,7 @@ def get_ai_task_service() -> AITaskQueueService:
     global _ai_task_service
     if _ai_task_service is None:
         from db.session import AsyncSessionLocal
+
         _ai_task_service = AITaskQueueService(AsyncSessionLocal)
     return _ai_task_service
 

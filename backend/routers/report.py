@@ -1,14 +1,14 @@
 """Report generation API endpoint."""
 
-from typing import Annotated
-from fastapi import APIRouter, HTTPException, Depends
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.logger import get_logger
 from db.session import get_session
 from schemas.report import ReportGenerationRequest, ReportGenerationResponse
 from services.report_service import ReportService
-from core.logger import get_logger
-import uuid
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["report"])
@@ -39,5 +39,5 @@ async def generate_report(
         )
         return result
     except Exception as e:
-        logger.error(f"Report generation error: {str(e)}")
+        logger.error(f"Report generation error: {e!s}")
         raise HTTPException(status_code=500, detail="Report generation failed")

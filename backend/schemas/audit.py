@@ -1,12 +1,12 @@
 """Schemas for audit log operations."""
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
-from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AuditLogBase(BaseModel):
     """Base audit log schema."""
+
     action: str
     method: str
     path: str
@@ -15,13 +15,14 @@ class AuditLogBase(BaseModel):
 
 class AuditLogInDB(AuditLogBase):
     """Schema for audit log in database."""
+
     id: str
-    user_id: Optional[str] = None
-    target_type: Optional[str] = None
-    target_id: Optional[str] = None
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    duration_ms: Optional[int] = None
+    user_id: str | None = None
+    target_type: str | None = None
+    target_id: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
+    duration_ms: int | None = None
     extra_json: dict = Field(default_factory=dict)
     created_at: str
 
@@ -30,11 +31,13 @@ class AuditLogInDB(AuditLogBase):
 
 class AuditLogResponse(AuditLogInDB):
     """Schema for audit log response."""
-    username: Optional[str] = None  # Joined from users table
+
+    username: str | None = None  # Joined from users table
 
 
 class AuditLogListResponse(BaseModel):
     """Schema for audit log list response."""
+
     total: int
     page: int
     page_size: int
@@ -43,11 +46,14 @@ class AuditLogListResponse(BaseModel):
 
 class AuditLogFilter(BaseModel):
     """Schema for audit log filtering."""
-    user_id: Optional[str] = None
-    action: Optional[str] = None
-    path: Optional[str] = None
-    status_code: Optional[str] = None  # Changed to str to support categories like "4xx", "error"
-    date_from: Optional[str] = None
-    date_to: Optional[str] = None
+
+    user_id: str | None = None
+    action: str | None = None
+    path: str | None = None
+    status_code: str | None = (
+        None  # Changed to str to support categories like "4xx", "error"
+    )
+    date_from: str | None = None
+    date_to: str | None = None
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=50, ge=1, le=100)

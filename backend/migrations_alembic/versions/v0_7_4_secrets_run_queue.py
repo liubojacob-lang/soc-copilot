@@ -23,8 +23,8 @@ from datetime import datetime
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'v0_7_4_secrets_run_queue'
-down_revision: Union[str, Sequence[str], None] = 'v0_7_3_version_context_replay'
+revision: str = "v0_7_4_secrets_run_queue"
+down_revision: Union[str, Sequence[str], None] = "v0_7_3_version_context_replay"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -43,35 +43,53 @@ def upgrade() -> None:
     # ============================================================
     # 1. Create secrets table
     # ============================================================
-    if 'secrets' not in existing_tables:
+    if "secrets" not in existing_tables:
         op.create_table(
-            'secrets',
-            sa.Column('id', sa.String(36), primary_key=True),
-            sa.Column('name', sa.String(100), unique=True, index=True, nullable=False),
-            sa.Column('encrypted_value', sa.Text(), nullable=False),
-            sa.Column('created_by_user_id', sa.String(36), sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
-            sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.utcnow()),
-            sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.utcnow(), onupdate=sa.func.utcnow()),
+            "secrets",
+            sa.Column("id", sa.String(36), primary_key=True),
+            sa.Column("name", sa.String(100), unique=True, index=True, nullable=False),
+            sa.Column("encrypted_value", sa.Text(), nullable=False),
+            sa.Column(
+                "created_by_user_id",
+                sa.String(36),
+                sa.ForeignKey("users.id", ondelete="SET NULL"),
+                nullable=True,
+            ),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                nullable=False,
+                server_default=sa.func.utcnow(),
+            ),
+            sa.Column(
+                "updated_at",
+                sa.DateTime(timezone=True),
+                nullable=False,
+                server_default=sa.func.utcnow(),
+                onupdate=sa.func.utcnow(),
+            ),
         )
 
         # Create indexes for secret lookup
-        op.create_index('idx_secrets_name', 'secrets', ['name'])
-        op.create_index('idx_secrets_created_at', 'secrets', ['created_at'])
+        op.create_index("idx_secrets_name", "secrets", ["name"])
+        op.create_index("idx_secrets_created_at", "secrets", ["created_at"])
 
     # ============================================================
     # 2. Add queued_at to playbook_runs
     # ============================================================
-    if 'playbook_runs' in existing_tables:
+    if "playbook_runs" in existing_tables:
         # Check if columns exist
-        columns = [col['name'] for col in inspector.get_columns('playbook_runs')]
+        columns = [col["name"] for col in inspector.get_columns("playbook_runs")]
 
         # Add queued_at column
-        if 'queued_at' not in columns:
+        if "queued_at" not in columns:
             op.add_column(
-                'playbook_runs',
-                sa.Column('queued_at', sa.DateTime(timezone=True), nullable=True)
+                "playbook_runs",
+                sa.Column("queued_at", sa.DateTime(timezone=True), nullable=True),
             )
-            op.create_index('idx_playbook_runs_queued_at', 'playbook_runs', ['queued_at'])
+            op.create_index(
+                "idx_playbook_runs_queued_at", "playbook_runs", ["queued_at"]
+            )
 
 
 def downgrade() -> None:
@@ -83,12 +101,12 @@ def downgrade() -> None:
     # 1. Remove queued_at from playbook_runs
     # ============================================================
     try:
-        op.drop_index('idx_playbook_runs_queued_at', 'playbook_runs')
+        op.drop_index("idx_playbook_runs_queued_at", "playbook_runs")
     except:
         pass
 
     try:
-        op.drop_column('playbook_runs', 'queued_at')
+        op.drop_column("playbook_runs", "queued_at")
     except:
         pass
 
@@ -96,16 +114,16 @@ def downgrade() -> None:
     # 2. Drop secrets table
     # ============================================================
     try:
-        op.drop_index('idx_secrets_created_at', 'secrets')
+        op.drop_index("idx_secrets_created_at", "secrets")
     except:
         pass
 
     try:
-        op.drop_index('idx_secrets_name', 'secrets')
+        op.drop_index("idx_secrets_name", "secrets")
     except:
         pass
 
     try:
-        op.drop_table('secrets')
+        op.drop_table("secrets")
     except:
         pass

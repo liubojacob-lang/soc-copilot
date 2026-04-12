@@ -1,8 +1,9 @@
 """Correlated event model."""
 
 import uuid
-from datetime import datetime, timezone
-from sqlalchemy import String, JSON, Integer, Float, Text, Index, ForeignKey
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.session import Base
@@ -18,67 +19,49 @@ class CorrelatedEvent(Base):
     __tablename__ = "correlated_events"
 
     id: Mapped[str] = mapped_column(
-        String(36),
-        primary_key=True,
-        default=lambda: str(uuid.uuid4())
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
 
     # Correlation metadata
     rule_id: Mapped[str] = mapped_column(
-        String(36),
-        ForeignKey("correlation_rules.id"),
-        nullable=False,
-        index=True
+        String(36), ForeignKey("correlation_rules.id"), nullable=False, index=True
     )
 
     # Event summary
     title: Mapped[str] = mapped_column(
-        String(500),
-        nullable=False,
-        doc="AI-generated or template-based title"
+        String(500), nullable=False, doc="AI-generated or template-based title"
     )
 
     description: Mapped[str] = mapped_column(
-        Text,
-        nullable=True,
-        doc="Detailed description of the correlated incident"
+        Text, nullable=True, doc="Detailed description of the correlated incident"
     )
 
     # Severity and classification
     severity: Mapped[str] = mapped_column(
-        String(20),
-        nullable=False,
-        index=True,
-        doc="critical, high, medium, low"
+        String(20), nullable=False, index=True, doc="critical, high, medium, low"
     )
 
     attack_type: Mapped[str] = mapped_column(
         String(100),
         nullable=True,
         index=True,
-        doc="e.g., brute_force, phishing, malware, lateral_movement"
+        doc="e.g., brute_force, phishing, malware, lateral_movement",
     )
 
     # Confidence score
     confidence_score: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
-        default=0.5,
-        doc="Aggregated confidence (0-1)"
+        Float, nullable=False, default=0.5, doc="Aggregated confidence (0-1)"
     )
 
     # Raw event IDs
     raw_event_ids: Mapped[list] = mapped_column(
         JSON,
         nullable=False,
-        doc="List of raw alert/event IDs included in this correlation"
+        doc="List of raw alert/event IDs included in this correlation",
     )
 
     raw_event_count: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=0,
-        doc="Total number of raw events aggregated"
+        Integer, nullable=False, default=0, doc="Total number of raw events aggregated"
     )
 
     # Common entities (extracted from all events)
@@ -86,7 +69,7 @@ class CorrelatedEvent(Base):
         JSON,
         nullable=False,
         default=lambda: {},
-        doc="Common IPs, users, hostnames across all events"
+        doc="Common IPs, users, hostnames across all events",
     )
 
     # Time range
@@ -94,13 +77,11 @@ class CorrelatedEvent(Base):
         String(50),
         nullable=False,
         index=True,
-        doc="Earliest event timestamp (ISO format)"
+        doc="Earliest event timestamp (ISO format)",
     )
 
     last_seen: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        doc="Latest event timestamp (ISO format)"
+        String(50), nullable=False, doc="Latest event timestamp (ISO format)"
     )
 
     # Status and workflow
@@ -109,96 +90,72 @@ class CorrelatedEvent(Base):
         nullable=False,
         default="open",
         index=True,
-        doc="open, investigating, resolved, false_positive, closed"
+        doc="open, investigating, resolved, false_positive, closed",
     )
 
     assigned_to: Mapped[str] = mapped_column(
-        String(100),
-        nullable=True,
-        doc="Analyst assigned to investigate"
+        String(100), nullable=True, doc="Analyst assigned to investigate"
     )
 
     # MITRE ATT&CK mapping
     tactics: Mapped[list] = mapped_column(
         JSON,
         nullable=True,
-        doc="MITRE ATT&CK tactics (e.g., ['initial-access', 'execution'])"
+        doc="MITRE ATT&CK tactics (e.g., ['initial-access', 'execution'])",
     )
 
     techniques: Mapped[list] = mapped_column(
-        JSON,
-        nullable=True,
-        doc="MITRE ATT&CK technique IDs"
+        JSON, nullable=True, doc="MITRE ATT&CK technique IDs"
     )
 
     # AI-generated insights
     ai_summary: Mapped[str] = mapped_column(
-        Text,
-        nullable=True,
-        doc="AI-generated concise summary"
+        Text, nullable=True, doc="AI-generated concise summary"
     )
 
     ai_remediation: Mapped[str] = mapped_column(
-        Text,
-        nullable=True,
-        doc="AI-suggested remediation steps"
+        Text, nullable=True, doc="AI-suggested remediation steps"
     )
 
     # Risk score
     risk_score: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
-        default=50.0,
-        doc="Calculated risk score (0-100)"
+        Float, nullable=False, default=50.0, doc="Calculated risk score (0-100)"
     )
 
     # Impact analysis
     affected_assets: Mapped[list] = mapped_column(
-        JSON,
-        nullable=True,
-        doc="List of affected asset IDs"
+        JSON, nullable=True, doc="List of affected asset IDs"
     )
 
     affected_users: Mapped[list] = mapped_column(
-        JSON,
-        nullable=True,
-        doc="List of affected user IDs"
+        JSON, nullable=True, doc="List of affected user IDs"
     )
 
     business_impact: Mapped[str] = mapped_column(
-        String(20),
-        nullable=True,
-        doc="high, medium, low, none"
+        String(20), nullable=True, doc="high, medium, low, none"
     )
 
     # Metadata
     created_at: Mapped[str] = mapped_column(
-        String(50),
-        default=lambda: datetime.now(timezone.utc).isoformat()
+        String(50), default=lambda: datetime.now(UTC).isoformat()
     )
 
     updated_at: Mapped[str] = mapped_column(
-        String(50),
-        default=lambda: datetime.now(timezone.utc).isoformat()
+        String(50), default=lambda: datetime.now(UTC).isoformat()
     )
 
-    resolved_at: Mapped[str] = mapped_column(
-        String(50),
-        nullable=True
-    )
+    resolved_at: Mapped[str] = mapped_column(String(50), nullable=True)
 
     # Performance metrics
     correlation_time_ms: Mapped[int] = mapped_column(
-        Integer,
-        nullable=True,
-        doc="Time taken to correlate (milliseconds)"
+        Integer, nullable=True, doc="Time taken to correlate (milliseconds)"
     )
 
     # Indexes
     __table_args__ = (
-        Index('idx_correlated_events_status_severity', 'status', 'severity'),
-        Index('idx_correlated_events_first_seen', 'first_seen'),
-        Index('idx_correlated_events_attack_type', 'attack_type'),
+        Index("idx_correlated_events_status_severity", "status", "severity"),
+        Index("idx_correlated_events_first_seen", "first_seen"),
+        Index("idx_correlated_events_attack_type", "attack_type"),
     )
 
     # Relationships

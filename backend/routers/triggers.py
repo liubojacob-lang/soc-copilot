@@ -1,30 +1,29 @@
 """Router for trigger CRUD operations."""
 
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user
 from models.user import UserModel, UserRole
-from repositories.trigger_repository import TriggerRepository
 from repositories.playbook_definition_repository import PlaybookDefinitionRepository
-from services.trigger_service import TriggerService
+from repositories.trigger_repository import TriggerRepository
 from schemas.trigger import (
-    WebhookTriggerCreate,
-    WebhookTriggerResponse,
-    WebhookTriggerOut,
     CronTriggerCreate,
     CronTriggerResponse,
-    TriggerUpdate,
-    TriggerOut,
-    TriggerListResponse,
-    TriggerWithDefinition,
-    TriggerInvocationOut,
     SecretRegenerateResponse,
+    TriggerInvocationOut,
+    TriggerListResponse,
+    TriggerOut,
+    TriggerUpdate,
+    TriggerWithDefinition,
+    WebhookTriggerCreate,
+    WebhookTriggerResponse,
 )
-
-from dependencies.auth import get_current_user, require_role
+from services.trigger_service import TriggerService
 
 logger = get_logger(__name__)
 
@@ -32,22 +31,30 @@ router = APIRouter(prefix="/api/triggers", tags=["triggers"])
 
 
 # Helper dependencies that can be reused
-def require_admin_or_analyst(current_user: Annotated[UserModel, Depends(get_current_user)]) -> UserModel:
+def require_admin_or_analyst(
+    current_user: Annotated[UserModel, Depends(get_current_user)],
+) -> UserModel:
     """Require admin or analyst role."""
     if current_user.role not in (UserRole.ADMIN, UserRole.ANALYST):
         raise HTTPException(status_code=403, detail="Permission denied")
     return current_user
 
 
-def require_any_role_internal(current_user: Annotated[UserModel, Depends(get_current_user)]) -> UserModel:
+def require_any_role_internal(
+    current_user: Annotated[UserModel, Depends(get_current_user)],
+) -> UserModel:
     """Require any authenticated role (admin, analyst, or auditor)."""
     return current_user
 
 
 @router.get("", response_model=TriggerListResponse)
 async def list_triggers(
-    trigger_type: Annotated[str | None, Query(description="Filter by trigger type")] = None,
-    is_active: Annotated[bool | None, Query(description="Filter by active status")] = None,
+    trigger_type: Annotated[
+        str | None, Query(description="Filter by trigger type")
+    ] = None,
+    is_active: Annotated[
+        bool | None, Query(description="Filter by active status")
+    ] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 50,
     current_user: Annotated[UserModel, Depends(require_any_role_internal)] = None,
@@ -64,6 +71,7 @@ async def list_triggers(
 
     # Convert to response format with webhook URLs
     from core.config import settings
+
     base_url = getattr(settings, "base_url", "http://localhost:8000")
 
     trigger_outs = []
@@ -72,7 +80,9 @@ async def list_triggers(
         # Add webhook URL for webhook triggers
         if trigger.type == "webhook":
             trigger_dict["webhook_url"] = f"{base_url}/api/webhooks/{trigger.id}"
-            trigger_dict["secret_prefix"] = (trigger.secret or "")[:10] + "***" if trigger.secret else None
+            trigger_dict["secret_prefix"] = (
+                (trigger.secret or "")[:10] + "***" if trigger.secret else None
+            )
         # Add cron expression for cron triggers
         if trigger.type == "cron":
             trigger_dict["cron_expr"] = trigger.cron_expr
@@ -103,15 +113,20 @@ async def get_trigger(
     # Get definition name
     definition = await definition_repo.get_by_id(trigger.definition_id)
     if not definition:
-        raise HTTPException(status_code=404, detail="Associated playbook definition not found")
+        raise HTTPException(
+            status_code=404, detail="Associated playbook definition not found"
+        )
 
     from core.config import settings
+
     base_url = getattr(settings, "base_url", "http://localhost:8000")
 
     trigger_dict = TriggerOut.model_validate(trigger).model_dump()
     if trigger.type == "webhook":
         trigger_dict["webhook_url"] = f"{base_url}/api/webhooks/{trigger.id}"
-        trigger_dict["secret_prefix"] = (trigger.secret or "")[:10] + "***" if trigger.secret else None
+        trigger_dict["secret_prefix"] = (
+            (trigger.secret or "")[:10] + "***" if trigger.secret else None
+        )
     if trigger.type == "cron":
         trigger_dict["cron_expr"] = trigger.cron_expr
 
@@ -144,6 +159,7 @@ async def create_webhook_trigger(
     )
 
     from core.config import settings
+
     base_url = getattr(settings, "base_url", "http://localhost:8000")
 
     return WebhookTriggerResponse(
@@ -184,8 +200,8 @@ async def create_cron_trigger(
             is_active=data.is_active,
             created_by_user_id=current_user.id,
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Bad request")
 
     return CronTriggerResponse(
         id=trigger.id,
@@ -219,9 +235,12 @@ async def update_trigger(
     # Validate cron_expr if provided for cron trigger
     if trigger.type == "cron" and data.cron_expr is not None:
         from services.trigger_service import TriggerService
+
         service = TriggerService(session)
         if not service._validate_cron_expr(data.cron_expr):
-            raise HTTPException(status_code=400, detail=f"Invalid cron expression: {data.cron_expr}")
+            raise HTTPException(
+                status_code=400, detail=f"Invalid cron expression: {data.cron_expr}"
+            )
 
     # Update trigger
     updated = await trigger_repo.update(
@@ -236,12 +255,15 @@ async def update_trigger(
         raise HTTPException(status_code=404, detail="Trigger not found")
 
     from core.config import settings
+
     base_url = getattr(settings, "base_url", "http://localhost:8000")
 
     trigger_dict = TriggerOut.model_validate(updated).model_dump()
     if updated.type == "webhook":
         trigger_dict["webhook_url"] = f"{base_url}/api/webhooks/{updated.id}"
-        trigger_dict["secret_prefix"] = (updated.secret or "")[:10] + "***" if updated.secret else None
+        trigger_dict["secret_prefix"] = (
+            (updated.secret or "")[:10] + "***" if updated.secret else None
+        )
     if updated.type == "cron":
         trigger_dict["cron_expr"] = updated.cron_expr
 
@@ -273,19 +295,23 @@ async def test_webhook_trigger(
     """Test a webhook trigger by sending a test invocation."""
     trigger_repo = TriggerRepository(session)
     trigger = await trigger_repo.get_by_id(trigger_id)
-    
+
     if not trigger:
         raise HTTPException(status_code=404, detail="Trigger not found")
-    
+
     if trigger.type != "webhook":
-        raise HTTPException(status_code=400, detail="Only webhook triggers can be tested")
-    
+        raise HTTPException(
+            status_code=400, detail="Only webhook triggers can be tested"
+        )
+
     from core.config import settings
+
     base_url = getattr(settings, "base_url", "http://localhost:8000")
     webhook_url = f"{base_url}/api/webhooks/{trigger.id}"
-    
+
     try:
         import httpx
+
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
                 webhook_url,
@@ -293,16 +319,24 @@ async def test_webhook_trigger(
                 headers={"X-Webhook-Test": "true"},
             )
             if response.status_code >= 200 and response.status_code < 300:
-                return {"success": True, "message": f"Webhook test successful! (Status: {response.status_code})"}
+                return {
+                    "success": True,
+                    "message": f"Webhook test successful! (Status: {response.status_code})",
+                }
             else:
-                return {"success": False, "message": f"Webhook test failed with status {response.status_code}"}
+                return {
+                    "success": False,
+                    "message": f"Webhook test failed with status {response.status_code}",
+                }
     except httpx.RequestError as e:
-        return {"success": False, "message": f"Failed to connect: {str(e)}"}
+        return {"success": False, "message": f"Failed to connect: {e!s}"}
     except Exception as e:
-        return {"success": False, "message": f"Test error: {str(e)}"}
+        return {"success": False, "message": f"Test error: {e!s}"}
 
 
-@router.post("/{trigger_id}/webhook/regenerate-secret", response_model=SecretRegenerateResponse)
+@router.post(
+    "/{trigger_id}/webhook/regenerate-secret", response_model=SecretRegenerateResponse
+)
 async def regenerate_webhook_secret(
     trigger_id: str,
     current_user: Annotated[UserModel, Depends(require_admin_or_analyst)] = None,
@@ -334,7 +368,8 @@ async def list_trigger_invocations(
     session: Annotated[AsyncSession, Depends(get_session)] = None,
 ) -> dict[str, list[TriggerInvocationOut]]:
     """List recent invocations for a trigger."""
-    from sqlalchemy import select, desc
+    from sqlalchemy import desc, select
+
     from models.trigger import TriggerInvocationModel
 
     # Verify trigger exists
@@ -354,7 +389,9 @@ async def list_trigger_invocations(
     invocations = list(result.scalars().all())
 
     return {
-        "invocations": [TriggerInvocationOut.model_validate(inv) for inv in invocations],
+        "invocations": [
+            TriggerInvocationOut.model_validate(inv) for inv in invocations
+        ],
     }
 
 

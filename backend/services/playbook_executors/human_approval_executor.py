@@ -1,16 +1,17 @@
 """Human Approval node executor for playbook execution pause."""
 
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .executor_base import BaseExecutor, ExecutorContext
+from core.logger import get_logger
 from models.playbook_approval import PlaybookApprovalModel
 from models.playbook_node_run import PlaybookNodeRunModel
-from core.logger import get_logger
+
+from .executor_base import BaseExecutor, ExecutorContext
 
 logger = get_logger(__name__)
 
@@ -61,11 +62,16 @@ class HumanApprovalExecutor(BaseExecutor):
         await session.flush()
 
         # Update node run status to waiting_approval
-        await self._update_node_status(context.run_id, context.node_id, "waiting_approval", {
-            "approval_id": approval.id,
-            "title": title,
-            "message": message,
-        })
+        await self._update_node_status(
+            context.run_id,
+            context.node_id,
+            "waiting_approval",
+            {
+                "approval_id": approval.id,
+                "title": title,
+                "message": message,
+            },
+        )
 
         await session.commit()
 
@@ -89,6 +95,7 @@ class HumanApprovalExecutor(BaseExecutor):
         This is a workaround - in production, session should be passed via context.
         """
         from db.session import AsyncSessionLocal
+
         return AsyncSessionLocal()
 
     def _get_current_user_id(self, context: ExecutorContext) -> str | None:
@@ -135,7 +142,7 @@ class HumanApprovalExecutor(BaseExecutor):
                 node_run.output_json = output_json
 
             if status == "waiting_approval":
-                node_run.started_at = datetime.now(timezone.utc)
+                node_run.started_at = datetime.now(UTC)
 
             await session.commit()
 

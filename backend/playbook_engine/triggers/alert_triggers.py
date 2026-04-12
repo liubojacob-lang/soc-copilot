@@ -5,8 +5,9 @@ Playbook Engine - SOC Copilot v0.7.4
 提供告警分析结果与剧本自动化的联动配置
 """
 
-from typing import Dict, List, Any, Optional
 from enum import Enum
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -38,7 +39,7 @@ class AlertTriggerConfig(BaseModel):
 
     trigger_id: str
     name: str
-    conditions: List[TriggerCondition]
+    conditions: list[TriggerCondition]
     playbook_id: str
     enabled: bool = True
     execution_mode: str = "manual"  # manual/auto/dry_run
@@ -230,7 +231,7 @@ ALERT_CONTEXT_MAPPING = {
 }
 
 
-def evaluate_condition(condition: TriggerCondition, alert_data: Dict) -> bool:
+def evaluate_condition(condition: TriggerCondition, alert_data: dict) -> bool:
     """评估触发器条件
 
     Args:
@@ -277,7 +278,7 @@ def evaluate_condition(condition: TriggerCondition, alert_data: Dict) -> bool:
     return False
 
 
-def evaluate_trigger(trigger: AlertTriggerConfig, alert_data: Dict) -> bool:
+def evaluate_trigger(trigger: AlertTriggerConfig, alert_data: dict) -> bool:
     """评估触发器
 
     Args:
@@ -293,7 +294,7 @@ def evaluate_trigger(trigger: AlertTriggerConfig, alert_data: Dict) -> bool:
     return all(evaluate_condition(c, alert_data) for c in trigger.conditions)
 
 
-def get_matching_triggers(alert_data: Dict) -> List[AlertTriggerConfig]:
+def get_matching_triggers(alert_data: dict) -> list[AlertTriggerConfig]:
     """获取匹配的触发器列表
 
     Args:

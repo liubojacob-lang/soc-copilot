@@ -7,20 +7,18 @@ This service handles:
 - Copying context between runs
 """
 
-import uuid
 import logging
-from datetime import datetime, timezone
-from typing import Optional, List
-from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
+from datetime import UTC, datetime
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.playbook_run import PlaybookRunModel
-from models.playbook_definition import PlaybookDefinitionModel
-from models.user import UserModel
 from schemas.playbook_dag import (
     PlaybookRunReplayResponse,
     ReplayChainNode,
-    ReplayChainResponse
+    ReplayChainResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,8 +34,8 @@ class PlaybookReplayService:
         self,
         run_id: str,
         mode: str = "dry_run",
-        override_context: Optional[dict] = None,
-        created_by_user_id: Optional[str] = None
+        override_context: dict | None = None,
+        created_by_user_id: str | None = None,
     ) -> PlaybookRunReplayResponse:
         """
         Replay a playbook run with historical input.
@@ -55,9 +53,7 @@ class PlaybookReplayService:
             Replay response with new run details
         """
         # Get the original run
-        stmt = select(PlaybookRunModel).where(
-            PlaybookRunModel.id == run_id
-        )
+        stmt = select(PlaybookRunModel).where(PlaybookRunModel.id == run_id)
         result = await self.session.execute(stmt)
         original_run = result.scalar_one_or_none()
 
@@ -82,21 +78,19 @@ class PlaybookReplayService:
             created_by_user_id=created_by_user_id,
             input_json=input_context,
             output_json={},
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             finished_at=None,
             error_message=None,
-
             # v0.7 DAG fields
             engine_version=original_run.engine_version,
             execution_mode=original_run.execution_mode,
             definition_id=original_run.definition_id,
             failure_strategy=original_run.failure_strategy,
             trigger_source="replay",
-
             # v0.7.3: Context and replay fields
             input_context_json=input_context,
             context_json={},
-            replay_of_run_id=run_id
+            replay_of_run_id=run_id,
         )
 
         self.session.add(new_run)
@@ -112,13 +106,11 @@ class PlaybookReplayService:
             original_run_id=run_id,
             mode=mode,
             status="pending",
-            message=f"Replay run created successfully"
+            message="Replay run created successfully",
         )
 
     async def get_replay_chain(
-        self,
-        run_id: str,
-        max_depth: int = 50
+        self, run_id: str, max_depth: int = 50
     ) -> ReplayChainResponse:
         """
         Get the replay chain for a run.
@@ -143,29 +135,31 @@ class PlaybookReplayService:
         depth = 0
 
         while current_run_id and depth < max_depth:
-            stmt = select(PlaybookRunModel).where(
-                PlaybookRunModel.id == current_run_id
-            )
+            stmt = select(PlaybookRunModel).where(PlaybookRunModel.id == current_run_id)
             result = await self.session.execute(stmt)
             run = result.scalar_one_or_none()
 
             if not run:
                 break
 
-            chain.append(ReplayChainNode(
-                run_id=run.id,
-                playbook_name=run.playbook_name,
-                mode=run.mode,
-                status=run.status,
-                started_at=run.started_at,
-                finished_at=run.finished_at,
-                replay_of_run_id=run.replay_of_run_id
-            ))
+            chain.append(
+                ReplayChainNode(
+                    run_id=run.id,
+                    playbook_name=run.playbook_name,
+                    mode=run.mode,
+                    status=run.status,
+                    started_at=run.started_at,
+                    finished_at=run.finished_at,
+                    replay_of_run_id=run.replay_of_run_id,
+                )
+            )
 
             # Find next replay
-            next_stmt = select(PlaybookRunModel).where(
-                PlaybookRunModel.replay_of_run_id == current_run_id
-            ).order_by(PlaybookRunModel.started_at.desc())
+            next_stmt = (
+                select(PlaybookRunModel)
+                .where(PlaybookRunModel.replay_of_run_id == current_run_id)
+                .order_by(PlaybookRunModel.started_at.desc())
+            )
 
             next_result = await self.session.execute(next_stmt)
             next_run = next_result.first()
@@ -178,16 +172,11 @@ class PlaybookReplayService:
             depth += 1
 
         return ReplayChainResponse(
-            root_run_id=root_run.id,
-            chain=chain,
-            total=len(chain),
-            depth=depth
+            root_run_id=root_run.id, chain=chain, total=len(chain), depth=depth
         )
 
     async def _validate_can_replay(
-        self,
-        original_run: PlaybookRunModel,
-        created_by_user_id: Optional[str]
+        self, original_run: PlaybookRunModel, created_by_user_id: str | None
     ) -> None:
         """
         Validate if a run can be replayed.
@@ -205,7 +194,7 @@ class PlaybookReplayService:
             # For now, allow all replays. RBAC is enforced at API level.
             pass
 
-    async def _find_root_run(self, run_id: str) -> Optional[PlaybookRunModel]:
+    async def _find_root_run(self, run_id: str) -> PlaybookRunModel | None:
         """
         Find the root run in a replay chain.
 
@@ -224,14 +213,14 @@ class PlaybookReplayService:
         for _ in range(max_iterations):
             if current_id in visited:
                 # Circular reference detected
-                logger.error(f"Circular reference detected in replay chain for {run_id}")
+                logger.error(
+                    f"Circular reference detected in replay chain for {run_id}"
+                )
                 break
 
             visited.add(current_id)
 
-            stmt = select(PlaybookRunModel).where(
-                PlaybookRunModel.id == current_id
-            )
+            stmt = select(PlaybookRunModel).where(PlaybookRunModel.id == current_id)
             result = await self.session.execute(stmt)
             run = result.scalar_one_or_none()
 
@@ -245,10 +234,7 @@ class PlaybookReplayService:
 
         return None
 
-    async def get_replay_children(
-        self,
-        run_id: str
-    ) -> List[PlaybookRunModel]:
+    async def get_replay_children(self, run_id: str) -> list[PlaybookRunModel]:
         """
         Get all direct replay children of a run.
 
@@ -258,9 +244,11 @@ class PlaybookReplayService:
         Returns:
             List of child runs
         """
-        stmt = select(PlaybookRunModel).where(
-            PlaybookRunModel.replay_of_run_id == run_id
-        ).order_by(PlaybookRunModel.started_at.desc())
+        stmt = (
+            select(PlaybookRunModel)
+            .where(PlaybookRunModel.replay_of_run_id == run_id)
+            .order_by(PlaybookRunModel.started_at.desc())
+        )
 
         result = await self.session.execute(stmt)
         return list(result.scalars().all())

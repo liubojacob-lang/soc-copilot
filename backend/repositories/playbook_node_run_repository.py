@@ -1,16 +1,15 @@
 """Repository for playbook node runs."""
 
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional
-from sqlalchemy import select, update, delete, func, and_
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models.playbook_node_run import PlaybookNodeRunModel
-from models.playbook_node_attempt import PlaybookNodeAttemptModel
-from models.playbook_run import PlaybookRunModel
 from core.logger import get_logger
+from models.playbook_node_run import PlaybookNodeRunModel
 
 logger = get_logger(__name__)
 
@@ -48,7 +47,7 @@ class PlaybookNodeRunRepository:
         logger.debug(f"Created node run: {node_run.id} for node {node_id}")
         return node_run
 
-    async def get_by_id(self, node_run_id: str) -> Optional[PlaybookNodeRunModel]:
+    async def get_by_id(self, node_run_id: str) -> PlaybookNodeRunModel | None:
         """Get node run by ID."""
         stmt = select(PlaybookNodeRunModel).where(
             PlaybookNodeRunModel.id == node_run_id
@@ -60,7 +59,7 @@ class PlaybookNodeRunRepository:
         self,
         run_id: str,
         node_id: str,
-    ) -> Optional[PlaybookNodeRunModel]:
+    ) -> PlaybookNodeRunModel | None:
         """Get node run by run ID and node ID."""
         stmt = select(PlaybookNodeRunModel).where(
             and_(
@@ -77,13 +76,15 @@ class PlaybookNodeRunRepository:
         include_attempts: bool = False,
     ) -> list[PlaybookNodeRunModel]:
         """List all node runs for a given run."""
-        stmt = select(PlaybookNodeRunModel).where(
-            PlaybookNodeRunModel.run_id == run_id
-        ).order_by(PlaybookNodeRunModel.created_at)
-        
+        stmt = (
+            select(PlaybookNodeRunModel)
+            .where(PlaybookNodeRunModel.run_id == run_id)
+            .order_by(PlaybookNodeRunModel.created_at)
+        )
+
         if include_attempts:
             stmt = stmt.options(selectinload(PlaybookNodeRunModel.attempts))
-        
+
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -106,25 +107,28 @@ class PlaybookNodeRunRepository:
         self,
         node_run_id: str,
         status: str,
-        error_message: Optional[str] = None,
-        output_json: Optional[dict[str, Any]] = None,
-    ) -> Optional[PlaybookNodeRunModel]:
+        error_message: str | None = None,
+        output_json: dict[str, Any] | None = None,
+    ) -> PlaybookNodeRunModel | None:
         """Update node run status."""
         node_run = await self.get_by_id(node_run_id)
         if not node_run:
             return None
-        
+
         # Set finished_at if transitioning to terminal state
-        if status in ("success", "failed", "skipped", "cancelled") and node_run.finished_at is None:
-            node_run.finished_at = datetime.now(timezone.utc)
-        
+        if (
+            status in ("success", "failed", "skipped", "cancelled")
+            and node_run.finished_at is None
+        ):
+            node_run.finished_at = datetime.now(UTC)
+
         node_run.status = status
         if error_message:
             node_run.last_error = error_message
         if output_json:
             node_run.output_json = output_json
-        
-        node_run.updated_at = datetime.now(timezone.utc)
+
+        node_run.updated_at = datetime.now(UTC)
         await self.session.flush()
         await self.session.refresh(node_run)
         logger.debug(f"Updated node run {node_run_id} status to {status}")
@@ -133,27 +137,27 @@ class PlaybookNodeRunRepository:
     async def increment_attempt(
         self,
         node_run_id: str,
-    ) -> Optional[PlaybookNodeRunModel]:
+    ) -> PlaybookNodeRunModel | None:
         """Increment attempt count for a node run."""
         node_run = await self.get_by_id(node_run_id)
         if not node_run:
             return None
-        
+
         node_run.attempt_count += 1
-        node_run.updated_at = datetime.now(timezone.utc)
+        node_run.updated_at = datetime.now(UTC)
         await self.session.flush()
         await self.session.refresh(node_run)
         return node_run
 
-    async def mark_started(self, node_run_id: str) -> Optional[PlaybookNodeRunModel]:
+    async def mark_started(self, node_run_id: str) -> PlaybookNodeRunModel | None:
         """Mark node run as started."""
         node_run = await self.get_by_id(node_run_id)
         if not node_run:
             return None
-        
+
         node_run.status = "running"
-        node_run.started_at = datetime.now(timezone.utc)
-        node_run.updated_at = datetime.now(timezone.utc)
+        node_run.started_at = datetime.now(UTC)
+        node_run.updated_at = datetime.now(UTC)
         await self.session.flush()
         await self.session.refresh(node_run)
         logger.debug(f"Marked node run {node_run_id} as started")
@@ -165,24 +169,26 @@ class PlaybookNodeRunRepository:
     ) -> dict[str, int]:
         """Get summary of node runs for a run."""
         # Count by status
-        stmt = select(
-            PlaybookNodeRunModel.status,
-            func.count(PlaybookNodeRunModel.id),
-        ).where(
-            PlaybookNodeRunModel.run_id == run_id
-        ).group_by(PlaybookNodeRunModel.status)
-        
+        stmt = (
+            select(
+                PlaybookNodeRunModel.status,
+                func.count(PlaybookNodeRunModel.id),
+            )
+            .where(PlaybookNodeRunModel.run_id == run_id)
+            .group_by(PlaybookNodeRunModel.status)
+        )
+
         result = await self.session.execute(stmt)
         status_counts = {status: count for status, count in result.all()}
-        
+
         total_stmt = select(func.count()).select_from(
-            select(PlaybookNodeRunModel).where(
-                PlaybookNodeRunModel.run_id == run_id
-            ).subquery()
+            select(PlaybookNodeRunModel)
+            .where(PlaybookNodeRunModel.run_id == run_id)
+            .subquery()
         )
         total_result = await self.session.execute(total_stmt)
         total = total_result.scalar() or 0
-        
+
         return {
             "total": total,
             "pending": status_counts.get("pending", 0),
@@ -195,9 +201,7 @@ class PlaybookNodeRunRepository:
 
     async def delete_by_run(self, run_id: str) -> int:
         """Delete all node runs for a given run."""
-        stmt = delete(PlaybookNodeRunModel).where(
-            PlaybookNodeRunModel.run_id == run_id
-        )
+        stmt = delete(PlaybookNodeRunModel).where(PlaybookNodeRunModel.run_id == run_id)
         result = await self.session.execute(stmt)
         count = result.rowcount
         await self.session.flush()

@@ -1,8 +1,8 @@
 """Schemas for threat intelligence."""
 
-from pydantic import BaseModel, Field
-from typing import List, Optional
 from enum import Enum
+
+from pydantic import BaseModel, Field
 
 
 class IOCType(str, Enum):
@@ -34,13 +34,15 @@ class ThreatIntelItem(BaseModel):
     verdict: Verdict = Field(..., description="Threat verdict")
     score: int = Field(ge=0, le=100, description="Threat score (0-100)")
     pulse_count: int = Field(default=0, description="Number of reports/pulses")
-    tags: List[str] = Field(default_factory=list, description="Threat tags")
-    references: List[str] = Field(default_factory=list, description="Reference URLs")
+    tags: list[str] = Field(default_factory=list, description="Threat tags")
+    references: list[str] = Field(default_factory=list, description="Reference URLs")
     cached: bool = Field(default=False, description="Whether from cache")
-    skipped: bool = Field(default=False, description="Whether skipped due to limit/filter")
-    skipped_reason: Optional[str] = Field(
+    skipped: bool = Field(
+        default=False, description="Whether skipped due to limit/filter"
+    )
+    skipped_reason: str | None = Field(
         None,
-        description="Reason for skipping (e.g., 'private_ip', 'internal_domain', 'blocked_tld', 'rate_limit')"
+        description="Reason for skipping (e.g., 'private_ip', 'internal_domain', 'blocked_tld', 'rate_limit')",
     )
 
 
@@ -60,13 +62,14 @@ class ThreatIntelResponse(BaseModel):
     verdict: Verdict = Field(..., description="Threat verdict")
     score: int = Field(ge=0, le=100, description="Threat score (0-100)")
     pulse_count: int = Field(default=0, description="Number of reports/pulses")
-    tags: List[str] = Field(default_factory=list, description="Threat tags")
-    references: List[str] = Field(default_factory=list, description="Reference URLs")
+    tags: list[str] = Field(default_factory=list, description="Threat tags")
+    references: list[str] = Field(default_factory=list, description="Reference URLs")
     raw: dict = Field(default_factory=dict, description="Raw response from provider")
-    error_reason: Optional[str] = Field(None, description="Error message if lookup failed")
-    skipped_reason: Optional[str] = Field(
-        None,
-        description="Reason for skipping (e.g., 'private_ip', 'internal_domain')"
+    error_reason: str | None = Field(
+        None, description="Error message if lookup failed"
+    )
+    skipped_reason: str | None = Field(
+        None, description="Reason for skipping (e.g., 'private_ip', 'internal_domain')"
     )
 
 
@@ -80,7 +83,7 @@ class BulkThreatIntelRequestItem(BaseModel):
 class BulkThreatIntelRequest(BaseModel):
     """Bulk threat intel lookup request."""
 
-    items: List[BulkThreatIntelRequestItem] = Field(
+    items: list[BulkThreatIntelRequestItem] = Field(
         ...,
         description="List of IOCs to lookup",
     )
@@ -95,20 +98,22 @@ class BulkThreatIntelResponse(BaseModel):
     request_id: str = Field(..., description="Request ID for tracing")
     provider: str = Field(default="otx", description="TI provider name")
     disabled: bool = Field(default=False, description="Whether external TI is disabled")
-    results: List[ThreatIntelResponse] = Field(
-        default_factory=list,
-        description="List of lookup results"
+    results: list[ThreatIntelResponse] = Field(
+        default_factory=list, description="List of lookup results"
     )
-    skipped_count: int = Field(default=0, description="Number of IOCs skipped due to rate limiting")
-    skipped_items: List[ThreatIntelItem] = Field(
-        default_factory=list,
-        description="List of IOCs skipped due to rate limiting"
+    skipped_count: int = Field(
+        default=0, description="Number of IOCs skipped due to rate limiting"
+    )
+    skipped_items: list[ThreatIntelItem] = Field(
+        default_factory=list, description="List of IOCs skipped due to rate limiting"
     )
     # v0.4.1: New fields for compliance filtering
-    filtered_count: int = Field(default=0, description="Number of IOCs filtered by compliance policy")
-    filtered_items: List[ThreatIntelItem] = Field(
+    filtered_count: int = Field(
+        default=0, description="Number of IOCs filtered by compliance policy"
+    )
+    filtered_items: list[ThreatIntelItem] = Field(
         default_factory=list,
-        description="List of IOCs filtered by compliance policy (not sent to external TI)"
+        description="List of IOCs filtered by compliance policy (not sent to external TI)",
     )
 
 
@@ -121,14 +126,17 @@ class ThreatIntelAnalysis(BaseModel):
     provider: str = Field(default="otx", description="TI provider name")
     disabled: bool = Field(default=False, description="Whether external TI is disabled")
     degraded: bool = Field(default=False, description="Whether lookup was degraded")
-    skipped: bool = Field(default=False, description="Whether some IOCs were skipped due to rate limiting")
-    items: List[ThreatIntelItem] = Field(
-        default_factory=list,
-        description="Threat intel results for IOCs"
+    skipped: bool = Field(
+        default=False, description="Whether some IOCs were skipped due to rate limiting"
+    )
+    items: list[ThreatIntelItem] = Field(
+        default_factory=list, description="Threat intel results for IOCs"
     )
     # v0.4.1: New field for compliance-filtered IOCs
-    filtered_items: List[ThreatIntelItem] = Field(
+    filtered_items: list[ThreatIntelItem] = Field(
         default_factory=list,
-        description="IOCs filtered by compliance policy (not sent to external TI)"
+        description="IOCs filtered by compliance policy (not sent to external TI)",
     )
-    error_reason: Optional[str] = Field(None, description="Error message if lookup failed")
+    error_reason: str | None = Field(
+        None, description="Error message if lookup failed"
+    )

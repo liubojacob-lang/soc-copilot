@@ -1,20 +1,20 @@
 """Threat Intelligence router for OTX API endpoints."""
 
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import delete, and_
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user
+from models.threat_intel_cache import ThreatIntelCacheDB
+from models.user import UserModel
 from schemas.threat_intel import (
-    ThreatIntelResponse,
     BulkThreatIntelRequest,
-    BulkThreatIntelRequestItem,
     BulkThreatIntelResponse,
+    ThreatIntelResponse,
 )
 from services.threat_intel_service import ThreatIntelService
-from models.threat_intel_cache import ThreatIntelCacheDB
 
 router = APIRouter(prefix="/api/ti", tags=["threat_intel"])
 logger = get_logger(__name__)
@@ -25,6 +25,7 @@ async def lookup_otx_single(
     ioc_type: str = Query(..., description="IOC type (ip/domain/url/hash)"),
     ioc_value: str = Query(..., description="IOC value"),
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> ThreatIntelResponse:
     """Lookup single IOC threat intelligence from OTX.
 
@@ -34,14 +35,15 @@ async def lookup_otx_single(
         service = ThreatIntelService(session)
         return await service.lookup(ioc_type=ioc_type, ioc_value=ioc_value)
     except Exception as e:
-        logger.error(f"OTX lookup error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"OTX lookup error: {e!s}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/otx/bulk", response_model=BulkThreatIntelResponse)
 async def lookup_otx_bulk(
     data: BulkThreatIntelRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> BulkThreatIntelResponse:
     """Bulk lookup threat intelligence from OTX.
 
@@ -59,13 +61,14 @@ async def lookup_otx_bulk(
 
         return await service.bulk_lookup(items)
     except Exception as e:
-        logger.error(f"OTX bulk lookup error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"OTX bulk lookup error: {e!s}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/stats")
 async def get_threat_intel_stats(
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Get threat intelligence cache statistics.
 
@@ -85,32 +88,34 @@ async def get_threat_intel_stats(
             },
         }
     except Exception as e:
-        logger.error(f"Threat intel stats error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Threat intel stats error: {e!s}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # v0.8.3: TI Cache Refresh API endpoints
+
 
 @router.delete("/cache/{ioc_type}/{ioc_value}")
 async def refresh_single_ioc(
     ioc_type: str,
     ioc_value: str,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Invalidate single IOC cache entry, forcing fresh lookup.
-    
+
     Use case: IOC data updated in OTX, need fresh data.
-    
+
     Args:
         ioc_type: IOC type (ip/domain/url/hash)
         ioc_value: IOC value to invalidate
     """
     from repositories.threat_intel_repository import ThreatIntelRepository
-    
+
     repo = ThreatIntelRepository()
     deleted = await repo.delete_by_ioc(session, "otx", ioc_type, ioc_value)
     await session.commit()
-    
+
     return {
         "action": "cache_invalidated",
         "ioc_type": ioc_type,
@@ -121,30 +126,33 @@ async def refresh_single_ioc(
 
 @router.post("/cache/refresh")
 async def refresh_bulk_iocs(
-    iocs: List[dict] = Body(..., description="List of {ioc_type, ioc_value} to refresh"),
+    iocs: list[dict] = Body(
+        ..., description="List of {ioc_type, ioc_value} to refresh"
+    ),
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Bulk invalidate IOC cache entries.
-    
+
     Use case: Daily refresh of high-value IOCs.
     Maximum 100 IOCs per request.
-    
+
     Args:
         iocs: List of dicts with ioc_type and ioc_value
     """
     from repositories.threat_intel_repository import ThreatIntelRepository
-    
+
     repo = ThreatIntelRepository()
     deleted_count = 0
-    
+
     for ioc in iocs[:100]:  # Limit to 100 per request
         deleted = await repo.delete_by_ioc(
             session, "otx", ioc.get("ioc_type"), ioc.get("ioc_value")
         )
         deleted_count += deleted
-    
+
     await session.commit()
-    
+
     return {
         "action": "bulk_cache_invalidated",
         "requested": len(iocs),
@@ -156,17 +164,18 @@ async def refresh_bulk_iocs(
 @router.delete("/cache/expired")
 async def clear_expired_cache(
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Clear all expired cache entries.
-    
+
     Use case: Manual cleanup before TTL-based auto-cleanup.
     """
     from repositories.threat_intel_repository import ThreatIntelRepository
-    
+
     repo = ThreatIntelRepository()
     deleted = await repo.delete_expired(session)
     await session.commit()
-    
+
     return {
         "action": "expired_cache_cleared",
         "deleted_count": deleted,
@@ -177,20 +186,21 @@ async def clear_expired_cache(
 async def clear_all_cache(
     confirm: bool = Query(..., description="Must be true to confirm action"),
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Clear entire TI cache (dangerous operation).
-    
+
     Use case: Complete cache reset after configuration change.
-    
+
     Args:
         confirm: Must be true to confirm the dangerous operation
     """
     if not confirm:
         raise HTTPException(status_code=400, detail="Confirmation required")
-    
+
     result = await session.execute(delete(ThreatIntelCacheDB))
     await session.commit()
-    
+
     return {
         "action": "all_cache_cleared",
         "deleted_count": result.rowcount,

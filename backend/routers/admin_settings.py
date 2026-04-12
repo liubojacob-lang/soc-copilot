@@ -4,17 +4,15 @@ This module provides API endpoints for managing system-wide settings,
 including Dify integration configuration.
 """
 
-import logging
-import os
 import re
 from pathlib import Path
-from typing import Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.logger import get_logger
 from core.config import settings
+from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
 from models.user import UserModel, UserRole
@@ -22,7 +20,7 @@ from models.user import UserModel, UserRole
 logger = get_logger(__name__)
 
 
-def _update_env_file(key: str, value: Optional[str]) -> None:
+def _update_env_file(key: str, value: str | None) -> None:
     """Update a key in the .env file.
 
     Args:

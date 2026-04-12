@@ -1,8 +1,7 @@
 """Playbook engine tests."""
 
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-import json
 
 
 class TestPlaybookDefinitions:
@@ -21,14 +20,14 @@ class TestPlaybookDefinitions:
                     "nodes": [
                         {"id": "n1", "type": "start", "name": "Start"},
                         {"id": "n2", "type": "normalize", "name": "Normalize"},
-                        {"id": "n3", "type": "end", "name": "End"}
+                        {"id": "n3", "type": "end", "name": "End"},
                     ],
                     "edges": [
                         {"source": "n1", "target": "n2"},
-                        {"source": "n2", "target": "n3"}
-                    ]
-                }
-            }
+                        {"source": "n2", "target": "n3"},
+                    ],
+                },
+            },
         )
         assert response.status_code == 201
         data = response.json()
@@ -43,14 +42,11 @@ class TestPlaybookDefinitions:
             json={
                 "name": "Invalid Playbook",
                 "version": "1.0.0",
-                "dag": {
-                    "nodes": [],
-                    "edges": []
-                }
-            }
+                "dag": {"nodes": [], "edges": []},
+            },
         )
-        # Should fail validation
-        assert response.status_code in [400, 422]
+        # Should fail validation - empty DAG
+        assert response.status_code == 422  # Unprocessable entity - validation error
 
     @pytest.mark.asyncio
     async def test_list_playbook_definitions(self, auth_client):
@@ -71,15 +67,17 @@ class TestPlaybookDefinitions:
                 "version": "1.0.0",
                 "dag": {
                     "nodes": [{"id": "n1", "type": "start", "name": "Start"}],
-                    "edges": []
-                }
-            }
+                    "edges": [],
+                },
+            },
         )
         assert create_response.status_code == 201
         definition_id = create_response.json()["id"]
 
         # Get it
-        get_response = await auth_client.get(f"/api/playbook-definitions/{definition_id}")
+        get_response = await auth_client.get(
+            f"/api/playbook-definitions/{definition_id}"
+        )
         assert get_response.status_code == 200
         data = get_response.json()
         assert data["id"] == definition_id
@@ -95,9 +93,9 @@ class TestPlaybookDefinitions:
                 "version": "1.0.0",
                 "dag": {
                     "nodes": [{"id": "n1", "type": "start", "name": "Start"}],
-                    "edges": []
-                }
-            }
+                    "edges": [],
+                },
+            },
         )
         definition_id = create_response.json()["id"]
 
@@ -111,11 +109,11 @@ class TestPlaybookDefinitions:
                 "dag": {
                     "nodes": [
                         {"id": "n1", "type": "start", "name": "Start"},
-                        {"id": "n2", "type": "end", "name": "End"}
+                        {"id": "n2", "type": "end", "name": "End"},
                     ],
-                    "edges": [{"source": "n1", "target": "n2"}]
-                }
-            }
+                    "edges": [{"source": "n1", "target": "n2"}],
+                },
+            },
         )
         assert update_response.status_code == 200
 
@@ -130,18 +128,22 @@ class TestPlaybookDefinitions:
                 "version": "1.0.0",
                 "dag": {
                     "nodes": [{"id": "n1", "type": "start", "name": "Start"}],
-                    "edges": []
-                }
-            }
+                    "edges": [],
+                },
+            },
         )
         definition_id = create_response.json()["id"]
 
         # Delete it
-        delete_response = await auth_client.delete(f"/api/playbook-definitions/{definition_id}")
-        assert delete_response.status_code in [200, 204]
+        delete_response = await auth_client.delete(
+            f"/api/playbook-definitions/{definition_id}"
+        )
+        assert delete_response.status_code == 204  # No content on successful deletion
 
         # Verify it's gone
-        get_response = await auth_client.get(f"/api/playbook-definitions/{definition_id}")
+        get_response = await auth_client.get(
+            f"/api/playbook-definitions/{definition_id}"
+        )
         assert get_response.status_code == 404
 
 
@@ -153,8 +155,7 @@ class TestPlaybookRuns:
         """Test executing a playbook."""
         # First create a definition
         create_response = await auth_client.post(
-            "/api/playbook-definitions",
-            json=sample_playbook_data
+            "/api/playbook-definitions", json=sample_playbook_data
         )
         assert create_response.status_code == 201
         definition_id = create_response.json()["id"]
@@ -162,13 +163,12 @@ class TestPlaybookRuns:
         # Execute it
         run_response = await auth_client.post(
             "/api/playbook-runs",
-            json={
-                "definition_id": definition_id,
-                "trigger_data": {"test": "data"}
-            }
+            json={"definition_id": definition_id, "trigger_data": {"test": "data"}},
         )
-        # Should succeed or 503 if executor not available
-        assert run_response.status_code in [201, 202, 503]
+        # Executor may not be available in test environment
+        if run_response.status_code == 503:
+            pytest.skip("Playbook executor not available")
+        assert run_response.status_code == 201  # Created
 
     @pytest.mark.asyncio
     async def test_list_playbook_runs(self, auth_client):
@@ -190,17 +190,16 @@ class TestPlaybookRuns:
                 "dag": {
                     "nodes": [
                         {"id": "n1", "type": "start", "name": "Start"},
-                        {"id": "n2", "type": "end", "name": "End"}
+                        {"id": "n2", "type": "end", "name": "End"},
                     ],
-                    "edges": [{"source": "n1", "target": "n2"}]
-                }
-            }
+                    "edges": [{"source": "n1", "target": "n2"}],
+                },
+            },
         )
         definition_id = create_response.json()["id"]
 
         run_response = await auth_client.post(
-            "/api/playbook-runs",
-            json={"definition_id": definition_id}
+            "/api/playbook-runs", json={"definition_id": definition_id}
         )
 
         if run_response.status_code in [201, 202]:
@@ -219,7 +218,7 @@ class TestPlaybookRuns:
         # For now, test the endpoint exists
         response = await auth_client.post("/api/playbook-runs/nonexistent/cancel")
         # Should fail for non-existent run
-        assert response.status_code in [404, 400]
+        assert response.status_code == 404  # Not found
 
     @pytest.mark.asyncio
     async def test_playbook_run_logs(self, auth_client):
@@ -238,13 +237,12 @@ class TestPlaybookNodes:
         """Test the normalize node functionality."""
         response = await auth_client.post(
             "/api/playbooks/test-node",
-            json={
-                "node_type": "normalize",
-                "input_data": {"raw": "test data"}
-            }
+            json={"node_type": "normalize", "input_data": {"raw": "test data"}},
         )
-        # Should succeed or 404 if test endpoint not available
-        assert response.status_code in [200, 404]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Node test endpoint not implemented")
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_extract_iocs_node(self, auth_client):
@@ -253,12 +251,13 @@ class TestPlaybookNodes:
             "/api/playbooks/test-node",
             json={
                 "node_type": "extract_iocs",
-                "input_data": {
-                    "text": "Attacker IP: 192.168.1.1, Domain: evil.com"
-                }
-            }
+                "input_data": {"text": "Attacker IP: 192.168.1.1, Domain: evil.com"},
+            },
         )
-        assert response.status_code in [200, 404]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Node test endpoint not implemented")
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_risk_score_node(self, auth_client):
@@ -267,13 +266,13 @@ class TestPlaybookNodes:
             "/api/playbooks/test-node",
             json={
                 "node_type": "risk_score",
-                "input_data": {
-                    "severity": "high",
-                    "iocs": {"ips": ["1.1.1.1"]}
-                }
-            }
+                "input_data": {"severity": "high", "iocs": {"ips": ["1.1.1.1"]}},
+            },
         )
-        assert response.status_code in [200, 404]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Node test endpoint not implemented")
+        assert response.status_code == 200
 
 
 class TestPlaybookTriggers:
@@ -287,29 +286,34 @@ class TestPlaybookTriggers:
             json={
                 "name": "Test Webhook",
                 "definition_id": "test-definition-id",
-                "enabled": True
-            }
+                "enabled": True,
+            },
         )
-        # Should succeed or 404 if endpoint not implemented
-        assert response.status_code in [201, 404]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Webhook trigger endpoint not implemented")
+        assert response.status_code == 201
 
     @pytest.mark.asyncio
     async def test_list_triggers(self, auth_client):
         """Test listing triggers."""
         response = await auth_client.get("/api/triggers")
-        # Should succeed or 404 if endpoint not implemented
-        assert response.status_code in [200, 404]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Triggers list endpoint not implemented")
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_trigger_webhook(self, client):
         """Test triggering a webhook."""
         # This would test the actual webhook endpoint
         response = await client.post(
-            "/api/webhooks/test-trigger-id",
-            json={"event": "test"}
+            "/api/webhooks/test-trigger-id", json={"event": "test"}
         )
-        # May or may not be implemented
-        assert response.status_code in [200, 404, 500]
+        # Endpoint may not be implemented
+        if response.status_code == 404:
+            pytest.skip("Webhook trigger endpoint not implemented")
+        assert response.status_code == 200
 
 
 class TestPlaybookValidation:
@@ -326,17 +330,17 @@ class TestPlaybookValidation:
                 "dag": {
                     "nodes": [
                         {"id": "n1", "type": "start", "name": "Start"},
-                        {"id": "n2", "type": "end", "name": "End"}
+                        {"id": "n2", "type": "end", "name": "End"},
                     ],
                     "edges": [
                         {"source": "n1", "target": "n2"},
-                        {"source": "n2", "target": "n1"}  # Cycle!
-                    ]
-                }
-            }
+                        {"source": "n2", "target": "n1"},  # Cycle!
+                    ],
+                },
+            },
         )
         # Should reject cyclic DAG
-        assert response.status_code in [400, 422]
+        assert response.status_code == 422  # Unprocessable entity - validation error
 
     @pytest.mark.asyncio
     async def test_validate_dag_orphan_nodes(self, auth_client):
@@ -350,16 +354,18 @@ class TestPlaybookValidation:
                     "nodes": [
                         {"id": "n1", "type": "start", "name": "Start"},
                         {"id": "n2", "type": "end", "name": "End"},
-                        {"id": "n3", "type": "normalize", "name": "Orphan"}  # No edges!
+                        {
+                            "id": "n3",
+                            "type": "normalize",
+                            "name": "Orphan",
+                        },  # No edges!
                     ],
-                    "edges": [
-                        {"source": "n1", "target": "n2"}
-                    ]
-                }
-            }
+                    "edges": [{"source": "n1", "target": "n2"}],
+                },
+            },
         )
-        # Should warn about orphan nodes or still accept
-        assert response.status_code in [200, 201, 400, 422]
+        # Orphan nodes should cause validation error
+        assert response.status_code == 422  # Unprocessable entity - validation error
 
     @pytest.mark.asyncio
     async def test_validate_required_nodes(self, auth_client):
@@ -370,15 +376,13 @@ class TestPlaybookValidation:
                 "name": "Missing Start/End",
                 "version": "1.0.0",
                 "dag": {
-                    "nodes": [
-                        {"id": "n1", "type": "normalize", "name": "Normalize"}
-                    ],
-                    "edges": []
-                }
-            }
+                    "nodes": [{"id": "n1", "type": "normalize", "name": "Normalize"}],
+                    "edges": [],
+                },
+            },
         )
         # Should require start and end nodes
-        assert response.status_code in [400, 422]
+        assert response.status_code == 422  # Unprocessable entity - validation error
 
 
 class TestPlaybookResults:

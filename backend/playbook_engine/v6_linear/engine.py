@@ -1,15 +1,16 @@
 """Playbook execution engine for running linear step-based playbooks."""
 
-import uuid
 import asyncio
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
-from .registry import get_registry
-from .models import StepResult
 from db.session import AsyncSessionLocal
+
+from .models import StepResult
+from .registry import get_registry
 
 logger = get_logger(__name__)
 
@@ -27,7 +28,7 @@ class PlaybookExecutionEngine:
         playbook_name: str,
         input_json: dict[str, Any],
         mode: str = "dry_run",
-        created_by_user_id: Optional[str] = None,
+        created_by_user_id: str | None = None,
     ) -> dict[str, Any]:
         """Execute a playbook from start to finish.
 
@@ -49,7 +50,6 @@ class PlaybookExecutionEngine:
         step_ids = playbook_config["steps"]
 
         # Import the run model here to avoid circular dependency
-        from models.playbook_run import PlaybookRunModel
         from repositories.playbook_run_repository import PlaybookRunRepository
 
         run_repo = PlaybookRunRepository(self.session)
@@ -93,7 +93,7 @@ class PlaybookExecutionEngine:
         self,
         run_id: str,
         from_step_index: int = 0,
-        run_mode: Optional[str] = None,
+        run_mode: str | None = None,
     ) -> dict[str, Any]:
         """Resume a playbook run from a specific step.
 
@@ -105,7 +105,6 @@ class PlaybookExecutionEngine:
         Returns:
             Dictionary with updated status
         """
-        from models.playbook_run import PlaybookRunModel
         from repositories.playbook_run_repository import PlaybookRunRepository
 
         run_repo = PlaybookRunRepository(self.session)
@@ -119,6 +118,7 @@ class PlaybookExecutionEngine:
 
         # Get playbook configuration
         from schemas.playbook_run import AVAILABLE_PLAYBOOKS
+
         playbook_config = AVAILABLE_PLAYBOOKS[run.playbook_name]
         step_ids = playbook_config["steps"]
 
@@ -127,10 +127,16 @@ class PlaybookExecutionEngine:
             await run_repo.update(run_id, {"mode": run_mode})
 
         # Resume execution
-        asyncio.create_task(self._execute_steps(
-            run_id, run.playbook_name, step_ids[from_step_index:],
-            run.input_json, run.mode, from_step_index
-        ))
+        asyncio.create_task(
+            self._execute_steps(
+                run_id,
+                run.playbook_name,
+                step_ids[from_step_index:],
+                run.input_json,
+                run.mode,
+                from_step_index,
+            )
+        )
 
         return {
             "run_id": run_id,
@@ -159,7 +165,6 @@ class PlaybookExecutionEngine:
             mode: Execution mode (dry_run or apply)
             start_index: Starting step index
         """
-        from models.playbook_run import PlaybookRunModel
         from repositories.playbook_run_repository import PlaybookRunRepository
 
         run_repo = PlaybookRunRepository(session)
@@ -179,21 +184,27 @@ class PlaybookExecutionEngine:
                 )
 
             # All steps completed successfully
-            await run_repo.update(run_id, {
-                "status": "success",
-                "finished_at": datetime.now(),
-                "output_json": {"steps": steps_output},
-            })
+            await run_repo.update(
+                run_id,
+                {
+                    "status": "success",
+                    "finished_at": datetime.now(),
+                    "output_json": {"steps": steps_output},
+                },
+            )
             logger.info(f"[{run_id}] Playbook completed successfully")
 
         except Exception as e:
             logger.error(f"[{run_id}] Playbook execution error: {e}")
-            await run_repo.update(run_id, {
-                "status": "failed",
-                "finished_at": datetime.now(),
-                "error_message": str(e),
-                "output_json": {"steps": steps_output},
-            })
+            await run_repo.update(
+                run_id,
+                {
+                    "status": "failed",
+                    "finished_at": datetime.now(),
+                    "error_message": str(e),
+                    "output_json": {"steps": steps_output},
+                },
+            )
             raise  # Re-raise so caller can handle
 
     async def _execute_steps(
@@ -217,7 +228,6 @@ class PlaybookExecutionEngine:
         """
         # Create a new session for the background task
         async with AsyncSessionLocal() as session:
-            from models.playbook_run import PlaybookRunModel
             from repositories.playbook_run_repository import PlaybookRunRepository
 
             run_repo = PlaybookRunRepository(session)
@@ -237,21 +247,27 @@ class PlaybookExecutionEngine:
                     )
 
                 # All steps completed successfully
-                await run_repo.update(run_id, {
-                    "status": "success",
-                    "finished_at": datetime.now(),
-                    "output_json": {"steps": steps_output},
-                })
+                await run_repo.update(
+                    run_id,
+                    {
+                        "status": "success",
+                        "finished_at": datetime.now(),
+                        "output_json": {"steps": steps_output},
+                    },
+                )
                 logger.info(f"[{run_id}] Playbook completed successfully")
 
             except Exception as e:
                 logger.error(f"[{run_id}] Playbook execution error: {e}")
-                await run_repo.update(run_id, {
-                    "status": "failed",
-                    "finished_at": datetime.now(),
-                    "error_message": str(e),
-                    "output_json": {"steps": steps_output},
-                })
+                await run_repo.update(
+                    run_id,
+                    {
+                        "status": "failed",
+                        "finished_at": datetime.now(),
+                        "error_message": str(e),
+                        "output_json": {"steps": steps_output},
+                    },
+                )
             finally:
                 await session.commit()
 
@@ -279,7 +295,6 @@ class PlaybookExecutionEngine:
         Returns:
             StepResult object with execution results
         """
-        from models.playbook_run import PlaybookRunStepModel
         from repositories.playbook_run_repository import PlaybookRunRepository
 
         step_repo = PlaybookRunRepository(session)
@@ -316,8 +331,10 @@ class PlaybookExecutionEngine:
             # Check if mode applies (some steps may not support apply mode)
             if mode == "apply" and not step_impl.supports_apply:
                 step_result.skipped = True
-                step_result.skipped_reason = f"Step does not support apply mode"
-                await self._mark_step_skipped(session, step.id, step_result.skipped_reason)
+                step_result.skipped_reason = "Step does not support apply mode"
+                await self._mark_step_skipped(
+                    session, step.id, step_result.skipped_reason
+                )
                 return step_result
 
             # Build enriched input: original input + outputs from previous steps
@@ -336,13 +353,18 @@ class PlaybookExecutionEngine:
             step_result.output = result
 
             # Update step as success
-            await step_repo.update_by_id(step.id, {
-                "status": "success",
-                "finished_at": datetime.now(),
-                "output_json": {"result": result},
-            })
+            await step_repo.update_by_id(
+                step.id,
+                {
+                    "status": "success",
+                    "finished_at": datetime.now(),
+                    "output_json": {"result": result},
+                },
+            )
 
-            logger.info(f"[{run_id}] Step {step_index} ({step_id}) completed successfully")
+            logger.info(
+                f"[{run_id}] Step {step_index} ({step_id}) completed successfully"
+            )
 
         except Exception as e:
             logger.error(f"[{run_id}] Step {step_index} ({step_id}) failed: {e}")
@@ -350,11 +372,14 @@ class PlaybookExecutionEngine:
             step_result.success = False
 
             # Update step as failed
-            await step_repo.update_by_id(step.id, {
-                "status": "failed",
-                "finished_at": datetime.now(),
-                "error_text": str(e),
-            })
+            await step_repo.update_by_id(
+                step.id,
+                {
+                    "status": "failed",
+                    "finished_at": datetime.now(),
+                    "error_text": str(e),
+                },
+            )
 
             raise  # Re-raise to stop playbook execution
 
@@ -367,20 +392,28 @@ class PlaybookExecutionEngine:
             await step_repo.update_by_id(step.id, {"duration_ms": duration_ms})
 
             # Add to accumulated output
-            steps_output.append({
-                "step_index": step_index,
-                "step_id": step_id,
-                "step_name": self.registry.get_step_name(step_id),
-                "status": "success" if step_result.success else ("skipped" if step_result.skipped else "failed"),
-                "output": step_result.output,
-                "error": step_result.error,
-                "skipped_reason": step_result.skipped_reason,
-                "duration_ms": duration_ms,
-            })
+            steps_output.append(
+                {
+                    "step_index": step_index,
+                    "step_id": step_id,
+                    "step_name": self.registry.get_step_name(step_id),
+                    "status": (
+                        "success"
+                        if step_result.success
+                        else ("skipped" if step_result.skipped else "failed")
+                    ),
+                    "output": step_result.output,
+                    "error": step_result.error,
+                    "skipped_reason": step_result.skipped_reason,
+                    "duration_ms": duration_ms,
+                }
+            )
 
         return step_result
 
-    async def _mark_step_skipped(self, session: AsyncSession, step_id: str, reason: str) -> None:
+    async def _mark_step_skipped(
+        self, session: AsyncSession, step_id: str, reason: str
+    ) -> None:
         """Mark a step as skipped.
 
         Args:
@@ -391,8 +424,11 @@ class PlaybookExecutionEngine:
         from repositories.playbook_run_repository import PlaybookRunRepository
 
         step_repo = PlaybookRunRepository(session)
-        await step_repo.update_by_id(step_id, {
-            "status": "skipped",
-            "finished_at": datetime.now(),
-            "skipped_reason": reason,
-        })
+        await step_repo.update_by_id(
+            step_id,
+            {
+                "status": "skipped",
+                "finished_at": datetime.now(),
+                "skipped_reason": reason,
+            },
+        )

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -18,7 +18,9 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         start = time.perf_counter()
         path = request.url.path
         method = request.method
-        tenant_id = getattr(request.state, "tenant_id", request.headers.get("x-tenant-id", "default"))
+        tenant_id = getattr(
+            request.state, "tenant_id", request.headers.get("x-tenant-id", "default")
+        )
 
         try:
             response = await call_next(request)

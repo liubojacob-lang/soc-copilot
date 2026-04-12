@@ -13,22 +13,20 @@ Endpoints:
 - GET /api/v1/monitoring/alerts/stats - Get alert statistics
 """
 
-from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
 
 from core.logger import get_logger, set_request_context
 from dependencies.auth import get_current_user
 from models.monitoring_alerts import (
+    AlertHistory,
     AlertRule,
     AlertRuleCreate,
-    AlertRuleUpdate,
     AlertRuleResponse,
-    AlertHistory,
+    AlertRuleUpdate,
     AlertStats,
 )
-from services.alert_evaluator import get_alert_evaluator
 from schemas.user import UserResponse
+from services.alerting.alert_evaluator import get_alert_evaluator
 
 logger = get_logger(__name__)
 
@@ -45,7 +43,7 @@ async def get_evaluator_dep():
 async def create_alert_rule(
     rule_data: AlertRuleCreate,
     current_user: UserResponse = Depends(get_current_user),
-    evaluator = Depends(get_evaluator_dep)
+    evaluator=Depends(get_evaluator_dep),
 ):
     """
     Create a new alert rule.
@@ -56,10 +54,7 @@ async def create_alert_rule(
     set_request_context(user_id=str(current_user.id), user_role=current_user.role)
 
     try:
-        rule = AlertRule(
-            user_id=str(current_user.id),
-            **rule_data.model_dump()
-        )
+        rule = AlertRule(user_id=str(current_user.id), **rule_data.model_dump())
 
         await evaluator.add_rule(rule)
 
@@ -69,14 +64,16 @@ async def create_alert_rule(
 
     except Exception as e:
         logger.error(f"Error creating alert rule: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to create alert rule: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create alert rule: {e!s}"
+        )
 
 
-@router.get("/rules", response_model=List[AlertRuleResponse])
+@router.get("/rules", response_model=list[AlertRuleResponse])
 async def list_alert_rules(
     enabled_only: bool = False,
     current_user: UserResponse = Depends(get_current_user),
-    evaluator = Depends(get_evaluator_dep)
+    evaluator=Depends(get_evaluator_dep),
 ):
     """
     List alert rules for the current user.
@@ -95,14 +92,16 @@ async def list_alert_rules(
 
     except Exception as e:
         logger.error(f"Error listing alert rules: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to list alert rules: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to list alert rules: {e!s}"
+        )
 
 
 @router.get("/rules/{rule_id}", response_model=AlertRuleResponse)
 async def get_alert_rule(
     rule_id: str,
     current_user: UserResponse = Depends(get_current_user),
-    evaluator = Depends(get_evaluator_dep)
+    evaluator=Depends(get_evaluator_dep),
 ):
     """
     Get a specific alert rule.
@@ -126,7 +125,9 @@ async def get_alert_rule(
         raise
     except Exception as e:
         logger.error(f"Error getting alert rule: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get alert rule: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get alert rule: {e!s}"
+        )
 
 
 @router.put("/rules/{rule_id}", response_model=AlertRuleResponse)
@@ -134,7 +135,7 @@ async def update_alert_rule(
     rule_id: str,
     updates: AlertRuleUpdate,
     current_user: UserResponse = Depends(get_current_user),
-    evaluator = Depends(get_evaluator_dep)
+    evaluator=Depends(get_evaluator_dep),
 ):
     """
     Update an alert rule.
@@ -171,14 +172,16 @@ async def update_alert_rule(
         raise
     except Exception as e:
         logger.error(f"Error updating alert rule: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update alert rule: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update alert rule: {e!s}"
+        )
 
 
 @router.delete("/rules/{rule_id}")
 async def delete_alert_rule(
     rule_id: str,
     current_user: UserResponse = Depends(get_current_user),
-    evaluator = Depends(get_evaluator_dep)
+    evaluator=Depends(get_evaluator_dep),
 ):
     """
     Delete an alert rule.
@@ -211,14 +214,16 @@ async def delete_alert_rule(
         raise
     except Exception as e:
         logger.error(f"Error deleting alert rule: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete alert rule: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete alert rule: {e!s}"
+        )
 
 
-@router.get("/history", response_model=List[AlertHistory])
+@router.get("/history", response_model=list[AlertHistory])
 async def get_alert_history(
     limit: int = Query(100, ge=1, le=1000),
     current_user: UserResponse = Depends(get_current_user),
-    evaluator = Depends(get_evaluator_dep)
+    evaluator=Depends(get_evaluator_dep),
 ):
     """
     Get alert history for the current user.
@@ -234,13 +239,15 @@ async def get_alert_history(
 
     except Exception as e:
         logger.error(f"Error getting alert history: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get alert history: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get alert history: {e!s}"
+        )
 
 
 @router.get("/stats", response_model=AlertStats)
 async def get_alert_stats(
     current_user: UserResponse = Depends(get_current_user),
-    evaluator = Depends(get_evaluator_dep)
+    evaluator=Depends(get_evaluator_dep),
 ):
     """
     Get alert statistics for the current user.
@@ -256,14 +263,16 @@ async def get_alert_stats(
 
     except Exception as e:
         logger.error(f"Error getting alert stats: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get alert stats: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get alert stats: {e!s}"
+        )
 
 
 @router.post("/test/{rule_id}")
 async def test_alert_rule(
     rule_id: str,
     current_user: UserResponse = Depends(get_current_user),
-    evaluator = Depends(get_evaluator_dep)
+    evaluator=Depends(get_evaluator_dep),
 ):
     """
     Test an alert rule against current metrics.
@@ -284,7 +293,8 @@ async def test_alert_rule(
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Get current metrics
-        from services.websocket_monitoring import get_websocket_monitoring
+        from services.observability.websocket_monitoring import get_websocket_monitoring
+
         monitoring = get_websocket_monitoring()
         metrics = await monitoring.get_current_metrics()
 
@@ -304,4 +314,6 @@ async def test_alert_rule(
         raise
     except Exception as e:
         logger.error(f"Error testing alert rule: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to test alert rule: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to test alert rule: {e!s}"
+        )

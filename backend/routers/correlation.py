@@ -1,19 +1,21 @@
 """Event correlation API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
-from datetime import datetime, timezone, timedelta
-from pydantic import BaseModel, ConfigDict
+from datetime import UTC, datetime
 
-from db.session import AsyncSessionLocal, get_session
-from services.event_correlation_service import EventCorrelationService, correlate_events_batch
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.logger import get_logger
+from core.metrics import observe_correlation_rule_hit
+from db.session import get_session
 from models.correlated_event import CorrelatedEvent
 from models.correlation_rule import CorrelationRule
-from core.logger import get_logger
 from services.correlation import CorrelationRuleDSL, RuleEngine
 from services.event_bus import get_event_bus
-from core.metrics import observe_correlation_rule_hit
+from services.event_correlation_service import (
+    EventCorrelationService,
+)
 
 logger = get_logger(__name__)
 
@@ -23,46 +25,50 @@ router = APIRouter(tags=["correlation"], prefix="/api/correlation")
 # Request/Response Schemas
 class CorrelationRequest(BaseModel):
     """Request to correlate events."""
-    events: List[dict]
-    rule_ids: Optional[List[str]] = None
+
+    events: list[dict]
+    rule_ids: list[str] | None = None
 
 
 class CorrelationRuleCreate(BaseModel):
     """Request to create a correlation rule."""
+
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     time_window_seconds: int = 300
     entity_types: dict = None
     min_similarity: float = 0.7
-    conditions: Optional[dict] = None
+    conditions: dict | None = None
     action: str = "aggregate"
-    action_params: Optional[dict] = None
+    action_params: dict | None = None
     priority: int = 50
-    group_by_field: Optional[str] = None
+    group_by_field: str | None = None
 
 
 class CorrelationRuleUpdate(BaseModel):
     """Request to update a correlation rule."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    enabled: Optional[bool] = None
-    time_window_seconds: Optional[int] = None
-    entity_types: Optional[dict] = None
-    min_similarity: Optional[float] = None
-    conditions: Optional[dict] = None
-    action: Optional[str] = None
-    action_params: Optional[dict] = None
-    priority: Optional[int] = None
-    group_by_field: Optional[str] = None
+
+    name: str | None = None
+    description: str | None = None
+    enabled: bool | None = None
+    time_window_seconds: int | None = None
+    entity_types: dict | None = None
+    min_similarity: float | None = None
+    conditions: dict | None = None
+    action: str | None = None
+    action_params: dict | None = None
+    priority: int | None = None
+    group_by_field: str | None = None
 
 
 class CorrelatedEventResponse(BaseModel):
     """Response for correlated event."""
+
     id: str
     title: str
-    description: Optional[str]
+    description: str | None
     severity: str
-    attack_type: Optional[str]
+    attack_type: str | None
     confidence_score: float
     raw_event_count: int
     common_entities: dict
@@ -76,21 +82,21 @@ class CorrelatedEventResponse(BaseModel):
 
 
 class RuleEngineEvaluateRequest(BaseModel):
-    events: List[dict]
-    rules: List[CorrelationRuleDSL]
+    events: list[dict]
+    rules: list[CorrelationRuleDSL]
 
 
 class RuleEngineEvaluateResponse(BaseModel):
-    incidents: List[dict]
-    execution_logs: List[dict]
+    incidents: list[dict]
+    execution_logs: list[dict]
 
 
 # Endpoints
-@router.post("/correlate", response_model=List[CorrelatedEventResponse])
+@router.post("/correlate", response_model=list[CorrelatedEventResponse])
 async def correlate_events(
     http_request: Request,
     request: CorrelationRequest,
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
     """
     Correlate a batch of events into incidents.
@@ -101,8 +107,7 @@ async def correlate_events(
     try:
         service = EventCorrelationService(db)
         correlated_events = await service.correlate_events(
-            events=request.events,
-            rule_ids=request.rule_ids
+            events=request.events, rule_ids=request.rule_ids
         )
 
         # Update rule statistics
@@ -111,7 +116,7 @@ async def correlate_events(
             rule = await db.get(CorrelationRule, event.rule_id)
             if rule:
                 rule.total_correlations += 1
-                rule.last_triggered = datetime.now(timezone.utc).isoformat()
+                rule.last_triggered = datetime.now(UTC).isoformat()
                 observe_correlation_rule_hit(str(rule.id), tenant_id)
 
         await db.commit()
@@ -136,7 +141,7 @@ async def correlate_events(
 
     except Exception as e:
         logger.error(f"Error during correlation: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/dsl/example", response_model=dict)
@@ -146,7 +151,9 @@ async def get_rule_dsl_example() -> dict:
 
 
 @router.post("/engine/evaluate", response_model=RuleEngineEvaluateResponse)
-async def evaluate_rule_engine(request: RuleEngineEvaluateRequest) -> RuleEngineEvaluateResponse:
+async def evaluate_rule_engine(
+    request: RuleEngineEvaluateRequest,
+) -> RuleEngineEvaluateResponse:
     """Evaluate rules using DSL engine (non-persistent)."""
     engine = RuleEngine()
     incidents = engine.execute(request.events, request.rules)
@@ -156,21 +163,21 @@ async def evaluate_rule_engine(request: RuleEngineEvaluateRequest) -> RuleEngine
     )
 
 
-@router.get("/incidents", response_model=List[CorrelatedEventResponse])
+@router.get("/incidents", response_model=list[CorrelatedEventResponse])
 async def list_correlated_events(
-    status: Optional[str] = Query(None, description="Filter by status"),
-    severity: Optional[str] = Query(None, description="Filter by severity"),
-    attack_type: Optional[str] = Query(None, description="Filter by attack type"),
+    status: str | None = Query(None, description="Filter by status"),
+    severity: str | None = Query(None, description="Filter by severity"),
+    attack_type: str | None = Query(None, description="Filter by attack type"),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
     """
     List correlated incidents.
 
     Supports filtering by status, severity, and attack type.
     """
-    from sqlalchemy import select, desc
+    from sqlalchemy import desc, select
 
     query = select(CorrelatedEvent).order_by(desc(CorrelatedEvent.first_seen))
 
@@ -193,8 +200,7 @@ async def list_correlated_events(
 
 @router.get("/incidents/{incident_id}", response_model=CorrelatedEventResponse)
 async def get_correlated_event(
-    incident_id: str,
-    db: AsyncSession = Depends(get_session)
+    incident_id: str, db: AsyncSession = Depends(get_session)
 ):
     """Get details of a specific correlated incident."""
     from sqlalchemy import select
@@ -213,8 +219,8 @@ async def get_correlated_event(
 async def update_incident_status(
     incident_id: str,
     status: str = Query(..., description="New status"),
-    assigned_to: Optional[str] = Query(None, description="Assign to analyst"),
-    db: AsyncSession = Depends(get_session)
+    assigned_to: str | None = Query(None, description="Assign to analyst"),
+    db: AsyncSession = Depends(get_session),
 ):
     """
     Update incident status and assignment.
@@ -235,7 +241,7 @@ async def update_incident_status(
     if status not in valid_statuses:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}",
         )
 
     # Update
@@ -244,9 +250,9 @@ async def update_incident_status(
         incident.assigned_to = assigned_to
 
     if status in ["resolved", "false_positive", "closed"]:
-        incident.resolved_at = datetime.now(timezone.utc).isoformat()
+        incident.resolved_at = datetime.now(UTC).isoformat()
 
-    incident.updated_at = datetime.now(timezone.utc).isoformat()
+    incident.updated_at = datetime.now(UTC).isoformat()
 
     await db.commit()
 
@@ -255,7 +261,7 @@ async def update_incident_status(
         "incident_id": incident_id,
         "status": status,
         "assigned_to": assigned_to,
-        "updated_at": incident.updated_at
+        "updated_at": incident.updated_at,
     }
 
 
@@ -263,7 +269,7 @@ async def update_incident_status(
 @router.get("/rules")
 async def list_correlation_rules(
     enabled_only: bool = Query(False, description="Only show enabled rules"),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
     """List all correlation rules."""
     from sqlalchemy import select
@@ -295,14 +301,13 @@ async def list_correlation_rules(
             }
             for rule in rules
         ],
-        "count": len(rules)
+        "count": len(rules),
     }
 
 
 @router.post("/rules")
 async def create_correlation_rule(
-    rule: CorrelationRuleCreate,
-    db: AsyncSession = Depends(get_session)
+    rule: CorrelationRuleCreate, db: AsyncSession = Depends(get_session)
 ):
     """Create a new correlation rule."""
     try:
@@ -333,19 +338,19 @@ async def create_correlation_rule(
                 "name": new_rule.name,
                 "enabled": new_rule.enabled,
                 "priority": new_rule.priority,
-            }
+            },
         }
 
     except Exception as e:
         logger.error(f"Error creating rule: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.put("/rules/{rule_id}")
 async def update_correlation_rule(
     rule_id: str,
     updates: CorrelationRuleUpdate,
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
     """Update an existing correlation rule."""
     from sqlalchemy import select
@@ -359,34 +364,30 @@ async def update_correlation_rule(
 
     # Don't allow updating builtin rules
     if rule.is_builtin:
-        raise HTTPException(
-            status_code=403,
-            detail="Cannot update built-in rules"
-        )
+        raise HTTPException(status_code=403, detail="Cannot update built-in rules")
 
     # Apply updates
     update_data = updates.dict(exclude_unset=True)
     for field, value in update_data.items():
         setattr(rule, field, value)
 
-    rule.updated_at = datetime.now(timezone.utc).isoformat()
+    rule.updated_at = datetime.now(UTC).isoformat()
 
     await db.commit()
 
     return {
         "success": True,
         "rule_id": rule_id,
-        "updated_fields": list(update_data.keys())
+        "updated_fields": list(update_data.keys()),
     }
 
 
 @router.delete("/rules/{rule_id}")
 async def delete_correlation_rule(
-    rule_id: str,
-    db: AsyncSession = Depends(get_session)
+    rule_id: str, db: AsyncSession = Depends(get_session)
 ):
     """Delete a correlation rule."""
-    from sqlalchemy import select, delete
+    from sqlalchemy import select
 
     query = select(CorrelationRule).where(CorrelationRule.id == rule_id)
     result = await db.execute(query)
@@ -397,26 +398,19 @@ async def delete_correlation_rule(
 
     # Don't allow deleting builtin rules
     if rule.is_builtin:
-        raise HTTPException(
-            status_code=403,
-            detail="Cannot delete built-in rules"
-        )
+        raise HTTPException(status_code=403, detail="Cannot delete built-in rules")
 
     await db.delete(rule)
     await db.commit()
 
     logger.info(f"Deleted correlation rule: {rule_id}")
 
-    return {
-        "success": True,
-        "message": f"Rule {rule_id} deleted"
-    }
+    return {"success": True, "message": f"Rule {rule_id} deleted"}
 
 
 @router.post("/rules/{rule_id}/toggle")
 async def toggle_correlation_rule(
-    rule_id: str,
-    db: AsyncSession = Depends(get_session)
+    rule_id: str, db: AsyncSession = Depends(get_session)
 ):
     """Enable or disable a correlation rule."""
     from sqlalchemy import select
@@ -429,57 +423,48 @@ async def toggle_correlation_rule(
         raise HTTPException(status_code=404, detail="Rule not found")
 
     rule.enabled = not rule.enabled
-    rule.updated_at = datetime.now(timezone.utc).isoformat()
+    rule.updated_at = datetime.now(UTC).isoformat()
 
     await db.commit()
 
     logger.info(f"Toggled rule {rule_id} to {rule.enabled}")
 
-    return {
-        "success": True,
-        "rule_id": rule_id,
-        "enabled": rule.enabled
-    }
+    return {"success": True, "rule_id": rule_id, "enabled": rule.enabled}
 
 
 # Statistics
 @router.get("/stats")
-async def get_correlation_stats(
-    db: AsyncSession = Depends(get_session)
-):
+async def get_correlation_stats(db: AsyncSession = Depends(get_session)):
     """Get correlation statistics."""
-    from sqlalchemy import select, func, text
+    from sqlalchemy import func, select
 
     # Total incidents
-    total_incidents = await db.execute(
-        select(func.count(CorrelatedEvent.id))
-    )
+    total_incidents = await db.execute(select(func.count(CorrelatedEvent.id)))
     total_count = total_incidents.scalar() or 0
 
     # Incidents by status
     status_counts = await db.execute(
-        select(CorrelatedEvent.status, func.count(CorrelatedEvent.id))
-        .group_by(CorrelatedEvent.status)
+        select(CorrelatedEvent.status, func.count(CorrelatedEvent.id)).group_by(
+            CorrelatedEvent.status
+        )
     )
     by_status = {status: count for status, count in status_counts.all()}
 
     # Incidents by severity
     severity_counts = await db.execute(
-        select(CorrelatedEvent.severity, func.count(CorrelatedEvent.id))
-        .group_by(CorrelatedEvent.severity)
+        select(CorrelatedEvent.severity, func.count(CorrelatedEvent.id)).group_by(
+            CorrelatedEvent.severity
+        )
     )
     by_severity = {severity: count for severity, count in severity_counts.all()}
 
     # Total rules
-    total_rules = await db.execute(
-        select(func.count(CorrelationRule.id))
-    )
+    total_rules = await db.execute(select(func.count(CorrelationRule.id)))
     rules_count = total_rules.scalar() or 0
 
     # Active rules
     active_rules = await db.execute(
-        select(func.count(CorrelationRule.id))
-        .where(CorrelationRule.enabled == True)
+        select(func.count(CorrelationRule.id)).where(CorrelationRule.enabled == True)
     )
     active_count = active_rules.scalar() or 0
 
@@ -500,15 +485,13 @@ async def get_correlation_stats(
             "active": active_count,
             "total_correlations_performed": correlations_count,
         },
-        "generated_at": datetime.now(timezone.utc).isoformat()
+        "generated_at": datetime.now(UTC).isoformat(),
     }
 
 
 @router.post("/test")
 async def test_correlation_rule(
-    rule_id: str,
-    test_events: List[dict],
-    db: AsyncSession = Depends(get_session)
+    rule_id: str, test_events: list[dict], db: AsyncSession = Depends(get_session)
 ):
     """
     Test a correlation rule against sample events.
@@ -527,8 +510,7 @@ async def test_correlation_rule(
     try:
         service = EventCorrelationService(db)
         correlated_events = await service.correlate_events(
-            events=test_events,
-            rule_ids=[rule_id]
+            events=test_events, rule_ids=[rule_id]
         )
 
         return {
@@ -545,9 +527,9 @@ async def test_correlation_rule(
                     "common_entities": inc.common_entities,
                 }
                 for inc in correlated_events
-            ]
+            ],
         }
 
     except Exception as e:
         logger.error(f"Error testing rule: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

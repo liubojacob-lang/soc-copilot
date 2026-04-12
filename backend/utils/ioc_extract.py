@@ -1,7 +1,5 @@
 import re
-from dataclasses import dataclass, asdict
-from typing import List, Dict
-
+from dataclasses import asdict, dataclass
 
 _IPV4_RE = re.compile(
     r"""
@@ -61,18 +59,18 @@ def _normalize_obfuscation(text: str) -> str:
     return t
 
 
-def _unique_sorted(items: List[str]) -> List[str]:
+def _unique_sorted(items: list[str]) -> list[str]:
     return sorted(list(dict.fromkeys(items)))
 
 
 @dataclass
 class IOCs:
-    ips: List[str]
-    domains: List[str]
-    urls: List[str]
-    hashes: List[str]
+    ips: list[str]
+    domains: list[str]
+    urls: list[str]
+    hashes: list[str]
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return asdict(self)
 
 
@@ -108,7 +106,7 @@ def extract_iocs(text: str) -> IOCs:
     )
 
 
-def get_ioc_count(iocs: IOCs) -> Dict[str, int]:
+def get_ioc_count(iocs: IOCs) -> dict[str, int]:
     """Get count of each IOC type."""
     return {
         "ips": len(iocs.ips),

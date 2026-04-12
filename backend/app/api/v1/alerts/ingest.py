@@ -19,11 +19,14 @@ router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 
 class AlertIngest(BaseModel):
     """告警接收模型"""
+
     source: str = Field(..., description="告警来源 (wazuh, snort, osquery, etc)")
     event_id: str = Field(..., description="事件ID")
     timestamp: str = Field(..., description="时间戳 (ISO 8601)")
     event_type: str = Field(..., description="事件类型")
-    severity: str = Field(..., description="严重级别 (critical, high, medium, low, info)")
+    severity: str = Field(
+        ..., description="严重级别 (critical, high, medium, low, info)"
+    )
     title: str = Field(..., description="告警标题")
     description: Optional[str] = Field(None, description="告警描述")
     source_ip: Optional[str] = Field(None, description="源IP")
@@ -44,6 +47,7 @@ class AlertIngest(BaseModel):
 
 class AlertResponse(BaseModel):
     """告警响应模型"""
+
     id: int
     source: str
     external_event_id: str
@@ -58,10 +62,7 @@ class AlertResponse(BaseModel):
 
 
 @router.post("/ingest", response_model=Dict[str, Any])
-async def ingest_alert(
-    alert: AlertIngest,
-    db: AsyncSession = Depends(get_db)
-):
+async def ingest_alert(alert: AlertIngest, db: AsyncSession = Depends(get_db)):
     """
     接收外部告警
     从 Wazuh、Snort 等安全工具接收告警
@@ -72,8 +73,7 @@ async def ingest_alert(
 
         # 检查是否已存在（基于 source + event_id 去重）
         existing_stmt = select(Alert).where(
-            Alert.source == alert.source,
-            Alert.external_event_id == alert.event_id
+            Alert.source == alert.source, Alert.external_event_id == alert.event_id
         )
 
         existing_alert = await db.execute(existing_stmt.scalar())
@@ -82,7 +82,7 @@ async def ingest_alert(
             return {
                 "status": "duplicate",
                 "message": "Alert already exists",
-                "alert_id": existing_alert
+                "alert_id": existing_alert,
             }
 
         # 创建新告警
@@ -101,14 +101,14 @@ async def ingest_alert(
             agent_ip=alert.agent_ip,
             rule_id=alert.rule_id,
             rule_level=alert.rule_level,
-            rule_groups=','.join(alert.rule_groups) if alert.rule_groups else None,
-            rule_mitre=','.join(alert.rule_mitre) if alert.rule_mitre else None,
+            rule_groups=",".join(alert.rule_groups) if alert.rule_groups else None,
+            rule_mitre=",".join(alert.rule_mitre) if alert.rule_mitre else None,
             full_log=alert.full_log,
             location=alert.location,
             geoip=alert.geoip,
             raw_data=alert.raw_data,
-            status='open',
-            created_at=datetime.now()
+            status="open",
+            created_at=datetime.now(),
         )
 
         db.add(new_alert)
@@ -123,7 +123,7 @@ async def ingest_alert(
         return {
             "status": "success",
             "message": "Alert ingested successfully",
-            "alert_id": new_alert.id
+            "alert_id": new_alert.id,
         }
 
     except Exception as e:
@@ -137,7 +137,7 @@ async def list_alerts(
     status: Optional[str] = None,
     limit: int = 100,
     offset: int = 0,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """查询告警列表"""
     try:
@@ -168,10 +168,7 @@ async def list_alerts(
 
 
 @router.get("/{alert_id}", response_model=AlertResponse)
-async def get_alert(
-    alert_id: int,
-    db: AsyncSession = Depends(get_db)
-):
+async def get_alert(alert_id: int, db: AsyncSession = Depends(get_db)):
     """获取告警详情"""
     try:
         from sqlalchemy import select
@@ -191,9 +188,7 @@ async def get_alert(
 
 
 @router.get("/stats/summary")
-async def get_alerts_summary(
-    db: AsyncSession = Depends(get_db)
-):
+async def get_alerts_summary(db: AsyncSession = Depends(get_db)):
     """获取告警统计摘要"""
     try:
         from sqlalchemy import func, select
@@ -204,30 +199,26 @@ async def get_alerts_summary(
 
         # 按严重级别统计
         severity_stats = await db.execute(
-            select(Alert.severity, func.count(Alert.id))
-            .group_by(Alert.severity)
+            select(Alert.severity, func.count(Alert.id)).group_by(Alert.severity)
         )
 
         # 按状态统计
         status_stats = await db.execute(
-            select(Alert.status, func.count(Alert.id))
-            .group_by(Alert.status)
+            select(Alert.status, func.count(Alert.id)).group_by(Alert.status)
         )
 
         # 按来源统计
         source_stats = await db.execute(
-            select(Alert.source, func.count(Alert.id))
-            .group_by(Alert.source)
+            select(Alert.source, func.count(Alert.id)).group_by(Alert.source)
         )
 
         # 最近24小时趋势
         from datetime import timedelta
+
         last_24h = datetime.now() - timedelta(days=1)
 
         recent = await db.execute(
-            select(func.count()).select_from(Alert).where(
-                Alert.created_at >= last_24h
-            )
+            select(func.count()).select_from(Alert).where(Alert.created_at >= last_24h)
         )
 
         return {
@@ -235,7 +226,7 @@ async def get_alerts_summary(
             "by_severity": {row[0]: row[1] for row in severity_stats.all()},
             "by_status": {row[0]: row[1] for row in status_stats.all()},
             "by_source": {row[0]: row[1] for row in source_stats.all()},
-            "last_24h": recent.scalar()
+            "last_24h": recent.scalar(),
         }
 
     except Exception as e:

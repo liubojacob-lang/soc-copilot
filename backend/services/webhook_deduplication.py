@@ -10,13 +10,13 @@ Provides:
 import hashlib
 import json
 import time
-from datetime import datetime, timezone, timedelta
-from typing import Optional, Dict, Any, Tuple
-from sqlalchemy import select, and_
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
-from core.config import settings
 
 logger = get_logger(__name__)
 
@@ -36,12 +36,12 @@ class WebhookDeduplicationService:
         """
         self.session = session
         self.redis = redis_client
-        self._memory_cache: Dict[str, Tuple[Any, float]] = {}
+        self._memory_cache: dict[str, tuple[Any, float]] = {}
 
     def _generate_fingerprint(
         self,
         payload: bytes,
-        headers: Dict[str, str],
+        headers: dict[str, str],
         trigger_id: str,
     ) -> str:
         """Generate a unique fingerprint for the webhook request.
@@ -56,20 +56,22 @@ class WebhookDeduplicationService:
         """
         # Include relevant headers in fingerprint
         relevant_headers = {
-            k: v for k, v in headers.items()
-            if k.lower() in [
-                'content-type',
-                'x-signature',
-                'x-event-type',
-                'x-timestamp',
+            k: v
+            for k, v in headers.items()
+            if k.lower()
+            in [
+                "content-type",
+                "x-signature",
+                "x-event-type",
+                "x-timestamp",
             ]
         }
 
         # Create fingerprint data
         fingerprint_data = {
-            'trigger_id': trigger_id,
-            'payload_hash': hashlib.sha256(payload).hexdigest(),
-            'headers': relevant_headers,
+            "trigger_id": trigger_id,
+            "payload_hash": hashlib.sha256(payload).hexdigest(),
+            "headers": relevant_headers,
         }
 
         # Generate fingerprint
@@ -79,7 +81,7 @@ class WebhookDeduplicationService:
     def _generate_idempotency_key(
         self,
         fingerprint: str,
-        idempotency_header: Optional[str] = None,
+        idempotency_header: str | None = None,
     ) -> str:
         """Generate idempotency key.
 
@@ -97,10 +99,10 @@ class WebhookDeduplicationService:
     async def check_duplicate(
         self,
         payload: bytes,
-        headers: Dict[str, str],
+        headers: dict[str, str],
         trigger_id: str,
-        idempotency_key: Optional[str] = None,
-    ) -> Tuple[bool, Optional[Dict[str, Any]]]:
+        idempotency_key: str | None = None,
+    ) -> tuple[bool, dict[str, Any] | None]:
         """Check if this webhook request is a duplicate.
 
         Args:
@@ -114,7 +116,7 @@ class WebhookDeduplicationService:
         """
         # Generate fingerprint
         fingerprint = self._generate_fingerprint(payload, headers, trigger_id)
-        
+
         # Generate idempotency key
         idem_key = self._generate_idempotency_key(fingerprint, idempotency_key)
 
@@ -142,10 +144,10 @@ class WebhookDeduplicationService:
     async def record_request(
         self,
         payload: bytes,
-        headers: Dict[str, str],
+        headers: dict[str, str],
         trigger_id: str,
-        response: Dict[str, Any],
-        idempotency_key: Optional[str] = None,
+        response: dict[str, Any],
+        idempotency_key: str | None = None,
         ttl_seconds: int = DEDUPLICATION_TTL_SECONDS,
     ) -> str:
         """Record a webhook request for deduplication.
@@ -163,7 +165,7 @@ class WebhookDeduplicationService:
         """
         # Generate fingerprint
         fingerprint = self._generate_fingerprint(payload, headers, trigger_id)
-        
+
         # Generate idempotency key
         idem_key = self._generate_idempotency_key(fingerprint, idempotency_key)
 
@@ -180,7 +182,7 @@ class WebhookDeduplicationService:
         logger.info(f"Recorded webhook request: {idem_key}")
         return idem_key
 
-    async def _check_redis(self, key: str) -> Optional[Dict[str, Any]]:
+    async def _check_redis(self, key: str) -> dict[str, Any] | None:
         """Check Redis for cached response."""
         if not self.redis:
             return None
@@ -195,7 +197,7 @@ class WebhookDeduplicationService:
     async def _store_redis(
         self,
         key: str,
-        response: Dict[str, Any],
+        response: dict[str, Any],
         ttl_seconds: int,
     ) -> None:
         """Store response in Redis."""
@@ -210,7 +212,7 @@ class WebhookDeduplicationService:
         except Exception as e:
             logger.warning(f"Redis store failed: {e}")
 
-    def _check_memory(self, key: str) -> Optional[Dict[str, Any]]:
+    def _check_memory(self, key: str) -> dict[str, Any] | None:
         """Check memory cache for cached response."""
         if key in self._memory_cache:
             response, expires_at = self._memory_cache[key]
@@ -224,7 +226,7 @@ class WebhookDeduplicationService:
     def _store_memory(
         self,
         key: str,
-        response: Dict[str, Any],
+        response: dict[str, Any],
         ttl_seconds: int,
     ) -> None:
         """Store response in memory cache."""
@@ -238,13 +240,14 @@ class WebhookDeduplicationService:
         """Remove expired entries from memory cache."""
         current_time = time.time()
         expired_keys = [
-            k for k, (_, expires_at) in self._memory_cache.items()
+            k
+            for k, (_, expires_at) in self._memory_cache.items()
             if current_time >= expires_at
         ]
         for key in expired_keys:
             del self._memory_cache[key]
 
-    async def _check_database(self, key: str) -> Optional[Dict[str, Any]]:
+    async def _check_database(self, key: str) -> dict[str, Any] | None:
         """Check database for cached response."""
         from models.trigger import TriggerInvocationModel
 
@@ -252,7 +255,8 @@ class WebhookDeduplicationService:
             stmt = select(TriggerInvocationModel).where(
                 and_(
                     TriggerInvocationModel.idempotency_key == key,
-                    TriggerInvocationModel.created_at > datetime.now(timezone.utc) - timedelta(hours=24),
+                    TriggerInvocationModel.created_at
+                    > datetime.now(UTC) - timedelta(hours=24),
                 )
             )
             result = await self.session.execute(stmt)
@@ -268,7 +272,7 @@ class WebhookDeduplicationService:
         self,
         key: str,
         trigger_id: str,
-        response: Dict[str, Any],
+        response: dict[str, Any],
         ttl_seconds: int,
     ) -> None:
         """Store response in database."""
@@ -305,9 +309,9 @@ class WebhookIdempotencyMiddleware:
         self,
         trigger_id: str,
         payload: bytes,
-        headers: Dict[str, str],
+        headers: dict[str, str],
         handler_func,
-    ) -> Tuple[bool, Dict[str, Any]]:
+    ) -> tuple[bool, dict[str, Any]]:
         """Process a webhook request with idempotency check.
 
         Args:
@@ -320,7 +324,7 @@ class WebhookIdempotencyMiddleware:
             Tuple of (was_duplicate, response)
         """
         # Get idempotency key from header
-        idempotency_key = headers.get('X-Idempotency-Key')
+        idempotency_key = headers.get("X-Idempotency-Key")
 
         async with self.session_factory() as session:
             service = WebhookDeduplicationService(session, self.redis)
@@ -366,17 +370,15 @@ def generate_webhook_signature(payload: bytes, secret: str) -> str:
     """
     import base64
 
-    signature = hashlib.sha256(
-        secret.encode('utf-8') + payload
-    ).digest()
-    return base64.b64encode(signature).decode('utf-8')
+    signature = hashlib.sha256(secret.encode("utf-8") + payload).digest()
+    return base64.b64encode(signature).decode("utf-8")
 
 
 def verify_webhook_signature(
     payload: bytes,
     signature: str,
     secret: str,
-    timestamp: Optional[str] = None,
+    timestamp: str | None = None,
     tolerance_seconds: int = 300,
 ) -> bool:
     """Verify webhook signature with optional timestamp validation.
@@ -391,8 +393,8 @@ def verify_webhook_signature(
     Returns:
         True if signature is valid
     """
-    import hmac
     import base64
+    import hmac
 
     # Check timestamp if provided
     if timestamp:
@@ -410,11 +412,7 @@ def verify_webhook_signature(
 
     # Verify signature
     try:
-        expected = hmac.new(
-            secret.encode('utf-8'),
-            payload,
-            hashlib.sha256
-        ).digest()
+        expected = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).digest()
 
         provided = base64.b64decode(signature)
         return hmac.compare_digest(expected, provided)

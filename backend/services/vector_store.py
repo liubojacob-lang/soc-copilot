@@ -3,16 +3,13 @@ Vector Store Module - For RAG (Retrieval Augmented Generation)
 Supports multiple backends: ChromaDB (local), Pinecone (cloud), or PostgreSQL with pgvector
 """
 
-import json
-import logging
-import hashlib
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
 from datetime import datetime
-from dataclasses import dataclass, asdict
+from typing import Any
 
 import numpy as np
+
 from core.logger import get_logger
-from core.config import settings
 
 logger = get_logger(__name__)
 
@@ -23,9 +20,9 @@ class Document:
 
     id: str
     content: str
-    metadata: Dict[str, Any]
-    embedding: Optional[List[float]] = None
-    created_at: Optional[datetime] = None
+    metadata: dict[str, Any]
+    embedding: list[float] | None = None
+    created_at: datetime | None = None
 
     def __post_init__(self):
         if self.created_at is None:
@@ -44,20 +41,20 @@ class SearchResult:
 class BaseVectorStore:
     """Base class for vector stores."""
 
-    async def add_documents(self, documents: List[Document]) -> bool:
+    async def add_documents(self, documents: list[Document]) -> bool:
         """Add documents to vector store."""
         raise NotImplementedError
 
     async def search(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[SearchResult]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[SearchResult]:
         """Search for similar documents."""
         raise NotImplementedError
 
-    async def delete(self, document_ids: List[str]) -> bool:
+    async def delete(self, document_ids: list[str]) -> bool:
         """Delete documents by ID."""
         raise NotImplementedError
 
@@ -102,7 +99,7 @@ class ChromaDBStore(BaseVectorStore):
                 raise
         return self._collection
 
-    async def add_documents(self, documents: List[Document]) -> bool:
+    async def add_documents(self, documents: list[Document]) -> bool:
         """Add documents to ChromaDB."""
         try:
             collection = await self._get_collection()
@@ -130,10 +127,10 @@ class ChromaDBStore(BaseVectorStore):
 
     async def search(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[SearchResult]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[SearchResult]:
         """Search ChromaDB for similar documents."""
         try:
             collection = await self._get_collection()
@@ -162,7 +159,7 @@ class ChromaDBStore(BaseVectorStore):
             logger.error(f"Error searching ChromaDB: {e}")
             return []
 
-    async def delete(self, document_ids: List[str]) -> bool:
+    async def delete(self, document_ids: list[str]) -> bool:
         """Delete documents from ChromaDB."""
         try:
             collection = await self._get_collection()
@@ -192,15 +189,15 @@ class MemoryVectorStore(BaseVectorStore):
     """In-memory vector store (for testing/development)."""
 
     def __init__(self):
-        self.documents: Dict[str, Document] = {}
+        self.documents: dict[str, Document] = {}
 
-    def _cosine_similarity(self, a: List[float], b: List[float]) -> float:
+    def _cosine_similarity(self, a: list[float], b: list[float]) -> float:
         """Calculate cosine similarity between two vectors."""
         a = np.array(a)
         b = np.array(b)
         return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-    async def add_documents(self, documents: List[Document]) -> bool:
+    async def add_documents(self, documents: list[Document]) -> bool:
         """Add documents to memory store."""
         for doc in documents:
             self.documents[doc.id] = doc
@@ -209,10 +206,10 @@ class MemoryVectorStore(BaseVectorStore):
 
     async def search(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[SearchResult]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[SearchResult]:
         """Search memory store for similar documents."""
         results = []
 
@@ -239,7 +236,7 @@ class MemoryVectorStore(BaseVectorStore):
         results.sort(key=lambda x: x.score, reverse=True)
         return results[:top_k]
 
-    async def delete(self, document_ids: List[str]) -> bool:
+    async def delete(self, document_ids: list[str]) -> bool:
         """Delete documents from memory store."""
         for doc_id in document_ids:
             if doc_id in self.documents:
@@ -277,7 +274,7 @@ class VectorStoreFactory:
 
 
 # Global vector store instance
-_vector_store: Optional[BaseVectorStore] = None
+_vector_store: BaseVectorStore | None = None
 
 
 async def get_vector_store() -> BaseVectorStore:

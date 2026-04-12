@@ -1,6 +1,6 @@
 """IOC Hits router for IOC hit management API."""
 
-from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,8 +8,8 @@ from core.logger import get_logger
 from db.session import get_session
 from schemas.ioc_hit import (
     IOCHitCreate,
-    IOCHitResponse,
     IOCHitListResponse,
+    IOCHitResponse,
 )
 from services.ioc_hits_service import IOCHitsService
 
@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 
 @router.get("", response_model=IOCHitListResponse)
 async def list_ioc_hits(
-    ioc: Optional[str] = Query(None, description="Filter by IOC value"),
+    ioc: str | None = Query(None, description="Filter by IOC value"),
     limit: int = Query(100, ge=1, le=500, description="Maximum results"),
     session: AsyncSession = Depends(get_session),
 ) -> IOCHitListResponse:
@@ -68,5 +68,5 @@ async def create_manual_ioc_hit(
         service = IOCHitsService(session)
         return await service.create(data)
     except Exception as e:
-        logger.error(f"Failed to create IOC hit: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Failed to create IOC hit: {e!s}")
+        raise HTTPException(status_code=400, detail="Bad request")

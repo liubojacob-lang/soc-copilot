@@ -1,6 +1,7 @@
 """Decision node executor."""
 
 from typing import Any
+
 from .executor_base import BaseExecutor, ExecutorContext
 
 
@@ -30,12 +31,14 @@ class DecisionExecutor(BaseExecutor):
             "branches": branches,
         }
 
-    async def _evaluate_condition(self, condition: str, context: ExecutorContext) -> bool:
+    async def _evaluate_condition(
+        self, condition: str, context: ExecutorContext
+    ) -> bool:
         """Evaluate a condition string."""
         # Parse simple comparisons: field == value, field > value
         import re
 
-        match = re.match(r'(\w+)\s*([><=!]+)\s*(.+)', condition)
+        match = re.match(r"(\w+)\s*([><=!]+)\s*(.+)", condition)
         if match:
             field, op, value = match.groups()
 
@@ -46,7 +49,7 @@ class DecisionExecutor(BaseExecutor):
             try:
                 if isinstance(field_value, str):
                     field_val = field_value
-                    val = value.strip('"\'')
+                    val = value.strip("\"'")
                 else:
                     field_val = float(field_value)
                     val = float(value)

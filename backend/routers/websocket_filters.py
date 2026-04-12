@@ -10,8 +10,8 @@ Endpoints:
 - GET /api/v1/websocket/filters/stats - Get filter statistics
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from core.logger import get_logger, set_request_context
@@ -20,13 +20,12 @@ from models.message_filters import (
     FilterRule,
     FilterSet,
     FilterStats,
-    StringFilter,
-    FilterOperator,
+    FilterValidationResult,
     SeverityLevel,
-    FilterValidationResult
+    StringFilter,
 )
-from services.message_filter import get_filter_service
 from schemas.user import UserResponse
+from services.message_filter import get_filter_service
 
 logger = get_logger(__name__)
 
@@ -36,38 +35,40 @@ router = APIRouter(prefix="/api/v1/websocket/filters", tags=["WebSocket Filters"
 # Pydantic schemas for API
 class FilterRuleCreate(BaseModel):
     """Schema for creating a filter rule"""
+
     name: str
     description: str = ""
     priority: int = 0
     enabled: bool = True
-    min_severity: Optional[SeverityLevel] = None
-    max_severity: Optional[SeverityLevel] = None
-    event_types: Optional[StringFilter] = None
-    agent_ids: Optional[StringFilter] = None
-    source_ips: Optional[StringFilter] = None
-    content_search: Optional[StringFilter] = None
+    min_severity: SeverityLevel | None = None
+    max_severity: SeverityLevel | None = None
+    event_types: StringFilter | None = None
+    agent_ids: StringFilter | None = None
+    source_ips: StringFilter | None = None
+    content_search: StringFilter | None = None
     enable_aggregation: bool = True
-    max_messages_per_minute: Optional[int] = None
+    max_messages_per_minute: int | None = None
 
 
 class FilterRuleResponse(BaseModel):
     """Schema for filter rule response"""
-    id: Optional[str]
+
+    id: str | None
     name: str
     description: str
     enabled: bool
     priority: int
-    min_severity: Optional[SeverityLevel] = None
-    max_severity: Optional[SeverityLevel] = None
-    event_types: Optional[StringFilter] = None
-    agent_ids: Optional[StringFilter] = None
-    source_ips: Optional[StringFilter] = None
-    content_search: Optional[StringFilter] = None
+    min_severity: SeverityLevel | None = None
+    max_severity: SeverityLevel | None = None
+    event_types: StringFilter | None = None
+    agent_ids: StringFilter | None = None
+    source_ips: StringFilter | None = None
+    content_search: StringFilter | None = None
     enable_aggregation: bool
-    max_messages_per_minute: Optional[int]
+    max_messages_per_minute: int | None
     created_at: str
     updated_at: str
-    last_triggered_at: Optional[str]
+    last_triggered_at: str | None
 
     class Config:
         from_attributes = True
@@ -75,15 +76,17 @@ class FilterRuleResponse(BaseModel):
 
 class FilterSetCreate(BaseModel):
     """Schema for creating a filter set"""
+
     default_action: str = "allow"
-    rules: List[FilterRuleCreate] = []
+    rules: list[FilterRuleCreate] = []
 
 
 class FilterSetResponse(BaseModel):
     """Schema for filter set response"""
+
     user_id: str
     default_action: str
-    rules: List[FilterRuleResponse]
+    rules: list[FilterRuleResponse]
     updated_at: str
 
     class Config:
@@ -99,7 +102,7 @@ async def get_filter_service_dep():
 @router.get("/", response_model=FilterSetResponse)
 async def get_filters(
     current_user: UserResponse = Depends(get_current_user),
-    filter_service = Depends(get_filter_service_dep)
+    filter_service=Depends(get_filter_service_dep),
 ):
     """
     Get current user's WebSocket message filters.
@@ -117,21 +120,21 @@ async def get_filters(
                 user_id=str(current_user.id),
                 default_action="allow",
                 rules=[],
-                updated_at=""
+                updated_at="",
             )
 
         return FilterSetResponse.model_validate(filter_set)
 
     except Exception as e:
         logger.error(f"Error getting filters: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get filters: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get filters: {e!s}")
 
 
 @router.put("/", response_model=FilterSetResponse)
 async def set_filters(
     filters_data: FilterSetCreate,
     current_user: UserResponse = Depends(get_current_user),
-    filter_service = Depends(get_filter_service_dep)
+    filter_service=Depends(get_filter_service_dep),
 ):
     """
     Set or replace user's WebSocket message filters.
@@ -158,14 +161,14 @@ async def set_filters(
                 source_ips=rule_data.source_ips,
                 content_search=rule_data.content_search,
                 enable_aggregation=rule_data.enable_aggregation,
-                max_messages_per_minute=rule_data.max_messages_per_minute
+                max_messages_per_minute=rule_data.max_messages_per_minute,
             )
             rules.append(rule)
 
         filter_set = FilterSet(
             user_id=str(current_user.id),
             default_action=filters_data.default_action,
-            rules=rules
+            rules=rules,
         )
 
         await filter_service.set_user_filters(str(current_user.id), filter_set)
@@ -176,13 +179,13 @@ async def set_filters(
 
     except Exception as e:
         logger.error(f"Error setting filters: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to set filters: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to set filters: {e!s}")
 
 
 @router.delete("/")
 async def delete_filters(
     current_user: UserResponse = Depends(get_current_user),
-    filter_service = Depends(get_filter_service_dep)
+    filter_service=Depends(get_filter_service_dep),
 ):
     """
     Delete all filters for the current user.
@@ -205,13 +208,15 @@ async def delete_filters(
         raise
     except Exception as e:
         logger.error(f"Error deleting filters: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete filters: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete filters: {e!s}"
+        )
 
 
 @router.get("/stats", response_model=FilterStats)
 async def get_filter_stats(
     current_user: UserResponse = Depends(get_current_user),
-    filter_service = Depends(get_filter_service_dep)
+    filter_service=Depends(get_filter_service_dep),
 ):
     """
     Get filter statistics for the current user.
@@ -231,13 +236,13 @@ async def get_filter_stats(
 
     except Exception as e:
         logger.error(f"Error getting filter stats: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get stats: {e!s}")
 
 
 @router.post("/stats/reset")
 async def reset_filter_stats(
     current_user: UserResponse = Depends(get_current_user),
-    filter_service = Depends(get_filter_service_dep)
+    filter_service=Depends(get_filter_service_dep),
 ):
     """
     Reset filter statistics for the current user.
@@ -260,14 +265,14 @@ async def reset_filter_stats(
         raise
     except Exception as e:
         logger.error(f"Error resetting stats: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to reset stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to reset stats: {e!s}")
 
 
 @router.post("/test", response_model=FilterValidationResult)
 async def test_filter(
     message_data: dict,
     current_user: UserResponse = Depends(get_current_user),
-    filter_service = Depends(get_filter_service_dep)
+    filter_service=Depends(get_filter_service_dep),
 ):
     """
     Test a message against user's filters without sending it.
@@ -278,12 +283,11 @@ async def test_filter(
 
     try:
         result = await filter_service.should_send_message(
-            user_id=str(current_user.id),
-            message_data=message_data
+            user_id=str(current_user.id), message_data=message_data
         )
 
         return result
 
     except Exception as e:
         logger.error(f"Error testing filter: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to test filter: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to test filter: {e!s}")

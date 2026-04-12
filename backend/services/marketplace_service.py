@@ -3,15 +3,12 @@ Playbook Marketplace Service
 Community-driven playbook sharing platform
 """
 
-import json
-import logging
-from typing import Any, Dict, List, Optional
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from core.logger import get_logger
-from core.config import settings
 
 logger = get_logger(__name__)
 
@@ -62,7 +59,7 @@ class MarketplacePlaybook:
     difficulty: PlaybookDifficulty
     author: str
     author_id: str
-    tags: List[str]
+    tags: list[str]
 
     # Stats
     download_count: int
@@ -71,7 +68,7 @@ class MarketplacePlaybook:
     review_count: int
 
     # Content
-    dag_json: Dict[str, Any]
+    dag_json: dict[str, Any]
     documentation: str
 
     # Metadata
@@ -81,16 +78,16 @@ class MarketplacePlaybook:
     featured: bool
 
     # Requirements
-    required_plugins: List[str]
-    compatible_versions: List[str]
+    required_plugins: list[str]
+    compatible_versions: list[str]
 
 
 class PlaybookMarketplace:
     """Playbook marketplace engine."""
 
     def __init__(self):
-        self.playbooks: Dict[str, MarketplacePlaybook] = {}
-        self.reviews: Dict[str, List[PlaybookReview]] = {}
+        self.playbooks: dict[str, MarketplacePlaybook] = {}
+        self.reviews: dict[str, list[PlaybookReview]] = {}
         self._initialize_sample_playbooks()
 
     def _initialize_sample_playbooks(self):
@@ -404,16 +401,16 @@ Emergency response playbook for active ransomware incidents.
 
     async def search_playbooks(
         self,
-        query: Optional[str] = None,
-        category: Optional[PlaybookCategory] = None,
-        difficulty: Optional[PlaybookDifficulty] = None,
-        tags: Optional[List[str]] = None,
-        min_rating: Optional[float] = None,
+        query: str | None = None,
+        category: PlaybookCategory | None = None,
+        difficulty: PlaybookDifficulty | None = None,
+        tags: list[str] | None = None,
+        min_rating: float | None = None,
         verified_only: bool = False,
         sort_by: str = "rating",  # rating, downloads, newest
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[List[MarketplacePlaybook], int]:
+    ) -> tuple[list[MarketplacePlaybook], int]:
         """
         Search playbooks in marketplace.
 
@@ -476,13 +473,13 @@ Emergency response playbook for active ransomware incidents.
 
         return results[start:end], total
 
-    async def get_playbook(self, playbook_id: str) -> Optional[MarketplacePlaybook]:
+    async def get_playbook(self, playbook_id: str) -> MarketplacePlaybook | None:
         """Get playbook by ID."""
         return self.playbooks.get(playbook_id)
 
     async def download_playbook(
         self, playbook_id: str, user_id: str
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Download playbook for local use.
 
@@ -563,14 +560,14 @@ Emergency response playbook for active ransomware incidents.
 
     async def get_playbook_reviews(
         self, playbook_id: str, page: int = 1, page_size: int = 10
-    ) -> List[PlaybookReview]:
+    ) -> list[PlaybookReview]:
         """Get reviews for a playbook."""
         reviews = self.reviews.get(playbook_id, [])
         start = (page - 1) * page_size
         end = start + page_size
         return reviews[start:end]
 
-    async def get_categories(self) -> List[Dict[str, Any]]:
+    async def get_categories(self) -> list[dict[str, Any]]:
         """Get playbook categories with counts."""
         categories = {}
         for playbook in self.playbooks.values():
@@ -584,13 +581,13 @@ Emergency response playbook for active ransomware incidents.
             for k, v in sorted(categories.items())
         ]
 
-    async def get_featured_playbooks(self, limit: int = 5) -> List[MarketplacePlaybook]:
+    async def get_featured_playbooks(self, limit: int = 5) -> list[MarketplacePlaybook]:
         """Get featured playbooks."""
         featured = [p for p in self.playbooks.values() if p.featured]
         featured.sort(key=lambda p: p.rating_average, reverse=True)
         return featured[:limit]
 
-    async def get_trending_playbooks(self, limit: int = 5) -> List[MarketplacePlaybook]:
+    async def get_trending_playbooks(self, limit: int = 5) -> list[MarketplacePlaybook]:
         """Get trending playbooks (most downloads in last 30 days)."""
         # In production, calculate based on recent downloads
         # For now, sort by total downloads
@@ -601,7 +598,7 @@ Emergency response playbook for active ransomware incidents.
 
 
 # Global marketplace instance
-_marketplace: Optional[PlaybookMarketplace] = None
+_marketplace: PlaybookMarketplace | None = None
 
 
 def get_marketplace() -> PlaybookMarketplace:

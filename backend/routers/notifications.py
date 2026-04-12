@@ -8,14 +8,14 @@ Notifications Router
 - 查看队列统计
 """
 
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict, List
-from pydantic import BaseModel
 from datetime import datetime
 
-from services.notification_service import get_notification_service
-from services.message_queue_manager import get_message_queue_manager
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
 from core.logger import get_logger
+from services.message_queue_manager import get_message_queue_manager
+from services.notification_service import get_notification_service
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1/notifications", tags=["notifications"])
@@ -23,21 +23,23 @@ router = APIRouter(prefix="/api/v1/notifications", tags=["notifications"])
 
 class TestNotificationRequest(BaseModel):
     """测试通知请求"""
-    channels: List[str] = []  # 指定测试渠道 (空表示所有)
+
+    channels: list[str] = []  # 指定测试渠道 (空表示所有)
 
 
 class QueueStatsResponse(BaseModel):
     """队列统计响应"""
+
     critical: int
     high: int
     medium: int
     low: int
 
 
-@router.post("/test", response_model=Dict[str, bool])
+@router.post("/test", response_model=dict[str, bool])
 async def send_test_notification(
-    request: TestNotificationRequest | None = None
-) -> Dict[str, bool]:
+    request: TestNotificationRequest | None = None,
+) -> dict[str, bool]:
     """
     发送测试通知
 
@@ -60,13 +62,13 @@ async def send_test_notification(
 
         # 构建测试告警
         test_alert = {
-            'id': 'TEST-001',
-            'title': 'SOC Copilot Test Notification',
-            'source': 'test',
-            'event_type': 'test',
-            'severity': 'info',
-            'description': 'This is a test notification to verify channel configuration.',
-            'created_at': datetime.now().isoformat()
+            "id": "TEST-001",
+            "title": "SOC Copilot Test Notification",
+            "source": "test",
+            "event_type": "test",
+            "severity": "info",
+            "description": "This is a test notification to verify channel configuration.",
+            "created_at": datetime.now().isoformat(),
         }
 
         # 发送测试通知
@@ -75,12 +77,14 @@ async def send_test_notification(
         return results
 
     except Exception as e:
-        logger.error(f"Error sending test notification: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to send test notification: {str(e)}")
+        logger.error(f"Error sending test notification: {e!s}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to send test notification: {e!s}"
+        )
 
 
-@router.get("/channels", response_model=Dict[str, bool])
-async def get_notification_channels() -> Dict[str, bool]:
+@router.get("/channels", response_model=dict[str, bool])
+async def get_notification_channels() -> dict[str, bool]:
     """
     获取通知渠道状态
 
@@ -95,16 +99,16 @@ async def get_notification_channels() -> Dict[str, bool]:
         return {
             "feishu": bool(notification_service.feishu_webhook),
             "slack": bool(notification_service.slack_webhook),
-            "email": bool(notification_service.email_config['to'])
+            "email": bool(notification_service.email_config["to"]),
         }
 
     except Exception as e:
-        logger.error(f"Error getting notification channels: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to get channels: {str(e)}")
+        logger.error(f"Error getting notification channels: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get channels: {e!s}")
 
 
-@router.get("/queue/stats", response_model=Dict[str, Dict[str, int | str]])
-async def get_queue_stats() -> Dict[str, Dict[str, int | str]]:
+@router.get("/queue/stats", response_model=dict[str, dict[str, int | str]])
+async def get_queue_stats() -> dict[str, dict[str, int | str]]:
     """
     获取消息队列统计信息
 
@@ -117,7 +121,7 @@ async def get_queue_stats() -> Dict[str, Dict[str, int | str]]:
         mq_manager = get_message_queue_manager()
         health = mq_manager.health_check()
         stats = mq_manager.get_queue_stats()
-        if not health.get('redis'):
+        if not health.get("redis"):
             # 无 Redis 时降级返回空统计，避免前端页面整体失败
             return {
                 "critical": {"stream": "events:critical", "length": 0, "pending": 0},
@@ -129,7 +133,7 @@ async def get_queue_stats() -> Dict[str, Dict[str, int | str]]:
         return stats
 
     except Exception as e:
-        logger.error(f"Error getting queue stats: {str(e)}")
+        logger.error(f"Error getting queue stats: {e!s}")
         # 与 /health 一致，异常时也返回可渲染的默认结构
         return {
             "critical": {"stream": "events:critical", "length": 0, "pending": 0},
@@ -140,7 +144,7 @@ async def get_queue_stats() -> Dict[str, Dict[str, int | str]]:
 
 
 @router.get("/health")
-async def get_notification_health() -> Dict:
+async def get_notification_health() -> dict:
     """
     获取通知系统健康状态
 
@@ -156,20 +160,15 @@ async def get_notification_health() -> Dict:
         health = mq_manager.health_check()
 
         return {
-            "redis": health.get('redis', False),
-            "streams": health.get('streams', False),
+            "redis": health.get("redis", False),
+            "streams": health.get("streams", False),
             "channels": {
                 "feishu": bool(notification_service.feishu_webhook),
                 "slack": bool(notification_service.slack_webhook),
-                "email": bool(notification_service.email_config['to'])
-            }
+                "email": bool(notification_service.email_config["to"]),
+            },
         }
 
     except Exception as e:
-        logger.error(f"Error checking notification health: {str(e)}")
-        return {
-            "redis": False,
-            "streams": False,
-            "channels": {},
-            "error": str(e)
-        }
+        logger.error(f"Error checking notification health: {e!s}")
+        return {"redis": False, "streams": False, "channels": {}, "error": str(e)}

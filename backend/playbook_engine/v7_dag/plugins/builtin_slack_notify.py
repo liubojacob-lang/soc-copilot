@@ -1,8 +1,8 @@
 """Slack notification node plugin (v0.7.4)."""
 
-from typing import Any, Dict
-from datetime import datetime, timezone
 import logging
+from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 
@@ -34,7 +34,7 @@ class SlackNotifyPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Send notifications to Slack via webhook"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         webhook_url = input_json.get("webhook_url")
         message = input_json.get("message")
@@ -45,7 +45,7 @@ class SlackNotifyPlugin(BaseNodePlugin):
         if not message:
             raise ValueError("message is required")
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Send Slack notification.
 
         Args:
@@ -70,7 +70,9 @@ class SlackNotifyPlugin(BaseNodePlugin):
             }
 
         # Build message
-        message_template = context.input_json.get("message", "Playbook run {{run_id}} completed")
+        message_template = context.input_json.get(
+            "message", "Playbook run {{run_id}} completed"
+        )
         message = self._resolve_template(message_template, context)
 
         # Get optional fields
@@ -89,7 +91,9 @@ class SlackNotifyPlugin(BaseNodePlugin):
             context=context,
         )
 
-        logger.info(f"[{context.run_id}] Sending Slack notification to {webhook_url[:50]}...")
+        logger.info(
+            f"[{context.run_id}] Sending Slack notification to {webhook_url[:50]}..."
+        )
 
         # Send webhook
         try:
@@ -101,7 +105,9 @@ class SlackNotifyPlugin(BaseNodePlugin):
                 )
 
                 if response.status_code in (200, 204):
-                    logger.info(f"[{context.run_id}] Slack notification sent successfully")
+                    logger.info(
+                        f"[{context.run_id}] Slack notification sent successfully"
+                    )
                     return {
                         "status": "success",
                         "message": "Notification sent",
@@ -121,7 +127,7 @@ class SlackNotifyPlugin(BaseNodePlugin):
             # Don't fail the run - notification is non-critical
             return {
                 "status": "success",
-                "message": f"Notification error but continuing: {str(e)}",
+                "message": f"Notification error but continuing: {e!s}",
                 "notification_failed": True,
             }
 
@@ -157,7 +163,7 @@ class SlackNotifyPlugin(BaseNodePlugin):
         node_name: str,
         include_fields: list[str],
         context: NodeExecutionContext,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build Slack attachment payload.
 
         Args:
@@ -191,19 +197,21 @@ class SlackNotifyPlugin(BaseNodePlugin):
                 value = str(context.input_json[field])
                 if len(value) > 50:
                     value = value[:50] + "..."
-                fields.append({
-                    "title": field.replace("_", " ").title(),
-                    "value": value,
-                    "short": True,
-                })
+                fields.append(
+                    {
+                        "title": field.replace("_", " ").title(),
+                        "value": value,
+                        "short": True,
+                    }
+                )
 
         attachment = {
             "color": color,
             "title": title,
             "text": message,
             "fields": fields[:6],  # Slack limit
-            "footer": f"SOC Copilot v0.7.4",
-            "ts": int(datetime.now(timezone.utc).timestamp()),
+            "footer": "SOC Copilot v0.7.4",
+            "ts": int(datetime.now(UTC).timestamp()),
         }
 
         return {"attachments": [attachment]}

@@ -14,17 +14,18 @@ Features:
 import gzip
 import json
 import time
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone
+from typing import Any
+
+from pydantic import BaseModel
 
 from core.logger import get_logger
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
 
 class CompressionConfig(BaseModel):
     """Configuration for message compression."""
+
     enabled: bool = True
     min_size_bytes: int = 1024  # Only compress messages larger than 1KB
     compression_level: int = 6  # Gzip compression level (0-9, 6 is default)
@@ -33,6 +34,7 @@ class CompressionConfig(BaseModel):
 
 class CompressionStats(BaseModel):
     """Statistics for compression performance."""
+
     total_messages: int = 0
     compressed_messages: int = 0
     original_size_bytes: int = 0
@@ -62,7 +64,7 @@ class MessageCompressionService:
     Uses gzip compression to reduce message size for large payloads.
     """
 
-    def __init__(self, config: Optional[CompressionConfig] = None):
+    def __init__(self, config: CompressionConfig | None = None):
         self.config = config or CompressionConfig()
         self.stats = CompressionStats()
 
@@ -86,9 +88,8 @@ class MessageCompressionService:
         return True
 
     def compress_message(
-        self,
-        message: Dict[str, Any]
-    ) -> tuple[Dict[str, Any], Optional[bytes]]:
+        self, message: dict[str, Any]
+    ) -> tuple[dict[str, Any], bytes | None]:
         """
         Compress a WebSocket message.
 
@@ -103,7 +104,7 @@ class MessageCompressionService:
         start_time = time.time()
 
         # Serialize message
-        json_data = json.dumps(message).encode('utf-8')
+        json_data = json.dumps(message).encode("utf-8")
         original_size = len(json_data)
 
         # Update stats
@@ -117,8 +118,7 @@ class MessageCompressionService:
         try:
             # Compress with gzip
             compressed_data = gzip.compress(
-                json_data,
-                compresslevel=self.config.compression_level
+                json_data, compresslevel=self.config.compression_level
             )
 
             compressed_size = len(compressed_data)
@@ -135,7 +135,7 @@ class MessageCompressionService:
             # Update stats
             self.stats.compressed_messages += 1
             self.stats.compressed_size_bytes += compressed_size
-            self.stats.bytes_saved += (original_size - compressed_size)
+            self.stats.bytes_saved += original_size - compressed_size
 
             compression_time_ms = (time.time() - start_time) * 1000
             self.stats.compression_time_ms += compression_time_ms
@@ -160,10 +160,7 @@ class MessageCompressionService:
             logger.error(f"Compression failed: {e}")
             return message, None
 
-    def decompress_message(
-        self,
-        compressed_data: bytes
-    ) -> Optional[Dict[str, Any]]:
+    def decompress_message(self, compressed_data: bytes) -> dict[str, Any] | None:
         """
         Decompress a compressed message.
 
@@ -175,7 +172,7 @@ class MessageCompressionService:
         """
         try:
             decompressed_data = gzip.decompress(compressed_data)
-            message = json.loads(decompressed_data.decode('utf-8'))
+            message = json.loads(decompressed_data.decode("utf-8"))
 
             # Remove compression metadata
             message.pop("_compressed", None)
@@ -205,13 +202,12 @@ class BatchCompressionService:
     More efficient for multiple small messages.
     """
 
-    def __init__(self, config: Optional[CompressionConfig] = None):
+    def __init__(self, config: CompressionConfig | None = None):
         self.compression_service = MessageCompressionService(config)
 
     async def compress_batch(
-        self,
-        messages: List[Dict[str, Any]]
-    ) -> List[tuple[Dict[str, Any], Optional[bytes]]]:
+        self, messages: list[dict[str, Any]]
+    ) -> list[tuple[dict[str, Any], bytes | None]]:
         """
         Compress a batch of messages.
 
@@ -246,8 +242,8 @@ class BatchCompressionService:
 
 
 # Global instances
-_compression_service: Optional[MessageCompressionService] = None
-_batch_compression_service: Optional[BatchCompressionService] = None
+_compression_service: MessageCompressionService | None = None
+_batch_compression_service: BatchCompressionService | None = None
 
 
 def get_compression_service() -> MessageCompressionService:

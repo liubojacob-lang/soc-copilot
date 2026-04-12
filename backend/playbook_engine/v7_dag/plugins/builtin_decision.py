@@ -1,8 +1,8 @@
 """Decision node plugin for conditional branching (v0.7.4)."""
 
-from typing import Any, Dict
-import re
 import logging
+import re
+from typing import Any
 
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
@@ -37,7 +37,7 @@ class DecisionPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Evaluate conditions to control workflow branching"
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Evaluate decision condition.
 
         Args:
@@ -67,9 +67,13 @@ class DecisionPlugin(BaseNodePlugin):
 
         # Determine which branch to take
         branch_key = str(result).lower() if isinstance(result, bool) else default_branch
-        branch_name = branches.get(branch_key, branches.get(default_branch, default_branch))
+        branch_name = branches.get(
+            branch_key, branches.get(default_branch, default_branch)
+        )
 
-        logger.info(f"[{context.run_id}] Decision result: {result}, branch: {branch_name}")
+        logger.info(
+            f"[{context.run_id}] Decision result: {result}, branch: {branch_name}"
+        )
 
         return {
             "status": "success",
@@ -79,7 +83,9 @@ class DecisionPlugin(BaseNodePlugin):
             "branches": branches,
         }
 
-    def _evaluate_condition(self, condition: str, context: NodeExecutionContext) -> bool:
+    def _evaluate_condition(
+        self, condition: str, context: NodeExecutionContext
+    ) -> bool:
         """Evaluate a condition string against context.
 
         Supported formats:
@@ -100,7 +106,9 @@ class DecisionPlugin(BaseNodePlugin):
             Boolean result of condition evaluation
         """
         # Try regex match for comparison operators
-        match = re.match(r'^(\w+(?:\.\w+)*)\s*([><=!]+|in)\s*(.+)$', str(condition).strip())
+        match = re.match(
+            r"^(\w+(?:\.\w+)*)\s*([><=!]+|in)\s*(.+)$", str(condition).strip()
+        )
         if match:
             field_path, op, value = match.groups()
 
@@ -116,9 +124,10 @@ class DecisionPlugin(BaseNodePlugin):
             # Type conversion for comparisons
             try:
                 # Remove quotes from string values
-                if (isinstance(value, str) and
-                    ((value.startswith('"') and value.endswith('"')) or
-                     (value.startswith("'") and value.endswith("'")))):
+                if isinstance(value, str) and (
+                    (value.startswith('"') and value.endswith('"'))
+                    or (value.startswith("'") and value.endswith("'"))
+                ):
                     field_val = str(field_value or "")
                     val = value[1:-1]
                 else:
@@ -128,7 +137,7 @@ class DecisionPlugin(BaseNodePlugin):
             except (ValueError, TypeError):
                 # Fall back to string comparison
                 field_val = str(field_value or "")
-                val = value.strip('"\'')
+                val = value.strip("\"'")
                 if op not in ("==", "!="):
                     return False
 
@@ -150,7 +159,7 @@ class DecisionPlugin(BaseNodePlugin):
         field_value = self._get_nested_value(context.input_json, condition.strip())
         return bool(field_value)
 
-    def _get_nested_value(self, data: Dict[str, Any], path: str) -> Any:
+    def _get_nested_value(self, data: dict[str, Any], path: str) -> Any:
         """Get nested value from dictionary using dot notation.
 
         Args:
@@ -160,7 +169,7 @@ class DecisionPlugin(BaseNodePlugin):
         Returns:
             Value at path or None if not found
         """
-        keys = path.split('.')
+        keys = path.split(".")
         value = data
 
         for key in keys:

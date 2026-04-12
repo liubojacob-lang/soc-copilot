@@ -2,8 +2,8 @@
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey
-from sqlalchemy.orm import declarative_base
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 
 from db.session import Base
 

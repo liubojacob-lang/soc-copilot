@@ -4,7 +4,8 @@ This file is loaded by pytest before tests/conftest.py.
 """
 
 import os
-import asyncio
+from pathlib import Path
+
 import pytest
 
 # Set environment variables BEFORE any other imports
@@ -15,18 +16,21 @@ os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
 # Use a separate test database
 os.environ["TEST_DB_PATH"] = "/tmp/soc_copilot_test.db"
 
+# Ignore archived test files
+collect_ignore_glob = ["tests/_archived/*"]
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
     """Setup test database before all tests and cleanup after."""
-    db_path = "/tmp/soc_copilot_test.db"
-    
+    db_path = Path("/tmp/soc_copilot_test.db")
+
     # Remove old test database if exists
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    
+    if db_path.exists():
+        db_path.unlink()
+
     yield
-    
+
     # Cleanup after all tests
-    if os.path.exists(db_path):
-        os.remove(db_path)
+    if db_path.exists():
+        db_path.unlink()

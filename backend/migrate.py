@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Alembic migration helper script."""
 
-import asyncio
 import sys
 from pathlib import Path
 
@@ -9,8 +8,8 @@ from pathlib import Path
 backend_dir = Path(__file__).parent
 sys.path.insert(0, str(backend_dir))
 
-from alembic.config import Config
 from alembic import command
+from alembic.config import Config
 
 
 def migrate():

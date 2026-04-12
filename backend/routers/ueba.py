@@ -2,20 +2,16 @@
 UEBA Router - User and Entity Behavior Analytics API
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, Field
 from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 
 from core.logger import get_logger
 from dependencies.auth import get_current_user
-from models.user import UserModel, UserRole
+from models.user import UserModel
 from services.ueba_service import (
     get_ueba_engine,
-    BehaviorType,
-    RiskLevel,
-    AnomalyDetection,
-    UserRiskProfile,
 )
 
 logger = get_logger(__name__)
@@ -29,11 +25,11 @@ class BehaviorDataInput(BaseModel):
 
     entity_id: str
     entity_type: str = Field(default="user", pattern="^(user|host|ip)$")
-    login_time: Optional[datetime] = None
-    data_volume_mb: Optional[float] = None
-    accessed_hosts: Optional[List[str]] = None
-    accessed_files: Optional[List[str]] = None
-    processes_created: Optional[List[str]] = None
+    login_time: datetime | None = None
+    data_volume_mb: float | None = None
+    accessed_hosts: list[str] | None = None
+    accessed_files: list[str] | None = None
+    processes_created: list[str] | None = None
 
 
 class AnomalyDetectionResponse(BaseModel):
@@ -44,8 +40,8 @@ class AnomalyDetectionResponse(BaseModel):
     anomaly_score: float
     risk_level: str
     description: str
-    indicators: List[str]
-    recommended_actions: List[str]
+    indicators: list[str]
+    recommended_actions: list[str]
     detected_at: datetime
 
 
@@ -56,8 +52,8 @@ class RiskProfileResponse(BaseModel):
     username: str
     overall_risk_score: float
     risk_level: str
-    risk_factors: List[dict]
-    anomalous_behaviors: List[AnomalyDetectionResponse]
+    risk_factors: list[dict]
+    anomalous_behaviors: list[AnomalyDetectionResponse]
     compromised_probability: float
     last_activity: datetime
 
@@ -70,7 +66,7 @@ class BaselineBuildRequest(BaseModel):
     days_of_history: int = Field(default=30, ge=7, le=90)
 
 
-@router.post("/detect", response_model=List[AnomalyDetectionResponse])
+@router.post("/detect", response_model=list[AnomalyDetectionResponse])
 async def detect_anomalies(
     data: BehaviorDataInput,
     current_user: UserModel = Depends(get_current_user),
@@ -120,7 +116,7 @@ async def detect_anomalies(
         logger.error(f"Error detecting anomalies: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Anomaly detection failed: {str(e)}",
+            detail=f"Anomaly detection failed: {e!s}",
         )
 
 
@@ -169,7 +165,7 @@ async def get_user_risk_profile(
         logger.error(f"Error getting risk profile: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get risk profile: {str(e)}",
+            detail=f"Failed to get risk profile: {e!s}",
         )
 
 
@@ -206,7 +202,7 @@ async def build_baseline(
         logger.error(f"Error building baseline: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Baseline building failed: {str(e)}",
+            detail=f"Baseline building failed: {e!s}",
         )
 
 
@@ -259,7 +255,7 @@ async def get_high_risk_users(
         logger.error(f"Error getting high risk users: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get high risk users: {str(e)}",
+            detail=f"Failed to get high risk users: {e!s}",
         )
 
 
@@ -302,5 +298,5 @@ async def get_ueba_dashboard(
         logger.error(f"Error getting UEBA dashboard: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get dashboard: {str(e)}",
+            detail=f"Failed to get dashboard: {e!s}",
         )

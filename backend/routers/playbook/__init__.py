@@ -10,10 +10,10 @@ This package contains the split playbook router modules:
 
 from fastapi import APIRouter
 
+from .approvals import router as approvals_router
+from .definitions import router as definitions_router
 from .queries import router as queries_router
 from .runs import router as runs_router
-from .definitions import router as definitions_router
-from .approvals import router as approvals_router
 from .versions import router as versions_router
 
 # Create main router that includes all sub-routers

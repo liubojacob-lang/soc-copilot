@@ -1,29 +1,28 @@
 """API Key management endpoints."""
 
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.logger import get_logger
 from db.session import get_session
-from models.user import UserModel
+from dependencies.auth import get_current_user, require_admin
 from models.api_key import APIKeyModel
+from models.user import UserModel
+from repositories.api_key_repository import APIKeyRepository
 from schemas.api_key import (
     APIKeyCreate,
-    APIKeyUpdate,
     APIKeyCreateResponse,
     APIKeyResponse,
+    APIKeyUpdate,
 )
-from repositories.api_key_repository import APIKeyRepository
-from dependencies.auth import get_current_user, require_admin
-from dependencies.auth import user_to_response
-from core.logger import get_logger
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/api-keys", tags=["API Keys"])
 
 
-@router.get("", response_model=dict[str, List[APIKeyResponse] | int])
+@router.get("", response_model=dict[str, list[APIKeyResponse] | int])
 async def list_api_keys(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -59,7 +58,9 @@ async def list_api_keys(
     return {"items": response_keys, "total": total}
 
 
-@router.post("", response_model=APIKeyCreateResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=APIKeyCreateResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_api_key(
     key_data: APIKeyCreate,
     current_user: UserModel = Depends(get_current_user),
@@ -77,6 +78,7 @@ async def create_api_key(
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="api_key:create",
@@ -150,6 +152,7 @@ async def update_api_key(
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="api_key:update",
@@ -212,6 +215,7 @@ async def delete_api_key(
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="api_key:delete",
@@ -227,7 +231,7 @@ async def delete_api_key(
     return {"message": "API key disabled successfully"}
 
 
-@router.get("/admin/all", response_model=dict[str, List[APIKeyResponse] | int])
+@router.get("/admin/all", response_model=dict[str, list[APIKeyResponse] | int])
 async def list_all_api_keys(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -237,7 +241,6 @@ async def list_all_api_keys(
 ):
     """List all API keys (admin only)."""
     from sqlalchemy import select
-    from models.api_key import APIKeyModel
 
     query = select(APIKeyModel)
     if user_id:
@@ -245,6 +248,7 @@ async def list_all_api_keys(
 
     # Get total
     from sqlalchemy import func
+
     count_query = select(func.count(APIKeyModel.id))
     if user_id:
         count_query = count_query.where(APIKeyModel.user_id == user_id)

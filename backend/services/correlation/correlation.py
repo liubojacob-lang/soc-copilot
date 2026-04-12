@@ -12,7 +12,9 @@ from .rule_engine import RuleEngine
 from .schemas import CorrelationRuleDSL
 
 
-async def correlate_with_dsl(events: list[dict[str, Any]], rules: list[dict[str, Any]]) -> dict[str, Any]:
+async def correlate_with_dsl(
+    events: list[dict[str, Any]], rules: list[dict[str, Any]]
+) -> dict[str, Any]:
     engine = RuleEngine()
     dsl_rules = [CorrelationRuleDSL.model_validate(item) for item in rules]
     incidents = engine.execute(events, dsl_rules)

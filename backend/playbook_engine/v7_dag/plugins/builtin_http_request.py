@@ -1,8 +1,8 @@
 """HTTP Request node plugin with hostname whitelist sandbox (v0.7.4)."""
 
-from typing import Any, Dict
-from urllib.parse import urlparse
 import logging
+from typing import Any
+from urllib.parse import urlparse
 
 import aiohttp
 
@@ -47,7 +47,7 @@ class HttpRequestPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Make HTTP requests with hostname whitelist sandbox protection"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         url = input_json.get("url")
         if not url:
@@ -57,7 +57,7 @@ class HttpRequestPlugin(BaseNodePlugin):
         if method not in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"):
             raise ValueError(f"Unsupported HTTP method: {method}")
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Execute HTTP request with sandbox validation.
 
         Args:
@@ -87,7 +87,12 @@ class HttpRequestPlugin(BaseNodePlugin):
 
         # Check hostname whitelist if configured
         from core.config import settings
-        allowed_hosts = settings.http_allowed_hosts.split(",") if settings.http_allowed_hosts else []
+
+        allowed_hosts = (
+            settings.http_allowed_hosts.split(",")
+            if settings.http_allowed_hosts
+            else []
+        )
 
         if allowed_hosts and allowed_hosts != [""]:
             # Remove empty strings from split
@@ -109,7 +114,7 @@ class HttpRequestPlugin(BaseNodePlugin):
                     url,
                     headers=headers,
                     json=body,
-                    timeout=aiohttp.ClientTimeout(total=timeout)
+                    timeout=aiohttp.ClientTimeout(total=timeout),
                 ) as response:
                     response_body = await response.text()
                     response_headers = dict(response.headers)

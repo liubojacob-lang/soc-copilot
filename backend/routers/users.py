@@ -1,23 +1,28 @@
 """User management API endpoints (admin only)."""
 
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.session import get_session
-from models.user import UserModel, UserRole
-from schemas.user import UserCreate, UserUpdate, UserResponse, UserInDB
-from repositories.user_repository import UserRepository
-from core.security import get_password_hash
 from core.logger import get_logger
-from dependencies.auth import require_admin, invalidate_user_permission_cache
+from core.security import get_password_hash
+from db.session import get_session
+from dependencies.auth import invalidate_user_permission_cache, require_admin
+from models.user import UserModel, UserRole
+from repositories.user_repository import UserRepository
+from schemas.user import (
+    PasswordResetRequest,
+    UserCreate,
+    UserResponse,
+    UserUpdate,
+)
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
 
-@router.get("", response_model=dict[str, List[UserResponse] | int])
+@router.get("", response_model=dict[str, list[UserResponse] | int])
 async def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -41,6 +46,7 @@ async def list_users(
     response_users = []
     for user in users:
         from dependencies.auth import user_to_response
+
         response_users.append(user_to_response(user))
 
     return {"items": response_users, "total": total}
@@ -80,6 +86,7 @@ async def create_user(
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="user:create",
@@ -98,6 +105,7 @@ async def create_user(
     await session.commit()
 
     from dependencies.auth import user_to_response
+
     return user_to_response(user)
 
 
@@ -118,6 +126,7 @@ async def get_user(
         )
 
     from dependencies.auth import user_to_response
+
     return user_to_response(user)
 
 
@@ -148,6 +157,7 @@ async def update_user(
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="user:update",
@@ -164,13 +174,14 @@ async def update_user(
     await session.commit()
 
     from dependencies.auth import user_to_response
+
     return user_to_response(user)
 
 
 @router.post("/{user_id}/reset-password")
 async def reset_user_password(
     user_id: str,
-    request: dict,
+    request: PasswordResetRequest,
     current_user: UserModel = Depends(require_admin),
     session: AsyncSession = Depends(get_session),
 ):
@@ -184,20 +195,13 @@ async def reset_user_password(
             detail="User not found",
         )
 
-    # Get new password from request
-    new_password = request.get("new_password")
-    if not new_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="new_password is required",
-        )
-
     # Hash and update password
-    hashed_password = get_password_hash(new_password)
+    hashed_password = get_password_hash(request.new_password)
     await user_repo.update_password(user_id, hashed_password)
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="user:reset_password",
@@ -210,7 +214,7 @@ async def reset_user_password(
     )
     await session.commit()
 
-    return {"message": "Password reset successfully", "plain_password": new_password}
+    return {"message": "Password reset successfully"}
 
 
 @router.delete("/{user_id}")
@@ -242,6 +246,7 @@ async def delete_user(
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
+
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="user:delete",

@@ -1,11 +1,14 @@
 """History API endpoints."""
 
 from typing import Annotated
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from db.session import AsyncSession, get_session
+from dependencies import get_current_user
+from models.user import UserModel
+from schemas.history import HistoryListResponse, HistoryResponse
 from services.history_service import HistoryService
-from schemas.history import HistoryResponse, HistoryListResponse
 
 router = APIRouter(prefix="/api/history", tags=["history"])
 
@@ -16,6 +19,7 @@ async def list_history(
     query: Annotated[str | None, Query(description="Search query")] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> HistoryListResponse:
     """List history records with optional filters.
 
@@ -36,6 +40,7 @@ async def list_history(
 async def get_history(
     history_id: str,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> HistoryResponse:
     """Get a specific history record by ID.
 
@@ -63,6 +68,7 @@ async def get_history(
 async def delete_history(
     history_id: str,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> None:
     """Delete a specific history record by ID.
 
@@ -85,6 +91,7 @@ async def delete_history(
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_all_history(
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> None:
     """Delete all history records.
 

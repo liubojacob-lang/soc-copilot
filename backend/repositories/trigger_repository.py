@@ -1,15 +1,16 @@
 """Repository for trigger operations."""
 
-import uuid
 import hashlib
-from datetime import datetime, timezone, timedelta
-from typing import Any, Optional
-from sqlalchemy import select, update, delete, func, and_
+import uuid
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.logger import get_logger
 from models.playbook_definition import PlaybookTriggerModel
 from models.trigger import TriggerInvocationModel
-from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -24,12 +25,12 @@ class TriggerRepository:
         self,
         definition_id: str,
         trigger_type: str,
-        name: Optional[str] = None,
+        name: str | None = None,
         config: dict[str, Any] | None = None,
-        secret: Optional[str] = None,
-        cron_expr: Optional[str] = None,
+        secret: str | None = None,
+        cron_expr: str | None = None,
         is_active: bool = True,
-        created_by_user_id: Optional[str] = None,
+        created_by_user_id: str | None = None,
     ) -> PlaybookTriggerModel:
         """Create a new trigger."""
         trigger = PlaybookTriggerModel(
@@ -49,19 +50,17 @@ class TriggerRepository:
         logger.info(f"Created trigger: {trigger.id} - type={trigger_type}")
         return trigger
 
-    async def get_by_id(self, trigger_id: str) -> Optional[PlaybookTriggerModel]:
+    async def get_by_id(self, trigger_id: str) -> PlaybookTriggerModel | None:
         """Get trigger by ID."""
-        stmt = select(PlaybookTriggerModel).where(
-            PlaybookTriggerModel.id == trigger_id
-        )
+        stmt = select(PlaybookTriggerModel).where(PlaybookTriggerModel.id == trigger_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def list_by_definition(
         self,
         definition_id: str,
-        trigger_type: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        trigger_type: str | None = None,
+        is_active: bool | None = None,
     ) -> list[PlaybookTriggerModel]:
         """List triggers for a definition."""
         stmt = select(PlaybookTriggerModel).where(
@@ -79,8 +78,8 @@ class TriggerRepository:
 
     async def list_all(
         self,
-        trigger_type: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        trigger_type: str | None = None,
+        is_active: bool | None = None,
         page: int = 1,
         page_size: int = 50,
     ) -> tuple[list[PlaybookTriggerModel], int]:
@@ -109,12 +108,12 @@ class TriggerRepository:
     async def update(
         self,
         trigger_id: str,
-        name: Optional[str] = None,
-        config: Optional[dict[str, Any]] = None,
-        secret: Optional[str] = None,
-        cron_expr: Optional[str] = None,
-        is_active: Optional[bool] = None,
-    ) -> Optional[PlaybookTriggerModel]:
+        name: str | None = None,
+        config: dict[str, Any] | None = None,
+        secret: str | None = None,
+        cron_expr: str | None = None,
+        is_active: bool | None = None,
+    ) -> PlaybookTriggerModel | None:
         """Update a trigger."""
         trigger = await self.get_by_id(trigger_id)
         if not trigger:
@@ -161,7 +160,7 @@ class TriggerRepository:
         stmt = (
             update(PlaybookTriggerModel)
             .where(PlaybookTriggerModel.id == trigger_id)
-            .values(last_triggered_at=datetime.now(timezone.utc))
+            .values(last_triggered_at=datetime.now(UTC))
         )
         await self.session.execute(stmt)
         await self.session.flush()
@@ -198,9 +197,9 @@ class TriggerRepository:
     async def check_idempotency(
         self,
         trigger_id: str,
-        idempotency_key: Optional[str],
+        idempotency_key: str | None,
         payload: bytes,
-    ) -> Optional[TriggerInvocationModel]:
+    ) -> TriggerInvocationModel | None:
         """Check if this request has already been processed.
 
         Returns the existing invocation if found, None otherwise.
@@ -213,7 +212,7 @@ class TriggerRepository:
                 and_(
                     TriggerInvocationModel.trigger_id == trigger_id,
                     TriggerInvocationModel.idempotency_key == idempotency_key,
-                    TriggerInvocationModel.expires_at > datetime.now(timezone.utc),
+                    TriggerInvocationModel.expires_at > datetime.now(UTC),
                 )
             )
             result = await self.session.execute(stmt)
@@ -227,7 +226,8 @@ class TriggerRepository:
             and_(
                 TriggerInvocationModel.trigger_id == trigger_id,
                 TriggerInvocationModel.request_hash == request_hash,
-                TriggerInvocationModel.created_at > datetime.now(timezone.utc) - timedelta(hours=24),
+                TriggerInvocationModel.created_at
+                > datetime.now(UTC) - timedelta(hours=24),
             )
         )
         result = await self.session.execute(stmt)
@@ -241,11 +241,11 @@ class TriggerRepository:
     async def record_invocation(
         self,
         trigger_id: str,
-        idempotency_key: Optional[str],
+        idempotency_key: str | None,
         payload: bytes,
-        run_id: Optional[str] = None,
+        run_id: str | None = None,
         status: str = "pending",
-        error_message: Optional[str] = None,
+        error_message: str | None = None,
     ) -> TriggerInvocationModel:
         """Record a trigger invocation for idempotency tracking."""
         request_hash = self._hash_request(payload)
@@ -258,8 +258,8 @@ class TriggerRepository:
             request_hash=request_hash,
             status=status,
             error_message=error_message,
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
         self.session.add(invocation)
         await self.session.flush()
@@ -269,10 +269,10 @@ class TriggerRepository:
     async def update_invocation(
         self,
         invocation_id: str,
-        run_id: Optional[str] = None,
+        run_id: str | None = None,
         status: str = "success",
-        error_message: Optional[str] = None,
-    ) -> Optional[TriggerInvocationModel]:
+        error_message: str | None = None,
+    ) -> TriggerInvocationModel | None:
         """Update an invocation with results."""
         stmt = (
             update(TriggerInvocationModel)
@@ -302,7 +302,7 @@ class TriggerRepository:
         if hours < 1 or hours > 8760:
             raise ValueError("hours must be between 1 and 8760 (1 day to 1 year)")
 
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=hours)
         stmt = delete(TriggerInvocationModel).where(
             TriggerInvocationModel.expires_at < cutoff
         )
@@ -314,7 +314,7 @@ class TriggerRepository:
 
     async def get_invocation(
         self, invocation_id: str
-    ) -> Optional[TriggerInvocationModel]:
+    ) -> TriggerInvocationModel | None:
         """Get invocation by ID."""
         stmt = select(TriggerInvocationModel).where(
             TriggerInvocationModel.id == invocation_id

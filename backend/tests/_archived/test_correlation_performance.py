@@ -6,25 +6,29 @@ Tests performance requirements:
 - Similarity calculation caching effective
 """
 
-import pytest
-import time
 import random
-from datetime import datetime, timezone, timedelta
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+import time
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from httpx import ASGITransport, AsyncClient
 
 from main import app
-from models.correlated_event import CorrelatedEvent
-from db.session import get_session
 
 
 # Test fixtures
 @pytest.fixture
 async def test_client():
-    """Create test HTTP client."""
+    """Create test HTTP client with auth."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        login_resp = await client.post(
+            "/api/auth/login",
+            json={"username": "admin", "password": "admin123!TestPass"},
+        )
+        if login_resp.status_code == 200:
+            token = login_resp.json().get("access_token", "")
+            client.headers["Authorization"] = f"Bearer {token}"
         yield client
 
 
@@ -39,7 +43,7 @@ def generate_test_events(count: int, time_span_minutes: int = 60) -> list:
         List of event dictionaries
     """
     events = []
-    base_time = datetime.now(timezone.utc)
+    base_time = datetime.now(UTC)
     categories = ["authentication", "network", "malware", "access", "application"]
     severities = ["low", "medium", "high", "critical"]
 
@@ -62,7 +66,7 @@ def generate_test_events(count: int, time_span_minutes: int = 60) -> list:
             "hostname": f"server-{i % 20}",  # 20 different servers
             "severity": random.choice(severities),
             "category": random.choice(categories),
-            "message": f"Test event message {i} for performance testing"
+            "message": f"Test event message {i} for performance testing",
         }
         events.append(event)
 
@@ -78,10 +82,7 @@ class TestCorrelationPerformance:
         events = generate_test_events(100, time_span_minutes=30)
 
         start_time = time.time()
-        response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events}
-        )
+        response = await test_client.post("/api/correlation/correlate", json={"events": events})
         elapsed = time.time() - start_time
 
         assert response.status_code == 200
@@ -99,10 +100,7 @@ class TestCorrelationPerformance:
         events = generate_test_events(500, time_span_minutes=60)
 
         start_time = time.time()
-        response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events}
-        )
+        response = await test_client.post("/api/correlation/correlate", json={"events": events})
         elapsed = time.time() - start_time
 
         assert response.status_code == 200
@@ -120,17 +118,16 @@ class TestCorrelationPerformance:
         events = generate_test_events(1000, time_span_minutes=120)
 
         start_time = time.time()
-        response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events}
-        )
+        response = await test_client.post("/api/correlation/correlate", json={"events": events})
         elapsed = time.time() - start_time
 
         assert response.status_code == 200
         data = response.json()
 
         # CRITICAL PERFORMANCE REQUIREMENT: 1000 events < 2s
-        assert elapsed < 2.0, f"❌ 1000 events correlation took {elapsed:.2f}s, FAILED < 2.0s requirement"
+        assert elapsed < 2.0, (
+            f"❌ 1000 events correlation took {elapsed:.2f}s, FAILED < 2.0s requirement"
+        )
         assert data["total_events_processed"] == 1000
 
         print(f"✓ 1000 events correlated in {elapsed:.3f}s (requirement: < 2.0s)")
@@ -146,10 +143,7 @@ class TestCorrelationPerformance:
         events = generate_test_events(5000, time_span_minutes=240)
 
         start_time = time.time()
-        response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events}
-        )
+        response = await test_client.post("/api/correlation/correlate", json={"events": events})
         elapsed = time.time() - start_time
 
         assert response.status_code == 200
@@ -222,18 +216,14 @@ class TestSimilarityCaching:
 
         # First run (cold cache)
         start_time = time.time()
-        response1 = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events}
-        )
+        response1 = await test_client.post("/api/correlation/correlate", json={"events": events})
         time_cold = time.time() - start_time
 
         # Second run with similar events (warm cache)
         events_warm = generate_test_events(300, time_span_minutes=30)
         start_time = time.time()
         response2 = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events_warm}
+            "/api/correlation/correlate", json={"events": events_warm}
         )
         time_warm = time.time() - start_time
 
@@ -259,10 +249,7 @@ class TestScalability:
         events = generate_test_events(event_count, time_span_minutes=60)
 
         start_time = time.time()
-        response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events}
-        )
+        response = await test_client.post("/api/correlation/correlate", json={"events": events})
         elapsed = time.time() - start_time
 
         assert response.status_code == 200
@@ -272,7 +259,9 @@ class TestScalability:
         events_per_second = event_count / elapsed
 
         # Should process at least 500 events/second
-        assert events_per_second >= 500, f"Processing rate: {events_per_second:.0f} events/s, required: ≥500"
+        assert events_per_second >= 500, (
+            f"Processing rate: {events_per_second:.0f} events/s, required: ≥500"
+        )
 
         print(f"✓ {event_count} events: {elapsed:.3f}s ({events_per_second:.0f} events/s)")
 
@@ -299,7 +288,7 @@ class TestScalability:
         # Concurrent processing should be faster than sequential
         # (This is a rough check - actual performance depends on async handling)
         print(f"✓ 5 concurrent requests completed in {elapsed:.3f}s")
-        print(f"  → Average per request: {elapsed/5:.3f}s")
+        print(f"  → Average per request: {elapsed / 5:.3f}s")
 
 
 class TestMemoryEfficiency:
@@ -313,10 +302,7 @@ class TestMemoryEfficiency:
 
         # Measure request
         start_time = time.time()
-        response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events}
-        )
+        response = await test_client.post("/api/correlation/correlate", json={"events": events})
         elapsed = time.time() - start_time
 
         assert response.status_code == 200
@@ -336,26 +322,23 @@ class TestRealWorldScenarios:
     async def test_brute_force_pattern_performance(self, test_client: AsyncClient):
         """Test performance with brute force attack pattern."""
         # Generate events simulating brute force (same IP, user, time)
-        base_time = datetime.now(timezone.utc)
+        base_time = datetime.now(UTC)
         events = [
             {
                 "id": f"bf-{i:04d}",
-                "timestamp": (base_time - timedelta(seconds=i*5)).isoformat(),
+                "timestamp": (base_time - timedelta(seconds=i * 5)).isoformat(),
                 "source_ip": "192.168.1.100",
                 "username": "admin",
                 "hostname": "server01",
                 "severity": "high",
                 "category": "authentication",
-                "message": "Login failed for user admin"
+                "message": "Login failed for user admin",
             }
             for i in range(100)
         ]
 
         start_time = time.time()
-        response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events}
-        )
+        response = await test_client.post("/api/correlation/correlate", json={"events": events})
         elapsed = time.time() - start_time
 
         assert response.status_code == 200
@@ -365,13 +348,15 @@ class TestRealWorldScenarios:
         assert len(data["correlated_events"]) >= 1
         assert elapsed < 0.5
 
-        print(f"✓ Brute force pattern (100 events): {elapsed:.3f}s, {len(data['correlated_events'])} incidents")
+        print(
+            f"✓ Brute force pattern (100 events): {elapsed:.3f}s, {len(data['correlated_events'])} incidents"
+        )
 
     @pytest.mark.asyncio
     async def test_port_scan_pattern_performance(self, test_client: AsyncClient):
         """Test performance with port scan pattern."""
         # Generate events simulating port scan (same IP, different ports)
-        base_time = datetime.now(timezone.utc)
+        base_time = datetime.now(UTC)
         events = [
             {
                 "id": f"scan-{i:04d}",
@@ -382,16 +367,13 @@ class TestRealWorldScenarios:
                 "hostname": "firewall",
                 "severity": "medium",
                 "category": "network",
-                "message": f"Port scan detected on port {20+i}"
+                "message": f"Port scan detected on port {20 + i}",
             }
             for i in range(200)
         ]
 
         start_time = time.time()
-        response = await test_client.post(
-            "/api/correlation/correlate",
-            json={"events": events}
-        )
+        response = await test_client.post("/api/correlation/correlate", json={"events": events})
         elapsed = time.time() - start_time
 
         assert response.status_code == 200
@@ -412,10 +394,7 @@ class TestPerformanceRegression:
         times = []
         for _ in range(3):
             start_time = time.time()
-            response = await test_client.post(
-                "/api/correlation/correlate",
-                json={"events": events}
-            )
+            response = await test_client.post("/api/correlation/correlate", json={"events": events})
             elapsed = time.time() - start_time
             times.append(elapsed)
 
@@ -435,7 +414,7 @@ class TestPerformanceRegression:
             "avg_time_seconds": avg_time,
             "min_time": min(times),
             "max_time": max(times),
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         print(f"  → Baseline data: {baseline}")
@@ -448,15 +427,15 @@ def performance_summary(request):
     yield
 
     if request.node.callspec.id == "test_baseline_correlation_performance":
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("🚀 PERFORMANCE TEST SUMMARY")
-        print("="*70)
+        print("=" * 70)
         print("All critical performance requirements:")
         print("  ✓ 100 events < 0.5s")
         print("  ✓ 500 events < 1.0s")
         print("  ✓ 1000 events < 2.0s  ← CRITICAL REQUIREMENT")
         print("  ✓ Database queries < 0.2s")
-        print("="*70)
+        print("=" * 70)
 
 
 # Run tests

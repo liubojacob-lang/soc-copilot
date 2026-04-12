@@ -7,13 +7,13 @@
 
 ## 🎯 为什么选择 Grafana + Loki？
 
-| 特性 | 说明 |
-|------|------|
-| ✅ **ARM64 原生支持** | 完美支持 Apple Silicon |
-| ✅ **轻量级** | 资源占用少，启动快 |
-| ✅ **强大告警** | 内置告警系统，支持多通道 |
-| ✅ **易于集成** | REST API，易于对接 SOC Copilot |
-| ✅ **免费开源** | 完全免费，社区活跃 |
+| 特性                  | 说明                           |
+| --------------------- | ------------------------------ |
+| ✅ **ARM64 原生支持** | 完美支持 Apple Silicon         |
+| ✅ **轻量级**         | 资源占用少，启动快             |
+| ✅ **强大告警**       | 内置告警系统，支持多通道       |
+| ✅ **易于集成**       | REST API，易于对接 SOC Copilot |
+| ✅ **免费开源**       | 完全免费，社区活跃             |
 
 ---
 
@@ -76,7 +76,7 @@ def send_alert_to_loki(alert):
             }
         ]
     }
-    
+
     requests.post(LOKI_URL, json=payload)
 ```
 
@@ -90,6 +90,7 @@ def send_alert_to_loki(alert):
    - 配置通知
 
 2. **配置 Webhook**
+
    ```
    URL: http://backend:8000/api/v1/webhooks/grafana
    Method: POST
@@ -134,11 +135,11 @@ logger = get_logger(__name__)
 
 class LokiClient:
     """Loki 日志发送客户端"""
-    
+
     def __init__(self, push_url: str):
         self.push_url = push_url
         self.client = httpx.AsyncClient()
-    
+
     async def send_alert(self, alert: dict):
         """发送告警到 Loki"""
         try:
@@ -159,18 +160,18 @@ class LokiClient:
                     }
                 ]
             }
-            
+
             response = await self.client.post(
                 self.push_url,
                 json=payload,
                 timeout=5.0
             )
-            
+
             if response.status_code == 204:
                 logger.info(f"Alert sent to Loki: {alert.get('id')}")
             else:
                 logger.error(f"Failed to send to Loki: {response.status_code}")
-                
+
         except Exception as e:
             logger.error(f"Error sending to Loki: {e}")
 ```
@@ -286,31 +287,34 @@ curl -G "http://localhost:3100/loki/api/v1/query" \
 
 ## 📋 与 Wazuh 对比
 
-| 功能 | Wazuh | Grafana + Loki |
-|------|-------|----------------|
-| **日志收集** | ✅ | ✅ |
-| **告警** | ✅ | ✅ |
-| **可视化** | ✅ | ✅ (更强大) |
-| **SIEM 功能** | ✅ | ⚠️ (需要配置) |
-| **ARM64 支持** | ❌ | ✅ |
-| **资源占用** | 高 | 低 |
-| **学习曲线** | 陡峭 | 平缓 |
+| 功能           | Wazuh | Grafana + Loki |
+| -------------- | ----- | -------------- |
+| **日志收集**   | ✅    | ✅             |
+| **告警**       | ✅    | ✅             |
+| **可视化**     | ✅    | ✅ (更强大)    |
+| **SIEM 功能**  | ✅    | ⚠️ (需要配置)  |
+| **ARM64 支持** | ❌    | ✅             |
+| **资源占用**   | 高    | 低             |
+| **学习曲线**   | 陡峭  | 平缓           |
 
 ---
 
 ## 🎯 下一步
 
 ### 立即可做：
+
 1. ✅ 访问 Grafana: http://localhost:3001
 2. ✅ 添加 Loki 数据源
 3. ✅ 查看日志: Explore → Loki
 
 ### 集成到 SOC Copilot：
+
 1. Backend 发送告警到 Loki
 2. 配置 Grafana 告警规则
 3. Webhook 通知回 SOC Copilot
 
 ### 高级功能：
+
 1. 创建自定义仪表板
 2. 配置告警通知通道
 3. 集成 Prometheus 指标

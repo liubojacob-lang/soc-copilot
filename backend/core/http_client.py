@@ -2,9 +2,10 @@
 HTTP Client Manager - Singleton HTTP client for connection pooling
 """
 
-import httpx
 from typing import Optional
-from core.config import settings
+
+import httpx
+
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -14,7 +15,7 @@ class HTTPClientManager:
     """Singleton HTTP client manager for connection pooling."""
 
     _instance: Optional["HTTPClientManager"] = None
-    _client: Optional[httpx.AsyncClient] = None
+    _client: httpx.AsyncClient | None = None
 
     def __new__(cls) -> "HTTPClientManager":
         if cls._instance is None:

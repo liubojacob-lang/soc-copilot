@@ -2,21 +2,18 @@
 Threat Hunting Router - Proactive Threat Discovery API
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, Field
 from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
-from models.user import UserModel, UserRole
+from models.user import UserModel
 from services.threat_hunting_service import (
     get_threat_hunting_engine,
-    HuntType,
-    HuntStatus,
-    HuntHypothesis,
 )
 
 logger = get_logger(__name__)
@@ -28,7 +25,7 @@ router = APIRouter(prefix="/api/threat-hunting", tags=["threat-hunting", "proact
 class IOCHuntRequest(BaseModel):
     """IOC hunt request."""
 
-    iocs: List[dict] = Field(..., description="List of IOCs to hunt for")
+    iocs: list[dict] = Field(..., description="List of IOCs to hunt for")
     time_range_days: int = Field(default=30, ge=1, le=90)
 
 
@@ -38,10 +35,10 @@ class IOCHuntResult(BaseModel):
     ioc_type: str
     ioc_value: str
     found: bool
-    first_seen: Optional[datetime] = None
-    last_seen: Optional[datetime] = None
+    first_seen: datetime | None = None
+    last_seen: datetime | None = None
     hit_count: int = 0
-    affected_entities: List[str] = []
+    affected_entities: list[str] = []
 
 
 class HuntHypothesisCreate(BaseModel):
@@ -49,8 +46,8 @@ class HuntHypothesisCreate(BaseModel):
 
     name: str = Field(..., min_length=5, max_length=100)
     description: str = Field(..., min_length=20)
-    mitre_techniques: List[str] = Field(default_factory=list)
-    data_sources: List[str] = Field(default_factory=list)
+    mitre_techniques: list[str] = Field(default_factory=list)
+    data_sources: list[str] = Field(default_factory=list)
     query_logic: str = Field(..., min_length=10)
     severity: str = Field(default="medium", pattern="^(low|medium|high|critical)$")
 
@@ -61,8 +58,8 @@ class HuntHypothesisResponse(BaseModel):
     id: str
     name: str
     description: str
-    mitre_techniques: List[str]
-    data_sources: List[str]
+    mitre_techniques: list[str]
+    data_sources: list[str]
     query_logic: str
     severity: str
     created_by: str
@@ -86,7 +83,7 @@ class HuntFindingResponse(BaseModel):
     confidence: float
     severity: str
     evidence: dict
-    recommended_actions: List[str]
+    recommended_actions: list[str]
     found_at: datetime
 
 
@@ -97,13 +94,13 @@ class HuntResultResponse(BaseModel):
     hunt_name: str
     status: str
     started_at: datetime
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
     total_entities_scanned: int
-    findings: List[HuntFindingResponse]
+    findings: list[HuntFindingResponse]
     statistics: dict
 
 
-@router.get("/hypotheses", response_model=List[HuntHypothesisResponse])
+@router.get("/hypotheses", response_model=list[HuntHypothesisResponse])
 async def get_hunt_hypotheses(
     current_user: UserModel = Depends(get_current_user),
 ):
@@ -136,7 +133,7 @@ async def get_hunt_hypotheses(
         logger.error(f"Error getting hunt hypotheses: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get hypotheses: {str(e)}",
+            detail=f"Failed to get hypotheses: {e!s}",
         )
 
 
@@ -180,7 +177,7 @@ async def create_hunt_hypothesis(
         logger.error(f"Error creating hypothesis: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create hypothesis: {str(e)}",
+            detail=f"Failed to create hypothesis: {e!s}",
         )
 
 
@@ -233,7 +230,7 @@ async def execute_hunt(
         logger.error(f"Error executing hunt: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Hunt execution failed: {str(e)}",
+            detail=f"Hunt execution failed: {e!s}",
         )
 
 
@@ -287,13 +284,13 @@ async def hunt_iocs(
         logger.error(f"Error in IOC hunt: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"IOC hunt failed: {str(e)}",
+            detail=f"IOC hunt failed: {e!s}",
         )
 
 
 @router.get("/results")
 async def get_hunt_results(
-    hunt_id: Optional[str] = None,
+    hunt_id: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
     current_user: UserModel = Depends(get_current_user),
 ):
@@ -323,7 +320,7 @@ async def get_hunt_results(
         logger.error(f"Error getting hunt results: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get results: {str(e)}",
+            detail=f"Failed to get results: {e!s}",
         )
 
 
@@ -374,5 +371,5 @@ async def get_hunting_dashboard(
         logger.error(f"Error getting hunting dashboard: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get dashboard: {str(e)}",
+            detail=f"Failed to get dashboard: {e!s}",
         )

@@ -9,19 +9,25 @@
 ## 📋 已创建的文件
 
 ### Docker Compose 配置
+
 ✅ `docker-compose.wazuh.yml` - Wazuh 完整栈配置
+
 - Wazuh Manager (端口 55000)
 - Wazuh Indexer/OpenSearch (端口 9200)
 - Wazuh Dashboard (端口 5601)
 - PostgreSQL 数据库 (端口 5432)
 
 ### 环境变量
+
 ✅ `.env.wazuh.example` - 环境变量模板
+
 - 所有默认密码和配置
 - 可复制为 `.env.wazuh` 使用
 
 ### 安装和集成脚本
+
 ✅ `setup_wazuh.sh` - 一键安装脚本
+
 - 自动检查 Docker 和 Docker Compose
 - 生成所有必要的配置文件
 - 启动 Wazuh 栈
@@ -29,19 +35,24 @@
 - 显示访问凭据
 
 ✅ `integrate_wazuh.sh` - SOC Copilot 集成脚本
+
 - 配置 backend/.env
 - 测试 Wazuh API 连接
 - 可选安装 Wazuh Agent
 - 重启后端服务
 
 ### 测试脚本
+
 ✅ `test_wazuh_stream.sh` - 测试脚本（已存在）
+
 - 启动流服务
 - 检查状态
 - 发送测试告警
 
 ### 文档
+
 ✅ `docs/WAZUH_INSTALLATION.md` - 完整安装指南
+
 - 先决条件检查
 - 分步安装说明
 - 集成步骤
@@ -50,6 +61,7 @@
 - 维护指南
 
 ✅ `WAZUH_STREAM_TROUBLESHOOT.md` - 故障排除指南（已存在）
+
 - 常见问题诊断
 - 解决方案
 - 调试步骤
@@ -72,6 +84,7 @@ nano .env.wazuh  # 更新密码
 ```
 
 **安装完成后，您可以访问：**
+
 - Wazuh Dashboard: https://localhost:5601 (admin / ChangeThisPassword123!)
 - Wazuh API: https://localhost:55000 (wazuh-wui / wazuh-wui-password)
 - OpenSearch: https://localhost:9200
@@ -144,16 +157,19 @@ sec/
 ## 🔑 默认凭据
 
 ### Wazuh Dashboard
+
 - **URL**: https://localhost:5601
 - **用户名**: admin
 - **密码**: ChangeThisPassword123!
 
 ### Wazuh API
+
 - **URL**: https://localhost:55000
 - **用户名**: wazuh-wui
 - **密码**: wazuh-wui-password
 
 ### OpenSearch
+
 - **URL**: https://localhost:9200
 - **用户名**: admin
 - **密码**: ChangeThisPassword123!
@@ -206,6 +222,7 @@ curl -k https://localhost:55000/healthcheck
 ### 问题 1: 前端显示 "未连接到 Wazuh 实时流"
 
 **解决方案**：
+
 ```bash
 # 1. 检查 Wazuh 是否运行
 docker compose -f docker-compose.wazuh.yml ps
@@ -225,6 +242,7 @@ cat WAZUH_STREAM_TROUBLESHOOT.md
 ### 问题 2: Wazuh 服务未启动
 
 **解决方案**：
+
 ```bash
 # 查看日志
 docker compose -f docker-compose.wazuh.yml logs -f
@@ -238,6 +256,7 @@ docker compose -f docker-compose.wazuh.yml logs -f
 ### 问题 3: 无法访问 Wazuh Dashboard
 
 **解决方案**：
+
 ```bash
 # 1. 确认服务健康
 docker compose -f docker-compose.wazuh.yml ps wazuh.dashboard
@@ -281,6 +300,7 @@ docker compose -f docker-compose.wazuh.yml logs -f wazuh.dashboard
 如果您已完成以上所有步骤，Wazuh 现在应该已经完全集成到 SOC Copilot 中了！
 
 **下一步**：
+
 1. 登录 Wazuh Dashboard 探索功能
 2. 在 SOC Copilot 中配置告警规则
 3. 安装 Wazuh Agents 到受监控的主机
@@ -289,6 +309,7 @@ docker compose -f docker-compose.wazuh.yml logs -f wazuh.dashboard
 ---
 
 **需要帮助？**
+
 - 查看完整文档: `docs/WAZUH_INSTALLATION.md`
 - 查看故障排除: `WAZUH_STREAM_TROUBLESHOOT.md`
 - 查看服务日志: `docker compose -f docker-compose.wazuh.yml logs -f`

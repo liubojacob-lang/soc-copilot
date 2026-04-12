@@ -4,28 +4,27 @@ v0.4.1: Integrated IOC compliance filter for external TI transmission.
 """
 
 import uuid
-from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.logger import get_logger
 from core.config import settings
-from schemas.threat_intel import (
-    ThreatIntelResponse,
-    BulkThreatIntelResponse,
-    ThreatIntelItem,
-    ThreatIntelAnalysis,
-    Verdict,
-    IOCType,
-)
-from repositories.threat_intel_repository import ThreatIntelRepository
+from core.logger import get_logger
 from integrations.otx_client import OTXClient
-from utils.ti_filter import should_send_ioc_to_external_ti, FilterDecision
+from repositories.threat_intel_repository import ThreatIntelRepository
+from schemas.threat_intel import (
+    BulkThreatIntelResponse,
+    ThreatIntelAnalysis,
+    ThreatIntelItem,
+    ThreatIntelResponse,
+    Verdict,
+)
+from utils.ti_filter import should_send_ioc_to_external_ti
 
 logger = get_logger(__name__)
 
 
-def _parse_internal_domains() -> List[str]:
+def _parse_internal_domains() -> list[str]:
     """Parse internal domain suffixes from config.
 
     Returns:
@@ -33,10 +32,12 @@ def _parse_internal_domains() -> List[str]:
     """
     if not settings.ti_internal_domain_suffixes:
         return []
-    return [d.strip() for d in settings.ti_internal_domain_suffixes.split(",") if d.strip()]
+    return [
+        d.strip() for d in settings.ti_internal_domain_suffixes.split(",") if d.strip()
+    ]
 
 
-def _parse_blocked_tlds() -> List[str]:
+def _parse_blocked_tlds() -> list[str]:
     """Parse blocked TLDs from config.
 
     Returns:
@@ -58,13 +59,13 @@ class ThreatIntelService:
         """
         self.session = session
         self.repository = ThreatIntelRepository()
-        self._otx_client: Optional[OTXClient] = None
+        self._otx_client: OTXClient | None = None
 
         # v0.4.1: Cache filter settings
         self._internal_domains = _parse_internal_domains()
         self._blocked_tlds = _parse_blocked_tlds()
 
-    def _get_otx_client(self) -> Optional[OTXClient]:
+    def _get_otx_client(self) -> OTXClient | None:
         """Get OTX client if configured.
 
         Returns:
@@ -76,7 +77,7 @@ class ThreatIntelService:
             self._otx_client = OTXClient(api_key=settings.otx_api_key)
         return self._otx_client
 
-    async def is_enabled(self) -> Tuple[bool, Optional[str]]:
+    async def is_enabled(self) -> tuple[bool, str | None]:
         """Check if external threat intel is enabled.
 
         Returns:
@@ -261,7 +262,7 @@ class ThreatIntelService:
 
     async def bulk_lookup(
         self,
-        items: List[Dict[str, str]],
+        items: list[dict[str, str]],
     ) -> BulkThreatIntelResponse:
         """Bulk lookup threat intelligence for multiple IOCs.
 
@@ -340,6 +341,7 @@ class ThreatIntelService:
 
         # Look up each allowed IOC concurrently
         import asyncio
+
         lookup_tasks = [
             self.lookup(
                 ioc_type=item["ioc_type"],
@@ -381,7 +383,7 @@ class ThreatIntelService:
 
     async def enrich_iocs(
         self,
-        iocs: Dict[str, List[str]],
+        iocs: dict[str, list[str]],
     ) -> ThreatIntelAnalysis:
         """Enrich extracted IOCs with threat intelligence.
 
@@ -479,7 +481,7 @@ class ThreatIntelService:
         client: OTXClient,
         ioc_type: str,
         ioc_value: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Perform OTX lookup based on IOC type.
 
         Args:

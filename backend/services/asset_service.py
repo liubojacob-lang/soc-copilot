@@ -1,18 +1,18 @@
 """Asset service for business logic."""
 
+import builtins
 import json
-from typing import List, Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from repositories.asset_repository import AssetRepository
 from schemas.asset import (
     AssetCreate,
-    AssetUpdate,
-    AssetResponse,
     AssetImportRequest,
     AssetImportResponse,
-    Criticality,
+    AssetResponse,
+    AssetUpdate,
 )
 
 logger = get_logger(__name__)
@@ -48,9 +48,13 @@ class AssetService:
 
         # Check for duplicate hostname
         if data.hostname:
-            existing = await self.repository.get_by_hostname(self.session, data.hostname)
+            existing = await self.repository.get_by_hostname(
+                self.session, data.hostname
+            )
             if existing:
-                raise ValueError(f"Asset with hostname '{data.hostname}' already exists")
+                raise ValueError(
+                    f"Asset with hostname '{data.hostname}' already exists"
+                )
 
         # Check for duplicate IP
         if data.ip:
@@ -62,7 +66,7 @@ class AssetService:
         logger.info(f"Created asset: {asset.id}")
         return self._to_response(asset)
 
-    async def get_by_id(self, asset_id: str) -> Optional[AssetResponse]:
+    async def get_by_id(self, asset_id: str) -> AssetResponse | None:
         """Get asset by ID.
 
         Args:
@@ -77,8 +81,8 @@ class AssetService:
         return self._to_response(asset)
 
     async def list(
-        self, query: Optional[str] = None, limit: int = 50
-    ) -> tuple[List[AssetResponse], int]:
+        self, query: str | None = None, limit: int = 50
+    ) -> tuple[list[AssetResponse], int]:
         """List assets with optional search.
 
         Args:
@@ -111,9 +115,13 @@ class AssetService:
 
         # Check for duplicate hostname
         if data.hostname and data.hostname != asset.hostname:
-            existing = await self.repository.get_by_hostname(self.session, data.hostname)
+            existing = await self.repository.get_by_hostname(
+                self.session, data.hostname
+            )
             if existing and existing.id != asset_id:
-                raise ValueError(f"Asset with hostname '{data.hostname}' already exists")
+                raise ValueError(
+                    f"Asset with hostname '{data.hostname}' already exists"
+                )
 
         # Check for duplicate IP
         if data.ip and data.ip != asset.ip:
@@ -160,17 +168,17 @@ class AssetService:
                 imported += 1
             except ValueError as e:
                 failed += 1
-                errors.append(f"{asset_data.hostname or asset_data.ip}: {str(e)}")
+                errors.append(f"{asset_data.hostname or asset_data.ip}: {e!s}")
             except Exception as e:
                 failed += 1
-                errors.append(f"{asset_data.hostname or asset_data.ip}: Unexpected error: {str(e)}")
+                errors.append(
+                    f"{asset_data.hostname or asset_data.ip}: Unexpected error: {e!s}"
+                )
 
         logger.info(f"Asset import complete: {imported} imported, {failed} failed")
-        return AssetImportResponse(
-            imported=imported, failed=failed, errors=errors
-        )
+        return AssetImportResponse(imported=imported, failed=failed, errors=errors)
 
-    async def get_by_ips(self, ips: List[str]) -> List[AssetResponse]:
+    async def get_by_ips(self, ips: builtins.list[str]) -> builtins.list[AssetResponse]:
         """Get assets by list of IPs.
 
         Args:
@@ -182,7 +190,7 @@ class AssetService:
         assets = await self.repository.get_by_ips(self.session, ips)
         return [self._to_response(a) for a in assets]
 
-    async def get_by_hostnames(self, hostnames: List[str]) -> List[AssetResponse]:
+    async def get_by_hostnames(self, hostnames: builtins.list[str]) -> builtins.list[AssetResponse]:
         """Get assets by list of hostnames.
 
         Args:

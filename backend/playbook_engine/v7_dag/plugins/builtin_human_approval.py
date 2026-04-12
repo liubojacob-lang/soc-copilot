@@ -1,16 +1,17 @@
 """Human approval node plugin (v0.7.4)."""
 
-import uuid
-from typing import Any, Dict
-from datetime import datetime, timezone
 import logging
+import uuid
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..base_node import BaseNodePlugin, NodeExecutionContext
 from models.playbook_approval import PlaybookApprovalModel
 from models.playbook_node_run import PlaybookNodeRunModel
+
+from ..base_node import BaseNodePlugin, NodeExecutionContext
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class HumanApprovalPlugin(BaseNodePlugin):
     def description(self) -> str:
         return "Pause execution for manual approval before proceeding"
 
-    def validate_input(self, input_json: Dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         approvers = input_json.get("approvers")
         if not approvers:
@@ -51,7 +52,7 @@ class HumanApprovalPlugin(BaseNodePlugin):
         if timeout is not None and timeout <= 0:
             raise ValueError("timeout_seconds must be positive")
 
-    async def execute(self, context: NodeExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
         """Create approval request and pause execution.
 
         Args:
@@ -61,14 +62,19 @@ class HumanApprovalPlugin(BaseNodePlugin):
             Approval request details with paused=True flag
         """
         title = context.input_json.get("title", "Approval Required")
-        message = context.input_json.get("message", "Please approve this step to continue.")
+        message = context.input_json.get(
+            "message", "Please approve this step to continue."
+        )
         approvers = context.input_json.get("approvers", [])
         timeout_seconds = context.input_json.get("timeout_seconds")
-        on_timeout = context.input_json.get("on_timeout", "fail")  # approve, reject, fail
+        on_timeout = context.input_json.get(
+            "on_timeout", "fail"
+        )  # approve, reject, fail
         min_approvals = context.input_json.get("min_approvals", 1)
 
         # Get database session
         from db.session import AsyncSessionLocal
+
         session = AsyncSessionLocal()
 
         try:
@@ -92,13 +98,16 @@ class HumanApprovalPlugin(BaseNodePlugin):
 
             # Update node run status to waiting_approval
             await self._update_node_status(
-                session, context.run_id, context.node_id, "waiting_approval",
+                session,
+                context.run_id,
+                context.node_id,
+                "waiting_approval",
                 {
                     "approval_id": approval.id,
                     "title": title,
                     "message": message,
                     "approvers": approvers,
-                }
+                },
             )
 
             await session.commit()
@@ -132,7 +141,7 @@ class HumanApprovalPlugin(BaseNodePlugin):
         run_id: str,
         node_id: str,
         status: str,
-        output_json: Dict[str, Any] | None = None,
+        output_json: dict[str, Any] | None = None,
     ) -> None:
         """Update node run status in database.
 
@@ -156,7 +165,7 @@ class HumanApprovalPlugin(BaseNodePlugin):
                 node_run.output_json = output_json
 
             if status == "waiting_approval":
-                node_run.started_at = datetime.now(timezone.utc)
+                node_run.started_at = datetime.now(UTC)
 
     def get_required_secrets(self) -> list[str]:
         """No secrets required for approval node."""

@@ -10,9 +10,9 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+from core.logger import get_logger
 from data.correlation_rules_builtin import BUILTIN_CORRELATION_RULES, seed_builtin_rules
 from db.session import AsyncSessionLocal
-from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -46,6 +46,7 @@ async def main():
         except Exception as e:
             logger.error(f"Failed to initialize rules: {e}")
             import traceback
+
             traceback.print_exc()
             return 1
 

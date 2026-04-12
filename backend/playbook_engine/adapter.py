@@ -1,6 +1,7 @@
 """Playbook Engine Adapter - v6/v7 compatibility layer."""
 
-from typing import Any, Optional
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -16,8 +17,8 @@ class PlaybookEngineAdapter:
     async def run_playbook(
         run: PlaybookRunModel,
         session: AsyncSession,
-        playbook_steps: Optional[list[str]] = None,
-        dag_definition: Optional[dict[str, Any]] = None,
+        playbook_steps: list[str] | None = None,
+        dag_definition: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Run a playbook using the appropriate engine version.
 
@@ -43,23 +44,40 @@ class PlaybookEngineAdapter:
     async def _run_v6_linear(
         run: PlaybookRunModel,
         session: AsyncSession,
-        steps: Optional[list[str]] = None,
+        steps: list[str] | None = None,
     ) -> dict[str, Any]:
         """Run v0.6 linear playbook."""
         # Import v6 engine
-        from .v6_linear.engine import PlaybookExecutionEngine
         from .v6_linear.registry import get_registry
 
-        engine = PlaybookExecutionEngine(session, run.id)
         registry = get_registry()
 
         # Get steps from playbook name or provided steps
         if not steps:
             # Map playbook name to steps (simplified)
             steps_map = {
-                "phishing_triage": ["ioc_extract", "ti_lookup_otx", "asset_enrich", "risk_score", "action_plan"],
-                "endpoint_malware_triage": ["ioc_extract", "ti_lookup_otx", "asset_enrich", "risk_score", "timeline_build", "action_plan"],
-                "suspicious_login_triage": ["ioc_extract", "ti_lookup_otx", "asset_enrich", "risk_score", "action_plan"],
+                "phishing_triage": [
+                    "ioc_extract",
+                    "ti_lookup_otx",
+                    "asset_enrich",
+                    "risk_score",
+                    "action_plan",
+                ],
+                "endpoint_malware_triage": [
+                    "ioc_extract",
+                    "ti_lookup_otx",
+                    "asset_enrich",
+                    "risk_score",
+                    "timeline_build",
+                    "action_plan",
+                ],
+                "suspicious_login_triage": [
+                    "ioc_extract",
+                    "ti_lookup_otx",
+                    "asset_enrich",
+                    "risk_score",
+                    "action_plan",
+                ],
             }
             steps = steps_map.get(run.playbook_name, [])
 
@@ -71,7 +89,7 @@ class PlaybookEngineAdapter:
                 logger.warning(f"Step not found: {step_id}, skipping")
                 continue
 
-            step_input = {**run.input_json, "prev_output": outputs.get(f"step_{i-1}")}
+            step_input = {**run.input_json, "prev_output": outputs.get(f"step_{i - 1}")}
             result = await step_impl.execute(step_input)
             outputs[f"step_{i}"] = result
 
@@ -84,7 +102,7 @@ class PlaybookEngineAdapter:
     async def _run_v7_dag(
         run: PlaybookRunModel,
         session: AsyncSession,
-        dag_definition: Optional[dict[str, Any]] = None,
+        dag_definition: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Run v0.7 DAG playbook."""
         from services.playbook_dag_compiler import DAGCompiler
@@ -95,7 +113,10 @@ class PlaybookEngineAdapter:
             dag_json = dag_definition
         elif run.definition_id:
             # Load from database
-            from repositories.playbook_definition_repository import PlaybookDefinitionRepository
+            from repositories.playbook_definition_repository import (
+                PlaybookDefinitionRepository,
+            )
+
             repo = PlaybookDefinitionRepository(session)
             definition = await repo.get_by_id(run.definition_id)
             if not definition:

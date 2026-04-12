@@ -1,14 +1,14 @@
-from .base import NotificationProvider, NotificationMessage
-from .registry import NotificationRegistry
-from .feishu import FeishuProvider
-from .slack import SlackProvider
+from .base import NotificationMessage, NotificationProvider
 from .email import EmailProvider
+from .feishu import FeishuProvider
+from .registry import NotificationRegistry
+from .slack import SlackProvider
 
 __all__ = [
-    "NotificationProvider",
-    "NotificationMessage",
-    "NotificationRegistry",
-    "FeishuProvider",
-    "SlackProvider",
     "EmailProvider",
+    "FeishuProvider",
+    "NotificationMessage",
+    "NotificationProvider",
+    "NotificationRegistry",
+    "SlackProvider",
 ]

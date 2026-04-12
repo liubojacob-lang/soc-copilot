@@ -1,167 +1,349 @@
-"""
-WebSocket 连接管理器
-用于管理告警实时推送的 WebSocket 连接
+"""WebSocket Connection Manager for real-time communication.
+
+Extracted from routers/websocket.py for better code organization.
+
+Features:
+- Manage WebSocket connections
+- Channel-based subscriptions
+- Message broadcasting
+- Offline message queuing
+- Connection monitoring
 """
 
-from typing import Dict, Set, Optional, Any
-from fastapi import WebSocket
-from datetime import datetime
+import asyncio
 import json
-import logging
+import time
+from datetime import UTC, datetime
+from typing import Any
 
-logger = logging.getLogger(__name__)
+from fastapi import WebSocket
+from pydantic import BaseModel
+
+from core.logger import get_logger
+from models.message_queue import MessageType
+from models.websocket_metrics import ErrorType
+from services.message_queue import MessageQueueService
+from services.observability.websocket_monitoring import get_websocket_monitoring
+from services.websocket_compression import get_compression_service
+
+logger = get_logger(__name__)
+
+
+class WebSocketMessage(BaseModel):
+    """WebSocket message format."""
+
+    type: str  # alert, playbook_run, system, ping, pong
+    data: dict[str, Any]
+    timestamp: str
+    channel: str | None = None
 
 
 class ConnectionManager:
-    """WebSocket 连接管理器"""
+    """Manages WebSocket connections and message broadcasting.
+
+    Features:
+    - Connection lifecycle management
+    - Channel-based subscriptions
+    - Message broadcasting with optional compression
+    - Offline message queuing
+    - Performance monitoring integration
+    """
 
     def __init__(self):
-        # 活跃连接: {user_id: {connection_id: WebSocket}}
-        self.active_connections: Dict[str, Dict[str, WebSocket]] = {}
-        # 连接订阅: {connection_id: {filters}}
-        self.subscriptions: Dict[str, Dict[str, Any]] = {}
-        # 最后心跳时间: {connection_id: datetime}
-        self.last_heartbeat: Dict[str, datetime] = {}
+        # Active connections: {websocket: user_info}
+        self.active_connections: dict[WebSocket, dict[str, Any]] = {}
+        # Channel subscriptions: {channel: set of websockets}
+        self.channel_subscriptions: dict[str, set[WebSocket]] = {
+            "alerts": set(),
+            "playbook_runs": set(),
+            "system": set(),
+        }
+        # Known users (including offline): {user_id: last_seen}
+        self.known_users: dict[str, str] = {}
+        self._lock = asyncio.Lock()
+        self._user_ttl_seconds = 86400  # 24 hours
 
-    async def connect(self, websocket: WebSocket, user_id: str, connection_id: str):
-        """接受新连接"""
+    async def connect(
+        self,
+        websocket: WebSocket,
+        user_id: str,
+        user_role: str,
+        channels: set[str] | None = None,
+        message_queue: MessageQueueService | None = None,
+    ):
+        """Accept a new WebSocket connection and send queued messages."""
+        connection_id = f"{user_id}_{int(time.time() * 1000)}"
         await websocket.accept()
 
-        if user_id not in self.active_connections:
-            self.active_connections[user_id] = {}
+        async with self._lock:
+            self.active_connections[websocket] = {
+                "user_id": user_id,
+                "user_role": user_role,
+                "connected_at": datetime.now(UTC).isoformat(),
+                "channels": channels or {"alerts"},
+                "connection_id": connection_id,
+            }
+            for channel in channels or {"alerts"}:
+                if channel in self.channel_subscriptions:
+                    self.channel_subscriptions[channel].add(websocket)
 
-        self.active_connections[user_id][connection_id] = websocket
-        self.subscriptions[connection_id] = {
-            "severity": None,  # None = all
-            "event_type": None,
-            "min_severity": None,
-        }
-        self.last_heartbeat[connection_id] = datetime.now()
-
-        logger.info(f"WebSocket connected: user={user_id}, conn={connection_id}")
-
-    def disconnect(self, user_id: str, connection_id: str):
-        """断开连接"""
-        if user_id in self.active_connections:
-            if connection_id in self.active_connections[user_id]:
-                del self.active_connections[user_id][connection_id]
-
-        if connection_id in self.subscriptions:
-            del self.subscriptions[connection_id]
-
-        if connection_id in self.last_heartbeat:
-            del self.last_heartbeat[connection_id]
-
-        logger.info(f"WebSocket disconnected: user={user_id}, conn={connection_id}")
-
-    async def send_personal_message(self, message: dict, user_id: str, connection_id: str):
-        """发送个人消息"""
-        if user_id in self.active_connections:
-            if connection_id in self.active_connections[user_id]:
-                try:
-                    websocket = self.active_connections[user_id][connection_id]
-                    await websocket.send_json(message)
-                    return True
-                except Exception as e:
-                    logger.error(f"Failed to send message: {e}")
-                    self.disconnect(user_id, connection_id)
-        return False
-
-    async def broadcast_to_user(self, message: dict, user_id: str):
-        """向用户的所有连接广播"""
-        if user_id not in self.active_connections:
-            return
-
-        disconnected = []
-        for conn_id, websocket in self.active_connections[user_id].items():
-            try:
-                await websocket.send_json(message)
-            except Exception as e:
-                logger.error(f"Failed to broadcast to {conn_id}: {e}")
-                disconnected.append(conn_id)
-
-        # 清理断开的连接
-        for conn_id in disconnected:
-            self.disconnect(user_id, conn_id)
-
-    async def broadcast_alert(self, alert: dict, severity_order: dict = None):
-        """广播告警到所有订阅用户"""
-        if severity_order is None:
-            severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
-
-        alert_severity = alert.get("severity", "info").lower()
-
-        for user_id, connections in self.active_connections.items():
-            for conn_id, websocket in connections.items():
-                try:
-                    # 检查订阅过滤
-                    subscription = self.subscriptions.get(conn_id, {})
-
-                    # 严重程度过滤
-                    min_severity = subscription.get("min_severity")
-                    if min_severity:
-                        min_order = severity_order.get(min_severity, 999)
-                        alert_order = severity_order.get(alert_severity, 999)
-                        if alert_order > min_order:
-                            continue
-
-                    # 事件类型过滤
-                    event_type_filter = subscription.get("event_type")
-                    if event_type_filter and alert.get("event_type") != event_type_filter:
-                        continue
-
-                    # 发送告警
-                    await websocket.send_json({
-                        "type": "alert",
-                        "data": alert,
-                        "timestamp": datetime.now().isoformat()
-                    })
-
-                except Exception as e:
-                    logger.error(f"Failed to broadcast alert: {e}")
-
-    def update_subscription(self, connection_id: str, filters: dict):
-        """更新连接的订阅过滤"""
-        if connection_id in self.subscriptions:
-            self.subscriptions[connection_id].update(filters)
-            logger.info(f"Subscription updated for {connection_id}: {filters}")
-
-    def heartbeat(self, connection_id: str):
-        """更新心跳时间"""
-        self.last_heartbeat[connection_id] = datetime.now()
-
-    async def check_timeouts(self, timeout_seconds: int = 60):
-        """检查超时连接"""
-        now = datetime.now()
-        timeout_connections = []
-
-        for conn_id, last_beat in self.last_heartbeat.items():
-            if (now - last_beat).total_seconds() > timeout_seconds:
-                timeout_connections.append(conn_id)
-
-        for conn_id in timeout_connections:
-            # 找到对应的用户并断开
-            for user_id, connections in self.active_connections.items():
-                if conn_id in connections:
-                    logger.warning(f"Connection timeout: {conn_id}")
-                    self.disconnect(user_id, conn_id)
-                    break
-
-    def get_connection_stats(self) -> dict:
-        """获取连接统计信息"""
-        total_connections = sum(
-            len(conns) for conns in self.active_connections.values()
+        self.known_users[user_id] = datetime.now(UTC).isoformat()
+        logger.info(
+            f"WebSocket connected: user={user_id}, channels={channels or ['alerts']}"
         )
 
+        try:
+            monitoring = get_websocket_monitoring()
+            await monitoring.record_connection_established(
+                connection_id, user_id, user_role
+            )
+        except Exception as e:
+            logger.warning(f"Failed to record connection in monitoring: {e}")
+
+        await self.send_personal_message(
+            websocket,
+            WebSocketMessage(
+                type="system",
+                data={"message": "Connected to SOC Copilot real-time feed"},
+                timestamp=datetime.now(UTC).isoformat(),
+                channel="system",
+            ).model_dump(),
+        )
+
+        if message_queue and await message_queue.is_available():
+            try:
+                queued_messages = await message_queue.get_messages(user_id)
+                if queued_messages:
+                    logger.info(
+                        f"Sending {len(queued_messages)} queued messages to user {user_id}"
+                    )
+                    for msg in queued_messages:
+                        await self.send_personal_message(
+                            websocket,
+                            WebSocketMessage(
+                                type=msg.type.value,
+                                data=msg.data,
+                                timestamp=msg.timestamp,
+                                channel=msg.channel,
+                            ).model_dump(),
+                        )
+                    await self.send_personal_message(
+                        websocket,
+                        WebSocketMessage(
+                            type="system",
+                            data={
+                                "message": f"Delivered {len(queued_messages)} messages from while you were offline"
+                            },
+                            timestamp=datetime.now(UTC).isoformat(),
+                            channel="system",
+                        ).model_dump(),
+                    )
+            except Exception as e:
+                logger.error(f"Error sending queued messages to user {user_id}: {e}")
+
+    async def disconnect(self, websocket: WebSocket, reason: str | None = None):
+        """Handle WebSocket disconnection."""
+        async with self._lock:
+            if websocket in self.active_connections:
+                user_info = self.active_connections[websocket]
+                connection_id = user_info.get("connection_id")
+                user_id = user_info.get("user_id")
+                for channel in self.channel_subscriptions.values():
+                    channel.discard(websocket)
+                del self.active_connections[websocket]
+                logger.info(f"WebSocket disconnected: user={user_id}, reason={reason}")
+                if connection_id:
+                    try:
+                        monitoring = get_websocket_monitoring()
+                        await monitoring.record_connection_closed(connection_id, reason)
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to record disconnection in monitoring: {e}"
+                        )
+
+    async def send_personal_message(
+        self, websocket: WebSocket, message: dict, compress: bool = True
+    ):
+        """Send a message to a specific client with optional compression."""
+        try:
+            compression_service = get_compression_service()
+            message_with_meta, compressed_data = compression_service.compress_message(
+                message
+            )
+            if compressed_data:
+                await websocket.send_text(
+                    json.dumps({"_compressed": True, "_data": compressed_data.hex()})
+                )
+                message_size = message_with_meta.get(
+                    "_compressed_size", len(json.dumps(message))
+                )
+            else:
+                await websocket.send_json(message)
+                message_size = len(json.dumps(message))
+            if websocket in self.active_connections:
+                user_info = self.active_connections[websocket]
+                connection_id = user_info.get("connection_id")
+                if connection_id:
+                    try:
+                        monitoring = get_websocket_monitoring()
+                        await monitoring.record_message_sent(
+                            connection_id,
+                            message.get("type", "unknown"),
+                            message_size,
+                            recipients=1,
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to record message in monitoring: {e}")
+        except Exception as e:
+            logger.error(f"Failed to send WebSocket message: {e}")
+            try:
+                monitoring = get_websocket_monitoring()
+                await monitoring.record_error(
+                    ErrorType.MESSAGE_PARSE_ERROR,
+                    str(e),
+                    is_critical=True,
+                    context={"message_type": message.get("type")},
+                )
+            except Exception:
+                pass
+            await self.disconnect(websocket, reason="send_error")
+
+    async def broadcast_to_channel(
+        self,
+        channel: str,
+        message: WebSocketMessage,
+        message_queue: MessageQueueService | None = None,
+    ):
+        """Broadcast a message to all clients subscribed to a channel."""
+        if channel not in self.channel_subscriptions:
+            return
+        message_dict = message.model_dump()
+        connections = list(self.channel_subscriptions[channel])
+        delivered_users = set()
+        for websocket in connections:
+            try:
+                await websocket.send_json(message_dict)
+                user_id = self.active_connections.get(websocket, {}).get("user_id")
+                if user_id:
+                    delivered_users.add(user_id)
+            except Exception as e:
+                logger.error(f"Failed to broadcast to channel {channel}: {e}")
+                await self.disconnect(websocket)
+        if message_queue and await message_queue.is_available():
+            for user_id in self.known_users.keys():
+                if user_id not in delivered_users:
+                    try:
+                        msg_type = (
+                            MessageType(message.type)
+                            if message.type in [mt.value for mt in MessageType]
+                            else MessageType.ALERT
+                        )
+                        await message_queue.push_message(
+                            user_id=user_id,
+                            message_type=msg_type,
+                            data=message.data,
+                            channel=message.channel or channel,
+                        )
+                    except Exception as e:
+                        logger.error(f"Error queuing message for user {user_id}: {e}")
+
+    async def broadcast_alert(self, alert_data: dict[str, Any]):
+        message = WebSocketMessage(
+            type="alert",
+            data=alert_data,
+            timestamp=datetime.now(UTC).isoformat(),
+            channel="alerts",
+        )
+        await self.broadcast_to_channel("alerts", message)
+
+    async def broadcast_playbook_run(self, run_data: dict[str, Any]):
+        message = WebSocketMessage(
+            type="playbook_run",
+            data=run_data,
+            timestamp=datetime.now(UTC).isoformat(),
+            channel="playbook_runs",
+        )
+        await self.broadcast_to_channel("playbook_runs", message)
+
+    async def broadcast_system_message(self, message_data: dict[str, Any]):
+        message = WebSocketMessage(
+            type="system",
+            data=message_data,
+            timestamp=datetime.now(UTC).isoformat(),
+            channel="system",
+        )
+        await self.broadcast_to_channel("system", message)
+
+    def get_connection_count(self) -> int:
+        return len(self.active_connections)
+
+    def get_channel_stats(self) -> dict[str, int]:
         return {
-            "total_users": len(self.active_connections),
-            "total_connections": total_connections,
-            "connections_per_user": {
-                user_id: len(conns)
-                for user_id, conns in self.active_connections.items()
-            }
+            channel: len(connections)
+            for channel, connections in self.channel_subscriptions.items()
         }
 
+    async def send_batch(
+        self,
+        channel: str,
+        messages: list[dict[str, Any]],
+        message_queue: MessageQueueService | None = None,
+    ):
+        if channel not in self.channel_subscriptions:
+            return
+        connections = list(self.channel_subscriptions[channel])
+        delivered_users = set()
+        for websocket in connections:
+            try:
+                for message in messages:
+                    await websocket.send_json(message)
+                user_id = self.active_connections.get(websocket, {}).get("user_id")
+                if user_id:
+                    delivered_users.add(user_id)
+            except Exception as e:
+                logger.error(f"Failed to send batch to channel {channel}: {e}")
+                await self.disconnect(websocket)
+        if message_queue and await message_queue.is_available():
+            for message in messages:
+                for user_id in self.known_users.keys():
+                    if user_id not in delivered_users:
+                        try:
+                            msg_type = MessageType(message.get("type", "alert"))
+                            if msg_type.value in [mt.value for mt in MessageType]:
+                                await message_queue.push_message(
+                                    user_id=user_id,
+                                    message_type=msg_type,
+                                    data=message.get("data", {}),
+                                    channel=message.get("channel", channel),
+                                )
+                        except Exception as e:
+                            logger.error(
+                                f"Error queuing message for user {user_id}: {e}"
+                            )
 
-# 全局连接管理器实例
-manager = ConnectionManager()
+    async def cleanup_stale_users(self) -> int:
+        now = datetime.now(UTC)
+        stale_users = []
+        for user_id, last_seen_str in self.known_users.items():
+            try:
+                last_seen = datetime.fromisoformat(last_seen_str.replace("Z", "+00:00"))
+                if (now - last_seen).total_seconds() > self._user_ttl_seconds:
+                    stale_users.append(user_id)
+            except Exception:
+                stale_users.append(user_id)
+        async with self._lock:
+            for user_id in stale_users:
+                del self.known_users[user_id]
+        if stale_users:
+            logger.info(f"Cleaned up {len(stale_users)} stale users from known_users")
+        return len(stale_users)
+
+
+_manager: ConnectionManager | None = None
+
+
+def get_manager() -> ConnectionManager:
+    global _manager
+    if _manager is None:
+        _manager = ConnectionManager()
+    return _manager

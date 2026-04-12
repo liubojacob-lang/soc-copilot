@@ -2,33 +2,33 @@
 告警生命周期管理 API 路由
 """
 
-from datetime import datetime, timedelta
-from typing import List, Optional
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
 from dependencies import get_current_user
 from models.user import UserModel
 from schemas.alert_lifecycle import (
-    AlertStatus,
-    AlertLifecycleResponse,
     AlertAssignment,
-    AlertEscalationCreate,
-    AlertResolution,
-    AlertNoteCreate,
-    AlertNote,
-    AlertStatistics,
-    AlertTrend,
-    TopThreat,
-    ThreatIntelligenceStats,
-    AlertBatchUpdate,
     AlertBatchResponse,
+    AlertBatchUpdate,
+    AlertEscalationCreate,
+    AlertLifecycleResponse,
+    AlertNote,
+    AlertNoteCreate,
+    AlertResolution,
+    AlertStatistics,
+    AlertStatus,
+    AlertTrend,
+    ThreatIntelligenceStats,
+    TopThreat,
 )
-from services.alert_lifecycle import AlertLifecycleService
-from services.security_alert_schema import ensure_security_alerts_schema
+from services.alerting.alert_lifecycle import AlertLifecycleService
+from services.security.security_alert_schema import ensure_security_alerts_schema
 
 logger = get_logger(__name__)
 
@@ -140,15 +140,13 @@ async def add_alert_note(
     if not lifecycle:
         raise HTTPException(status_code=404, detail="Alert not found")
 
-    return await service.add_note(
-        alert_id, note, current_user.id, current_user.username
-    )
+    return await service.add_note(alert_id, note, current_user.id, current_user.username)
 
 
 @router.get("/statistics/summary", response_model=AlertStatistics)
 async def get_alert_statistics(
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
     db: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ):
@@ -157,11 +155,11 @@ async def get_alert_statistics(
     return await service.get_statistics(start_date, end_date)
 
 
-@router.get("/statistics/trends", response_model=List[AlertTrend])
+@router.get("/statistics/trends", response_model=list[AlertTrend])
 async def get_alert_trends(
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
-    interval: str = Query("hour", regex="^(hour|day|week)$"),
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
+    interval: str = Query("hour", pattern="^(hour|day|week)$"),
     db: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ):
@@ -170,12 +168,12 @@ async def get_alert_trends(
     return await service.get_trends(start_date, end_date, interval)
 
 
-@router.get("/statistics/top-threats", response_model=List[TopThreat])
+@router.get("/statistics/top-threats", response_model=list[TopThreat])
 async def get_top_threats(
-    threat_type: str = Query("ip", regex="^(ip|domain)$"),
+    threat_type: str = Query("ip", pattern="^(ip|domain)$"),
     limit: int = Query(10, ge=1, le=100),
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
     db: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ):
@@ -186,8 +184,8 @@ async def get_top_threats(
 
 @router.get("/statistics/threat-intel", response_model=ThreatIntelligenceStats)
 async def get_threat_intel_statistics(
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
     db: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ):
@@ -212,9 +210,7 @@ async def batch_update_alerts(
 
     for alert_id in batch.alert_ids:
         try:
-            result = await db.execute(
-                select(SecurityAlert).where(SecurityAlert.id == alert_id)
-            )
+            result = await db.execute(select(SecurityAlert).where(SecurityAlert.id == alert_id))
             alert = result.scalar_one_or_none()
 
             if not alert:
@@ -230,8 +226,17 @@ async def batch_update_alerts(
                 alert.assigned_at = datetime.utcnow()
 
             if batch.tags:
-                # TODO: 实现标签更新
-                pass
+                current_tags = alert.tags or []
+                if batch.tags_operation == "add":
+                    # Order-preserving dedup: existing tags first, then new unique tags
+                    existing_set = set(current_tags)
+                    alert.tags = current_tags + [t for t in batch.tags if t not in existing_set]
+                elif batch.tags_operation == "remove":
+                    remove_set = set(batch.tags)
+                    alert.tags = [tag for tag in current_tags if tag not in remove_set]
+                else:
+                    # Default: replace
+                    alert.tags = batch.tags
 
             alert.updated_at = datetime.utcnow()
             updated_count += 1

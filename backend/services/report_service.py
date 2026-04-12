@@ -1,12 +1,13 @@
 """Report generation service with history tracking."""
 
 import json
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from schemas.report import ReportGenerationResponse
-from services.llm_retry import get_llm_retry_service
 from services.history_service import HistoryService
+from services.llm_retry import get_llm_retry_service
 
 logger = get_logger(__name__)
 
@@ -58,7 +59,9 @@ class ReportService:
             alert_data = {}
             logger.warning("Invalid alert JSON provided")
 
-        notes_text = f"\n\nAdditional Notes:\n{additional_notes}" if additional_notes else ""
+        notes_text = (
+            f"\n\nAdditional Notes:\n{additional_notes}" if additional_notes else ""
+        )
 
         prompt = f"""Based on this alert analysis, generate three report templates:
 
@@ -132,10 +135,12 @@ Each template should be professional Markdown with:
         ]
 
         if result.degraded:
-            lines.extend([
-                "",
-                "---",
-                f"*⚠️ Degraded mode: {result.error_reason or 'Unknown error'}*",
-            ])
+            lines.extend(
+                [
+                    "",
+                    "---",
+                    f"*⚠️ Degraded mode: {result.error_reason or 'Unknown error'}*",
+                ]
+            )
 
         return "\n".join(lines)

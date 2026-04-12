@@ -1,9 +1,9 @@
 """Notification services for DAG-based playbook events."""
 
-from .slack import SlackNotificationService
 from .http_callback import HttpCallbackService
+from .slack import SlackNotificationService
 
 __all__ = [
-    "SlackNotificationService",
     "HttpCallbackService",
+    "SlackNotificationService",
 ]

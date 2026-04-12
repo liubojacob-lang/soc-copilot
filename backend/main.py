@@ -12,67 +12,69 @@ if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-from core.logger import get_logger
-from observability.logging import setup_json_logging
-from observability.tracing import setup_tracing
 from core.config import settings
+from core.logger import get_logger
 from db.session import AsyncSessionLocal
-from routers import (
-    alert,
-    report,
-    ai_models,
-    timeline,
-    history,
-    assets,
-    ioc_hits,
-    threat_intel,
-    playbook,
-    playbook_definitions,
-    auth,
-    users,
-    api_keys,
-    audit,
-    webhooks,
-    triggers,
-    secrets,
-    admin_settings,
-    ai,
-    ai_tasks,
-    ueba,
-    threat_hunting,
-    marketplace,
-    cloud_native,
-    health,
-    monitor,
-    correlation,
-    security_alerts,
-    alert_enrichment,
-    notifications,
-    security_vulnerabilities,
-)
-from routers import websocket as ws_router
-from routers import websocket_filters
-from routers import monitoring_alerts
-from routers import export
-from routers import system_dashboard
 from middleware import (
     AuditMiddleware,
-    TraceIDMiddleware,
-    RequestContextMiddleware,
-    ObservabilityMiddleware,
     ExceptionCaptureMiddleware,
-    setup_trace_logging,
-    setup_exception_handlers,
+    ObservabilityMiddleware,
+    RequestContextMiddleware,
     ResourceAuthorizationMiddleware,
-    IdempotencyMiddleware,
+    TraceIDMiddleware,
+    setup_exception_handlers,
+    setup_trace_logging,
 )
-from middleware.tenant_middleware import TenantMiddleware
+from middleware.csrf_middleware import setup_csrf_middleware
 from middleware.performance import PerformanceMiddleware
+from middleware.tenant_middleware import TenantMiddleware
+from observability.logging import setup_json_logging
+from observability.tracing import setup_tracing
+from routers import (
+    admin_settings,
+    ai,
+    ai_models,
+    ai_tasks,
+    alert,
+    alert_enrichment,
+    api_keys,
+    assets,
+    audit,
+    auth,
+    blocked_ips,
+    cloud_native,
+    correlation,
+    export,
+    health,
+    history,
+    ioc_hits,
+    marketplace,
+    monitor,
+    monitoring_alerts,
+    notifications,
+    playbook,
+    playbook_definitions,
+    report,
+    secrets,
+    security_alerts,
+    security_vulnerabilities,
+    system_dashboard,
+    threat_hunting,
+    threat_intel,
+    timeline,
+    triggers,
+    ueba,
+    users,
+    webhooks,
+    websocket_filters,
+)
+from routers import websocket as ws_router
 
 setup_json_logging(settings.log_level)
 logger = get_logger(__name__)
@@ -91,9 +93,9 @@ class AddCredentialsMiddleware(BaseHTTPMiddleware):
 
 async def create_bootstrap_admin():
     """Create bootstrap admin user if no users exist."""
-    from repositories.user_repository import UserRepository
-    from models.user import UserModel, UserRole
     from core.security import get_password_hash
+    from models.user import UserRole
+    from repositories.user_repository import UserRepository
 
     async with AsyncSessionLocal() as session:
         user_repo = UserRepository(session)
@@ -141,8 +143,8 @@ async def create_bootstrap_admin():
 async def run_migrations():
     """Run Alembic database migrations on startup."""
     from pathlib import Path
+
     from alembic.config import Config
-    from alembic import command
 
     alembic_dir = Path(__file__).parent / "migrations_alembic"
     ini_path = Path(__file__).parent / "alembic.ini"
@@ -154,15 +156,28 @@ async def run_migrations():
             import logging
 
             logging.getLogger("alembic").setLevel(logging.WARNING)
+            import asyncio
             import subprocess
             import sys
 
-            result = subprocess.run(
-                [sys.executable, "-m", "alembic", "-c", str(ini_path), "upgrade", "head"],
-                capture_output=True,
-                text=True,
-                cwd=str(Path(__file__).parent),
-            )
+            # Run migrations in thread pool to avoid blocking event loop
+            def run_migrations_sync():
+                return subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "alembic",
+                        "-c",
+                        str(ini_path),
+                        "upgrade",
+                        "head",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    cwd=str(Path(__file__).parent),
+                )
+
+            result = await asyncio.to_thread(run_migrations_sync)
             if result.returncode == 0:
                 logger.info("Database migrations completed")
             else:
@@ -173,71 +188,71 @@ async def run_migrations():
 
 def register_lifecycle_services():
     """Register all lifecycle services with the manager.
-    
+
     Services are registered in order of priority:
     1. CRITICAL: Database
     2. ESSENTIAL: Queue Manager, Cron Scheduler, Rate Limiter
     3. NORMAL: AI Task Processor, WebSocket Monitoring, Alert Evaluator
     4. OPTIONAL: Audit Archive
     """
-    from services.lifecycle import get_lifecycle_manager
     from services.lifecycle import (
-        DatabaseService,
-        QueueManagerService,
-        CronSchedulerServiceWrapper,
         AITaskProcessorService,
-        RateLimiterService,
-        WebSocketMonitoringService,
         AlertEvaluatorService,
         AuditArchiveService,
+        CronSchedulerServiceWrapper,
+        DatabaseService,
+        QueueManagerService,
+        RateLimiterService,
+        WebSocketMonitoringService,
+        get_lifecycle_manager,
     )
-    
+
     manager = get_lifecycle_manager()
-    
+
     # CRITICAL priority
     manager.register(DatabaseService())
-    
+
     # ESSENTIAL priority
     manager.register(QueueManagerService())
     manager.register(CronSchedulerServiceWrapper())
     manager.register(RateLimiterService())
-    
+
     # NORMAL priority
     manager.register(AITaskProcessorService())
     manager.register(WebSocketMonitoringService())
     manager.register(AlertEvaluatorService())
-    
+
     # OPTIONAL priority
     if settings.audit_log_cleanup_enabled:
         manager.register(AuditArchiveService())
-    
+
     return manager
 
 
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
     """Application lifespan manager using lifecycle services.
-    
+
     This refactored version uses the LifecycleManager for cleaner
     startup and shutdown of all services.
     """
     # Startup
-    logger.info(f"Initializing SOC Copilot API v0.8.0")
+    logger.info("Initializing SOC Copilot API v0.8.0")
     logger.info(f"Environment: {settings.environment}")
-    logger.info(f"Playbook Engine: ENABLED (DAG-based with Node Plugin System)")
-    logger.info(f"Trigger System: ENABLED (webhook + cron)")
+    logger.info("Playbook Engine: ENABLED (DAG-based with Node Plugin System)")
+    logger.info("Trigger System: ENABLED (webhook + cron)")
     logger.info(f"Run Queue: ENABLED (max_concurrent={settings.run_queue_max})")
-    logger.info(f"Secrets Management: ENABLED (Fernet encryption)")
+    logger.info("Secrets Management: ENABLED (Fernet encryption)")
     logger.info(
         f"External TI: {'ENABLED' if settings.allow_external_ti else 'DISABLED'}"
     )
-    logger.info(f"Authentication: ENABLED")
-    logger.info(f"RBAC: ENABLED (admin, analyst, auditor)")
-    logger.info(f"Audit Logging: ENABLED")
+    logger.info("Authentication: ENABLED")
+    logger.info("RBAC: ENABLED (admin, analyst, auditor)")
+    logger.info("Audit Logging: ENABLED")
 
     # Production security checks
     from core.security_validators import run_production_security_checks
-    
+
     security_errors = run_production_security_checks()
     if security_errors:
         msg = "Production security validation failed: " + "; ".join(security_errors)
@@ -251,6 +266,12 @@ async def lifespan(app_instance: FastAPI):
     # Run migrations
     await run_migrations()
 
+    # Validate security environment variables
+    from middleware.env_validator import validate_cors_origins, validate_security_env
+
+    validate_security_env()
+    validate_cors_origins()
+
     # Register and start all lifecycle services
     manager = register_lifecycle_services()
     started_services = await manager.start_all()
@@ -261,17 +282,48 @@ async def lifespan(app_instance: FastAPI):
 
     # Load node plugins
     from pathlib import Path
-    from playbook_engine.v7_dag.registry import NodeRegistry, get_node_registry
+
+    from playbook_engine.v7_dag.registry import NodeRegistry
 
     node_registry = NodeRegistry()
     plugin_dir = Path(__file__).parent / "playbook_engine" / "v7_dag" / "plugins"
     plugin_count = node_registry.auto_load_plugins(plugin_dir)
     logger.info(f"Loaded {plugin_count} node plugins")
 
+    # Start background cleanup task for WebSocket known_users
+    import asyncio
+
+    from services.websocket_manager import get_manager
+
+    cleanup_task = None
+
+    async def websocket_cleanup_task():
+        """Periodically clean up stale WebSocket users."""
+        while True:
+            try:
+                await asyncio.sleep(3600)  # Run every hour
+                manager = get_manager()
+                cleaned = await manager.cleanup_stale_users()
+                if cleaned > 0:
+                    logger.info(f"Cleaned up {cleaned} stale WebSocket users")
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"WebSocket cleanup task error: {e}")
+
+    cleanup_task = asyncio.create_task(websocket_cleanup_task())
+    logger.info("Started WebSocket user cleanup background task")
+
     yield
 
     # Shutdown
     logger.info("Shutting down SOC Copilot API")
+    if cleanup_task:
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
     await manager.stop_all()
     logger.info("Shutdown complete")
 
@@ -285,13 +337,13 @@ app = FastAPI(
 
 # Setup Prometheus metrics
 from core.metrics import setup_metrics
+
 setup_metrics(app)
 setup_tracing(app, service_name="soc-backend")
 
 # Middleware to set user_id in request.state for audit middleware
 # Must be added BEFORE AuditMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp
 
 
 class SetUserStateMiddleware(BaseHTTPMiddleware):
@@ -328,9 +380,7 @@ if settings.environment == "production":
             "CORS_ORIGINS must be configured in production. "
             "Example: CORS_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com"
         )
-    _cors_origins = (
-        [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
-    )
+    _cors_origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
     # v0.8.1: Production CORS security - reject wildcard origins
     if "*" in _cors_origins:
         raise RuntimeError(
@@ -386,6 +436,15 @@ app.add_middleware(ResourceAuthorizationMiddleware)
 # Setup global exception handlers
 setup_exception_handlers(app)
 
+# Setup CSRF protection (must be before exception handlers in request chain)
+setup_csrf_middleware(
+    app,
+    exempt_paths={
+        "/api/triggers/webhook",  # Webhook endpoints have their own validation
+        "/api/playbook-definitions/runs",  # API can be called via API key
+    },
+)
+
 # Setup trace logging
 setup_trace_logging()
 
@@ -393,6 +452,7 @@ setup_trace_logging()
 # Include routers - health first (no auth required), then auth, then others
 app.include_router(health.router)  # v0.8.2: Enhanced health check and metrics
 app.include_router(correlation.router)  # v0.8.0: Event correlation engine
+app.include_router(blocked_ips.router)  # IP/Domain blocking for threat response
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(api_keys.router)
@@ -420,15 +480,20 @@ app.include_router(cloud_native.router)  # Phase 4: Cloud native security
 app.include_router(monitor.router)  # Real-time monitoring dashboard
 app.include_router(security_alerts.router)  # v0.9.0: External security alert ingestion
 app.include_router(alert_enrichment.router)  # v0.9.0: Threat intelligence enrichment
-app.include_router(notifications.router)  # v0.9.x: Notification channels and queue status
+app.include_router(
+    notifications.router
+)  # v0.9.x: Notification channels and queue status
 from routers import alerts_lifecycle  # v0.9.0: Alert lifecycle management
+
 app.include_router(alerts_lifecycle.router)  # v0.9.0: Alert lifecycle management
 app.include_router(ws_router.router)  # v0.8.5: WebSocket real-time alerts
 app.include_router(websocket_filters.router)  # v0.9.0: WebSocket filter management
 app.include_router(monitoring_alerts.router)  # v0.9.1: Monitoring alert rules
 app.include_router(export.router)  # v0.8.5: Data export functionality
 app.include_router(system_dashboard.router)  # v0.8.5: System health dashboard
-app.include_router(security_vulnerabilities.router)  # v0.9.2: Security vulnerability management
+app.include_router(
+    security_vulnerabilities.router
+)  # v0.9.2: Security vulnerability management
 
 
 # Global OPTIONS handler for CORS preflight
@@ -437,15 +502,48 @@ from fastapi.responses import Response
 
 @app.options("/{path:path}")
 async def options_handler(path: str, request: Request):
-    """Handle OPTIONS preflight requests for CORS."""
-    origin = request.headers.get("origin", "*")
+    """Handle OPTIONS preflight requests for CORS.
+
+    SECURITY: Validate origin against whitelist to prevent unauthorized cross-origin access.
+    """
+    origin = request.headers.get("origin", "")
+
+    # Security: Validate origin against whitelist
+    if origin:
+        # Check if origin is in allowed list
+        allowed_origins = (
+            settings.cors_origins if hasattr(settings, "cors_origins") else []
+        )
+        # Handle wildcard and specific origins
+        is_allowed = "*" in allowed_origins or origin in allowed_origins
+
+        # In production, reject unknown origins
+        if not is_allowed and settings.environment == "production":
+            return Response(
+                status_code=403,
+                headers={"Content-Type": "text/plain"},
+                content="Origin not allowed",
+            )
+
+        # In development, allow localhost variants
+        if not is_allowed and settings.environment == "development":
+            if not (
+                origin.startswith("http://localhost")
+                or origin.startswith("http://127.0.0.1")
+            ):
+                return Response(
+                    status_code=403,
+                    headers={"Content-Type": "text/plain"},
+                    content="Origin not allowed in development mode",
+                )
+
     return Response(
         status_code=200,
         headers={
-            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Origin": origin or "*",
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, X-CSRF-Token, X-API-Key",
+            "Access-Control-Allow-Credentials": "true" if origin else "false",
             "Access-Control-Max-Age": "600",
         },
     )

@@ -1,13 +1,13 @@
 """Repository for playbook output CRUD operations."""
 
 from typing import Any
-from sqlalchemy import select, delete, func
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.playbook_output import PlaybookOutputModel
 from schemas.playbook import (
     PlaybookOutputResponse,
-    PlaybookHistoryResponse,
 )
 
 

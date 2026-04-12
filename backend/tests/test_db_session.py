@@ -3,11 +3,10 @@ Tests for database session module.
 """
 
 import pytest
-import pytest_asyncio
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.session import get_session, AsyncSessionLocal, init_db
+from db.session import AsyncSessionLocal, get_session, init_db
 
 
 class TestDatabaseSession:
@@ -18,10 +17,10 @@ class TestDatabaseSession:
         """get_session should return an async session."""
         session_gen = get_session()
         session = await session_gen.__anext__()
-        
+
         assert session is not None
         assert isinstance(session, AsyncSession)
-        
+
         # Cleanup
         try:
             await session_gen.__anext__()
@@ -56,7 +55,7 @@ class TestDatabaseSession:
             async with AsyncSessionLocal() as session2:
                 result1 = await session1.execute(text("SELECT 1"))
                 result2 = await session2.execute(text("SELECT 2"))
-                
+
                 assert result1.scalar() == 1
                 assert result2.scalar() == 2
 

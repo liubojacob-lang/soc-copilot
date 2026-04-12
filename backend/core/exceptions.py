@@ -5,8 +5,10 @@ This module defines custom exception classes that use error codes
 instead of hardcoded error messages.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
+
 from fastapi import HTTPException, status
+
 from core.enums.error_codes import ErrorCode, get_error_message
 
 
@@ -24,7 +26,7 @@ class APIException(HTTPException):
         self,
         code: ErrorCode,
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         self.code = code
         self.status_code = status_code
@@ -44,7 +46,7 @@ class APIException(HTTPException):
 class BadRequestException(APIException):
     """400 Bad Request"""
 
-    def __init__(self, code: ErrorCode, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, code: ErrorCode, details: dict[str, Any] | None = None):
         super().__init__(
             code=code,
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -55,7 +57,7 @@ class BadRequestException(APIException):
 class UnauthorizedException(APIException):
     """401 Unauthorized"""
 
-    def __init__(self, code: ErrorCode, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, code: ErrorCode, details: dict[str, Any] | None = None):
         super().__init__(
             code=code,
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -66,7 +68,7 @@ class UnauthorizedException(APIException):
 class ForbiddenException(APIException):
     """403 Forbidden"""
 
-    def __init__(self, code: ErrorCode, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, code: ErrorCode, details: dict[str, Any] | None = None):
         super().__init__(
             code=code,
             status_code=status.HTTP_403_FORBIDDEN,
@@ -77,7 +79,7 @@ class ForbiddenException(APIException):
 class NotFoundException(APIException):
     """404 Not Found"""
 
-    def __init__(self, code: ErrorCode, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, code: ErrorCode, details: dict[str, Any] | None = None):
         super().__init__(
             code=code,
             status_code=status.HTTP_404_NOT_FOUND,
@@ -88,7 +90,7 @@ class NotFoundException(APIException):
 class ConflictException(APIException):
     """409 Conflict"""
 
-    def __init__(self, code: ErrorCode, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, code: ErrorCode, details: dict[str, Any] | None = None):
         super().__init__(
             code=code,
             status_code=status.HTTP_409_CONFLICT,
@@ -99,7 +101,7 @@ class ConflictException(APIException):
 class UnprocessableEntityException(APIException):
     """422 Unprocessable Entity"""
 
-    def __init__(self, code: ErrorCode, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, code: ErrorCode, details: dict[str, Any] | None = None):
         super().__init__(
             code=code,
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -110,7 +112,7 @@ class UnprocessableEntityException(APIException):
 class TooManyRequestsException(APIException):
     """429 Too Many Requests"""
 
-    def __init__(self, code: ErrorCode, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, code: ErrorCode, details: dict[str, Any] | None = None):
         super().__init__(
             code=code,
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -121,7 +123,7 @@ class TooManyRequestsException(APIException):
 class InternalServerException(APIException):
     """500 Internal Server Error"""
 
-    def __init__(self, code: ErrorCode, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, code: ErrorCode, details: dict[str, Any] | None = None):
         super().__init__(
             code=code,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -132,7 +134,7 @@ class InternalServerException(APIException):
 class ServiceUnavailableException(APIException):
     """503 Service Unavailable"""
 
-    def __init__(self, code: ErrorCode, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, code: ErrorCode, details: dict[str, Any] | None = None):
         super().__init__(
             code=code,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -145,7 +147,7 @@ class ServiceUnavailableException(APIException):
 # ============================================================================
 
 
-def unauthorized(message: Optional[str] = None) -> APIException:
+def unauthorized(message: str | None = None) -> APIException:
     """Quick unauthorized error"""
     exc = UnauthorizedException(ErrorCode.AUTH_UNAUTHORIZED)
     if message:
@@ -153,7 +155,7 @@ def unauthorized(message: Optional[str] = None) -> APIException:
     return exc
 
 
-def forbidden(message: Optional[str] = None) -> APIException:
+def forbidden(message: str | None = None) -> APIException:
     """Quick forbidden error"""
     exc = ForbiddenException(ErrorCode.AUTH_FORBIDDEN)
     if message:
@@ -204,7 +206,7 @@ def invalid_input(field: str, reason: str = "") -> APIException:
     )
 
 
-def internal_error(message: Optional[str] = None) -> APIException:
+def internal_error(message: str | None = None) -> APIException:
     """Quick internal server error"""
     exc = InternalServerException(ErrorCode.GENERAL_INTERNAL_ERROR)
     if message:

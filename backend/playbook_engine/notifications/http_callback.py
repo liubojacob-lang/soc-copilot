@@ -1,12 +1,11 @@
 """HTTP callback notification service for playbook events."""
 
-import json
-from typing import Optional, Dict, Any
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
+
 import httpx
 
 from core.logger import get_logger
-from .slack import SlackNotificationService
 
 logger = get_logger(__name__)
 
@@ -16,7 +15,7 @@ class HttpCallbackService:
 
     def __init__(
         self,
-        default_callback_url: Optional[str] = None,
+        default_callback_url: str | None = None,
         timeout: int = 10,
         max_retries: int = 3,
     ):
@@ -37,8 +36,8 @@ class HttpCallbackService:
         run_id: str,
         playbook_name: str,
         status: str,
-        data: Optional[Dict[str, Any]] = None,
-        callback_url: Optional[str] = None,
+        data: dict[str, Any] | None = None,
+        callback_url: str | None = None,
     ) -> bool:
         """Send a playbook event notification via HTTP callback.
 
@@ -63,7 +62,7 @@ class HttpCallbackService:
             "run_id": run_id,
             "playbook_name": playbook_name,
             "status": status,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "data": data or {},
         }
 
@@ -76,9 +75,9 @@ class HttpCallbackService:
         node_id: str,
         node_name: str,
         status: str,
-        output: Optional[Any] = None,
-        error: Optional[str] = None,
-        callback_url: Optional[str] = None,
+        output: Any | None = None,
+        error: str | None = None,
+        callback_url: str | None = None,
     ) -> bool:
         """Send a node event notification via HTTP callback.
 
@@ -105,7 +104,7 @@ class HttpCallbackService:
             "node_id": node_id,
             "node_name": node_name,
             "status": status,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "output": output,
             "error": error,
         }
@@ -115,7 +114,7 @@ class HttpCallbackService:
     async def _send_with_retry(
         self,
         url: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
     ) -> bool:
         """Send HTTP callback with retry logic.
 

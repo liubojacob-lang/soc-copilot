@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from .schemas import CorrelationRuleDSL, RuleExecutionLog
 from core.metrics import observe_correlation_rule_hit
+
+from .schemas import CorrelationRuleDSL, RuleExecutionLog
 
 
 class RuleEngine:
@@ -16,7 +17,9 @@ class RuleEngine:
     def __init__(self):
         self.execution_logs: list[RuleExecutionLog] = []
 
-    def execute(self, events: list[dict[str, Any]], rules: list[CorrelationRuleDSL]) -> list[dict[str, Any]]:
+    def execute(
+        self, events: list[dict[str, Any]], rules: list[CorrelationRuleDSL]
+    ) -> list[dict[str, Any]]:
         incidents: list[dict[str, Any]] = []
         self.execution_logs.clear()
 
@@ -32,26 +35,38 @@ class RuleEngine:
             )
 
             for (window_start, dim_key), grouped_events in windowed_groups.items():
-                matched = [evt for evt in grouped_events if self._match_clause(evt, rule)]
+                matched = [
+                    evt for evt in grouped_events if self._match_clause(evt, rule)
+                ]
                 raw_score = len(matched) * rule.weight
-                threshold_hit = len(matched) >= rule.threshold.min_count and raw_score >= rule.threshold.min_score
+                threshold_hit = (
+                    len(matched) >= rule.threshold.min_count
+                    and raw_score >= rule.threshold.min_score
+                )
 
                 self.execution_logs.append(
                     RuleExecutionLog(
                         rule_id=rule.id,
                         rule_name=rule.name,
                         window_start=window_start,
-                        window_end=window_start + timedelta(seconds=rule.aggregation.window_seconds),
+                        window_end=window_start
+                        + timedelta(seconds=rule.aggregation.window_seconds),
                         dimension_key=dim_key,
                         matched_count=len(matched),
                         score=raw_score,
                         triggered=threshold_hit,
-                        reason="threshold-met" if threshold_hit else "threshold-not-met",
+                        reason=(
+                            "threshold-met" if threshold_hit else "threshold-not-met"
+                        ),
                     )
                 )
 
                 if threshold_hit:
-                    tenant_id = str(matched[0].get("tenant_id", "default")) if matched else "default"
+                    tenant_id = (
+                        str(matched[0].get("tenant_id", "default"))
+                        if matched
+                        else "default"
+                    )
                     observe_correlation_rule_hit(rule.id, tenant_id)
                     incidents.append(
                         {
@@ -59,7 +74,10 @@ class RuleEngine:
                             "rule_name": rule.name,
                             "dimension_key": dim_key,
                             "window_start": window_start.isoformat(),
-                            "window_end": (window_start + timedelta(seconds=rule.aggregation.window_seconds)).isoformat(),
+                            "window_end": (
+                                window_start
+                                + timedelta(seconds=rule.aggregation.window_seconds)
+                            ).isoformat(),
                             "score": raw_score,
                             "matched_events": matched,
                             "event_count": len(matched),
@@ -81,7 +99,11 @@ class RuleEngine:
             "clause": {
                 "operator": "AND",
                 "conditions": [
-                    {"field": "event_type", "op": "in", "value": ["auth_failed", "login_failed"]},
+                    {
+                        "field": "event_type",
+                        "op": "in",
+                        "value": ["auth_failed", "login_failed"],
+                    },
                     {"field": "severity", "op": "in", "value": ["high", "critical"]},
                 ],
             },
@@ -95,11 +117,11 @@ class RuleEngine:
             try:
                 copied["_dt"] = datetime.fromisoformat(ts.replace("Z", "+00:00"))
             except Exception:
-                copied["_dt"] = datetime.now(timezone.utc)
+                copied["_dt"] = datetime.now(UTC)
         elif isinstance(ts, datetime):
             copied["_dt"] = ts
         else:
-            copied["_dt"] = datetime.now(timezone.utc)
+            copied["_dt"] = datetime.now(UTC)
         return copied
 
     def _group_by_window_and_dimensions(
@@ -112,19 +134,28 @@ class RuleEngine:
         for event in events:
             dt = event["_dt"]
             bucket_seconds = int(dt.timestamp()) // window_seconds * window_seconds
-            window_start = datetime.fromtimestamp(bucket_seconds, tz=timezone.utc)
-            dim_values = [str(event.get(dim, "*")) for dim in dimensions] if dimensions else ["all"]
+            window_start = datetime.fromtimestamp(bucket_seconds, tz=UTC)
+            dim_values = (
+                [str(event.get(dim, "*")) for dim in dimensions]
+                if dimensions
+                else ["all"]
+            )
             dim_key = "|".join(dim_values)
             grouped[(window_start, dim_key)].append(event)
         return grouped
 
     def _match_clause(self, event: dict[str, Any], rule: CorrelationRuleDSL) -> bool:
-        results = [self._match_condition(event, cond.field, cond.op, cond.value) for cond in rule.clause.conditions]
+        results = [
+            self._match_condition(event, cond.field, cond.op, cond.value)
+            for cond in rule.clause.conditions
+        ]
         if not results:
             return True
         return all(results) if rule.clause.operator == "AND" else any(results)
 
-    def _match_condition(self, event: dict[str, Any], field: str, op: str, value: Any) -> bool:
+    def _match_condition(
+        self, event: dict[str, Any], field: str, op: str, value: Any
+    ) -> bool:
         actual = event.get(field)
         if op == "exists":
             return field in event and event.get(field) is not None

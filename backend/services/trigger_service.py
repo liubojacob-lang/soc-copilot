@@ -1,19 +1,17 @@
 """Service for trigger management and execution."""
 
-import secrets
 import hashlib
-import asyncio
-from datetime import datetime, timezone
-from typing import Any, Optional
+import secrets
+from datetime import UTC, datetime
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.playbook_definition import PlaybookTriggerModel
-from models.playbook_run import PlaybookRunModel
-from models.user import UserRole
-from repositories.trigger_repository import TriggerRepository
-from repositories.playbook_run_repository import PlaybookRunRepository
-from repositories.audit_repository import AuditRepository
 from core.logger import get_logger
+from models.playbook_definition import PlaybookTriggerModel
+from repositories.audit_repository import AuditRepository
+from repositories.playbook_run_repository import PlaybookRunRepository
+from repositories.trigger_repository import TriggerRepository
 
 logger = get_logger(__name__)
 
@@ -30,10 +28,10 @@ class TriggerService:
     async def create_webhook_trigger(
         self,
         definition_id: str,
-        name: Optional[str] = None,
-        config: Optional[dict[str, Any]] = None,
+        name: str | None = None,
+        config: dict[str, Any] | None = None,
         is_active: bool = True,
-        created_by_user_id: Optional[str] = None,
+        created_by_user_id: str | None = None,
     ) -> PlaybookTriggerModel:
         """Create a webhook trigger with auto-generated secret.
 
@@ -52,17 +50,19 @@ class TriggerService:
             created_by_user_id=created_by_user_id,
         )
 
-        logger.info(f"Created webhook trigger: {trigger.id} with secret: {secret[:10]}...")
+        logger.info(
+            f"Created webhook trigger: {trigger.id} with secret: {secret[:10]}..."
+        )
         return trigger
 
     async def create_cron_trigger(
         self,
         definition_id: str,
         cron_expr: str,
-        name: Optional[str] = None,
-        config: Optional[dict[str, Any]] = None,
+        name: str | None = None,
+        config: dict[str, Any] | None = None,
         is_active: bool = True,
-        created_by_user_id: Optional[str] = None,
+        created_by_user_id: str | None = None,
     ) -> PlaybookTriggerModel:
         """Create a cron trigger with schedule validation.
 
@@ -96,19 +96,23 @@ class TriggerService:
 
             # Block dangerous patterns - every minute cron not allowed
             if cron_expr.strip() == "* * * * *" or cron_expr.strip() == "* * * * * *":
-                raise ValueError("Every-minute cron expression not allowed (minimum interval: 5 minutes)")
+                raise ValueError(
+                    "Every-minute cron expression not allowed (minimum interval: 5 minutes)"
+                )
 
             # Validate with croniter
             cron = croniter(cron_expr)
 
             # Check minimum interval (5 minutes = 300 seconds)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             next1 = cron.get_next(datetime)
             next2 = cron.get_next(datetime)
             min_interval = (next2 - next1).total_seconds()
 
             if min_interval < 300:  # 5 minutes minimum
-                raise ValueError(f"Cron interval too short: {int(min_interval)}s (minimum 300s)")
+                raise ValueError(
+                    f"Cron interval too short: {int(min_interval)}s (minimum 300s)"
+                )
 
             return True
         except ValueError:
@@ -121,8 +125,8 @@ class TriggerService:
         self,
         trigger_id: str,
         payload: bytes,
-        signature: Optional[str] = None,
-        idempotency_key: Optional[str] = None,
+        signature: str | None = None,
+        idempotency_key: str | None = None,
     ) -> dict[str, Any]:
         """Handle a webhook invocation.
 
@@ -184,6 +188,7 @@ class TriggerService:
 
         # Parse payload as JSON for input context
         import json
+
         try:
             input_context = json.loads(payload.decode("utf-8")) if payload else {}
         except json.JSONDecodeError:
@@ -201,7 +206,10 @@ class TriggerService:
         run = None
         try:
             # Get definition
-            from repositories.playbook_definition_repository import PlaybookDefinitionRepository
+            from repositories.playbook_definition_repository import (
+                PlaybookDefinitionRepository,
+            )
+
             definition_repo = PlaybookDefinitionRepository(self.session)
             definition = await definition_repo.get_by_id(trigger.definition_id)
             if not definition:
@@ -209,8 +217,11 @@ class TriggerService:
 
             # Validate and compile DAG
             from services.playbook_dag_compiler import DAGCompiler, DAGValidationError
+
             try:
-                compiled = await DAGCompiler.validate_and_compile(definition.definition_json, self.session)
+                compiled = await DAGCompiler.validate_and_compile(
+                    definition.definition_json, self.session
+                )
             except DAGValidationError as e:
                 raise ValueError(f"Invalid DAG definition: {e}")
 
@@ -231,6 +242,7 @@ class TriggerService:
             # Execute DAG (for now, mark as success immediately)
             # In production, this would be an async background task
             from services.playbook_dag_scheduler import DAGScheduler
+
             scheduler = DAGScheduler(
                 session=self.session,
                 run_id=run.id,
@@ -241,8 +253,10 @@ class TriggerService:
             )
             output = await scheduler.execute()
 
-            final_status = "cancelled" if scheduler.cancelled else (
-                "failed" if scheduler.failed_nodes else "success"
+            final_status = (
+                "cancelled"
+                if scheduler.cancelled
+                else ("failed" if scheduler.failed_nodes else "success")
             )
             invocation_status = "success" if final_status == "success" else "failed"
             invocation_error = None
@@ -333,8 +347,8 @@ class TriggerService:
 
     def _verify_signature(self, payload: bytes, signature: str, secret: str) -> bool:
         """Verify HMAC signature."""
-        import hmac
         import base64
+        import hmac
 
         try:
             # Compute expected signature
@@ -354,7 +368,7 @@ class TriggerService:
     async def execute_cron_trigger(
         self,
         trigger_id: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Execute a cron trigger.
 
         Returns the run_id if execution was started, None otherwise.
@@ -380,9 +394,10 @@ class TriggerService:
         # Check if should run (compare with last_triggered_at)
         if trigger.last_triggered_at:
             from croniter import croniter
+
             cron = croniter(trigger.cron_expr, trigger.last_triggered_at)
             next_run = cron.get_next(datetime)
-            if next_run > datetime.now(timezone.utc):
+            if next_run > datetime.now(UTC):
                 logger.debug(f"Cron trigger {trigger_id} not due yet: {next_run}")
                 return None
 
@@ -390,7 +405,10 @@ class TriggerService:
         run = None
         try:
             # Get definition
-            from repositories.playbook_definition_repository import PlaybookDefinitionRepository
+            from repositories.playbook_definition_repository import (
+                PlaybookDefinitionRepository,
+            )
+
             definition_repo = PlaybookDefinitionRepository(self.session)
             definition = await definition_repo.get_by_id(trigger.definition_id)
             if not definition:
@@ -399,10 +417,15 @@ class TriggerService:
 
             # Validate and compile DAG
             from services.playbook_dag_compiler import DAGCompiler, DAGValidationError
+
             try:
-                compiled = await DAGCompiler.validate_and_compile(definition.definition_json, self.session)
+                compiled = await DAGCompiler.validate_and_compile(
+                    definition.definition_json, self.session
+                )
             except DAGValidationError as e:
-                logger.error(f"Invalid DAG definition for cron trigger {trigger_id}: {e}")
+                logger.error(
+                    f"Invalid DAG definition for cron trigger {trigger_id}: {e}"
+                )
                 return None
 
             # Create run
@@ -422,6 +445,7 @@ class TriggerService:
 
             # Execute DAG
             from services.playbook_dag_scheduler import DAGScheduler
+
             scheduler = DAGScheduler(
                 session=self.session,
                 run_id=run.id,
@@ -432,8 +456,10 @@ class TriggerService:
             )
             output = await scheduler.execute()
 
-            final_status = "cancelled" if scheduler.cancelled else (
-                "failed" if scheduler.failed_nodes else "success"
+            final_status = (
+                "cancelled"
+                if scheduler.cancelled
+                else ("failed" if scheduler.failed_nodes else "success")
             )
             run_error_message = None
             if final_status == "cancelled":
@@ -524,4 +550,3 @@ class TriggerService:
 
 
 # Import hashlib at module level
-import hashlib

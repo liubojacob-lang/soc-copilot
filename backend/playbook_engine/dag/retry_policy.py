@@ -3,8 +3,7 @@
 import asyncio
 import random
 from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 
 @dataclass
@@ -83,8 +82,8 @@ class RetryResult:
 
     success: bool
     attempt_number: int
-    error: Optional[str] = None
-    next_retry_at: Optional[datetime] = None
+    error: str | None = None
+    next_retry_at: datetime | None = None
 
 
 class RetryExecutor:
@@ -98,12 +97,7 @@ class RetryExecutor:
         """
         self.policy = policy
 
-    async def execute_with_retry(
-        self,
-        func,
-        *args,
-        **kwargs
-    ) -> RetryResult:
+    async def execute_with_retry(self, func, *args, **kwargs) -> RetryResult:
         """Execute a function with retry policy.
 
         Args:
@@ -121,8 +115,7 @@ class RetryExecutor:
             try:
                 # Execute with timeout
                 result = await asyncio.wait_for(
-                    func(*args, **kwargs),
-                    timeout=self.policy.get_timeout_seconds()
+                    func(*args, **kwargs), timeout=self.policy.get_timeout_seconds()
                 )
 
                 return RetryResult(
@@ -130,7 +123,7 @@ class RetryExecutor:
                     attempt_number=attempt_number,
                 )
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 last_error = f"Timeout after {self.policy.timeout}s"
             except Exception as e:
                 last_error = str(e)
@@ -141,7 +134,7 @@ class RetryExecutor:
 
             # Calculate backoff and wait
             backoff = self.policy.calculate_backoff(attempt_number)
-            next_retry_at = datetime.now(timezone.utc) + timedelta(seconds=backoff)
+            next_retry_at = datetime.now(UTC) + timedelta(seconds=backoff)
 
             attempt_number += 1
 
@@ -156,7 +149,7 @@ class RetryExecutor:
             error=last_error,
         )
 
-    def get_next_retry_time(self, attempt_number: int) -> Optional[datetime]:
+    def get_next_retry_time(self, attempt_number: int) -> datetime | None:
         """Calculate when the next retry should occur.
 
         Args:
@@ -169,4 +162,4 @@ class RetryExecutor:
             return None
 
         backoff = self.policy.calculate_backoff(attempt_number)
-        return datetime.now(timezone.utc) + timedelta(seconds=backoff)
+        return datetime.now(UTC) + timedelta(seconds=backoff)

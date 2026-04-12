@@ -3,10 +3,9 @@
 Only IOCs that pass compliance checks are sent to external TI services.
 """
 
-import re
 import ipaddress
+import re
 from dataclasses import dataclass
-from typing import Optional, List
 
 
 @dataclass
@@ -17,8 +16,9 @@ class FilterDecision:
         allowed: Whether the IOC is allowed to be sent to external TI
         reason: Reason for filtering (if not allowed)
     """
+
     allowed: bool
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 def is_private_ip(ip: str) -> bool:
@@ -32,17 +32,12 @@ def is_private_ip(ip: str) -> bool:
     """
     try:
         obj = ipaddress.ip_address(ip.strip())
-        return (
-            obj.is_private
-            or obj.is_loopback
-            or obj.is_link_local
-            or obj.is_reserved
-        )
+        return obj.is_private or obj.is_loopback or obj.is_link_local or obj.is_reserved
     except Exception:
         return False
 
 
-def extract_host_from_url(url: str) -> Optional[str]:
+def extract_host_from_url(url: str) -> str | None:
     """Extract hostname from URL.
 
     Args:
@@ -69,7 +64,7 @@ def extract_host_from_url(url: str) -> Optional[str]:
     return None
 
 
-def matches_internal_domain(host: str, internal_suffixes: List[str]) -> bool:
+def matches_internal_domain(host: str, internal_suffixes: list[str]) -> bool:
     """Check if hostname matches internal domain suffixes.
 
     Args:
@@ -92,7 +87,7 @@ def matches_internal_domain(host: str, internal_suffixes: List[str]) -> bool:
     return False
 
 
-def has_blocked_tld(host: str, blocked_tlds: List[str]) -> bool:
+def has_blocked_tld(host: str, blocked_tlds: list[str]) -> bool:
     """Check if hostname has a blocked TLD.
 
     Args:
@@ -120,8 +115,8 @@ def should_send_ioc_to_external_ti(
     ioc_value: str,
     *,
     allow_private_ip: bool = False,
-    internal_domain_suffixes: Optional[List[str]] = None,
-    blocked_tlds: Optional[List[str]] = None,
+    internal_domain_suffixes: list[str] | None = None,
+    blocked_tlds: list[str] | None = None,
     allow_url_with_private_host: bool = False,
 ) -> FilterDecision:
     """Determine if IOC should be sent to external TI service.

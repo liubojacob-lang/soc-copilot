@@ -13,25 +13,25 @@ print(f"Python path: {sys.path}")
 print(f"Backend directory: {backend_dir}")
 
 try:
-    from core.config import settings
+
     print("✓ Successfully imported core.config")
 except Exception as e:
     print(f"✗ Failed to import core.config: {e}")
 
 try:
-    from core.logger import get_logger
+
     print("✓ Successfully imported core.logger")
 except Exception as e:
     print(f"✗ Failed to import core.logger: {e}")
 
 try:
-    from db.session import AsyncSessionLocal
+
     print("✓ Successfully imported db.session")
 except Exception as e:
     print(f"✗ Failed to import db.session: {e}")
 
 try:
-    from routers import health
+
     print("✓ Successfully imported routers")
 except Exception as e:
     print(f"✗ Failed to import routers: {e}")

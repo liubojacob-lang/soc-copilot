@@ -6,14 +6,14 @@ import pytest
 from fastapi import HTTPException
 
 from core.validators import (
-    validate_username,
-    validate_password,
-    validate_email,
-    validate_sql_input,
     sanitize_string,
+    validate_email,
+    validate_id_format,
     validate_limit,
     validate_pagination_params,
-    validate_id_format,
+    validate_password,
+    validate_sql_input,
+    validate_username,
 )
 
 
@@ -155,15 +155,15 @@ class TestSQLInputValidation:
         assert result is None
 
     def test_invalid_sql_keyword_select(self):
-        """Input with SELECT should fail."""
+        """Input with SELECT injection pattern should fail."""
         with pytest.raises(HTTPException) as exc:
-            validate_sql_input("SELECT * FROM users")
+            validate_sql_input("'; SELECT * FROM users--")
         assert exc.value.status_code == 400
 
     def test_invalid_sql_keyword_drop(self):
-        """Input with DROP should fail."""
+        """Input with DROP injection pattern should fail."""
         with pytest.raises(HTTPException) as exc:
-            validate_sql_input("DROP TABLE users")
+            validate_sql_input("'; DROP TABLE users--")
         assert exc.value.status_code == 400
 
     def test_invalid_sql_injection_pattern(self):

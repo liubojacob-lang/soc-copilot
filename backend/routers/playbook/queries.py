@@ -12,17 +12,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user
 from models.user import UserModel
+from repositories.audit_repository import AuditRepository
 from schemas.playbook import (
-    GenerateQueriesRequest,
-    GenerateQueriesResponse,
     GenerateActionsRequest,
     GenerateActionsResponse,
+    GenerateQueriesRequest,
+    GenerateQueriesResponse,
     PlaybookHistoryResponse,
 )
-from services.playbook_service import PlaybookService
-from dependencies.auth import get_current_user
-from repositories.audit_repository import AuditRepository
+from services.playbook.playbook_service import PlaybookService
 
 logger = get_logger(__name__)
 

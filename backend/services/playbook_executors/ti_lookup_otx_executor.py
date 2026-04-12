@@ -4,8 +4,10 @@ v0.8.2: Integrated with actual OTX service instead of mock data.
 """
 
 from typing import Any
+
 from core.config import settings
 from core.logger import get_logger
+
 from .executor_base import BaseExecutor, ExecutorContext
 
 logger = get_logger(__name__)
@@ -24,7 +26,9 @@ class TiLookupOtxExecutor(BaseExecutor):
             Threat intelligence lookup results
         """
         ioc = self._get_input(context, "ioc")
-        ioc_type = self._get_input(context, "ioc_type", "auto")  # auto, ip, domain, url, hash
+        ioc_type = self._get_input(
+            context, "ioc_type", "auto"
+        )  # auto, ip, domain, url, hash
 
         if not ioc:
             return {
@@ -35,7 +39,9 @@ class TiLookupOtxExecutor(BaseExecutor):
 
         # Check if external TI is enabled
         if not settings.allow_external_ti:
-            logger.warning(f"[{context.run_id}] External TI is disabled, skipping OTX lookup")
+            logger.warning(
+                f"[{context.run_id}] External TI is disabled, skipping OTX lookup"
+            )
             return {
                 "status": "skipped",
                 "message": "External threat intelligence is disabled by configuration",
@@ -105,26 +111,28 @@ class TiLookupOtxExecutor(BaseExecutor):
         import re
 
         # IP address pattern (IPv4)
-        ip_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+        ip_pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
         if re.match(ip_pattern, ioc):
             return "ip"
 
         # URL pattern
-        if ioc.startswith('http://') or ioc.startswith('https://'):
+        if ioc.startswith("http://") or ioc.startswith("https://"):
             return "url"
 
         # Hash patterns (MD5, SHA1, SHA256)
-        if re.match(r'^[a-fA-F0-9]{32}$', ioc):
+        if re.match(r"^[a-fA-F0-9]{32}$", ioc):
             return "hash"  # MD5
-        if re.match(r'^[a-fA-F0-9]{40}$', ioc):
+        if re.match(r"^[a-fA-F0-9]{40}$", ioc):
             return "hash"  # SHA1
-        if re.match(r'^[a-fA-F0-9]{64}$', ioc):
+        if re.match(r"^[a-fA-F0-9]{64}$", ioc):
             return "hash"  # SHA256
 
         # Default to domain
         return "domain"
 
-    def _parse_otx_result(self, ioc: str, ioc_type: str, result: dict) -> dict[str, Any]:
+    def _parse_otx_result(
+        self, ioc: str, ioc_type: str, result: dict
+    ) -> dict[str, Any]:
         """Parse OTX result into standardized format.
 
         Args:
@@ -165,13 +173,15 @@ class TiLookupOtxExecutor(BaseExecutor):
         # Build matches from pulses
         matches = []
         if pulse_count > 0:
-            matches.append({
-                "indicator": ioc,
-                "threat_type": ", ".join(tags[:5]) if tags else "unknown",
-                "confidence": min(score, 100),
-                "pulse_count": pulse_count,
-                "verdict": verdict,
-            })
+            matches.append(
+                {
+                    "indicator": ioc,
+                    "threat_type": ", ".join(tags[:5]) if tags else "unknown",
+                    "confidence": min(score, 100),
+                    "pulse_count": pulse_count,
+                    "verdict": verdict,
+                }
+            )
 
         return {
             "status": "success",

@@ -3,12 +3,10 @@ Threat Hunting Service - Proactive Threat Discovery
 Enables hypothesis-driven hunting and automated threat detection
 """
 
-import json
-import logging
-from typing import Any, Dict, List, Optional, AsyncGenerator
-from datetime import datetime, timedelta
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from core.logger import get_logger
 from db.session import AsyncSession
@@ -41,8 +39,8 @@ class HuntHypothesis:
     id: str
     name: str
     description: str
-    mitre_techniques: List[str]
-    data_sources: List[str]
+    mitre_techniques: list[str]
+    data_sources: list[str]
     query_logic: str
     severity: str
     created_by: str
@@ -60,8 +58,8 @@ class HuntFinding:
     description: str
     confidence: float
     severity: str
-    evidence: Dict[str, Any]
-    recommended_actions: List[str]
+    evidence: dict[str, Any]
+    recommended_actions: list[str]
     found_at: datetime
 
 
@@ -73,18 +71,18 @@ class HuntResult:
     hunt_name: str
     status: HuntStatus
     started_at: datetime
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
     total_entities_scanned: int
-    findings: List[HuntFinding]
-    statistics: Dict[str, Any]
+    findings: list[HuntFinding]
+    statistics: dict[str, Any]
 
 
 class ThreatHuntingEngine:
     """Threat hunting engine."""
 
     def __init__(self):
-        self.active_hunts: Dict[str, HuntResult] = {}
-        self.hunt_library: Dict[str, HuntHypothesis] = {}
+        self.active_hunts: dict[str, HuntResult] = {}
+        self.hunt_library: dict[str, HuntHypothesis] = {}
         self._initialize_default_hypotheses()
 
     def _initialize_default_hypotheses(self):
@@ -198,8 +196,8 @@ class ThreatHuntingEngine:
         self,
         name: str,
         description: str,
-        mitre_techniques: List[str],
-        data_sources: List[str],
+        mitre_techniques: list[str],
+        data_sources: list[str],
         query_logic: str,
         severity: str,
         created_by: str,
@@ -303,7 +301,7 @@ class ThreatHuntingEngine:
 
     async def _execute_hunt_query(
         self, hypothesis: HuntHypothesis, time_range_hours: int, db: AsyncSession
-    ) -> List[HuntFinding]:
+    ) -> list[HuntFinding]:
         """Execute hunt query and return findings."""
         findings = []
 
@@ -365,10 +363,10 @@ class ThreatHuntingEngine:
 
     async def ioc_hunt(
         self,
-        iocs: List[Dict[str, str]],
+        iocs: list[dict[str, str]],
         time_range_days: int = 30,
         db: AsyncSession = None,
-    ) -> List[HuntFinding]:
+    ) -> list[HuntFinding]:
         """
         Hunt for Indicators of Compromise (IOCs).
 
@@ -417,13 +415,13 @@ class ThreatHuntingEngine:
 
         return findings
 
-    async def get_hunt_library(self) -> List[HuntHypothesis]:
+    async def get_hunt_library(self) -> list[HuntHypothesis]:
         """Get all available hunt hypotheses."""
         return list(self.hunt_library.values())
 
     async def get_hunt_results(
-        self, hunt_id: Optional[str] = None, limit: int = 50
-    ) -> List[HuntResult]:
+        self, hunt_id: str | None = None, limit: int = 50
+    ) -> list[HuntResult]:
         """Get hunt execution results."""
         if hunt_id:
             result = self.active_hunts.get(hunt_id)
@@ -437,7 +435,7 @@ class ThreatHuntingEngine:
 
 
 # Global threat hunting engine
-_threat_hunting_engine: Optional[ThreatHuntingEngine] = None
+_threat_hunting_engine: ThreatHuntingEngine | None = None
 
 
 def get_threat_hunting_engine() -> ThreatHuntingEngine:

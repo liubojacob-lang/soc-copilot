@@ -1,15 +1,17 @@
 """Impact analysis service."""
 
-from typing import List, Optional, Dict, Any
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from schemas.impact import (
-    ImpactAnalysis,
     AffectedAsset,
     ContainmentPriority,
+    ImpactAnalysis,
+)
+from schemas.impact import (
     Severity as ImpactSeverity,
-    DegradedImpactAnalysis,
 )
 
 logger = get_logger(__name__)
@@ -44,10 +46,10 @@ class ImpactAnalysisService:
 
     async def analyze(
         self,
-        iocs: Dict[str, List[str]],
-        history_record: Optional[Any] = None,
-        primary_asset: Optional[Any] = None,
-        related_assets: Optional[List[Any]] = None,
+        iocs: dict[str, list[str]],
+        history_record: Any | None = None,
+        primary_asset: Any | None = None,
+        related_assets: list[Any] | None = None,
     ) -> ImpactAnalysis:
         """Perform impact analysis.
 
@@ -99,10 +101,10 @@ class ImpactAnalysisService:
 
     async def _calculate_risk_score(
         self,
-        iocs: Dict[str, List[str]],
-        history_record: Optional[Any],
-        primary_asset: Optional[Any],
-        related_assets: Optional[List[Any]],
+        iocs: dict[str, list[str]],
+        history_record: Any | None,
+        primary_asset: Any | None,
+        related_assets: list[Any] | None,
     ) -> int:
         """Calculate risk score (0-100).
 
@@ -149,7 +151,9 @@ class ImpactAnalysisService:
 
         return min(score, 100)
 
-    def _determine_severity(self, risk_score: int, affected_count: int) -> ImpactSeverity:
+    def _determine_severity(
+        self, risk_score: int, affected_count: int
+    ) -> ImpactSeverity:
         """Determine severity from risk score and affected assets.
 
         Args:
@@ -170,10 +174,10 @@ class ImpactAnalysisService:
 
     async def _build_affected_assets(
         self,
-        iocs: Dict[str, List[str]],
-        primary_asset: Optional[Any],
-        related_assets: Optional[List[Any]],
-    ) -> List[AffectedAsset]:
+        iocs: dict[str, list[str]],
+        primary_asset: Any | None,
+        related_assets: list[Any] | None,
+    ) -> list[AffectedAsset]:
         """Build list of affected assets.
 
         Args:
@@ -213,7 +217,7 @@ class ImpactAnalysisService:
 
         return affected
 
-    def _get_asset_reason(self, iocs: Dict[str, List[str]], asset: Any) -> str:
+    def _get_asset_reason(self, iocs: dict[str, list[str]], asset: Any) -> str:
         """Get reason for asset being affected.
 
         Args:
@@ -231,14 +235,16 @@ class ImpactAnalysisService:
         if asset.hostname:
             for hostname in iocs.get("domains", []):
                 if asset.hostname.lower() in hostname.lower():
-                    reasons.append(f"Hostname {asset.hostname} matches IOC domain {hostname}")
+                    reasons.append(
+                        f"Hostname {asset.hostname} matches IOC domain {hostname}"
+                    )
 
         return "; ".join(reasons) if reasons else "IOC correlation detected"
 
     def _generate_business_impact(
         self,
-        affected_assets: List[AffectedAsset],
-        iocs: Dict[str, List[str]],
+        affected_assets: list[AffectedAsset],
+        iocs: dict[str, list[str]],
         severity: ImpactSeverity,
     ) -> str:
         """Generate business impact description.
@@ -279,8 +285,8 @@ class ImpactAnalysisService:
             return "LOW: Limited impact detected. Routine investigation recommended."
 
     def _build_containment_priorities(
-        self, affected_assets: List[AffectedAsset], iocs: Dict[str, List[str]]
-    ) -> List[ContainmentPriority]:
+        self, affected_assets: list[AffectedAsset], iocs: dict[str, list[str]]
+    ) -> list[ContainmentPriority]:
         """Build containment priority list.
 
         Args:
@@ -314,7 +320,9 @@ class ImpactAnalysisService:
                 reason += " - malicious hash detected"
 
             priorities.append(
-                ContainmentPriority(asset_id=asset.asset_id, priority=priority, reason=reason)
+                ContainmentPriority(
+                    asset_id=asset.asset_id, priority=priority, reason=reason
+                )
             )
 
         # Sort by priority (lower = higher priority)
@@ -323,10 +331,10 @@ class ImpactAnalysisService:
 
     def _generate_recommended_queries(
         self,
-        iocs: Dict[str, List[str]],
-        primary_asset: Optional[Any],
-        related_assets: Optional[List[Any]],
-    ) -> List[str]:
+        iocs: dict[str, list[str]],
+        primary_asset: Any | None,
+        related_assets: list[Any] | None,
+    ) -> list[str]:
         """Generate recommended follow-up queries.
 
         Args:
@@ -354,13 +362,19 @@ class ImpactAnalysisService:
         # Asset-specific queries
         if primary_asset:
             if primary_asset.hostname:
-                queries.append(f"Search for all activity on hostname: {primary_asset.hostname}")
+                queries.append(
+                    f"Search for all activity on hostname: {primary_asset.hostname}"
+                )
             if primary_asset.ip:
-                queries.append(f"Search for network connections from: {primary_asset.ip}")
+                queries.append(
+                    f"Search for network connections from: {primary_asset.ip}"
+                )
 
         # Related asset queries
         if related_assets and len(related_assets) > 1:
-            queries.append(f"Correlate activity across {len(related_assets)} affected assets")
+            queries.append(
+                f"Correlate activity across {len(related_assets)} affected assets"
+            )
 
         # Historical IOC query
         if iocs.get("ips") or iocs.get("domains"):

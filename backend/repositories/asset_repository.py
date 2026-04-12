@@ -1,8 +1,9 @@
 """Asset repository for database operations."""
 
+import builtins
 import json
-from typing import List, Optional
-from sqlalchemy import select, and_, or_
+
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.asset import AssetDB
@@ -22,7 +23,11 @@ class AssetRepository:
             ip=data.ip,
             owner=data.owner,
             business=data.business,
-            criticality=data.criticality.value if isinstance(data.criticality, Criticality) else data.criticality,
+            criticality=(
+                data.criticality.value
+                if isinstance(data.criticality, Criticality)
+                else data.criticality
+            ),
             tags=json.dumps(data.tags) if data.tags else None,
             notes=data.notes,
             is_active=data.is_active,
@@ -31,19 +36,23 @@ class AssetRepository:
         await session.flush()
         return asset
 
-    async def get_by_id(self, session: AsyncSession, asset_id: str) -> Optional[AssetDB]:
+    async def get_by_id(
+        self, session: AsyncSession, asset_id: str
+    ) -> AssetDB | None:
         """Get asset by ID."""
         result = await session.execute(select(AssetDB).where(AssetDB.id == asset_id))
         return result.scalar_one_or_none()
 
-    async def get_by_hostname(self, session: AsyncSession, hostname: str) -> Optional[AssetDB]:
+    async def get_by_hostname(
+        self, session: AsyncSession, hostname: str
+    ) -> AssetDB | None:
         """Get asset by hostname (case-insensitive)."""
         result = await session.execute(
             select(AssetDB).where(AssetDB.hostname == hostname)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_ip(self, session: AsyncSession, ip: str) -> Optional[AssetDB]:
+    async def get_by_ip(self, session: AsyncSession, ip: str) -> AssetDB | None:
         """Get asset by IP."""
         result = await session.execute(select(AssetDB).where(AssetDB.ip == ip))
         return result.scalar_one_or_none()
@@ -51,9 +60,9 @@ class AssetRepository:
     async def list(
         self,
         session: AsyncSession,
-        query: Optional[str] = None,
+        query: str | None = None,
         limit: int = 50,
-    ) -> List[AssetDB]:
+    ) -> list[AssetDB]:
         """List assets with optional search."""
         stmt = select(AssetDB)
 
@@ -87,7 +96,9 @@ class AssetRepository:
             asset.business = data.business
         if data.criticality is not None:
             asset.criticality = (
-                data.criticality.value if isinstance(data.criticality, Criticality) else data.criticality
+                data.criticality.value
+                if isinstance(data.criticality, Criticality)
+                else data.criticality
             )
         if data.tags is not None:
             asset.tags = json.dumps(data.tags)
@@ -103,12 +114,14 @@ class AssetRepository:
         """Delete an asset."""
         await session.delete(asset)
 
-    async def get_by_ips(self, session: AsyncSession, ips: List[str]) -> List[AssetDB]:
+    async def get_by_ips(self, session: AsyncSession, ips: builtins.list[str]) -> builtins.list[AssetDB]:
         """Get assets by list of IPs."""
         result = await session.execute(select(AssetDB).where(AssetDB.ip.in_(ips)))
         return list(result.scalars().all())
 
-    async def get_by_hostnames(self, session: AsyncSession, hostnames: List[str]) -> List[AssetDB]:
+    async def get_by_hostnames(
+        self, session: AsyncSession, hostnames: builtins.list[str]
+    ) -> builtins.list[AssetDB]:
         """Get assets by list of hostnames."""
         result = await session.execute(
             select(AssetDB).where(AssetDB.hostname.in_(hostnames))

@@ -9,7 +9,9 @@ trace_id_ctx: ContextVar[str] = ContextVar("trace_id", default="")
 tenant_id_ctx: ContextVar[str] = ContextVar("tenant_id", default="default")
 
 
-def set_context(*, request_id: str = "", trace_id: str = "", tenant_id: str = "default") -> None:
+def set_context(
+    *, request_id: str = "", trace_id: str = "", tenant_id: str = "default"
+) -> None:
     request_id_ctx.set(request_id or "")
     trace_id_ctx.set(trace_id or "")
     tenant_id_ctx.set(tenant_id or "default")

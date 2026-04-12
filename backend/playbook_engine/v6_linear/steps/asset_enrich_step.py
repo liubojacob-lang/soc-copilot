@@ -1,8 +1,9 @@
 """Asset enrichment step implementation."""
 
 from typing import Any
-from .base_step import BaseStepImpl
+
 from ..registry import register_step
+from .base_step import BaseStepImpl
 
 
 class AssetEnrichStep(BaseStepImpl):

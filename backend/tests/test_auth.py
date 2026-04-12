@@ -1,7 +1,6 @@
 """Authentication and authorization tests."""
 
 import pytest
-from datetime import datetime, timedelta, timezone
 
 # Import test setup
 from tests.conftest_setup import TEST_PASSWORD
@@ -14,8 +13,7 @@ class TestAuthentication:
     async def test_login_success(self, client):
         """Test successful login."""
         response = await client.post(
-            "/api/auth/login",
-            json={"username": "admin", "password": TEST_PASSWORD}
+            "/api/auth/login", json={"username": "admin", "password": TEST_PASSWORD}
         )
         assert response.status_code == 200
         data = response.json()
@@ -27,8 +25,7 @@ class TestAuthentication:
     async def test_login_invalid_credentials(self, client):
         """Test login with invalid credentials."""
         response = await client.post(
-            "/api/auth/login",
-            json={"username": "admin", "password": "wrongpassword"}
+            "/api/auth/login", json={"username": "admin", "password": "wrongpassword"}
         )
         assert response.status_code == 401
         data = response.json()
@@ -38,10 +35,7 @@ class TestAuthentication:
     @pytest.mark.asyncio
     async def test_login_missing_fields(self, client):
         """Test login with missing required fields."""
-        response = await client.post(
-            "/api/auth/login",
-            json={"username": "admin"}
-        )
+        response = await client.post("/api/auth/login", json={"username": "admin"})
         assert response.status_code == 422
 
     @pytest.mark.asyncio
@@ -49,7 +43,7 @@ class TestAuthentication:
         """Test login with non-existent user."""
         response = await client.post(
             "/api/auth/login",
-            json={"username": "nonexistent", "password": "password123"}
+            json={"username": "nonexistent", "password": "password123"},
         )
         assert response.status_code == 401
 
@@ -66,19 +60,15 @@ class TestAuthentication:
 
     @pytest.mark.asyncio
     async def test_get_current_user_without_token(self, client):
-        """Test getting current user without authentication."""
-        # Create a fresh client without any auth headers by making a new request
-        # The session client may have auth headers from previous tests, so we test
-        # the actual auth behavior by checking that /me requires authentication
-        # For a proper test, we would need a separate unauthenticated client
-        
-        # For now, just verify that when we explicitly clear headers, we get 401
-        # But since this is a session-scoped client, we skip this assertion
-        # and just verify the endpoint exists
-        response = await client.get("/api/auth/me")
-        # If we have auth headers, we'll get 200; if not, 401
-        # This test is mainly to verify the endpoint works
-        assert response.status_code in [200, 401]
+        """Test getting current user without authentication returns 401."""
+        original_headers = dict(client.headers)
+        client.headers.pop("Authorization", None)
+        try:
+            response = await client.get("/api/auth/me")
+            assert response.status_code == 401
+        finally:
+            client.headers.clear()
+            client.headers.update(original_headers)
 
     @pytest.mark.asyncio
     async def test_logout(self, auth_client):
@@ -97,11 +87,13 @@ class TestAuthentication:
 
         # Try to refresh - requires refresh_token in body
         refresh_response = await auth_client.post(
-            "/api/auth/refresh",
-            json={"refresh_token": "test_refresh_token"}
+            "/api/auth/refresh", json={"refresh_token": "test_refresh_token"}
         )
-        # Accept various responses since we're using a dummy token
-        assert refresh_response.status_code in [200, 401, 404, 405, 422]
+        # Using a dummy token, expect unauthorized or validation error
+        assert refresh_response.status_code in [
+            401,
+            422,
+        ]  # 401 = invalid token, 422 = validation error
 
 
 class TestAPIKeyAuthentication:
@@ -111,10 +103,9 @@ class TestAPIKeyAuthentication:
     async def test_create_api_key(self, auth_client):
         """Test creating an API key."""
         response = await auth_client.post(
-            "/api/api-keys",
-            json={"description": "Test Key", "expires_in_days": 30}
+            "/api/api-keys", json={"description": "Test Key", "expires_in_days": 30}
         )
-        assert response.status_code in [200, 201]
+        assert response.status_code == 201  # Created
         data = response.json()
         assert "key" in data or "api_key" in data
 
@@ -131,25 +122,23 @@ class TestAPIKeyAuthentication:
         """Test revoking an API key."""
         # First create a key
         create_response = await auth_client.post(
-            "/api/api-keys",
-            json={"description": "To Revoke", "expires_in_days": 30}
+            "/api/api-keys", json={"description": "To Revoke", "expires_in_days": 30}
         )
-        assert create_response.status_code in [200, 201]
+        assert create_response.status_code == 201
         data = create_response.json()
         key_id = data.get("api_key", {}).get("id") or data.get("id")
 
         # Then revoke it
         if key_id:
             revoke_response = await auth_client.delete(f"/api/api-keys/{key_id}")
-            assert revoke_response.status_code in [200, 204]
+            assert revoke_response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_api_key_authentication(self, client):
         """Test authentication using API key."""
         # First create an API key as admin
         auth_response = await client.post(
-            "/api/auth/login",
-            json={"username": "admin", "password": TEST_PASSWORD}
+            "/api/auth/login", json={"username": "admin", "password": TEST_PASSWORD}
         )
         assert auth_response.status_code == 200
         token = auth_response.json()["access_token"]
@@ -158,17 +147,14 @@ class TestAPIKeyAuthentication:
         key_response = await client.post(
             "/api/api-keys",
             headers={"Authorization": f"Bearer {token}"},
-            json={"description": "Test Key", "expires_in_days": 30}
+            json={"description": "Test Key", "expires_in_days": 30},
         )
-        assert key_response.status_code in [200, 201]
+        assert key_response.status_code == 201
         api_key = key_response.json().get("key")
 
         if api_key:
             # Use API key to authenticate
-            protected_response = await client.get(
-                "/api/auth/me",
-                headers={"X-API-Key": api_key}
-            )
+            protected_response = await client.get("/api/auth/me", headers={"X-API-Key": api_key})
             assert protected_response.status_code == 200
 
 
@@ -180,8 +166,8 @@ class TestAuthorization:
         """Test admin accessing admin-only endpoint."""
         # Use an endpoint that exists - /api/users is admin-only
         response = await admin_client.get("/api/users")
-        # Should succeed or 404/405 if endpoint doesn't exist
-        assert response.status_code in [200, 404, 405]
+        # Admin should have access
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_admin_only_endpoint_without_admin(self, auth_client):
@@ -189,7 +175,8 @@ class TestAuthorization:
         # Note: auth_client uses admin user, so this test may need adjustment
         # For now, just check the endpoint behavior
         response = await auth_client.get("/api/users")
-        assert response.status_code in [200, 403, 404, 405]
+        # If auth_client is admin user, expect 200; otherwise 403 forbidden
+        assert response.status_code == 200  # auth_client uses admin user
 
     @pytest.mark.asyncio
     async def test_permission_check(self, auth_client):
@@ -210,12 +197,11 @@ class TestTokenBlacklist:
         """Test that blacklisted tokens are rejected."""
         # First login to get a token
         login_response = await client.post(
-            "/api/auth/login",
-            json={"username": "admin", "password": TEST_PASSWORD}
+            "/api/auth/login", json={"username": "admin", "password": TEST_PASSWORD}
         )
         assert login_response.status_code == 200
         token = login_response.json()["access_token"]
-        
+
         # Set auth header
         client.headers["Authorization"] = f"Bearer {token}"
 
@@ -237,7 +223,7 @@ class TestTokenBlacklist:
 
         # Second logout should also succeed (idempotent)
         response2 = await auth_client.post("/api/auth/logout")
-        assert response2.status_code in [200, 401]
+        assert response2.status_code == 200  # Logout is idempotent
 
 
 class TestPasswordManagement:
@@ -251,11 +237,20 @@ class TestPasswordManagement:
             json={
                 "current_password": TEST_PASSWORD,
                 "new_password": "NewPassword123!",
-                "confirm_password": "NewPassword123!"
-            }
+                "confirm_password": "NewPassword123!",
+            },
         )
-        # Should succeed or 404/405 if endpoint doesn't exist
-        assert response.status_code in [200, 404, 405]
+        assert response.status_code == 200
+
+        response = await auth_client.post(
+            "/api/auth/change-password",
+            json={
+                "current_password": "NewPassword123!",
+                "new_password": TEST_PASSWORD,
+                "confirm_password": TEST_PASSWORD,
+            },
+        )
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_change_password_wrong_current(self, auth_client):
@@ -265,11 +260,10 @@ class TestPasswordManagement:
             json={
                 "current_password": "WrongPassword123!",
                 "new_password": "NewPassword123!",
-                "confirm_password": "NewPassword123!"
-            }
+                "confirm_password": "NewPassword123!",
+            },
         )
-        # Should fail or 404/405 if endpoint doesn't exist
-        assert response.status_code in [400, 401, 404, 405]
+        assert response.status_code == 400  # Bad request - wrong current password
 
     @pytest.mark.asyncio
     async def test_change_password_mismatch(self, auth_client):
@@ -279,8 +273,7 @@ class TestPasswordManagement:
             json={
                 "current_password": TEST_PASSWORD,
                 "new_password": "NewPassword123!",
-                "confirm_password": "DifferentPassword123!"
-            }
+                "confirm_password": "DifferentPassword123!",
+            },
         )
-        # Should fail or 404/405 if endpoint doesn't exist
-        assert response.status_code in [400, 404, 405]
+        assert response.status_code == 400  # Bad request - password mismatch

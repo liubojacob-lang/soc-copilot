@@ -1,13 +1,14 @@
 """History service for managing analysis history."""
 
 from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from repositories.history_repository import HistoryRepository
 from schemas.history import (
     HistoryCreate,
-    HistoryResponse,
     HistoryListResponse,
+    HistoryResponse,
 )
 
 

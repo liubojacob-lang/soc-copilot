@@ -3,25 +3,26 @@
 """
 
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import Any
+
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func, desc
+
 from core.logger import get_logger
 from schemas.alert_lifecycle import (
-    AlertStatus,
-    AlertSeverity,
     AlertAssignee,
-    AlertEscalation,
-    AlertNote,
-    AlertLifecycleResponse,
-    AlertResolution,
     AlertAssignment,
     AlertEscalationCreate,
+    AlertLifecycleResponse,
+    AlertNote,
     AlertNoteCreate,
+    AlertResolution,
+    AlertSeverity,
     AlertStatistics,
+    AlertStatus,
     AlertTrend,
-    TopThreat,
     ThreatIntelligenceStats,
+    TopThreat,
 )
 
 logger = get_logger(__name__)
@@ -34,7 +35,7 @@ class AlertLifecycleService:
         self.db = db
 
     @staticmethod
-    def _normalize_status(raw_status: Optional[str]) -> AlertStatus:
+    def _normalize_status(raw_status: str | None) -> AlertStatus:
         """Map legacy status values to lifecycle enum."""
         mapping = {
             "open": AlertStatus.NEW,
@@ -49,10 +50,10 @@ class AlertLifecycleService:
 
     async def get_alert_lifecycle(
         self, alert_id: str
-    ) -> Optional[AlertLifecycleResponse]:
+    ) -> AlertLifecycleResponse | None:
         """获取告警生命周期信息"""
-        from models.security_alert import SecurityAlert
         from models.alert_note import AlertNoteModel
+        from models.security_alert import SecurityAlert
 
         result = await self.db.execute(
             select(SecurityAlert).where(SecurityAlert.id == alert_id)
@@ -88,11 +89,15 @@ class AlertLifecycleService:
             alert_id=str(alert.id),
             status=self._normalize_status(alert.status),
             severity=AlertSeverity(alert.severity),
-            assigned_to=AlertAssignee(
-                user_id=alert.assigned_to or "",
-                username=alert.assigned_to or "Unassigned",
-                assigned_at=alert.assigned_at or alert.created_at,
-            ) if alert.assigned_to else None,
+            assigned_to=(
+                AlertAssignee(
+                    user_id=alert.assigned_to or "",
+                    username=alert.assigned_to or "Unassigned",
+                    assigned_at=alert.assigned_at or alert.created_at,
+                )
+                if alert.assigned_to
+                else None
+            ),
             escalated=None,  # TODO: 从关联表获取
             notes=notes,  # 从数据库加载备注
             created_at=alert.created_at,
@@ -102,44 +107,52 @@ class AlertLifecycleService:
             timeline=timeline,
         )
 
-    async def _build_timeline(self, alert) -> List[Dict[str, Any]]:
+    async def _build_timeline(self, alert) -> list[dict[str, Any]]:
         """构建告警时间线"""
         timeline = []
 
         # 创建事件
-        timeline.append({
-            "timestamp": alert.created_at,
-            "event": "created",
-            "description": f"Alert created by {alert.source}",
-            "user": None,
-        })
+        timeline.append(
+            {
+                "timestamp": alert.created_at,
+                "event": "created",
+                "description": f"Alert created by {alert.source}",
+                "user": None,
+            }
+        )
 
         # 状态变更
         if alert.status and alert.status != "new":
-            timeline.append({
-                "timestamp": alert.updated_at,
-                "event": "status_changed",
-                "description": f"Status changed to {alert.status}",
-                "user": None,
-            })
+            timeline.append(
+                {
+                    "timestamp": alert.updated_at,
+                    "event": "status_changed",
+                    "description": f"Status changed to {alert.status}",
+                    "user": None,
+                }
+            )
 
         # 分配事件
         if alert.assigned_to:
-            timeline.append({
-                "timestamp": alert.assigned_at or alert.updated_at,
-                "event": "assigned",
-                "description": f"Assigned to {alert.assigned_to}",
-                "user": alert.assigned_to,
-            })
+            timeline.append(
+                {
+                    "timestamp": alert.assigned_at or alert.updated_at,
+                    "event": "assigned",
+                    "description": f"Assigned to {alert.assigned_to}",
+                    "user": alert.assigned_to,
+                }
+            )
 
         # 丰富化事件
         if alert.enriched_at:
-            timeline.append({
-                "timestamp": alert.enriched_at,
-                "event": "enriched",
-                "description": "Threat intelligence enrichment completed",
-                "user": None,
-            })
+            timeline.append(
+                {
+                    "timestamp": alert.enriched_at,
+                    "event": "enriched",
+                    "description": "Threat intelligence enrichment completed",
+                    "user": None,
+                }
+            )
 
         # 按时间排序
         timeline.sort(key=lambda x: x["timestamp"])
@@ -148,7 +161,7 @@ class AlertLifecycleService:
 
     async def update_status(
         self, alert_id: str, status: AlertStatus, user_id: str
-    ) -> Optional[AlertLifecycleResponse]:
+    ) -> AlertLifecycleResponse | None:
         """更新告警状态"""
         from models.security_alert import SecurityAlert
 
@@ -178,7 +191,7 @@ class AlertLifecycleService:
 
     async def assign_alert(
         self, alert_id: str, assignment: AlertAssignment, user_id: str
-    ) -> Optional[AlertLifecycleResponse]:
+    ) -> AlertLifecycleResponse | None:
         """分配告警"""
         from models.security_alert import SecurityAlert
 
@@ -205,7 +218,7 @@ class AlertLifecycleService:
 
     async def resolve_alert(
         self, alert_id: str, resolution: AlertResolution, user_id: str
-    ) -> Optional[AlertLifecycleResponse]:
+    ) -> AlertLifecycleResponse | None:
         """解决告警"""
         from models.security_alert import SecurityAlert
 
@@ -234,7 +247,7 @@ class AlertLifecycleService:
 
     async def escalate_alert(
         self, alert_id: str, escalation: AlertEscalationCreate, user_id: str
-    ) -> Optional[AlertLifecycleResponse]:
+    ) -> AlertLifecycleResponse | None:
         """升级告警"""
         from models.security_alert import SecurityAlert
 
@@ -299,8 +312,8 @@ class AlertLifecycleService:
 
     async def get_statistics(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> AlertStatistics:
         """获取告警统计"""
         from models.security_alert import SecurityAlert
@@ -364,7 +377,9 @@ class AlertLifecycleService:
 
         # 计算平均解决时间
         mttr_result = await self.db.execute(
-            select(func.avg(SecurityAlert.resolved_at - SecurityAlert.created_at)).where(
+            select(
+                func.avg(SecurityAlert.resolved_at - SecurityAlert.created_at)
+            ).where(
                 and_(
                     SecurityAlert.created_at >= start_date,
                     SecurityAlert.created_at <= end_date,
@@ -386,10 +401,10 @@ class AlertLifecycleService:
 
     async def get_trends(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         interval: str = "hour",  # hour, day, week
-    ) -> List[AlertTrend]:
+    ) -> list[AlertTrend]:
         """获取告警趋势 - 时间序列聚合
 
         Args:
@@ -400,8 +415,6 @@ class AlertLifecycleService:
         Returns:
             按时间间隔分组的告警趋势数据
         """
-        from models.security_alert import SecurityAlert
-        from sqlalchemy import case, literal_column
 
         if not end_date:
             end_date = datetime.utcnow()
@@ -421,7 +434,9 @@ class AlertLifecycleService:
             # 按周分组: YYYY-WW
             date_trunc = "strftime('%Y-W%W', created_at)"
         else:
-            raise ValueError(f"Invalid interval: {interval}. Must be 'hour', 'day', or 'week'")
+            raise ValueError(
+                f"Invalid interval: {interval}. Must be 'hour', 'day', or 'week'"
+            )
 
         # 使用原生SQL进行时间序列聚合（SQLite特定）
         # 获取每个时间段的告警统计
@@ -443,8 +458,7 @@ class AlertLifecycleService:
         from sqlalchemy import text
 
         result = await self.db.execute(
-            text(query),
-            {"start_date": start_date, "end_date": end_date}
+            text(query), {"start_date": start_date, "end_date": end_date}
         )
 
         trends = []
@@ -453,7 +467,9 @@ class AlertLifecycleService:
             if interval == "hour":
                 timestamp = datetime.strptime(str(row.period), "%Y-%m-%d %H:00:00")
             elif interval == "day":
-                timestamp = datetime.strptime(str(row.period), "%Y-%m-%d").replace(hour=0, minute=0, second=0)
+                timestamp = datetime.strptime(str(row.period), "%Y-%m-%d").replace(
+                    hour=0, minute=0, second=0
+                )
             else:  # week
                 # 对于周，使用周的开始时间
                 parts = str(row.period).split("-W")
@@ -461,8 +477,9 @@ class AlertLifecycleService:
                     year, week = int(parts[0]), int(parts[1])
                     # 计算周的开始时间（周一）
                     from datetime import timedelta
+
                     timestamp = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
-                    timestamp += timedelta(weeks=week-1, days=-timestamp.weekday())
+                    timestamp += timedelta(weeks=week - 1, days=-timestamp.weekday())
                 else:
                     timestamp = datetime.utcnow()
 
@@ -475,14 +492,18 @@ class AlertLifecycleService:
                 "info": row.info or 0,
             }
 
-            trends.append(AlertTrend(
-                timestamp=timestamp,
-                count=row.total,
-                by_severity=by_severity,
-            ))
+            trends.append(
+                AlertTrend(
+                    timestamp=timestamp,
+                    count=row.total,
+                    by_severity=by_severity,
+                )
+            )
 
-        logger.info(f"Generated {len(trends)} trend points for interval '{interval}' "
-                    f"from {start_date} to {end_date}")
+        logger.info(
+            f"Generated {len(trends)} trend points for interval '{interval}' "
+            f"from {start_date} to {end_date}"
+        )
 
         return trends
 
@@ -490,9 +511,9 @@ class AlertLifecycleService:
         self,
         threat_type: str = "ip",  # ip or domain
         limit: int = 10,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> List[TopThreat]:
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[TopThreat]:
         """获取Top威胁源"""
         from models.security_alert import SecurityAlert
 
@@ -501,24 +522,135 @@ class AlertLifecycleService:
         if not start_date:
             start_date = end_date - timedelta(days=7)
 
-        # TODO: 实现威胁源统计
         threats = []
+
+        if threat_type == "ip":
+            query = (
+                select(
+                    SecurityAlert.source_ip,
+                    func.count(SecurityAlert.id).label("count"),
+                    func.min(SecurityAlert.created_at).label("first_seen"),
+                    func.max(SecurityAlert.created_at).label("last_seen"),
+                    SecurityAlert.severity,
+                )
+                .where(
+                    and_(
+                        SecurityAlert.source_ip.isnot(None),
+                        SecurityAlert.source_ip != "",
+                        SecurityAlert.created_at >= start_date,
+                        SecurityAlert.created_at <= end_date,
+                    )
+                )
+                .group_by(SecurityAlert.source_ip, SecurityAlert.severity)
+                .order_by(desc("count"))
+                .limit(limit)
+            )
+
+            result = await self.db.execute(query)
+            rows = result.all()
+
+            for row in rows:
+                if row.source_ip:
+                    threats.append(
+                        TopThreat(
+                            type="ip",
+                            value=row.source_ip,
+                            count=row.count,
+                            severity=(
+                                AlertSeverity(row.severity.lower())
+                                if row.severity
+                                else AlertSeverity.MEDIUM
+                            ),
+                            first_seen=row.first_seen,
+                            last_seen=row.last_seen,
+                        )
+                    )
 
         return threats
 
     async def get_threat_intel_stats(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> ThreatIntelligenceStats:
         """获取威胁情报统计"""
-        # TODO: 实现威胁情报统计
+        from models.security_alert import SecurityAlert
+
+        if not end_date:
+            end_date = datetime.utcnow()
+        if not start_date:
+            start_date = end_date - timedelta(days=7)
+
+        total_iocs_query = select(func.count(SecurityAlert.id)).where(
+            and_(
+                SecurityAlert.iocs.isnot(None),
+                SecurityAlert.created_at >= start_date,
+                SecurityAlert.created_at <= end_date,
+            )
+        )
+        total_iocs_result = await self.db.execute(total_iocs_query)
+        total_iocs = total_iocs_result.scalar() or 0
+
+        malicious_ips_query = select(func.count(SecurityAlert.id)).where(
+            and_(
+                SecurityAlert.source_ip.isnot(None),
+                SecurityAlert.threat_score >= 70,
+                SecurityAlert.created_at >= start_date,
+                SecurityAlert.created_at <= end_date,
+            )
+        )
+        malicious_ips_result = await self.db.execute(malicious_ips_query)
+        malicious_ips = malicious_ips_result.scalar() or 0
+
+        suspicious_ips_query = select(func.count(SecurityAlert.id)).where(
+            and_(
+                SecurityAlert.source_ip.isnot(None),
+                SecurityAlert.threat_score >= 30,
+                SecurityAlert.threat_score < 70,
+                SecurityAlert.created_at >= start_date,
+                SecurityAlert.created_at <= end_date,
+            )
+        )
+        suspicious_ips_result = await self.db.execute(suspicious_ips_query)
+        suspicious_ips = suspicious_ips_result.scalar() or 0
+
+        malicious_domains_query = select(func.count(SecurityAlert.id)).where(
+            and_(
+                SecurityAlert.iocs.isnot(None),
+                SecurityAlert.threat_score >= 70,
+                SecurityAlert.created_at >= start_date,
+                SecurityAlert.created_at <= end_date,
+            )
+        )
+        malicious_domains_result = await self.db.execute(malicious_domains_query)
+        malicious_domains = malicious_domains_result.scalar() or 0
+
+        top_ips = await self.get_top_threats("ip", 10, start_date, end_date)
+        top_domains = []
+
+        mitre_tactics_query = select(SecurityAlert.mitre_tactics).where(
+            and_(
+                SecurityAlert.mitre_tactics.isnot(None),
+                SecurityAlert.created_at >= start_date,
+                SecurityAlert.created_at <= end_date,
+            )
+        )
+        mitre_result = await self.db.execute(mitre_tactics_query)
+        mitre_rows = mitre_result.all()
+
+        mitre_tactics: dict[str, int] = {}
+        for row in mitre_rows:
+            if row.mitre_tactics:
+                for tactic in row.mitre_tactics:
+                    if tactic:
+                        mitre_tactics[tactic] = mitre_tactics.get(tactic, 0) + 1
+
         return ThreatIntelligenceStats(
-            total_iocs=0,
-            malicious_ips=0,
-            suspicious_ips=0,
-            malicious_domains=0,
-            top_ips=[],
-            top_domains=[],
-            mitre_tactics={},
+            total_iocs=total_iocs,
+            malicious_ips=malicious_ips,
+            suspicious_ips=suspicious_ips,
+            malicious_domains=malicious_domains,
+            top_ips=top_ips,
+            top_domains=top_domains,
+            mitre_tactics=mitre_tactics,
         )
