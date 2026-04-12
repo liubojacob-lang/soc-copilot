@@ -1,7 +1,7 @@
 # SOC Copilot 项目功能总结
 
-> **文档版本**: v0.8.0  
-> **最后更新**: 2026-02-11  
+> **文档版本**: v0.9.0  
+> **最后更新**: 2026-04-12  
 > **项目经理**: AI Assistant
 
 ---
@@ -14,7 +14,7 @@
 
 | 组件         | 技术栈                                       | 版本  |
 | ------------ | -------------------------------------------- | ----- |
-| **后端 API** | Python + FastAPI                             | 0.8.0 |
+| **后端 API** | Python + FastAPI                             | 0.9.0 |
 | **前端界面** | Next.js 15 + React 19 + TypeScript           | 0.2.0 |
 | **数据库**   | PostgreSQL + SQLAlchemy                      | -     |
 | **AI 引擎**  | NVIDIA AI Foundation Models (Llama 3.1 405B) | -     |

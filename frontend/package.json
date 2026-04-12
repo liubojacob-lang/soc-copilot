@@ -1,6 +1,6 @@
 {
   "name": "soc-copilot-frontend",
-  "version": "0.2.0",
+  "version": "0.9.0",
   "private": true,
   "scripts": {
     "dev": "next dev -H localhost -p 3003",
