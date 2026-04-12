@@ -1,19 +1,24 @@
-"""
-Marketplace Router - Playbook Marketplace API
-"""
-
-from datetime import datetime
+"""Marketplace Router - Playbook Marketplace API with DB persistence."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
+from db.session import get_db
 from dependencies.auth import get_current_user
+from dependencies.authorization import require_admin
 from models.user import UserModel
-from services.marketplace_service import (
-    PlaybookCategory,
-    PlaybookDifficulty,
-    get_marketplace,
+from repositories.marketplace_repository import MarketplaceRepository
+from repositories.playbook_definition_repository import PlaybookDefinitionRepository
+from schemas.marketplace import (
+    MarketplaceApprovalRequest,
+    MarketplacePlaybookCreate,
+    MarketplacePlaybookDetail,
+    MarketplacePlaybookResponse,
+    MarketplaceReviewCreate,
+    MarketplaceReviewResponse,
+    MarketplaceStats,
 )
 
 logger = get_logger(__name__)
@@ -21,452 +26,259 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/marketplace", tags=["marketplace", "community"])
 
 
-# Request/Response Models
-class PlaybookSearchRequest(BaseModel):
-    """Search request."""
-
-    query: str | None = None
-    category: str | None = None
-    difficulty: str | None = None
-    tags: list[str] | None = None
-    min_rating: float | None = Field(None, ge=0, le=5)
-    verified_only: bool = False
-    sort_by: str = Field(default="rating", pattern="^(rating|downloads|newest)$")
+def get_marketplace_repo(db: AsyncSession = Depends(get_db)) -> MarketplaceRepository:
+    return MarketplaceRepository(db)
 
 
-class PlaybookResponse(BaseModel):
-    """Playbook response."""
-
-    id: str
-    name: str
-    description: str
-    version: str
-    category: str
-    difficulty: str
-    author: str
-    tags: list[str]
-    download_count: int
-    rating_average: float
-    rating_count: int
-    review_count: int
-    verified: bool
-    featured: bool
-    created_at: datetime
-    updated_at: datetime
-    required_plugins: list[str]
-    compatible_versions: list[str]
+def get_playbook_repo(db: AsyncSession = Depends(get_db)) -> PlaybookDefinitionRepository:
+    return PlaybookDefinitionRepository(db)
 
 
-class ReviewSubmitRequest(BaseModel):
-    """Submit review request."""
-
-    rating: int = Field(..., ge=1, le=5)
-    comment: str = Field(..., min_length=10, max_length=1000)
-
-
-class ReviewResponse(BaseModel):
-    """Review response."""
-
-    id: str
-    username: str
-    rating: int
-    comment: str
-    created_at: datetime
-
-
-@router.get("/playbooks", response_model=list[PlaybookResponse])
+@router.get("/playbooks", response_model=dict)
 async def search_playbooks(
     query: str | None = None,
     category: str | None = None,
     difficulty: str | None = None,
-    tags: str | None = None,  # comma-separated
-    min_rating: float | None = None,
+    min_rating: float | None = Query(None, ge=0, le=5),
     verified_only: bool = False,
     sort_by: str = Query(default="rating", pattern="^(rating|downloads|newest)$"),
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    Search playbooks in marketplace.
-
-    Supports filtering by category, difficulty, tags, and rating.
-    Results can be sorted by rating, downloads, or newest.
-    """
-    try:
-        marketplace = get_marketplace()
-
-        # Parse tags
-        tag_list = tags.split(",") if tags else None
-
-        # Parse category and difficulty
-        cat_enum = PlaybookCategory(category) if category else None
-        diff_enum = PlaybookDifficulty(difficulty) if difficulty else None
-
-        playbooks, total = await marketplace.search_playbooks(
-            query=query,
-            category=cat_enum,
-            difficulty=diff_enum,
-            tags=tag_list,
-            min_rating=min_rating,
-            verified_only=verified_only,
-            sort_by=sort_by,
-            page=page,
-            page_size=page_size,
-        )
-
-        return [
-            PlaybookResponse(
-                id=p.id,
-                name=p.name,
-                description=p.description,
-                version=p.version,
-                category=p.category.value,
-                difficulty=p.difficulty.value,
-                author=p.author,
-                tags=p.tags,
-                download_count=p.download_count,
-                rating_average=p.rating_average,
-                rating_count=p.rating_count,
-                review_count=p.review_count,
-                verified=p.verified,
-                featured=p.featured,
-                created_at=p.created_at,
-                updated_at=p.updated_at,
-                required_plugins=p.required_plugins,
-                compatible_versions=p.compatible_versions,
-            )
-            for p in playbooks
-        ]
-
-    except Exception as e:
-        logger.error(f"Error searching playbooks: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Search failed: {e!s}",
-        )
+    """Search playbooks in marketplace."""
+    playbooks, total = await repo.get_playbooks(
+        query=query,
+        category=category,
+        difficulty=difficulty,
+        min_rating=min_rating,
+        verified_only=verified_only,
+        sort_by=sort_by,
+        page=page,
+        page_size=page_size,
+    )
+    return {
+        "playbooks": [MarketplacePlaybookResponse.model_validate(p) for p in playbooks],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
 
 
-@router.get("/playbooks/{playbook_id}")
-async def get_playbook_details(
+@router.get("/playbooks/{playbook_id}", response_model=MarketplacePlaybookDetail)
+async def get_playbook(
     playbook_id: str,
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    Get detailed information about a marketplace playbook.
-
-    Includes full documentation and DAG definition.
-    """
-    try:
-        marketplace = get_marketplace()
-        playbook = await marketplace.get_playbook(playbook_id)
-
-        if not playbook:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Playbook not found"
-            )
-
-        return {
-            "id": playbook.id,
-            "name": playbook.name,
-            "description": playbook.description,
-            "version": playbook.version,
-            "category": playbook.category.value,
-            "difficulty": playbook.difficulty.value,
-            "author": playbook.author,
-            "tags": playbook.tags,
-            "download_count": playbook.download_count,
-            "rating_average": playbook.rating_average,
-            "rating_count": playbook.rating_count,
-            "review_count": playbook.review_count,
-            "verified": playbook.verified,
-            "featured": playbook.featured,
-            "documentation": playbook.documentation,
-            "dag_preview": playbook.dag_json,
-            "required_plugins": playbook.required_plugins,
-            "compatible_versions": playbook.compatible_versions,
-            "created_at": playbook.created_at,
-            "updated_at": playbook.updated_at,
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting playbook: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get playbook: {e!s}",
-        )
+    """Get detailed playbook information."""
+    playbook = await repo.get_playbook(playbook_id)
+    if not playbook:
+        raise HTTPException(status_code=404, detail="Playbook not found")
+    return MarketplacePlaybookDetail.model_validate(playbook)
 
 
-@router.post("/playbooks/{playbook_id}/download")
+@router.post("/publish", response_model=MarketplacePlaybookResponse, status_code=201)
+async def publish_playbook(
+    request: MarketplacePlaybookCreate,
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
+    playbook_repo: PlaybookDefinitionRepository = Depends(get_playbook_repo),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Publish a local playbook to marketplace (pending approval)."""
+    definition = await playbook_repo.get_by_id(request.source_definition_id)
+    if not definition:
+        raise HTTPException(status_code=404, detail="Playbook definition not found")
+
+    if definition.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only publish your own playbooks")
+
+    playbook = await repo.create_playbook(
+        definition=definition,
+        data=request,
+        author_id=current_user.id,
+        author_name=current_user.username or current_user.email,
+    )
+    logger.info(f"User {current_user.id} published playbook {playbook.id} for review")
+    return MarketplacePlaybookResponse.model_validate(playbook)
+
+
+@router.post("/playbooks/{playbook_id}/download", response_model=dict)
 async def download_playbook(
     playbook_id: str,
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
+    playbook_repo: PlaybookDefinitionRepository = Depends(get_playbook_repo),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    Download a playbook from marketplace for local use.
+    """Download and import a marketplace playbook to local definitions."""
+    playbook = await repo.get_playbook(playbook_id)
+    if not playbook:
+        raise HTTPException(status_code=404, detail="Playbook not found")
 
-    Returns playbook definition that can be imported into SOC Copilot.
-    """
-    try:
-        marketplace = get_marketplace()
+    if not playbook.is_visible:
+        raise HTTPException(status_code=404, detail="Playbook not found")
 
-        playbook_data = await marketplace.download_playbook(
-            playbook_id=playbook_id, user_id=str(current_user.id)
-        )
+    await repo.increment_download(playbook_id)
 
-        if not playbook_data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Playbook not found"
-            )
+    imported = await playbook_repo.create(
+        name=f"[Marketplace] {playbook.name}",
+        description=playbook.description,
+        version=playbook.version,
+        dag_json=playbook.dag_json,
+        created_by_user_id=current_user.id,
+    )
 
-        return {
-            "success": True,
-            "message": "Playbook downloaded successfully",
-            "playbook": playbook_data,
-        }
+    logger.info(f"User {current_user.id} downloaded playbook {playbook_id} as {imported.id}")
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error downloading playbook: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Download failed: {e!s}",
-        )
+    return {
+        "success": True,
+        "message": "Playbook imported successfully",
+        "local_definition_id": imported.id,
+        "playbook_name": imported.name,
+    }
 
 
-@router.get("/playbooks/{playbook_id}/reviews")
-async def get_playbook_reviews(
+@router.get("/playbooks/{playbook_id}/reviews", response_model=dict)
+async def get_reviews(
     playbook_id: str,
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=10, ge=1, le=50),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=50),
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    Get reviews for a marketplace playbook.
-    """
-    try:
-        marketplace = get_marketplace()
+    """Get reviews for a playbook."""
+    playbook = await repo.get_playbook(playbook_id)
+    if not playbook:
+        raise HTTPException(status_code=404, detail="Playbook not found")
 
-        # Check playbook exists
-        playbook = await marketplace.get_playbook(playbook_id)
-        if not playbook:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Playbook not found"
-            )
-
-        reviews = await marketplace.get_playbook_reviews(
-            playbook_id=playbook_id, page=page, page_size=page_size
-        )
-
-        return {
-            "playbook_id": playbook_id,
-            "reviews": [
-                ReviewResponse(
-                    id=r.id,
-                    username=r.username,
-                    rating=r.rating,
-                    comment=r.comment,
-                    created_at=r.created_at,
-                )
-                for r in reviews
-            ],
-            "total_reviews": playbook.review_count,
-            "average_rating": playbook.rating_average,
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting reviews: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get reviews: {e!s}",
-        )
+    reviews = await repo.get_reviews(playbook_id, page=page_size, page_size=page_size)
+    return {
+        "reviews": [MarketplaceReviewResponse.model_validate(r) for r in reviews],
+        "page": page,
+        "page_size": page_size,
+    }
 
 
-@router.post("/playbooks/{playbook_id}/reviews")
+@router.post(
+    "/playbooks/{playbook_id}/reviews", response_model=MarketplaceReviewResponse, status_code=201
+)
 async def submit_review(
     playbook_id: str,
-    review: ReviewSubmitRequest,
+    request: MarketplaceReviewCreate,
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    Submit a review for a marketplace playbook.
-
-    Requires authentication. Users can only submit one review per playbook.
-    """
-    try:
-        marketplace = get_marketplace()
-
-        success = await marketplace.submit_review(
-            playbook_id=playbook_id,
-            user_id=str(current_user.id),
-            username=current_user.username,
-            rating=review.rating,
-            comment=review.comment,
-        )
-
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to submit review",
-            )
-
-        return {"success": True, "message": "Review submitted successfully"}
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error submitting review: {e}")
+    """Submit a review for a playbook."""
+    review = await repo.create_review(
+        playbook_id=playbook_id,
+        user_id=current_user.id,
+        username=current_user.username or current_user.email,
+        data=request,
+    )
+    if not review:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to submit review: {e!s}",
+            status_code=400, detail="Cannot submit review (playbook not found or already reviewed)"
         )
+    return MarketplaceReviewResponse.model_validate(review)
 
 
-@router.get("/categories")
+@router.get("/categories", response_model=list[dict])
 async def get_categories(
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    Get playbook categories with playbook counts.
-    """
-    try:
-        marketplace = get_marketplace()
-        categories = await marketplace.get_categories()
-
-        return {"categories": categories}
-
-    except Exception as e:
-        logger.error(f"Error getting categories: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get categories: {e!s}",
-        )
+    """Get playbook categories with counts."""
+    return await repo.get_categories()
 
 
-@router.get("/featured")
-async def get_featured_playbooks(
-    limit: int = Query(default=5, ge=1, le=20),
+@router.get("/featured", response_model=list[MarketplacePlaybookResponse])
+async def get_featured(
+    limit: int = Query(5, ge=1, le=20),
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    Get featured playbooks (curated by admins).
-
-    These are high-quality, verified playbooks recommended for all users.
-    """
-    try:
-        marketplace = get_marketplace()
-        playbooks = await marketplace.get_featured_playbooks(limit=limit)
-
-        return {
-            "featured": [
-                {
-                    "id": p.id,
-                    "name": p.name,
-                    "description": p.description,
-                    "category": p.category.value,
-                    "author": p.author,
-                    "rating_average": p.rating_average,
-                    "download_count": p.download_count,
-                }
-                for p in playbooks
-            ]
-        }
-
-    except Exception as e:
-        logger.error(f"Error getting featured playbooks: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get featured playbooks: {e!s}",
-        )
+    """Get featured playbooks."""
+    playbooks = await repo.get_featured(limit=limit)
+    return [MarketplacePlaybookResponse.model_validate(p) for p in playbooks]
 
 
-@router.get("/trending")
-async def get_trending_playbooks(
-    limit: int = Query(default=5, ge=1, le=20),
+@router.get("/trending", response_model=list[MarketplacePlaybookResponse])
+async def get_trending(
+    limit: int = Query(5, ge=1, le=20),
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    Get trending playbooks (most downloaded).
-
-    Shows what the community is using most.
-    """
-    try:
-        marketplace = get_marketplace()
-        playbooks = await marketplace.get_trending_playbooks(limit=limit)
-
-        return {
-            "trending": [
-                {
-                    "id": p.id,
-                    "name": p.name,
-                    "description": (
-                        p.description[:100] + "..."
-                        if len(p.description) > 100
-                        else p.description
-                    ),
-                    "category": p.category.value,
-                    "download_count": p.download_count,
-                    "rating_average": p.rating_average,
-                }
-                for p in playbooks
-            ]
-        }
-
-    except Exception as e:
-        logger.error(f"Error getting trending playbooks: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get trending playbooks: {e!s}",
-        )
+    """Get trending playbooks."""
+    playbooks = await repo.get_trending(limit=limit)
+    return [MarketplacePlaybookResponse.model_validate(p) for p in playbooks]
 
 
-@router.get("/dashboard")
-async def get_marketplace_dashboard(
+@router.get("/dashboard", response_model=MarketplaceStats)
+async def get_dashboard(
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    Get marketplace dashboard statistics.
+    """Get marketplace statistics."""
+    stats = await repo.get_stats()
+    return MarketplaceStats(**stats)
 
-    Returns overall marketplace metrics and activity.
-    """
-    try:
-        marketplace = get_marketplace()
 
-        # Get stats
-        total_playbooks = len(marketplace.playbooks)
-        verified_count = sum(1 for p in marketplace.playbooks.values() if p.verified)
-        featured_count = sum(1 for p in marketplace.playbooks.values() if p.featured)
-        total_downloads = sum(p.download_count for p in marketplace.playbooks.values())
+# Admin endpoints
 
-        # Get category distribution
-        categories = await marketplace.get_categories()
 
-        return {
-            "statistics": {
-                "total_playbooks": total_playbooks,
-                "verified_playbooks": verified_count,
-                "featured_playbooks": featured_count,
-                "total_downloads": total_downloads,
-                "community_authors": len(
-                    set(p.author_id for p in marketplace.playbooks.values())
-                ),
-            },
-            "categories": categories,
-            "recent_activity": {
-                "new_this_week": 2,
-                "downloads_this_week": 156,
-                "reviews_this_week": 12,
-            },
-        }
+@router.get("/admin/pending", response_model=dict)
+async def get_pending_playbooks(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
+    current_user: UserModel = Depends(require_admin),
+):
+    """Get playbooks pending review (admin only)."""
+    playbooks, total = await repo.get_playbooks(
+        status="pending",
+        sort_by="newest",
+        page=page,
+        page_size=page_size,
+    )
+    return {
+        "playbooks": [MarketplacePlaybookResponse.model_validate(p) for p in playbooks],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
 
-    except Exception as e:
-        logger.error(f"Error getting dashboard: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get dashboard: {e!s}",
-        )
+
+@router.post("/admin/playbooks/{playbook_id}/review", response_model=MarketplacePlaybookResponse)
+async def review_playbook(
+    playbook_id: str,
+    request: MarketplaceApprovalRequest,
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
+    current_user: UserModel = Depends(require_admin),
+):
+    """Approve or reject a playbook (admin only)."""
+    playbook = await repo.approve_playbook(
+        playbook_id=playbook_id,
+        reviewer_id=current_user.id,
+        approved=request.approved,
+        review_note=request.review_note,
+        featured=request.featured,
+        verified=request.verified,
+    )
+    if not playbook:
+        raise HTTPException(status_code=404, detail="Playbook not found")
+
+    action = "approved" if request.approved else "rejected"
+    logger.info(f"Admin {current_user.id} {action} playbook {playbook_id}")
+
+    return MarketplacePlaybookResponse.model_validate(playbook)
+
+
+@router.get("/admin/stats", response_model=MarketplaceStats)
+async def get_admin_stats(
+    repo: MarketplaceRepository = Depends(get_marketplace_repo),
+    current_user: UserModel = Depends(require_admin),
+):
+    """Get full marketplace statistics including pending (admin only)."""
+    stats = await repo.get_stats()
+    return MarketplaceStats(**stats)

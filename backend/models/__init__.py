@@ -24,6 +24,7 @@ from models.root_cause_analysis import RootCauseAnalysis
 from models.secret import SecretModel
 from models.security_alert import SecurityAlert
 from models.threat_intel_cache import ThreatIntelCacheModel
+from models.marketplace import MarketplacePlaybookModel, MarketplaceReviewModel
 from models.trigger import TriggerInvocationModel
 from models.user import UserModel, UserRole
 
@@ -45,6 +46,8 @@ __all__ = [
     "HistoryModel",
     "IOCHitModel",
     "MonitorHistoryModel",
+    "MarketplacePlaybookModel",
+    "MarketplaceReviewModel",
     "Permission",
     "PlaybookApprovalModel",
     "PlaybookDefinitionModel",
