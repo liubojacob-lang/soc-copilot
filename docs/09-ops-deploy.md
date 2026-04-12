@@ -28,7 +28,7 @@ npm run dev
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
+version: "3.8"
 
 services:
   backend:

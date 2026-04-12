@@ -31,11 +31,11 @@ SOC Copilot WebSocket API 提供实时安全告警、playbook 执行更新和系
 
 ### 支持的通道
 
-| 通道 | 描述 | 消息类型 |
-|------|------|----------|
-| `alerts` | 安全告警 | alert |
+| 通道            | 描述             | 消息类型     |
+| --------------- | ---------------- | ------------ |
+| `alerts`        | 安全告警         | alert        |
 | `playbook_runs` | Playbook执行状态 | playbook_run |
-| `system` | 系统通知 | system |
+| `system`        | 系统通知         | system       |
 
 ---
 
@@ -45,20 +45,21 @@ SOC Copilot WebSocket API 提供实时安全告警、playbook 执行更新和系
 
 ```javascript
 // WebSocket 连接 URL
-const wsUrl = 'ws://localhost:8000/api/v1/ws/alerts?token=YOUR_JWT_TOKEN&channels=alerts,playbook_runs,system';
+const wsUrl =
+  "ws://localhost:8000/api/v1/ws/alerts?token=YOUR_JWT_TOKEN&channels=alerts,playbook_runs,system";
 
 // 建立连接
 const ws = new WebSocket(wsUrl);
 
 // 监听连接打开
 ws.onopen = () => {
-  console.log('WebSocket connected');
+  console.log("WebSocket connected");
 };
 
 // 监听消息
-ws.onmessage = (event) => {
+ws.onmessage = event => {
   const message = JSON.parse(event.data);
-  console.log('Received:', message);
+  console.log("Received:", message);
 
   if (message._compressed) {
     // 处理压缩消息
@@ -70,13 +71,13 @@ ws.onmessage = (event) => {
 };
 
 // 监听错误
-ws.onerror = (error) => {
-  console.error('WebSocket error:', error);
+ws.onerror = error => {
+  console.error("WebSocket error:", error);
 };
 
 // 监听关闭
 ws.onclose = () => {
-  console.log('WebSocket disconnected');
+  console.log("WebSocket disconnected");
 };
 ```
 
@@ -85,17 +86,17 @@ ws.onclose = () => {
 ```javascript
 function handleMessage(message) {
   switch (message.type) {
-    case 'alert':
+    case "alert":
       handleAlert(message.data);
       break;
-    case 'playbook_run':
+    case "playbook_run":
       handlePlaybookRun(message.data);
       break;
-    case 'system':
+    case "system":
       handleSystemNotification(message.data);
       break;
     default:
-      console.log('Unknown message type:', message.type);
+      console.log("Unknown message type:", message.type);
   }
 }
 
@@ -111,21 +112,25 @@ function handleAlert(alertData) {
 ```javascript
 // 订阅新通道
 function subscribeToChannel(channel) {
-  ws.send(JSON.stringify({
-    type: 'subscribe',
-    channels: ['alerts', channel]
-  }));
+  ws.send(
+    JSON.stringify({
+      type: "subscribe",
+      channels: ["alerts", channel],
+    })
+  );
 }
 
 // 取消订阅
 function unsubscribeFromChannel(channel) {
-  const currentChannels = ['alerts', 'playbook_runs', 'system'];
+  const currentChannels = ["alerts", "playbook_runs", "system"];
   const newChannels = currentChannels.filter(ch => ch !== channel);
 
-  ws.send(JSON.stringify({
-    type: 'subscribe',
-    channels: newChannels
-  }));
+  ws.send(
+    JSON.stringify({
+      type: "subscribe",
+      channels: newChannels,
+    })
+  );
 }
 ```
 
@@ -138,20 +143,21 @@ function unsubscribeFromChannel(channel) {
 当客户端断开连接时，消息会自动缓存到 Redis。重连后，缓存的消息会自动投递。
 
 **缓存配置**:
+
 - TTL: 24 小时
 - 最大队列长度: 1000 条消息
 - 自动清理过期消息
 
 **使用示例**:
+
 ```javascript
 // 重连后，会自动收到离线期间的消息
-ws.onmessage = (event) => {
+ws.onmessage = event => {
   const message = JSON.parse(event.data);
 
   // 检测是否是离线消息投递通知
-  if (message.type === 'system' &&
-      message.data.message.includes('Delivered')) {
-    console.log('Offline messages delivered');
+  if (message.type === "system" && message.data.message.includes("Delivered")) {
+    console.log("Offline messages delivered");
   }
 };
 ```
@@ -161,6 +167,7 @@ ws.onmessage = (event) => {
 在服务器端过滤消息，只接收符合条件的通知。
 
 **支持的过滤条件**:
+
 - 严重级别 (min_severity, max_severity)
 - 事件类型 (event_types)
 - 代理 ID (agent_ids)
@@ -169,6 +176,7 @@ ws.onmessage = (event) => {
 - 速率限制 (max_messages_per_minute)
 
 **创建过滤器**:
+
 ```http
 PUT /api/v1/websocket/filters
 Content-Type: application/json
@@ -198,12 +206,14 @@ Authorization: Bearer YOUR_JWT_TOKEN
 ### 3. 监控和告警
 
 **监控指标**:
+
 - 健康评分 (0-100%)
 - 连接指标 (活跃连接、总连接、连接失败)
 - 消息指标 (发送/接收/过滤/队列)
 - 性能指标 (平均/P50/P95/P99延迟)
 
 **创建告警规则**:
+
 ```http
 POST /api/v1/monitoring/alerts/rules
 Content-Type: application/json
@@ -236,16 +246,19 @@ Authorization: Bearer YOUR_JWT_TOKEN
 ### 4. 性能优化
 
 **消息压缩**:
+
 - 自动压缩 >1KB 的消息
 - gzip 压缩级别 6
 - 平均压缩率 65%
 
 **批量发送**:
+
 - 最多 100 条消息/批
 - 最大延迟 100ms
 - 吞吐量提升 5-10x
 
 **连接池**:
+
 - 最多 1000 个连接
 - 空闲连接 5 分钟超时
 - 自动健康检查
@@ -263,6 +276,7 @@ ws://localhost:8000/api/v1/ws/alerts?token=JWT&channels=alerts,system
 ```
 
 **查询参数**:
+
 - `token` (必需): JWT 认证令牌
 - `channels` (可选): 逗号分隔的通道列表
 
@@ -283,36 +297,36 @@ ws://localhost:8000/api/v1/ws/alerts?token=JWT&channels=alerts,system
 
 #### 监控相关
 
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| GET | `/api/v1/ws/monitoring/metrics` | 获取当前监控指标 |
-| GET | `/api/v1/ws/monitoring/health` | 获取系统健康评分 |
-| GET | `/api/v1/ws/monitoring/summary` | 获取监控摘要 |
-| GET | `/api/v1/ws/compression/stats` | 获取压缩统计 |
-| GET | `/api/v1/ws/batch/stats` | 获取批量统计 |
-| GET | `/api/v1/ws/pool/stats` | 获取连接池统计 |
+| 方法 | 端点                            | 描述             |
+| ---- | ------------------------------- | ---------------- |
+| GET  | `/api/v1/ws/monitoring/metrics` | 获取当前监控指标 |
+| GET  | `/api/v1/ws/monitoring/health`  | 获取系统健康评分 |
+| GET  | `/api/v1/ws/monitoring/summary` | 获取监控摘要     |
+| GET  | `/api/v1/ws/compression/stats`  | 获取压缩统计     |
+| GET  | `/api/v1/ws/batch/stats`        | 获取批量统计     |
+| GET  | `/api/v1/ws/pool/stats`         | 获取连接池统计   |
 
 #### 过滤器相关
 
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| GET | `/api/v1/websocket/filters` | 获取用户过滤器 |
-| PUT | `/api/v1/websocket/filters` | 设置过滤器 |
-| DELETE | `/api/v1/websocket/filters` | 删除过滤器 |
-| GET | `/api/v1/websocket/filters/stats` | 获取过滤统计 |
-| POST | `/api/v1/websocket/filters/test` | 测试消息 |
+| 方法   | 端点                              | 描述           |
+| ------ | --------------------------------- | -------------- |
+| GET    | `/api/v1/websocket/filters`       | 获取用户过滤器 |
+| PUT    | `/api/v1/websocket/filters`       | 设置过滤器     |
+| DELETE | `/api/v1/websocket/filters`       | 删除过滤器     |
+| GET    | `/api/v1/websocket/filters/stats` | 获取过滤统计   |
+| POST   | `/api/v1/websocket/filters/test`  | 测试消息       |
 
 #### 告警相关
 
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| POST | `/api/v1/monitoring/alerts/rules` | 创建告警规则 |
-| GET | `/api/v1/monitoring/alerts/rules` | 列出告警规则 |
-| GET | `/api/v1/monitoring/alerts/rules/{id}` | 获取告警规则 |
-| PUT | `/api/v1/monitoring/alerts/rules/{id}` | 更新告警规则 |
+| 方法   | 端点                                   | 描述         |
+| ------ | -------------------------------------- | ------------ |
+| POST   | `/api/v1/monitoring/alerts/rules`      | 创建告警规则 |
+| GET    | `/api/v1/monitoring/alerts/rules`      | 列出告警规则 |
+| GET    | `/api/v1/monitoring/alerts/rules/{id}` | 获取告警规则 |
+| PUT    | `/api/v1/monitoring/alerts/rules/{id}` | 更新告警规则 |
 | DELETE | `/api/v1/monitoring/alerts/rules/{id}` | 删除告警规则 |
-| GET | `/api/v1/monitoring/alerts/history` | 获取告警历史 |
-| POST | `/api/v1/monitoring/alerts/test/{id}` | 测试告警规则 |
+| GET    | `/api/v1/monitoring/alerts/history`    | 获取告警历史 |
+| POST   | `/api/v1/monitoring/alerts/test/{id}`  | 测试告警规则 |
 
 ---
 
@@ -376,12 +390,14 @@ PoolConfig(max_pool_size=1000, max_idle_time_seconds=300)
 ### 1. 连接管理
 
 ✅ **DO**:
+
 - 在应用启动时建立连接
 - 实现自动重连机制
 - 监听连接状态变化
 - 优雅关闭连接
 
 ❌ **DON'T**:
+
 - 为每个用户创建多个连接
 - 频繁连接/断开
 - 忽略连接错误
@@ -390,12 +406,14 @@ PoolConfig(max_pool_size=1000, max_idle_time_seconds=300)
 ### 2. 消息处理
 
 ✅ **DO**:
+
 - 使用异步处理消息
 - 批量处理相似消息
 - 过滤不需要的消息
 - 记录消息处理错误
 
 ❌ **DON'T**:
+
 - 阻塞 WebSocket 线程
 - 在消息处理中执行耗时操作
 - 忽略消息验证
@@ -404,12 +422,14 @@ PoolConfig(max_pool_size=1000, max_idle_time_seconds=300)
 ### 3. 过滤器配置
 
 ✅ **DO**:
+
 - 使用过滤器减少客户端负载
 - 配置合理的优先级
 - 定期审查过滤规则
 - 监控过滤统计
 
 ❌ **DON'T**:
+
 - 创建过多过滤规则（>20条）
 - 使用过于复杂的正则表达式
 - 忘记禁用不需要的规则
@@ -418,12 +438,14 @@ PoolConfig(max_pool_size=1000, max_idle_time_seconds=300)
 ### 4. 告警配置
 
 ✅ **DO**:
+
 - 设置合理的阈值
 - 配置冷却时间
 - 使用多个通知渠道
 - 定期测试告警规则
 
 ❌ **DON'T**:
+
 - 设置过低的阈值（告警疲劳）
 - 忽略告警严重性分级
 - 配置重复的告警
@@ -440,24 +462,26 @@ PoolConfig(max_pool_size=1000, max_idle_time_seconds=300)
 **症状**: WebSocket 连接立即断开
 
 **可能原因**:
+
 - JWT 令牌无效或过期
 - CORS 配置错误
 - 服务器未启动
 
 **解决方案**:
+
 ```javascript
 // 检查令牌
-const token = localStorage.getItem('token');
+const token = localStorage.getItem("token");
 if (!token) {
-  console.error('No authentication token');
+  console.error("No authentication token");
 }
 
 // 检查连接 URL
-const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/v1/ws/alerts?token=${token}`;
+const wsUrl = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/api/v1/ws/alerts?token=${token}`;
 
 // 添加错误处理
-ws.onerror = (error) => {
-  console.error('WebSocket error:', error);
+ws.onerror = error => {
+  console.error("WebSocket error:", error);
   // 尝试重新连接
   setTimeout(() => reconnect(), 5000);
 };
@@ -468,30 +492,34 @@ ws.onerror = (error) => {
 **症状**: 已连接但未收到消息
 
 **可能原因**:
+
 - 未订阅正确的通道
 - 过滤器阻止了消息
 - 客户端消息处理错误
 
 **解决方案**:
+
 ```javascript
 // 检查订阅
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  channels: ['alerts', 'playbook_runs', 'system']
-}));
+ws.send(
+  JSON.stringify({
+    type: "subscribe",
+    channels: ["alerts", "playbook_runs", "system"],
+  })
+);
 
 // 检查过滤器
-fetch('/api/v1/websocket/filters', {
-  headers: { 'Authorization': `Bearer ${token}` }
+fetch("/api/v1/websocket/filters", {
+  headers: { Authorization: `Bearer ${token}` },
 })
-.then(res => res.json())
-.then(filters => {
-  console.log('Current filters:', filters);
-});
+  .then(res => res.json())
+  .then(filters => {
+    console.log("Current filters:", filters);
+  });
 
 // 添加调试日志
-ws.onmessage = (event) => {
-  console.log('Message received:', event.data);
+ws.onmessage = event => {
+  console.log("Message received:", event.data);
   // ... 处理消息
 };
 ```
@@ -501,11 +529,13 @@ ws.onmessage = (event) => {
 **症状**: 高延迟或低吞吐量
 
 **可能原因**:
+
 - 消息过大
 - 过多的并发连接
 - CPU 或内存限制
 
 **解决方案**:
+
 ```python
 # 检查监控指标
 GET /api/v1/ws/monitoring/metrics
@@ -521,11 +551,13 @@ PoolConfig(max_pool_size=500)            # 减少连接池大小
 **症状**: 内存使用持续增长
 
 **可能原因**:
+
 - 未释放的连接
 - 消息队列积累
 - 监控数据未清理
 
 **解决方案**:
+
 ```python
 # 定期清理
 - 关闭空闲连接

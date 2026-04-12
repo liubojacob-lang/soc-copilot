@@ -16,12 +16,14 @@
 ## 🎯 Week 3 目标
 
 ### 主要目标
+
 1. **离线消息缓存** - 解决客户端断线期间的告警丢失问题
 2. **服务端消息过滤** - 减少不必要的网络传输和客户端处理
 3. **监控和告警** - 实时监控 WebSocket 连接状态和消息吞吐
 4. **性能优化** - 消息压缩、批量发送等优化措施
 
 ### 成功标准
+
 - [ ] 客户端重连后能接收离线期间的告警
 - [ ] 支持服务端过滤规则（按严重级别、事件类型等）
 - [ ] 实时监控仪表板显示连接状态和消息统计
@@ -34,6 +36,7 @@
 ### Day 1: 离线消息缓存架构（6-8 小时）
 
 #### 任务列表
+
 - [ ] 设计消息队列架构
 - [ ] 实现消息缓存服务
 - [ ] 集成到 WebSocket 路由
@@ -51,6 +54,7 @@ Max Size: 1000 条消息/用户
 ```
 
 **数据流**:
+
 ```
 1. 告警产生 → 检查连接状态
 2. 如果离线 → 加入消息队列
@@ -59,12 +63,14 @@ Max Size: 1000 条消息/用户
 ```
 
 **新增组件**:
+
 - `backend/services/message_queue.py` - 消息队列服务
 - `backend/models/message_queue.py` - 消息队列模型
 
 #### API 设计
 
 **缓存消息**:
+
 ```python
 async def cache_message(user_id: str, message: WebSocketMessage):
     """缓存离线消息"""
@@ -72,6 +78,7 @@ async def cache_message(user_id: str, message: WebSocketMessage):
 ```
 
 **获取缓存消息**:
+
 ```python
 async def get_cached_messages(user_id: str) -> List[WebSocketMessage]:
     """获取用户的缓存消息"""
@@ -79,6 +86,7 @@ async def get_cached_messages(user_id: str) -> List[WebSocketMessage]:
 ```
 
 #### 测试计划
+
 - [ ] 缓存消息成功
 - [ ] 重连后自动接收缓存消息
 - [ ] TTL 过期自动清理
@@ -89,6 +97,7 @@ async def get_cached_messages(user_id: str) -> List[WebSocketMessage]:
 ### Day 2: 服务端消息过滤（6-8 小时）
 
 #### 任务列表
+
 - [ ] 设计过滤规则 schema
 - [ ] 实现服务端过滤引擎
 - [ ] 集成到 WebSocket 路由
@@ -137,6 +146,7 @@ async def should_send_message(
 #### API 设计
 
 **设置过滤规则**:
+
 ```http
 PUT /api/v1/websocket/filters
 Authorization: Bearer <token>
@@ -150,6 +160,7 @@ Content-Type: application/json
 ```
 
 **获取过滤规则**:
+
 ```http
 GET /api/v1/websocket/filters
 Authorization: Bearer <token>
@@ -158,6 +169,7 @@ Authorization: Bearer <token>
 #### 前端 UI
 
 过滤配置面板：
+
 - 严重级别选择器
 - 事件类型多选框
 - 代理 ID 输入
@@ -168,6 +180,7 @@ Authorization: Bearer <token>
 ### Day 3: 监控和告警（6-8 小时）
 
 #### 任务列表
+
 - [ ] 设计监控 metrics
 - [ ] 实现监控数据收集
 - [ ] 创建监控仪表板
@@ -176,6 +189,7 @@ Authorization: Bearer <token>
 #### 监控指标
 
 **连接指标**:
+
 - 当前活跃连接数
 - 历史连接趋势
 - 连接成功率
@@ -183,6 +197,7 @@ Authorization: Bearer <token>
 - 重连次数
 
 **消息指标**:
+
 - 消息发送速率（msg/s）
 - 消息接收速率（msg/s）
 - 消息延迟（P50, P95, P99）
@@ -190,6 +205,7 @@ Authorization: Bearer <token>
 - 缓存消息数
 
 **错误指标**:
+
 - 连接失败率
 - 消息发送失败率
 - 异常次数
@@ -224,6 +240,7 @@ class WebSocketMetrics:
 **页面**: `/dashboard/websocket`
 
 **组件**:
+
 1. **连接状态卡片**
    - 当前连接数
    - 连接趋势图（24小时）
@@ -258,6 +275,7 @@ class AlertRule(BaseModel):
 ```
 
 **预置告警**:
+
 - 连接数异常（> 100 或 < 5）
 - 错误率过高（> 5%）
 - 消息队列积压（> 1000）
@@ -268,6 +286,7 @@ class AlertRule(BaseModel):
 ### Day 4: 性能优化（6-8 小时）
 
 #### 任务列表
+
 - [ ] 实现消息压缩
 - [ ] 批量发送优化
 - [ ] 连接复用
@@ -351,18 +370,19 @@ class WebSocketConnectionPool:
 
 #### 性能测试目标
 
-| 指标 | Week 2 | Week 3 目标 | 提升 |
-|------|--------|------------|------|
-| 消息吞吐 | 16 msg/s | 24 msg/s | +50% |
-| 连接数 | 20 | 50 | +150% |
-| 延迟 P99 | <100ms | <50ms | -50% |
-| 带宽使用 | 1KB/alert | 0.3KB/alert | -70% |
+| 指标     | Week 2    | Week 3 目标 | 提升  |
+| -------- | --------- | ----------- | ----- |
+| 消息吞吐 | 16 msg/s  | 24 msg/s    | +50%  |
+| 连接数   | 20        | 50          | +150% |
+| 延迟 P99 | <100ms    | <50ms       | -50%  |
+| 带宽使用 | 1KB/alert | 0.3KB/alert | -70%  |
 
 ---
 
 ### Day 5: 测试和文档（4-6 小时）
 
 #### 任务列表
+
 - [ ] 端到端测试
 - [ ] 性能测试
 - [ ] 压力测试
@@ -372,18 +392,21 @@ class WebSocketConnectionPool:
 #### 测试计划
 
 **端到端测试**:
+
 - [ ] 离线消息缓存流程
 - [ ] 服务端过滤功能
 - [ ] 监控仪表板数据
 - [ ] 性能优化验证
 
 **性能测试**:
+
 - [ ] 消息压缩效果
 - [ ] 批量发送性能
 - [ ] 并发连接数
 - [ ] 消息吞吐量
 
 **压力测试**:
+
 - [ ] 100 并发连接
 - [ ] 100 msg/s 持续发送
 - [ ] 内存泄漏检测
@@ -439,11 +462,13 @@ class WebSocketConnectionPool:
 ### 数据流
 
 **在线消息流**:
+
 ```
 Alert → Stream Service → Filter Check → Broadcast → Clients
 ```
 
 **离线消息流**:
+
 ```
 Alert → Stream Service → Check Online Status
   → (Offline) → Message Queue
@@ -451,6 +476,7 @@ Alert → Stream Service → Check Online Status
 ```
 
 **监控数据流**:
+
 ```
 WebSocket Events → Metrics Collector → Time Series DB
   → Monitoring Dashboard → Visualization
@@ -484,12 +510,12 @@ WebSocket Events → Metrics Collector → Time Series DB
 
 ### 性能目标
 
-| 指标 | Week 2 | Week 3 | 提升 |
-|------|--------|--------|------|
-| 消息吞吐 | 16 msg/s | 24+ msg/s | +50% |
-| 并发连接 | 20 | 50+ | +150% |
-| P99 延迟 | <100ms | <50ms | -50% |
-| 带宽使用 | 1KB/alert | 0.3KB/alert | -70% |
+| 指标     | Week 2    | Week 3      | 提升  |
+| -------- | --------- | ----------- | ----- |
+| 消息吞吐 | 16 msg/s  | 24+ msg/s   | +50%  |
+| 并发连接 | 20        | 50+         | +150% |
+| P99 延迟 | <100ms    | <50ms       | -50%  |
+| 带宽使用 | 1KB/alert | 0.3KB/alert | -70%  |
 
 ---
 
@@ -498,6 +524,7 @@ WebSocket Events → Metrics Collector → Time Series DB
 ### 新增依赖
 
 **后端**:
+
 ```python
 # requirements.txt
 redis==5.0.0              # 消息队列
@@ -506,6 +533,7 @@ gzipio==0.1.0             # 消息压缩
 ```
 
 **前端**:
+
 ```json
 {
   "dependencies": {
@@ -518,11 +546,13 @@ gzipio==0.1.0             # 消息压缩
 ### 基础设施
 
 **Redis**:
+
 - 用途：消息队列、缓存
 - 部署：Docker 容器
 - 配置：最大内存 1GB
 
 **Prometheus**（可选）:
+
 - 用途：监控数据存储
 - 部署：Docker 容器
 - 保留时间：7 天
@@ -534,6 +564,7 @@ gzipio==0.1.0             # 消息压缩
 ### 新增文件
 
 **后端**:
+
 - `backend/services/message_queue.py` - 消息队列服务
 - `backend/services/websocket_filter.py` - 服务端过滤
 - `backend/services/websocket_metrics.py` - 监控指标
@@ -542,6 +573,7 @@ gzipio==0.1.0             # 消息压缩
 - `backend/routers/monitoring.py` - 监控 API
 
 **前端**:
+
 - `frontend/app/[locale]/dashboard/websocket/page.tsx` - 监控仪表板
 - `frontend/components/websocket/FilterConfig.tsx` - 过滤配置组件
 - `frontend/components/websocket/MetricsChart.tsx` - 指标图表
@@ -549,10 +581,12 @@ gzipio==0.1.0             # 消息压缩
 ### 修改文件
 
 **后端**:
+
 - `backend/routers/websocket.py` - 集成消息队列和过滤
 - `backend/requirements.txt` - 添加新依赖
 
 **前端**:
+
 - `frontend/components/wazuh/WazuhAlertStream.tsx` - 支持离线消息
 
 ### 文档
@@ -667,4 +701,3 @@ services:
 **计划开始**: Week 3
 **预估完成**: 4-5 天
 **状态**: 📝 计划中
-

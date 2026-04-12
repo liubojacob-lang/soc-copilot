@@ -11,6 +11,7 @@
 ## 🎯 Priority P0: 导航组件（关键 - 25个文件）
 
 **影响文件:**
+
 ```
 components/NavigationEnhanced.tsx
 components/NavigationGrouped.tsx
@@ -35,6 +36,7 @@ components/common/MobileDrawer.tsx
 | Timeline | tabs.timelineBuilder | 时间线 |
 
 **执行命令:**
+
 ```bash
 # 预览变更
 python scripts/replace_hardcoded_strings.py --priority P0 --dry-run
@@ -50,6 +52,7 @@ python scripts/replace_hardcoded_strings.py --priority P0
 ## 🔥 Priority P1: 常用UI标签（高频 - 40+处）
 
 **分类:**
+
 - 状态标签: Unknown, Status
 - 严重级别: Critical, High, Medium, Low
 - 通用字段: Name, Type, Actions, Details
@@ -71,6 +74,7 @@ python scripts/replace_hardcoded_strings.py --priority P0
 **影响文件**: ~40 个组件文件
 
 **执行命令:**
+
 ```bash
 python scripts/replace_hardcoded_strings.py --priority P1 --dry-run
 python scripts/replace_hardcoded_strings.py --priority P1
@@ -94,6 +98,7 @@ python scripts/replace_hardcoded_strings.py --priority P1
 **影响文件**: ~15 个监控组件
 
 **执行命令:**
+
 ```bash
 python scripts/replace_hardcoded_strings.py --priority P2 --dry-run
 python scripts/replace_hardcoded_strings.py --priority P2
@@ -106,8 +111,9 @@ python scripts/replace_hardcoded_strings.py --priority P2
 ## 🔧 Priority P3: 技术术语（可选 - 保持原样）
 
 **不需要翻译的技术术语:**
+
 - HTTP 头: "Authorization", "Content-Type"
-- API 路径: "/api/ai/chat", "/api/cloud-native/*"
+- API 路径: "/api/ai/chat", "/api/cloud-native/\*"
 - 技术常量: "GET", "POST", "PUT", "DELETE"
 - 状态码: "200", "404", "500"
 
@@ -118,6 +124,7 @@ python scripts/replace_hardcoded_strings.py --priority P2
 ## 📋 执行计划
 
 ### 第 1 周: P0 导航组件
+
 - [ ] Day 1: 运行 `--priority P0 --dry-run` 预览
 - [ ] Day 1: 审查 diff 输出
 - [ ] Day 2: 应用 P0 变更
@@ -125,18 +132,21 @@ python scripts/replace_hardcoded_strings.py --priority P2
 - [ ] Day 2: 测试中英文切换
 
 ### 第 2 周: P1 常用标签
+
 - [ ] Day 1: 运行 `--priority P1 --dry-run` 预览
 - [ ] Day 1-2: 审查并修复问题
 - [ ] Day 3: 应用 P1 变更
 - [ ] Day 4-5: 测试 UI 组件
 
 ### 第 3 周: P2 监控标签
+
 - [ ] Day 1: 运行 `--priority P2 --dry-run`
 - [ ] Day 1: 应用变更
 - [ ] Day 2: 测试监控组件
 - [ ] Day 3-5: 全面验证和修复
 
 ### 第 4 周: 验证和优化
+
 - [ ] 运行 `python scripts/find_missing_translations.py`
 - [ ] 运行 `python scripts/validate_i18n.py`
 - [ ] 修复所有剩余问题
@@ -148,27 +158,32 @@ python scripts/replace_hardcoded_strings.py --priority P2
 ## 🛠️ 快速开始
 
 ### 1. 生成摘要（当前步骤）
+
 ```bash
 python scripts/replace_hardcoded_strings.py --summary
 ```
 
 ### 2. 预览 P0 变更
+
 ```bash
 python scripts/replace_hardcoded_strings.py --priority P0 --dry-run
 ```
 
 ### 3. 应用 P0 变更
+
 ```bash
 python scripts/replace_hardcoded_strings.py --priority P0
 ```
 
 ### 4. 验证
+
 ```bash
 python scripts/find_missing_translations.py
 python scripts/validate_i18n.py
 ```
 
 ### 5. 回滚（如需要）
+
 ```bash
 git checkout frontend/components/
 ```
@@ -178,6 +193,7 @@ git checkout frontend/components/
 ## 📝 注意事项
 
 1. **备份**: 应用变更前先提交当前代码
+
    ```bash
    git add .
    git commit -m "backup: before hardcoded string replacement"

@@ -150,14 +150,14 @@ sequenceDiagram
 
 <div align="center">
 
-| 📁 目录 | 📝 职责 | 🔑 关键文件 |
-|:--------|:--------|:------------|
-| `routers/` | API 路由入口 | `ai.py`, `alert.py`, `playbook*.py` |
-| `services/` | 业务逻辑 | `ai_service*.py`, `playbook_engine/` |
-| `repositories/` | 数据访问层 | `alert_repo.py`, `playbook_repo.py` |
-| `models/` | ORM 模型 | `alert.py`, `playbook.py` |
-| `schemas/` | Pydantic 模型 | API 请求/响应定义 |
-| `core/` | 基础配置 | `config.py`, `security.py` |
+| 📁 目录         | 📝 职责       | 🔑 关键文件                          |
+| :-------------- | :------------ | :----------------------------------- |
+| `routers/`      | API 路由入口  | `ai.py`, `alert.py`, `playbook*.py`  |
+| `services/`     | 业务逻辑      | `ai_service*.py`, `playbook_engine/` |
+| `repositories/` | 数据访问层    | `alert_repo.py`, `playbook_repo.py`  |
+| `models/`       | ORM 模型      | `alert.py`, `playbook.py`            |
+| `schemas/`      | Pydantic 模型 | API 请求/响应定义                    |
+| `core/`         | 基础配置      | `config.py`, `security.py`           |
 
 </div>
 
@@ -179,13 +179,13 @@ graph LR
 
 <div align="center">
 
-| 📁 目录 | 📝 职责 | 🔑 关键文件 |
-|:--------|:--------|:------------|
-| `app/` | 页面路由 | `page.tsx`, `[id]/page.tsx` |
-| `components/` | 复用组件 | `Navigation.tsx`, `dag/` |
-| `lib/` | 工具函数 | `api.ts` (API 调用封装) |
-| `hooks/` | 自定义 Hooks | `useAuth.ts`, `usePlaybook.ts` |
-| `types/` | TypeScript 类型 | `alert.ts`, `playbook.ts` |
+| 📁 目录       | 📝 职责         | 🔑 关键文件                    |
+| :------------ | :-------------- | :----------------------------- |
+| `app/`        | 页面路由        | `page.tsx`, `[id]/page.tsx`    |
+| `components/` | 复用组件        | `Navigation.tsx`, `dag/`       |
+| `lib/`        | 工具函数        | `api.ts` (API 调用封装)        |
+| `hooks/`      | 自定义 Hooks    | `useAuth.ts`, `usePlaybook.ts` |
+| `types/`      | TypeScript 类型 | `alert.ts`, `playbook.ts`      |
 
 </div>
 
@@ -210,24 +210,24 @@ graph TB
 
 ### 后端技术栈
 
-| 层级 | 技术选型 | 版本 | 徽章 |
-|:-----|:---------|:-----|:-----|
-| 🚀 后端框架 | FastAPI | 0.115+ | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white) |
-| 🗄️ ORM | SQLAlchemy (Async) | 2.0+ | ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=flat-square) |
-| 💾 数据库 | SQLite / PostgreSQL | 3.0+ | ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white) |
-| 🔐 认证 | JWT / OAuth2 | - | ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens) |
-| 🤖 AI | NVIDIA / OpenAI / Claude | - | ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white) |
-| 🌐 威胁情报 | AlienVault OTX | - | ![OTX](https://img.shields.io/badge/OTX-000000?style=flat-square) |
+| 层级        | 技术选型                 | 版本   | 徽章                                                                                                   |
+| :---------- | :----------------------- | :----- | :----------------------------------------------------------------------------------------------------- |
+| 🚀 后端框架 | FastAPI                  | 0.115+ | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white) |
+| 🗄️ ORM      | SQLAlchemy (Async)       | 2.0+   | ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=flat-square)                        |
+| 💾 数据库   | SQLite / PostgreSQL      | 3.0+   | ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)    |
+| 🔐 认证     | JWT / OAuth2             | -      | ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens)                   |
+| 🤖 AI       | NVIDIA / OpenAI / Claude | -      | ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white)    |
+| 🌐 威胁情报 | AlienVault OTX           | -      | ![OTX](https://img.shields.io/badge/OTX-000000?style=flat-square)                                      |
 
 ### 前端技术栈
 
-| 层级 | 技术选型 | 版本 | 徽章 |
-|:-----|:---------|:-----|:-----|
-| ⚛️ 前端框架 | Next.js | 15.1 | ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white) |
-| 🎨 UI 框架 | React + Tailwind | 19.0 + 3.4 | ![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black) |
-| 📊 DAG 编辑 | React Flow | - | ![React Flow](https://img.shields.io/badge/React%20Flow-ff0072?style=flat-square) |
-| 📝 语言 | TypeScript | 5.x | ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) |
-| 🎭 图标 | Lucide React | - | ![Lucide](https://img.shields.io/badge/Lucide-F56565?style=flat-square) |
+| 层级        | 技术选型         | 版本       | 徽章                                                                                                            |
+| :---------- | :--------------- | :--------- | :-------------------------------------------------------------------------------------------------------------- |
+| ⚛️ 前端框架 | Next.js          | 15.1       | ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)        |
+| 🎨 UI 框架  | React + Tailwind | 19.0 + 3.4 | ![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)                |
+| 📊 DAG 编辑 | React Flow       | -          | ![React Flow](https://img.shields.io/badge/React%20Flow-ff0072?style=flat-square)                               |
+| 📝 语言     | TypeScript       | 5.x        | ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) |
+| 🎭 图标     | Lucide React     | -          | ![Lucide](https://img.shields.io/badge/Lucide-F56565?style=flat-square)                                         |
 
 </div>
 
@@ -237,13 +237,13 @@ graph TB
 
 <div align="center">
 
-| 指标 | 目标值 | 说明 |
-|:-----|:-------|:-----|
-| ⚡ API 响应时间 | < 200ms | P95 响应时间 |
-| 🔄 并发用户 | 100+ | 同时在线用户 |
-| 📈 告警处理 | 1000/小时 | 每小时处理告警数 |
-| 🗄️ 数据库 | 10万+ | 支持告警记录数 |
-| 🤖 AI 响应 | < 5s | 典型分析请求 |
+| 指标            | 目标值    | 说明             |
+| :-------------- | :-------- | :--------------- |
+| ⚡ API 响应时间 | < 200ms   | P95 响应时间     |
+| 🔄 并发用户     | 100+      | 同时在线用户     |
+| 📈 告警处理     | 1000/小时 | 每小时处理告警数 |
+| 🗄️ 数据库       | 10万+     | 支持告警记录数   |
+| 🤖 AI 响应      | < 5s      | 典型分析请求     |
 
 </div>
 
@@ -253,11 +253,11 @@ graph TB
 
 <div align="center">
 
-| 📖 推荐阅读 | 🎯 目标 |
-|:------------|:--------|
-| [📙 API 文档](02-api-overview.md) | 了解 API 接口详情 |
-| [📕 数据库设计](03-database.md) | 理解数据模型 |
-| [📔 剧本引擎](06-playbook-engine.md) | 学习 DAG 工作流 |
+| 📖 推荐阅读                          | 🎯 目标           |
+| :----------------------------------- | :---------------- |
+| [📙 API 文档](02-api-overview.md)    | 了解 API 接口详情 |
+| [📕 数据库设计](03-database.md)      | 理解数据模型      |
+| [📔 剧本引擎](06-playbook-engine.md) | 学习 DAG 工作流   |
 
 </div>
 

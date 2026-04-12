@@ -9,21 +9,21 @@
 
 ### 后端开发 (100%)
 
-| 任务 | 状态 | 工作量 | 文件 |
-|------|------|--------|------|
-| WebSocket 服务器 | ✅ 完成 | 2 天 | `backend/routers/wazuh_stream.py` |
-| 告警流数据模型 | ✅ 完成 | 1 天 | `backend/schemas/wazuh_stream.py` |
-| 告警广播服务 | ✅ 完成 | 2 天 | `backend/services/wazuh_stream_service.py` |
-| 主程序集成 | ✅ 完成 | 0.5 天 | `backend/main.py` |
+| 任务             | 状态    | 工作量 | 文件                                       |
+| ---------------- | ------- | ------ | ------------------------------------------ |
+| WebSocket 服务器 | ✅ 完成 | 2 天   | `backend/routers/wazuh_stream.py`          |
+| 告警流数据模型   | ✅ 完成 | 1 天   | `backend/schemas/wazuh_stream.py`          |
+| 告警广播服务     | ✅ 完成 | 2 天   | `backend/services/wazuh_stream_service.py` |
+| 主程序集成       | ✅ 完成 | 0.5 天 | `backend/main.py`                          |
 
 ### 前端开发 (100%)
 
-| 任务 | 状态 | 工作量 | 文件 |
-|------|------|--------|------|
-| WebSocket 客户端 | ✅ 完成 | 1 天 | `frontend/lib/wazuhWebSocket.ts` |
-| 类型定义 | ✅ 完成 | 0.5 天 | `frontend/types/wazuh.ts` |
-| 实时告警流组件 | ✅ 完成 | 2 天 | `frontend/components/wazuh/WazuhAlertStream.tsx` |
-| 国际化翻译 | ✅ 完成 | 0.5 天 | `frontend/messages/en.json`, `frontend/messages/zh.json` |
+| 任务             | 状态    | 工作量 | 文件                                                     |
+| ---------------- | ------- | ------ | -------------------------------------------------------- |
+| WebSocket 客户端 | ✅ 完成 | 1 天   | `frontend/lib/wazuhWebSocket.ts`                         |
+| 类型定义         | ✅ 完成 | 0.5 天 | `frontend/types/wazuh.ts`                                |
+| 实时告警流组件   | ✅ 完成 | 2 天   | `frontend/components/wazuh/WazuhAlertStream.tsx`         |
+| 国际化翻译       | ✅ 完成 | 0.5 天 | `frontend/messages/en.json`, `frontend/messages/zh.json` |
 
 ---
 
@@ -32,6 +32,7 @@
 ### 1. 后端 WebSocket 服务器
 
 **功能**:
+
 - ✅ `/api/v1/wazuh/stream/ws` - WebSocket 端点
 - ✅ JWT 认证支持
 - ✅ 频道订阅机制 (alerts, playbook_runs, system)
@@ -39,6 +40,7 @@
 - ✅ 心跳保活机制
 
 **API 端点**:
+
 - `POST /api/v1/wazuh/stream/start` - 启动流服务
 - `POST /api/v1/wazuh/stream/stop` - 停止流服务
 - `GET /api/v1/wazuh/stream/status` - 获取服务状态
@@ -49,6 +51,7 @@
 ### 2. 告警流数据模型
 
 **核心模型**:
+
 - ✅ `WazuhAlertStream` - 实时告警数据
 - ✅ `WazuhStreamMessage` - WebSocket 消息格式
 - ✅ `AlertStreamFilter` - 订阅过滤器
@@ -56,6 +59,7 @@
 - ✅ `AlertAggregation` - 告警聚合数据
 
 **特性**:
+
 - 支持 5 个严重级别 (critical, high, medium, low, info)
 - 包含完整的 MITRE ATT&CK 映射
 - IOC 提取和存储
@@ -64,6 +68,7 @@
 ### 3. 告警广播服务
 
 **WazuhStreamService**:
+
 - ✅ 实时告警广播
 - ✅ 告警聚合 (可配置时间窗口)
 - ✅ 去重和合并
@@ -72,6 +77,7 @@
 - ✅ 后台任务处理
 
 **配置选项**:
+
 ```python
 aggregation_window_seconds: 60  # 聚合时间窗口
 max_buffer_size: 10000          # 最大缓冲区大小
@@ -81,6 +87,7 @@ max_history_size: 1000          # 历史缓存大小
 ### 4. 前端 WebSocket 客户端
 
 **WazuhWebSocketClient**:
+
 - ✅ 自动连接和重连 (指数退避)
 - ✅ 心跳检测
 - ✅ 消息队列
@@ -88,6 +95,7 @@ max_history_size: 1000          # 历史缓存大小
 - ✅ 错误处理
 
 **特性**:
+
 - 单例模式
 - TypeScript 类型安全
 - 事件处理器注册
@@ -96,6 +104,7 @@ max_history_size: 1000          # 历史缓存大小
 ### 5. 实时告警流 UI 组件
 
 **WazuhAlertStream**:
+
 - ✅ 实时告警列表
 - ✅ 统计卡片 (总计、各严重级别计数)
 - ✅ 过滤面板 (严重级别、搜索、设备)
@@ -104,6 +113,7 @@ max_history_size: 1000          # 历史缓存大小
 - ✅ 响应式设计
 
 **UI 特性**:
+
 - 按严重级别颜色编码
 - MITRE ATT&CK 战术显示
 - IOC 高亮
@@ -207,22 +217,26 @@ max_history_size: 1000          # 历史缓存大小
 ### 手动测试步骤
 
 1. **启动服务**:
+
 ```bash
 cd backend
 python main.py
 ```
 
 2. **启动流服务**:
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/wazuh/stream/start
 ```
 
 3. **检查状态**:
+
 ```bash
 curl http://localhost:8000/api/v1/wazuh/stream/status
 ```
 
 4. **发送测试告警**:
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/wazuh/stream/test-alert \
   -H "Content-Type: application/json" \
@@ -235,6 +249,7 @@ curl -X POST http://localhost:8000/api/v1/wazuh/stream/test-alert \
 ```
 
 5. **查看统计**:
+
 ```bash
 curl http://localhost:8000/api/v1/wazuh/stream/stats
 ```
@@ -276,16 +291,16 @@ WAZUH_STREAM_MAX_HISTORY_SIZE=1000
 ```typescript
 // lib/wazuhWebSocket.ts
 const client = getWazuhWebSocketClient({
-  url: 'ws://localhost:8000/api/v1/wazuh/stream/ws',
+  url: "ws://localhost:8000/api/v1/wazuh/stream/ws",
   token: authToken,
   reconnectInterval: 3000,
   maxReconnectAttempts: 10,
   heartbeatInterval: 30000,
   enableAggregation: true,
   filters: {
-    min_severity: 'medium',
-    limit: 100
-  }
+    min_severity: "medium",
+    limit: 100,
+  },
 });
 ```
 
@@ -293,13 +308,13 @@ const client = getWazuhWebSocketClient({
 
 ## 🚀 性能指标
 
-| 指标 | 目标 | 当前 | 备注 |
-|------|------|------|------|
-| 告警接收延迟 | <30 秒 | ~30 秒 | 轮询间隔 |
-| WebSocket 推送延迟 | <5 秒 | <1 秒 | 实时推送 |
-| 支持并发连接 | 100+ | 100 | 可配置 |
-| 告警聚合准确性 | >95% | 98% | 基于时间窗口 |
-| 前端渲染性能 | 60 FPS | 60 FPS | 虚拟滚动 |
+| 指标               | 目标   | 当前   | 备注         |
+| ------------------ | ------ | ------ | ------------ |
+| 告警接收延迟       | <30 秒 | ~30 秒 | 轮询间隔     |
+| WebSocket 推送延迟 | <5 秒  | <1 秒  | 实时推送     |
+| 支持并发连接       | 100+   | 100    | 可配置       |
+| 告警聚合准确性     | >95%   | 98%    | 基于时间窗口 |
+| 前端渲染性能       | 60 FPS | 60 FPS | 虚拟滚动     |
 
 ---
 
@@ -324,11 +339,13 @@ const client = getWazuhWebSocketClient({
 **症状**: 前端显示 "Not connected"
 
 **可能原因**:
+
 - 后端服务未启动
 - Token 无效
 - 端口被占用
 
 **解决方法**:
+
 ```bash
 # 检查服务状态
 curl http://localhost:8000/api/v1/wazuh/stream/status
@@ -342,11 +359,13 @@ wscat -c ws://localhost:8000/api/v1/wazuh/stream/ws?token=YOUR_TOKEN
 **症状**: 连接正常但无告警
 
 **可能原因**:
+
 - Wazuh 无新告警
 - 过滤器设置过于严格
 - 流服务未启动
 
 **解决方法**:
+
 ```bash
 # 发送测试告警
 curl -X POST http://localhost:8000/api/v1/wazuh/stream/test-alert
@@ -360,11 +379,13 @@ curl http://localhost:8000/api/v1/wazuh/stream/stats
 **症状**: WebSocket 连接不稳定
 
 **可能原因**:
+
 - 网络问题
 - 心跳超时
 - 服务器负载过高
 
 **解决方法**:
+
 ```bash
 # 调整心跳间隔
 WS_HEARTBEAT_INTERVAL=60

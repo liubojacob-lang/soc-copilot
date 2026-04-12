@@ -9,14 +9,17 @@
 ### 1. ✅ 第一阶段遗留问题完善
 
 #### 1.1 添加单元测试
+
 **文件**: `backend/tests/test_alert_deduplication.py`
 
 **测试覆盖**:
+
 - `AlertDeduplicator` 指纹生成测试（3种策略）
 - `AlertStormSuppressor` 阈值配置测试
 - 工厂函数测试
 
 **运行测试**:
+
 ```bash
 cd backend
 python -m pytest tests/test_alert_deduplication.py -v
@@ -27,9 +30,11 @@ python -m pytest tests/test_alert_deduplication.py -v
 ### 2. ✅ 性能快速提升
 
 #### 2.1 Gzip 响应压缩中间件
+
 **文件**: `backend/middleware/gzip_compression.py`
 
 **功能**:
+
 - 自动压缩大于 1KB 的响应
 - 可配置压缩级别（默认 6）
 - 检查客户端是否支持 gzip
@@ -39,6 +44,7 @@ python -m pytest tests/test_alert_deduplication.py -v
 
 **使用方法**:
 在 `main.py` 中添加：
+
 ```python
 from middleware.gzip_compression import GzipCompressionMiddleware
 
@@ -48,9 +54,11 @@ app.add_middleware(GzipCompressionMiddleware, minimum_size=1024, compresslevel=6
 ---
 
 #### 2.2 查询缓存服务
+
 **文件**: `backend/services/query_cache.py`
 
 **功能**:
+
 - 内存 TTL 缓存（默认 5 分钟）
 - LRU 淘汰策略
 - 最大 1000 条缓存
@@ -60,6 +68,7 @@ app.add_middleware(GzipCompressionMiddleware, minimum_size=1024, compresslevel=6
 **预期收益**: 统计查询响应时间减少 90%
 
 **使用方法**:
+
 ```python
 from services.query_cache import cached, invalidate_cache
 
@@ -77,6 +86,7 @@ invalidate_cache("alert_stats")
 ## 📁 新增/修改的文件
 
 ### 新增文件
+
 1. `backend/tests/test_alert_deduplication.py` - 去重服务单元测试
 2. `backend/middleware/gzip_compression.py` - Gzip 压缩中间件
 3. `backend/services/query_cache.py` - 查询缓存服务
@@ -84,6 +94,7 @@ invalidate_cache("alert_stats")
 5. `docs/zh/PHASE1_IMPLEMENTATION_SUMMARY.md` - 第一阶段实施总结
 
 ### 第一阶段已有文件
+
 1. `backend/services/alert_deduplication.py` - 告警去重和聚合服务
 2. `backend/migrations_alembic/versions/v1_2_0_phase1_optimizations.py` - 数据库迁移
 3. `backend/models/security_alert.py` - 安全告警模型（更新）
@@ -93,7 +104,9 @@ invalidate_cache("alert_stats")
 ## 🚀 下一步操作建议
 
 ### 立即执行（10分钟）
+
 1. **应用 Gzip 压缩**
+
    ```python
    # 在 backend/main.py 的 middleware 部分添加：
    from middleware.gzip_compression import GzipCompressionMiddleware
@@ -101,6 +114,7 @@ invalidate_cache("alert_stats")
    ```
 
 2. **运行单元测试**
+
    ```bash
    cd backend
    python -m pytest tests/test_alert_deduplication.py -v
@@ -118,6 +132,7 @@ invalidate_cache("alert_stats")
 ---
 
 ### 短期执行（1-2天）
+
 1. **为高频 API 添加缓存装饰器**
    - 告警统计接口
    - 仪表板数据接口
@@ -136,22 +151,22 @@ invalidate_cache("alert_stats")
 
 ## 📊 预期性能提升
 
-| 优化项 | 预期提升 | 说明 |
-|--------|---------|------|
+| 优化项    | 预期提升          | 说明         |
+| --------- | ----------------- | ------------ |
 | Gzip 压缩 | 响应大小 ↓ 60-80% | 减少带宽使用 |
-| 查询缓存 | 查询速度 ↑ 90% | 缓存统计数据 |
-| 单元测试 | 代码质量 ↑ | 减少回归 bug |
+| 查询缓存  | 查询速度 ↑ 90%    | 缓存统计数据 |
+| 单元测试  | 代码质量 ↑        | 减少回归 bug |
 
 ---
 
 ## 💡 使用建议
 
 ### 查询缓存最佳实践
+
 1. **缓存什么**
    - ✅ 统计数据（告警计数、仪表板数据）
    - ✅ 不常变化的配置数据
    - ✅ 资产列表（有失效机制）
-   
    - ❌ 实时告警数据
    - ❌ 用户会话数据
    - ❌ 写入操作结果
@@ -166,6 +181,7 @@ invalidate_cache("alert_stats")
 ## 🎉 总结
 
 已完成的优化:
+
 - ✅ 第一阶段功能（去重、聚合、索引优化）
 - ✅ 单元测试覆盖
 - ✅ Gzip 响应压缩

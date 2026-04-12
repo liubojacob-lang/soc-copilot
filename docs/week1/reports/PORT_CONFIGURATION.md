@@ -12,11 +12,11 @@
 
 ## 📋 端口分配
 
-| 服务 | 端口 | 说明 |
-|------|------|------|
-| **后端 API** | `8000` | FastAPI 服务 |
-| **前端 UI** | `3003` | Next.js 开发服务器 |
-| **WebSocket** | `8000` | 与后端共享 |
+| 服务          | 端口   | 说明               |
+| ------------- | ------ | ------------------ |
+| **后端 API**  | `8000` | FastAPI 服务       |
+| **前端 UI**   | `3003` | Next.js 开发服务器 |
+| **WebSocket** | `8000` | 与后端共享         |
 
 ---
 
@@ -56,9 +56,9 @@ docker-compose -f docker-compose.prod.yml up -d
 // frontend/next.config.js
 module.exports = {
   devServer: {
-    port: 3003
-  }
-}
+    port: 3003,
+  },
+};
 ```
 
 ### 环境变量
@@ -97,8 +97,8 @@ NEXT_PUBLIC_PORT=3003
 
 ## 📝 更新日志
 
-| 日期 | 端口 | 原因 |
-|------|------|------|
+| 日期       | 端口   | 原因         |
+| ---------- | ------ | ------------ |
 | 2026-02-25 | `3003` | 固定前端端口 |
 
 ---
@@ -134,7 +134,7 @@ npm run dev -- -p 3004
 services:
   frontend:
     ports:
-      - "3003:3000"  # 宿主机:容器
+      - "3003:3000" # 宿主机:容器
 ```
 
 ---
@@ -142,6 +142,7 @@ services:
 ## 📞 支持
 
 如有端口配置问题，请查看:
+
 - `docker-compose.yml`
 - `frontend/next.config.js`
 - `frontend/package.json`

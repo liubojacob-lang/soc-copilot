@@ -38,6 +38,7 @@ $ curl http://localhost:8000/api/v1/wazuh/stream/status
 ### 3. 新增文件清单
 
 **后端 (5 个新文件)**:
+
 - ✅ `backend/schemas/wazuh_stream.py` - 数据模型
 - ✅ `backend/services/wazuh_stream_service.py` - 流服务
 - ✅ `backend/routers/wazuh_stream.py` - API 路由
@@ -45,6 +46,7 @@ $ curl http://localhost:8000/api/v1/wazuh/stream/status
 - ✅ `frontend/components/wazuh/WazuhAlertStream.tsx` - UI 组件
 
 **修改的文件**:
+
 - ✅ `backend/main.py` - 注册新路由和启动流服务
 - ✅ `backend/services/wazuh_log_receiver.py` - 集成流服务
 - ✅ `frontend/messages/en.json` - 英文翻译
@@ -66,6 +68,7 @@ npm run dev -- -p 3003
 ### 步骤 2: 登录系统
 
 使用管理员账号登录（根据您的配置）:
+
 - 用户名: `admin`
 - 密码: 根据控制台输出的随机密码
 
@@ -76,6 +79,7 @@ npm run dev -- -p 3003
 ### 步骤 4: 查看实时告警流
 
 在 Wazuh 页面中，您应该能看到：
+
 - ✅ 连接状态指示器
 - ✅ 统计卡片（总计、Critical、High、Medium、Low、Info）
 - ✅ 过滤按钮
@@ -148,11 +152,13 @@ curl -X POST http://localhost:8000/api/v1/wazuh/stream/test-alert \
 ### 问题 1: 前端无法连接 WebSocket
 
 **可能原因**:
+
 - 后端服务未运行
 - Token 无效
 - 端口冲突
 
 **解决方法**:
+
 ```bash
 # 检查后端服务
 curl http://localhost:8000/api/health
@@ -164,11 +170,13 @@ curl -I http://localhost:8000/api/v1/wazuh/stream/status
 ### 问题 2: 没有告警显示
 
 **可能原因**:
+
 - Wazuh 未配置
 - 流服务未启动
 - 过滤器设置过严
 
 **解决方法**:
+
 1. 检查 Wazuh 配置 (`.env`)
 2. 手动启动流服务
 3. 发送测试告警验证
@@ -176,10 +184,12 @@ curl -I http://localhost:8000/api/v1/wazuh/stream/status
 ### 问题 3: 统计数据不准确
 
 **可能原因**:
+
 - 流服务刚启动
 - 缓存未更新
 
 **解决方法**:
+
 - 等待几秒后刷新
 - 检查流服务统计 API
 
@@ -189,19 +199,19 @@ curl -I http://localhost:8000/api/v1/wazuh/stream/status
 
 ### 后端性能
 
-| 指标 | 目标 | 测试方法 |
-|------|------|----------|
+| 指标         | 目标   | 测试方法                                     |
+| ------------ | ------ | -------------------------------------------- |
 | API 响应时间 | <500ms | `time curl http://localhost:8000/api/health` |
-| 内存使用 | <500MB | 检查进程监控 |
-| CPU 使用 | <50% | 检查进程监控 |
+| 内存使用     | <500MB | 检查进程监控                                 |
+| CPU 使用     | <50%   | 检查进程监控                                 |
 
 ### WebSocket 性能
 
-| 指标 | 目标 | 验证方法 |
-|------|------|----------|
-| 连接建立时间 | <2s | 浏览器开发者工具 Network 面板 |
-| 消息推送延迟 | <5s | 从发送到接收的时间差 |
-| 并发连接 | 100+ | 压力测试工具 |
+| 指标         | 目标 | 验证方法                      |
+| ------------ | ---- | ----------------------------- |
+| 连接建立时间 | <2s  | 浏览器开发者工具 Network 面板 |
+| 消息推送延迟 | <5s  | 从发送到接收的时间差          |
+| 并发连接     | 100+ | 压力测试工具                  |
 
 ---
 
@@ -264,6 +274,7 @@ curl -I http://localhost:8000/api/v1/wazuh/stream/status
 ## 📞 支持
 
 如遇问题，请检查：
+
 1. 后端日志: `backend/backend.log`
 2. 浏览器控制台: F12 → Console
 3. WebSocket 连接: F12 → Network → WS

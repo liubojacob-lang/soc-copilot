@@ -13,14 +13,17 @@
 #### 1.1 为高频API添加查询缓存装饰器
 
 **文件修改**:
+
 - `backend/routers/security_alerts.py`
 
 **实施内容**:
+
 - 为 `/api/v1/security-alerts/stats/summary` 端点添加了 `@cached` 装饰器
 - 设置60秒TTL，平衡数据实时性和性能
 - 在数据变更时自动失效缓存（创建、更新、删除告警时）
 
 **预期收益**:
+
 - 统计查询响应时间减少 90%+
 - 降低数据库负载
 
@@ -29,10 +32,12 @@
 #### 1.2 缓存指标集成 (P2)
 
 **文件修改**:
+
 - `backend/observability/metrics.py`
 - `backend/services/query_cache.py`
 
 **新增指标**:
+
 ```python
 # 缓存命中率指标
 cache_hits_total = Counter("soc_cache_hits_total", "Total cache hits", ["cache_name"])
@@ -45,6 +50,7 @@ security_alerts_by_status = Gauge("soc_security_alerts_by_status", "Current secu
 ```
 
 **新增辅助函数**:
+
 - `observe_cache_hit()` - 记录缓存命中
 - `observe_cache_miss()` - 记录缓存未命中
 - `set_cache_size()` - 更新缓存大小
@@ -52,11 +58,13 @@ security_alerts_by_status = Gauge("soc_security_alerts_by_status", "Current secu
 - `set_security_alerts_by_status()` - 更新告警状态统计
 
 **集成到查询缓存**:
+
 - TTLCache 的 `get()` 方法自动记录命中/未命中
 - TTLCache 的 `set()`、`delete()`、`clear()` 方法自动更新缓存大小
 - `invalidate_cache()` 函数自动更新缓存大小
 
 **预期收益**:
+
 - 可实时监控缓存命中率
 - 便于调优缓存策略
 - 更好的业务指标可视化
@@ -68,21 +76,25 @@ security_alerts_by_status = Gauge("soc_security_alerts_by_status", "Current secu
 #### 2.1 集成Gzip压缩中间件
 
 **文件修改**:
+
 - `backend/main.py`
 
 **实施内容**:
+
 - 导入 `GzipCompressionMiddleware`
 - 在中间件链中添加Gzip压缩
 - 配置最小压缩大小为1KB
 - 压缩级别设置为6（平衡压缩率和速度）
 
 **压缩条件**:
+
 - 响应大小 > 1KB
 - 客户端接受gzip编码
 - 响应未被压缩
 - 状态码在200-299范围内
 
 **预期收益**:
+
 - 响应大小减少 60-80%
 - 降低带宽成本
 - 提升前端加载速度
@@ -94,6 +106,7 @@ security_alerts_by_status = Gauge("soc_security_alerts_by_status", "Current secu
 项目已有的强大基础设施：
 
 #### 3.1 错误处理系统
+
 - **文件**: `backend/middleware/exception_handler.py`
 - **功能**:
   - 统一错误响应格式
@@ -103,6 +116,7 @@ security_alerts_by_status = Gauge("soc_security_alerts_by_status", "Current secu
   - Pydantic 验证错误处理
 
 #### 3.2 Prometheus 指标系统
+
 - **文件**: `backend/observability/metrics.py`
 - **已有指标**:
   - API 请求统计和延迟直方图
@@ -112,6 +126,7 @@ security_alerts_by_status = Gauge("soc_security_alerts_by_status", "Current secu
   - 异常统计指标
 
 #### 3.3 数据归档脚本
+
 - **文件**: `backend/scripts/archive_old_data.py`
 - **功能**:
   - 归档旧告警数据
@@ -124,9 +139,11 @@ security_alerts_by_status = Gauge("soc_security_alerts_by_status", "Current secu
 ## 文件变更清单
 
 ### 新增文件
+
 - 无（使用现有基础设施）
 
 ### 修改文件
+
 1. `backend/routers/security_alerts.py`
    - 添加查询缓存导入
    - 为统计端点添加 `@cached` 装饰器
@@ -150,6 +167,7 @@ security_alerts_by_status = Gauge("soc_security_alerts_by_status", "Current secu
 ## 验证步骤
 
 ### 1. 查询缓存验证
+
 ```bash
 # 1. 启动后端服务
 cd backend
@@ -166,6 +184,7 @@ curl http://localhost:8000/metrics/prometheus | grep cache
 ```
 
 ### 2. Gzip压缩验证
+
 ```bash
 # 1. 请求大响应并检查压缩
 curl -H "Accept-Encoding: gzip" -I http://localhost:8000/api/v1/security-alerts/
@@ -174,6 +193,7 @@ curl -H "Accept-Encoding: gzip" -I http://localhost:8000/api/v1/security-alerts/
 ```
 
 ### 3. Prometheus指标验证
+
 ```bash
 # 访问指标端点
 curl http://localhost:8000/metrics/prometheus
@@ -190,28 +210,31 @@ curl http://localhost:8000/metrics/prometheus
 
 ## 性能预期
 
-| 优化项 | 预期提升 | 说明 |
-|--------|----------|------|
-| 查询缓存 | 统计查询响应时间减少 90%+ | 60秒TTL，自动失效 |
-| Gzip压缩 | 响应大小减少 60-80% | >1KB响应自动压缩 |
-| 缓存监控 | 可实时监控缓存命中率 | Prometheus指标集成 |
+| 优化项   | 预期提升                  | 说明               |
+| -------- | ------------------------- | ------------------ |
+| 查询缓存 | 统计查询响应时间减少 90%+ | 60秒TTL，自动失效  |
+| Gzip压缩 | 响应大小减少 60-80%       | >1KB响应自动压缩   |
+| 缓存监控 | 可实时监控缓存命中率      | Prometheus指标集成 |
 
 ---
 
 ## 下一步建议
 
 ### 短期优化 (P1续)
+
 1. 为更多高频API添加缓存（如Playbook列表、资产列表）
 2. 添加缓存管理API端点（查看缓存状态、手动清除缓存）
 3. 实现缓存预热功能
 
 ### 中期优化 (P2续)
+
 1. AI响应缓存（使用语义相似度匹配）
 2. 数据库查询优化（分析慢查询日志）
 3. 添加更多业务指标（告警处理时间、MTTR等）
 4. 实现告警状态指标的定期更新
 
 ### 长期优化 (P3)
+
 1. 分布式缓存（Redis替代内存缓存）
 2. 缓存持久化
 3. 多级缓存策略

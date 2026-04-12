@@ -1,7 +1,7 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import ReactDOM from 'react-dom';
-import { AiAssistantWidget } from '../../../ai-assistant-release/ai-assistant-widget/src';
+import React from "react";
+import { createRoot } from "react-dom/client";
+import ReactDOM from "react-dom";
+import { AiAssistantWidget } from "../../../ai-assistant-release/ai-assistant-widget/src";
 
 const App = () => (
   <div style={{ padding: 16 }}>
@@ -11,4 +11,4 @@ const App = () => (
   </div>
 );
 
-createRoot(document.getElementById('root')).render(<App />);
+createRoot(document.getElementById("root")).render(<App />);

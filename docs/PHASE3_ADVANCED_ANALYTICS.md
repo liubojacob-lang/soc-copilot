@@ -13,6 +13,7 @@ Phase 3 introduces advanced security analytics capabilities including UEBA (User
 User and Entity Behavior Analytics system that detects insider threats and anomalous behavior using ML.
 
 **Key Capabilities**:
+
 - **Behavior Baseline Building**: Learns normal behavior patterns for users, hosts, and IPs
 - **Anomaly Detection**: Identifies deviations from baseline
   - Unusual login times
@@ -24,6 +25,7 @@ User and Entity Behavior Analytics system that detects insider threats and anoma
 - **Peer Group Analysis**: Compares behavior against peer groups
 
 **API Endpoints**:
+
 ```
 POST   /api/ueba/detect              - Detect behavioral anomalies
 GET    /api/ueba/risk-profile/{id}   - Get user risk profile
@@ -33,6 +35,7 @@ GET    /api/ueba/dashboard           - Get UEBA dashboard
 ```
 
 **Example Usage**:
+
 ```bash
 # Detect anomalies for a user
 curl -X POST http://localhost:8000/api/ueba/detect \
@@ -58,6 +61,7 @@ curl http://localhost:8000/api/ueba/risk-profile/user_001 \
 Proactive threat discovery platform for hypothesis-driven hunting.
 
 **Key Capabilities**:
+
 - **Hypothesis-Driven Hunting**: Based on MITRE ATT&CK framework
   - Lateral Movement Detection
   - PowerShell Obfuscation
@@ -70,15 +74,16 @@ Proactive threat discovery platform for hypothesis-driven hunting.
 
 **Built-in Hunt Hypotheses**:
 
-| ID | Name | MITRE Technique | Severity |
-|----|------|----------------|----------|
-| hunt_001 | Lateral Movement via SMB | T1021.002 | High |
-| hunt_002 | PowerShell Obfuscation | T1059.001, T1027 | Critical |
-| hunt_003 | Persistence via Scheduled Tasks | T1053.005 | High |
-| hunt_004 | Data Exfiltration via DNS | T1071.004 | Medium |
-| hunt_005 | Kerberoasting Activity | T1558.003 | Critical |
+| ID       | Name                            | MITRE Technique  | Severity |
+| -------- | ------------------------------- | ---------------- | -------- |
+| hunt_001 | Lateral Movement via SMB        | T1021.002        | High     |
+| hunt_002 | PowerShell Obfuscation          | T1059.001, T1027 | Critical |
+| hunt_003 | Persistence via Scheduled Tasks | T1053.005        | High     |
+| hunt_004 | Data Exfiltration via DNS       | T1071.004        | Medium   |
+| hunt_005 | Kerberoasting Activity          | T1558.003        | Critical |
 
 **API Endpoints**:
+
 ```
 GET    /api/threat-hunting/hypotheses      - List hunt hypotheses
 POST   /api/threat-hunting/hypotheses      - Create custom hypothesis
@@ -89,6 +94,7 @@ GET    /api/threat-hunting/dashboard       - Get hunting dashboard
 ```
 
 **Example Usage**:
+
 ```bash
 # List available hypotheses
 curl http://localhost:8000/api/threat-hunting/hypotheses \
@@ -121,6 +127,7 @@ curl -X POST http://localhost:8000/api/threat-hunting/ioc-hunt \
 **Upgrade to existing threat_intel service**
 
 Planned enhancements (not yet implemented):
+
 - Multi-source aggregation (VirusTotal, MISP, Abuse.ch)
 - STIX/TAXII support
 - Intelligence correlation
@@ -172,6 +179,7 @@ Planned enhancements (not yet implemented):
 ### UEBA Models
 
 **BehaviorBaseline**:
+
 ```python
 {
   "entity_id": "user_001",
@@ -184,6 +192,7 @@ Planned enhancements (not yet implemented):
 ```
 
 **AnomalyDetection**:
+
 ```python
 {
   "entity_id": "user_001",
@@ -199,6 +208,7 @@ Planned enhancements (not yet implemented):
 ### Threat Hunting Models
 
 **HuntHypothesis**:
+
 ```python
 {
   "id": "hunt_001",
@@ -211,6 +221,7 @@ Planned enhancements (not yet implemented):
 ```
 
 **HuntFinding**:
+
 ```python
 {
   "id": "finding_001",
@@ -249,11 +260,13 @@ Use the provided example curl commands or access the interactive documentation.
 ## 📈 Performance Considerations
 
 ### UEBA
+
 - Baseline building: Run periodically (e.g., weekly)
 - Real-time anomaly detection: < 100ms per query
 - ML model training: Background job
 
 ### Threat Hunting
+
 - Hunt execution: Depends on data volume (seconds to minutes)
 - IOC hunting: Optimized for large-scale searches
 - Results caching: Cache hunt results for 1 hour
@@ -268,12 +281,14 @@ Use the provided example curl commands or access the interactive documentation.
 ## 📝 Future Enhancements
 
 ### UEBA
+
 - [ ] Graph-based relationship analysis
 - [ ] Time-series anomaly detection
 - [ ] Integration with SIEM data sources
 - [ ] Automated playbook triggering
 
 ### Threat Hunting
+
 - [ ] Jupyter notebook integration
 - [ ] Hunt scheduling (cron-based)
 - [ ] Machine learning hunt suggestions

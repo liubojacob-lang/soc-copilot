@@ -28,12 +28,13 @@ git push -u origin master
 
 添加以下 Secrets：
 
-| Secret Name | Value | Description |
-|-------------|-------|-------------|
-| `DOCKERHUB_USERNAME` | your-dockerhub-username | Docker Hub 用户名 |
-| `DOCKERHUB_TOKEN` | your-dockerhub-token | Docker Hub 访问令牌 |
+| Secret Name          | Value                   | Description         |
+| -------------------- | ----------------------- | ------------------- |
+| `DOCKERHUB_USERNAME` | your-dockerhub-username | Docker Hub 用户名   |
+| `DOCKERHUB_TOKEN`    | your-dockerhub-token    | Docker Hub 访问令牌 |
 
 **获取 Docker Hub Token：**
+
 1. 登录 https://hub.docker.com
 2. Account Settings → Security → New Access Token
 3. 复制 Token 并保存到 GitHub Secrets
@@ -42,12 +43,12 @@ git push -u origin master
 
 如果需要部署到服务器，添加：
 
-| Secret Name | Value |
-|-------------|-------|
-| `SSH_HOST` | your-server-ip |
-| `SSH_USERNAME` | your-username |
+| Secret Name       | Value                |
+| ----------------- | -------------------- |
+| `SSH_HOST`        | your-server-ip       |
+| `SSH_USERNAME`    | your-username        |
 | `SSH_PRIVATE_KEY` | your-ssh-private-key |
-| `DEPLOY_ENV` | staging/production |
+| `DEPLOY_ENV`      | staging/production   |
 
 ## 🔄 CI/CD 流程说明
 
@@ -74,11 +75,11 @@ git push -u origin master
 
 ### 分支策略
 
-| 分支 | 触发条件 | 部署目标 |
-|------|----------|----------|
-| `main` | push / PR | Production |
-| `develop` | push / PR | Staging |
-| `feature/*` | PR only | 不部署 |
+| 分支        | 触发条件  | 部署目标   |
+| ----------- | --------- | ---------- |
+| `main`      | push / PR | Production |
+| `develop`   | push / PR | Staging    |
+| `feature/*` | PR only   | 不部署     |
 
 ## 🧪 本地测试 CI/CD
 
@@ -155,6 +156,7 @@ docker-compose up -d
 ## 🎉 完成！
 
 配置完成后，每次 Push 代码到 GitHub，CI/CD 会自动：
+
 1. 运行测试
 2. 构建 Docker 镜像
 3. 推送到 Docker Hub

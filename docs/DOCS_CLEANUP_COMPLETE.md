@@ -8,7 +8,9 @@
 ## ✅ 清理结果
 
 ### 根目录（清理后）
+
 **只保留 3 个核心文档**:
+
 - `README.md` - 项目主文档
 - `PROJECT_SUMMARY.md` - 项目总结
 - `DOCS_CLEANUP_PLAN.md` - 清理计划（已移至 docs/）
@@ -92,6 +94,7 @@ docs/
 ## 🗑️ 已删除的文档
 
 ### 测试相关报告 (11 个)
+
 - P0_BUG_FIX_REPORT.md
 - P0_COMPLETE_SUMMARY.md
 - P0_IMPLEMENTATION_REPORT.md
@@ -105,28 +108,33 @@ docs/
 - TEST_REPORT_NOTIFICATIONS.md
 
 ### Wazuh 临时报告 (4 个)
+
 - WAZUH_DEPLOYMENT.md
 - WAZUH_DEPLOYMENT_SUCCESS.md
 - WAZUH_FIXED.md
 - WAZUH_IMPLEMENTATION_SUMMARY.md
 
 ### 修复报告 (4 个)
+
 - BUILD_FIX_REPORT.md
 - FRONTEND_STARTUP_FIX.md
 - HYDRATION_FIX_REPORT.md
 - HYDRATION_FIX_SUMMARY.md
 
 ### 状态报告 (3 个)
+
 - BACKEND_RUNNING_STATUS.md
 - STARTUP_STATUS.md
 - DEPLOYMENT_STATUS.md
 
 ### 临时/草稿 (3 个)
+
 - WEEK1_SIMPLE_WAZUH_PAGE.md
 - NEXT_STEPS.md
 - next_steps_plan.md
 
 ### 重复版本 (6 个)
+
 - ACCESS_GUIDE.md
 - DEPLOY.md
 - QUICKSTART_INTEGRATION.md
@@ -140,22 +148,24 @@ docs/
 
 ## 📊 清理统计
 
-| 类别 | 清理前 | 清理后 | 减少 |
-|------|--------|--------|------|
-| 根目录文档 | 60+ | 2 | -58 |
-| docs/ 文档 | 15 | 67 | +52 |
-| 总文档数 | 60+ | 69 | 结构化 |
+| 类别       | 清理前 | 清理后 | 减少   |
+| ---------- | ------ | ------ | ------ |
+| 根目录文档 | 60+    | 2      | -58    |
+| docs/ 文档 | 15     | 67     | +52    |
+| 总文档数   | 60+    | 69     | 结构化 |
 
 ---
 
 ## ✅ 清理效果
 
 ### 根目录
+
 - ✅ 只保留核心文档（README.md, PROJECT_SUMMARY.md）
 - ✅ 所有项目文档统一在 docs/
 - ✅ 结构清晰，易于维护
 
 ### docs/ 文件夹
+
 - ✅ 按周组织 (week1/, week2/, ...)
 - ✅ 按类型分类
 - ✅ 中文文档单独存放
@@ -166,6 +176,7 @@ docs/
 ## 📝 文档管理规定
 
 **核心规则**:
+
 1. 所有文档必须放在 `docs/` 文件夹
 2. 按周或按类型分类存放
 3. 使用规范的命名格式

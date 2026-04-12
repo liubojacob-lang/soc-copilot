@@ -1,5 +1,5 @@
-import { getRequestConfig } from 'next-intl/server';
-import { i18nConfig, isValidLocale, getDefaultLocale } from '../frontend/config/i18n';
+import { getRequestConfig } from "next-intl/server";
+import { i18nConfig, isValidLocale, getDefaultLocale } from "../frontend/config/i18n";
 
 // Re-export for backward compatibility
 export const locales = i18nConfig.locales;
@@ -16,6 +16,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default
+    messages: (await import(`../messages/${locale}.json`)).default,
   };
 });

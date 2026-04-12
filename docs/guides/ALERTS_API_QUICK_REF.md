@@ -52,14 +52,14 @@ curl http://localhost:8000/api/v1/security-alerts/stats/summary
 
 ## 🔧 Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/ingest` | Receive alert from external tool |
-| GET | `/` | List alerts with filters |
-| GET | `/{id}` | Get alert details |
-| PATCH | `/{id}` | Update alert status |
-| DELETE | `/{id}` | Delete alert |
-| GET | `/stats/summary` | Alert statistics |
+| Method | Endpoint         | Description                      |
+| ------ | ---------------- | -------------------------------- |
+| POST   | `/ingest`        | Receive alert from external tool |
+| GET    | `/`              | List alerts with filters         |
+| GET    | `/{id}`          | Get alert details                |
+| PATCH  | `/{id}`          | Update alert status              |
+| DELETE | `/{id}`          | Delete alert                     |
+| GET    | `/stats/summary` | Alert statistics                 |
 
 ---
 
@@ -67,17 +67,17 @@ curl http://localhost:8000/api/v1/security-alerts/stats/summary
 
 **For GET /api/v1/security-alerts/**
 
-| Parameter | Type | Example | Description |
-|-----------|------|---------|-------------|
-| `source` | string | `wazuh` | Filter by source |
-| `severity` | string | `high` | Filter by severity |
-| `status` | string | `open` | Filter by status |
-| `agent_name` | string | `web-01` | Filter by agent |
-| `source_ip` | string | `1.2.3.4` | Filter by IP |
-| `event_type` | string | `web_attack` | Filter by type |
-| `search` | string | `sql` | Search text |
-| `page` | int | `1` | Page number |
-| `page_size` | int | `50` | Items per page (max 100) |
+| Parameter    | Type   | Example      | Description              |
+| ------------ | ------ | ------------ | ------------------------ |
+| `source`     | string | `wazuh`      | Filter by source         |
+| `severity`   | string | `high`       | Filter by severity       |
+| `status`     | string | `open`       | Filter by status         |
+| `agent_name` | string | `web-01`     | Filter by agent          |
+| `source_ip`  | string | `1.2.3.4`    | Filter by IP             |
+| `event_type` | string | `web_attack` | Filter by type           |
+| `search`     | string | `sql`        | Search text              |
+| `page`       | int    | `1`          | Page number              |
+| `page_size`  | int    | `50`         | Items per page (max 100) |
 
 ---
 
@@ -115,6 +115,7 @@ custom   - Custom source
 ## 💡 Response Examples
 
 ### Ingest Response
+
 ```json
 {
   "status": "success",
@@ -124,6 +125,7 @@ custom   - Custom source
 ```
 
 ### List Response
+
 ```json
 {
   "total": 150,
@@ -143,12 +145,13 @@ custom   - Custom source
 ```
 
 ### Statistics Response
+
 ```json
 {
   "total": 150,
-  "by_severity": {"critical": 5, "high": 25},
-  "by_status": {"open": 80, "investigating": 20},
-  "by_source": {"wazuh": 100, "snort": 30},
+  "by_severity": { "critical": 5, "high": 25 },
+  "by_status": { "open": 80, "investigating": 20 },
+  "by_source": { "wazuh": 100, "snort": 30 },
   "last_24h": 15,
   "last_7d": 75,
   "last_30d": 150

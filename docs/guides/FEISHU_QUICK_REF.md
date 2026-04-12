@@ -9,6 +9,7 @@
 ```
 
 **URL 格式**:
+
 ```
 https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
@@ -23,6 +24,7 @@ python configure_feishu.py
 ```
 
 然后按提示:
+
 1. 粘贴 Webhook URL
 2. 选择保存配置
 3. 确认发送测试
@@ -79,11 +81,11 @@ curl -X POST http://localhost:8000/api/v1/notifications/test
 
 ## 🐛 问题排查
 
-| 问题 | 解决方法 |
-|------|---------|
-| 没收到消息 | 检查 Webhook URL 是否正确 |
+| 问题         | 解决方法                              |
+| ------------ | ------------------------------------- |
+| 没收到消息   | 检查 Webhook URL 是否正确             |
 | URL 格式错误 | 确保以 `https://open.feishu.cn/` 开头 |
-| 机器人被移除 | 重新添加机器人到群聊 |
+| 机器人被移除 | 重新添加机器人到群聊                  |
 
 ---
 

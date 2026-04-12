@@ -6,10 +6,10 @@
 
 ## 📋 端口配置总览
 
-| 服务 | 端口 | 状态 |
-|------|------|------|
-| 后端 API | `8000` | ✅ 固定 |
-| 前端 UI | `3003` | ✅ 固定 |
+| 服务      | 端口   | 状态    |
+| --------- | ------ | ------- |
+| 后端 API  | `8000` | ✅ 固定 |
+| 前端 UI   | `3003` | ✅ 固定 |
 | WebSocket | `8000` | ✅ 固定 |
 
 ---
@@ -17,6 +17,7 @@
 ## ✅ 已完成的配置
 
 ### 1. package.json 配置 ✅
+
 ```json
 {
   "scripts": {
@@ -24,6 +25,7 @@
   }
 }
 ```
+
 **位置**: `frontend/package.json:6`
 
 ### 2. 文档已更新 ✅
@@ -78,25 +80,27 @@ open http://localhost:3003
 
 ## 📝 所有文档中的端口已统一
 
-| 文档 | 原端口 | 新端口 | 状态 |
-|------|--------|--------|------|
-| WEEK1_BROWSER_TEST.html | 8080 | 3003 | ✅ 已更新 |
-| BROWSER_TEST_QUICK_REF.md | 8080 | 3003 | ✅ 已更新 |
-| WEEK1_HANDOVER_REPORT.md | 8080 | 3003 | ✅ 已更新 |
-| WEEK_1_FINAL_REPORT.md | 8080 | 3003 | ✅ 已更新 |
-| TEST_GUIDE_WEEK1.md | 8080 | 3003 | ✅ 已更新 |
-| frontend/package.json | 3003 | 3003 | ✅ 已确认 |
+| 文档                      | 原端口 | 新端口 | 状态      |
+| ------------------------- | ------ | ------ | --------- |
+| WEEK1_BROWSER_TEST.html   | 8080   | 3003   | ✅ 已更新 |
+| BROWSER_TEST_QUICK_REF.md | 8080   | 3003   | ✅ 已更新 |
+| WEEK1_HANDOVER_REPORT.md  | 8080   | 3003   | ✅ 已更新 |
+| WEEK_1_FINAL_REPORT.md    | 8080   | 3003   | ✅ 已更新 |
+| TEST_GUIDE_WEEK1.md       | 8080   | 3003   | ✅ 已更新 |
+| frontend/package.json     | 3003   | 3003   | ✅ 已确认 |
 
 ---
 
 ## ⚠️ 重要提醒
 
 1. **启动前端时不需要指定端口**
+
    ```bash
    npm run dev  # 自动使用 3003
    ```
 
 2. **访问前端**
+
    ```
    http://localhost:3003
    ```
@@ -104,7 +108,7 @@ open http://localhost:3003
 3. **API 请求会自动代理到后端**
    ```javascript
    // 前端代码中
-   fetch('/api/v1/wazuh/stream/start')  // 自动代理到 8000
+   fetch("/api/v1/wazuh/stream/start"); // 自动代理到 8000
    ```
 
 ---
@@ -112,17 +116,20 @@ open http://localhost:3003
 ## 🎯 浏览器测试更新
 
 ### 访问地址
+
 ```
 http://localhost:3003
 ```
 
 ### 登录凭证
+
 ```
 用户名: admin
 密码: admin123
 ```
 
 ### 测试命令
+
 ```bash
 # 启动前端
 cd frontend

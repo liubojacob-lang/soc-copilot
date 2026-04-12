@@ -29,11 +29,13 @@
 **位置**: `frontend/app/[locale]/audit/page.tsx`
 
 **问题描述**:
+
 - 文件存在额外的闭合括号 `}` (341个开括号 vs 342个闭括号)
 - 导致整个审计日志页面无法访问
 - 阻止用户查看系统活动记录
 
 **修复步骤**:
+
 ```typescript
 // 1. 定位问题
 grep -n "^}" app/\[locale\]/audit/page.tsx | head -50
@@ -46,6 +48,7 @@ npx tsc --noEmit app/\[locale\]/audit/page.tsx
 ```
 
 **预期收益**:
+
 - ✅ 恢复审计日志功能
 - ✅ 启用虚拟滚动的性能优势 (93-99%提升)
 - ✅ 修复用户对关键审计追踪的访问
@@ -62,10 +65,11 @@ npx tsc --noEmit app/\[locale\]/audit/page.tsx
 **已修复**: ✅ 完成 (2026-02-28)
 
 **修改内容**:
+
 ```typescript
 // frontend/components/WebVitals.tsx
 // 将 onFID 替换为 onINP
-import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
+import { onCLS, onINP, onLCP, onFCP, onTTFB } from "web-vitals";
 ```
 
 ---
@@ -78,6 +82,7 @@ import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
 **建议方案**: 在首页添加迷你仪表板组件
 
 **业务理由**:
+
 - 安全分析师需要快速查看新兴威胁
 - 减少导航开销
 - 实现更快的威胁响应
@@ -85,19 +90,20 @@ import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
 **实施方案**:
 
 **前端组件**:
+
 ```typescript
 // components/ThreatIntelWidget.tsx
 interface ThreatIntelWidgetProps {
-  maxItems?: number;           // 默认显示5条
-  autoRefresh?: boolean;       // 自动刷新
-  refreshInterval?: number;    // 刷新间隔(秒)
+  maxItems?: number; // 默认显示5条
+  autoRefresh?: boolean; // 自动刷新
+  refreshInterval?: number; // 刷新间隔(秒)
 }
 
 interface ThreatIntelItem {
   id: string;
-  threat_type: string;         // 'malware' | 'phishing' | 'botnet'
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  ioc: string;                 // 威胁指标
+  threat_type: string; // 'malware' | 'phishing' | 'botnet'
+  severity: "critical" | "high" | "medium" | "low";
+  ioc: string; // 威胁指标
   first_seen: string;
   sources: string[];
   tags: string[];
@@ -111,6 +117,7 @@ interface ThreatIntelItem {
 ```
 
 **后端API**:
+
 ```python
 # backend/routers/threat_intel.py
 @router.get("/api/threat-intel/recent")
@@ -153,6 +160,7 @@ async def get_recent_threats(
 ```
 
 **数据流**:
+
 ```
 用户访问首页
     ↓
@@ -166,6 +174,7 @@ ThreatIntelWidget自动加载
 ```
 
 **预期收益**:
+
 - ⚡ 威胁检测速度提升 (减少3次点击到0次)
 - 📊 改善态势感知
 - 🎯 主动威胁狩猎
@@ -181,6 +190,7 @@ ThreatIntelWidget自动加载
 **建议方案**: 添加批量导出、删除、归档操作
 
 **业务理由**:
+
 - 合规要求需要批量数据导出
 - 存储管理需要批量归档
 - GDPR"被遗忘权"需要批量删除
@@ -188,11 +198,12 @@ ThreatIntelWidget自动加载
 **实施方案**:
 
 **前端UI**:
+
 ```typescript
 // components/audit/BulkActionBar.tsx
 interface BulkActionBarProps {
   selectedCount: number;
-  onExport: (format: 'csv' | 'json') => void;
+  onExport: (format: "csv" | "json") => void;
   onArchive: (dateRange: DateRange) => void;
   onDelete: () => void;
   onClearSelection: () => void;
@@ -212,6 +223,7 @@ interface AuditLogWithSelection extends AuditLog {
 ```
 
 **后端API**:
+
 ```python
 # backend/routers/audit_logs.py
 from fastapi import BackgroundTasks
@@ -274,6 +286,7 @@ async def process_bulk_operation(
 ```
 
 **任务状态查询**:
+
 ```python
 @router.get("/api/audit-logs/bulk/jobs/{job_id}")
 async def get_bulk_job_status(job_id: str):
@@ -289,6 +302,7 @@ async def get_bulk_job_status(job_id: str):
 ```
 
 **预期收益**:
+
 - 📦 合规导出速度提升10倍
 - 💾 改善存储管理
 - 🔒 更好的GDPR合规性
@@ -304,6 +318,7 @@ async def get_bulk_job_status(job_id: str):
 **建议方案**: 交互式、可编辑的拖放DAG
 
 **业务理由**:
+
 - 可视化playbook创建更直观
 - 降低安全分析师学习曲线
 - 实现快速playbook原型设计
@@ -311,16 +326,10 @@ async def get_bulk_job_status(job_id: str):
 **实施方案**:
 
 **前端组件**:
+
 ```typescript
 // components/playbooks/InteractiveDAG.tsx
-import ReactFlow, {
-  Node,
-  Edge,
-  addEdge,
-  Background,
-  Controls,
-  MiniMap
-} from 'reactflow';
+import ReactFlow, { Node, Edge, addEdge, Background, Controls, MiniMap } from "reactflow";
 
 interface InteractiveDAGProps {
   playbookId: string;
@@ -338,7 +347,7 @@ const nodeTypes = {
   decision: DecisionNode,
   trigger: TriggerNode,
   approval: ApprovalNode,
-  condition: ConditionNode
+  condition: ConditionNode,
 };
 
 // 2. 自动布局 (使用dagre算法)
@@ -364,9 +373,10 @@ useEffect(() => {
 ```
 
 **节点类型定义**:
+
 ```typescript
 interface PlaybookNode extends Node {
-  type: 'action' | 'decision' | 'trigger' | 'approval' | 'condition';
+  type: "action" | "decision" | "trigger" | "approval" | "condition";
   data: {
     label: string;
     config: NodeConfig;
@@ -377,21 +387,22 @@ interface PlaybookNode extends Node {
 }
 
 interface ActionNodeData {
-  action_type: string;      // 'http_request' | 'slack_notify' | etc.
+  action_type: string; // 'http_request' | 'slack_notify' | etc.
   parameters: Record<string, any>;
   timeout: number;
   retry_policy: RetryPolicy;
-  on_failure: 'stop' | 'continue' | 'retry';
+  on_failure: "stop" | "continue" | "retry";
 }
 
 interface DecisionNodeData {
   condition: string;
-  true_branch: string;      // 节点ID
-  false_branch: string;     // 节点ID
+  true_branch: string; // 节点ID
+  false_branch: string; // 节点ID
 }
 ```
 
 **后端验证API**:
+
 ```python
 # backend/routers/playbook_dag.py
 @router.post("/api/playbooks/validate-dag")
@@ -441,6 +452,7 @@ async def validate_dag(
 ```
 
 **预期收益**:
+
 - 🎨 Playbook创建速度提升50%
 - 🐛 减少验证错误
 - 👥 降低入门门槛
@@ -462,6 +474,7 @@ async def validate_dag(
 **实施方案**:
 
 **缓存管理器**:
+
 ```python
 # backend/core/cache_manager.py
 from functools import lru_cache
@@ -545,6 +558,7 @@ cache_manager = CacheManager(settings.redis_url)
 ```
 
 **缓存装饰器**:
+
 ```python
 # backend/core/decorators.py
 from functools import wraps
@@ -588,6 +602,7 @@ def cache_response(
 ```
 
 **使用示例**:
+
 ```python
 # backend/routers/system_dashboard.py
 @router.get("/api/dashboard/stats")
@@ -615,16 +630,17 @@ async def create_audit_log(
 
 **缓存策略表**:
 
-| 端点类型 | TTL | 失效策略 | 理由 |
-|---------|-----|---------|------|
-| 仪表板统计 | 60秒 | 数据更新时 | 数据变化不频繁 |
-| 威胁情报 | 5分钟 | 定期刷新 | 外部数据,更新较慢 |
-| 审计日志 | 不缓存 | N/A | 实时数据要求高 |
-| Playbook定义 | 10分钟 | 更新时 | 很少变化 |
-| 用户列表 | 5分钟 | 用户变更时 | 中等变化频率 |
-| 资产列表 | 2分钟 | 资产变更时 | 较频繁变化 |
+| 端点类型     | TTL    | 失效策略   | 理由              |
+| ------------ | ------ | ---------- | ----------------- |
+| 仪表板统计   | 60秒   | 数据更新时 | 数据变化不频繁    |
+| 威胁情报     | 5分钟  | 定期刷新   | 外部数据,更新较慢 |
+| 审计日志     | 不缓存 | N/A        | 实时数据要求高    |
+| Playbook定义 | 10分钟 | 更新时     | 很少变化          |
+| 用户列表     | 5分钟  | 用户变更时 | 中等变化频率      |
+| 资产列表     | 2分钟  | 资产变更时 | 较频繁变化        |
 
 **缓存统计监控**:
+
 ```python
 @router.get("/api/admin/cache-stats")
 async def get_cache_stats(
@@ -635,6 +651,7 @@ async def get_cache_stats(
 ```
 
 **预期收益**:
+
 - ⚡ 减少80%的数据库查询
 - 📈 仪表板加载时间: 2秒 → 200毫秒
 - 💰 降低基础设施成本
@@ -648,6 +665,7 @@ async def get_cache_stats(
 ### ⚡ 3.2 数据库查询优化
 
 **当前问题**:
+
 - Playbook runs存在N+1查询
 - 频繁查询字段缺少索引
 - 无查询结果分页
@@ -706,6 +724,7 @@ ON user_sessions(user_id, is_active, expires_at);
 ```
 
 **索引使用监控**:
+
 ```python
 # backend/scripts/monitor_index_usage.py
 async def monitor_index_usage(db: AsyncSession):
@@ -813,6 +832,7 @@ async def analyze_slow_queries(db: AsyncSession):
 ```
 
 **预期收益**:
+
 - 🚀 查询性能: 500毫秒 → 50毫秒 (90%提升)
 - 📉 数据库CPU使用: 80% → 20%
 - ⚡ 页面加载: 3秒 → 300毫秒
@@ -828,6 +848,7 @@ async def analyze_slow_queries(db: AsyncSession):
 **当前问题**: Bundle大小过大,初始加载慢
 
 **分析步骤**:
+
 ```bash
 # 分析bundle大小
 npm run build -- --analyze
@@ -840,6 +861,7 @@ ANALYZE=true npm run build
 **优化方案**:
 
 **A. 代码分割**:
+
 ```typescript
 // ❌ 错误: 静态导入大组件
 import { HeavyPlaybookEditor } from './HeavyPlaybookEditor';
@@ -871,6 +893,7 @@ export default function PlaybooksPage() {
 ```
 
 **B. 路由级分割**:
+
 ```typescript
 // app/[locale]/playbooks/page.tsx
 import { lazy, Suspense } from 'react';
@@ -893,29 +916,27 @@ export function PlaybooksContent() {
 ```
 
 **C. Tree Shaking优化**:
+
 ```json
 // package.json
 {
-  "sideEffects": [
-    "*.css",
-    "*.scss",
-    "*.sass"
-  ]
+  "sideEffects": ["*.css", "*.scss", "*.sass"]
 }
 ```
 
 ```typescript
 // ❌ 错误: 导入整个库
-import * as lodash from 'lodash';
+import * as lodash from "lodash";
 
 // ✅ 正确: 只导入需要的函数
-import { debounce, throttle } from 'lodash';
+import { debounce, throttle } from "lodash";
 
 // 或使用ES模块版本
-import debounce from 'lodash/debounce';
+import debounce from "lodash/debounce";
 ```
 
 **D. 图片优化**:
+
 ```typescript
 // next.config.js
 module.exports = {
@@ -939,6 +960,7 @@ import Image from 'next/image';
 ```
 
 **E. 字体优化**:
+
 ```typescript
 // next.config.js
 module.exports = {
@@ -964,6 +986,7 @@ export default function RootLayout({ children }) {
 ```
 
 **预期收益**:
+
 - 📦 初始Bundle: 2MB → 800KB (60%减少)
 - ⚡ 首次绘制: 3秒 → 1.5秒 (50%提升)
 - 📱 移动端性能: 2倍改善
@@ -984,55 +1007,56 @@ export default function RootLayout({ children }) {
 **实施方案**:
 
 **快捷键配置**:
+
 ```typescript
 // hooks/useGlobalShortcuts.ts
 interface ShortcutMap {
   // 导航快捷键
-  'Ctrl+K': () => void;        // 快速搜索
-  'Ctrl+/': () => void;        // 显示快捷键帮助
-  'Ctrl+B': () => void;        // 跳转到Playbooks
-  'Ctrl+A': () => void;        // 跳转到Alerts
-  'Ctrl+T': () => void;        // 跳转到Threat Intel
-  'Ctrl+D': () => void;        // 跳转到Dashboard
-  'Alt+Left': () => void;      // 后退
-  'Alt+Right': () => void;     // 前进
+  "Ctrl+K": () => void; // 快速搜索
+  "Ctrl+/": () => void; // 显示快捷键帮助
+  "Ctrl+B": () => void; // 跳转到Playbooks
+  "Ctrl+A": () => void; // 跳转到Alerts
+  "Ctrl+T": () => void; // 跳转到Threat Intel
+  "Ctrl+D": () => void; // 跳转到Dashboard
+  "Alt+Left": () => void; // 后退
+  "Alt+Right": () => void; // 前进
 
   // 操作快捷键
-  'Ctrl+N': () => void;        // 新建 (上下文感知)
-  'Ctrl+F': () => void;        // 聚焦搜索框
-  'Ctrl+R': () => void;        // 刷新当前视图
-  'Ctrl+S': () => void;        // 保存
-  'Ctrl+P': () => void;        // 打印/导出
+  "Ctrl+N": () => void; // 新建 (上下文感知)
+  "Ctrl+F": () => void; // 聚焦搜索框
+  "Ctrl+R": () => void; // 刷新当前视图
+  "Ctrl+S": () => void; // 保存
+  "Ctrl+P": () => void; // 打印/导出
 
   // 列表导航
-  'j': () => void;             // 下一项
-  'k': () => void;             // 上一项
-  'o': () => void;             // 打开选中项
-  'x': () => void;             // 选择项
+  j: () => void; // 下一项
+  k: () => void; // 上一项
+  o: () => void; // 打开选中项
+  x: () => void; // 选择项
 
   // 通用
-  'Escape': () => void;        // 关闭模态框/抽屉
-  'Ctrl+Enter': () => void;    // 提交表单
-  '?': () => void;             // 显示帮助
+  Escape: () => void; // 关闭模态框/抽屉
+  "Ctrl+Enter": () => void; // 提交表单
+  "?": () => void; // 显示帮助
 }
 
 // 上下文感知快捷键
 const useContextualShortcuts = (page: string) => {
   const shortcuts: ShortcutMap = {
     // 全局快捷键
-    'Ctrl+K': openGlobalSearch,
-    'Ctrl+/': showHelp,
+    "Ctrl+K": openGlobalSearch,
+    "Ctrl+/": showHelp,
 
     // 页面特定快捷键
-    ...(page === 'playbooks' && {
-      'Ctrl+N': createNewPlaybook,
-      'Ctrl+R': runPlaybook,
+    ...(page === "playbooks" && {
+      "Ctrl+N": createNewPlaybook,
+      "Ctrl+R": runPlaybook,
     }),
 
-    ...(page === 'alerts' && {
-      'Ctrl+N': createAlert,
-      'a': acknowledgeAlert,
-      'r': resolveAlert,
+    ...(page === "alerts" && {
+      "Ctrl+N": createAlert,
+      a: acknowledgeAlert,
+      r: resolveAlert,
     }),
   };
 
@@ -1041,6 +1065,7 @@ const useContextualShortcuts = (page: string) => {
 ```
 
 **快捷键帮助组件**:
+
 ```typescript
 // components/KeyboardShortcutsHelp.tsx
 export function KeyboardShortcutsHelp() {
@@ -1085,6 +1110,7 @@ export function KeyboardShortcutsHelp() {
 ```
 
 **键盘快捷键提示**:
+
 ```typescript
 // 在UI中显示快捷键提示
 <button
@@ -1099,6 +1125,7 @@ export function KeyboardShortcutsHelp() {
 ```
 
 **预期收益**:
+
 - ⌨️ 高级用户效率提升40%
 - 🎯 改善可访问性
 - 💪 提高生产力
@@ -1116,6 +1143,7 @@ export function KeyboardShortcutsHelp() {
 **实施方案**:
 
 **智能搜索组件**:
+
 ```typescript
 // components/SmartSearch.tsx
 import { useSearch } from '@/hooks/useSearch';
@@ -1229,6 +1257,7 @@ export function SmartSearch({ scope, onSearch }: SmartSearchProps) {
 ```
 
 **搜索建议API**:
+
 ```python
 # backend/routers/search.py
 @router.get("/api/search/suggestions")
@@ -1342,6 +1371,7 @@ async def get_smart_suggestions(
 ```
 
 **搜索历史管理**:
+
 ```python
 # backend/models/search_history.py
 class UserSearchHistory(Base):
@@ -1384,6 +1414,7 @@ async def save_search(
 ```
 
 **预期收益**:
+
 - 🔍 搜索效率提升60%
 - 💡 更好的发现能力
 - 📊 减少零结果搜索
@@ -1405,6 +1436,7 @@ async def save_search(
 **实施方案**:
 
 **数据模型扩展**:
+
 ```python
 # backend/models/audit_log.py
 from cryptography.hazmat.primitives import hashes
@@ -1491,6 +1523,7 @@ class AuditLogEntry(Base):
 ```
 
 **创建审计日志时确保完整性**:
+
 ```python
 # backend/services/audit_service.py
 class AuditService:
@@ -1539,6 +1572,7 @@ class AuditService:
 ```
 
 **完整性验证API**:
+
 ```python
 # backend/routers/audit_integrity.py
 @router.get("/api/audit-logs/verify")
@@ -1628,6 +1662,7 @@ async def verify_audit_log_integrity(
 ```
 
 **预期收益**:
+
 - 🔒 防篡改审计日志
 - ⚖️ 取证可采纳性
 - 🛡️ 合规支持
@@ -1648,6 +1683,7 @@ async def verify_audit_log_integrity(
 **实施方案**:
 
 **速率限制器配置**:
+
 ```python
 # backend/core/rate_limit.py
 from slowapi import Limiter
@@ -1712,6 +1748,7 @@ RATE_LIMITS = {
 ```
 
 **应用到端点**:
+
 ```python
 # backend/routers/alerts.py
 from backend.core.rate_limit import limiter, limit_by_user
@@ -1750,6 +1787,7 @@ async def login(
 ```
 
 **自定义速率限制处理器**:
+
 ```python
 # backend/core/exceptions.py
 from slowapi.errors import RateLimitExceeded
@@ -1780,6 +1818,7 @@ async def rate_limit_exceeded_handler(
 ```
 
 **速率限制监控**:
+
 ```python
 # backend/routers/admin.py
 @router.get("/api/admin/rate-limit-stats")
@@ -1805,6 +1844,7 @@ async def get_rate_limit_stats(
 ```
 
 **预期收益**:
+
 - 🛡️ DoS攻击保护
 - ⚖️ 公平资源分配
 - 📊 使用分析
@@ -1949,6 +1989,7 @@ async def check_external_apis() -> Dict[str, Any]:
 ```
 
 **预期收益**:
+
 - 📊 更好的监控
 - 🔍 更快的调试
 - 🚨 主动告警
@@ -1968,6 +2009,7 @@ async def check_external_apis() -> Dict[str, Any]:
 **实施示例**已在前面章节提供
 
 **预期收益**:
+
 - 📚 更好的API理解
 - 🔧 更快的集成
 - 🐛 更少的API错误
@@ -1980,6 +2022,7 @@ async def check_external_apis() -> Dict[str, Any]:
 ## 8. 实施路线图
 
 ### Phase 1: 关键修复 (第1周)
+
 - [ ] 修复Audit页面语法错误 (0.5天)
 - [ ] 添加API速率限制 (1天)
 - [ ] 实施会话管理 (2天)
@@ -1988,6 +2031,7 @@ async def check_external_apis() -> Dict[str, Any]:
 **小计**: 4.5天
 
 ### Phase 2: 性能优化 (第2-3周)
+
 - [ ] 实施缓存层 (2天)
 - [ ] 添加数据库索引 (1天)
 - [ ] 修复N+1查询 (1天)
@@ -1996,6 +2040,7 @@ async def check_external_apis() -> Dict[str, Any]:
 **小计**: 6天
 
 ### Phase 3: 功能增强 (第4-6周)
+
 - [ ] 威胁情报仪表板组件 (3天)
 - [ ] 批量审计操作 (4天)
 - [ ] 交互式DAG可视化 (7天)
@@ -2003,6 +2048,7 @@ async def check_external_apis() -> Dict[str, Any]:
 **小计**: 14天
 
 ### Phase 4: UX与安全 (第7-8周)
+
 - [ ] 全局键盘快捷键 (2天)
 - [ ] 智能搜索 (3天)
 - [ ] 审计日志完整性 (2天)
@@ -2011,6 +2057,7 @@ async def check_external_apis() -> Dict[str, Any]:
 **小计**: 9天
 
 ### Phase 5: DX与监控 (第9-10周)
+
 - [ ] 增强API文档 (3天)
 - [ ] 集成测试 (5天)
 - [ ] 指标收集 (2天)
@@ -2024,22 +2071,26 @@ async def check_external_apis() -> Dict[str, Any]:
 ## 9. 投资回报分析
 
 ### 性能提升
+
 - ⚡ 仪表板加载: 2秒 → 200毫秒 (90%提升)
 - 📊 查询性能: 500毫秒 → 50毫秒 (90%提升)
 - 📦 Bundle大小: 2MB → 800KB (60%减少)
 - 🚀 交互时间: 3秒 → 1.5秒 (50%提升)
 
 ### 用户体验
+
 - 🎯 任务完成: 使用键盘快捷键快40%
 - 🔍 搜索效率: 智能搜索快60%
 - 👥 培训时间: 更好的UX减少50%
 
 ### 安全与合规
+
 - 🔒 防篡改审计日志
 - 🛡️ DoS攻击保护
 - ⚖️ 更好的合规支持
 
 ### 开发效率
+
 - 🐛 使用测试减少80%的回归
 - 📚 更好的API文档理解
 - 🔍 使用追踪更快调试

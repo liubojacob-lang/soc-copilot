@@ -7,35 +7,51 @@ services:
     container_name: soc-copilot-postgres
     environment:
       POSTGRES_USER: ${DB_USER:-soc_copilot}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?ERROR: DB_PASSWORD environment variable is required. Generate one using: openssl rand -base64 32}
       POSTGRES_DB: ${DB_NAME:-soc_copilot}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"  # Only bind to localhost for security
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-soc_copilot}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - soc-copilot-network
+      - database-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: soc-copilot-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme_redis}
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"  # Only bind to localhost
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_redis}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - soc-copilot-network
+      - backend-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
   # Backend API
   backend:
@@ -44,25 +60,34 @@ services:
       dockerfile: Dockerfile
     container_name: soc-copilot-backend
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-soc_copilot}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-soc_copilot}
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-soc_copilot}:${DB_PASSWORD:?ERROR: DB_PASSWORD is required}@postgres:5432/${DB_NAME:-soc_copilot}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme_redis}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:?ERROR: SECRET_KEY environment variable is required. Generate one using: openssl rand -base64 64}
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - DIFY_API_URL=${DIFY_API_URL:-}
       - DIFY_API_KEY=${DIFY_API_KEY:-}
     volumes:
       - ./backend:/app
       - /app/__pycache__
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - soc-copilot-network
+      - backend-net
+      - database-net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   # Frontend
   frontend:
@@ -71,17 +96,25 @@ services:
       dockerfile: Dockerfile
     container_name: soc-copilot-frontend
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=http://backend:8000
       - NODE_ENV=${NODE_ENV:-production}
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
       - backend
     networks:
-      - soc-copilot-network
+      - frontend-net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
-  # Nginx Reverse Proxy (optional)
+  # Nginx Reverse Proxy (Production)
   nginx:
     image: nginx:alpine
     container_name: soc-copilot-nginx
@@ -95,8 +128,13 @@ services:
       - frontend
       - backend
     networks:
-      - soc-copilot-network
+      - frontend-net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
     profiles:
       - production
 
@@ -105,5 +143,11 @@ volumes:
   redis_data:
 
 networks:
-  soc-copilot-network:
+  frontend-net:
     driver: bridge
+  backend-net:
+    driver: bridge
+    internal: true  # Prevent external access
+  database-net:
+    driver: bridge
+    internal: true  # Prevent external access

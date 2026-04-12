@@ -316,7 +316,24 @@
       "Bash(killall node 2>/dev/null; sleep 2; echo \"Node进程已清理\")",
       "Bash(fuser -k 3003/tcp 2>/dev/null; sleep 2; echo \"端口已清理\")",
       "Bash(sudo kill -9 2636)",
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nrefactor: comprehensive codebase optimization and documentation cleanup\n\n## 🎯 Major Improvements\n\n### Code Quality & Performance\n- ✅ P0: Implement dynamic risk scoring in event correlation\n  * Calculate risk based on severity + asset criticality + event count\n  * Replace hardcoded 50.0 with dynamic 10-100 scoring\n  * File: backend/services/event_correlation_service.py\n\n- ✅ P1: Implement alert notes persistence with database storage\n  * Create AlertNoteModel with SQLAlchemy\n  * Add database migration v0_8_1_alert_notes.py\n  * Implement full CRUD operations for notes\n  * Files: backend/models/alert_note.py, services/alerting/alert_lifecycle.py\n\n- ✅ P1: Implement time-series aggregation for alert trends\n  * Support hour/day/week intervals with SQLite-specific queries\n  * Add severity breakdown statistics\n  * Files: backend/services/alerting/alert_lifecycle.py\n\n- ✅ Fix queue stats hardcoded value\n  * Use settings.run_queue_max instead of hardcoded 3\n  * File: backend/routers/playbook_definitions.py\n\n### Architecture Improvements\n- 🏗️ Reorganize services into logical subdirectories\n  * services/alerting/ - Alert management services\n  * services/playbook/ - Playbook engine services  \n  * services/security/ - Security services\n  * services/lifecycle/ - Lifecycle management\n  * services/integration/ - Integration services\n  * services/user/ - User services\n\n- 🏗️ Implement comprehensive error handling system\n  * Add core/exceptions.py with error code hierarchy\n  * Create ErrorCode enum in core/enums/error_codes.py\n  * Structured error responses across all endpoints\n\n- 🏗️ Add new security vulnerability tracking\n  * New models: SecurityVulnerability\n  * New routers: security_vulnerabilities.py\n  * Integration with threat intelligence\n\n### Documentation Cleanup\n- 📚 Clean up 58 root MD documents → 7 core documents \\(87% reduction\\)\n  * Archive 46 historical docs to docs/archive/\n  * Move 7 reports to docs/reports/\n  * Delete 8 obsolete temporary docs\n  * Backup: md_docs_backup_20260302_111006.tar.gz\n\n- 📚 Improve documentation structure\n  * docs/archive/grafana/ \\(9 docs\\)\n  * docs/archive/wazuh/ \\(7 docs\\)\n  * docs/archive/i18n/ \\(7 docs\\)\n  * docs/archive/phases/ \\(4 docs\\)\n\n### Frontend Enhancements\n- ✅ Remove Dify integration components\n- ✅ Add common UI component library\n  * Button, Card, Input, LoadingSpinner, etc.\n  * VirtualTable for performance\n  * Accessibility improvements \\(SkipToContent\\)\n- ✅ Add Web Vitals monitoring\n- ✅ Improve keyboard navigation\n- ✅ Add design tokens configuration\n\n### Testing & Quality\n- ✅ Add comprehensive test suite\n  * test_alert_service.py\n  * test_alert_trends.py  \n  * test_playbook_dag_engine.py\n  * test_query_cache.py\n  * test_risk_score_calculation.py\n  * test_threat_intel_service.py\n\n- ✅ Add I18N utility scripts\n  * check_i18n_sync.py\n  * find_missing_translations.py\n  * generate_i18n_types.py\n  * validate_i18n.py\n\n### Configuration & Observability\n- ✅ Update Prometheus metrics configuration\n- ✅ Improve Promtail logging setup\n- ✅ Add performance monitoring endpoints\n- ✅ Enhance pytest configuration\n\n## 📊 Statistics\n- Files changed: 200+\n- Lines added: 50,000+\n- Lines removed: 15,000+\n- Net improvement: ~35,000 lines\n\n## 🔗 Related Issues\n- P0: Risk scoring calculation\n- P1: Alert notes persistence  \n- P1: Time-series aggregation\n- Documentation cleanup\n- Service architecture reorganization\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(cd /Users/levent/Desktop/sec/frontend && npm run lint 2>&1 | head -80)",
+      "Bash(cd /Users/levent/Desktop/sec/frontend && npm audit fix 2>&1)",
+      "Bash(npm list:*)",
+      "Bash(npm audit:*)",
+      "Bash(cd frontend:*)",
+      "Bash(npm run:*)",
+      "Bash(du -sh backend/data/*.db 2>/dev/null || echo \"No database files\")",
+      "Bash(npm outdated:*)",
+      "Bash(pip list:*)",
+      "Bash(which pytest:*)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.14/bin/pytest tests/test_auth.py -v --tb=short 2>&1 | tail -60)",
+      "Bash(npm update:*)",
+      "Bash(git rm:*)",
+      "Bash(sudo rm:*)",
+      "mcp__zread__search_doc",
+      "mcp__web-reader__webReader"
     ]
   }
 }

@@ -1,39 +1,40 @@
 {
   "name": "soc-copilot",
-  "version": "0.8.5",
+  "version": "0.8.2",
   "private": true,
-  "description": "SOC Copilot - Security Operations Center AI Assistant",
-  "workspaces": ["frontend"],
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
     "dev:frontend": "cd frontend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:backend": "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000",
-    "start:frontend": "cd frontend && npm run start",
-    "lint": "cd frontend && npm run lint",
-    "test": "cd frontend && npm run test",
-    "clean": "rm -rf node_modules frontend/node_modules package-lock.json frontend/package-lock.json"
+    "dev:backend": "cd backend && source ../venv/bin/activate && uvicorn main:app --reload --port 8000",
+    "build": "npm run build:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && source ../venv/bin/activate && ruff check .",
+    "lint:fix": "npm run lint:fix:frontend && npm run lint:fix:backend",
+    "lint:fix:frontend": "cd frontend && npm run lint:fix",
+    "lint:fix:backend": "cd backend && source ../venv/bin/activate && ruff check . --fix",
+    "format": "npm run format:frontend && npm run format:backend",
+    "format:frontend": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "format:backend": "cd backend && source ../venv/bin/activate && black . && isort .",
+    "type-check": "npm run type-check:frontend",
+    "type-check:frontend": "cd frontend && npm run type-check",
+    "test": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "cd frontend && npm run test",
+    "test:backend": "cd backend && source ../venv/bin/activate && pytest",
+    "test:coverage": "npm run test:coverage:frontend && npm run test:coverage:backend",
+    "test:coverage:frontend": "cd frontend && npm run test:coverage",
+    "test:coverage:backend": "cd backend && source ../venv/bin/activate && pytest --cov",
+    "clean": "rm -rf frontend/.next frontend/out frontend/node_modules/.cache backend/__pycache__ backend/**/__pycache__",
+    "db:migrate": "cd backend && source ../venv/bin/activate && alembic upgrade head",
+    "db:rollback": "cd backend && source ../venv/bin/activate && alembic downgrade -1",
+    "db:reset": "cd backend && source ../venv/bin/activate && alembic downgrade base && alembic upgrade head"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "puppeteer": "^24.37.4"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/your-org/soc-copilot.git"
-  },
-  "keywords": [
-    "security",
-    "soc",
-    "ai",
-    "playbook",
-    "threat-intelligence"
-  ],
-  "author": "SOC Copilot Team",
-  "license": "MIT"
+    "prettier": "^3.2.5"
+  }
 }

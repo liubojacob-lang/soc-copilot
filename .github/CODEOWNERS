@@ -1,0 +1,12 @@
+* @levent
+
+/frontend/ @levent
+/backend/ @levent
+
+/.github/ @levent
+/docker-compose*.yml @levent
+/Dockerfile* @levent
+/Makefile @levent
+
+/docs/ @levent
+/AGENTS.md @levent

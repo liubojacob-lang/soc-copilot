@@ -41,12 +41,12 @@
 
 <div align="center">
 
-| 依赖 | 版本 | 说明 | 状态 |
-|:-----|:-----|:-----|:----:|
-| ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white) | 3.10+ | 后端服务 | ✅ 必需 |
-| ![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=nodedotjs&logoColor=white) | 18+ | 前端服务 | ✅ 必需 |
-| ![Git](https://img.shields.io/badge/Git-2.0+-F05032?style=flat-square&logo=git&logoColor=white) | 2.0+ | 版本控制 | ✅ 必需 |
-| ![SQLite](https://img.shields.io/badge/SQLite-3.0+-003B57?style=flat-square&logo=sqlite&logoColor=white) | 3.0+ | 开发数据库 | ✅ 内置 |
+| 依赖                                                                                                         | 版本  | 说明       |  状态   |
+| :----------------------------------------------------------------------------------------------------------- | :---- | :--------- | :-----: |
+| ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)    | 3.10+ | 后端服务   | ✅ 必需 |
+| ![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=nodedotjs&logoColor=white) | 18+   | 前端服务   | ✅ 必需 |
+| ![Git](https://img.shields.io/badge/Git-2.0+-F05032?style=flat-square&logo=git&logoColor=white)              | 2.0+  | 版本控制   | ✅ 必需 |
+| ![SQLite](https://img.shields.io/badge/SQLite-3.0+-003B57?style=flat-square&logo=sqlite&logoColor=white)     | 3.0+  | 开发数据库 | ✅ 内置 |
 
 </div>
 
@@ -98,6 +98,7 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ✅ **预期输出：**
+
 ```
 INFO:     Uvicorn running on http://0.0.0.0:8000
 INFO:     Application startup complete.
@@ -124,6 +125,7 @@ npm run dev
 ```
 
 ✅ **预期输出：**
+
 ```
 ready - started server on 0.0.0.0:3003, url: http://localhost:3003
 ```
@@ -134,11 +136,11 @@ ready - started server on 0.0.0.0:3003, url: http://localhost:3003
 
 <div align="center">
 
-| 🌐 服务 | 🔗 URL | 👤 默认账号 |
-|:--------|:-------|:------------|
-| **前端界面** | http://localhost:3003 | `admin` / `admin123` |
-| **API 文档** | http://localhost:8000/docs | - |
-| **数据库** | `backend/data/app.db` | - |
+| 🌐 服务      | 🔗 URL                     | 👤 默认账号          |
+| :----------- | :------------------------- | :------------------- |
+| **前端界面** | http://localhost:3003      | `admin` / `admin123` |
+| **API 文档** | http://localhost:8000/docs | -                    |
+| **数据库**   | `backend/data/app.db`      | -                    |
 
 </div>
 
@@ -204,14 +206,14 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 <div align="center">
 
-| ❌ 症状 | 🔍 原因 | ✅ 解决方案 |
-|:--------|:--------|:------------|
-| 端口 8000 被占用 | 其他服务占用端口 | `netstat -ano \| findstr :8000` 查找并关闭 |
-| pip 安装失败 | 网络超时 | `pip install --trusted-host pypi.org -r requirements.txt` |
-| npm install 报错 | Node 版本不兼容 | 使用 nvm 切换到 Node 18+ |
-| 数据库迁移失败 | SQLite 锁 | 删除 `data/*.db` 重新迁移 |
-| CORS 跨域错误 | 前后端端口不一致 | 检查 `.env` 中的 API URL |
-| OTX 连接失败 | API Key 无效 | 确认 https://otx.alienvault.com 的 Key |
+| ❌ 症状          | 🔍 原因          | ✅ 解决方案                                               |
+| :--------------- | :--------------- | :-------------------------------------------------------- |
+| 端口 8000 被占用 | 其他服务占用端口 | `netstat -ano \| findstr :8000` 查找并关闭                |
+| pip 安装失败     | 网络超时         | `pip install --trusted-host pypi.org -r requirements.txt` |
+| npm install 报错 | Node 版本不兼容  | 使用 nvm 切换到 Node 18+                                  |
+| 数据库迁移失败   | SQLite 锁        | 删除 `data/*.db` 重新迁移                                 |
+| CORS 跨域错误    | 前后端端口不一致 | 检查 `.env` 中的 API URL                                  |
+| OTX 连接失败     | API Key 无效     | 确认 https://otx.alienvault.com 的 Key                    |
 
 </div>
 
@@ -233,6 +235,7 @@ sqlite3 data/app.db ".tables"
 ```
 
 ✅ **预期输出：**
+
 ```
 alembic_version
 users
@@ -247,11 +250,11 @@ alerts
 
 <div align="center">
 
-| 📖 推荐阅读 | 🎯 目标 |
-|:------------|:--------|
-| [📗 架构总览](01-architecture.md) | 理解系统设计 |
-| [📙 API 文档](02-api-overview.md) | 开始 API 集成 |
-| [🛠️ 排障手册](10-troubleshooting.md) | 解决常见问题 |
+| 📖 推荐阅读                          | 🎯 目标       |
+| :----------------------------------- | :------------ |
+| [📗 架构总览](01-architecture.md)    | 理解系统设计  |
+| [📙 API 文档](02-api-overview.md)    | 开始 API 集成 |
+| [🛠️ 排障手册](10-troubleshooting.md) | 解决常见问题  |
 
 </div>
 

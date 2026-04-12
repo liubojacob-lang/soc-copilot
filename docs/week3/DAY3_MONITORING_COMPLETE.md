@@ -14,6 +14,7 @@
 ## ✅ 完成任务
 
 ### 1. 监控指标 Schema 设计 ✅
+
 - ✅ 定义 ConnectionMetrics 连接指标模型
 - ✅ 定义 MessageMetrics 消息指标模型
 - ✅ 定义 ErrorMetrics 错误指标模型
@@ -23,6 +24,7 @@
 - ✅ 定义 MetricsReport 监控报告
 
 ### 2. 监控数据收集服务 ✅
+
 - ✅ 实现 WebSocketMetricsCollector 类
 - ✅ 实时连接生命周期跟踪
 - ✅ 消息发送/接收统计
@@ -32,6 +34,7 @@
 - ✅ 健康评分计算
 
 ### 3. 监控仪表板 UI ✅
+
 - ✅ MonitoringDashboard React 组件
 - ✅ 实时指标显示（自动刷新）
 - ✅ 健康评分展示
@@ -40,6 +43,7 @@
 - ✅ 时间范围过滤器
 
 ### 4. 告警规则引擎 ✅
+
 - ✅ AlertRule 数据模型
 - ✅ 多条件告警规则（AND/OR逻辑）
 - ✅ 告警条件评估器
@@ -55,6 +59,7 @@
 ### 数据模型
 
 **ConnectionMetrics** - 连接指标:
+
 ```python
 class ConnectionMetrics(BaseModel):
     active_connections: int
@@ -69,6 +74,7 @@ class ConnectionMetrics(BaseModel):
 ```
 
 **MessageMetrics** - 消息指标:
+
 ```python
 class MessageMetrics(BaseModel):
     total_messages_sent: int
@@ -82,6 +88,7 @@ class MessageMetrics(BaseModel):
 ```
 
 **ErrorMetrics** - 错误指标:
+
 ```python
 class ErrorMetrics(BaseModel):
     total_errors: int
@@ -92,6 +99,7 @@ class ErrorMetrics(BaseModel):
 ```
 
 **PerformanceMetrics** - 性能指标:
+
 ```python
 class PerformanceMetrics(BaseModel):
     avg_latency_ms: float
@@ -106,6 +114,7 @@ class PerformanceMetrics(BaseModel):
 ### 监控收集器
 
 **指标收集**:
+
 ```python
 def record_connection_established(connection_id, user_id, user_role):
     self.active_connections[connection_id] = {...}
@@ -120,6 +129,7 @@ def record_message_sent(connection_id, message_type, size_bytes, recipients):
 ```
 
 **健康评分**:
+
 ```python
 def calculate_health_score(self) -> float:
     connection_score = connection_success_rate * 100 * 0.3
@@ -131,6 +141,7 @@ def calculate_health_score(self) -> float:
 ### 告警规则
 
 **告警条件**:
+
 ```python
 class AlertCondition(BaseModel):
     metric_type: MetricType  # health_score, active_connections, etc.
@@ -140,6 +151,7 @@ class AlertCondition(BaseModel):
 ```
 
 **规则评估**:
+
 ```python
 def should_trigger(self, metrics: Dict[str, float]) -> tuple[bool, str]:
     for condition in self.conditions:
@@ -153,19 +165,19 @@ def should_trigger(self, metrics: Dict[str, float]) -> tuple[bool, str]:
 
 ### API 端点
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/ws/monitoring/metrics` | 获取当前监控指标 |
-| GET | `/api/v1/ws/monitoring/health` | 获取系统健康评分 |
-| GET | `/api/v1/ws/monitoring/summary` | 获取监控摘要 |
-| POST | `/api/v1/monitoring/alerts/rules` | 创建告警规则 |
-| GET | `/api/v1/monitoring/alerts/rules` | 列出告警规则 |
-| GET | `/api/v1/monitoring/alerts/rules/{id}` | 获取告警规则 |
-| PUT | `/api/v1/monitoring/alerts/rules/{id}` | 更新告警规则 |
-| DELETE | `/api/v1/monitoring/alerts/rules/{id}` | 删除告警规则 |
-| GET | `/api/v1/monitoring/alerts/history` | 获取告警历史 |
-| GET | `/api/v1/monitoring/alerts/stats` | 获取告警统计 |
-| POST | `/api/v1/monitoring/alerts/test/{id}` | 测试告警规则 |
+| 方法   | 路径                                   | 描述             |
+| ------ | -------------------------------------- | ---------------- |
+| GET    | `/api/v1/ws/monitoring/metrics`        | 获取当前监控指标 |
+| GET    | `/api/v1/ws/monitoring/health`         | 获取系统健康评分 |
+| GET    | `/api/v1/ws/monitoring/summary`        | 获取监控摘要     |
+| POST   | `/api/v1/monitoring/alerts/rules`      | 创建告警规则     |
+| GET    | `/api/v1/monitoring/alerts/rules`      | 列出告警规则     |
+| GET    | `/api/v1/monitoring/alerts/rules/{id}` | 获取告警规则     |
+| PUT    | `/api/v1/monitoring/alerts/rules/{id}` | 更新告警规则     |
+| DELETE | `/api/v1/monitoring/alerts/rules/{id}` | 删除告警规则     |
+| GET    | `/api/v1/monitoring/alerts/history`    | 获取告警历史     |
+| GET    | `/api/v1/monitoring/alerts/stats`      | 获取告警统计     |
+| POST   | `/api/v1/monitoring/alerts/test/{id}`  | 测试告警规则     |
 
 ---
 
@@ -174,23 +186,27 @@ def should_trigger(self, metrics: Dict[str, float]) -> tuple[bool, str]:
 ### 监控仪表板
 
 **健康评分**:
+
 - 大号显示当前健康评分（0-100%）
 - 颜色编码状态（绿色=健康，黄色=降级，红色=严重）
 - 最后更新时间戳
 
 **指标卡片**:
+
 - 连接数（活跃、总数、失败）
 - 消息数（已发送、已接收、已过滤）
 - 错误数（总计、严重、速率）
 - 延迟（平均、P95、P99）
 
 **详细面板**:
+
 - 连接详情（总数、断开、失败、平均持续时间）
 - 消息详情（发送/接收率、队列大小）
 - 性能详情（P50/P95/P99延迟）
 - 错误明细（按类型分类）
 
 **交互功能**:
+
 - 自动刷新开关
 - 时间范围选择（1h, 6h, 24h, 7d）
 - 手动刷新按钮
@@ -275,22 +291,27 @@ def should_trigger(self, metrics: Dict[str, float]) -> tuple[bool, str]:
 ### 新增文件
 
 **后端模型**:
+
 - `backend/models/websocket_metrics.py` - 监控指标数据模型（500+ 行）
 - `backend/models/monitoring_alerts.py` - 告警规则数据模型（400+ 行）
 
 **后端服务**:
+
 - `backend/services/websocket_monitoring.py` - 监控服务（450+ 行）
 - `backend/services/alert_evaluator.py` - 告警评估服务（400+ 行）
 
 **后端路由**:
+
 - `backend/routers/monitoring_alerts.py` - 告警规则 API（300+ 行）
 
 **前端组件**:
+
 - `frontend/components/websocket/MonitoringDashboard.tsx` - 监控仪表板 UI（450+ 行）
 
 ### 修改文件
 
 **后端**:
+
 - `backend/routers/websocket.py` - 集成监控调用
 - `backend/main.py` - 初始化监控服务和告警评估器
 
@@ -307,12 +328,12 @@ def should_trigger(self, metrics: Dict[str, float]) -> tuple[bool, str]:
 
 ### 监控开销
 
-| 组件 | 开销 | 影响 |
-|------|------|------|
-| 指标收集 | ~1ms per event | 最小 |
-| Redis持久化 | ~10ms per minute | 最小 |
-| 规则评估 | ~2ms per rule | 低 |
-| 健康评分计算 | ~1ms | 最小 |
+| 组件         | 开销             | 影响 |
+| ------------ | ---------------- | ---- |
+| 指标收集     | ~1ms per event   | 最小 |
+| Redis持久化  | ~10ms per minute | 最小 |
+| 规则评估     | ~2ms per rule    | 低   |
+| 健康评分计算 | ~1ms             | 最小 |
 
 ---
 
@@ -321,16 +342,19 @@ def should_trigger(self, metrics: Dict[str, float]) -> tuple[bool, str]:
 ### 默认行为
 
 **指标持久化**:
+
 - 每分钟自动持久化一次
 - Redis TTL: 7天
 - 保留最多10000个快照
 
 **告警评估**:
+
 - 每分钟评估一次（在指标持久化后）
 - 冷却时间默认: 5分钟
 - 每小时最多通知: 10次
 
 **自动刷新**:
+
 - 前端仪表板默认每5秒刷新
 - 可通过UI开关禁用
 
@@ -422,12 +446,14 @@ await start_alert_evaluator()
 ## 📋 下一步行动
 
 ### Day 4: 性能优化
+
 - [ ] 实现消息压缩（gzip）
 - [ ] 批量消息发送优化
 - [ ] 连接复用和池化
 - [ ] 性能测试和基准测试
 
 ### Day 5: 测试和文档
+
 - [ ] 端到端测试
 - [ ] 性能测试
 - [ ] 压力测试
@@ -438,12 +464,12 @@ await start_alert_evaluator()
 
 ## 🎯 Day 3 成功标准
 
-| 标准 | 目标 | 实际 | 状态 |
-|------|------|------|------|
-| 指标 Schema 设计 | ✅ | ✅ | ✅ 达标 |
-| 监控数据收集 | ✅ | ✅ | ✅ 达标 |
-| 仪表板 UI | ✅ | ✅ | ✅ 达标 |
-| 告警规则引擎 | ✅ | ✅ | ✅ 达标 |
+| 标准             | 目标 | 实际 | 状态    |
+| ---------------- | ---- | ---- | ------- |
+| 指标 Schema 设计 | ✅   | ✅   | ✅ 达标 |
+| 监控数据收集     | ✅   | ✅   | ✅ 达标 |
+| 仪表板 UI        | ✅   | ✅   | ✅ 达标 |
+| 告警规则引擎     | ✅   | ✅   | ✅ 达标 |
 
 **Day 3 完成度**: **100%** ✅
 

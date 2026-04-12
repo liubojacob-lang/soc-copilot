@@ -10,15 +10,15 @@
 
 ## 核心表说明
 
-| 表名 | 说明 | 关键字段 |
-|------|------|----------|
-| `users` | 用户账户 | `id`, `username`, `password_hash`, `role` |
-| `alerts` | 告警记录 | `id`, `raw_log`, `severity`, `status` |
-| `assets` | 资产信息 | `id`, `hostname`, `ip`, `criticality` |
-| `playbook_definitions` | 剧本定义 | `id`, `name`, `dag_json`, `status` |
-| `playbook_runs` | 剧本执行 | `id`, `definition_id`, `status`, `output` |
-| `threat_intel_cache` | 威胁情报缓存 | `ioc`, `result`, `ttl` |
-| `audit_logs` | 操作审计 | `id`, `user_id`, `action`, `details` |
+| 表名                   | 说明         | 关键字段                                  |
+| ---------------------- | ------------ | ----------------------------------------- |
+| `users`                | 用户账户     | `id`, `username`, `password_hash`, `role` |
+| `alerts`               | 告警记录     | `id`, `raw_log`, `severity`, `status`     |
+| `assets`               | 资产信息     | `id`, `hostname`, `ip`, `criticality`     |
+| `playbook_definitions` | 剧本定义     | `id`, `name`, `dag_json`, `status`        |
+| `playbook_runs`        | 剧本执行     | `id`, `definition_id`, `status`, `output` |
+| `threat_intel_cache`   | 威胁情报缓存 | `ioc`, `result`, `ttl`                    |
+| `audit_logs`           | 操作审计     | `id`, `user_id`, `action`, `details`      |
 
 ## ERD 图
 
@@ -26,15 +26,15 @@
 erDiagram
     users ||--o{ audit_logs : "generates"
     users ||--o{ playbook_runs : "executes"
-    
+
     alerts ||--o{ playbook_runs : "triggers"
-    
+
     playbook_definitions ||--o{ playbook_runs : "executes"
-    
+
     playbook_runs ||--o{ playbook_run_nodes : "contains"
-    
+
     assets ||--o{ alerts : "related_to"
-    
+
     threat_intel_cache }|--|| iocs : "caches"
 ```
 
@@ -62,8 +62,8 @@ alembic downgrade -1
 
 首次启动会自动创建演示数据：
 
-| 数据类型 | 示例 |
-|----------|------|
-| 管理员账号 | `admin / admin123` |
-| 示例剧本 | Phishing Response, Malware Triage |
-| 示例资产 | 5 台服务器，工作站 |
+| 数据类型   | 示例                              |
+| ---------- | --------------------------------- |
+| 管理员账号 | `admin / admin123`                |
+| 示例剧本   | Phishing Response, Malware Triage |
+| 示例资产   | 5 台服务器，工作站                |

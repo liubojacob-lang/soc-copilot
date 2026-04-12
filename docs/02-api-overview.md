@@ -10,15 +10,15 @@
 
 ## API 模块列表
 
-| 模块 | 前缀 | 主要端点 |
-|------|------|----------|
-| **AI 助手** | `/api/ai/` | `chat`, `query`, `analyze-alert` |
-| **告警** | `/api/alerts/` | `list`, `detail`, `analyze` |
-| **剧本** | `/api/playbook*/` | `definitions`, `runs`, `execute` |
-| **资产管理** | `/api/assets/` | `list`, `create`, `import` |
-| **触发器** | `/api/triggers/` | `list`, `webhook`, `cron` |
-| **威胁情报** | `/api/threat-intel/` | `lookup`, `batch` |
-| **审计** | `/api/audit/` | `logs`, `export` |
+| 模块         | 前缀                 | 主要端点                         |
+| ------------ | -------------------- | -------------------------------- |
+| **AI 助手**  | `/api/ai/`           | `chat`, `query`, `analyze-alert` |
+| **告警**     | `/api/alerts/`       | `list`, `detail`, `analyze`      |
+| **剧本**     | `/api/playbook*/`    | `definitions`, `runs`, `execute` |
+| **资产管理** | `/api/assets/`       | `list`, `create`, `import`       |
+| **触发器**   | `/api/triggers/`     | `list`, `webhook`, `cron`        |
+| **威胁情报** | `/api/threat-intel/` | `lookup`, `batch`                |
+| **审计**     | `/api/audit/`        | `logs`, `export`                 |
 
 ## 认证方式
 
@@ -66,14 +66,14 @@ curl -X GET http://localhost:8000/api/assets \
 }
 ```
 
-| HTTP 状态码 | 说明 |
-|------------|------|
-| 200 | 成功 |
-| 400 | 请求参数错误 |
-| 401 | 未认证 |
-| 403 | 权限不足 |
-| 404 | 资源不存在 |
-| 500 | 服务器内部错误 |
+| HTTP 状态码 | 说明           |
+| ----------- | -------------- |
+| 200         | 成功           |
+| 400         | 请求参数错误   |
+| 401         | 未认证         |
+| 403         | 权限不足       |
+| 404         | 资源不存在     |
+| 500         | 服务器内部错误 |
 
 ## 关键接口示例
 

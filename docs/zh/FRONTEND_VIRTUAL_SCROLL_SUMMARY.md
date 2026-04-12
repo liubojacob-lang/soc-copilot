@@ -15,6 +15,7 @@
 **文件**: `frontend/components/common/VirtualList.tsx`
 
 **功能特性**:
+
 - 只渲染可见区域的元素，- 支持可变高度元素
 - 平滑滚动体验
 - 响应式容器支持
@@ -22,6 +23,7 @@
 - 自动加载更多功能
 
 **使用示例**:
+
 ```tsx
 import { VirtualList, useInfiniteScroll } from '@/components/common/VirtualList';
 
@@ -52,6 +54,7 @@ function MyList() {
 **文件**: `frontend/components/common/VirtualTable.tsx`
 
 **功能特性**:
+
 - 为表格数据提供虚拟滚动
 - 支持自定义列配置
 - 可点击行支持
@@ -59,23 +62,17 @@ function MyList() {
 - 空状态支持
 
 **使用示例**:
+
 ```tsx
-import { VirtualTable } from '@/components/common/VirtualTable';
+import { VirtualTable } from "@/components/common/VirtualTable";
 
 function MyTable() {
   const columns = [
-    { key: 'name', header: 'Name', render: (item) => item.name },
-    { key: 'status', header: 'Status', render: (item) => item.status },
+    { key: "name", header: "Name", render: item => item.name },
+    { key: "status", header: "Status", render: item => item.status },
   ];
 
-  return (
-    <VirtualTable
-      data={data}
-      columns={columns}
-      rowHeight={56}
-      containerHeight={600}
-    />
-  );
+  return <VirtualTable data={data} columns={columns} rowHeight={56} containerHeight={600} />;
 }
 ```
 
@@ -88,22 +85,24 @@ function MyTable() {
 **文件**: `frontend/app/[locale]/audit/components/VirtualAuditTable.tsx`
 
 **功能特性**:
+
 - 为审计日志表格提供虚拟滚动
 - 支持无限滚动加载更多
 - 固定表头
 - 加载状态指示器
 
 **集成方式**:
+
 ```tsx
-import { VirtualAuditTable } from './components';
+import { VirtualAuditTable } from "./components";
 
 // 在审计日志页面使用
-<VirtualAuditTable 
+<VirtualAuditTable
   logs={logs}
   onLoadMore={handleLoadMore}
   hasMore={hasMore}
   loadingMore={loadingMore}
-/>
+/>;
 ```
 
 ---
@@ -115,21 +114,24 @@ import { VirtualAuditTable } from './components';
 **文件**: `frontend/components/alerts/RealTimeAlertStream.tsx`
 
 **优化内容**:
+
 - 集成 `VirtualList` 组件
 - 使用 `memo` 优化 `AlertItem` 组件
 - 设置固定高度 120px
 - 添加 overscan 提升滚动流畅度
 
 **修改前**:
+
 ```tsx
 <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
-  {filteredAlerts.map((alert) => (
+  {filteredAlerts.map(alert => (
     <AlertItem key={alert.id} alert={alert} onClick={() => onAlertClick?.(alert)} />
   ))}
 </div>
 ```
 
 **修改后**:
+
 ```tsx
 <VirtualList
   items={filteredAlerts}
@@ -149,11 +151,11 @@ import { VirtualAuditTable } from './components';
 
 ### 内存优化
 
-| 场景 | 优化前 | 优化后 | 提升 |
-|------|--------|--------|------|
-| 1000条告警 | 渲染1000个DOM节点 | 渲染约10个DOM节点 | 99%减少 |
+| 场景           | 优化前            | 优化后            | 提升      |
+| -------------- | ----------------- | ----------------- | --------- |
+| 1000条告警     | 渲染1000个DOM节点 | 渲染约10个DOM节点 | 99%减少   |
 | 1000条审计日志 | 渲染1000个DOM节点 | 渲染约15个DOM节点 | 98.5%减少 |
-| 滚动流畅度 | 可能卡顿 | 60fps流畅 | 显著提升 |
+| 滚动流畅度     | 可能卡顿          | 60fps流畅         | 显著提升  |
 
 ### 渲染优化
 
@@ -166,10 +168,12 @@ import { VirtualAuditTable } from './components';
 ## 文件变更清单
 
 ### 新增文件
+
 1. `frontend/components/common/VirtualTable.tsx` - 虚拟表格组件
 2. `frontend/app/[locale]/audit/components/VirtualAuditTable.tsx` - 审计日志虚拟表格
 
 ### 修改文件
+
 1. `frontend/components/common/index.ts` - 导出新组件
 2. `frontend/components/alerts/RealTimeAlertStream.tsx` - 集成虚拟滚动
 3. `frontend/app/[locale]/audit/components/index.ts` - 导出VirtualAuditTable

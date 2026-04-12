@@ -3,6 +3,7 @@
 ## 项目现状分析
 
 ### 已有的 i18n 基础设施
+
 - `next-intl` v3.26.5 已安装
 - [`i18n.ts`](frontend/i18n.ts) 配置文件已存在
 - [`middleware.ts.disabled`](frontend/middleware.ts.disabled) 已存在（需启用和增强）
@@ -10,6 +11,7 @@
 - [`LanguageSwitcher.tsx`](frontend/components/LanguageSwitcher.tsx) 组件已存在
 
 ### 需要改造的核心文件
+
 1. [`next.config.js`](frontend/next.config.js) - 添加 next-intl 插件
 2. [`middleware.ts`](frontend/middleware.ts) - 启用并增强语言检测
 3. [`app/layout.tsx`](frontend/app/layout.tsx) - 迁移到 `[locale]` 目录
@@ -26,7 +28,7 @@
 **修改文件**: [`next.config.js`](frontend/next.config.js)
 
 ```javascript
-const createNextIntlPlugin = require('next-intl/plugin');
+const createNextIntlPlugin = require("next-intl/plugin");
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -47,39 +49,40 @@ module.exports = withNextIntl(nextConfig);
 **新建文件**: [`middleware.ts`](frontend/middleware.ts)（重命名自 `middleware.ts.disabled`）
 
 增强功能：
+
 - 优先读取 cookie 中的语言设置
 - 其次读取 Accept-Language header
 - 自动重定向到对应的 locale 路径
 
 ```typescript
-import createMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from './i18n';
-import { NextRequest, NextResponse } from 'next/server';
+import createMiddleware from "next-intl/middleware";
+import { locales, defaultLocale } from "./i18n";
+import { NextRequest, NextResponse } from "next/server";
 
 export default function middleware(request: NextRequest) {
   // 1. 检查 cookie 中的语言偏好
-  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
-  
+  const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
+
   // 2. 如果 cookie 中有有效语言，使用它
   if (cookieLocale && locales.includes(cookieLocale as any)) {
     // 继续使用 next-intl 的中间件处理
     return createMiddleware({
       locales,
       defaultLocale,
-      localePrefix: 'always' // 始终显示 /en 或 /zh
+      localePrefix: "always", // 始终显示 /en 或 /zh
     })(request);
   }
-  
+
   // 3. 否则使用默认行为（Accept-Language 检测）
   return createMiddleware({
     locales,
     defaultLocale,
-    localePrefix: 'always'
+    localePrefix: "always",
   })(request);
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|_next/static|_next/image|favicon.ico|.*\\..*).*)']
+  matcher: ["/((?!api|_next|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
 ```
 
@@ -358,6 +361,7 @@ export default async function LocaleLayout({
 **修改文件**: [`components/Navigation.tsx`](frontend/components/Navigation.tsx)
 
 主要改动：
+
 1. 添加 `useTranslations` hook
 2. 替换所有硬编码文案为翻译 key
 3. 集成 `LanguageSwitcher` 组件
@@ -399,15 +403,15 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
   return (
     <nav>
       {/* ... */}
-      
+
       {/* 添加语言切换按钮 */}
       <LanguageSwitcher />
-      
+
       {/* 退出按钮使用翻译 */}
       <button onClick={handleLogout}>
         {t("exit")}
       </button>
-      
+
       {/* ... */}
     </nav>
   );
@@ -423,6 +427,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
 **新建文件**: [`app/[locale]/page.tsx`](frontend/app/[locale]/page.tsx)
 
 从 [`app/page.tsx`](frontend/app/page.tsx) 迁移，主要改动：
+
 1. 添加 `useTranslations` hook
 2. 替换硬编码文案
 3. 更新路由跳转逻辑
@@ -470,6 +475,7 @@ export default function HomePage() {
 **新建文件**: [`app/[locale]/playbooks/page.tsx`](frontend/app/[locale]/playbooks/page.tsx)
 
 从 [`app/playbooks/page.tsx`](frontend/app/playbooks/page.tsx) 迁移，主要改动：
+
 1. 添加 `useTranslations` hook
 2. 替换关键按钮/标题文案
 3. 更新路由跳转逻辑
@@ -490,11 +496,11 @@ export default function PlaybooksPage() {
 
   return (
     <div>
-      <Navigation 
-        title={t("title")} 
-        subtitle={t("subtitle")} 
+      <Navigation
+        title={t("title")}
+        subtitle={t("subtitle")}
       />
-      
+
       <main>
         {/* 筛选区域 */}
         <div>
@@ -504,7 +510,7 @@ export default function PlaybooksPage() {
             <option value="">{t("allPlaybooks")}</option>
             {/* ... */}
           </select>
-          
+
           <label>{t("status")}</label>
           <select>
             <option value="">{t("allStatuses")}</option>
@@ -513,10 +519,10 @@ export default function PlaybooksPage() {
             <option value="failed">{t("statuses.failed")}</option>
             <option value="partial">{t("statuses.partial")}</option>
           </select>
-          
+
           <button>{tCommon("refresh")}</button>
         </div>
-        
+
         {/* 表格 */}
         <table>
           <thead>
@@ -531,7 +537,7 @@ export default function PlaybooksPage() {
           </thead>
           {/* ... */}
         </table>
-        
+
         {/* 可用剧本 */}
         <div>
           <h2>{t("availablePlaybooks")}</h2>
@@ -555,8 +561,8 @@ export default function PlaybooksPage() {
 
 ```typescript
 // app/page.tsx - 重定向到默认语言
-import { redirect } from 'next/navigation';
-import { defaultLocale } from '@/i18n';
+import { redirect } from "next/navigation";
+import { defaultLocale } from "@/i18n";
 
 export default function RootPage() {
   redirect(`/${defaultLocale}`);
@@ -567,11 +573,7 @@ export default function RootPage() {
 
 ```typescript
 // app/layout.tsx - 简化为最小布局
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return children;
 }
 ```
@@ -584,31 +586,33 @@ export default function RootLayout({
 
 #### 验收测试清单
 
-| 测试项 | 预期结果 | 验证方式 |
-|--------|----------|----------|
-| 访问 `/` | 自动重定向到 `/en` 或 `/zh` | 浏览器访问 |
-| 访问 `/en` | 显示英文首页 | 浏览器访问 |
-| 访问 `/zh` | 显示中文首页 | 浏览器访问 |
-| 语言切换按钮 | 点击可切换语言 | 点击测试 |
+| 测试项         | 预期结果                          | 验证方式       |
+| -------------- | --------------------------------- | -------------- |
+| 访问 `/`       | 自动重定向到 `/en` 或 `/zh`       | 浏览器访问     |
+| 访问 `/en`     | 显示英文首页                      | 浏览器访问     |
+| 访问 `/zh`     | 显示中文首页                      | 浏览器访问     |
+| 语言切换按钮   | 点击可切换语言                    | 点击测试       |
 | 切换后保持路径 | `/en/playbooks` → `/zh/playbooks` | 导航后检查 URL |
-| 刷新后语言保持 | Cookie 记住语言偏好 | 刷新页面验证 |
-| 导航栏翻译 | 显示对应语言的导航项 | 视觉检查 |
-| 首页翻译 | Tab 标签等显示翻译 | 视觉检查 |
-| Playbooks 翻译 | 表头、按钮等显示翻译 | 视觉检查 |
-| 其他页面可访问 | 未迁移页面仍可正常访问 | 直接访问 URL |
-| `npm run dev` | 无报错正常启动 | 终端检查 |
+| 刷新后语言保持 | Cookie 记住语言偏好               | 刷新页面验证   |
+| 导航栏翻译     | 显示对应语言的导航项              | 视觉检查       |
+| 首页翻译       | Tab 标签等显示翻译                | 视觉检查       |
+| Playbooks 翻译 | 表头、按钮等显示翻译              | 视觉检查       |
+| 其他页面可访问 | 未迁移页面仍可正常访问            | 直接访问 URL   |
+| `npm run dev`  | 无报错正常启动                    | 终端检查       |
 
 ---
 
 ## 文件变更清单
 
 ### 新建文件
+
 1. [`middleware.ts`](frontend/middleware.ts) - 从 `.disabled` 启用
 2. [`app/[locale]/layout.tsx`](frontend/app/[locale]/layout.tsx)
 3. [`app/[locale]/page.tsx`](frontend/app/[locale]/page.tsx)
 4. [`app/[locale]/playbooks/page.tsx`](frontend/app/[locale]/playbooks/page.tsx)
 
 ### 修改文件
+
 1. [`next.config.js`](frontend/next.config.js) - 添加 next-intl 插件
 2. [`messages/en.json`](frontend/messages/en.json) - 扩展翻译
 3. [`messages/zh.json`](frontend/messages/zh.json) - 扩展翻译
@@ -618,6 +622,7 @@ export default function RootLayout({
 7. [`app/page.tsx`](frontend/app/page.tsx) - 改为重定向
 
 ### 保留不变
+
 - 所有 API 路由 (`app/api/*`)
 - 其他未迁移页面 (`app/admin/*`, `app/settings/*`, 等)
 - 所有组件（除 Navigation 和 LanguageSwitcher）
@@ -667,6 +672,7 @@ graph TB
 ## 后续扩展
 
 完成本次实施后，可按需渐进迁移其他页面：
+
 - `/admin/*` 页面
 - `/settings/*` 页面
 - `/triggers/*` 页面

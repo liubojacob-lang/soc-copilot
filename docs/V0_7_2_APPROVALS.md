@@ -128,6 +128,7 @@ CREATE TABLE playbook_approvals (
 | include_output_fields | array | No | Output fields to include |
 
 **Supported Variables:**
+
 - `{{run_id}}` - Playbook run ID
 - `{{status}}` - Current status
 - `{{node_id}}` - Current node ID
@@ -139,14 +140,15 @@ CREATE TABLE playbook_approvals (
 
 ### Approvals Management
 
-| Method | Endpoint | Description | RBAC |
-|--------|----------|-------------|------|
-| GET | `/api/playbook/approvals` | List approvals with filters | all users |
-| POST | `/api/playbook/approvals/{id}/approve` | Approve a request | admin, auditor |
-| POST | `/api/playbook/approvals/{id}/reject` | Reject a request | admin, auditor |
-| GET | `/api/playbook/approvals/pending/count` | Get pending count | all users |
+| Method | Endpoint                                | Description                 | RBAC           |
+| ------ | --------------------------------------- | --------------------------- | -------------- |
+| GET    | `/api/playbook/approvals`               | List approvals with filters | all users      |
+| POST   | `/api/playbook/approvals/{id}/approve`  | Approve a request           | admin, auditor |
+| POST   | `/api/playbook/approvals/{id}/reject`   | Reject a request            | admin, auditor |
+| GET    | `/api/playbook/approvals/pending/count` | Get pending count           | all users      |
 
 **RBAC Rules:**
+
 - **admin/auditor**: Can see ALL approvals
 - **analyst**: Can only see their OWN approval requests
 - **analyst**: CANNOT approve (self-approval prevention)
@@ -157,10 +159,10 @@ CREATE TABLE playbook_approvals (
 
 ### Slack Notifications
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `SLACK_WEBHOOK_DEFAULT` | No | - | Default Slack webhook URL for notifications |
-| `ENABLE_RUN_FAILURE_NOTIFY` | No | false | Enable automatic failure alerts |
+| Variable                    | Required | Default | Description                                 |
+| --------------------------- | -------- | ------- | ------------------------------------------- |
+| `SLACK_WEBHOOK_DEFAULT`     | No       | -       | Default Slack webhook URL for notifications |
+| `ENABLE_RUN_FAILURE_NOTIFY` | No       | false   | Enable automatic failure alerts             |
 
 ---
 
@@ -223,6 +225,7 @@ npm run dev
 ```
 
 **Migration Details:**
+
 - Adds `playbook_approvals` table
 - No breaking changes to existing APIs
 - Existing playbooks continue to work
@@ -403,8 +406,8 @@ curl -X GET "http://localhost:8000/api/playbook/approvals?status=pending&page=1&
     }
   ],
   "edges": [
-    {"source": "step1", "target": "step2"},
-    {"source": "step2", "target": "step3"}
+    { "source": "step1", "target": "step2" },
+    { "source": "step2", "target": "step3" }
   ]
 }
 ```
@@ -446,8 +449,8 @@ curl -X GET "http://localhost:8000/api/playbook/approvals?status=pending&page=1&
     }
   ],
   "edges": [
-    {"source": "notify1", "target": "approve1"},
-    {"source": "approve1", "target": "notify2"}
+    { "source": "notify1", "target": "approve1" },
+    { "source": "approve1", "target": "notify2" }
   ]
 }
 ```
@@ -538,13 +541,13 @@ curl -X GET "http://localhost:8000/api/playbook/runs/{run_id}/nodes" \
 
 ### Approval Permissions
 
-| Action | Admin | Analyst | Auditor |
-|---------|-------|--------|--------|
-| View all approvals | ✅ | ❌ | ✅ |
-| View own approvals | ✅ | ✅ | ✅ |
-| Create approval (run playbook) | ✅ | ✅ | ❌ |
-| Approve request | ✅ | ❌ | ✅ |
-| Reject request | ✅ | ❌ | ✅ |
+| Action                         | Admin | Analyst | Auditor |
+| ------------------------------ | ----- | ------- | ------- |
+| View all approvals             | ✅    | ❌      | ✅      |
+| View own approvals             | ✅    | ✅      | ✅      |
+| Create approval (run playbook) | ✅    | ✅      | ❌      |
+| Approve request                | ✅    | ❌      | ✅      |
+| Reject request                 | ✅    | ❌      | ✅      |
 
 ### Key Security Rules
 
@@ -605,6 +608,7 @@ alembic downgrade v0_7_2_approval_system
 ```
 
 This will:
+
 - Drop `playbook_approvals` table
 - Remove approval-related indexes
 - Keep all other v0.7.1 functionality intact
@@ -616,6 +620,7 @@ This will:
 ### v0.7.2 (2026-02-09)
 
 **Added:**
+
 - Human approval nodes with timeout support
 - Approvals management UI at `/playbooks/approvals`
 - Slack webhook notification nodes
@@ -625,11 +630,13 @@ This will:
 - Enhanced run page with approval status display
 
 **Changed:**
+
 - Playbook execution engine to handle `waiting_approval` state
 - Node status display with approval indicators
 - RBAC rules for approval operations
 
 **Fixed:**
+
 - Resume functionality after approval
 - Proper audit logging for approval actions
 - Notification error handling (non-blocking)

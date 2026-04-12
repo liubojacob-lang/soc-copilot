@@ -39,7 +39,10 @@ venv.bak/
 .env
 .env.local
 .env.*.local
+.env.security
+.env.wazuh
 !.env.example
+!.env.*.example
 
 # Database
 *.db
@@ -78,3 +81,21 @@ build/
 *.pid
 *.seed
 *.pid.lock
+
+# Archive directory (temp files moved here)
+archive/
+
+# Temporary scripts and test data
+*.log
+server*.log
+
+# Coverage reports
+coverage.json
+
+# Backup files
+*.tar.gz
+*.bak
+
+# Temporary JSON files
+test_*.json
+grafana-*.json

@@ -95,12 +95,12 @@ POST /api/v1/wazuh/test-alert
 
 ## Severity Mapping
 
-| Wazuh Level | SOC Severity | Color | Response Time |
-|------------|--------------|-------|---------------|
-| 0-3 | Low | Blue | 24h |
-| 4-7 | Medium | Yellow | 8h |
-| 8-12 | High | Orange | 1h |
-| 13-15 | Critical | Red | Immediate |
+| Wazuh Level | SOC Severity | Color  | Response Time |
+| ----------- | ------------ | ------ | ------------- |
+| 0-3         | Low          | Blue   | 24h           |
+| 4-7         | Medium       | Yellow | 8h            |
+| 8-12        | High         | Orange | 1h            |
+| 13-15       | Critical     | Red    | Immediate     |
 
 ---
 
@@ -147,13 +147,13 @@ curl http://localhost:8000/api/v1/wazuh/agents
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| "Not initialized" | Check `WAZUH_ENABLED=true` in .env |
-| "Auth failed" | Verify username/password in Wazuh |
-| "SSL error" | Set `WAZUH_VERIFY_SSL=false` for self-signed certs |
-| "No alerts" | Check agents are active in Wazuh dashboard |
-| High error rate | Increase `WAZUH_POLL_INTERVAL` to 60 |
+| Issue             | Solution                                           |
+| ----------------- | -------------------------------------------------- |
+| "Not initialized" | Check `WAZUH_ENABLED=true` in .env                 |
+| "Auth failed"     | Verify username/password in Wazuh                  |
+| "SSL error"       | Set `WAZUH_VERIFY_SSL=false` for self-signed certs |
+| "No alerts"       | Check agents are active in Wazuh dashboard         |
+| High error rate   | Increase `WAZUH_POLL_INTERVAL` to 60               |
 
 ---
 
@@ -179,11 +179,13 @@ WAZUH_RECEIVER_AUTO_START=true # Auto-start
 ## Monitoring
 
 **Key Metrics**:
+
 - Receiver success rate: Should be >95%
 - Queue depth: Should not grow continuously
 - Poll latency: Should be <5 seconds
 
 **Check**:
+
 ```bash
 curl http://localhost:8000/api/v1/wazuh/receiver/stats
 ```

@@ -26,6 +26,7 @@ Migrations are automatically run when the application starts. No manual interven
 ## Manual Migration Commands
 
 ### Run all pending migrations
+
 ```bash
 cd backend
 source venv/Scripts/activate  # Windows
@@ -34,6 +35,7 @@ python migrate.py
 ```
 
 ### Using Alembic directly
+
 ```bash
 cd backend
 source venv/Scripts/activate
@@ -60,6 +62,7 @@ alembic revision -m "description"
 ## Creating a New Migration
 
 ### 1. Modify your model
+
 ```python
 # models/playbook_run.py
 class PlaybookRunModel(Base):
@@ -68,6 +71,7 @@ class PlaybookRunModel(Base):
 ```
 
 ### 2. Generate migration
+
 ```bash
 cd backend
 source venv/Scripts/activate
@@ -75,9 +79,11 @@ alembic revision --autogenerate -m "add new_field to playbook_run"
 ```
 
 ### 3. Review the generated migration
+
 Check `migrations_alembic/versions/<revision_id>_description.py` to ensure it's correct.
 
 ### 4. Apply the migration
+
 ```bash
 alembic upgrade head
 # Or just restart the application (migrations run automatically)
@@ -86,17 +92,21 @@ alembic upgrade head
 ## Troubleshooting
 
 ### Migration conflict
+
 If a migration fails, you can:
+
 1. Check the error message
 2. Manually fix the database
 3. Use `alembic stamp head` to mark as applied (use carefully!)
 
 ### Missing migration table
+
 ```bash
 alembic stamp head
 ```
 
 ### View applied migrations
+
 ```bash
 alembic current
 ```

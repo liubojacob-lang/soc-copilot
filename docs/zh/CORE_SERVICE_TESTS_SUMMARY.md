@@ -13,6 +13,7 @@
 **文件**: `backend/tests/test_alert_service.py`
 
 **测试类**:
+
 - `TestAlertServiceIOCExtraction` - IOC 提取和合并测试
   - `test_merge_iocs_basic` - 基本 IOC 合并
   - `test_merge_iocs_empty_local` - 空本地 IOC 合并
@@ -39,6 +40,7 @@
 **文件**: `backend/tests/test_playbook_dag_engine.py`
 
 **测试类**:
+
 - `TestNodeType` - 节点类型枚举测试
   - `test_node_type_values` - 节点类型值验证
   - `test_node_type_string_conversion` - 字符串转换
@@ -79,6 +81,7 @@
 **文件**: `backend/tests/test_threat_intel_service.py`
 
 **测试类**:
+
 - `TestThreatIntelServiceIOCAnalysis` - IOC 分析测试
   - `test_analyze_ip_malicious` - 恶意 IP 分析
   - `test_analyze_ip_benign` - 良性 IP 分析
@@ -116,29 +119,32 @@
 
 ## 测试覆盖范围
 
-| 服务 | 测试类数 | 测试方法数 | 覆盖功能 |
-|------|----------|------------|----------|
-| AlertService | 4 | 9 | IOC提取、Markdown格式化、分析、计数 |
-| PlaybookDAGEngine | 5 | 18 | 节点类型、状态、上下文、规范、DAG执行 |
-| ThreatIntelService | 6 | 18 | IOC分析、增强、批量分析、缓存、验证、统计 |
-| **总计** | **15** | **45** | - |
+| 服务               | 测试类数 | 测试方法数 | 覆盖功能                                  |
+| ------------------ | -------- | ---------- | ----------------------------------------- |
+| AlertService       | 4        | 9          | IOC提取、Markdown格式化、分析、计数       |
+| PlaybookDAGEngine  | 5        | 18         | 节点类型、状态、上下文、规范、DAG执行     |
+| ThreatIntelService | 6        | 18         | IOC分析、增强、批量分析、缓存、验证、统计 |
+| **总计**           | **15**   | **45**     | -                                         |
 
 ---
 
 ## 测试策略
 
 ### 1. 单元测试原则
+
 - **隔离性**: 使用 mock 隔离外部依赖
 - **可重复性**: 测试不依赖外部状态
 - **快速执行**: 避免网络调用和数据库操作
 - **清晰命名**: 测试名称描述测试意图
 
 ### 2. Mock 策略
+
 - 使用 `unittest.mock` 进行依赖模拟
 - 使用 `patch` 上下文管理器临时替换
 - 使用 `AsyncMock` 处理异步函数
 
 ### 3. 测试数据
+
 - 使用 fixture 提供测试数据
 - 使用工厂函数创建复杂对象
 - 边界值和异常情况测试
@@ -169,6 +175,7 @@ pytest -v tests/test_alert_service.py
 ## 文件变更清单
 
 ### 新增文件
+
 1. `backend/tests/test_alert_service.py` - AlertService 单元测试
 2. `backend/tests/test_playbook_dag_engine.py` - PlaybookDAGEngine 单元测试
 3. `backend/tests/test_threat_intel_service.py` - ThreatIntelService 单元测试
@@ -178,16 +185,19 @@ pytest -v tests/test_alert_service.py
 ## 下一步建议
 
 ### 短期
+
 1. 添加集成测试覆盖 API 端点
 2. 添加端到端测试覆盖关键业务流程
 3. 配置 CI/CD 自动运行测试
 
 ### 中期
+
 1. 提高测试覆盖率到 80%+
 2. 添加性能基准测试
 3. 添加安全测试
 
 ### 长期
+
 1. 实现测试数据工厂
 2. 添加契约测试
 3. 实现测试覆盖率门禁

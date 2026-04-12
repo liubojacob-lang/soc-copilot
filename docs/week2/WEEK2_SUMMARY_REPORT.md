@@ -26,12 +26,12 @@ Week 2 成功实现了 **WebSocket 实时告警推送功能**，替代了原有�
 
 ## 🎯 Week 2 目标与结果
 
-| 目标 | 计划 | 实际 | 完成度 |
-|------|------|------|--------|
-| Day 1: 后端 WebSocket 验证 | 验证现有实现 | 完全验证并测试 | 100% |
-| Day 2: 前端客户端集成 | 集成 WebSocket 客户端 | 完全集成并修复序列化问题 | 100% |
-| Day 3: 实时更新和重连 | 实现自动重连和状态指示 | 聚合+重连+指示器全部完成 | 100% |
-| Day 4: 测试和文档 | 端到端测试+性能+文档 | 所有测试通过+文档完成 | 100% |
+| 目标                       | 计划                   | 实际                     | 完成度 |
+| -------------------------- | ---------------------- | ------------------------ | ------ |
+| Day 1: 后端 WebSocket 验证 | 验证现有实现           | 完全验证并测试           | 100%   |
+| Day 2: 前端客户端集成      | 集成 WebSocket 客户端  | 完全集成并修复序列化问题 | 100%   |
+| Day 3: 实时更新和重连      | 实现自动重连和状态指示 | 聚合+重连+指示器全部完成 | 100%   |
+| Day 4: 测试和文档          | 端到端测试+性能+文档   | 所有测试通过+文档完成    | 100%   |
 
 **总体完成度**: **100%** ✅
 
@@ -44,6 +44,7 @@ Week 2 成功实现了 **WebSocket 实时告警推送功能**，替代了原有�
 **任务**: 验证后端 WebSocket 功能完全正常
 
 **完成内容**:
+
 - ✅ WebSocket 服务器验证（`/ws/alerts` 端点）
 - ✅ JWT token 认证验证
 - ✅ 流服务集成验证
@@ -51,6 +52,7 @@ Week 2 成功实现了 **WebSocket 实时告警推送功能**，替代了原有�
 - ✅ 消息格式验证
 
 **测试结果**:
+
 ```bash
 ✅ Backend is running
 ✅ Token obtained
@@ -60,6 +62,7 @@ Week 2 成功实现了 **WebSocket 实时告警推送功能**，替代了原有�
 ```
 
 **关键文件**:
+
 - `tests/test_websocket_quick.sh` - Shell 快速测试
 - `tests/test_websocket_connection.py` - Python 完整测试
 - `docs/week2/DAY1_BACKEND_TEST_COMPLETE.md` - Day 1 报告
@@ -71,6 +74,7 @@ Week 2 成功实现了 **WebSocket 实时告警推送功能**，替代了原有�
 **任务**: 集成前端 WebSocket 客户端
 
 **完成内容**:
+
 - ✅ 环境变量配置（`NEXT_PUBLIC_WS_URL`）
 - ✅ WebSocket 客户端 URL 配置修复
 - ✅ Wazuh 页面更新为 WebSocket 版本
@@ -80,6 +84,7 @@ Week 2 成功实现了 **WebSocket 实时告警推送功能**，替代了原有�
 **关键修复**:
 
 **问题**: `datetime` 对象无法 JSON 序列化
+
 ```python
 # 修复前
 await push_alert(alert.dict())  # ❌ Error: Object of type datetime is not JSON serializable
@@ -90,6 +95,7 @@ await push_alert(alert_data)
 ```
 
 **测试结果**:
+
 ```
 ✅ SUCCESS! ALERT RECEIVED VIA WEBSOCKET!
    📋 Alert ID: test-2026-02-25T13:08:33.535838-0
@@ -100,6 +106,7 @@ await push_alert(alert_data)
 ```
 
 **关键文件**:
+
 - `frontend/.env.local` - 环境变量
 - `frontend/lib/wazuhWebSocket.ts` - URL 配置修复
 - `frontend/app/[locale]/wazuh/page.tsx` - 页面更新
@@ -112,6 +119,7 @@ await push_alert(alert_data)
 **任务**: 实现连接状态指示器和自动重连机制
 
 **完成内容**:
+
 - ✅ 告警聚合功能重新启用
 - ✅ 聚合告警 WebSocket 发送修复
 - ✅ 聚合窗口缩短至 10 秒（测试用）
@@ -120,6 +128,7 @@ await push_alert(alert_data)
 - ✅ 自动重连机制验证
 
 **聚合功能验证**:
+
 ```
 ✅ AGGREGATED ALERT RECEIVED!
    Key: test|test|203.0.113.45|9999
@@ -129,17 +138,20 @@ await push_alert(alert_data)
 ```
 
 **连接状态指示器**:
+
 - 🟢 **已连接**: 绿色背景 + Wifi 图标 + 脉冲动画
 - 🟡 **连接中**: 黄色背景 + 旋转加载器
 - 🔴 **已断开**: 红色背景 + WifiOff 图标
 
 **自动重连参数**:
+
 - 初始延迟: 3 秒
 - 退避系数: 2x（指数增长）
 - 最大尝试: 10 次
 - 最大延迟: ~1,536 秒
 
 **关键文件**:
+
 - `backend/services/wazuh_stream_service.py` - 聚合修复
 - `frontend/components/wazuh/WazuhAlertStream.tsx` - 状态指示器
 - `docs/week2/DAY3_RECONNECTION_COMPLETE.md` - Day 3 报告
@@ -151,6 +163,7 @@ await push_alert(alert_data)
 **任务**: 端到端测试、性能测试和文档更新
 
 **完成内容**:
+
 - ✅ 端到端集成测试（11/11 通过）
 - ✅ 性能测试（全部达标）
 - ✅ 用户文档创建
@@ -158,26 +171,27 @@ await push_alert(alert_data)
 
 **端到端测试结果**:
 
-| 测试类别 | 测试数 | 通过 | 失败 | 成功率 |
-|---------|--------|------|------|--------|
-| 认证 | 1 | 1 | 0 | 100% |
-| WebSocket 连接 | 3 | 3 | 0 | 100% |
-| 实时告警推送 | 3 | 3 | 0 | 100% |
-| 告警聚合 | 2 | 2 | 0 | 100% |
-| 统计 API | 1 | 1 | 0 | 100% |
-| 连接管理 | 1 | 1 | 0 | 100% |
-| **总计** | **11** | **11** | **0** | **100%** |
+| 测试类别       | 测试数 | 通过   | 失败  | 成功率   |
+| -------------- | ------ | ------ | ----- | -------- |
+| 认证           | 1      | 1      | 0     | 100%     |
+| WebSocket 连接 | 3      | 3      | 0     | 100%     |
+| 实时告警推送   | 3      | 3      | 0     | 100%     |
+| 告警聚合       | 2      | 2      | 0     | 100%     |
+| 统计 API       | 1      | 1      | 0     | 100%     |
+| 连接管理       | 1      | 1      | 0     | 100%     |
+| **总计**       | **11** | **11** | **0** | **100%** |
 
 **性能测试结果**:
 
-| 指标 | 目标 | 实际 | 状态 |
-|------|------|------|------|
-| 连接延迟 | < 100ms | 2.57ms 平均 | ✅ 优秀 |
-| 并发连接 | 20 | 20/20 成功 | ✅ 通过 |
+| 指标     | 目标       | 实际        | 状态    |
+| -------- | ---------- | ----------- | ------- |
+| 连接延迟 | < 100ms    | 2.57ms 平均 | ✅ 优秀 |
+| 并发连接 | 20         | 20/20 成功  | ✅ 通过 |
 | 消息吞吐 | > 10 msg/s | 16.36 msg/s | ✅ 通过 |
-| 资源使用 | 正常 | 正常 | ✅ 通过 |
+| 资源使用 | 正常       | 正常        | ✅ 通过 |
 
 **关键文件**:
+
 - `docs/WEBSOCKET_USER_GUIDE.md` - 用户使用指南
 - 本文档 - Week 2 总结报告
 
@@ -223,24 +237,28 @@ await push_alert(alert_data)
 ### 关键组件
 
 **1. WebSocket 服务器** (`backend/routers/websocket.py`)
+
 - 端点: `/ws/alerts`
 - 认证: JWT token
 - 频道: alerts, playbook_runs, system
 - 心跳: 60 秒超时
 
 **2. 连接管理器** (`ConnectionManager`)
+
 - 管理活跃连接
 - 频道订阅
 - 消息广播
 - 统计信息
 
 **3. 流服务** (`WazuhStreamService`)
+
 - 告警聚合（10 秒窗口）
 - 缓冲管理（最大 10,000 条）
 - 历史记录（1,000 条）
 - WebSocket 集成
 
 **4. WebSocket 客户端** (`WazuhWebSocketClient`)
+
 - 自动重连（指数退避）
 - 消息路由
 - 错误处理
@@ -289,10 +307,12 @@ await push_alert(alert_data)
 ### 后端 (Backend)
 
 **新增文件**:
+
 - `tests/test_websocket_quick.sh` - Shell 快速测试脚本
 - `tests/test_websocket_connection.py` - Python 测试套件
 
 **修改文件**:
+
 - `backend/services/wazuh_stream_service.py` - 聚合功能修复和改进
   - 重新启用告警聚合
   - 修复 JSON 序列化（`model_dump(mode='json')`）
@@ -300,17 +320,21 @@ await push_alert(alert_data)
   - 修复聚合告警发送逻辑
 
 **验证文件**:
+
 - `backend/routers/websocket.py` - WebSocket 服务器（已存在，验证通过）
 
 ### 前端 (Frontend)
 
 **修改文件**:
+
 - `frontend/.env.local` - 添加 WebSocket URL 配置
+
   ```bash
   NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws/alerts
   ```
 
 - `frontend/lib/wazuhWebSocket.ts` - 修复 URL 配置逻辑
+
   ```typescript
   // 优先使用环境变量
   const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
@@ -332,6 +356,7 @@ await push_alert(alert_data)
 ### 文档 (Documentation)
 
 **新增文件**:
+
 - `docs/week2/README_WEEK2.md` - Week 2 计划
 - `docs/week2/DAY1_BACKEND_TEST_COMPLETE.md` - Day 1 报告
 - `docs/week2/DAY2_FRONTEND_COMPLETE.md` - Day 2 报告
@@ -396,6 +421,7 @@ npm run dev
 ### 生产环境
 
 **环境变量**:
+
 ```bash
 # 后端
 export WAZUH_STREAM_ENABLED=true
@@ -406,6 +432,7 @@ NEXT_PUBLIC_WS_URL=wss://your-domain.com/ws/alerts
 ```
 
 **Nginx 配置**:
+
 ```nginx
 location /ws/ {
     proxy_pass http://backend:8000;

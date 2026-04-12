@@ -7,15 +7,18 @@
 ## 一、已完成的优化（按优先级实施）
 
 ### P0 功能/正确性
+
 - **编辑页保存接口**：已改为 `PATCH /api/playbook-definitions/{id}`，body 为 `{ dag: { nodes, edges } }`，编辑页使用 `api_v7.updateDefinition`。
 - **统一定义类 API**：前端 `api_v7` 与主 `api` 中与定义、执行、runs 相关的接口已统一为 `/api/playbook-definitions`（列表、获取、创建、更新、删除、run、runs/{id}、runs/{id}/nodes、cancel）。`getPlaybookDefinition` 也改为请求 playbook-definitions，并兼容返回中的 `dag`/`definition_json`。
 
 ### P1 安全
+
 - **生产环境配置校验**：新增 `ENVIRONMENT`、`CORS_ORIGINS`、`STRICT_PRODUCTION_CHECKS`。当 `ENVIRONMENT=production` 时启动会校验 JWT_SECRET、BOOTSTRAP_ADMIN_PASSWORD（及可选 SECRET_ENCRYPTION_KEY）；若 `STRICT_PRODUCTION_CHECKS=true` 则校验不通过会拒绝启动。
 - **CORS 可配置**：通过 `CORS_ORIGINS`（逗号分隔）配置允许来源，未配置时默认 `["*"]`，并启用 `allow_credentials=True`。
 - **密钥未配置**：SecretService 在密钥未配置时抛 ValueError；DAG 执行时加载 secrets 失败会静默返回空 dict，不中断执行。
 
 ### P1 功能
+
 - **Run 取消**：`/api/playbook-definitions/runs/{run_id}/cancel` 会查找当前正在执行的 scheduler 并调用 `scheduler.cancel()`，使执行循环与节点检查 `cancelled` 后退出，并将 run 状态更新为 `cancelled`。
 - **审批发起人**：DAGScheduler 接收 `created_by_user_id` 并传入 `NodeExecutionContext.context`；人工审批节点使用 `context.context.get("created_by_user_id")` 写入 `requested_by_user_id`。
 - **DAG 执行时加载 secrets**：在 `playbook_dag_scheduler` 中新增 `_load_secrets()`，从 SecretRepository 列出密钥并经 SecretService 解密后传入节点上下文，供 `{{secret.xxx}}` 等使用。
@@ -42,13 +45,13 @@
 
 以下为代码中标注的 TODO，建议按需实现或收敛行为：
 
-| 位置 | 内容 | 建议 |
-|------|------|------|
-| `services/playbook_dag_scheduler.py` | `secrets={},  # TODO: Load secrets` | 从 Secret 服务加载密钥并传入节点执行上下文，以支持 `{{secret.xxx}}`。 |
-| `routers/playbook_definitions.py` | `# TODO: Implement actual cancellation` | 实现 run 取消：置位取消标志，调度器/执行器检查后中止后续节点。 |
-| `playbook_engine/v7_dag/plugins/builtin_human_approval.py` | `requested_by_user_id=None,  # TODO: Get from auth context` | 从请求/认证上下文写入发起审批的用户 ID。 |
-| `services/playbook_executors/human_approval_executor.py` | `# TODO: Get from proper context` | 同上，从执行上下文或 request state 获取当前用户。 |
-| `services/playbook_executors/ti_lookup_otx_executor.py` | `# TODO: Call actual OTX service` | 若该 executor 仍在使用，应接入真实 OTX 查询逻辑，否则标注为废弃。 |
+| 位置                                                       | 内容                                                        | 建议                                                                  |
+| ---------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| `services/playbook_dag_scheduler.py`                       | `secrets={},  # TODO: Load secrets`                         | 从 Secret 服务加载密钥并传入节点执行上下文，以支持 `{{secret.xxx}}`。 |
+| `routers/playbook_definitions.py`                          | `# TODO: Implement actual cancellation`                     | 实现 run 取消：置位取消标志，调度器/执行器检查后中止后续节点。        |
+| `playbook_engine/v7_dag/plugins/builtin_human_approval.py` | `requested_by_user_id=None,  # TODO: Get from auth context` | 从请求/认证上下文写入发起审批的用户 ID。                              |
+| `services/playbook_executors/human_approval_executor.py`   | `# TODO: Get from proper context`                           | 同上，从执行上下文或 request state 获取当前用户。                     |
+| `services/playbook_executors/ti_lookup_otx_executor.py`    | `# TODO: Call actual OTX service`                           | 若该 executor 仍在使用，应接入真实 OTX 查询逻辑，否则标注为废弃。     |
 
 ---
 
@@ -149,13 +152,13 @@
 
 ## 优先级建议
 
-| 优先级 | 类别     | 项 |
-|--------|----------|----|
-| P0     | 功能/正确性 | 编辑页保存已修复；统一定义类 API 路径与 body，避免再次 404/405。 |
-| P1     | 安全     | 生产环境 JWT/密钥/bootstrap 密码校验；CORS 收紧；密钥未配置时的明确行为。 |
-| P1     | 功能     | Run 取消、审批/执行上下文中的用户 ID、DAG 执行时加载 secrets。 |
-| P2     | 测试     | 核心服务与关键 API 的单元/集成测试与 CI。 |
-| P2     | 体验     | 错误提示与加载状态；PATCH 空 body 处理。 |
-| P3     | 运维     | 健康检查增强、trace_id、限流。 |
+| 优先级 | 类别        | 项                                                                        |
+| ------ | ----------- | ------------------------------------------------------------------------- |
+| P0     | 功能/正确性 | 编辑页保存已修复；统一定义类 API 路径与 body，避免再次 404/405。          |
+| P1     | 安全        | 生产环境 JWT/密钥/bootstrap 密码校验；CORS 收紧；密钥未配置时的明确行为。 |
+| P1     | 功能        | Run 取消、审批/执行上下文中的用户 ID、DAG 执行时加载 secrets。            |
+| P2     | 测试        | 核心服务与关键 API 的单元/集成测试与 CI。                                 |
+| P2     | 体验        | 错误提示与加载状态；PATCH 空 body 处理。                                  |
+| P3     | 运维        | 健康检查增强、trace_id、限流。                                            |
 
 以上内容会随代码变更而更新，建议与版本发布或迭代计划一起回顾。

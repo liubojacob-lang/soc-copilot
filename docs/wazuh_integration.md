@@ -34,12 +34,12 @@ The Wazuh SIEM integration enables SOC Copilot to receive real-time security eve
 
 ### Severity Mapping
 
-| Wazuh Rule Level | SOC Severity | Queue Priority | Response Time |
-|-----------------|--------------|----------------|---------------|
-| 0-3 | Low | Low | Within 24 hours |
-| 4-7 | Medium | Medium | Within 8 hours |
-| 8-12 | High | High | Within 1 hour |
-| 13-15 | Critical | Critical | Immediate |
+| Wazuh Rule Level | SOC Severity | Queue Priority | Response Time   |
+| ---------------- | ------------ | -------------- | --------------- |
+| 0-3              | Low          | Low            | Within 24 hours |
+| 4-7              | Medium       | Medium         | Within 8 hours  |
+| 8-12             | High         | High           | Within 1 hour   |
+| 13-15            | Critical     | Critical       | Immediate       |
 
 ---
 
@@ -215,6 +215,7 @@ WAZUH_POLL_INTERVAL=60
 ```
 
 **Trade-offs**:
+
 - Lower interval (15-30s): Faster alert delivery, higher API load
 - Higher interval (60-120s): Slower alert delivery, lower API load
 
@@ -228,6 +229,7 @@ WAZUH_BATCH_SIZE=200
 ```
 
 **Recommendations**:
+
 - Small deployments (<50 agents): 50-100 alerts
 - Medium deployments (50-200 agents): 100-200 alerts
 - Large deployments (>200 agents): 200-500 alerts
@@ -242,6 +244,7 @@ WAZUH_LOOKBACK_MINUTES=60
 ```
 
 **Use cases**:
+
 - Fresh installation: 5-15 minutes (avoid alert flood)
 - Existing deployment: 60-1440 minutes (catch up on recent alerts)
 
@@ -258,6 +261,7 @@ GET /api/v1/wazuh/health
 ```
 
 **Response**:
+
 ```json
 {
   "healthy": true,
@@ -275,6 +279,7 @@ GET /api/v1/wazuh/agents?limit=100&status_filter=active
 ```
 
 **Response**:
+
 ```json
 [
   {
@@ -282,7 +287,7 @@ GET /api/v1/wazuh/agents?limit=100&status_filter=active
     "name": "prod-server-01",
     "ip": "10.0.0.5",
     "status": "active",
-    "os": {"name": "Ubuntu", "version": "22.04"},
+    "os": { "name": "Ubuntu", "version": "22.04" },
     "version": "Wazuh v4.8.0"
   }
 ]
@@ -329,6 +334,7 @@ GET /api/v1/wazuh/receiver/stats
 ```
 
 **Response**:
+
 ```json
 {
   "is_running": true,
@@ -367,6 +373,7 @@ GET /api/v1/wazuh/integration/status
 ```
 
 **Response**:
+
 ```json
 {
   "timestamp": "2026-02-24T12:00:00Z",
@@ -400,6 +407,7 @@ python test_wazuh_integration.py
 ```
 
 **Test Coverage**:
+
 1. Wazuh API connectivity
 2. Alert mapper functionality
 3. End-to-end integration (Wazuh → Queue → Notification)
@@ -457,15 +465,18 @@ Check your Feishu/Slack/Email for the test alert notification
 #### Issue 1: "Wazuh client not initialized"
 
 **Symptoms**:
+
 - Logs show "Wazuh client not initialized, cannot start receiver"
 - API returns 503 Service Unavailable
 
 **Causes**:
+
 - `WAZUH_ENABLED=false` or not set
 - Missing required environment variables
 - Configuration validation failed
 
 **Solutions**:
+
 1. Check `.env` file has all required variables
 2. Verify `WAZUH_ENABLED=true`
 3. Check backend logs for specific error
@@ -474,15 +485,18 @@ Check your Feishu/Slack/Email for the test alert notification
 #### Issue 2: "Authentication failed: HTTP 401"
 
 **Symptoms**:
+
 - Logs show authentication errors
 - Health check returns "Cannot connect to Wazuh API"
 
 **Causes**:
+
 - Incorrect username/password
 - Wazuh API not running
 - Account locked or disabled
 
 **Solutions**:
+
 1. Verify credentials in Wazuh dashboard
 2. Test credentials manually:
    ```bash
@@ -496,15 +510,18 @@ Check your Feishu/Slack/Email for the test alert notification
 #### Issue 3: "Connection error: SSL verification failed"
 
 **Symptoms**:
+
 - SSL certificate errors in logs
 - Cannot connect to Wazuh API
 
 **Causes**:
+
 - Self-signed certificate
 - Certificate not trusted
 - Certificate expired
 
 **Solutions**:
+
 1. If using self-signed cert, disable verification:
    ```bash
    WAZUH_VERIFY_SSL=false
@@ -518,15 +535,18 @@ Check your Feishu/Slack/Email for the test alert notification
 #### Issue 4: "No alerts received"
 
 **Symptoms**:
+
 - Receiver running but no alerts published
 - Queue stats show 0 messages
 
 **Causes**:
+
 - No agents generating alerts
 - Wazuh rules not configured
 - Lookback window too small
 
 **Solutions**:
+
 1. Check Wazuh dashboard for alerts
 2. Verify agents are connected and active:
    ```bash
@@ -538,15 +558,18 @@ Check your Feishu/Slack/Email for the test alert notification
 #### Issue 5: "High error rate in receiver stats"
 
 **Symptoms**:
+
 - `success_rate` < 90%
 - `total_errors` increasing
 
 **Causes**:
+
 - Network instability
 - Wazuh API rate limiting
 - Malformed alerts from Wazuh
 
 **Solutions**:
+
 1. Check network connectivity
 2. Increase `WAZUH_POLL_INTERVAL` to reduce API load
 3. Review error logs for specific issues:
@@ -578,16 +601,19 @@ docker-compose -f docker-compose.prod.yml logs -f backend | grep -i wazuh
 If you have >200 agents or >1000 alerts/hour:
 
 1. **Increase poll interval** (reduce API load):
+
    ```bash
    WAZUH_POLL_INTERVAL=60
    ```
 
 2. **Increase batch size** (fetch more per poll):
+
    ```bash
    WAZUH_BATCH_SIZE=500
    ```
 
 3. **Scale alert workers** (process alerts faster):
+
    ```bash
    # In docker-compose.prod.yml
    alert-worker:

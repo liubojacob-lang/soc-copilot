@@ -53,16 +53,16 @@ edges:
 
 ## 节点类型
 
-| 类型 | 说明 |
-|------|------|
-| `extract_iocs` | 从日志提取 IOC |
-| `ti_lookup_otx` | 查询 OTX |
-| `http_request` | HTTP 请求 |
-| `decision` | 条件分支 |
-| `send_email` | 发送邮件 |
-| `slack_notify` | Slack 通知 |
-| `human_approval` | 人工审批 |
-| `generate_report` | 生成报告 |
+| 类型              | 说明           |
+| ----------------- | -------------- |
+| `extract_iocs`    | 从日志提取 IOC |
+| `ti_lookup_otx`   | 查询 OTX       |
+| `http_request`    | HTTP 请求      |
+| `decision`        | 条件分支       |
+| `send_email`      | 发送邮件       |
+| `slack_notify`    | Slack 通知     |
+| `human_approval`  | 人工审批       |
+| `generate_report` | 生成报告       |
 
 ## 状态机
 
@@ -74,10 +74,10 @@ PENDING → RUNNING → SUCCESS / FAILED / SKIPPED
 
 ## dry_run vs run
 
-| 模式 | 说明 | 适用场景 |
-|------|------|----------|
+| 模式      | 说明                   | 适用场景           |
+| --------- | ---------------------- | ------------------ |
 | `dry_run` | 模拟执行，不发外部请求 | 测试剧本、验证逻辑 |
-| `run` | 实际执行 | 生产环境响应 |
+| `run`     | 实际执行               | 生产环境响应       |
 
 ## 队列管理器
 
@@ -85,7 +85,7 @@ PENDING → RUNNING → SUCCESS / FAILED / SKIPPED
 class RunQueueManager:
     def __init__(self, max_concurrent: int = 3):
         self.semaphore = asyncio.Semaphore(max_concurrent)
-    
+
     async def submit(self, run_id: str):
         async with self.semaphore:
             await execute_playbook(run_id)

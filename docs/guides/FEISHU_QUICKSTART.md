@@ -12,6 +12,7 @@ python configure_feishu.py
 ```
 
 **功能**:
+
 - ✅ 逐步引导配置
 - ✅ 自动验证 URL 格式
 - ✅ 自动保存到 .env 文件
@@ -30,6 +31,7 @@ python test_feishu_quick.py https://your-webhook-url-here
 ```
 
 **自定义消息**:
+
 ```bash
 python test_feishu_quick.py \
   https://your-webhook-url-here \
@@ -162,12 +164,14 @@ curl -X POST http://localhost:8000/api/v1/notifications/test
 ### Q1: 没有收到测试消息
 
 **检查清单**:
+
 1. Webhook URL 是否完整复制
 2. 机器人是否在群聊中
 3. 网络连接是否正常
 4. URL 格式是否正确 (应该以 https:// 开头)
 
 **解决方法**:
+
 ```bash
 # 重新获取 Webhook URL
 python configure_feishu.py
@@ -176,11 +180,13 @@ python configure_feishu.py
 ### Q2: 提示 URL 格式错误
 
 **正确格式**:
+
 ```
 https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 **错误格式**:
+
 ```
 ❌ https://open.feishu.cn/...
 ❌ http://open.feishu.cn/...
@@ -190,6 +196,7 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx
 ### Q3: 配置保存后无法加载
 
 **检查**:
+
 ```bash
 # 查看环境变量
 echo $FEISHU_WEBHOOK_URL
@@ -199,6 +206,7 @@ cat .env | grep FEISHU
 ```
 
 **解决**:
+
 ```bash
 # 手动导出环境变量
 export FEISHU_WEBHOOK_URL=$(grep FEISHU_WEBHOOK_URL .env | cut -d'=' -f2)
@@ -219,16 +227,19 @@ export FEISHU_WEBHOOK_URL=$(grep FEISHU_WEBHOOK_URL .env | cut -d'=' -f2)
 配置成功后，您将能够：
 
 ✅ **接收实时告警**
+
 - 安全事件实时推送
 - 格式化的告警卡片
 - 可点击的详情链接
 
 ✅ **多渠道支持**
+
 - 飞书群聊
 - Slack (可选)
 - Email (可选)
 
 ✅ **高可靠性**
+
 - 消息持久化
 - 自动重试
 - 优先级处理

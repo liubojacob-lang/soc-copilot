@@ -38,15 +38,18 @@ docs/
 ## 📝 文档管理规定
 
 ### 核心规则
+
 **所有文档必须统一放在 `docs/` 文件夹里**
 
 ### 文件夹结构
+
 - `docs/week1/` - Week 1 文档
 - `docs/week2/` - Week 2 文档
 - `docs/guides/` - 通用指南
 - `docs/reports/` - 通用报告
 
 ### 命名规范
+
 - Week 文档: `WEEK_1_*.md` 或 `WEEK1_*.md`
 - 计划文档: `*_PLAN.md`
 - 报告文档: `*_REPORT.md`
@@ -68,6 +71,7 @@ docs/
 ## 📞 快速参考
 
 ### 查找 Week 1 文档
+
 ```bash
 # 列出所有 Week 1 文档
 ls docs/week1/
@@ -80,6 +84,7 @@ ls docs/week1/reports/
 ```
 
 ### 创建新文档时
+
 ```bash
 # Week 文档
 touch docs/week2/WEEK_2_PLAN.md

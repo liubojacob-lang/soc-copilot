@@ -21,10 +21,10 @@ class AlertInput(BaseModel):
 async def analyze_alert(input_data: AlertInput) -> Dict[str, any]:
     """
     分析告警内容
-    
+
     Args:
         input_data: 告警输入
-        
+
     Returns:
         分析结果字典
     """
@@ -39,7 +39,7 @@ async def analyze_alert(input_data: AlertInput) -> Dict[str, any]:
 interface Alert {
   id: string;
   name: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  severity: "critical" | "high" | "medium" | "low";
 }
 
 async function fetchAlert(id: string): Promise<Alert> {
@@ -62,15 +62,15 @@ async function fetchAlert(id: string): Promise<Alert> {
 
 ### Type 类型
 
-| 类型 | 说明 |
-|------|------|
-| `feat` | 新功能 |
-| `fix` | Bug 修复 |
-| `docs` | 文档更新 |
-| `refactor` | 重构 |
-| `perf` | 性能优化 |
-| `test` | 测试相关 |
-| `chore` | 构建/工具 |
+| 类型       | 说明      |
+| ---------- | --------- |
+| `feat`     | 新功能    |
+| `fix`      | Bug 修复  |
+| `docs`     | 文档更新  |
+| `refactor` | 重构      |
+| `perf`     | 性能优化  |
+| `test`     | 测试相关  |
+| `chore`    | 构建/工具 |
 
 ### 示例
 
@@ -127,34 +127,39 @@ git log -p | grep -i "api_key\|password\|secret"
 ## 安全报告
 
 如发现安全漏洞：
+
 1. **不要**在公开 Issue 中报告
 2. 发送邮件至 `security@soc-copilot.dev`
 
 ## 文档写作规范
 
-```markdown
+````markdown
 # 标题（必须使用 #）
 
 ## 适用对象（必须有）
+
 描述文档的目标读者。
 
 ## 目标（必须有）
+
 描述文档要解决的问题。
 
 ## 内容主体
+
 使用二级标题（##）组织内容。
 
 ### 代码示例（必须有）
+
 使用 ``` 包裹代码块。
-```
+````
 
 ## 社区资源
 
-| 资源 | URL |
-|------|-----|
-| GitHub Issues | https://github.com/org/soc-copilot/issues |
-| 讨论区 | https://github.com/org/soc-copilot/discussions |
-| Discord | https://discord.gg/soc-copilot |
+| 资源          | URL                                            |
+| ------------- | ---------------------------------------------- |
+| GitHub Issues | https://github.com/org/soc-copilot/issues      |
+| 讨论区        | https://github.com/org/soc-copilot/discussions |
+| Discord       | https://discord.gg/soc-copilot                 |
 
 ---
 

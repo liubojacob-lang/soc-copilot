@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/levent/.claude/skills/**)",
+      "Bash(ls *)",
+      "Bash(cat)",
+      "Bash(do)",
+      "Bash(continue)",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(else)",
+      "Bash(done)",
+      "Bash(eof)",
+      "Bash(chmod *)",
+      "Bash(bash *)",
+      "Bash(sudo *)",
+      "Bash(mkdir *)",
+      "Bash(python *)"
+    ]
+  },
+  "$version": 3
+}

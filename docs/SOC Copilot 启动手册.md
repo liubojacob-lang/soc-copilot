@@ -70,8 +70,8 @@ killall -9 node     # 前端
 
 ## 服务地址
 
-| 服务 | 地址 |
-|------|------|
-| 后端 API | http://localhost:8000 |
-| 前端界面 | http://localhost:3003 |
+| 服务     | 地址                       |
+| -------- | -------------------------- |
+| 后端 API | http://localhost:8000      |
+| 前端界面 | http://localhost:3003      |
 | API 文档 | http://localhost:8000/docs |

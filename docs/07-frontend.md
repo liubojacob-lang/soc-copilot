@@ -52,18 +52,18 @@ export async function executePlaybook(id: string, mode: "dry_run" | "run") {
 使用 React Flow 实现：
 
 ```tsx
-import ReactFlow from 'reactflow';
+import ReactFlow from "reactflow";
 
 export function DAGEditor({ definition, onSave }) {
   const [nodes, setNodes] = useNodesState(definition.nodes);
   const [edges, setEdges] = useEdgesState(definition.edges);
-  
+
   return (
     <div style={{ height: 500 }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onConnect={(params) => setEdges((eds) => addEdge(params, eds))}
+        onConnect={params => setEdges(eds => addEdge(params, eds))}
       />
     </div>
   );
@@ -118,6 +118,7 @@ export const useAlertStore = create<AlertStore>((set) => ({
 ```
 
 ## Alert: alert }),
+
 样式规范
 
 使用 Tailwind CSS：

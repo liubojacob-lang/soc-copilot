@@ -25,12 +25,12 @@ sqlite3 data/app.db "SELECT * FROM playbook_runs WHERE id='RUN-ID';"
 
 ### 常见原因
 
-| 原因 | 解决方案 |
-|------|----------|
-| 数据库连接超时 | 增加连接池大小 |
-| 外部 API 调用失败 | 检查网络/防火墙 |
+| 原因                   | 解决方案            |
+| ---------------------- | ------------------- |
+| 数据库连接超时         | 增加连接池大小      |
+| 外部 API 调用失败      | 检查网络/防火墙     |
 | 剧本定义 JSON 格式错误 | 验证 YAML/JSON 语法 |
-| 节点配置缺失 | 检查节点必填字段 |
+| 节点配置缺失           | 检查节点必填字段    |
 
 ## 2. 前端 Maximum update depth exceeded
 
@@ -39,7 +39,7 @@ sqlite3 data/app.db "SELECT * FROM playbook_runs WHERE id='RUN-ID';"
 ```tsx
 // ❌ 错误写法
 useEffect(() => {
-  setData(data);  // 无限循环
+  setData(data); // 无限循环
 }, [data]);
 
 // ✅ 正确写法
@@ -65,11 +65,11 @@ curl -v https://otx.alienvault.com
 
 ### 常见问题
 
-| 问题 | 原因 | 解决方案 |
-|------|------|----------|
-| 401 Unauthorized | API Key 无效 | 重新配置 Key |
+| 问题                  | 原因         | 解决方案       |
+| --------------------- | ------------ | -------------- |
+| 401 Unauthorized      | API Key 无效 | 重新配置 Key   |
 | 429 Too Many Requests | 超过速率限制 | 等待或升级套餐 |
-| Timeout | 网络问题 | 检查防火墙 |
+| Timeout               | 网络问题     | 检查防火墙     |
 
 ## 4. 数据库问题
 
@@ -120,7 +120,7 @@ app.add_middleware(
 
 ## 日志位置汇总
 
-| 服务 | 日志文件 | 位置 |
-|------|----------|------|
-| 后端 | backend.log | backend/ |
+| 服务 | 日志文件     | 位置      |
+| ---- | ------------ | --------- |
+| 后端 | backend.log  | backend/  |
 | 前端 | frontend.log | frontend/ |

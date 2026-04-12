@@ -9,6 +9,7 @@
 ## 📊 Week 1 完成情况
 
 ### ✅ 已完成
+
 - [x] 后端流服务 (HTTP API)
 - [x] 后端 WebSocket 服务器 (已有完整实现)
 - [x] 前端告警流页面 (HTTP 轮询版本)
@@ -16,6 +17,7 @@
 - [x] 基本测试通过
 
 ### ⏳ 待完善
+
 - [ ] 前端 WebSocket 客户端集成
 - [ ] 实时统计自动更新
 - [ ] 告警列表实时追加
@@ -31,6 +33,7 @@
 **目标**: 验证后端 WebSocket 功能完全正常
 
 **任务**:
+
 - [ ] 1.1 测试 WebSocket 连接
   - [ ] 使用 wscat 或 websocat 测试连接
   - [ ] 验证 token 认证
@@ -46,6 +49,7 @@
 - [ ] 1.4 创建测试脚本
 
 **预期成果**:
+
 - ✅ 后端 WebSocket 功能验证通过
 - ✅ 告警实时广播正常工作
 
@@ -56,6 +60,7 @@
 **目标**: 实现前端 WebSocket 连接和消息接收
 
 **任务**:
+
 - [ ] 2.1 修复前端 WebSocket 配置
   - [ ] 修复环境变量配置
   - [ ] 修复 WebSocket URL
@@ -74,6 +79,7 @@
   - [ ] 用户提示
 
 **预期成果**:
+
 - ✅ 前端可以连接 WebSocket
 - ✅ 可以接收告警消息
 - ✅ 告警自动显示在页面上
@@ -85,6 +91,7 @@
 **目标**: 实现完整的实时用户体验
 
 **任务**:
+
 - [ ] 3.1 实时统计更新
   - [ ] 统计数字自动更新
   - [ ] 颜色动态变化
@@ -104,6 +111,7 @@
   - [ ] 手动重连按钮
 
 **预期成果**:
+
 - ✅ 完整的实时更新体验
 - ✅ 稳定的连接管理
 - ✅ 友好的用户提示
@@ -115,6 +123,7 @@
 **目标**: 完成测试验证和文档编写
 
 **任务**:
+
 - [ ] 4.1 功能测试
   - [ ] 单客户端测试
   - [ ] 多客户端测试
@@ -134,6 +143,7 @@
   - [ ] 性能优化
 
 **预期成果**:
+
 - ✅ 所有测试通过
 - ✅ 文档齐全
 - ✅ Week 2 完成
@@ -143,6 +153,7 @@
 ## 📁 文件结构
 
 ### 新建文件
+
 ```
 tests/
 ├── test_websocket_connection.py   # WebSocket 连接测试
@@ -157,6 +168,7 @@ docs/week2/
 ```
 
 ### 修改文件
+
 ```
 frontend/
 ├── lib/wazuhWebSocket.ts           # 修复配置
@@ -172,6 +184,7 @@ backend/
 ## 🧪 测试计划
 
 ### 单元测试
+
 ```python
 # WebSocket 连接测试
 def test_websocket_connection():
@@ -190,6 +203,7 @@ def test_broadcast_alert():
 ```
 
 ### 集成测试
+
 ```bash
 # 1. 启动后端
 cd backend && python main.py
@@ -206,12 +220,13 @@ python tests/test_websocket_broadcast.py
 ```
 
 ### 浏览器测试
+
 ```javascript
 // 浏览器控制台
-const ws = new WebSocket('ws://localhost:8000/ws/alerts?token=' + token);
+const ws = new WebSocket("ws://localhost:8000/ws/alerts?token=" + token);
 
-ws.onmessage = (event) => {
-  console.log('收到消息:', event.data);
+ws.onmessage = event => {
+  console.log("收到消息:", event.data);
 };
 ```
 
@@ -220,6 +235,7 @@ ws.onmessage = (event) => {
 ## 🎯 验收标准
 
 ### 功能验收
+
 - [ ] WebSocket 连接成功率 > 99%
 - [ ] 告警实时推送延迟 < 1 秒
 - [ ] 支持 10+ 并发连接
@@ -227,11 +243,13 @@ ws.onmessage = (event) => {
 - [ ] 统计数据实时更新
 
 ### 性能验收
+
 - [ ] 内存使用稳定（无泄漏）
 - [ ] CPU 使用率正常
 - [ ] 长时间运行稳定（24 小时+）
 
 ### 用户体验验收
+
 - [ ] 连接状态清晰可见
 - [ ] 断线有友好提示
 - [ ] 重连无需手动操作
@@ -242,12 +260,14 @@ ws.onmessage = (event) => {
 ## 📊 Week 2 成功标准
 
 ### 核心目标
+
 ✅ **后端 WebSocket**: 已有完整实现，验证即可
 ✅ **前端 WebSocket 客户端**: 完整实现
 ✅ **实时推送功能**: 告警实时显示
 ✅ **自动重连**: 断线自动恢复
 
 ### 交付物
+
 - [ ] 前端 WebSocket 集成完成
 - [ ] 实时更新功能实现
 - [ ] 测试脚本编写完成
@@ -271,4 +291,4 @@ ws.onmessage = (event) => {
 
 **责任人**: SOC Copilot Team
 
-🎯 **目标**: 完整的 WebSocket 实时推送功能！**
+🎯 **目标**: 完整的 WebSocket 实时推送功能！\*\*

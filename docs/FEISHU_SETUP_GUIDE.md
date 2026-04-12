@@ -47,12 +47,14 @@
 #### 方法 A: 使用环境变量 (推荐)
 
 1. **编辑 `.env` 文件**
+
    ```bash
    cd /Users/levent/Desktop/sec
    nano .env
    ```
 
 2. **添加飞书配置**
+
    ```bash
    # 飞书通知配置
    FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -224,11 +226,13 @@ def generate_sign(secret: str) -> str:
 ### 问题 1: 没有收到消息
 
 **可能原因**:
+
 1. Webhook URL 配置错误
 2. 网络连接问题
 3. 机器人已被移除
 
 **解决方法**:
+
 ```bash
 # 1. 验证 Webhook URL 格式
 echo $FEISHU_WEBHOOK_URL
@@ -248,15 +252,16 @@ curl -X POST $FEISHU_WEBHOOK_URL \
 
 **常见错误**:
 
-| 错误信息 | 原因 | 解决方法 |
-|---------|------|---------|
-| `webhook url invalid` | URL 错误 | 检查 URL 是否完整复制 |
-| `sign verify fail` | 签名验证失败 | 检查签名密钥配置 |
-| `rate limit` | 发送频率过高 | 降低发送频率 |
+| 错误信息              | 原因         | 解决方法              |
+| --------------------- | ------------ | --------------------- |
+| `webhook url invalid` | URL 错误     | 检查 URL 是否完整复制 |
+| `sign verify fail`    | 签名验证失败 | 检查签名密钥配置      |
+| `rate limit`          | 发送频率过高 | 降低发送频率          |
 
 ### 问题 3: Docker 环境无法发送
 
 **检查步骤**:
+
 ```bash
 # 1. 检查环境变量是否传递到容器
 docker exec -it soc-copilot-alert-worker env | grep FEISHU
@@ -306,6 +311,7 @@ docker exec -it soc-copilot-alert-worker \
 **需要帮助?**
 
 如果您在配置过程中遇到问题：
+
 1. 检查 Webhook URL 是否正确
 2. 使用 curl 测试 URL 有效性
 3. 查看日志输出了解详细错误
@@ -313,4 +319,4 @@ docker exec -it soc-copilot-alert-worker \
 
 ---
 
-*配置指南最后更新: 2026-02-24*
+_配置指南最后更新: 2026-02-24_

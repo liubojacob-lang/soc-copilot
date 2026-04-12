@@ -14,12 +14,14 @@
 ## ✅ 完成任务
 
 ### 1. 过滤规则 Schema 设计 ✅
+
 - ✅ 定义 FilterRule 数据模型
 - ✅ 支持多种过滤条件（严重级别、事件类型、代理、源 IP、内容）
 - ✅ 优先级和启用/禁用控制
 - ✅ 速率限制配置
 
 ### 2. 服务器端过滤引擎 ✅
+
 - ✅ 实现 MessageFilterEngine 类
 - ✅ 实现 FilterService 服务
 - ✅ 规则匹配逻辑（优先级排序）
@@ -27,6 +29,7 @@
 - ✅ 速率限制功能
 
 ### 3. 过滤管理 API ✅
+
 - ✅ GET /api/v1/websocket/filters - 获取过滤器
 - ✅ PUT /api/v1/websocket/filters - 设置过滤器
 - ✅ DELETE /api/v1/websocket/filters - 删除过滤器
@@ -34,6 +37,7 @@
 - ✅ POST /api/v1/websocket/filters/test - 测试消息
 
 ### 4. 前端过滤配置 UI ✅
+
 - ✅ FilterConfig React 组件
 - ✅ 规则添加/删除/编辑
 - ✅ 严重级别、事件类型选择
@@ -47,6 +51,7 @@
 ### 数据模型
 
 **FilterRule** - 过滤规则:
+
 ```python
 class FilterRule(BaseModel):
     name: str                    # 规则名称
@@ -64,6 +69,7 @@ class FilterRule(BaseModel):
 ### 过滤引擎
 
 **规则评估**:
+
 ```python
 def matches(message_data: Dict[str, Any]) -> bool:
     # 检查严重级别
@@ -79,6 +85,7 @@ def matches(message_data: Dict[str, Any]) -> bool:
 ```
 
 **优先级排序**:
+
 ```python
 sorted_rules = sorted(active_rules, key=lambda r: r.priority, reverse=True)
 for rule in sorted_rules:
@@ -88,13 +95,13 @@ for rule in sorted_rules:
 
 ### API 端点
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/websocket/filters` | 获取用户过滤器 |
-| PUT | `/api/v1/websocket/filters` | 设置过滤器 |
-| DELETE | `/api/v1/websocket/filters` | 删除过滤器 |
-| GET | `/api/v1/websocket/filters/stats` | 获取统计 |
-| POST | `/api/v1/websocket/filters/test` | 测试消息 |
+| 方法   | 路径                              | 描述           |
+| ------ | --------------------------------- | -------------- |
+| GET    | `/api/v1/websocket/filters`       | 获取用户过滤器 |
+| PUT    | `/api/v1/websocket/filters`       | 设置过滤器     |
+| DELETE | `/api/v1/websocket/filters`       | 删除过滤器     |
+| GET    | `/api/v1/websocket/filters/stats` | 获取统计       |
+| POST   | `/api/v1/websocket/filters/test`  | 测试消息       |
 
 ---
 
@@ -147,16 +154,19 @@ for rule in sorted_rules:
 ### 新增文件
 
 **后端**:
+
 - `backend/models/message_filters.py` - 过滤规则数据模型（330 行）
 - `backend/services/message_filter.py` - 过滤引擎服务（350 行）
 - `backend/routers/websocket_filters.py` - API 路由（280 行）
 
 **前端**:
+
 - `frontend/components/websocket/FilterConfig.tsx` - 过滤配置 UI（300+ 行）
 
 ### 修改文件
 
 **后端**:
+
 - `backend/main.py` - 注册新路由器
 
 ---
@@ -164,12 +174,14 @@ for rule in sorted_rules:
 ## 🎨 前端 UI 特性
 
 ### 规则列表
+
 - 按优先级排序显示
 - 启用/禁用状态指示
 - 规则详情展示
 - 删除按钮
 
 ### 规则配置
+
 - 名称和描述
 - 优先级设置
 - 严重级别选择
@@ -178,6 +190,7 @@ for rule in sorted_rules:
 - 添加按钮
 
 ### 实时反馈
+
 - 成功/错误消息
 - 保存状态指示
 - 清空所有按钮
@@ -217,11 +230,11 @@ Message → Check Rate Limit → Check Filters (by priority) → Send/Block
 
 ### 过滤效果
 
-| 场景 | 过滤前 | 过滤后 | 减少 |
-|------|--------|--------|------|
-| 全部告警 | 1000 msg/h | 100 msg/h | 90% |
-| 低优先级告警 | 500 msg/h | 0 msg/h | 100% |
-| 特定事件 | 200 msg/h | 50 msg/h | 75% |
+| 场景         | 过滤前     | 过滤后    | 减少 |
+| ------------ | ---------- | --------- | ---- |
+| 全部告警     | 1000 msg/h | 100 msg/h | 90%  |
+| 低优先级告警 | 500 msg/h  | 0 msg/h   | 100% |
+| 特定事件     | 200 msg/h  | 50 msg/h  | 75%  |
 
 ---
 
@@ -271,12 +284,14 @@ class FilterRuleDB(Base):
 ## 📋 下一步行动
 
 ### Day 3: 监控和告警
+
 - [ ] 设计监控 metrics
 - [ ] 实现监控数据收集
 - [ ] 创建监控仪表板
 - [ ] 配置告警规则
 
 ### Day 4: 性能优化
+
 - [ ] 实现消息压缩
 - [ ] 批量发送优化
 - [ ] 连接复用
@@ -286,12 +301,12 @@ class FilterRuleDB(Base):
 
 ## 🎯 Day 2 成功标准
 
-| 标准 | 目标 | 实际 | 状态 |
-|------|------|------|------|
-| Schema 设计 | ✅ | ✅ | ✅ 达标 |
-| 过滤引擎 | ✅ | ✅ | ✅ 达标 |
-| API 实现 | ✅ | ✅ | ✅ 达标 |
-| 前端 UI | ✅ | ✅ | ✅ 达标 |
+| 标准        | 目标 | 实际 | 状态    |
+| ----------- | ---- | ---- | ------- |
+| Schema 设计 | ✅   | ✅   | ✅ 达标 |
+| 过滤引擎    | ✅   | ✅   | ✅ 达标 |
+| API 实现    | ✅   | ✅   | ✅ 达标 |
+| 前端 UI     | ✅   | ✅   | ✅ 达标 |
 
 **Day 2 完成度**: **100%** ✅
 

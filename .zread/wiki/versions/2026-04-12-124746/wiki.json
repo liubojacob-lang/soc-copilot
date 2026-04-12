@@ -1,0 +1,219 @@
+{
+  "id": "2026-04-12-124746",
+  "generated_at": "2026-04-12T04:47:46.722299Z",
+  "language": "zh",
+  "pages": [
+    {
+      "slug": "1-xiang-mu-gai-lan-soc-copilot-zhi-neng-an-quan-yun-ying-ping-tai-jie-shao",
+      "title": "项目概览：SOC Copilot 智能安全运营平台介绍",
+      "file": "1-xiang-mu-gai-lan-soc-copilot-zhi-neng-an-quan-yun-ying-ping-tai-jie-shao.md",
+      "section": "快速上手",
+      "level": "Beginner"
+    },
+    {
+      "slug": "2-kuai-su-qi-dong-huan-jing-da-jian-yu-shou-ci-yun-xing-zhi-nan",
+      "title": "快速启动：环境搭建与首次运行指南",
+      "file": "2-kuai-su-qi-dong-huan-jing-da-jian-yu-shou-ci-yun-xing-zhi-nan.md",
+      "section": "快速上手",
+      "level": "Beginner"
+    },
+    {
+      "slug": "3-xiang-mu-mu-lu-jie-gou-yu-mo-kuai-zhi-ze-su-cha",
+      "title": "项目目录结构与模块职责速查",
+      "file": "3-xiang-mu-mu-lu-jie-gou-yu-mo-kuai-zhi-ze-su-cha.md",
+      "section": "快速上手",
+      "level": "Beginner"
+    },
+    {
+      "slug": "4-docker-compose-jian-bu-shu-kai-fa-yu-sheng-chan-mo-shi",
+      "title": "Docker Compose 一键部署（开发与生产模式）",
+      "file": "4-docker-compose-jian-bu-shu-kai-fa-yu-sheng-chan-mo-shi.md",
+      "section": "快速上手",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "5-qian-hou-duan-zheng-ti-jia-gou-yu-shu-ju-liu-she-ji",
+      "title": "前后端整体架构与数据流设计",
+      "file": "5-qian-hou-duan-zheng-ti-jia-gou-yu-shu-ju-liu-she-ji.md",
+      "section": "深入理解",
+      "group": "系统架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "6-hou-duan-fen-ceng-jia-gou-lu-you-fu-wu-cang-chu-yu-mo-xing",
+      "title": "后端分层架构：路由、服务、仓储与模型",
+      "file": "6-hou-duan-fen-ceng-jia-gou-lu-you-fu-wu-cang-chu-yu-mo-xing.md",
+      "section": "深入理解",
+      "group": "系统架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "7-fu-wu-sheng-ming-zhou-qi-guan-li-yu-you-xian-ji-qi-dong-ji-zhi",
+      "title": "服务生命周期管理与优先级启动机制",
+      "file": "7-fu-wu-sheng-ming-zhou-qi-guan-li-yu-you-xian-ji-qi-dong-ji-zhi.md",
+      "section": "深入理解",
+      "group": "系统架构",
+      "level": "Advanced"
+    },
+    {
+      "slug": "8-shu-ju-ku-she-ji-sqlite-postgresql-shuang-mo-shi-yu-alembic-qian-yi",
+      "title": "数据库设计：SQLite/PostgreSQL 双模式与 Alembic 迁移",
+      "file": "8-shu-ju-ku-she-ji-sqlite-postgresql-shuang-mo-shi-yu-alembic-qian-yi.md",
+      "section": "深入理解",
+      "group": "系统架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "9-gao-jing-fen-xi-yin-qing-shuang-yin-qing-ioc-ti-qu-yu-ai-qu-dong-fen-xi",
+      "title": "告警分析引擎：双引擎 IOC 提取与 AI 驱动分析",
+      "file": "9-gao-jing-fen-xi-yin-qing-shuang-yin-qing-ioc-ti-qu-yu-ai-qu-dong-fen-xi.md",
+      "section": "深入理解",
+      "group": "核心业务模块",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "10-playbook-dag-gong-zuo-liu-yin-qing-jie-dian-cha-jian-zhuang-tai-ji-yu-zhi-xing-dui-lie",
+      "title": "Playbook DAG 工作流引擎：节点插件、状态机与执行队列",
+      "file": "10-playbook-dag-gong-zuo-liu-yin-qing-jie-dian-cha-jian-zhuang-tai-ji-yu-zhi-xing-dui-lie.md",
+      "section": "深入理解",
+      "group": "核心业务模块",
+      "level": "Advanced"
+    },
+    {
+      "slug": "11-hong-fa-qi-xi-tong-webhook-yu-cron-ding-shi-ren-wu-de-zi-dong-hua-ji-cheng",
+      "title": "触发器系统：Webhook 与 Cron 定时任务的自动化集成",
+      "file": "11-hong-fa-qi-xi-tong-webhook-yu-cron-ding-shi-ren-wu-de-zi-dong-hua-ji-cheng.md",
+      "section": "深入理解",
+      "group": "核心业务模块",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "12-wei-xie-qing-bao-fu-wu-otx-ji-cheng-ben-di-huan-cun-yu-he-gui-guo-lu",
+      "title": "威胁情报服务：OTX 集成、本地缓存与合规过滤",
+      "file": "12-wei-xie-qing-bao-fu-wu-otx-ji-cheng-ben-di-huan-cun-yu-he-gui-guo-lu.md",
+      "section": "深入理解",
+      "group": "核心业务模块",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "13-shi-jian-guan-lian-yin-qing-gui-ze-dsl-chuang-kou-ju-he-yu-jia-quan-ping-fen",
+      "title": "事件关联引擎：规则 DSL、窗口聚合与加权评分",
+      "file": "13-shi-jian-guan-lian-yin-qing-gui-ze-dsl-chuang-kou-ju-he-yu-jia-quan-ping-fen.md",
+      "section": "深入理解",
+      "group": "核心业务模块",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "14-ai-fu-wu-ji-cheng-duo-provider-zhi-chi-zhi-pu-anthropic-openai-nvidia",
+      "title": "AI 服务集成：多 Provider 支持（智谱/Anthropic/OpenAI/NVIDIA）",
+      "file": "14-ai-fu-wu-ji-cheng-duo-provider-zhi-chi-zhi-pu-anthropic-openai-nvidia.md",
+      "section": "深入理解",
+      "group": "核心业务模块",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "15-tong-zhi-fu-wu-fei-shu-slack-you-jian-de-cha-jian-hua-tong-zhi-jia-gou",
+      "title": "通知服务：飞书、Slack、邮件的插件化通知架构",
+      "file": "15-tong-zhi-fu-wu-fei-shu-slack-you-jian-de-cha-jian-hua-tong-zhi-jia-gou.md",
+      "section": "深入理解",
+      "group": "核心业务模块",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "16-rbac-quan-xian-mo-xing-jiao-se-quan-xian-yu-zi-yuan-ji-fang-wen-kong-zhi",
+      "title": "RBAC 权限模型：角色、权限与资源级访问控制",
+      "file": "16-rbac-quan-xian-mo-xing-jiao-se-quan-xian-yu-zi-yuan-ji-fang-wen-kong-zhi.md",
+      "section": "深入理解",
+      "group": "安全与权限",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "17-ren-zheng-ti-xi-jwt-ling-pai-api-key-csrf-fang-hu-yu-mi-ma-ce-lue",
+      "title": "认证体系：JWT 令牌、API Key、CSRF 防护与密码策略",
+      "file": "17-ren-zheng-ti-xi-jwt-ling-pai-api-key-csrf-fang-hu-yu-mi-ma-ce-lue.md",
+      "section": "深入理解",
+      "group": "安全与权限",
+      "level": "Advanced"
+    },
+    {
+      "slug": "18-an-quan-jia-gu-min-gan-shu-ju-tuo-min-mi-yao-guan-li-yu-http-sha-xiang",
+      "title": "安全加固：敏感数据脱敏、密钥管理与 HTTP 沙箱",
+      "file": "18-an-quan-jia-gu-min-gan-shu-ju-tuo-min-mi-yao-guan-li-yu-http-sha-xiang.md",
+      "section": "深入理解",
+      "group": "安全与权限",
+      "level": "Advanced"
+    },
+    {
+      "slug": "19-zhong-jian-jian-lian-shen-ji-mi-deng-xing-qing-qiu-zhui-zong-yu-yi-chang-bu-huo",
+      "title": "中间件链：审计、幂等性、请求追踪与异常捕获",
+      "file": "19-zhong-jian-jian-lian-shen-ji-mi-deng-xing-qing-qiu-zhui-zong-yu-yi-chang-bu-huo.md",
+      "section": "深入理解",
+      "group": "中间件与可观测性",
+      "level": "Advanced"
+    },
+    {
+      "slug": "20-ke-guan-ce-xing-ti-xi-prometheus-zhi-biao-fen-bu-shi-zhui-zong-yu-jie-gou-hua-ri-zhi",
+      "title": "可观测性体系：Prometheus 指标、分布式追踪与结构化日志",
+      "file": "20-ke-guan-ce-xing-ti-xi-prometheus-zhi-biao-fen-bu-shi-zhui-zong-yu-jie-gou-hua-ri-zhi.md",
+      "section": "深入理解",
+      "group": "中间件与可观测性",
+      "level": "Advanced"
+    },
+    {
+      "slug": "21-websocket-shi-shi-tong-xin-lian-jie-guan-li-pin-dao-ding-yue-yu-chi-xian-xiao-xi-dui-lie",
+      "title": "WebSocket 实时通信：连接管理、频道订阅与离线消息队列",
+      "file": "21-websocket-shi-shi-tong-xin-lian-jie-guan-li-pin-dao-ding-yue-yu-chi-xian-xiao-xi-dui-lie.md",
+      "section": "深入理解",
+      "group": "中间件与可观测性",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "22-next-js-qian-duan-jia-gou-app-router-i18n-guo-ji-hua-yu-zustand-zhuang-tai-guan-li",
+      "title": "Next.js 前端架构：App Router、i18n 国际化与 Zustand 状态管理",
+      "file": "22-next-js-qian-duan-jia-gou-app-router-i18n-guo-ji-hua-yu-zustand-zhuang-tai-guan-li.md",
+      "section": "深入理解",
+      "group": "前端工程",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "23-react-flow-dag-ke-shi-hua-bian-ji-qi-playbook-liu-cheng-bian-pai-ui",
+      "title": "React Flow DAG 可视化编辑器：Playbook 流程编排 UI",
+      "file": "23-react-flow-dag-ke-shi-hua-bian-ji-qi-playbook-liu-cheng-bian-pai-ui.md",
+      "section": "深入理解",
+      "group": "前端工程",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "24-qian-duan-zu-jian-ti-xi-yu-zi-ding-yi-hooks-she-ji",
+      "title": "前端组件体系与自定义 Hooks 设计",
+      "file": "24-qian-duan-zu-jian-ti-xi-yu-zi-ding-yi-hooks-she-ji.md",
+      "section": "深入理解",
+      "group": "前端工程",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "25-ci-cd-liu-shui-xian-dai-ma-jian-cha-an-quan-sao-miao-yu-zi-dong-hua-bu-shu",
+      "title": "CI/CD 流水线：代码检查、安全扫描与自动化部署",
+      "file": "25-ci-cd-liu-shui-xian-dai-ma-jian-cha-an-quan-sao-miao-yu-zi-dong-hua-bu-shu.md",
+      "section": "深入理解",
+      "group": "运维与质量保障",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "26-ce-shi-ce-lue-dan-yuan-ce-shi-e2e-ce-shi-yu-playwright-pei-zhi",
+      "title": "测试策略：单元测试、E2E 测试与 Playwright 配置",
+      "file": "26-ce-shi-ce-lue-dan-yuan-ce-shi-e2e-ce-shi-yu-playwright-pei-zhi.md",
+      "section": "深入理解",
+      "group": "运维与质量保障",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "27-sheng-chan-huan-jing-pei-zhi-nginx-fan-xiang-dai-li-ssl-yu-an-quan-jia-gu-jian-cha-qing-dan",
+      "title": "生产环境配置：Nginx 反向代理、SSL 与安全加固检查清单",
+      "file": "27-sheng-chan-huan-jing-pei-zhi-nginx-fan-xiang-dai-li-ssl-yu-an-quan-jia-gu-jian-cha-qing-dan.md",
+      "section": "深入理解",
+      "group": "运维与质量保障",
+      "level": "Advanced"
+    }
+  ]
+}

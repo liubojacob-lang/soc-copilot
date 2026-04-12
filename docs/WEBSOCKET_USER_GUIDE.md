@@ -17,6 +17,7 @@ SOC Copilot 现在支持 WebSocket 实时告警推送功能，让您能够即时
 ### 1. 访问 Wazuh 页面
 
 登录后，导航到 **Wazuh** 页面：
+
 - 中文版：`http://localhost:3003/zh/wazuh`
 - 英文版：`http://localhost:3003/en/wazuh`
 
@@ -24,15 +25,16 @@ SOC Copilot 现在支持 WebSocket 实时告警推送功能，让您能够即时
 
 页面顶部的状态指示器显示当前连接状态：
 
-| 状态 | 颜色 | 图标 | 说明 |
-|------|------|------|------|
+| 状态   | 颜色 | 图标        | 说明             |
+| ------ | ---- | ----------- | ---------------- |
 | 已连接 | 绿色 | 📶 + 脉冲点 | 正在接收实时告警 |
-| 连接中 | 黄色 | 🔄 旋转 | 正在建立连接 |
-| 已断开 | 红色 | 📶 | 连接已断开 |
+| 连接中 | 黄色 | 🔄 旋转     | 正在建立连接     |
+| 已断开 | 红色 | 📶          | 连接已断开       |
 
 ### 3. 实时告警接收
 
 告警会自动出现在告警列表中，包括：
+
 - 📊 告警详情（ID、严重级别、事件类型）
 - 🏷️ 代理信息（名称、IP 地址）
 - ⏰ 时间戳
@@ -56,12 +58,14 @@ SOC Copilot 现在支持 WebSocket 实时告警推送功能，让您能够即时
 ### 启动/停止实时推送
 
 点击状态指示器右侧的按钮：
+
 - 🔔 已连接：点击停止接收告警
 - 🔕 已断开：点击开始接收告警
 
 ### 过滤告警
 
 点击过滤器按钮（🔍）可以：
+
 - 按严重级别过滤
 - 搜索关键词
 - 按代理过滤
@@ -102,6 +106,7 @@ NEXT_PUBLIC_WS_URL=ws://your-server:8000/ws/alerts
 **原因**: 前端未正确加载 WebSocket 客户端
 
 **解决方案**:
+
 1. 刷新页面（Ctrl+F5 / Cmd+Shift+R）
 2. 检查浏览器控制台是否有错误
 3. 确认后端 WebSocket 服务正在运行
@@ -111,6 +116,7 @@ NEXT_PUBLIC_WS_URL=ws://your-server:8000/ws/alerts
 **原因**: WebSocket 连接失败
 
 **解决方案**:
+
 1. 检查后端是否正在运行：
    ```bash
    curl http://localhost:8000/api/health
@@ -124,7 +130,9 @@ NEXT_PUBLIC_WS_URL=ws://your-server:8000/ws/alerts
 **原因**: 流服务未启动
 
 **解决方案**:
+
 1. 检查流服务状态：
+
    ```bash
    # 获取 token
    TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
@@ -135,6 +143,7 @@ NEXT_PUBLIC_WS_URL=ws://your-server:8000/ws/alerts
    curl -X GET http://localhost:8000/api/v1/wazuh/stream/status \
      -H "Authorization: Bearer $TOKEN"
    ```
+
 2. 如果 `running: false`，启动流服务：
    ```bash
    curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
@@ -152,6 +161,7 @@ NEXT_PUBLIC_WS_URL=ws://your-server:8000/ws/alerts
 **原因**: 网络不稳定或后端重启
 
 **解决方案**:
+
 1. 检查网络连接
 2. 查看后端日志：
    ```bash
@@ -189,10 +199,12 @@ ws://localhost:8000/ws/alerts?token=<JWT>&channels=alerts
 ```
 
 **参数**:
+
 - `token`: JWT 访问令牌（必需）
 - `channels`: 订阅频道，逗号分隔（可选，默认: alerts）
 
 **消息类型**:
+
 - `system`: 系统消息（欢迎、订阅确认等）
 - `alert`: 单个告警
 - `aggregated_alert`: 聚合告警
@@ -200,29 +212,34 @@ ws://localhost:8000/ws/alerts?token=<JWT>&channels=alerts
 ### REST API
 
 **启动流服务**:
+
 ```http
 POST /api/v1/wazuh/stream/start
 Authorization: Bearer <token>
 ```
 
 **停止流服务**:
+
 ```http
 POST /api/v1/wazuh/stream/stop
 Authorization: Bearer <token>
 ```
 
 **查看流状态**:
+
 ```http
 GET /api/v1/wazuh/stream/status
 Authorization: Bearer <token>
 ```
 
 **查看 WebSocket 统计**:
+
 ```http
 GET /ws/stats
 ```
 
 **发送测试告警**:
+
 ```http
 POST /api/v1/wazuh/stream/test-alert
 Authorization: Bearer <token>
@@ -247,6 +264,7 @@ Content-Type: application/json
 ## 📞 技术支持
 
 如有问题，请：
+
 1. 查看浏览器控制台（F12）
 2. 检查后端日志
 3. 参考故障排除部分

@@ -37,10 +37,12 @@ docs/
 ## 📝 文档命名规则
 
 ### 通用规则
+
 - 使用大写字母和下划线
 - 例如: `WEEK_1_COMPLETION_REPORT.md`
 
 ### 特定类型
+
 - **README**: `README_WEEK1.md`
 - **计划**: `*_PLAN.md`
 - **报告**: `*_REPORT.md`
@@ -52,6 +54,7 @@ docs/
 ## 📋 文档分类
 
 ### 按周分类
+
 ```
 docs/week1/
 docs/week2/
@@ -60,6 +63,7 @@ docs/week3/
 ```
 
 ### 按类型分类
+
 ```
 guides/     - 指南和教程
 reports/    - 测试和完成报告
@@ -81,7 +85,7 @@ plans/      - 实施计划
 
 - ❌ 不要在项目根目录创建文档
 - ❌ 不要使用中文文件名
-- ❌ 不要使用特殊字符 (除 _ 和 -)
+- ❌ 不要使用特殊字符 (除 \_ 和 -)
 - ❌ 不要随意移动文档位置
 
 ---
@@ -89,6 +93,7 @@ plans/      - 实施计划
 ## 📌 例外情况
 
 **允许放在根目录的文件**:
+
 - `README.md` - 项目主 README
 - `.env.example` - 环境变量示例
 - `package.json` - 依赖配置
@@ -99,6 +104,7 @@ plans/      - 实施计划
 ## 🔄 迁移现有文档
 
 ### 待迁移文档
+
 以下根目录文档需要迁移到 `docs/`:
 
 - [ ] BUILD_FIX_REPORT.md
@@ -112,13 +118,14 @@ plans/      - 实施计划
 - [ ] README_AUDIT_REPORTS.md
 - [ ] TEST_REPORT_NOTIFICATIONS.md
 - [ ] TEST_REPORT.md
-- [ ] 其他 *.md 文档
+- [ ] 其他 \*.md 文档
 
 ---
 
 ## 📞 快速参考
 
 ### 创建新文档
+
 ```bash
 # Week 文档
 touch docs/week2/WEEK_2_PLAN.md
@@ -131,6 +138,7 @@ touch docs/reports/SOMETHING_REPORT.md
 ```
 
 ### 查找文档
+
 ```bash
 # 查找所有 Week 文档
 ls docs/week*/

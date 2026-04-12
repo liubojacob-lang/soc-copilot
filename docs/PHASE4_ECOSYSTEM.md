@@ -13,6 +13,7 @@ Phase 4 introduces ecosystem features including a playbook marketplace, cloud-na
 Community-driven playbook sharing platform.
 
 **Key Capabilities**:
+
 - **Browse & Search**: Filter by category, difficulty, tags, rating
 - **Download & Install**: One-click import into SOC Copilot
 - **Rating & Reviews**: Community feedback system
@@ -27,16 +28,17 @@ Community-driven playbook sharing platform.
 
 **Built-in Playbooks** (6):
 
-| ID | Name | Category | Difficulty | Rating |
-|----|------|----------|------------|--------|
-| market_001 | Phishing Email Response | Phishing | Beginner | 4.5 ⭐ |
-| market_002 | Ransomware Emergency | Ransomware | Advanced | 4.8 ⭐ |
-| market_003 | Data Exfiltration | Data Breach | Intermediate | 4.3 ⭐ |
-| market_004 | Malware Analysis | Malware | Intermediate | 4.7 ⭐ |
-| market_005 | Insider Threat | Insider Threat | Advanced | 4.4 ⭐ |
-| market_006 | GDPR Compliance | Compliance | Intermediate | 4.6 ⭐ |
+| ID         | Name                    | Category       | Difficulty   | Rating |
+| ---------- | ----------------------- | -------------- | ------------ | ------ |
+| market_001 | Phishing Email Response | Phishing       | Beginner     | 4.5 ⭐ |
+| market_002 | Ransomware Emergency    | Ransomware     | Advanced     | 4.8 ⭐ |
+| market_003 | Data Exfiltration       | Data Breach    | Intermediate | 4.3 ⭐ |
+| market_004 | Malware Analysis        | Malware        | Intermediate | 4.7 ⭐ |
+| market_005 | Insider Threat          | Insider Threat | Advanced     | 4.4 ⭐ |
+| market_006 | GDPR Compliance         | Compliance     | Intermediate | 4.6 ⭐ |
 
 **API Endpoints**:
+
 ```bash
 GET    /api/marketplace/playbooks           # Search playbooks
 GET    /api/marketplace/playbooks/{id}      # Get details
@@ -50,6 +52,7 @@ GET    /api/marketplace/dashboard           # Dashboard stats
 ```
 
 **Example Usage**:
+
 ```bash
 # Search playbooks
 curl "http://localhost:8000/api/marketplace/playbooks?category=phishing&difficulty=beginner"
@@ -71,6 +74,7 @@ curl -X POST http://localhost:8000/api/marketplace/playbooks/market_001/reviews 
 Kubernetes, container, and multi-cloud security monitoring.
 
 **Key Capabilities**:
+
 - **Container Scanning**: Vulnerability scanning with Trivy/Clair integration
 - **Kubernetes Security**: CIS Benchmark scanning
 - **Multi-Cloud Support**:
@@ -81,12 +85,14 @@ Kubernetes, container, and multi-cloud security monitoring.
 - **Compliance Reports**: CIS Kubernetes Benchmark compliance
 
 **Supported Cloud Providers**:
+
 - AWS
 - Azure
 - GCP
 - AliCloud
 
 **API Endpoints**:
+
 ```bash
 POST   /api/cloud-native/containers/scan    # Scan container image
 POST   /api/cloud-native/kubernetes/scan    # Scan K8s cluster
@@ -98,6 +104,7 @@ GET    /api/cloud-native/dashboard          # Dashboard
 ```
 
 **Example Usage**:
+
 ```bash
 # Scan container image
 curl -X POST http://localhost:8000/api/cloud-native/containers/scan \
@@ -174,6 +181,7 @@ curl http://localhost:8000/api/cloud-native/compliance/report \
 ### Phase 4 New Endpoints
 
 #### Marketplace
+
 ```
 GET    /api/marketplace/playbooks
 GET    /api/marketplace/playbooks/{id}
@@ -187,6 +195,7 @@ GET    /api/marketplace/dashboard
 ```
 
 #### Cloud Native
+
 ```
 POST   /api/cloud-native/containers/scan
 POST   /api/cloud-native/kubernetes/scan
@@ -200,12 +209,14 @@ GET    /api/cloud-native/dashboard
 ## 🚀 Getting Started
 
 ### 1. Start Server
+
 ```bash
 cd backend
 python -m uvicorn main:app --reload
 ```
 
 ### 2. Access Documentation
+
 ```
 http://localhost:8000/docs
 ```
@@ -213,6 +224,7 @@ http://localhost:8000/docs
 ### 3. Configure Cloud Credentials (Optional)
 
 Add to `.env`:
+
 ```env
 # AWS
 AWS_ACCESS_KEY_ID=your-key
@@ -232,12 +244,14 @@ ALICLOUD_SECRET_KEY=your-secret
 ## 🔮 Future Enhancements
 
 ### Marketplace
+
 - [ ] Playbook submission workflow
 - [ ] Version management & updates
 - [ ] Verified publisher program
 - [ ] Playbook templates generator
 
 ### Cloud Native
+
 - [ ] Real-time K8s event streaming
 - [ ] Admission controller integration
 - [ ] Falco rule management
@@ -247,14 +261,15 @@ ALICLOUD_SECRET_KEY=your-secret
 
 ### All Phases Complete
 
-| Phase | Content | Status |
-|-------|---------|--------|
+| Phase       | Content                               | Status      |
+| ----------- | ------------------------------------- | ----------- |
 | **Phase 1** | Infrastructure (CI/CD, Docker, Tests) | ✅ Complete |
-| **Phase 2** | AI Copilot (LLM, RAG, Analysis) | ✅ Complete |
-| **Phase 3** | Advanced Analytics (UEBA, Hunting) | ✅ Complete |
-| **Phase 4** | Ecosystem (Marketplace, Cloud) | ✅ Complete |
+| **Phase 2** | AI Copilot (LLM, RAG, Analysis)       | ✅ Complete |
+| **Phase 3** | Advanced Analytics (UEBA, Hunting)    | ✅ Complete |
+| **Phase 4** | Ecosystem (Marketplace, Cloud)        | ✅ Complete |
 
 ### Total Statistics
+
 - **Total Commits**: 4
 - **Total Files**: 50+
 - **Total Code Lines**: 8000+
@@ -264,6 +279,7 @@ ALICLOUD_SECRET_KEY=your-secret
 ---
 
 **🎉 All Phases Complete! The SOC Copilot platform is now feature-complete with:**
+
 - ✅ CI/CD Pipeline
 - ✅ AI Assistant
 - ✅ UEBA Analytics

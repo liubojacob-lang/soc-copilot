@@ -28,20 +28,24 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 **目标**: 实现离线消息缓存架构
 
 **完成任务**:
+
 1. ✅ 设计消息队列数据模型
 2. ✅ 实现 Redis 消息队列服务
 3. ✅ 集成到 WebSocket 路由
 4. ✅ 编写单元测试
 
 **创建文件**:
+
 - `backend/models/message_queue.py` (230 行)
 - `backend/services/message_queue.py` (330 行)
 - `backend/tests/test_message_queue.py` (400 行)
 
 **修改文件**:
+
 - `backend/routers/websocket.py`
 
 **关键指标**:
+
 - TTL: 24 小时
 - 最大队列长度: 1000 条
 - 自动过期清理
@@ -55,21 +59,25 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 **目标**: 实现服务端消息过滤功能
 
 **完成任务**:
+
 1. ✅ 设计过滤规则 Schema
 2. ✅ 实现过滤引擎服务
 3. ✅ 创建过滤管理 API
 4. ✅ 实现前端过滤 UI
 
 **创建文件**:
+
 - `backend/models/message_filters.py` (330 行)
 - `backend/services/message_filter.py` (350 行)
 - `backend/routers/websocket_filters.py` (280 行)
 - `frontend/components/websocket/FilterConfig.tsx` (470 行)
 
 **修改文件**:
+
 - `backend/main.py` - 注册新路由器
 
 **关键功能**:
+
 - 多条件过滤（严重级别、事件类型、代理、IP、内容）
 - 优先级评估
 - 速率限制
@@ -83,12 +91,14 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 **目标**: 实现系统监控和告警
 
 **完成任务**:
+
 1. ✅ 设计监控指标 Schema
 2. ✅ 实现监控数据收集服务
 3. ✅ 创建监控仪表板 UI
 4. ✅ 配置告警规则引擎
 
 **创建文件**:
+
 - `backend/models/websocket_metrics.py` (500 行)
 - `backend/models/monitoring_alerts.py` (400 行)
 - `backend/services/websocket_monitoring.py` (450 行)
@@ -97,10 +107,12 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 - `frontend/components/websocket/MonitoringDashboard.tsx` (450 行)
 
 **修改文件**:
+
 - `backend/routers/websocket.py` - 集成监控调用
 - `backend/main.py` - 初始化服务
 
 **关键功能**:
+
 - 实时指标收集（连接、消息、错误、性能）
 - 健康评分计算（0-100%）
 - 告警规则引擎
@@ -115,22 +127,26 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 **目标**: 实现性能优化功能
 
 **完成任务**:
+
 1. ✅ 实现消息压缩（gzip）
 2. ✅ 批量消息发送优化
 3. ✅ 连接池和复用
 4. ✅ 性能测试
 
 **创建文件**:
+
 - `backend/services/websocket_compression.py` (280 行)
 - `backend/services/message_batch_service.py` (350 行)
 - `backend/services/websocket_connection_pool.py` (450 行)
 - `backend/tests/test_websocket_performance.py` (400 行)
 
 **修改文件**:
+
 - `backend/routers/websocket.py` - 集成优化
 - `backend/main.py` - 启动优化服务
 
 **关键功能**:
+
 - gzip 压缩（65% 压缩率）
 - 批量发送（5-10x 吞吐量提升）
 - 连接池（30% 开销减少）
@@ -144,6 +160,7 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 **目标**: 测试和文档完善
 
 **完成任务**:
+
 1. ✅ 创建端到端测试
 2. ✅ 执行性能测试
 3. ✅ 实现压力测试
@@ -151,6 +168,7 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 5. ✅ 生成总结报告
 
 **创建文件**:
+
 - `backend/tests/test_websocket_e2e.py` (500 行)
 - `backend/tests/test_websocket_stress.py` (450 行)
 - `docs/week3/PERFORMANCE_REPORT.md`
@@ -159,6 +177,7 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 - `docs/week3/WEEK3_SUMMARY.md` (本文件)
 
 **完成情况**:
+
 - ✅ 端到端测试套件
 - ✅ 性能基准测试
 - ✅ 压力测试（1000+ 连接）
@@ -171,19 +190,20 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 
 ### 新增文件总览
 
-| 类别 | 文件数 | 代码行数 |
-|------|--------|---------|
-| 后端模型 | 5 | ~2,100 |
-| 后端服务 | 7 | ~2,600 |
-| 后端路由 | 3 | ~1,000 |
-| 后端测试 | 4 | ~1,750 |
-| 前端组件 | 2 | ~920 |
-| 文档 | 7 | ~8,000 |
+| 类别     | 文件数 | 代码行数    |
+| -------- | ------ | ----------- |
+| 后端模型 | 5      | ~2,100      |
+| 后端服务 | 7      | ~2,600      |
+| 后端路由 | 3      | ~1,000      |
+| 后端测试 | 4      | ~1,750      |
+| 前端组件 | 2      | ~920        |
+| 文档     | 7      | ~8,000      |
 | **总计** | **28** | **~16,370** |
 
 ### 文件列表
 
 **后端模型**:
+
 1. `backend/models/message_queue.py` - 消息队列数据模型
 2. `backend/models/message_filters.py` - 过滤规则数据模型
 3. `backend/models/websocket_metrics.py` - 监控指标数据模型
@@ -191,6 +211,7 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 5. `backend/models/alert_lifecycle.py` - 告警生命周期模型
 
 **后端服务**:
+
 1. `backend/services/message_queue.py` - 消息队列服务
 2. `backend/services/message_filter.py` - 消息过滤服务
 3. `backend/services/websocket_monitoring.py` - 监控服务
@@ -200,21 +221,25 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 7. `backend/services/websocket_connection_pool.py` - 连接池服务
 
 **后端路由**:
+
 1. `backend/routers/websocket_filters.py` - 过滤器 API
 2. `backend/routers/monitoring_alerts.py` - 监控告警 API
 3. `backend/routers/websocket.py` - WebSocket 主路由（已修改）
 
 **后端测试**:
+
 1. `backend/tests/test_message_queue.py` - 队列测试
 2. `backend/tests/test_websocket_e2e.py` - 端到端测试
 3. `backend/tests/test_websocket_performance.py` - 性能测试
 4. `backend/tests/test_websocket_stress.py` - 压力测试
 
 **前端组件**:
+
 1. `frontend/components/websocket/FilterConfig.tsx` - 过滤器配置 UI
 2. `frontend/components/websocket/MonitoringDashboard.tsx` - 监控仪表板
 
 **文档**:
+
 1. `docs/week3/README_WEEK3.md` - Week 3 计划
 2. `docs/week3/DAY1_MESSAGE_QUEUE_COMPLETE.md` - Day 1 报告
 3. `docs/week3/DAY2_FILTER_COMPLETE.md` - Day 2 报告
@@ -231,17 +256,20 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 ### 1. 离线消息缓存
 
 **功能描述**:
+
 - Redis 消息队列存储离线消息
 - 客户端重连时自动投递缓存消息
 - 24 小时 TTL，最多 1000 条/用户
 
 **技术实现**:
+
 - 异步 Redis 操作
 - 消息序列化/反序列化
 - 自动过期清理
 - 批量获取优化
 
 **使用场景**:
+
 - 用户网络不稳定
 - 浏览器标签页切换
 - 移动端后台运行
@@ -250,18 +278,21 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 ### 2. 服务端消息过滤
 
 **功能描述**:
+
 - 基于规则的消息过滤
 - 支持多条件组合（AND/OR）
 - 优先级评估
 - 速率限制
 
 **技术实现**:
+
 - Pydantic 数据模型
 - 规则匹配引擎
 - 统计信息收集
 - REST API 管理接口
 
 **使用场景**:
+
 - 减少客户端负载
 - 过滤低优先级告警
 - 按事件类型订阅
@@ -270,18 +301,21 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 ### 3. 监控和告警
 
 **功能描述**:
+
 - 实时指标收集（连接、消息、错误、性能）
 - 健康评分计算（0-100%）
 - 阈值告警规则
 - 多通知通道（日志、Webhook、Email）
 
 **技术实现**:
+
 - 后台指标收集任务
 - Redis 时间序列存储
 - 规则评估引擎
 - 通知通道抽象
 
 **使用场景**:
+
 - 系统健康监控
 - 性能异常告警
 - 容量规划
@@ -290,17 +324,20 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 ### 4. 性能优化
 
 **功能描述**:
+
 - gzip 消息压缩
 - 批量消息发送
 - WebSocket 连接池
 
 **技术实现**:
+
 - 压缩服务（可配置级别）
 - 批量队列（可配置大小/延迟）
 - 连接池管理（健康检查）
 - 性能统计收集
 
 **性能提升**:
+
 - 网络流量减少 30-40%
 - 吞吐量提升 5-10x
 - 连接开销减少 30%
@@ -311,28 +348,31 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 
 ### 优化前后对比
 
-| 指标 | 优化前 | 优化后 | 提升 |
-|------|--------|--------|------|
-| **吞吐量** | 200 msg/s | 1,724 msg/s | **8.6x** |
-| **网络带宽** | 100% | 60-70% | **30-40%↓** |
-| **P95 延迟** | 50ms | 85ms | +70% |
-| **连接开销** | 100% | 70% | **30%↓** |
-| **压缩率** | N/A | 65% | **新功能** |
-| **健康评分** | N/A | 85% | **新功能** |
+| 指标         | 优化前    | 优化后      | 提升        |
+| ------------ | --------- | ----------- | ----------- |
+| **吞吐量**   | 200 msg/s | 1,724 msg/s | **8.6x**    |
+| **网络带宽** | 100%      | 60-70%      | **30-40%↓** |
+| **P95 延迟** | 50ms      | 85ms        | +70%        |
+| **连接开销** | 100%      | 70%         | **30%↓**    |
+| **压缩率**   | N/A       | 65%         | **新功能**  |
+| **健康评分** | N/A       | 85%         | **新功能**  |
 
 ### 性能基准测试结果
 
 **消息压缩**:
+
 - 平均压缩率: 65%
 - P95 压缩时间: 9.8ms
 - 字节节省: 6.2KB/条（4KB消息）
 
 **批量发送**:
+
 - 吞吐量: 1,724 msg/s
 - P95 批次时间: 95ms
 - 网络往返减少: 80-90%
 
 **连接池**:
+
 - 支持 1000+ 并发连接
 - 连接复用率: 30-50%
 - 健康检查开销: <1% CPU
@@ -345,41 +385,41 @@ Week 3 成功完成了 WebSocket 系统的性能优化和稳定性增强工作�
 
 #### 过滤器 API (4 个端点)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/websocket/filters` | 获取用户过滤器 |
-| PUT | `/api/v1/websocket/filters` | 设置过滤器 |
-| DELETE | `/api/v1/websocket/filters` | 删除过滤器 |
-| GET | `/api/v1/websocket/filters/stats` | 获取过滤统计 |
+| 方法   | 路径                              | 描述           |
+| ------ | --------------------------------- | -------------- |
+| GET    | `/api/v1/websocket/filters`       | 获取用户过滤器 |
+| PUT    | `/api/v1/websocket/filters`       | 设置过滤器     |
+| DELETE | `/api/v1/websocket/filters`       | 删除过滤器     |
+| GET    | `/api/v1/websocket/filters/stats` | 获取过滤统计   |
 
 #### 监控 API (6 个端点)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/ws/monitoring/metrics` | 获取监控指标 |
-| GET | `/api/v1/ws/monitoring/health` | 获取健康评分 |
-| GET | `/api/v1/ws/monitoring/summary` | 获取监控摘要 |
-| GET | `/api/v1/ws/compression/stats` | 获取压缩统计 |
-| GET | `/api/v1/ws/batch/stats` | 获取批量统计 |
-| GET | `/api/v1/ws/pool/stats` | 获取连接池统计 |
+| 方法 | 路径                            | 描述           |
+| ---- | ------------------------------- | -------------- |
+| GET  | `/api/v1/ws/monitoring/metrics` | 获取监控指标   |
+| GET  | `/api/v1/ws/monitoring/health`  | 获取健康评分   |
+| GET  | `/api/v1/ws/monitoring/summary` | 获取监控摘要   |
+| GET  | `/api/v1/ws/compression/stats`  | 获取压缩统计   |
+| GET  | `/api/v1/ws/batch/stats`        | 获取批量统计   |
+| GET  | `/api/v1/ws/pool/stats`         | 获取连接池统计 |
 
 #### 告警规则 API (6 个端点)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| POST | `/api/v1/monitoring/alerts/rules` | 创建告警规则 |
-| GET | `/api/v1/monitoring/alerts/rules` | 列出告警规则 |
-| PUT | `/api/v1/monitoring/alerts/rules/{id}` | 更新告警规则 |
+| 方法   | 路径                                   | 描述         |
+| ------ | -------------------------------------- | ------------ |
+| POST   | `/api/v1/monitoring/alerts/rules`      | 创建告警规则 |
+| GET    | `/api/v1/monitoring/alerts/rules`      | 列出告警规则 |
+| PUT    | `/api/v1/monitoring/alerts/rules/{id}` | 更新告警规则 |
 | DELETE | `/api/v1/monitoring/alerts/rules/{id}` | 删除告警规则 |
-| GET | `/api/v1/monitoring/alerts/history` | 获取告警历史 |
-| POST | `/api/v1/monitoring/alerts/test/{id}` | 测试告警规则 |
+| GET    | `/api/v1/monitoring/alerts/history`    | 获取告警历史 |
+| POST   | `/api/v1/monitoring/alerts/test/{id}`  | 测试告警规则 |
 
 ### 新增前端组件
 
-| 组件 | 路径 | 功能 |
-|------|------|------|
-| FilterConfig | `/components/websocket/FilterConfig.tsx` | 过滤器配置 UI |
-| MonitoringDashboard | `/components/websocket/MonitoringDashboard.tsx` | 监控仪表板 |
+| 组件                | 路径                                            | 功能          |
+| ------------------- | ----------------------------------------------- | ------------- |
+| FilterConfig        | `/components/websocket/FilterConfig.tsx`        | 过滤器配置 UI |
+| MonitoringDashboard | `/components/websocket/MonitoringDashboard.tsx` | 监控仪表板    |
 
 ---
 
@@ -430,18 +470,21 @@ WS_POOL_HEALTH_CHECK_INTERVAL=60
 ### 后续改进建议
 
 **短期**（1-2 周）:
+
 - [ ] 实现邮件通知渠道
 - [ ] 添加 SMS 通知支持
 - [ ] 优化小消息压缩逻辑
 - [ ] 实现离线消息数据库持久化
 
 **中期**（1 个月）:
+
 - [ ] 实时图表（Chart.js）到监控仪表板
 - [ ] 告警分组和聚合
 - [ ] 自动告警升级
 - [ ] 更多压缩算法支持（brotli）
 
 **长期**（3 个月）:
+
 - [ ] 分布式消息队列（RabbitMQ/Kafka）
 - [ ] 多服务器集群支持
 - [ ] 高级分析和报表
@@ -483,6 +526,7 @@ WS_POOL_HEALTH_CHECK_INTERVAL=60
 ### 技术栈总结
 
 **后端技术**:
+
 - FastAPI WebSocket
 - Redis 消息队列
 - Pydantic 数据模型
@@ -491,6 +535,7 @@ WS_POOL_HEALTH_CHECK_INTERVAL=60
 - 连接池模式
 
 **前端技术**:
+
 - React Hooks
 - WebSocket API
 - TypeScript
@@ -498,6 +543,7 @@ WS_POOL_HEALTH_CHECK_INTERVAL=60
 - 实时数据更新
 
 **测试框架**:
+
 - pytest
 - pytest-asyncio
 - 性能测试
@@ -511,11 +557,13 @@ WS_POOL_HEALTH_CHECK_INTERVAL=60
 ### 部署清单
 
 **必需组件**:
+
 - ✅ Redis（用于消息队列和监控存储）
 - ✅ PostgreSQL（已有）
 - ✅ 后端服务（包含所有新功能）
 
 **可选组件**:
+
 - ⚪ Slack Webhook（用于告警通知）
 - ⚪ 邮件服务器（用于邮件告警）
 - ⚪ 监控系统（Prometheus/Grafana）
@@ -544,14 +592,14 @@ WS_POOL_HEALTH_CHECK_INTERVAL=60
 
 ### Week 3 目标达成情况
 
-| 目标 | 目标值 | 实际值 | 状态 |
-|------|--------|--------|------|
-| 离线消息缓存 | ✅ | ✅ | ✅ 100% |
-| 服务端过滤 | ✅ | ✅ | ✅ 100% |
-| 监控告警 | ✅ | ✅ | ✅ 100% |
-| 性能优化 | ✅ | ✅ | ✅ 100% |
-| 测试覆盖 | 80%+ | ~90% | ✅ 超标 |
-| 文档完整 | ✅ | ✅ | ✅ 100% |
+| 目标         | 目标值 | 实际值 | 状态    |
+| ------------ | ------ | ------ | ------- |
+| 离线消息缓存 | ✅     | ✅     | ✅ 100% |
+| 服务端过滤   | ✅     | ✅     | ✅ 100% |
+| 监控告警     | ✅     | ✅     | ✅ 100% |
+| 性能优化     | ✅     | ✅     | ✅ 100% |
+| 测试覆盖     | 80%+   | ~90%   | ✅ 超标 |
+| 文档完整     | ✅     | ✅     | ✅ 100% |
 
 **总体完成度**: **100%** ✅
 
@@ -572,6 +620,7 @@ Week 3 圆满完成，所有计划功能均已实现并测试通过。
 ### 下一步行动
 
 **Week 4+ 计划**:
+
 1. 生产环境部署
 2. 用户培训
 3. 反馈收集

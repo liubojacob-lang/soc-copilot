@@ -13,6 +13,7 @@
 **文件**: `frontend/messages/zh.json`
 
 **修复内容**:
+
 - 修复了JSON格式错误
 - 补充了完整的翻译键结构
 - 添加了所有页面所需的翻译键
@@ -22,6 +23,7 @@
 ### 2. 新增翻译键
 
 **Common 通用翻译键** (30+):
+
 ```json
 {
   "autoRefresh": "自动刷新",
@@ -57,6 +59,7 @@
 ```
 
 **Marketplace 市场翻译键**:
+
 ```json
 {
   "searchPlaceholder": "搜索剧本...",
@@ -78,6 +81,7 @@
 ```
 
 **Threat Hunting 威胁狩猎翻译键**:
+
 ```json
 {
   "totalHunts": "总狩猎次数",
@@ -115,31 +119,32 @@
 
 ### 页面汉化状态
 
-| 页面 | 状态 | 说明 |
-|------|------|------|
-| Home 首页 | ✅ 已汉化 | 完整翻译 |
-| Login 登录 | ✅ 已汉化 | 完整翻译 |
-| Users 用户 | ✅ 已汉化 | 完整翻译 |
+| 页面                       | 状态      | 说明             |
+| -------------------------- | --------- | ---------------- |
+| Home 首页                  | ✅ 已汉化 | 完整翻译         |
+| Login 登录                 | ✅ 已汉化 | 完整翻译         |
+| Users 用户                 | ✅ 已汉化 | 完整翻译         |
 | Admin Dashboard 管理仪表板 | ✅ 已汉化 | 新增系统状态翻译 |
-| Admin Settings 管理设置 | ✅ 已汉化 | 完整翻译 |
-| Admin Audit 审计日志 | ✅ 已汉化 | 完整翻译 |
-| Alerts 告警 | ✅ 已汉化 | 完整翻译 |
-| Settings 设置 | ✅ 已汉化 | 完整翻译 |
-| Playbooks 剧本 | ✅ 已汉化 | 完整翻译 |
-| Reports 报告 | ✅ 已汉化 | 完整翻译 |
-| AI Assistant AI助手 | ✅ 已汉化 | 完整翻译 |
-| Threat Intel 威胁情报 | ✅ 已汉化 | 完整翻译 |
-| Marketplace 市场 | ✅ 已汉化 | 新增完整翻译 |
-| Threat Hunting 威胁狩猎 | ✅ 已汉化 | 新增完整翻译 |
-| UEBA 用户行为分析 | ✅ 已汉化 | 完整翻译 |
-| Dify Page Dify集成 | ✅ 已汉化 | 完整翻译 |
-| Triggers 触发器 | ✅ 已汉化 | 完整翻译 |
+| Admin Settings 管理设置    | ✅ 已汉化 | 完整翻译         |
+| Admin Audit 审计日志       | ✅ 已汉化 | 完整翻译         |
+| Alerts 告警                | ✅ 已汉化 | 完整翻译         |
+| Settings 设置              | ✅ 已汉化 | 完整翻译         |
+| Playbooks 剧本             | ✅ 已汉化 | 完整翻译         |
+| Reports 报告               | ✅ 已汉化 | 完整翻译         |
+| AI Assistant AI助手        | ✅ 已汉化 | 完整翻译         |
+| Threat Intel 威胁情报      | ✅ 已汉化 | 完整翻译         |
+| Marketplace 市场           | ✅ 已汉化 | 新增完整翻译     |
+| Threat Hunting 威胁狩猎    | ✅ 已汉化 | 新增完整翻译     |
+| UEBA 用户行为分析          | ✅ 已汉化 | 完整翻译         |
+| Dify Page Dify集成         | ✅ 已汉化 | 完整翻译         |
+| Triggers 触发器            | ✅ 已汉化 | 完整翻译         |
 
 ---
 
 ## 文件变更清单
 
 ### 修改文件
+
 1. `frontend/messages/zh.json` - 修复格式并补充所有翻译键
 
 ---
@@ -147,17 +152,20 @@
 ## 验证步骤
 
 ### 1. 启动前端开发服务器
+
 ```bash
 cd frontend
 npm run dev
 ```
 
 ### 2. 访问中文版本
+
 ```
 http://localhost:3000/zh
 ```
 
 ### 3. 检查各个页面汉化
+
 - 导航菜单 - 所有菜单项应为中文
 - 首页 - 所有标签页标题应为中文
 - 管理仪表板 - 系统状态、数据库信息等应为中文
@@ -169,6 +177,7 @@ http://localhost:3000/zh
 ## 已知汉化的翻译键
 
 ### Navigation 导航
+
 ```
 home: "首页"
 runs: "剧本"
@@ -181,6 +190,7 @@ settings: "设置"
 ```
 
 ### Alerts Page 告警页面
+
 ```
 title: "安全告警中心"
 subtitle: "实时告警流 - 由 Grafana + Loki 提供支持"
@@ -190,6 +200,7 @@ openDashboard: "打开 Grafana Dashboard →"
 ```
 
 ### Admin Dashboard 管理仪表板
+
 ```
 title: "系统仪表板"
 overview: "系统概览"
@@ -206,6 +217,7 @@ lowAlerts: "低危告警"
 ```
 
 ### Marketplace 市场
+
 ```
 title: "市场"
 subtitle: "发现和集成安全工具"
@@ -231,6 +243,7 @@ difficulty: {
 ```
 
 ### Threat Hunting 威胁狩猎
+
 ```
 title: "威胁狩猎"
 subtitle: "主动检测和响应高级威胁"
@@ -271,11 +284,13 @@ iocHunt: {
 ## 后续建议
 
 ### 短期优化
+
 1. **添加动态翻译** - 为API返回的数据添加翻译
 2. **翻译验证** - 添加翻译缺失检测工具
 3. **翻译管理** - 添加翻译管理界面
 
 ### 中期优化
+
 1. **多语言支持** - 添加更多语言（日语、韩语等）
 2. **翻译缓存** - 优化翻译加载性能
 3. **翻译测试** - 添加翻译完整性测试

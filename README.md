@@ -1,12 +1,15 @@
 # SOC Copilot - Security Operations Center Intelligent Analysis Platform
 
-[![Version](https://img.shields.io/badge/version-v0.8.0-blue.svg)](./CHANGELOG.md)
-[![Python](https://img.shields.io/badge/python-3.10+-green.svg)](https://www.python.org/)
-[![Node.js](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org/)
+[![Version](https://img.shields.io/badge/version-v0.9.0-blue.svg)](./CHANGELOG.md)
+[![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://www.python.org/)
+[![Node.js](https://img.shields.io/badge/node.js-20+-green.svg)](https://nodejs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-15.1-black.svg)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2-black.svg)](https://nextjs.org/)
+[![Security](https://img.shields.io/badge/security-hardened-brightgreen.svg)](./SECURITY_OPTIMIZATION_SUMMARY.md)
 
 SOC Copilot is an intelligent analysis workbench designed for Security Operations Center (SOC) teams, providing alert analysis, event timeline reconstruction, report generation, asset management, threat intelligence queries, and **Playbook automation orchestration** capabilities.
+
+**🔒 Security Status**: All P0+P1 security issues resolved. [View Security Report](./SECURITY_OPTIMIZATION_SUMMARY.md)
 
 ---
 
@@ -25,6 +28,7 @@ SOC Copilot is an intelligent analysis workbench designed for Security Operation
 ## Core Features
 
 ### 1. Alert Analyzer
+
 - Event classification (supports 9 security event types)
 - Severity assessment
 - **Dual-engine IOC extraction** (Local regex + AI for IPs, domains, URLs, hashes)
@@ -33,22 +37,26 @@ SOC Copilot is an intelligent analysis workbench designed for Security Operation
 - Impact analysis panel (risk score, associated assets)
 
 ### 2. Timeline Builder
+
 - Automatic event timeline reconstruction
 - Intelligent suspicious event ranking (Top 5)
 - Next investigation step recommendations
 
 ### 3. Report Writer
+
 - Ticket templates
 - Daily report templates
 - Post-incident analysis templates
 
 ### 4. Asset Management
+
 - Full CRUD operations
 - Bulk import (JSON format)
 - Multi-dimensional search (hostname, IP, owner, business line, tags)
 - Asset criticality grading (Low/Medium/High/Critical)
 
 ### 5. Threat Intelligence
+
 - AlienVault OTX integration
 - Local cache (7-day TTL)
 - Compliance filtering (private IP, internal domain blocking)
@@ -56,6 +64,7 @@ SOC Copilot is an intelligent analysis workbench designed for Security Operation
 ### 6. Playbook Automation Engine
 
 #### v0.7.4 New Features
+
 - **Node Plugin System**: Dynamic node type registration with auto-loading from `plugins/` directory
 - **Secrets Management**: Encrypted secret storage (Fernet) with `{{secret.xxx}}` variable references
 - **Run Recovery**: Automatic orphaned run detection and recovery after server restart
@@ -64,28 +73,33 @@ SOC Copilot is an intelligent analysis workbench designed for Security Operation
 - **5 Built-in Plugins**: HTTP Request, OTX Lookup, Decision, Slack Notify, Human Approval
 
 #### v0.7.3 New Features
+
 - **Version Management**: Draft → Published → Archived lifecycle management
 - **Context Variable System**: Supports `{{context.xxx}}`, `{{input.xxx}}`, `{{node.<id>.field}}` template variables
 - **Run Replay**: Re-execute based on historical inputs
 - **Import/Export**: JSON/YAML format support
 
 #### v0.7.2 New Features
+
 - **Manual Approval Node**: Execution pauses for human approval
 - **Approval Inbox**: Dedicated approval management interface
 - **Slack Notifications**: Real-time notifications to Slack channels
 - **Failure Alerts**: Automatic notifications on execution failures
 
 #### v0.7.1 New Features
+
 - **Trigger System**: Webhook and Cron scheduled triggers
 - **Idempotency**: Duplicate trigger invocation prevention
 - **Auto Migration**: Alembic database migration support
 
 #### v0.7.0 New Features
+
 - **DAG Engine**: Topological sort with concurrent execution
 - **Retry Policy**: Exponential backoff for failed nodes
 - **Visual DAG Editor**: React Flow-based workflow editor
 
 #### DAG Workflow Engine
+
 - Visual DAG editor (React Flow)
 - Multiple node types:
   - **Triggers**: Webhook, Scheduled tasks (Cron)
@@ -100,6 +114,7 @@ SOC Copilot is an intelligent analysis workbench designed for Security Operation
 ## Quick Start
 
 ### Prerequisites
+
 - Python 3.10+
 - Node.js 18+
 - Git
@@ -138,40 +153,42 @@ npm run dev
 
 ### 3. Access Application
 
-| Service | URL | Default Credentials |
-|---------|-----|---------------------|
-| Frontend | http://localhost:3003 | admin / admin123 |
-| Backend API | http://localhost:8000 | - |
-| API Documentation | http://localhost:8000/docs | - |
-| Database | `data/app.db` (auto-created) | - |
+| Service           | URL                          | Default Credentials |
+| ----------------- | ---------------------------- | ------------------- |
+| Frontend          | http://localhost:3003        | admin / admin123    |
+| Backend API       | http://localhost:8000        | -                   |
+| API Documentation | http://localhost:8000/docs   | -                   |
+| Database          | `data/app.db` (auto-created) | -                   |
 
 ---
 
 ## Technical Architecture
 
 ### Backend Tech Stack
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Python | 3.10+ | Language |
-| FastAPI | 0.115.0 | Web Framework |
-| SQLAlchemy | 2.0.36 | ORM |
-| aiosqlite | 0.20.0 | Async SQLite |
-| Alembic | 1.14.0 | Database Migration |
-| Pydantic | 2.9.2 | Data Validation |
-| python-jose | 3.3.0 | JWT Authentication |
-| passlib | 1.7.4 | Password Encryption |
-| croniter | 3.0.3 | Cron Expression Parser |
-| anthropic | 0.40.0 | Claude AI |
+
+| Technology  | Version | Purpose                |
+| ----------- | ------- | ---------------------- |
+| Python      | 3.10+   | Language               |
+| FastAPI     | 0.115.0 | Web Framework          |
+| SQLAlchemy  | 2.0.36  | ORM                    |
+| aiosqlite   | 0.20.0  | Async SQLite           |
+| Alembic     | 1.14.0  | Database Migration     |
+| Pydantic    | 2.9.2   | Data Validation        |
+| python-jose | 3.3.0   | JWT Authentication     |
+| passlib     | 1.7.4   | Password Encryption    |
+| croniter    | 3.0.3   | Cron Expression Parser |
+| anthropic   | 0.40.0  | Claude AI              |
 
 ### Frontend Tech Stack
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Next.js | 15.1 | React Framework |
-| React | 19.0 | UI Library |
-| TypeScript | 5.x | Type System |
-| Tailwind CSS | 3.4.17 | CSS Framework |
-| React Flow | 11.11.4 | DAG Visualization |
-| Lucide React | 0.563.0 | Icon Library |
+
+| Technology   | Version | Purpose           |
+| ------------ | ------- | ----------------- |
+| Next.js      | 15.1    | React Framework   |
+| React        | 19.0    | UI Library        |
+| TypeScript   | 5.x     | Type System       |
+| Tailwind CSS | 3.4.17  | CSS Framework     |
+| React Flow   | 11.11.4 | DAG Visualization |
+| Lucide React | 0.563.0 | Icon Library      |
 
 ---
 
@@ -179,88 +196,88 @@ npm run dev
 
 ### Core Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/analyze-alert` | Alert Analysis |
-| POST | `/api/build-timeline` | Build Timeline |
-| POST | `/api/generate-report` | Generate Report |
-| GET | `/api/health` | Health Check |
+| Method | Endpoint               | Description     |
+| ------ | ---------------------- | --------------- |
+| POST   | `/api/analyze-alert`   | Alert Analysis  |
+| POST   | `/api/build-timeline`  | Build Timeline  |
+| POST   | `/api/generate-report` | Generate Report |
+| GET    | `/api/health`          | Health Check    |
 
 ### Asset Management
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/assets` | Asset list (with search) |
-| POST | `/api/assets` | Create asset |
-| GET | `/api/assets/{id}` | Asset details |
-| PATCH | `/api/assets/{id}` | Update asset |
-| DELETE | `/api/assets/{id}` | Delete asset |
-| POST | `/api/assets/import` | Bulk import |
+| Method | Endpoint             | Description              |
+| ------ | -------------------- | ------------------------ |
+| GET    | `/api/assets`        | Asset list (with search) |
+| POST   | `/api/assets`        | Create asset             |
+| GET    | `/api/assets/{id}`   | Asset details            |
+| PATCH  | `/api/assets/{id}`   | Update asset             |
+| DELETE | `/api/assets/{id}`   | Delete asset             |
+| POST   | `/api/assets/import` | Bulk import              |
 
 ### Playbook Definition Management
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/playbook-definitions` | Definition list (CRUD primary path) |
-| POST | `/api/playbook-definitions` | Create definition |
-| GET | `/api/playbook-definitions/{id}` | Definition details |
-| PATCH | `/api/playbook-definitions/{id}` | Update definition |
-| DELETE | `/api/playbook-definitions/{id}` | Delete definition |
-| POST | `/api/playbook-definitions/{id}/run` | Execute definition |
-| GET | `/api/playbook-definitions/runs/{run_id}` | Execution details (DAG) |
-| GET | `/api/playbook-definitions/runs/{run_id}/nodes` | Node execution details |
-| POST | `/api/playbook-definitions/runs/{run_id}/cancel` | Cancel execution |
-| POST | `/api/playbook/definitions/{id}/publish` | Publish version |
-| GET | `/api/playbook/definitions/{id}/versions` | Version history |
-| POST | `/api/playbook/definitions/{id}/restore/{version_no}` | Rollback version |
-| GET | `/api/playbook/definitions/{id}/export` | Export definition |
-| POST | `/api/playbook/definitions/import` | Import definition |
+| Method | Endpoint                                              | Description                         |
+| ------ | ----------------------------------------------------- | ----------------------------------- |
+| GET    | `/api/playbook-definitions`                           | Definition list (CRUD primary path) |
+| POST   | `/api/playbook-definitions`                           | Create definition                   |
+| GET    | `/api/playbook-definitions/{id}`                      | Definition details                  |
+| PATCH  | `/api/playbook-definitions/{id}`                      | Update definition                   |
+| DELETE | `/api/playbook-definitions/{id}`                      | Delete definition                   |
+| POST   | `/api/playbook-definitions/{id}/run`                  | Execute definition                  |
+| GET    | `/api/playbook-definitions/runs/{run_id}`             | Execution details (DAG)             |
+| GET    | `/api/playbook-definitions/runs/{run_id}/nodes`       | Node execution details              |
+| POST   | `/api/playbook-definitions/runs/{run_id}/cancel`      | Cancel execution                    |
+| POST   | `/api/playbook/definitions/{id}/publish`              | Publish version                     |
+| GET    | `/api/playbook/definitions/{id}/versions`             | Version history                     |
+| POST   | `/api/playbook/definitions/{id}/restore/{version_no}` | Rollback version                    |
+| GET    | `/api/playbook/definitions/{id}/export`               | Export definition                   |
+| POST   | `/api/playbook/definitions/import`                    | Import definition                   |
 
 ### Playbook Execution Management
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/playbook/runs` | Execution history |
-| GET | `/api/playbook/runs/{run_id}` | Execution details |
-| GET | `/api/playbook/runs/{run_id}/nodes` | Node execution details |
-| POST | `/api/playbook/runs/{run_id}/replay` | Replay execution |
-| GET | `/api/playbook/runs/{run_id}/replay-chain` | Replay chain |
+| Method | Endpoint                                   | Description            |
+| ------ | ------------------------------------------ | ---------------------- |
+| GET    | `/api/playbook/runs`                       | Execution history      |
+| GET    | `/api/playbook/runs/{run_id}`              | Execution details      |
+| GET    | `/api/playbook/runs/{run_id}/nodes`        | Node execution details |
+| POST   | `/api/playbook/runs/{run_id}/replay`       | Replay execution       |
+| GET    | `/api/playbook/runs/{run_id}/replay-chain` | Replay chain           |
 
 ### Approval Management
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/playbook/approvals` | Approval list |
-| POST | `/api/playbook/approvals/{id}/approve` | Approve request |
-| POST | `/api/playbook/approvals/{id}/reject` | Reject request |
-| GET | `/api/playbook/approvals/pending/count` | Pending approval count |
+| Method | Endpoint                                | Description            |
+| ------ | --------------------------------------- | ---------------------- |
+| GET    | `/api/playbook/approvals`               | Approval list          |
+| POST   | `/api/playbook/approvals/{id}/approve`  | Approve request        |
+| POST   | `/api/playbook/approvals/{id}/reject`   | Reject request         |
+| GET    | `/api/playbook/approvals/pending/count` | Pending approval count |
 
 ### Trigger Management
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/triggers` | Trigger list |
-| POST | `/api/triggers` | Create trigger |
-| GET | `/api/triggers/{id}` | Trigger details |
-| PATCH | `/api/triggers/{id}` | Update trigger |
-| DELETE | `/api/triggers/{id}` | Delete trigger |
+| Method | Endpoint             | Description     |
+| ------ | -------------------- | --------------- |
+| GET    | `/api/triggers`      | Trigger list    |
+| POST   | `/api/triggers`      | Create trigger  |
+| GET    | `/api/triggers/{id}` | Trigger details |
+| PATCH  | `/api/triggers/{id}` | Update trigger  |
+| DELETE | `/api/triggers/{id}` | Delete trigger  |
 
 ### Secrets Management (v0.7.4)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/secrets` | List secrets (admin only) |
-| POST | `/api/secrets` | Create secret (admin only) |
-| GET | `/api/secrets/{name}` | Get secret details |
-| PATCH | `/api/secrets/{name}` | Update secret (admin only) |
-| DELETE | `/api/secrets/{name}` | Delete secret (admin only) |
-| GET | `/api/secrets/key-status` | Check encryption key status |
+| Method | Endpoint                  | Description                 |
+| ------ | ------------------------- | --------------------------- |
+| GET    | `/api/secrets`            | List secrets (admin only)   |
+| POST   | `/api/secrets`            | Create secret (admin only)  |
+| GET    | `/api/secrets/{name}`     | Get secret details          |
+| PATCH  | `/api/secrets/{name}`     | Update secret (admin only)  |
+| DELETE | `/api/secrets/{name}`     | Delete secret (admin only)  |
+| GET    | `/api/secrets/key-status` | Check encryption key status |
 
 ### Queue Management (v0.7.4)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/playbook-definitions/queue-stats` | Queue statistics |
+| Method | Endpoint                                | Description      |
+| ------ | --------------------------------------- | ---------------- |
+| GET    | `/api/playbook-definitions/queue-stats` | Queue statistics |
 
 ---
 
@@ -382,6 +399,7 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 ## Version History
 
 ### v0.8.0 (Current Version)
+
 - ✨ **Added**: Node plugin system with dynamic auto-loading
 - ✨ **Added**: Secrets management with Fernet encryption
 - ✨ **Added**: Template variable `{{secret.xxx}}` support
@@ -395,6 +413,7 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 - 🐛 **Fixed**: Queue stats endpoint routing
 
 ### v0.7.3
+
 - ✨ **Added**: Playbook version management (draft/published/archived)
 - ✨ **Added**: Version history tracking and rollback
 - ✨ **Added**: Global context variable system (JSONPath mapping)
@@ -405,17 +424,20 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 - ✨ **Added**: 20+ curl API examples
 
 ### v0.7.2
+
 - ✨ **Added**: Manual approval node
 - ✨ **Added**: Approval inbox UI
 - ✨ **Added**: Slack Webhook notifications
 - ✨ **Added**: Execution failure alerts
 
 ### v0.7.1
+
 - ✨ **Added**: Trigger system (Webhook/Cron)
 - ✨ **Added**: Scheduled task dispatcher
 - ✨ **Added**: Automatic database migration (Alembic)
 
 ### v0.7.0
+
 - ✨ **Added**: DAG Playbook engine
 - ✨ **Added**: Visual workflow editor
 - ✨ **Added**: Multi-node type support
@@ -424,6 +446,7 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 <summary>View More Historical Versions</summary>
 
 ### v0.6.1
+
 - ✨ **Added**: Playbook execution engine
 - ✨ **Added**: 5 built-in steps
 - ✨ **Added**: 3 Playbook templates
@@ -433,14 +456,17 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 - 🐛 **Fixed**: Step data passing
 
 ### v0.5.0
+
 - ✨ **Added**: SIEM query generation (Splunk, Elastic, Sentinel)
 - ✨ **Added**: Remediation action generator
 
 ### v0.4.0
+
 - ✨ **Added**: OTX threat intelligence integration
 - ✨ **Added**: Threat intelligence caching
 
 ### v0.3.0
+
 - ✨ **Added**: Asset management module
 - ✨ **Added**: IOC hit tracking
 - ✨ **Added**: Impact analysis
@@ -451,17 +477,52 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 
 ## Security Notes
 
+### 🔒 Security Hardening (v0.9.0)
+
+This project has undergone comprehensive security optimization. [View Full Report](./SECURITY_OPTIMIZATION_SUMMARY.md)
+
+**Completed Security Enhancements:**
+
+#### P0 - Critical Security Fixes
+
+- ✅ **No Default Passwords**: All credentials now required as environment variables
+- ✅ **CORS Origin Validation**: Strict whitelist in production, localhost-only in development
+- ✅ **Docker Secrets Protection**: `.dockerignore` files prevent secret leakage into images
+- ✅ **JWT Token Invalidation**: Tokens automatically invalidated on role/password change
+
+#### P1 - High Priority Security
+
+- ✅ **Network Isolation**: Three-tier architecture (frontend/backend/database)
+- ✅ **Resource Limits**: CPU and memory limits for all containers
+- ✅ **Nginx Security**: TLS 1.2/1.3, HSTS, CSP, rate limiting (5 login/min)
+- ✅ **Port Binding**: Database and Redis only bind to localhost (127.0.0.1)
+- ✅ **Environment Validation**: Startup validation of all security-critical variables
+
+#### Automated Security Scanning
+
+- ✅ **GitHub Actions**: Daily security scans (dependencies, secrets, SAST, Docker)
+- ✅ **Pre-commit Hooks**: Gitleaks, Bandit, hardcoded password detection
+- ✅ **CI/CD Pipeline**: Blocks commits with default credentials
+
+### Basic Security Features
+
 - All remediation recommendations are defensive operations
-- All endpoints have input validation
-- CORS enabled by default (restrict in production)
-- API keys stored in environment variables
+- All endpoints have input validation (Pydantic schemas + SQL injection protection)
+- API keys bcrypt-hashed with prefix optimization
 - Request ID tracking for auditing
-- Playbook execution:
-  - dry_run mode enabled by default (no external changes)
-  - apply mode requires explicit authorization
-  - All executions logged with timestamps
-  - Step-level audit trail
-  - Failed steps can be reviewed before resuming
+- JWT token blacklist with Redis support
+- Account lockout after 5 failed login attempts (30 min)
+- CSRF protection with double-submit cookie pattern
+- Password history enforcement (no reuse)
+
+### Playbook Execution Security
+
+- dry_run mode enabled by default (no external changes)
+- apply mode requires explicit authorization
+- All executions logged with timestamps
+- Step-level audit trail
+- Failed steps can be reviewed before resuming
+- Manual approval nodes for critical operations
 
 ---
 

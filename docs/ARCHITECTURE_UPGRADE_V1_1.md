@@ -5,6 +5,7 @@
 Wazuh -> Webhook/Poller -> Event Bus -> Correlation -> Playbook DAG -> Notification Providers
 
 Detailed path:
+
 1. `POST /api/v1/wazuh/events/webhook` receives raw Wazuh event.
 2. `services/wazuh_event_receiver.py` normalizes event and publishes `wazuh.alert.received`.
 3. `services/message_broker/redis_broker.py` routes by priority with consumer group ack/nack.
@@ -26,23 +27,25 @@ Detailed path:
   "clause": {
     "operator": "AND",
     "conditions": [
-      {"field": "event_type", "op": "in", "value": ["auth_failed", "login_failed"]},
-      {"field": "severity", "op": "in", "value": ["high", "critical"]}
+      { "field": "event_type", "op": "in", "value": ["auth_failed", "login_failed"] },
+      { "field": "severity", "op": "in", "value": ["high", "critical"] }
     ]
   },
-  "threshold": {"min_count": 3, "min_score": 6.0}
+  "threshold": { "min_count": 3, "min_score": 6.0 }
 }
 ```
 
 ## 3. Playbook DAG State Machine (P1)
 
 Node states:
+
 - `pending -> running -> success`
 - `pending -> running -> failed -> rolling_back -> rolled_back`
 - `pending -> waiting_approval -> running -> success`
 - `pending -> skipped`
 
 Branching:
+
 - `on_success` edges execute next business nodes.
 - `on_failure` edges execute compensation nodes.
 - `rollback_node_id` executes explicit rollback action when failure occurs.
@@ -50,12 +53,14 @@ Branching:
 ## 4. Before vs After
 
 Before:
+
 - Redis Streams used directly by multiple modules.
 - Wazuh integration mainly polling path.
 - Correlation based on basic similarity and fixed logic.
 - Notifications tightly coupled in one service.
 
 After:
+
 - `MessageBroker` abstraction with Redis implementation, DLQ/retry/delay/replay.
 - Wazuh webhook event-driven ingest added, polling kept as compatibility mode.
 - DSL-based `RuleEngine` with window + dimensions + weighted scoring + logs.
@@ -80,23 +85,26 @@ Example snippets:
 
 ```tsx
 // Virtualized list
-<VirtualList items={rows} itemHeight={44} renderItem={(row) => <Row row={row} />} />
+<VirtualList items={rows} itemHeight={44} renderItem={row => <Row row={row} />} />
 ```
 
 ## 6. Migration Phases
 
 Phase A (P0 baseline):
+
 1. Deploy code with `MESSAGE_BROKER=redis`.
 2. Start webhook endpoint and keep poller enabled.
 3. Route new alerts through event bus.
 4. Observe queue stats, DLQ and delayed queue metrics.
 
 Phase B (P1 enhancement):
+
 1. Enable notification plugin registry.
 2. Enable RuleEngine DSL endpoint and shadow evaluation.
 3. Introduce enhanced DAG orchestration semantics.
 
 Phase C (P2 prep):
+
 1. Run migration `v1_1_0_arch_upgrade`.
 2. Inject tenant from middleware and propagate to writes.
 3. Enable RBAC permission checks incrementally by endpoint.
@@ -109,4 +117,3 @@ Phase C (P2 prep):
 3. Disable strict RBAC checks, keep role-level controls.
 4. Rollback Alembic migration `v1_1_0_arch_upgrade`.
 5. Replay DLQ after fix to avoid message loss.
-

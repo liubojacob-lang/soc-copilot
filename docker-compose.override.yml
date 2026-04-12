@@ -1,0 +1,49 @@
+# Development Environment Override
+# This file is automatically loaded by docker-compose in development mode
+# Usage: docker-compose up -d (automatically includes this file)
+
+services:
+  # Backend - Development mode with hot reload
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"  # Expose for direct access during development
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+      - CORS_ORIGINS=["http://localhost:3003","http://127.0.0.1:3003"]
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    networks:
+      - frontend-net  # Allow direct access in development
+      - backend-net
+      - database-net
+
+  # Frontend - Development mode
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: npm run dev
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+    networks:
+      - frontend-net
+      - backend-net  # Allow direct API access
+
+  # Redis - No password in development for simplicity
+  redis:
+    command: redis-server --appendonly yes --loglevel warning
+    ports:
+      - "6379:6379"  # Expose for local debugging
+
+  # Postgres - Expose for local database tools
+  postgres:
+    ports:
+      - "5432:5432"
