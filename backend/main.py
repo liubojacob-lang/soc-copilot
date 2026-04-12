@@ -33,6 +33,7 @@ from middleware import (
 )
 from middleware.csrf_middleware import setup_csrf_middleware
 from middleware.performance import PerformanceMiddleware
+from middleware.security_headers import SecurityHeadersMiddleware
 from middleware.tenant_middleware import TenantMiddleware
 from observability.logging import setup_json_logging
 from observability.tracing import setup_tracing
@@ -103,9 +104,7 @@ async def create_bootstrap_admin():
 
         if user_count == 0:
             logger.info("No users found. Creating bootstrap admin user...")
-            logger.info(
-                f"Bootstrap admin username: {settings.bootstrap_admin_username}"
-            )
+            logger.info(f"Bootstrap admin username: {settings.bootstrap_admin_username}")
             logger.info(f"Bootstrap admin email: {settings.bootstrap_admin_email}")
             logger.info("Bootstrap admin password: [REDACTED for security]")
             logger.warning("CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
@@ -243,9 +242,7 @@ async def lifespan(app_instance: FastAPI):
     logger.info("Trigger System: ENABLED (webhook + cron)")
     logger.info(f"Run Queue: ENABLED (max_concurrent={settings.run_queue_max})")
     logger.info("Secrets Management: ENABLED (Fernet encryption)")
-    logger.info(
-        f"External TI: {'ENABLED' if settings.allow_external_ti else 'DISABLED'}"
-    )
+    logger.info(f"External TI: {'ENABLED' if settings.allow_external_ti else 'DISABLED'}")
     logger.info("Authentication: ENABLED")
     logger.info("RBAC: ENABLED (admin, analyst, auditor)")
     logger.info("Audit Logging: ENABLED")
@@ -259,9 +256,7 @@ async def lifespan(app_instance: FastAPI):
         if settings.strict_production_checks:
             logger.critical(msg)
             raise RuntimeError(msg)
-        logger.critical(
-            msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=true to fail)"
-        )
+        logger.critical(msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=true to fail)")
 
     # Run migrations
     await run_migrations()
@@ -407,6 +402,12 @@ app.add_middleware(
 # Add credentials header for localhost origins
 app.add_middleware(AddCredentialsMiddleware)
 
+# Security headers middleware (adds CSP, X-Frame-Options, HSTS, etc.)
+app.add_middleware(
+    SecurityHeadersMiddleware,
+    enable_hsts=settings.environment == "production",
+)
+
 # P1: Gzip compression middleware - REMOVED due to compatibility issues
 # Use uvicorn's built-in gzip or nginx gzip compression instead
 
@@ -480,9 +481,7 @@ app.include_router(cloud_native.router)  # Phase 4: Cloud native security
 app.include_router(monitor.router)  # Real-time monitoring dashboard
 app.include_router(security_alerts.router)  # v0.9.0: External security alert ingestion
 app.include_router(alert_enrichment.router)  # v0.9.0: Threat intelligence enrichment
-app.include_router(
-    notifications.router
-)  # v0.9.x: Notification channels and queue status
+app.include_router(notifications.router)  # v0.9.x: Notification channels and queue status
 from routers import alerts_lifecycle  # v0.9.0: Alert lifecycle management
 
 app.include_router(alerts_lifecycle.router)  # v0.9.0: Alert lifecycle management
@@ -491,9 +490,7 @@ app.include_router(websocket_filters.router)  # v0.9.0: WebSocket filter managem
 app.include_router(monitoring_alerts.router)  # v0.9.1: Monitoring alert rules
 app.include_router(export.router)  # v0.8.5: Data export functionality
 app.include_router(system_dashboard.router)  # v0.8.5: System health dashboard
-app.include_router(
-    security_vulnerabilities.router
-)  # v0.9.2: Security vulnerability management
+app.include_router(security_vulnerabilities.router)  # v0.9.2: Security vulnerability management
 
 
 # Global OPTIONS handler for CORS preflight
@@ -511,9 +508,7 @@ async def options_handler(path: str, request: Request):
     # Security: Validate origin against whitelist
     if origin:
         # Check if origin is in allowed list
-        allowed_origins = (
-            settings.cors_origins if hasattr(settings, "cors_origins") else []
-        )
+        allowed_origins = settings.cors_origins if hasattr(settings, "cors_origins") else []
         # Handle wildcard and specific origins
         is_allowed = "*" in allowed_origins or origin in allowed_origins
 
@@ -527,10 +522,7 @@ async def options_handler(path: str, request: Request):
 
         # In development, allow localhost variants
         if not is_allowed and settings.environment == "development":
-            if not (
-                origin.startswith("http://localhost")
-                or origin.startswith("http://127.0.0.1")
-            ):
+            if not (origin.startswith("http://localhost") or origin.startswith("http://127.0.0.1")):
                 return Response(
                     status_code=403,
                     headers={"Content-Type": "text/plain"},

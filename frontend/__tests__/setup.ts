@@ -1,7 +1,6 @@
-// Test setup file for Vitest
-import { beforeAll, afterAll, afterEach } from "vitest";
+import "@testing-library/jest-dom";
+import { beforeAll, afterAll, afterEach, vi } from "vitest";
 
-// Mock localStorage
 const store: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => store[key] ?? null,
@@ -24,12 +23,10 @@ Object.defineProperty(global, "localStorage", {
   value: localStorageMock,
 });
 
-// Mock sessionStorage
 Object.defineProperty(global, "sessionStorage", {
   value: localStorageMock,
 });
 
-// Mock matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
@@ -44,7 +41,16 @@ Object.defineProperty(window, "matchMedia", {
   }),
 });
 
-// Clean up after each test
+Object.defineProperty(window, "ResizeObserver", {
+  writable: true,
+  value: vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  })),
+});
+
 afterEach(() => {
   localStorageMock.clear();
+  vi.clearAllMocks();
 });
