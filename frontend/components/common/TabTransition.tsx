@@ -9,14 +9,11 @@ interface TabTransitionProps {
 }
 
 function TabTransition({ activeKey, children, className = "" }: TabTransitionProps) {
-  const activeChild = children.find(child => child.key === activeKey);
+  const activeChild = children.find((child) => child.key === activeKey);
 
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      <div
-        key={activeKey}
-        className="animate-scale-in"
-      >
+      <div key={activeKey} className="animate-scale-in">
         {activeChild?.content}
       </div>
     </div>

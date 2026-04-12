@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
 /**
  * CorrelatedAlerts Component
  * 关联告警视图
  */
 
-import React, { useState } from 'react';
-import { Link2, AlertTriangle, TrendingUp, Clock, ChevronDown, ChevronRight } from 'lucide-react';
-import { AlertCard, SeverityBadge } from '@/components/AlertStatusBadge';
+import React, { useState } from "react";
+import { Link2, AlertTriangle, TrendingUp, Clock, ChevronDown, ChevronRight } from "lucide-react";
+import { AlertCard, SeverityBadge } from "@/components/AlertStatusBadge";
 
 interface CorrelationGroup {
   id: string;
   name: string;
   description: string;
-  correlation_type: 'temporal' | 'attack_chain' | 'threat_intel' | 'asset_based';
+  correlation_type: "temporal" | "attack_chain" | "threat_intel" | "asset_based";
   confidence: number;
   alerts: CorrelatedAlert[];
   created_at: string;
   common_indicators: {
-    type: 'ip' | 'domain' | 'hash' | 'agent' | 'user';
+    type: "ip" | "domain" | "hash" | "agent" | "user";
     value: string;
     count: number;
   }[];
@@ -29,8 +29,8 @@ interface CorrelatedAlert {
   id: string;
   title: string;
   description?: string;
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
-  status: 'new' | 'investigating' | 'resolved' | 'false_positive';
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  status: "new" | "investigating" | "resolved" | "false_positive";
   source: string;
   timestamp: string;
   event_type: string;
@@ -43,28 +43,28 @@ interface CorrelatedAlertsProps {
 
 const CORRELATION_TYPE_CONFIG = {
   temporal: {
-    label: 'Time-based Correlation',
+    label: "Time-based Correlation",
     icon: Clock,
-    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    description: 'Alerts occurred within a short time window',
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    description: "Alerts occurred within a short time window",
   },
   attack_chain: {
-    label: 'Attack Chain',
+    label: "Attack Chain",
     icon: TrendingUp,
-    color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-    description: 'Alerts form part of a multi-stage attack',
+    color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    description: "Alerts form part of a multi-stage attack",
   },
   threat_intel: {
-    label: 'Threat Intelligence',
+    label: "Threat Intelligence",
     icon: AlertTriangle,
-    color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-    description: 'Alerts share known threat indicators',
+    color: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+    description: "Alerts share known threat indicators",
   },
   asset_based: {
-    label: 'Asset-based',
+    label: "Asset-based",
     icon: Link2,
-    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-    description: 'Alerts target the same asset or host',
+    color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+    description: "Alerts target the same asset or host",
   },
 };
 
@@ -72,7 +72,7 @@ export function CorrelatedAlerts({ groups, onAlertClick }: CorrelatedAlertsProps
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const toggleGroup = (groupId: string) => {
-    setExpandedGroups(prev => {
+    setExpandedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(groupId)) {
         next.delete(groupId);
@@ -87,9 +87,7 @@ export function CorrelatedAlerts({ groups, onAlertClick }: CorrelatedAlertsProps
     return (
       <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
         <Link2 className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          No correlated alerts found
-        </p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No correlated alerts found</p>
       </div>
     );
   }
@@ -100,12 +98,10 @@ export function CorrelatedAlerts({ groups, onAlertClick }: CorrelatedAlertsProps
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Correlated Alerts
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Correlated Alerts</h3>
         </div>
         <span className="text-sm text-gray-500 dark:text-gray-400">
-          {groups.length} correlation group{groups.length !== 1 ? 's' : ''}
+          {groups.length} correlation group{groups.length !== 1 ? "s" : ""}
         </span>
       </div>
 
@@ -138,7 +134,9 @@ export function CorrelatedAlerts({ groups, onAlertClick }: CorrelatedAlertsProps
                     </button>
 
                     {/* Correlation Type Badge */}
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color} flex-shrink-0`}>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color} flex-shrink-0`}
+                    >
                       <Icon className="w-3 h-3" />
                       {config.label}
                     </span>
@@ -149,13 +147,15 @@ export function CorrelatedAlerts({ groups, onAlertClick }: CorrelatedAlertsProps
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                           {group.name}
                         </h4>
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          group.confidence >= 80
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                            : group.confidence >= 50
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            group.confidence >= 80
+                              ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                              : group.confidence >= 50
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                                : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                          }`}
+                        >
                           {group.confidence}% confidence
                         </span>
                       </div>
@@ -277,7 +277,7 @@ export function SimpleCorrelationList({ groups, onAlertClick }: CorrelatedAlerts
     return null;
   }
 
-  const allAlerts = groups.flatMap(group => group.alerts);
+  const allAlerts = groups.flatMap((group) => group.alerts);
 
   return (
     <div className="space-y-3">

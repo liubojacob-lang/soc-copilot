@@ -1,0 +1,73 @@
+{
+  "audit": {
+    "actions": {
+      "allActions": "All Actions",
+      "authentication": "Authentication",
+      "userManagement": "User Management",
+      "playbooks": "Playbooks",
+      "assets": "Assets",
+      "apiKeys": "API Keys",
+      "playbookDefinitions": "Playbook Definitions",
+      "threatIntel": "Threat Intel",
+      "iocHits": "IOC Hits",
+      "alertAnalysis": "Alert Analysis",
+      "reports": "Reports",
+      "timelines": "Timelines",
+      "auditLogs": "Audit Logs",
+      "webhooks": "Webhooks",
+      "history": "History"
+    },
+    "paths": {
+      "allPaths": "All Paths",
+      "playbooks": "Playbooks",
+      "authentication": "Authentication",
+      "userManagement": "User Management",
+      "assets": "Assets",
+      "apiKeys": "API Keys",
+      "threatIntel": "Threat Intel",
+      "auditLogs": "Audit Logs",
+      "webhooks": "Webhooks",
+      "history": "History",
+      "alertAnalysis": "Alert Analysis",
+      "reports": "Reports",
+      "timelines": "Timelines"
+    },
+    "statusCodes": {
+      "allStatus": "All Status",
+      "success": "Success (2xx)",
+      "allErrors": "All Errors",
+      "clientErrors": "Client Errors (4xx)",
+      "serverErrors": "Server Errors (5xx)",
+      "ok200": "200 OK",
+      "created201": "201 Created",
+      "noContent204": "204 No Content",
+      "badRequest400": "400 Bad Request",
+      "unauthorized401": "401 Unauthorized",
+      "forbidden403": "403 Forbidden",
+      "notFound404": "404 Not Found",
+      "unprocessable422": "422 Unprocessable",
+      "serverError500": "500 Server Error"
+    }
+  },
+  "api": "API",
+  "checking": "Checking",
+  "statusError": "Error",
+  "logout": "Logout",
+  "wazuh": {
+    "stream": {
+      "title": "Real-time Alert Stream",
+      "toggleFilters": "Toggle Filters",
+      "clearAlerts": "Clear Alerts",
+      "exportAlerts": "Export Alerts",
+      "filters": "Filters",
+      "minSeverity": "Minimum Severity",
+      "allSeverities": "All Severities",
+      "search": "Search",
+      "searchPlaceholder": "Search alerts...",
+      "agent": "Agent",
+      "allAgents": "All Agents",
+      "noAlerts": "No alerts",
+      "notConnected": "Not connected to stream"
+    }
+  }
+}

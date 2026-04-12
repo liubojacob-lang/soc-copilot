@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 
 interface AuditFiltersProps {
   filterAction: string;
@@ -33,8 +33,8 @@ export function AuditFilters({
   onFilterChange,
   onReset,
 }: AuditFiltersProps) {
-  const t = useTranslations('audit');
-  const tAuditPage = useTranslations('auditPage');
+  const t = useTranslations("audit");
+  const tAuditPage = useTranslations("auditPage");
 
   const handleActionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onFilterChange({
@@ -124,13 +124,13 @@ export function AuditFilters({
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-          {tAuditPage('filters.title')}
+          {tAuditPage("filters.title")}
         </h3>
         <button
           onClick={onReset}
           className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
         >
-          {tAuditPage('filters.reset')}
+          {tAuditPage("filters.reset")}
         </button>
       </div>
 
@@ -138,14 +138,14 @@ export function AuditFilters({
         {/* Action Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {tAuditPage('filters.action')}
+            {tAuditPage("filters.action")}
           </label>
           <select
             value={filterAction}
             onChange={handleActionChange}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
           >
-            <option value="">{tAuditPage('filters.allActions')}</option>
+            <option value="">{tAuditPage("filters.allActions")}</option>
             <option value="GET">GET</option>
             <option value="POST">POST</option>
             <option value="PUT">PUT</option>
@@ -159,14 +159,14 @@ export function AuditFilters({
         {/* Status Code Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {tAuditPage('filters.statusCode')}
+            {tAuditPage("filters.statusCode")}
           </label>
           <select
             value={filterStatusCode}
             onChange={handleStatusCodeChange}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
           >
-            <option value="">{tAuditPage('filters.allStatuses')}</option>
+            <option value="">{tAuditPage("filters.allStatuses")}</option>
             <option value="200">200 - OK</option>
             <option value="201">201 - Created</option>
             <option value="400">400 - Bad Request</option>
@@ -180,7 +180,7 @@ export function AuditFilters({
         {/* Date Range Filters */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {tAuditPage('filters.dateFrom')}
+            {tAuditPage("filters.dateFrom")}
           </label>
           <input
             type="date"
@@ -192,7 +192,7 @@ export function AuditFilters({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {tAuditPage('filters.dateTo')}
+            {tAuditPage("filters.dateTo")}
           </label>
           <input
             type="date"
@@ -205,13 +205,13 @@ export function AuditFilters({
         {/* Path Filter */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {tAuditPage('filters.path')}
+            {tAuditPage("filters.path")}
           </label>
           <input
             type="text"
             value={filterPath}
             onChange={handlePathChange}
-            placeholder={tAuditPage('filters.pathPlaceholder')}
+            placeholder={tAuditPage("filters.pathPlaceholder")}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -219,13 +219,13 @@ export function AuditFilters({
         {/* User ID Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {tAuditPage('filters.userId')}
+            {tAuditPage("filters.userId")}
           </label>
           <input
             type="text"
             value={filterUserId}
             onChange={handleUserIdChange}
-            placeholder={tAuditPage('filters.userIdPlaceholder')}
+            placeholder={tAuditPage("filters.userIdPlaceholder")}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -233,13 +233,13 @@ export function AuditFilters({
         {/* IP Address Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {tAuditPage('filters.ipAddress')}
+            {tAuditPage("filters.ipAddress")}
           </label>
           <input
             type="text"
             value={filterIpAddress}
             onChange={handleIpAddressChange}
-            placeholder={tAuditPage('filters.ipAddressPlaceholder')}
+            placeholder={tAuditPage("filters.ipAddressPlaceholder")}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
           />
         </div>

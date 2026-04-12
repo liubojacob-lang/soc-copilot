@@ -1,6 +1,6 @@
 /** Smart pagination component for audit logs */
 
-import { getPageNumbers } from '../utils';
+import { getPageNumbers } from "../utils";
 
 interface AuditPaginationProps {
   page: number;
@@ -15,7 +15,7 @@ export function AuditPagination({
   pageSize,
   total,
   onPageChange,
-  onPageSizeChange
+  onPageSizeChange,
 }: AuditPaginationProps) {
   if (total === 0) return null;
 
@@ -26,9 +26,15 @@ export function AuditPagination({
     <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
       {/* Left: Statistics */}
       <div className="text-sm text-gray-700 dark:text-gray-300">
-        显示 <span className="font-semibold text-blue-600 dark:text-blue-400">{(page - 1) * pageSize + 1}</span> 到{" "}
-        <span className="font-semibold text-blue-600 dark:text-blue-400">{Math.min(page * pageSize, total)}</span> 共{" "}
-        <span className="font-semibold text-blue-600 dark:text-blue-400">{total}</span> 条记录
+        显示{" "}
+        <span className="font-semibold text-blue-600 dark:text-blue-400">
+          {(page - 1) * pageSize + 1}
+        </span>{" "}
+        到{" "}
+        <span className="font-semibold text-blue-600 dark:text-blue-400">
+          {Math.min(page * pageSize, total)}
+        </span>{" "}
+        共 <span className="font-semibold text-blue-600 dark:text-blue-400">{total}</span> 条记录
       </div>
 
       {/* Center: Page Numbers */}

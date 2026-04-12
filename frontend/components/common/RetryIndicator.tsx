@@ -4,17 +4,17 @@
  * Shows retry status to users with countdown timer
  */
 
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { formatRetryMessage, type RetryState } from '@/lib/retryConfig';
+import React, { useEffect, useState } from "react";
+import { formatRetryMessage, type RetryState } from "@/lib/retryConfig";
 
 interface RetryIndicatorProps {
   retryState: RetryState;
   className?: string;
 }
 
-export function RetryIndicator({ retryState, className = '' }: RetryIndicatorProps) {
+export function RetryIndicator({ retryState, className = "" }: RetryIndicatorProps) {
   const [countdown, setCountdown] = useState(retryState.nextRetryIn || 0);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export function RetryIndicator({ retryState, className = '' }: RetryIndicatorPro
     setCountdown(retryState.nextRetryIn);
 
     const interval = setInterval(() => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev <= 1000) {
           clearInterval(interval);
           return 0;
@@ -39,7 +39,9 @@ export function RetryIndicator({ retryState, className = '' }: RetryIndicatorPro
   const remaining = retryState.maxRetries - retryState.attempt;
 
   return (
-    <div className={`flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 ${className}`}>
+    <div
+      className={`flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 ${className}`}
+    >
       <div className="flex items-center gap-2">
         {/* Spinner */}
         <svg
@@ -65,7 +67,7 @@ export function RetryIndicator({ retryState, className = '' }: RetryIndicatorPro
 
         {/* Message */}
         <span>
-          Retrying... ({remaining} {remaining === 1 ? 'attempt' : 'attempts'} left
+          Retrying... ({remaining} {remaining === 1 ? "attempt" : "attempts"} left
           {seconds > 0 && `, in ${seconds}s`})
         </span>
       </div>
@@ -109,7 +111,7 @@ export function RetryBadge({ retryState }: { retryState: RetryState }) {
  */
 export function RetryOverlay({
   retryState,
-  message = 'Network error. Retrying...',
+  message = "Network error. Retrying...",
   onCancel,
 }: {
   retryState: RetryState;
@@ -124,7 +126,7 @@ export function RetryOverlay({
     setCountdown(retryState.nextRetryIn);
 
     const interval = setInterval(() => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev <= 1000) {
           clearInterval(interval);
           return 0;
@@ -193,8 +195,8 @@ export function RetryOverlay({
         <div className="text-center mb-4">
           <h3 className="text-lg font-semibold mb-2">{message}</h3>
           <p className="text-muted-foreground">
-            Next retry in {seconds} second{seconds !== 1 ? 's' : ''} ({remaining}{' '}
-            {remaining === 1 ? 'attempt' : 'attempts'} remaining)
+            Next retry in {seconds} second{seconds !== 1 ? "s" : ""} ({remaining}{" "}
+            {remaining === 1 ? "attempt" : "attempts"} remaining)
           </p>
         </div>
 

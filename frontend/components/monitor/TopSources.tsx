@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
 /**
  * TopSources Component
  * Top 攻击源展示 - IP/域名统计
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -15,14 +15,15 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-} from 'recharts';
-import { Globe, Server, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+} from "recharts";
+import { Globe, Server, ChevronDown, ChevronUp, ExternalLink, Ban, Loader2 } from "lucide-react";
+import { useToast } from "@/components/Toast";
 
 interface ThreatSource {
-  type: 'ip' | 'domain';
+  type: "ip" | "domain";
   value: string;
   count: number;
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  severity: "critical" | "high" | "medium" | "low";
   country?: string;
   first_seen: string;
   last_seen: string;
@@ -30,40 +31,38 @@ interface ThreatSource {
 
 interface TopSourcesProps {
   sources: ThreatSource[];
-  type?: 'ip' | 'domain' | 'both';
+  type?: "ip" | "domain" | "both";
   limit?: number;
   showDetails?: boolean;
 }
 
 const SEVERITY_COLORS = {
-  critical: '#dc2626',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#3b82f6',
+  critical: "#dc2626",
+  high: "#f97316",
+  medium: "#eab308",
+  low: "#3b82f6",
 };
 
 export function TopSources({
   sources,
-  type = 'both',
+  type = "both",
   limit = 10,
   showDetails = true,
 }: TopSourcesProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // 过滤和限制数据
-  const filteredSources = sources
-    .filter(s => type === 'both' || s.type === type)
-    .slice(0, limit);
+  const filteredSources = sources.filter((s) => type === "both" || s.type === type).slice(0, limit);
 
   // 图表数据
-  const chartData = filteredSources.map(s => ({
+  const chartData = filteredSources.map((s) => ({
     name: s.value,
     count: s.count,
     color: SEVERITY_COLORS[s.severity],
   }));
 
   const toggleExpand = (value: string) => {
-    setExpanded(prev => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(value)) {
         next.delete(value);
@@ -90,7 +89,11 @@ export function TopSources({
       {/* 柱状图 */}
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="horizontal" margin={{ top: 10, right: 10, left: 80, bottom: 10 }}>
+          <BarChart
+            data={chartData}
+            layout="horizontal"
+            margin={{ top: 10, right: 10, left: 80, bottom: 10 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} />
             <XAxis type="number" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
             <YAxis
@@ -103,12 +106,13 @@ export function TopSources({
               width={70}
             />
             <Tooltip
-              content={({ active, payload }: any) => {
+              content={({ active, payload }) => {
                 if (!active || !payload || !payload.length) return null;
+                const data = payload[0] as { value: number; payload: { name: string } };
                 return (
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2">
                     <p className="text-xs font-medium text-gray-900 dark:text-white">
-                      {payload[0].payload.name}: {payload[0].value} alerts
+                      {data.payload.name}: {data.value} alerts
                     </p>
                   </div>
                 );
@@ -128,7 +132,7 @@ export function TopSources({
         <div className="space-y-2">
           {filteredSources.map((source) => {
             const isExpanded = expanded.has(source.value);
-            const Icon = source.type === 'ip' ? Server : Globe;
+            const Icon = source.type === "ip" ? Server : Globe;
 
             return (
               <div
@@ -144,24 +148,24 @@ export function TopSources({
                     {/* 图标 */}
                     <div
                       className={`p-2 rounded-lg ${
-                        source.severity === 'critical'
-                          ? 'bg-red-100 dark:bg-red-900/30'
-                          : source.severity === 'high'
-                          ? 'bg-orange-100 dark:bg-orange-900/30'
-                          : source.severity === 'medium'
-                          ? 'bg-yellow-100 dark:bg-yellow-900/30'
-                          : 'bg-blue-100 dark:bg-blue-900/30'
+                        source.severity === "critical"
+                          ? "bg-red-100 dark:bg-red-900/30"
+                          : source.severity === "high"
+                            ? "bg-orange-100 dark:bg-orange-900/30"
+                            : source.severity === "medium"
+                              ? "bg-yellow-100 dark:bg-yellow-900/30"
+                              : "bg-blue-100 dark:bg-blue-900/30"
                       }`}
                     >
                       <Icon
                         className={`w-4 h-4 ${
-                          source.severity === 'critical'
-                            ? 'text-red-600 dark:text-red-400'
-                            : source.severity === 'high'
-                            ? 'text-orange-600 dark:text-orange-400'
-                            : source.severity === 'medium'
-                            ? 'text-yellow-600 dark:text-yellow-400'
-                            : 'text-blue-600 dark:text-blue-400'
+                          source.severity === "critical"
+                            ? "text-red-600 dark:text-red-400"
+                            : source.severity === "high"
+                              ? "text-orange-600 dark:text-orange-400"
+                              : source.severity === "medium"
+                                ? "text-yellow-600 dark:text-yellow-400"
+                                : "text-blue-600 dark:text-blue-400"
                         }`}
                       />
                     </div>
@@ -179,7 +183,7 @@ export function TopSources({
                         )}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {source.count} alert{source.count !== 1 ? 's' : ''}
+                        {source.count} alert{source.count !== 1 ? "s" : ""}
                       </div>
                     </div>
                   </div>
@@ -208,13 +212,13 @@ export function TopSources({
                         <span className="text-gray-500 dark:text-gray-400">Severity:</span>
                         <span
                           className={`ml-2 font-medium capitalize ${
-                            source.severity === 'critical'
-                              ? 'text-red-600 dark:text-red-400'
-                              : source.severity === 'high'
-                              ? 'text-orange-600 dark:text-orange-400'
-                              : source.severity === 'medium'
-                              ? 'text-yellow-600 dark:text-yellow-400'
-                              : 'text-blue-600 dark:text-blue-400'
+                            source.severity === "critical"
+                              ? "text-red-600 dark:text-red-400"
+                              : source.severity === "high"
+                                ? "text-orange-600 dark:text-orange-400"
+                                : source.severity === "medium"
+                                  ? "text-yellow-600 dark:text-yellow-400"
+                                  : "text-blue-600 dark:text-blue-400"
                           }`}
                         >
                           {source.severity}
@@ -236,21 +240,21 @@ export function TopSources({
 
                     {/* 快速操作 */}
                     <div className="flex gap-2 mt-3">
-                      <button
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-xs font-medium rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // TODO: Block IP
+                      <BlockIPButton
+                        value={source.value}
+                        type={source.type}
+                        onSuccess={() => {
+                          // Optionally refresh the list or show success
                         }}
-                      >
-                        <Server className="w-3 h-3" />
-                        Block IP
-                      </button>
+                      />
                       <button
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-medium rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: View details
+                          window.open(
+                            `/threat-intel?indicator=${encodeURIComponent(source.value)}`,
+                            "_blank"
+                          );
                         }}
                       >
                         <ExternalLink className="w-3 h-3" />
@@ -268,19 +272,85 @@ export function TopSources({
   );
 }
 
+// Block IP Button Component
+interface BlockIPButtonProps {
+  value: string;
+  type: "ip" | "domain";
+  alertId?: string;
+  onSuccess?: () => void;
+}
+
+function BlockIPButton({ value, type, alertId, onSuccess }: BlockIPButtonProps) {
+  const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
+
+  const handleBlock = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!confirm(`Are you sure you want to block ${type} ${value}?`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/blocked-ips", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          value,
+          type,
+          reason: `Blocked from threat intelligence dashboard`,
+          alert_id: alertId,
+          expires_in_hours: 168, // 7 days
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to block");
+      }
+
+      showToast(
+        `Blocked Successfully: ${type.toUpperCase()} ${value} has been blocked for 7 days.`,
+        "success"
+      );
+
+      onSuccess?.();
+    } catch (error) {
+      showToast(
+        `Failed to Block: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-xs font-medium rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+      onClick={handleBlock}
+      disabled={loading}
+    >
+      {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
+      Block
+    </button>
+  );
+}
+
 // 简化版：仅显示列表
 export function SimpleTopSources({
   sources,
   limit = 5,
-  type = 'both',
+  type = "both",
 }: {
   sources: ThreatSource[];
   limit?: number;
-  type?: 'ip' | 'domain' | 'both';
+  type?: "ip" | "domain" | "both";
 }) {
-  const filteredSources = sources
-    .filter(s => type === 'both' || s.type === type)
-    .slice(0, limit);
+  const filteredSources = sources.filter((s) => type === "both" || s.type === type).slice(0, limit);
 
   if (filteredSources.length === 0) {
     return null;
@@ -289,7 +359,7 @@ export function SimpleTopSources({
   return (
     <div className="space-y-2">
       {filteredSources.map((source) => {
-        const Icon = source.type === 'ip' ? Server : Globe;
+        const Icon = source.type === "ip" ? Server : Globe;
 
         return (
           <div
@@ -298,11 +368,11 @@ export function SimpleTopSources({
           >
             <Icon
               className={`w-4 h-4 ${
-                source.severity === 'critical'
-                  ? 'text-red-500'
-                  : source.severity === 'high'
-                  ? 'text-orange-500'
-                  : 'text-yellow-500'
+                source.severity === "critical"
+                  ? "text-red-500"
+                  : source.severity === "high"
+                    ? "text-orange-500"
+                    : "text-yellow-500"
               }`}
             />
             <div className="flex-1 min-w-0">
@@ -310,7 +380,7 @@ export function SimpleTopSources({
                 {source.value}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                {source.count} alert{source.count !== 1 ? 's' : ''}
+                {source.count} alert{source.count !== 1 ? "s" : ""}
               </div>
             </div>
           </div>

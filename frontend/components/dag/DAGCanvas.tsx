@@ -12,6 +12,9 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   addEdge,
+  NodeChange,
+  EdgeChange,
+  Connection,
 } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -24,21 +27,48 @@ const nodeTypes: NodeTypes = {
 // P0-2: Maximum update iterations to prevent infinite loops
 const MAX_UPDATE_ITERATIONS = 100;
 
+// Internal types for normalizing mixed node/edge definitions
+interface DefinitionNode {
+  id: string;
+  step_id?: string;
+  name?: string;
+  label?: string;
+  position_x?: number;
+  position_y?: number;
+}
+
+interface DefinitionEdge {
+  source: string;
+  target: string;
+  condition?: string;
+}
+
 interface DAGCanvasProps {
   definition?: {
-    nodes: Array<{ id: string; step_id: string; name: string; position_x?: number; position_y?: number }> | Node<NodeData>[];
+    nodes:
+      | Array<{
+          id: string;
+          step_id: string;
+          name: string;
+          position_x?: number;
+          position_y?: number;
+        }>
+      | Node<NodeData>[];
     edges: Array<{ source: string; target: string; condition?: string }> | Edge[];
   };
-  nodeStatuses?: Record<string, {
-    status: "pending" | "running" | "success" | "failed" | "skipped" | "waiting_approval";
-    duration?: number;
-    error?: string;
-    output?: Record<string, any>;
-  }>;
+  nodeStatuses?: Record<
+    string,
+    {
+      status: "pending" | "running" | "success" | "failed" | "skipped" | "waiting_approval";
+      duration?: number;
+      error?: string;
+      output?: Record<string, unknown>;
+    }
+  >;
   readonly?: boolean;
   onNodesChange?: (nodes: Node<NodeData>[]) => void;
   onEdgesChange?: (edges: Edge[]) => void;
-  onConnect?: (connection: Edge) => void;
+  onConnect?: (connection: Connection) => void;
   onNodeClick?: (node: Node) => void;
   onEdgeClick?: (edge: Edge) => void;
   onPaneClick?: () => void;
@@ -49,14 +79,21 @@ interface DAGCanvasProps {
  * Create a stable hash of nodeStatuses values (not object reference)
  * This ensures the effect only runs when actual status values change, not when parent re-renders
  */
-function createStatusHash(statuses: Record<string, any>): string {
+function createStatusHash(
+  statuses: Record<
+    string,
+    { status: string; duration?: number; error?: string; output?: Record<string, unknown> }
+  >
+): string {
   const keys = Object.keys(statuses).sort();
   if (keys.length === 0) return "";
 
-  return keys.map(key => {
-    const s = statuses[key];
-    return `${key}:${s.status}:${s.duration ?? ""}:${s.error ?? ""}:${JSON.stringify(s.output ?? {})}`;
-  }).join("|");
+  return keys
+    .map((key) => {
+      const s = statuses[key];
+      return `${key}:${s.status}:${s.duration ?? ""}:${s.error ?? ""}:${JSON.stringify(s.output ?? {})}`;
+    })
+    .join("|");
 }
 
 export function DAGCanvas({
@@ -79,7 +116,7 @@ export function DAGCanvas({
   const readonlyDefinitionKeyRef = useRef("");
   const editDefinitionKeyRef = useRef("");
   const lastProcessedStatusHashRef = useRef("");
-  
+
   // P0-2: Update iteration counter for infinite loop protection
   const updateIterationRef = useRef(0);
 
@@ -87,8 +124,8 @@ export function DAGCanvas({
   const currentDefinitionKey = useMemo(() => {
     if (!definition) return "";
     return JSON.stringify({
-      nodes: definition.nodes?.map(n => n.id).sort(),
-      edges: definition.edges?.map(e => `${e.source}-${e.target}`).sort()
+      nodes: definition.nodes?.map((n) => n.id).sort(),
+      edges: definition.edges?.map((e) => `${e.source}-${e.target}`).sort(),
     });
   }, [definition]);
 
@@ -104,15 +141,17 @@ export function DAGCanvas({
       const status = nodeStatuses[node.id] || { status: "pending" as const };
 
       // Handle both plain objects and ReactFlow Node types
-      const isReactFlowNode = 'data' in node && 'position' in node;
-      const id = isReactFlowNode ? (node as Node).id : (node as any).id;
-      const position = isReactFlowNode ? (node as Node).position : {
-        x: (node as any).position_x ?? (index % 3) * 300,
-        y: (node as any).position_y ?? Math.floor(index / 3) * 150,
+      const isReactFlowNode = "data" in node && "position" in node;
+      const rfNode = isReactFlowNode ? (node as Node) : null;
+      const defNode = isReactFlowNode ? null : (node as DefinitionNode);
+      const id = rfNode?.id ?? defNode?.id ?? "";
+      const position = rfNode?.position ?? {
+        x: defNode?.position_x ?? (index % 3) * 300,
+        y: defNode?.position_y ?? Math.floor(index / 3) * 150,
       };
-      const nodeData = isReactFlowNode ? (node as Node).data : node as any;
+      const nodeData = rfNode?.data ?? defNode;
       const label = nodeData?.label || nodeData?.name || id;
-      const stepId = nodeData?.stepId || (node as any).step_id || id;
+      const stepId = (nodeData as NodeData)?.stepId || defNode?.step_id || id;
 
       return {
         id,
@@ -138,10 +177,12 @@ export function DAGCanvas({
 
     return definition.edges.map((edge, index) => {
       // Handle both plain objects and ReactFlow Edge types
-      const isReactFlowEdge = 'id' in edge && 'source' in edge && 'target' in edge;
-      const source = isReactFlowEdge ? (edge as Edge).source : (edge as any).source;
-      const target = isReactFlowEdge ? (edge as Edge).target : (edge as any).target;
-      const condition = isReactFlowEdge ? (edge as Edge).label : (edge as any).condition;
+      const isReactFlowEdge = "id" in edge && "source" in edge && "target" in edge;
+      const rfEdge = isReactFlowEdge ? (edge as Edge) : null;
+      const defEdge = isReactFlowEdge ? null : (edge as DefinitionEdge);
+      const source = rfEdge?.source ?? defEdge?.source ?? "";
+      const target = rfEdge?.target ?? defEdge?.target ?? "";
+      const condition = rfEdge?.label ?? defEdge?.condition;
 
       return {
         id: `edge-${index}`,
@@ -179,14 +220,26 @@ export function DAGCanvas({
         setEdges(initialEdges);
         initializedRef.current = true;
         // Store initial state for comparison
-        lastNotifiedNodesRef.current = JSON.stringify(initialNodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y })));
-        lastNotifiedEdgesRef.current = JSON.stringify(initialEdges.map(e => ({ s: e.source, t: e.target })));
+        lastNotifiedNodesRef.current = JSON.stringify(
+          initialNodes.map((n) => ({ id: n.id, x: n.position.x, y: n.position.y }))
+        );
+        lastNotifiedEdgesRef.current = JSON.stringify(
+          initialEdges.map((e) => ({ s: e.source, t: e.target }))
+        );
         lastProcessedStatusHashRef.current = nodeStatusesHash;
         // P0-2: Reset iteration counter on definition change
         updateIterationRef.current = 0;
       }
     }
-  }, [readonly, currentDefinitionKey, initialNodes, initialEdges, setNodes, setEdges, nodeStatusesHash]);
+  }, [
+    readonly,
+    currentDefinitionKey,
+    initialNodes,
+    initialEdges,
+    setNodes,
+    setEdges,
+    nodeStatusesHash,
+  ]);
 
   /**
    * CRITICAL: Idempotent status update for readonly mode
@@ -206,7 +259,7 @@ export function DAGCanvas({
 
     // P0-2: Infinite loop protection - check iteration count
     if (updateIterationRef.current >= MAX_UPDATE_ITERATIONS) {
-      console.warn('[DAGCanvas] Max update iterations reached, skipping further updates');
+      console.warn("[DAGCanvas] Max update iterations reached, skipping further updates");
       return;
     }
 
@@ -233,7 +286,8 @@ export function DAGCanvas({
         const statusChanged = currentData.status !== newStatus.status;
         const durationChanged = currentData.duration !== newStatus.duration;
         const errorChanged = currentData.error !== newStatus.error;
-        const outputChanged = JSON.stringify(currentData.output) !== JSON.stringify(newStatus.output);
+        const outputChanged =
+          JSON.stringify(currentData.output) !== JSON.stringify(newStatus.output);
 
         if (!statusChanged && !durationChanged && !errorChanged && !outputChanged) {
           // No changes - return ORIGINAL reference (crucial for idempotency)
@@ -268,13 +322,17 @@ export function DAGCanvas({
         const sourceStatus = nodeStatuses[edge.source]?.status;
         const newAnimated = sourceStatus === "running";
         const newStroke =
-          sourceStatus === "success" ? "#22c55e" :
-          sourceStatus === "failed" ? "#ef4444" :
-          sourceStatus === "running" ? "#3b82f6" : "#94a3b8";
+          sourceStatus === "success"
+            ? "#22c55e"
+            : sourceStatus === "failed"
+              ? "#ef4444"
+              : sourceStatus === "running"
+                ? "#3b82f6"
+                : "#94a3b8";
 
         // Check if anything changed
         const animatedChanged = edge.animated !== newAnimated;
-        const styleChanged = (edge.style as any)?.stroke !== newStroke;
+        const styleChanged = (edge.style as Record<string, string>)?.stroke !== newStroke;
 
         if (!animatedChanged && !styleChanged) {
           // No changes - return ORIGINAL reference
@@ -297,9 +355,12 @@ export function DAGCanvas({
 
   // Notify parent of nodes changes - only when actually changed
   useLayoutEffect(() => {
-    if (readonly || !onNodesChange || isNotifyingParentRef.current || !initializedRef.current) return;
+    if (readonly || !onNodesChange || isNotifyingParentRef.current || !initializedRef.current)
+      return;
 
-    const nodesKey = JSON.stringify(nodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y })));
+    const nodesKey = JSON.stringify(
+      nodes.map((n) => ({ id: n.id, x: n.position.x, y: n.position.y }))
+    );
     if (nodesKey !== lastNotifiedNodesRef.current) {
       lastNotifiedNodesRef.current = nodesKey;
       isNotifyingParentRef.current = true;
@@ -313,9 +374,10 @@ export function DAGCanvas({
 
   // Notify parent of edges changes - only when actually changed
   useLayoutEffect(() => {
-    if (readonly || !onEdgesChange || isNotifyingParentRef.current || !initializedRef.current) return;
+    if (readonly || !onEdgesChange || isNotifyingParentRef.current || !initializedRef.current)
+      return;
 
-    const edgesKey = JSON.stringify(edges.map(e => ({ s: e.source, t: e.target })));
+    const edgesKey = JSON.stringify(edges.map((e) => ({ s: e.source, t: e.target })));
     if (edgesKey !== lastNotifiedEdgesRef.current) {
       lastNotifiedEdgesRef.current = edgesKey;
       isNotifyingParentRef.current = true;
@@ -327,47 +389,65 @@ export function DAGCanvas({
     }
   }, [edges, onEdgesChange, readonly]);
 
-  const handleNodesChange = useCallback((changes: any) => {
-    onNodesChangeInternal(changes);
-  }, [onNodesChangeInternal]);
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      onNodesChangeInternal(changes);
+    },
+    [onNodesChangeInternal]
+  );
 
-  const handleEdgesChange = useCallback((changes: any) => {
-    onEdgesChangeInternal(changes);
-  }, [onEdgesChangeInternal]);
+  const handleEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      onEdgesChangeInternal(changes);
+    },
+    [onEdgesChangeInternal]
+  );
 
-  const handleConnect = useCallback((connection: any) => {
-    if (readonly) return;
-    setEdges((eds) => addEdge(connection, eds));
-    if (onConnect) {
-      onConnect(connection);
-    }
-  }, [readonly, onConnect, setEdges]);
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      if (readonly) return;
+      setEdges((eds) => addEdge(connection, eds));
+      if (onConnect) {
+        onConnect(connection);
+      }
+    },
+    [readonly, onConnect, setEdges]
+  );
 
   // Handle node click for selection
-  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    if (readonly) return;
-    event.stopPropagation();
-    if (onNodeClick) {
-      onNodeClick(node);
-    }
-  }, [readonly, onNodeClick]);
+  const handleNodeClick = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      if (readonly) return;
+      event.stopPropagation();
+      if (onNodeClick) {
+        onNodeClick(node);
+      }
+    },
+    [readonly, onNodeClick]
+  );
 
   // Handle edge click for selection
-  const handleEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
-    if (readonly) return;
-    event.stopPropagation();
-    if (onEdgeClick) {
-      onEdgeClick(edge);
-    }
-  }, [readonly, onEdgeClick]);
+  const handleEdgeClick = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      if (readonly) return;
+      event.stopPropagation();
+      if (onEdgeClick) {
+        onEdgeClick(edge);
+      }
+    },
+    [readonly, onEdgeClick]
+  );
 
   // Handle background click to deselect
-  const handlePaneClick = useCallback((event: React.MouseEvent) => {
-    if (readonly) return;
-    if (onPaneClick) {
-      onPaneClick();
-    }
-  }, [readonly, onPaneClick]);
+  const handlePaneClick = useCallback(
+    (event: React.MouseEvent) => {
+      if (readonly) return;
+      if (onPaneClick) {
+        onPaneClick();
+      }
+    },
+    [readonly, onPaneClick]
+  );
 
   return (
     <div className={`w-full h-full ${className}`}>
@@ -391,25 +471,24 @@ export function DAGCanvas({
           style: { strokeWidth: 2 },
         }}
       >
-        <Background
-          color="#94a3b8"
-          gap={16}
-        />
-        <Controls
-          showZoom={true}
-          showFitView={true}
-          showInteractive={!readonly}
-        />
+        <Background color="#94a3b8" gap={16} />
+        <Controls showZoom={true} showFitView={true} showInteractive={!readonly} />
         <MiniMap
           nodeColor={(node) => {
             const data = node.data as NodeData;
             switch (data.status) {
-              case "success": return "#22c55e";
-              case "failed": return "#ef4444";
-              case "running": return "#3b82f6";
-              case "skipped": return "#6b7280";
-              case "waiting_approval": return "#eab308";
-              default: return "#cbd5e1";
+              case "success":
+                return "#22c55e";
+              case "failed":
+                return "#ef4444";
+              case "running":
+                return "#3b82f6";
+              case "skipped":
+                return "#6b7280";
+              case "waiting_approval":
+                return "#eab308";
+              default:
+                return "#cbd5e1";
             }
           }}
           maskColor="rgba(0, 0, 0, 0.1)"

@@ -14,7 +14,7 @@ export interface PlaybookMetadata {
   description: string;
   version: string;
   estimated_duration_seconds: number;
-  steps: any[];
+  steps: Record<string, unknown>[];
 }
 
 export interface QueueStats {

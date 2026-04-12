@@ -1,17 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from 'next-intl';
-import {
-  Search,
-  Plus,
-  Edit,
-  Trash2,
-  X,
-  Server,
-  User,
-  Building,
-} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { authFetchJSON } from "@/lib/auth";
+import { Search, Plus, Edit, Trash2, X, Server, User, Building } from "lucide-react";
 
 interface Asset {
   id: string;
@@ -35,9 +27,9 @@ const CRITICALITY_COLORS = {
 };
 
 export function AssetsTab() {
-  const t = useTranslations('assets');
-  const tCommon = useTranslations('common');
-  
+  const t = useTranslations("assets");
+  const tCommon = useTranslations("common");
+
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -67,18 +59,11 @@ export function AssetsTab() {
   const loadAssets = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("access_token");
       const params = new URLSearchParams();
       if (search) params.append("query", search);
       params.append("limit", "50");
 
-      const response = await fetch(`/api/assets?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) throw new Error("Failed to load assets");
-
-      const data = await response.json();
+      const data = await authFetchJSON<{ items?: Asset[] }>(`/api/assets?${params}`);
       setAssets(data.items || []);
     } catch (err) {
       console.error("Failed to load assets:", err);
@@ -91,20 +76,17 @@ export function AssetsTab() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch("/api/assets", {
+      await authFetchJSON("/api/assets", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
+          tags: formData.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
         }),
       });
-
-      if (!response.ok) throw new Error("Failed to create asset");
 
       setShowCreateModal(false);
       resetForm();
@@ -121,20 +103,17 @@ export function AssetsTab() {
     if (!selectedAsset) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`/api/assets/${selectedAsset.id}`, {
+      await authFetchJSON(`/api/assets/${selectedAsset.id}`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
+          tags: formData.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
         }),
       });
-
-      if (!response.ok) throw new Error("Failed to update asset");
 
       setShowEditModal(false);
       resetForm();
@@ -149,13 +128,9 @@ export function AssetsTab() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this asset?")) return;
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`/api/assets/${id}`, {
+      await authFetchJSON(`/api/assets/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!response.ok) throw new Error("Failed to delete asset");
       loadAssets();
     } catch (err) {
       console.error("Failed to delete asset:", err);
@@ -201,7 +176,7 @@ export function AssetsTab() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('searchPlaceholder')}
+            placeholder={t("searchPlaceholder")}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
           />
         </div>
@@ -213,7 +188,7 @@ export function AssetsTab() {
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
-          {t('create')}
+          {t("create")}
         </button>
       </div>
 
@@ -225,7 +200,7 @@ export function AssetsTab() {
       ) : assets.length === 0 ? (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <Server className="w-10 h-10 mx-auto mb-2 opacity-50" />
-          <p>{t('noAssets')}</p>
+          <p>{t("noAssets")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -238,7 +213,7 @@ export function AssetsTab() {
                 <div className="flex items-center gap-2">
                   <Server className="w-4 h-4 text-gray-400" />
                   <span className="font-medium text-gray-900 dark:text-white text-sm">
-                    {asset.hostname || asset.ip || t('unknown')}
+                    {asset.hostname || asset.ip || t("unknown")}
                   </span>
                 </div>
                 <span
@@ -302,13 +277,13 @@ export function AssetsTab() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <Modal title={t('createAsset')} onClose={() => setShowCreateModal(false)}>
+        <Modal title={t("createAsset")} onClose={() => setShowCreateModal(false)}>
           <AssetForm
             formData={formData}
             setFormData={setFormData}
             onSubmit={handleCreate}
             submitting={submitting}
-            submitLabel={t('create')}
+            submitLabel={t("create")}
             t={t}
             tCommon={tCommon}
           />
@@ -317,13 +292,13 @@ export function AssetsTab() {
 
       {/* Edit Modal */}
       {showEditModal && (
-        <Modal title={t('editAsset')} onClose={() => setShowEditModal(false)}>
+        <Modal title={t("editAsset")} onClose={() => setShowEditModal(false)}>
           <AssetForm
             formData={formData}
             setFormData={setFormData}
             onSubmit={handleUpdate}
             submitting={submitting}
-            submitLabel={tCommon('save')}
+            submitLabel={tCommon("save")}
             t={t}
             tCommon={tCommon}
           />
@@ -334,14 +309,25 @@ export function AssetsTab() {
 }
 
 // Modal Component
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+function Modal({
+  title,
+  children,
+  onClose,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-gray-700">
           <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+          >
             <X className="w-4 h-4 text-gray-400" />
           </button>
         </div>
@@ -361,20 +347,40 @@ function AssetForm({
   t,
   tCommon,
 }: {
-  formData: any;
-  setFormData: any;
+  formData: {
+    hostname: string;
+    ip: string;
+    owner: string;
+    business: string;
+    criticality: "low" | "medium" | "high" | "critical";
+    tags: string;
+    notes: string;
+    is_active: boolean;
+  };
+  setFormData: React.Dispatch<
+    React.SetStateAction<{
+      hostname: string;
+      ip: string;
+      owner: string;
+      business: string;
+      criticality: "low" | "medium" | "high" | "critical";
+      tags: string;
+      notes: string;
+      is_active: boolean;
+    }>
+  >;
   onSubmit: (e: React.FormEvent) => void;
   submitting: boolean;
   submitLabel: string;
-  t: any;
-  tCommon: any;
+  t: (key: string) => string;
+  tCommon: (key: string) => string;
 }) {
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('hostname')}
+            {t("hostname")}
           </label>
           <input
             type="text"
@@ -385,7 +391,7 @@ function AssetForm({
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('ip')}
+            {t("ip")}
           </label>
           <input
             type="text"
@@ -398,7 +404,7 @@ function AssetForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('owner')}
+            {t("owner")}
           </label>
           <input
             type="text"
@@ -409,7 +415,7 @@ function AssetForm({
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('business')}
+            {t("business")}
           </label>
           <input
             type="text"
@@ -421,22 +427,27 @@ function AssetForm({
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {t('criticality')}
+          {t("criticality")}
         </label>
         <select
           value={formData.criticality}
-          onChange={(e) => setFormData({ ...formData, criticality: e.target.value })}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              criticality: e.target.value as "low" | "medium" | "high" | "critical",
+            })
+          }
           className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-          <option value="low">{t('criticalities.low')}</option>
-          <option value="medium">{t('criticalities.medium')}</option>
-          <option value="high">{t('criticalities.high')}</option>
-          <option value="critical">{t('criticalities.critical')}</option>
+          <option value="low">{t("criticalities.low")}</option>
+          <option value="medium">{t("criticalities.medium")}</option>
+          <option value="high">{t("criticalities.high")}</option>
+          <option value="critical">{t("criticalities.critical")}</option>
         </select>
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {t('tags')}
+          {t("tags")}
         </label>
         <input
           type="text"
@@ -452,7 +463,7 @@ function AssetForm({
           disabled={submitting}
           className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {submitting ? tCommon('loading') : submitLabel}
+          {submitting ? tCommon("loading") : submitLabel}
         </button>
       </div>
     </form>

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { loadAuthState } from '@/lib/auth';
-import { Shield, Filter, Plus, Trash2, Save, RefreshCw, CheckCircle } from 'lucide-react';
-import { SeverityLevel } from '@/types/wazuh';
+import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { loadAuthState } from "@/lib/auth";
+import { Shield, Filter, Plus, Trash2, Save, RefreshCw, CheckCircle } from "lucide-react";
+import { SeverityLevel } from "@/types/wazuh";
 
 interface FilterRule {
   id?: string;
@@ -22,28 +22,28 @@ interface FilterRule {
 
 interface FilterSet {
   user_id: string;
-  default_action: 'allow' | 'block';
+  default_action: "allow" | "block";
   rules: FilterRule[];
 }
 
-const SEVERITY_LEVELS: SeverityLevel[] = ['critical', 'high', 'medium', 'low', 'info'];
+const SEVERITY_LEVELS: SeverityLevel[] = ["critical", "high", "medium", "low", "info"];
 
 export function FilterConfig() {
-  const t = useTranslations('websocket.filters');
+  const t = useTranslations("websocket.filters");
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const [filters, setFilters] = useState<FilterSet>({
-    user_id: '',
-    default_action: 'allow',
+    user_id: "",
+    default_action: "allow",
     rules: [],
   });
 
   const [newRule, setNewRule] = useState<FilterRule>({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     priority: 0,
     enabled: true,
     enableAggregation: true,
@@ -57,9 +57,9 @@ export function FilterConfig() {
 
       setLoading(true);
       try {
-        const response = await fetch('/api/v1/websocket/filters', {
+        const response = await fetch("/api/v1/websocket/filters", {
           headers: {
-            'Authorization': `Bearer ${authState.token}`,
+            Authorization: `Bearer ${authState.tokens?.access_token}`,
           },
         });
 
@@ -68,8 +68,8 @@ export function FilterConfig() {
           setFilters(data);
         }
       } catch (error) {
-        console.error('Error fetching filters:', error);
-        setMessage({ type: 'error', text: 'Failed to load filters' });
+        console.error("Error fetching filters:", error);
+        setMessage({ type: "error", text: "Failed to load filters" });
       } finally {
         setLoading(false);
       }
@@ -87,23 +87,23 @@ export function FilterConfig() {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/v1/websocket/filters', {
-        method: 'PUT',
+      const response = await fetch("/api/v1/websocket/filters", {
+        method: "PUT",
         headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authState.tokens?.access_token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(filters),
       });
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Filters saved successfully' });
+        setMessage({ type: "success", text: "Filters saved successfully" });
       } else {
-        throw new Error('Failed to save filters');
+        throw new Error("Failed to save filters");
       }
     } catch (error) {
-      console.error('Error saving filters:', error);
-      setMessage({ type: 'error', text: 'Failed to save filters' });
+      console.error("Error saving filters:", error);
+      setMessage({ type: "error", text: "Failed to save filters" });
     } finally {
       setSaving(false);
     }
@@ -116,24 +116,24 @@ export function FilterConfig() {
     setSaving(true);
 
     try {
-      const response = await fetch('/api/v1/websocket/filters', {
-        method: 'DELETE',
+      const response = await fetch("/api/v1/websocket/filters", {
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${authState.token}`,
+          Authorization: `Bearer ${authState.tokens?.access_token}`,
         },
       });
 
       if (response.ok) {
         setFilters({
           user_id: filters.user_id,
-          default_action: 'allow',
+          default_action: "allow",
           rules: [],
         });
-        setMessage({ type: 'success', text: 'Filters cleared' });
+        setMessage({ type: "success", text: "Filters cleared" });
       }
     } catch (error) {
-      console.error('Error clearing filters:', error);
-      setMessage({ type: 'error', text: 'Failed to clear filters' });
+      console.error("Error clearing filters:", error);
+      setMessage({ type: "error", text: "Failed to clear filters" });
     } finally {
       setSaving(false);
     }
@@ -141,7 +141,7 @@ export function FilterConfig() {
 
   const addRule = () => {
     if (!newRule.name) {
-      setMessage({ type: 'error', text: 'Please enter a rule name' });
+      setMessage({ type: "error", text: "Please enter a rule name" });
       return;
     }
 
@@ -151,30 +151,28 @@ export function FilterConfig() {
     });
 
     setNewRule({
-      name: '',
-      description: '',
+      name: "",
+      description: "",
       priority: 0,
       enabled: true,
       enableAggregation: true,
     });
 
-    setMessage({ type: 'success', text: 'Rule added' });
+    setMessage({ type: "success", text: "Rule added" });
   };
 
   const removeRule = (ruleId: string) => {
     setFilters({
       ...filters,
-      rules: filters.rules.filter(r => r.id !== ruleId),
+      rules: filters.rules.filter((r) => r.id !== ruleId),
     });
-    setMessage({ type: 'success', text: 'Rule removed' });
+    setMessage({ type: "success", text: "Rule removed" });
   };
 
   const updateRule = (ruleId: string, updates: Partial<FilterRule>) => {
     setFilters({
       ...filters,
-      rules: filters.rules.map(r =>
-        r.id === ruleId ? { ...r, ...updates } : r
-      ),
+      rules: filters.rules.map((r) => (r.id === ruleId ? { ...r, ...updates } : r)),
     });
   };
 
@@ -223,13 +221,15 @@ export function FilterConfig() {
 
       {/* Status Message */}
       {message && (
-        <div className={`p-3 rounded-lg border ${
-          message.type === 'success'
-            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
-            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
-        }`}>
+        <div
+          className={`p-3 rounded-lg border ${
+            message.type === "success"
+              ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
+              : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
+          }`}
+        >
           <div className="flex items-center gap-2">
-            {message.type === 'success' ? (
+            {message.type === "success" ? (
               <CheckCircle className="w-4 h-4" />
             ) : (
               <Shield className="w-4 h-4" />
@@ -252,24 +252,22 @@ export function FilterConfig() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-gray-900 dark:text-white">
-                        {rule.name}
-                      </h4>
-                      <span className={`text-xs px-2 py-0.5 rounded ${
-                        rule.enabled
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
-                      }`}>
-                        {rule.enabled ? 'Enabled' : 'Disabled'}
+                      <h4 className="font-medium text-gray-900 dark:text-white">{rule.name}</h4>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded ${
+                          rule.enabled
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                        }`}
+                      >
+                        {rule.enabled ? "Enabled" : "Disabled"}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         Priority: {rule.priority}
                       </span>
                     </div>
                     {rule.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {rule.description}
-                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{rule.description}</p>
                     )}
                   </div>
                   <button
@@ -404,8 +402,10 @@ export function FilterConfig() {
               Min Severity
             </label>
             <select
-              value={newRule.minSeverity || ''}
-              onChange={(e) => setNewRule({ ...newRule, minSeverity: e.target.value as SeverityLevel })}
+              value={newRule.minSeverity || ""}
+              onChange={(e) =>
+                setNewRule({ ...newRule, minSeverity: e.target.value as SeverityLevel })
+              }
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">No minimum</option>
@@ -424,11 +424,15 @@ export function FilterConfig() {
             </label>
             <input
               type="text"
-              value={newRule.eventTypes?.join(', ') || ''}
-              onChange={(e) => setNewRule({
-                ...newRule,
-                eventTypes: e.target.value ? e.target.value.split(',').map(s => s.trim()) : undefined
-              })}
+              value={newRule.eventTypes?.join(", ") || ""}
+              onChange={(e) =>
+                setNewRule({
+                  ...newRule,
+                  eventTypes: e.target.value
+                    ? e.target.value.split(",").map((s) => s.trim())
+                    : undefined,
+                })
+              }
               placeholder="malware, ssh_bruteforce, ransomware"
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
@@ -465,10 +469,17 @@ export function FilterConfig() {
           ℹ️ How Filters Work
         </h4>
         <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-          <li>• Rules are evaluated by <strong>priority</strong> (highest first)</li>
+          <li>
+            • Rules are evaluated by <strong>priority</strong> (highest first)
+          </li>
           <li>• First matching rule determines if message is sent</li>
-          <li>• If no rules match, default action is <strong>{filters.default_action.toUpperCase()}</strong></li>
-          <li>• Messages are filtered <strong>before</strong> being sent via WebSocket</li>
+          <li>
+            • If no rules match, default action is{" "}
+            <strong>{filters.default_action.toUpperCase()}</strong>
+          </li>
+          <li>
+            • Messages are filtered <strong>before</strong> being sent via WebSocket
+          </li>
           <li>• Filters reduce network traffic and client processing</li>
         </ul>
       </div>

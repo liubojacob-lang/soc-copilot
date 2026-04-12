@@ -3,13 +3,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { loadAuthState, logout, isAdmin } from "@/lib/auth";
-import { useTranslations } from 'next-intl';
-import {
-  X,
-  Shield,
-  LogOut,
-  ChevronRight,
-} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { X, Shield, LogOut, ChevronRight } from "lucide-react";
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -29,9 +24,9 @@ interface NavGroup {
 export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const t = useTranslations('navigation');
-  const tNav = useTranslations('nav');
-  const tCommon = useTranslations('common');
+  const t = useTranslations("navigation");
+  const tNav = useTranslations("nav");
+  const tCommon = useTranslations("common");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -49,28 +44,28 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   // Navigation groups
   const navGroups: NavGroup[] = [
     {
-      label: tNav('dashboard'),
+      label: tNav("dashboard"),
       items: [
-        { label: tNav('home'), path: "/" },
-        { label: tNav('runs'), path: "/playbooks" },
-        { label: tNav('definitions'), path: "/playbooks/definitions" },
-        { label: t('approvals'), path: "/playbooks/approvals" },
+        { label: tNav("home"), path: "/" },
+        { label: tNav("runs"), path: "/playbooks" },
+        { label: tNav("definitions"), path: "/playbooks/definitions" },
+        { label: t("approvals"), path: "/playbooks/approvals" },
       ],
     },
     {
-      label: tNav('analysis'),
+      label: tNav("analysis"),
       items: [
-        { label: tNav('ai'), path: "/ai-assistant" },
-        { label: tNav('ueba'), path: "/ueba" },
-        { label: tNav('threatHunting'), path: "/threat-hunting" },
+        { label: tNav("ai"), path: "/ai-assistant" },
+        { label: tNav("ueba"), path: "/ueba" },
+        { label: tNav("threatHunting"), path: "/threat-hunting" },
       ],
     },
     {
-      label: tNav('ecosystem'),
+      label: tNav("ecosystem"),
       items: [
-        { label: tNav('marketplace'), path: "/marketplace" },
-        { label: tNav('cloudNative'), path: "/cloud-native" },
-        { label: t('triggers'), path: "/triggers" },
+        { label: tNav("marketplace"), path: "/marketplace" },
+        { label: tNav("cloudNative"), path: "/cloud-native" },
+        { label: t("triggers"), path: "/triggers" },
       ],
     },
   ];
@@ -78,10 +73,10 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   // Admin items
   const adminItems: NavItem[] = isAdmin(user ?? null)
     ? [
-        { label: t('settings'), path: "/settings" },
-        { label: t('users'), path: "/admin/users" },
-        { label: tCommon('secrets'), path: "/admin/secrets" },
-        { label: t('audit'), path: "/audit" },
+        { label: t("settings"), path: "/settings" },
+        { label: t("users"), path: "/admin/users" },
+        { label: tCommon("secrets"), path: "/admin/secrets" },
+        { label: t("audit"), path: "/audit" },
       ]
     : [];
 
@@ -170,9 +165,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <span className="font-bold text-lg text-gray-900 dark:text-white">
-              SOC Copilot
-            </span>
+            <span className="font-bold text-lg text-gray-900 dark:text-white">SOC Copilot</span>
           </div>
           <button
             onClick={onClose}
@@ -213,9 +206,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
           {navGroups.map((group) => (
             <div key={group.label} className="mb-2">
               <button
-                onClick={() =>
-                  setExpandedGroup(expandedGroup === group.label ? null : group.label)
-                }
+                onClick={() => setExpandedGroup(expandedGroup === group.label ? null : group.label)}
                 className="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 {group.label}
@@ -251,12 +242,10 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
           {adminItems.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
-                onClick={() =>
-                  setExpandedGroup(expandedGroup === "admin" ? null : "admin")
-                }
+                onClick={() => setExpandedGroup(expandedGroup === "admin" ? null : "admin")}
                 className="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                {tCommon('admin')}
+                {tCommon("admin")}
                 <ChevronRight
                   className={`w-4 h-4 transition-transform ${
                     expandedGroup === "admin" ? "rotate-90" : ""
@@ -269,18 +258,18 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                 }`}
               >
                 {adminItems.map((item) => (
-                    <button
-                      key={item.path}
-                      onClick={() => handleNavigate(item.path)}
-                      className={`w-full px-4 py-3 flex items-center text-left transition-colors ${
-                        isLinkActive(item.path)
-                          ? "bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border-r-2 border-purple-600"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                    >
-                      <span className="font-medium">{item.label}</span>
-                    </button>
-                  ))}
+                  <button
+                    key={item.path}
+                    onClick={() => handleNavigate(item.path)}
+                    className={`w-full px-4 py-3 flex items-center text-left transition-colors ${
+                      isLinkActive(item.path)
+                        ? "bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border-r-2 border-purple-600"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    <span className="font-medium">{item.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -293,7 +282,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             className="w-full py-2 px-4 flex items-center justify-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
           >
             <LogOut className="w-5 h-5" />
-            <span>{t('logout')}</span>
+            <span>{t("logout")}</span>
           </button>
         </div>
       </div>

@@ -1,0 +1,13 @@
+{
+  "login": {
+    "title": "Sign In",
+    "subtitle": "Enter your credentials",
+    "username": "Username",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "error": "Invalid credentials",
+    "devMode": "Dev Mode",
+    "checkServerLogs": "Check server logs for default credentials"
+  }
+}

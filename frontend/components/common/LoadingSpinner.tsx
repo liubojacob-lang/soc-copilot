@@ -31,7 +31,7 @@ export function LoadingSpinner({
   label,
 }: LoadingSpinnerProps) {
   return (
-    <div 
+    <div
       className={`inline-flex items-center gap-2 ${className}`}
       role="status"
       aria-live="polite"
@@ -58,9 +58,7 @@ export function LoadingSpinner({
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         />
       </svg>
-      {label && (
-        <span className={`text-sm ${colorClasses[color]}`}>{label}</span>
-      )}
+      {label && <span className={`text-sm ${colorClasses[color]}`}>{label}</span>}
       {!label && <span className="sr-only">加载中...</span>}
     </div>
   );
@@ -72,10 +70,7 @@ interface FullScreenLoaderProps {
   className?: string;
 }
 
-export function FullScreenLoader({
-  message = "加载中...",
-  className = "",
-}: FullScreenLoaderProps) {
+export function FullScreenLoader({ message = "加载中...", className = "" }: FullScreenLoaderProps) {
   return (
     <div
       className={`
@@ -90,11 +85,7 @@ export function FullScreenLoader({
       aria-live="assertive"
     >
       <LoadingSpinner size="xl" color="soc" />
-      {message && (
-        <p className="mt-4 text-gray-600 dark:text-gray-400 text-sm">
-          {message}
-        </p>
-      )}
+      {message && <p className="mt-4 text-gray-600 dark:text-gray-400 text-sm">{message}</p>}
     </div>
   );
 }
@@ -105,10 +96,7 @@ interface SkeletonLoaderProps {
   className?: string;
 }
 
-export function SkeletonLoader({
-  count = 3,
-  className = "",
-}: SkeletonLoaderProps) {
+export function SkeletonLoader({ count = 3, className = "" }: SkeletonLoaderProps) {
   return (
     <div className={`space-y-3 ${className}`}>
       {Array.from({ length: count }).map((_, i) => (

@@ -29,9 +29,9 @@ interface CreateKeyResponse {
 
 export default function APIKeysPage() {
   const router = useRouter();
-  const t = useTranslations('settings');
-  const tApiKeys = useTranslations('settingsApiKeys');
-  const tCommon = useTranslations('common');
+  const t = useTranslations("settings");
+  const tApiKeys = useTranslations("settingsApiKeys");
+  const tCommon = useTranslations("common");
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -54,10 +54,10 @@ export default function APIKeysPage() {
 
   const fetchAPIKeys = async () => {
     try {
-      const data = await authFetchJSON<{items: APIKey[], total: number}>("/api/api-keys");
+      const data = await authFetchJSON<{ items: APIKey[]; total: number }>("/api/api-keys");
       setApiKeys(data.items);
-    } catch (err: any) {
-      setError(err.message || "Failed to load API keys");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load API keys");
     } finally {
       setLoading(false);
     }
@@ -85,15 +85,15 @@ export default function APIKeysPage() {
 
       // Refresh the list
       await fetchAPIKeys();
-    } catch (err: any) {
-      setError(err.message || "Failed to create API key");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create API key");
     } finally {
       setCreating(false);
     }
   };
 
   const handleDeleteKey = async (id: string) => {
-    if (!confirm(t('modal.deleteConfirm'))) {
+    if (!confirm(t("modal.deleteConfirm"))) {
       return;
     }
 
@@ -102,8 +102,8 @@ export default function APIKeysPage() {
         method: "DELETE",
       });
       await fetchAPIKeys();
-    } catch (err: any) {
-      setError(err.message || "Failed to delete API key");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete API key");
     }
   };
 
@@ -114,8 +114,8 @@ export default function APIKeysPage() {
         body: JSON.stringify({ is_active: false }),
       });
       await fetchAPIKeys();
-    } catch (err: any) {
-      setError(err.message || "Failed to disable API key");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to disable API key");
     }
   };
 
@@ -126,8 +126,8 @@ export default function APIKeysPage() {
         body: JSON.stringify({ is_active: true }),
       });
       await fetchAPIKeys();
-    } catch (err: any) {
-      setError(err.message || "Failed to enable API key");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to enable API key");
     }
   };
 
@@ -163,7 +163,7 @@ export default function APIKeysPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Navigation */}
-      <Navigation title={tApiKeys('title')} subtitle={tApiKeys('subtitle')} />
+      <Navigation title={tApiKeys("title")} subtitle={tApiKeys("subtitle")} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -177,16 +177,18 @@ export default function APIKeysPage() {
         {/* Page Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{tApiKeys('yourApiKeys')}</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {tApiKeys("yourApiKeys")}
+            </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {tApiKeys('manageApiKeys')}
+              {tApiKeys("manageApiKeys")}
             </p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
           >
-            {tApiKeys('createNewKey')}
+            {tApiKeys("createNewKey")}
           </button>
         </div>
 
@@ -194,7 +196,7 @@ export default function APIKeysPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
           {apiKeys.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-gray-500 dark:text-gray-400">{tApiKeys('noApiKeysFound')}</p>
+              <p className="text-gray-500 dark:text-gray-400">{tApiKeys("noApiKeysFound")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -202,25 +204,25 @@ export default function APIKeysPage() {
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tApiKeys('keyPrefix')}
+                      {tApiKeys("keyPrefix")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tApiKeys('description')}
+                      {tApiKeys("description")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tApiKeys('status')}
+                      {tApiKeys("status")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tApiKeys('created')}
+                      {tApiKeys("created")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tApiKeys('lastUsed')}
+                      {tApiKeys("lastUsed")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tApiKeys('expires')}
+                      {tApiKeys("expires")}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tApiKeys('actions')}
+                      {tApiKeys("actions")}
                     </th>
                   </tr>
                 </thead>
@@ -233,20 +235,22 @@ export default function APIKeysPage() {
                         </code>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {key.description || <span className="text-gray-400 italic">{tApiKeys('noDescription')}</span>}
+                        {key.description || (
+                          <span className="text-gray-400 italic">{tApiKeys("noDescription")}</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {isExpired(key.expires_at) ? (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                            {tCommon('expired')}
+                            {tCommon("expired")}
                           </span>
                         ) : key.is_active ? (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {tCommon('active')}
+                            {tCommon("active")}
                           </span>
                         ) : (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            {tCommon('disabled')}
+                            {tCommon("disabled")}
                           </span>
                         )}
                       </td>
@@ -257,7 +261,7 @@ export default function APIKeysPage() {
                         {formatDate(key.last_used_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {key.expires_at ? formatDate(key.expires_at) : tCommon('never')}
+                        {key.expires_at ? formatDate(key.expires_at) : tCommon("never")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {key.is_active ? (
@@ -265,21 +269,21 @@ export default function APIKeysPage() {
                             onClick={() => handleDisableKey(key.id)}
                             className="text-orange-600 hover:text-orange-900 mr-3"
                           >
-                            {tCommon('disable')}
+                            {tCommon("disable")}
                           </button>
                         ) : (
                           <button
                             onClick={() => handleEnableKey(key.id)}
                             className="text-green-600 hover:text-green-900 mr-3"
                           >
-                            {tCommon('enable')}
+                            {tCommon("enable")}
                           </button>
                         )}
                         <button
                           onClick={() => handleDeleteKey(key.id)}
                           className="text-red-600 hover:text-red-900"
                         >
-                          {tCommon('delete')}
+                          {tCommon("delete")}
                         </button>
                       </td>
                     </tr>
@@ -292,11 +296,13 @@ export default function APIKeysPage() {
 
         {/* Info Box */}
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">{tApiKeys('aboutApiKeys')}</h3>
+          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+            {tApiKeys("aboutApiKeys")}
+          </h3>
           <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
-            <li>{tApiKeys('aboutApiKeysInfo1')}</li>
-            <li>{tApiKeys('aboutApiKeysInfo2')}</li>
-            <li>{tApiKeys('aboutApiKeysInfo3')}</li>
+            <li>{tApiKeys("aboutApiKeysInfo1")}</li>
+            <li>{tApiKeys("aboutApiKeysInfo2")}</li>
+            <li>{tApiKeys("aboutApiKeysInfo3")}</li>
           </ul>
         </div>
       </main>
@@ -305,12 +311,17 @@ export default function APIKeysPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{tApiKeys('createNewApiKey')}</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              {tApiKeys("createNewApiKey")}
+            </h3>
 
             <form onSubmit={handleCreateKey} className="space-y-4">
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {tApiKeys('description')}
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  {tApiKeys("description")}
                 </label>
                 <input
                   id="description"
@@ -319,22 +330,27 @@ export default function APIKeysPage() {
                   value={newKeyDescription}
                   onChange={(e) => setNewKeyDescription(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder={tApiKeys('descriptionPlaceholder')}
+                  placeholder={tApiKeys("descriptionPlaceholder")}
                 />
               </div>
 
               <div>
-                <label htmlFor="expires" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {tApiKeys('expiresInDays')}
+                <label
+                  htmlFor="expires"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  {tApiKeys("expiresInDays")}
                 </label>
                 <input
                   id="expires"
                   type="number"
                   min="1"
                   value={newKeyExpiresInDays ?? ""}
-                  onChange={(e) => setNewKeyExpiresInDays(e.target.value ? parseInt(e.target.value) : null)}
+                  onChange={(e) =>
+                    setNewKeyExpiresInDays(e.target.value ? parseInt(e.target.value) : null)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder={tApiKeys('expiresPlaceholder')}
+                  placeholder={tApiKeys("expiresPlaceholder")}
                 />
               </div>
 
@@ -344,14 +360,14 @@ export default function APIKeysPage() {
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
                 >
-                  {tCommon('cancel')}
+                  {tCommon("cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {creating ? tApiKeys('creating') : tApiKeys('createKey')}
+                  {creating ? tApiKeys("creating") : tApiKeys("createKey")}
                 </button>
               </div>
             </form>
@@ -365,19 +381,31 @@ export default function APIKeysPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
             <div className="mb-4">
               <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white text-center">{tApiKeys('apiKeyCreated')}</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white text-center">
+                {tApiKeys("apiKeyCreated")}
+              </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
-                {tApiKeys('copyKeyNow')}
+                {tApiKeys("copyKeyNow")}
               </p>
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {tApiKeys('yourApiKey')}
+                {tApiKeys("yourApiKey")}
               </label>
               <div className="flex">
                 <input
@@ -390,7 +418,7 @@ export default function APIKeysPage() {
                   onClick={handleCopyKey}
                   className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-r-md hover:bg-blue-700"
                 >
-                  {copied ? tCommon('copied') : tCommon('copy')}
+                  {copied ? tCommon("copied") : tCommon("copy")}
                 </button>
               </div>
             </div>
@@ -399,7 +427,7 @@ export default function APIKeysPage() {
               onClick={() => setShowKeyModal(false)}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
             >
-              {tApiKeys('iveSavedMyKey')}
+              {tApiKeys("iveSavedMyKey")}
             </button>
           </div>
         </div>

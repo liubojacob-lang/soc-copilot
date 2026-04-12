@@ -1,0 +1,39 @@
+{
+  "uebaPage": {
+    "title": "UEBA",
+    "subtitle": "用户和实体行为分析",
+    "riskFactors": {
+      "unusualDataAccess": "异常数据访问",
+      "geolocationAnomaly": "地理位置异常"
+    },
+    "riskLevel": {
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "monitoredUsers": "监控用户",
+    "highRiskUsers": "高风险用户",
+    "anomalies24h": "异常 (24小时)",
+    "criticalAlerts": "严重告警",
+    "highRiskUsersSection": "高风险用户",
+    "noHighRiskUsers": "未发现高风险用户",
+    "anomalousBehaviors": "{count} 个异常行为",
+    "riskScore": "风险评分",
+    "topRiskFactors": "主要风险因素",
+    "offHoursLogin": "非工作时间登录",
+    "times": "次",
+    "recentAnomalies": "最近异常",
+    "mlPowered": {
+      "title": "机器学习驱动分析",
+      "description": "利用机器学习检测异常用户行为和潜在安全威胁。"
+    }
+  },
+  "ueba": {
+    "title": "用户和实体行为分析",
+    "subtitle": "检测内部威胁和异常行为",
+    "anomalies": "异常检测",
+    "riskScore": "风险评分",
+    "behaviorProfile": "行为画像",
+    "alerts": "行为告警"
+  }
+}

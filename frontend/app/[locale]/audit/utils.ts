@@ -1,14 +1,14 @@
 /** Utility functions for audit logs page */
 
-import type { DatePreset } from './types';
+import type { DatePreset } from "./types";
 
 /** Format date for datetime-local input */
 export function formatDateForInput(date: Date): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
@@ -45,11 +45,7 @@ export function getMethodClass(method: string): string {
 }
 
 /** Generate page numbers for smart pagination */
-export function getPageNumbers(
-  page: number,
-  total: number,
-  pageSize: number
-): (number | string)[] {
+export function getPageNumbers(page: number, total: number, pageSize: number): (number | string)[] {
   const pages: (number | string)[] = [];
   const totalPages = Math.ceil(total / pageSize);
 
@@ -97,9 +93,9 @@ export const datePresets: DatePreset[] = [
       return {
         from: formatDateForInput(from),
         to: formatDateForInput(now),
-        display: "Last 15 minutes"
+        display: "Last 15 minutes",
       };
-    }
+    },
   },
   {
     id: "1hour",
@@ -111,9 +107,9 @@ export const datePresets: DatePreset[] = [
       return {
         from: formatDateForInput(from),
         to: formatDateForInput(now),
-        display: "Last hour"
+        display: "Last hour",
       };
-    }
+    },
   },
   {
     id: "today",
@@ -125,9 +121,9 @@ export const datePresets: DatePreset[] = [
       return {
         from: formatDateForInput(from),
         to: formatDateForInput(now),
-        display: "Today"
+        display: "Today",
       };
-    }
+    },
   },
   {
     id: "yesterday",
@@ -137,13 +133,22 @@ export const datePresets: DatePreset[] = [
       const now = new Date();
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
-      const from = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0);
+      const from = new Date(
+        yesterday.getFullYear(),
+        yesterday.getMonth(),
+        yesterday.getDate(),
+        0,
+        0,
+        0
+      );
       return {
         from: formatDateForInput(from),
-        to: formatDateForInput(new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59)),
-        display: "Yesterday"
+        to: formatDateForInput(
+          new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59)
+        ),
+        display: "Yesterday",
       };
-    }
+    },
   },
   {
     id: "7days",
@@ -155,9 +160,9 @@ export const datePresets: DatePreset[] = [
       return {
         from: formatDateForInput(from),
         to: formatDateForInput(now),
-        display: "Last 7 days"
+        display: "Last 7 days",
       };
-    }
+    },
   },
   {
     id: "30days",
@@ -169,9 +174,9 @@ export const datePresets: DatePreset[] = [
       return {
         from: formatDateForInput(from),
         to: formatDateForInput(now),
-        display: "Last 30 days"
+        display: "Last 30 days",
       };
-    }
+    },
   },
   {
     id: "thisWeek",
@@ -188,9 +193,9 @@ export const datePresets: DatePreset[] = [
       return {
         from: formatDateForInput(from),
         to: formatDateForInput(now),
-        display: "This week"
+        display: "This week",
       };
-    }
+    },
   },
   {
     id: "thisMonth",
@@ -202,8 +207,8 @@ export const datePresets: DatePreset[] = [
       return {
         from: formatDateForInput(from),
         to: formatDateForInput(now),
-        display: "This month"
+        display: "This month",
       };
-    }
+    },
   },
 ];

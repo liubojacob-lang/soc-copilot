@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations, useLocale } from "next-intl";
 import { loadAuthState, authFetchJSON, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
-import { 
-  Link, 
-  Search, 
-  Plus, 
-  RefreshCw, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Link,
+  Search,
+  Plus,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
   XCircle,
   Loader2,
   Filter,
@@ -19,7 +19,7 @@ import {
   ChevronRight,
   Shield,
   Clock,
-  Activity
+  Activity,
 } from "lucide-react";
 
 interface Incident {
@@ -76,9 +76,9 @@ const STATUS_COLORS = {
 export default function CorrelationPage() {
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations('correlation');
-  const tCommon = useTranslations('common');
-  
+  const t = useTranslations("correlation");
+  const tCommon = useTranslations("common");
+
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [rules, setRules] = useState<CorrelationRule[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -103,7 +103,9 @@ export default function CorrelationPage() {
     setLoading(true);
     try {
       const [incidentsData, rulesData, statsData] = await Promise.all([
-        authFetchJSON<{items: Incident[]; total: number}>(`/api/correlation/incidents?page=${page}&page_size=20`).catch(() => ({items: [], total: 0})),
+        authFetchJSON<{ items: Incident[]; total: number }>(
+          `/api/correlation/incidents?page=${page}&page_size=20`
+        ).catch(() => ({ items: [], total: 0 })),
         authFetchJSON<CorrelationRule[]>("/api/correlation/rules").catch(() => []),
         authFetchJSON<Stats>("/api/correlation/stats").catch(() => null),
       ]);
@@ -128,8 +130,9 @@ export default function CorrelationPage() {
     setRefreshing(false);
   };
 
-  const filteredIncidents = incidents.filter(incident => {
-    const matchesSearch = !search || 
+  const filteredIncidents = incidents.filter((incident) => {
+    const matchesSearch =
+      !search ||
       incident.title.toLowerCase().includes(search.toLowerCase()) ||
       incident.description?.toLowerCase().includes(search.toLowerCase());
     const matchesSeverity = severityFilter === "all" || incident.severity === severityFilter;
@@ -139,7 +142,7 @@ export default function CorrelationPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation title={t('title')} subtitle={t('subtitle')} />
+        <Navigation title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
@@ -151,7 +154,7 @@ export default function CorrelationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t('title')} subtitle={t('subtitle')} />
+      <Navigation title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
@@ -160,22 +163,22 @@ export default function CorrelationPage() {
             <button
               onClick={() => setActiveTab("incidents")}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === "incidents" 
-                  ? "bg-blue-600 text-white" 
+                activeTab === "incidents"
+                  ? "bg-blue-600 text-white"
                   : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
-              {t('incidents')}
+              {t("incidents")}
             </button>
             <button
               onClick={() => setActiveTab("rules")}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === "rules" 
-                  ? "bg-blue-600 text-white" 
+                activeTab === "rules"
+                  ? "bg-blue-600 text-white"
                   : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
-              {t('rules')}
+              {t("rules")}
             </button>
           </div>
           <button
@@ -183,8 +186,8 @@ export default function CorrelationPage() {
             disabled={refreshing}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {t('refresh')}
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            {t("refresh")}
           </button>
         </div>
 
@@ -197,8 +200,10 @@ export default function CorrelationPage() {
                   <Link className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('totalIncidents')}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_incidents}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t("totalIncidents")}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {stats.total_incidents}
+                  </p>
                 </div>
               </div>
             </div>
@@ -208,8 +213,10 @@ export default function CorrelationPage() {
                   <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('openIncidents')}</p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.open_incidents}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t("openIncidents")}</p>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {stats.open_incidents}
+                  </p>
                 </div>
               </div>
             </div>
@@ -219,8 +226,12 @@ export default function CorrelationPage() {
                   <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('resolvedIncidents')}</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.resolved_incidents}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {t("resolvedIncidents")}
+                  </p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {stats.resolved_incidents}
+                  </p>
                 </div>
               </div>
             </div>
@@ -230,8 +241,12 @@ export default function CorrelationPage() {
                   <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('totalCorrelations')}</p>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total_correlations_performed}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {t("totalCorrelations")}
+                  </p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {stats.total_correlations_performed}
+                  </p>
                 </div>
               </div>
             </div>
@@ -250,7 +265,7 @@ export default function CorrelationPage() {
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder={t('searchIncidents')}
+                    placeholder={t("searchIncidents")}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
@@ -259,11 +274,11 @@ export default function CorrelationPage() {
                   onChange={(e) => setSeverityFilter(e.target.value)}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option value="all">{t('allSeverity')}</option>
-                  <option value="critical">{t('critical')}</option>
-                  <option value="high">{t('high')}</option>
-                  <option value="medium">{t('medium')}</option>
-                  <option value="low">{t('low')}</option>
+                  <option value="all">{t("allSeverity")}</option>
+                  <option value="critical">{t("critical")}</option>
+                  <option value="high">{t("high")}</option>
+                  <option value="medium">{t("medium")}</option>
+                  <option value="low">{t("low")}</option>
                 </select>
               </div>
             </div>
@@ -273,7 +288,7 @@ export default function CorrelationPage() {
               {filteredIncidents.length === 0 ? (
                 <div className="p-8 text-center">
                   <Link className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">{t('noIncidents')}</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t("noIncidents")}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -281,43 +296,54 @@ export default function CorrelationPage() {
                     <thead className="bg-gray-50 dark:bg-gray-800/50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          {t('incident')}
+                          {t("incident")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          {t('severity')}
+                          {t("severity")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          {t('status')}
+                          {t("status")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          {t('events')}
+                          {t("events")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          {t('confidence')}
+                          {t("confidence")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          {t('created')}
+                          {t("created")}
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredIncidents.map((incident) => (
-                        <tr key={incident.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <tr
+                          key={incident.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        >
                           <td className="px-6 py-4">
                             <div>
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">{incident.title}</p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {incident.title}
+                              </p>
                               {incident.description && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{incident.description}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                                  {incident.description}
+                                </p>
                               )}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${SEVERITY_COLORS[incident.severity as keyof typeof SEVERITY_COLORS] || SEVERITY_COLORS.low}`}>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${SEVERITY_COLORS[incident.severity as keyof typeof SEVERITY_COLORS] || SEVERITY_COLORS.low}`}
+                            >
                               {incident.severity}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[incident.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.open}`}>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[incident.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.open}`}
+                            >
                               {incident.status}
                             </span>
                           </td>
@@ -341,18 +367,18 @@ export default function CorrelationPage() {
               {totalPages > 1 && (
                 <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t('page')} {page} {t('of')} {totalPages}
+                    {t("page")} {page} {t("of")} {totalPages}
                   </p>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                       className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
                       className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
                     >
@@ -369,7 +395,7 @@ export default function CorrelationPage() {
             {rules.length === 0 ? (
               <div className="p-8 text-center">
                 <Shield className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">{t('noRules')}</p>
+                <p className="text-gray-500 dark:text-gray-400">{t("noRules")}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -377,19 +403,19 @@ export default function CorrelationPage() {
                   <thead className="bg-gray-50 dark:bg-gray-800/50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        {t('rule')}
+                        {t("rule")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        {t('priority')}
+                        {t("priority")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        {t('timeWindow')}
+                        {t("timeWindow")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        {t('status')}
+                        {t("status")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        {t('correlations')}
+                        {t("correlations")}
                       </th>
                     </tr>
                   </thead>
@@ -398,9 +424,13 @@ export default function CorrelationPage() {
                       <tr key={rule.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td className="px-6 py-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">{rule.name}</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {rule.name}
+                            </p>
                             {rule.description && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{rule.description}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {rule.description}
+                              </p>
                             )}
                           </div>
                         </td>
@@ -413,11 +443,11 @@ export default function CorrelationPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           {rule.enabled ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                              {t('enabled')}
+                              {t("enabled")}
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400">
-                              {t('disabled')}
+                              {t("disabled")}
                             </span>
                           )}
                         </td>

@@ -3,9 +3,9 @@
  * Manages application notifications (toasts, alerts)
  */
 
-import { create } from 'zustand';
+import { create } from "zustand";
 
-type NotificationType = 'success' | 'error' | 'warning' | 'info';
+type NotificationType = "success" | "error" | "warning" | "info";
 
 interface Notification {
   id: string;
@@ -69,21 +69,21 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 export const notify = {
   success: (title: string, message: string, duration?: number) => {
     const { addNotification } = useNotificationStore.getState();
-    addNotification('success', title, message, duration);
+    addNotification("success", title, message, duration);
   },
 
   error: (title: string, message: string, duration?: number) => {
     const { addNotification } = useNotificationStore.getState();
-    addNotification('error', title, message, duration);
+    addNotification("error", title, message, duration);
   },
 
   warning: (title: string, message: string, duration?: number) => {
     const { addNotification } = useNotificationStore.getState();
-    addNotification('warning', title, message, duration);
+    addNotification("warning", title, message, duration);
   },
 
   info: (title: string, message: string, duration?: number) => {
     const { addNotification } = useNotificationStore.getState();
-    addNotification('info', title, message, duration);
+    addNotification("info", title, message, duration);
   },
 };

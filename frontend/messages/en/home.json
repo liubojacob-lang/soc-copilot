@@ -1,0 +1,27 @@
+{
+  "home": {
+    "title": "SOC Copilot",
+    "subtitle": "Security Operations Center",
+    "loading": "Loading...",
+    "securityOperations": "Security Operations",
+    "refreshData": "Refresh Data",
+    "tabs": {
+      "alertAnalyzer": "Alert Analyzer",
+      "timelineBuilder": "Timeline Builder",
+      "reportWriter": "Report Writer",
+      "assets": "Assets"
+    }
+  },
+  "welcome": {
+    "title": "Welcome to SOC Copilot",
+    "greeting": "Hello! I am your AI security operations assistant",
+    "prompt": "How can I help you? Try asking: \"Help me analyze recent alerts\"",
+    "capabilities": "AI-powered security operations capabilities",
+    "features": {
+      "naturalLanguage": "Interact with AI using natural language",
+      "alertAnalysis": "Intelligently analyze security alerts",
+      "playbookRecommend": "Recommend best response playbooks",
+      "reportGeneration": "Auto-generate security incident reports"
+    }
+  }
+}

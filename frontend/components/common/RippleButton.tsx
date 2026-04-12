@@ -49,10 +49,13 @@ export function RippleButton({
 
   // 变体样式
   const variantClasses = {
-    primary: "bg-gradient-to-r from-soc-500 to-soc-600 text-white shadow-lg shadow-soc-500/25 hover:shadow-xl hover:shadow-soc-500/35",
-    secondary: "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700",
+    primary:
+      "bg-gradient-to-r from-soc-500 to-soc-600 text-white shadow-lg shadow-soc-500/25 hover:shadow-xl hover:shadow-soc-500/35",
+    secondary:
+      "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700",
     ghost: "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
-    danger: "bg-gradient-to-r from-danger-500 to-danger-600 text-white shadow-lg shadow-danger-500/25 hover:shadow-xl hover:shadow-danger-500/35",
+    danger:
+      "bg-gradient-to-r from-danger-500 to-danger-600 text-white shadow-lg shadow-danger-500/25 hover:shadow-xl hover:shadow-danger-500/35",
   };
 
   // 尺寸样式
@@ -63,9 +66,10 @@ export function RippleButton({
   };
 
   // 默认涟漪颜色
-  const defaultRippleColor = variant === "primary" || variant === "danger" 
-    ? "rgba(255, 255, 255, 0.3)" 
-    : "rgba(14, 165, 233, 0.2)";
+  const defaultRippleColor =
+    variant === "primary" || variant === "danger"
+      ? "rgba(255, 255, 255, 0.3)"
+      : "rgba(14, 165, 233, 0.2)";
 
   return (
     <button
@@ -111,9 +115,9 @@ export function RippleButton({
           </svg>
         </span>
       )}
-      
+
       <span className={isLoading ? "ml-5" : ""}>{children}</span>
-      
+
       {ripples.map((ripple) => (
         <span
           key={ripple.id}

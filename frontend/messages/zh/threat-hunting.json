@@ -1,0 +1,36 @@
+{
+  "threatHunting": {
+    "title": "威胁狩猎",
+    "subtitle": "主动检测和响应高级威胁",
+    "search": "搜索威胁",
+    "createHunt": "创建狩猎任务",
+    "activeHunts": "活跃的狩猎任务",
+    "huntResults": "狩猎结果",
+    "totalHunts": "总狩猎次数",
+    "findings": "发现",
+    "critical": "严重",
+    "successRate": "成功率",
+    "huntHypotheses": "狩猎假设",
+    "recentResults": "最近结果",
+    "topTechniques": "热门技术",
+    "times": "次",
+    "findingsCount": "{count} 个发现",
+    "clean": "干净",
+    "mitre": "MITRE",
+    "dataSources": "数据源",
+    "running": "运行中",
+    "run": "运行",
+    "severity": {
+      "critical": "严重",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "iocHunt": {
+      "title": "IOC 狩猎",
+      "description": "使用 IOC 进行主动威胁狩猎",
+      "button": "开始 IOC 狩猎",
+      "comingSoon": "即将推出"
+    }
+  }
+}

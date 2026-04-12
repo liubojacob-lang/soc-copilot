@@ -1,0 +1,13 @@
+{
+  "login": {
+    "title": "登录",
+    "subtitle": "输入您的凭据",
+    "username": "用户名",
+    "password": "密码",
+    "signIn": "登录",
+    "signingIn": "登录中...",
+    "error": "凭据无效",
+    "devMode": "开发模式",
+    "checkServerLogs": "检查服务器日志获取默认凭据"
+  }
+}

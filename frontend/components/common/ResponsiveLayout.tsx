@@ -54,11 +54,9 @@ export function ResponsiveProvider({ children }: ResponsiveProviderProps) {
       width: window.innerWidth,
       height: window.innerHeight,
     });
-    
+
     // Detect touch device
-    setTouchDevice(
-      "ontouchstart" in window || navigator.maxTouchPoints > 0
-    );
+    setTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
     const handleResize = () => {
       setDimensions({
@@ -95,11 +93,7 @@ export function ResponsiveProvider({ children }: ResponsiveProviderProps) {
     touchDevice,
   };
 
-  return (
-    <ResponsiveContext.Provider value={value}>
-      {children}
-    </ResponsiveContext.Provider>
-  );
+  return <ResponsiveContext.Provider value={value}>{children}</ResponsiveContext.Provider>;
 }
 
 // Responsive wrapper component
@@ -225,11 +219,7 @@ export function ResponsiveGrid({
     return classes.join(" ");
   };
 
-  return (
-    <div className={`grid ${getGridCols()} gap-${gap} ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`grid ${getGridCols()} gap-${gap} ${className}`}>{children}</div>;
 }
 
 // Responsive spacing component
@@ -275,8 +265,6 @@ export function ResponsiveSpacing({
   };
 
   return (
-    <div className={`${getPaddingClasses()} ${getMarginClasses()} ${className}`}>
-      {children}
-    </div>
+    <div className={`${getPaddingClasses()} ${getMarginClasses()} ${className}`}>{children}</div>
   );
 }

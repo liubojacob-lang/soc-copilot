@@ -3,9 +3,9 @@
  * Provides consistent loading experience across the app
  */
 
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from "react";
 
 interface LoadingContextValue {
   isLoading: boolean;
@@ -45,7 +45,7 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
 export function useLoading() {
   const context = useContext(LoadingContext);
   if (!context) {
-    throw new Error('useLoading must be used within LoadingProvider');
+    throw new Error("useLoading must be used within LoadingProvider");
   }
   return context;
 }

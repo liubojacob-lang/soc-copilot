@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { onCLS, onINP, onLCP, onFCP, onTTFB, type Metric } from 'web-vitals';
+import { useEffect } from "react";
+import { onCLS, onINP, onLCP, onFCP, onTTFB, type Metric } from "web-vitals";
 
 type WebVitalsMetric = Metric & {
-  rating: 'good' | 'needs-improvement' | 'poor';
+  rating: "good" | "needs-improvement" | "poor";
 };
 
 function sendToAnalytics(metric: WebVitalsMetric) {
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Web Vitals]', metric.name, {
+  if (process.env.NODE_ENV === "development") {
+    console.log("[Web Vitals]", metric.name, {
       value: Math.round(metric.value),
       rating: metric.rating,
       id: metric.id,
@@ -25,7 +25,7 @@ function sendToAnalytics(metric: WebVitalsMetric) {
       id: metric.id,
       page: window.location.pathname,
     });
-    navigator.sendBeacon('/api/analytics/vitals', body);
+    navigator.sendBeacon("/api/analytics/vitals", body);
   }
 }
 

@@ -2,24 +2,32 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations, useLocale } from "next-intl";
 import { login, saveAuthState } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations('login');
+  const t = useTranslations("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [redirectPath, setRedirectPath] = useState(`/${locale}`);
 
-  // Get redirect path from session storage
+  // Get redirect path from session storage (validate against open redirect)
   useEffect(() => {
     const storedRedirect = sessionStorage.getItem("redirect_after_login");
     if (storedRedirect) {
-      setRedirectPath(storedRedirect);
+      // Only allow relative paths starting with / to prevent open redirect attacks
+      try {
+        const url = new URL(storedRedirect, window.location.origin);
+        if (url.origin === window.location.origin && storedRedirect.startsWith("/")) {
+          setRedirectPath(storedRedirect);
+        }
+      } catch {
+        // Invalid URL, ignore
+      }
       sessionStorage.removeItem("redirect_after_login");
     }
   }, [locale]);
@@ -33,8 +41,8 @@ export default function LoginPage() {
       const authState = await login(username, password);
       saveAuthState(authState);
       router.push(redirectPath);
-    } catch (err: any) {
-      setError(err.message || t('error'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("error"));
     } finally {
       setLoading(false);
     }
@@ -45,12 +53,8 @@ export default function LoginPage() {
       <div className="max-w-md w-full mx-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              SOC Copilot
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {t('subtitle')}
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">SOC Copilot</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">{t("subtitle")}</p>
           </div>
 
           {error && (
@@ -65,7 +69,7 @@ export default function LoginPage() {
                 htmlFor="username"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
-                {t('username')}
+                {t("username")}
               </label>
               <input
                 id="username"
@@ -84,7 +88,7 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
-                {t('password')}
+                {t("password")}
               </label>
               <input
                 id="password"
@@ -103,15 +107,14 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? t('signingIn') : t('signIn')}
+              {loading ? t("signingIn") : t("signIn")}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             {process.env.NODE_ENV === "development" && (
               <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                {t('devMode')}:{" "}
-                <span className="text-xs">{t('checkServerLogs')}</span>
+                {t("devMode")}: <span className="text-xs">{t("checkServerLogs")}</span>
               </p>
             )}
           </div>

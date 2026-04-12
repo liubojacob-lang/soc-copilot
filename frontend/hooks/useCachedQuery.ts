@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 /**
  * Custom hooks for data fetching with caching support.
- * 
+ *
  * Features:
  * - Automatic caching with TTL
  * - Request deduplication
@@ -11,16 +11,16 @@
  * - Cache invalidation
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { apiCache, cacheKeys, cacheInvalidators } from '../lib/cache';
-import { apiClient } from '../lib/api-client';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { apiCache, cacheKeys, cacheInvalidators } from "../lib/cache";
+import { apiClient } from "../lib/api-client";
 
 interface UseCachedQueryOptions {
   ttl?: number;
   enabled?: boolean;
   refetchOnMount?: boolean;
   refetchInterval?: number;
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: Error) => void;
 }
 
@@ -117,15 +117,11 @@ export function useCachedQuery<T>(
  */
 export function usePlaybookRuns(params?: Record<string, string>) {
   const key = cacheKeys.playbookRuns(params);
-  
-  return useCachedQuery(
-    key,
-    () => apiClient.get('/playbook/runs', params),
-    {
-      refetchOnMount: true,
-      ttl: 30 * 1000, // 30 seconds
-    }
-  );
+
+  return useCachedQuery(key, () => apiClient.get("/playbook/runs", params), {
+    refetchOnMount: true,
+    ttl: 30 * 1000, // 30 seconds
+  });
 }
 
 /**
@@ -133,14 +129,10 @@ export function usePlaybookRuns(params?: Record<string, string>) {
  */
 export function usePlaybookRun(id: string) {
   const key = cacheKeys.playbookRun(id);
-  
-  return useCachedQuery(
-    key,
-    () => apiClient.get(`/playbook/runs/${id}`),
-    {
-      ttl: 60 * 1000, // 1 minute
-    }
-  );
+
+  return useCachedQuery(key, () => apiClient.get(`/playbook/runs/${id}`), {
+    ttl: 60 * 1000, // 1 minute
+  });
 }
 
 /**
@@ -148,15 +140,11 @@ export function usePlaybookRun(id: string) {
  */
 export function usePlaybookDefinitions(params?: Record<string, string>) {
   const key = cacheKeys.playbookDefinitions(params);
-  
-  return useCachedQuery(
-    key,
-    () => apiClient.get('/playbook/definitions', params),
-    {
-      refetchOnMount: true,
-      ttl: 60 * 1000, // 1 minute
-    }
-  );
+
+  return useCachedQuery(key, () => apiClient.get("/playbook/definitions", params), {
+    refetchOnMount: true,
+    ttl: 60 * 1000, // 1 minute
+  });
 }
 
 /**
@@ -164,14 +152,10 @@ export function usePlaybookDefinitions(params?: Record<string, string>) {
  */
 export function usePlaybookDefinition(id: string) {
   const key = cacheKeys.playbookDefinition(id);
-  
-  return useCachedQuery(
-    key,
-    () => apiClient.get(`/playbook/definitions/${id}`),
-    {
-      ttl: 5 * 60 * 1000, // 5 minutes
-    }
-  );
+
+  return useCachedQuery(key, () => apiClient.get(`/playbook/definitions/${id}`), {
+    ttl: 5 * 60 * 1000, // 5 minutes
+  });
 }
 
 /**
@@ -179,7 +163,7 @@ export function usePlaybookDefinition(id: string) {
  */
 export function useThreatIntel(ioc: string, type: string, enabled: boolean = true) {
   const key = cacheKeys.threatIntel(ioc, type);
-  
+
   return useCachedQuery(
     key,
     () => apiClient.get(`/threat-intel/${type}/${encodeURIComponent(ioc)}`),
@@ -195,14 +179,10 @@ export function useThreatIntel(ioc: string, type: string, enabled: boolean = tru
  */
 export function useAIModels() {
   const key = cacheKeys.aiModels();
-  
-  return useCachedQuery(
-    key,
-    () => apiClient.get('/ai/models'),
-    {
-      ttl: 5 * 60 * 1000, // 5 minutes
-    }
-  );
+
+  return useCachedQuery(key, () => apiClient.get("/ai/models"), {
+    ttl: 5 * 60 * 1000, // 5 minutes
+  });
 }
 
 /**
@@ -210,14 +190,10 @@ export function useAIModels() {
  */
 export function useUserSettings() {
   const key = cacheKeys.userSettings();
-  
-  return useCachedQuery(
-    key,
-    () => apiClient.get('/users/me/settings'),
-    {
-      ttl: 5 * 60 * 1000, // 5 minutes
-    }
-  );
+
+  return useCachedQuery(key, () => apiClient.get("/users/me/settings"), {
+    ttl: 5 * 60 * 1000, // 5 minutes
+  });
 }
 
 /**
@@ -241,14 +217,14 @@ export function useMutation<T, V>(
 
       try {
         const result = await mutationFn(variables);
-        
+
         // Invalidate specified keys
         if (options.invalidateKeys) {
           options.invalidateKeys.forEach((key) => {
             apiCache.delete(key);
           });
         }
-        
+
         options.onSuccess?.(result, variables);
         return result;
       } catch (err) {

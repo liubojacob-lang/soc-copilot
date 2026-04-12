@@ -1,4 +1,4 @@
-import type { Config } from "tailwindcss"
+import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
@@ -89,97 +89,102 @@ const config: Config = {
         },
       },
       boxShadow: {
-        'soft': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        'card': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
-        'elevated': '0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08)',
-        'glow': '0 0 20px -5px rgba(14, 165, 233, 0.3)',
-        'glow-success': '0 0 20px -5px rgba(16, 185, 129, 0.3)',
-        'glow-danger': '0 0 20px -5px rgba(239, 68, 68, 0.3)',
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-        'neumorphic': '8px 8px 16px rgba(0, 0, 0, 0.1), -8px -8px 16px rgba(255, 255, 255, 0.9)',
-        'neumorphic-inset': 'inset 4px 4px 8px rgba(0, 0, 0, 0.1), inset -4px -4px 8px rgba(255, 255, 255, 0.9)',
-        'neumorphic-dark': '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.05)',
-        'neumorphic-inset-dark': 'inset 4px 4px 8px rgba(0, 0, 0, 0.3), inset -4px -4px 8px rgba(255, 255, 255, 0.05)',
+        soft: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+        card: "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)",
+        elevated: "0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08)",
+        glow: "0 0 20px -5px rgba(14, 165, 233, 0.3)",
+        "glow-success": "0 0 20px -5px rgba(16, 185, 129, 0.3)",
+        "glow-danger": "0 0 20px -5px rgba(239, 68, 68, 0.3)",
+        glass: "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
+        neumorphic: "8px 8px 16px rgba(0, 0, 0, 0.1), -8px -8px 16px rgba(255, 255, 255, 0.9)",
+        "neumorphic-inset":
+          "inset 4px 4px 8px rgba(0, 0, 0, 0.1), inset -4px -4px 8px rgba(255, 255, 255, 0.9)",
+        "neumorphic-dark":
+          "8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.05)",
+        "neumorphic-inset-dark":
+          "inset 4px 4px 8px rgba(0, 0, 0, 0.3), inset -4px -4px 8px rgba(255, 255, 255, 0.05)",
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-out',
-        'fade-in-up': 'fadeInUp 0.4s ease-out',
-        'fade-in-up-stagger-1': 'fadeInUp 0.4s ease-out 0.1s both',
-        'fade-in-up-stagger-2': 'fadeInUp 0.4s ease-out 0.2s both',
-        'fade-in-up-stagger-3': 'fadeInUp 0.4s ease-out 0.3s both',
-        'fade-in-up-stagger-4': 'fadeInUp 0.4s ease-out 0.4s both',
-        'slide-in-right': 'slideInRight 0.3s ease-out',
-        'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
-        'float': 'float 6s ease-in-out infinite',
-        'glow-pulse': 'glowPulse 2s ease-in-out infinite',
-        'shimmer': 'shimmer 2s linear infinite',
-        'bounce-soft': 'bounceSoft 2s ease-in-out infinite',
-        'wiggle': 'wiggle 1s ease-in-out infinite',
-        'scale-in': 'scaleIn 0.3s ease-out',
-        'rotate-slow': 'rotateSlow 20s linear infinite',
-        'morph': 'morph 8s ease-in-out infinite',
+        "fade-in": "fadeIn 0.3s ease-out",
+        "fade-in-up": "fadeInUp 0.4s ease-out",
+        "fade-in-up-stagger-1": "fadeInUp 0.4s ease-out 0.1s both",
+        "fade-in-up-stagger-2": "fadeInUp 0.4s ease-out 0.2s both",
+        "fade-in-up-stagger-3": "fadeInUp 0.4s ease-out 0.3s both",
+        "fade-in-up-stagger-4": "fadeInUp 0.4s ease-out 0.4s both",
+        "slide-in-right": "slideInRight 0.3s ease-out",
+        "pulse-soft": "pulseSoft 2s ease-in-out infinite",
+        float: "float 6s ease-in-out infinite",
+        "glow-pulse": "glowPulse 2s ease-in-out infinite",
+        shimmer: "shimmer 2s linear infinite",
+        "bounce-soft": "bounceSoft 2s ease-in-out infinite",
+        wiggle: "wiggle 1s ease-in-out infinite",
+        "scale-in": "scaleIn 0.3s ease-out",
+        "rotate-slow": "rotateSlow 20s linear infinite",
+        morph: "morph 8s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
         },
         fadeInUp: {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
         slideInRight: {
-          '0%': { opacity: '0', transform: 'translateX(20px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' },
+          "0%": { opacity: "0", transform: "translateX(20px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
         },
         pulseSoft: {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.7' },
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
         },
         float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
         },
         glowPulse: {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(14, 165, 233, 0.4)' },
-          '50%': { boxShadow: '0 0 0 10px rgba(14, 165, 233, 0)' },
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(14, 165, 233, 0.4)" },
+          "50%": { boxShadow: "0 0 0 10px rgba(14, 165, 233, 0)" },
         },
         shimmer: {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
         bounceSoft: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-5px)' },
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-5px)" },
         },
         wiggle: {
-          '0%, 100%': { transform: 'rotate(-3deg)' },
-          '50%': { transform: 'rotate(3deg)' },
+          "0%, 100%": { transform: "rotate(-3deg)" },
+          "50%": { transform: "rotate(3deg)" },
         },
         scaleIn: {
-          '0%': { opacity: '0', transform: 'scale(0.9)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
+          "0%": { opacity: "0", transform: "scale(0.9)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
         },
         rotateSlow: {
-          '0%': { transform: 'rotate(0deg)' },
-          '100%': { transform: 'rotate(360deg)' },
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
         },
         morph: {
-          '0%, 100%': { borderRadius: '60% 40% 30% 70%/60% 30% 70% 40%' },
-          '50%': { borderRadius: '30% 60% 70% 40%/50% 60% 30% 60%' },
+          "0%, 100%": { borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%" },
+          "50%": { borderRadius: "30% 60% 70% 40%/50% 60% 30% 60%" },
         },
       },
       backdropBlur: {
-        xs: '2px',
+        xs: "2px",
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(var(--tw-gradient-stops))',
-        'glass-gradient': 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
-        'glass-gradient-dark': 'linear-gradient(135deg, rgba(31,41,55,0.9) 0%, rgba(31,41,55,0.7) 100%)',
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-conic": "conic-gradient(var(--tw-gradient-stops))",
+        "glass-gradient":
+          "linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)",
+        "glass-gradient-dark":
+          "linear-gradient(135deg, rgba(31,41,55,0.9) 0%, rgba(31,41,55,0.7) 100%)",
       },
     },
   },
   plugins: [],
-}
-export default config
+};
+export default config;

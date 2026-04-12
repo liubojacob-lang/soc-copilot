@@ -1,0 +1,161 @@
+{
+  "playbooks": {
+    "title": "剧本",
+    "execute": "执行",
+    "history": "运行历史",
+    "dag": "DAG可视化",
+    "create": "创建剧本",
+    "edit": "编辑剧本",
+    "delete": "删除剧本",
+    "running": "运行中",
+    "completed": "已完成",
+    "failed": "失败",
+    "subtitle": "剧本自动化与编排",
+    "duration": "持续时间",
+    "mode": "模式",
+    "started": "开始时间",
+    "playbook": "剧本",
+    "status": "状态",
+    "searchPlaceholder": "Search by name or ID...",
+    "noPlaybookRuns": "暂无剧本运行",
+    "runPlaybookHint": "运行剧本以在此处查看",
+    "noDefinitions": "No playbook definitions found",
+    "statuses": {
+      "running": "运行中",
+      "success": "成功",
+      "failed": "失败",
+      "pending": "待审批",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "expired": "已过期"
+    },
+    "queue": {
+      "queued": "排队中",
+      "running": "运行中"
+    },
+    "tabs": {
+      "definitions": "定义",
+      "runs": "运行",
+      "approvals": "审批",
+      "dag": "DAG",
+      "history": "历史"
+    },
+    "allPlaybooks": "所有剧本",
+    "allStatuses": "所有状态",
+    "approvals": {
+      "title": "剧本执行审批",
+      "subtitle": "审批剧本执行请求",
+      "status": "状态",
+      "requestedBy": "请求人",
+      "runId": "运行 ID",
+      "searchPlaceholder": "搜索审批...",
+      "actions": "操作",
+      "approve": "批准",
+      "reject": "拒绝",
+      "created": "创建时间",
+      "noApprovals": "无待审批项",
+      "noApprovalsDesc": "当前没有需要审批的剧本执行"
+    },
+    "definitions": {
+      "title": "剧本定义",
+      "subtitle": "管理剧本定义",
+      "name": "名称",
+      "description": "描述",
+      "version": "版本",
+      "status": "状态",
+      "actions": "操作",
+      "noDefinitions": "暂无剧本定义",
+      "searchPlaceholder": "搜索定义...",
+      "createFirst": "创建第一个剧本定义",
+      "createNew": "创建新定义",
+      "updated": "更新时间"
+    }
+  },
+  "definitions": {
+    "name": "名称",
+    "subtitle": "剧本定义",
+    "title": "剧本定义",
+    "createFirst": "创建第一个剧本定义",
+    "createNew": "创建新定义",
+    "actions": "操作"
+  },
+  "approvals": {
+    "status": "状态",
+    "noApprovals": "无待审批项",
+    "created": "创建时间",
+    "subtitle": "剧本执行审批",
+    "approve": "批准",
+    "searchPlaceholder": "搜索审批...",
+    "noApprovalsDesc": "当前没有需要审批的剧本执行",
+    "requestedBy": "请求人",
+    "runId": "运行 ID",
+    "reject": "拒绝",
+    "title": "剧本执行审批",
+    "actions": "操作"
+  },
+  "runs": "运行",
+  "history": {
+    "justNow": "刚刚",
+    "title": "历史"
+  },
+  "queue": {
+    "running": "运行中",
+    "queued": "队列中"
+  },
+  "difficulty": {
+    "advanced": "高级",
+    "intermediate": "中级",
+    "beginner": "初级"
+  },
+  "playbookPanel": {
+    "title": "Playbook 助手",
+    "tabs": {
+      "queries": "查询",
+      "actions": "动作"
+    },
+    "errors": {
+      "noIOCs": "没有可用的 IOC",
+      "generateQueriesFailed": "生成查询失败",
+      "noHistoryId": "没有可用的历史 ID",
+      "generateActionsFailed": "生成动作失败"
+    },
+    "queries": {
+      "platform": "平台",
+      "platforms": {
+        "splunk": "Splunk",
+        "elastic_kql": "Elastic KQL",
+        "sentinel_kql": "Sentinel KQL"
+      },
+      "timeRange": "时间范围",
+      "timeRanges": {
+        "last_1h": "最近 1 小时",
+        "last_24h": "最近 24 小时",
+        "last_7d": "最近 7 天"
+      },
+      "generate": "生成查询",
+      "generating": "生成中...",
+      "fields": "字段",
+      "prerequisite": "前置条件",
+      "expectedFields": "期望字段"
+    },
+    "actions": {
+      "policy": "策略",
+      "policies": {
+        "safe": "安全",
+        "moderate": "适中",
+        "aggressive": "激进"
+      },
+      "generate": "生成动作",
+      "generating": "生成中...",
+      "copyMD": "复制 MD",
+      "risk": "风险",
+      "priority": "优先级",
+      "steps": "步骤",
+      "verification": "验证",
+      "rollback": "回滚"
+    }
+  },
+  "dag": {
+    "output": "输出"
+  }
+}

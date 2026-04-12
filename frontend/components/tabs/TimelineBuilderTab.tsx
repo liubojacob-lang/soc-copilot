@@ -16,7 +16,7 @@ interface TimelineBuilderTabProps {
 }
 
 export function TimelineBuilderTab({ onHistoryToggle }: TimelineBuilderTabProps) {
-  const t = useTranslations('tabs');
+  const t = useTranslations("tabs");
   const [input, setInput] = useState("");
   const [logType, setLogType] = useState<string>("");
   const [result, setTimelineResult] = useState<TimelineResponse | null>(null);
@@ -99,7 +99,7 @@ Feb  5 10:23:46 server01 sshd[1234]: Failed password for root from 192.168.1.100
             disabled={loading || !input.trim()}
             className="w-full py-2.5 bg-soc-600 text-white font-medium rounded-lg hover:bg-soc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? t('buildingTimeline') : t('buildTimeline')}
+            {loading ? t("buildingTimeline") : t("buildTimeline")}
           </button>
         </div>
 
@@ -140,7 +140,10 @@ Feb  5 10:23:46 server01 sshd[1234]: Failed password for root from 192.168.1.100
                   </h4>
                   <ul className="space-y-2">
                     {result.suspicious_top5.map((event: SuspiciousEvent, i: number) => (
-                      <li key={i} className="text-sm text-red-800 p-2 bg-white rounded border border-red-200">
+                      <li
+                        key={i}
+                        className="text-sm text-red-800 p-2 bg-white rounded border border-red-200"
+                      >
                         <div className="font-medium">{event.description}</div>
                         <div className="text-xs text-red-600 mt-1">
                           Reason: {event.reasoning} | Severity: {event.severity}
@@ -168,11 +171,7 @@ Feb  5 10:23:46 server01 sshd[1234]: Failed password for root from 192.168.1.100
               )}
 
               {/* Playbook Panel */}
-              <PlaybookPanel
-                historyId={currentHistoryId}
-                iocs={result.iocs}
-                module="timeline"
-              />
+              <PlaybookPanel historyId={currentHistoryId} iocs={result.iocs} module="timeline" />
 
               {result.request_id && (
                 <div className="text-xs text-slate-500">Request ID: {result.request_id}</div>

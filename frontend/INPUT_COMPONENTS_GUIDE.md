@@ -254,69 +254,69 @@ function RegistrationForm() {
 
 所有输入组件都支持以下变体：
 
-| 变体 | 说明 |
-|------|------|
+| 变体      | 说明               |
+| --------- | ------------------ |
 | `default` | 默认样式，灰色边框 |
-| `error` | 错误状态，红色边框 |
+| `error`   | 错误状态，红色边框 |
 | `success` | 成功状态，绿色边框 |
 
 所有输入组件都支持以下尺寸：
 
-| 尺寸 | 说明 |
-|------|------|
-| `sm` | 小号 |
+| 尺寸 | 说明         |
+| ---- | ------------ |
+| `sm` | 小号         |
 | `md` | 中号（默认） |
-| `lg` | 大号 |
+| `lg` | 大号         |
 
 ## 🔧 Props
 
 ### Input Props
 
-| Prop | 类型 | 默认 | 说明 |
-|------|------|------|------|
-| `variant` | `default \| error \| success` | `default` | 样式变体 |
-| `size` | `sm \| md \| lg` | `md` | 尺寸 |
-| `label` | `string` | - | 标签文字 |
-| `helperText` | `string` | - | 帮助文字 |
-| `error` | `string` | - | 错误信息 |
-| `leftIcon` | `ReactNode` | - | 左侧图标 |
-| `rightIcon` | `ReactNode` | - | 右侧图标 |
-| `className` | `string` | - | 自定义类名 |
+| Prop         | 类型                          | 默认      | 说明       |
+| ------------ | ----------------------------- | --------- | ---------- |
+| `variant`    | `default \| error \| success` | `default` | 样式变体   |
+| `size`       | `sm \| md \| lg`              | `md`      | 尺寸       |
+| `label`      | `string`                      | -         | 标签文字   |
+| `helperText` | `string`                      | -         | 帮助文字   |
+| `error`      | `string`                      | -         | 错误信息   |
+| `leftIcon`   | `ReactNode`                   | -         | 左侧图标   |
+| `rightIcon`  | `ReactNode`                   | -         | 右侧图标   |
+| `className`  | `string`                      | -         | 自定义类名 |
 
 ### Textarea Props
 
-| Prop | 类型 | 默认 | 说明 |
-|------|------|------|------|
-| `variant` | `default \| error \| success` | `default` | 样式变体 |
-| `size` | `sm \| md \| lg` | `md` | 尺寸 |
-| `label` | `string` | - | 标签文字 |
-| `helperText` | `string` | - | 帮助文字 |
-| `error` | `string` | - | 错误信息 |
-| `className` | `string` | - | 自定义类名 |
+| Prop         | 类型                          | 默认      | 说明       |
+| ------------ | ----------------------------- | --------- | ---------- |
+| `variant`    | `default \| error \| success` | `default` | 样式变体   |
+| `size`       | `sm \| md \| lg`              | `md`      | 尺寸       |
+| `label`      | `string`                      | -         | 标签文字   |
+| `helperText` | `string`                      | -         | 帮助文字   |
+| `error`      | `string`                      | -         | 错误信息   |
+| `className`  | `string`                      | -         | 自定义类名 |
 
 ### Select Props
 
-| Prop | 类型 | 默认 | 说明 |
-|------|------|------|------|
-| `variant` | `default \| error \| success` | `default` | 样式变体 |
-| `size` | `sm \| md \| lg` | `md` | 尺寸 |
-| `label` | `string` | - | 标签文字 |
-| `helperText` | `string` | - | 帮助文字 |
-| `error` | `string` | - | 错误信息 |
-| `placeholder` | `string` | - | 占位选项文字 |
-| `className` | `string` | - | 自定义类名 |
+| Prop          | 类型                          | 默认      | 说明         |
+| ------------- | ----------------------------- | --------- | ------------ |
+| `variant`     | `default \| error \| success` | `default` | 样式变体     |
+| `size`        | `sm \| md \| lg`              | `md`      | 尺寸         |
+| `label`       | `string`                      | -         | 标签文字     |
+| `helperText`  | `string`                      | -         | 帮助文字     |
+| `error`       | `string`                      | -         | 错误信息     |
+| `placeholder` | `string`                      | -         | 占位选项文字 |
+| `className`   | `string`                      | -         | 自定义类名   |
 
 ### Checkbox Props
 
-| Prop | 类型 | 默认 | 说明 |
-|------|------|------|------|
-| `label` | `string` | - | 标签文字 |
-| `error` | `string` | - | 错误信息 |
-| `className` | `string` | - | 自定义类名 |
+| Prop        | 类型     | 默认 | 说明       |
+| ----------- | -------- | ---- | ---------- |
+| `label`     | `string` | -    | 标签文字   |
+| `error`     | `string` | -    | 错误信息   |
+| `className` | `string` | -    | 自定义类名 |
 
 ### Switch Props
 
-| Prop | 类型 | 默认 | 说明 |
-|------|------|------|------|
-| `label` | `string` | - | 标签文字 |
-| `className` | `string` | - | 自定义类名 |
+| Prop        | 类型     | 默认 | 说明       |
+| ----------- | -------- | ---- | ---------- |
+| `label`     | `string` | -    | 标签文字   |
+| `className` | `string` | -    | 自定义类名 |

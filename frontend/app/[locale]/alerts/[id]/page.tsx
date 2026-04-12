@@ -1,33 +1,33 @@
-'use client';
+"use client";
 
 /**
  * Alert Details Page
  * 告警详情页面
  */
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
-import { ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react';
-import { loadAuthState, authFetchJSON } from '@/lib/auth';
-import { useToast } from '@/components/Toast';
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { ArrowLeft, RefreshCw, AlertTriangle } from "lucide-react";
+import { loadAuthState, authFetchJSON } from "@/lib/auth";
+import { useToast } from "@/components/Toast";
 
 // Components
-import { AlertStatusBadge, SeverityBadge } from '@/components/AlertStatusBadge';
-import { ThreatIntelCard } from '@/components/alerts/ThreatIntelCard';
-import { MITREMapping } from '@/components/alerts/MITREMapping';
-import { CorrelatedAlerts, SimpleCorrelationList } from '@/components/alerts/CorrelatedAlerts';
-import { AlertActions } from '@/components/alerts/AlertActions';
-import { TimelineView, RecentTimeline } from '@/components/alerts/TimelineView';
-import { AlertNotes } from '@/components/alerts/AlertNotes';
-import { useAlertWebSocket } from '@/components/AlertWebSocket';
+import { AlertStatusBadge, SeverityBadge } from "@/components/AlertStatusBadge";
+import { ThreatIntelCard } from "@/components/alerts/ThreatIntelCard";
+import { MITREMapping } from "@/components/alerts/MITREMapping";
+import { CorrelatedAlerts, SimpleCorrelationList } from "@/components/alerts/CorrelatedAlerts";
+import { AlertActions } from "@/components/alerts/AlertActions";
+import { TimelineView, RecentTimeline } from "@/components/alerts/TimelineView";
+import { AlertNotes } from "@/components/alerts/AlertNotes";
+import { useAlertWebSocket } from "@/components/AlertWebSocket";
 
 interface AlertDetails {
   id: string;
   title: string;
   description?: string;
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
-  status: 'new' | 'investigating' | 'resolved' | 'false_positive' | 'escalated';
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  status: "new" | "investigating" | "resolved" | "false_positive" | "escalated";
   source: string;
   event_type: string;
   timestamp: string;
@@ -43,7 +43,7 @@ interface AlertDetails {
   rule_id?: string;
   rule_mitre?: string[];
   full_log?: string;
-  raw_data?: any;
+  raw_data?: Record<string, unknown>;
   // Enrichment data
   enriched_at?: string;
   iocs?: Array<{
@@ -72,12 +72,24 @@ interface AlertDetails {
     created_at: string;
   }>;
   // Correlated alerts
-  correlated_alerts?: any[];
+  correlated_alerts?: Array<Record<string, unknown>>;
+}
+
+interface SecurityAlertItem {
+  id: string | number;
+  title?: string;
+  description?: string;
+  severity?: string;
+  status?: string;
+  source?: string;
+  event_type?: string;
+  event_timestamp?: string;
+  created_at?: string;
 }
 
 interface SecurityAlertListResponse {
   total: number;
-  alerts: any[];
+  alerts: SecurityAlertItem[];
   page: number;
   page_size: number;
 }
@@ -86,21 +98,21 @@ interface CorrelationGroupData {
   id: string;
   name: string;
   description: string;
-  correlation_type: 'temporal' | 'attack_chain' | 'threat_intel' | 'asset_based';
+  correlation_type: "temporal" | "attack_chain" | "threat_intel" | "asset_based";
   confidence: number;
   alerts: Array<{
     id: string;
     title: string;
     description?: string;
-    severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
-    status: 'new' | 'investigating' | 'resolved' | 'false_positive';
+    severity: "critical" | "high" | "medium" | "low" | "info";
+    status: "new" | "investigating" | "resolved" | "false_positive";
     source: string;
     timestamp: string;
     event_type: string;
   }>;
   created_at: string;
   common_indicators: Array<{
-    type: 'ip' | 'domain' | 'hash' | 'agent' | 'user';
+    type: "ip" | "domain" | "hash" | "agent" | "user";
     value: string;
     count: number;
   }>;
@@ -118,15 +130,17 @@ function normalizeStatus(status?: string): AlertDetails["status"] {
   return "new";
 }
 
-function normalizeCorrelationStatus(status?: string): 'new' | 'investigating' | 'resolved' | 'false_positive' {
+function normalizeCorrelationStatus(
+  status?: string
+): "new" | "investigating" | "resolved" | "false_positive" {
   const normalized = normalizeStatus(status);
-  if (normalized === 'escalated') return 'investigating';
+  if (normalized === "escalated") return "investigating";
   return normalized;
 }
 
 export default function AlertDetailsPage() {
   const locale = useLocale();
-  const t = useTranslations('alertDetails');
+  const t = useTranslations("alertDetails");
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
@@ -136,32 +150,39 @@ export default function AlertDetailsPage() {
   const [correlationGroups, setCorrelationGroups] = useState<CorrelationGroupData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'notes' | 'correlations'>('overview');
+  const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "notes" | "correlations">(
+    "overview"
+  );
 
   // 获取告警详情
   const fetchCorrelatedAlerts = async (currentAlert: AlertDetails) => {
-    const queries: Array<{ key: string; url: string; type: CorrelationGroupData['correlation_type']; indicator?: { type: 'ip' | 'agent'; value: string } }> = [];
+    const queries: Array<{
+      key: string;
+      url: string;
+      type: CorrelationGroupData["correlation_type"];
+      indicator?: { type: "ip" | "agent"; value: string };
+    }> = [];
     if (currentAlert.source) {
       queries.push({
         key: `source:${currentAlert.source}`,
         url: `/api/v1/security-alerts/?source=${encodeURIComponent(currentAlert.source)}&page=1&page_size=20`,
-        type: 'attack_chain',
+        type: "attack_chain",
       });
     }
     if (currentAlert.source_ip) {
       queries.push({
         key: `ip:${currentAlert.source_ip}`,
         url: `/api/v1/security-alerts/?source_ip=${encodeURIComponent(currentAlert.source_ip)}&page=1&page_size=20`,
-        type: 'threat_intel',
-        indicator: { type: 'ip', value: currentAlert.source_ip },
+        type: "threat_intel",
+        indicator: { type: "ip", value: currentAlert.source_ip },
       });
     }
     if (currentAlert.agent_name) {
       queries.push({
         key: `agent:${currentAlert.agent_name}`,
         url: `/api/v1/security-alerts/?agent_name=${encodeURIComponent(currentAlert.agent_name)}&page=1&page_size=20`,
-        type: 'asset_based',
-        indicator: { type: 'agent', value: currentAlert.agent_name },
+        type: "asset_based",
+        indicator: { type: "agent", value: currentAlert.agent_name },
       });
     }
 
@@ -189,11 +210,13 @@ export default function AlertDetailsPage() {
             id: String(a.id),
             title: String(a.title || `Alert #${a.id}`),
             description: a.description ? String(a.description) : undefined,
-            severity: (String(a.severity || 'info').toLowerCase() as CorrelationGroupData['alerts'][number]['severity']),
+            severity: String(
+              a.severity || "info"
+            ).toLowerCase() as CorrelationGroupData["alerts"][number]["severity"],
             status: normalizeCorrelationStatus(a.status),
-            source: String(a.source || 'unknown'),
+            source: String(a.source || "unknown"),
             timestamp: String(a.event_timestamp || a.created_at || new Date().toISOString()),
-            event_type: String(a.event_type || 'unknown'),
+            event_type: String(a.event_type || "unknown"),
           }));
 
         if (related.length === 0) return null;
@@ -201,14 +224,25 @@ export default function AlertDetailsPage() {
 
         return {
           id: query.key,
-          name: query.type === 'attack_chain' ? 'Same Source Correlation' : query.type === 'threat_intel' ? 'Same Source IP Correlation' : 'Same Agent Correlation',
+          name:
+            query.type === "attack_chain"
+              ? "Same Source Correlation"
+              : query.type === "threat_intel"
+                ? "Same Source IP Correlation"
+                : "Same Agent Correlation",
           description: `Found ${uniqueRelated.length} related alerts by ${query.key}`,
           correlation_type: query.type,
           confidence: Math.min(95, 50 + uniqueRelated.length * 8),
           alerts: uniqueRelated,
           created_at: new Date().toISOString(),
           common_indicators: query.indicator
-            ? [{ type: query.indicator.type, value: query.indicator.value, count: uniqueRelated.length + 1 }]
+            ? [
+                {
+                  type: query.indicator.type,
+                  value: query.indicator.value,
+                  count: uniqueRelated.length + 1,
+                },
+              ]
             : [],
         } as CorrelationGroupData;
       })
@@ -222,35 +256,39 @@ export default function AlertDetailsPage() {
       setLoading(true);
       setError(null);
       const [alertData, lifecycleData] = await Promise.all([
-        authFetchJSON<any>(`/api/v1/security-alerts/${alertId}`),
-        authFetchJSON<any>(`/api/v1/alerts/${alertId}/lifecycle`).catch(() => null),
+        authFetchJSON<Record<string, unknown>>(`/api/v1/security-alerts/${alertId}`),
+        authFetchJSON<Record<string, unknown>>(`/api/v1/alerts/${alertId}/lifecycle`).catch(
+          () => null
+        ),
       ]);
 
       const normalized: AlertDetails = {
         id: String(alertData.id),
-        title: alertData.title || `Alert #${alertData.id}`,
-        description: alertData.description,
-        severity: alertData.severity || 'info',
-        status: normalizeStatus(lifecycleData?.status || alertData.status),
-        source: alertData.source || 'unknown',
-        event_type: alertData.event_type || 'unknown',
-        timestamp: alertData.event_timestamp || alertData.created_at,
-        source_ip: alertData.source_ip,
-        destination_ip: alertData.destination_ip,
-        agent_name: alertData.agent_name,
-        rule_id: alertData.rule_id,
-        rule_mitre: alertData.rule_mitre ? String(alertData.rule_mitre).split(',') : [],
-        full_log: alertData.full_log,
-        assigned_to: lifecycleData?.assigned_to?.username || alertData.assigned_to,
-        notes: lifecycleData?.notes || [],
-        timeline: lifecycleData?.timeline || [],
+        title: (alertData.title as string) || `Alert #${alertData.id}`,
+        description: alertData.description as string | undefined,
+        severity: ((alertData.severity as string) || "info") as AlertDetails["severity"],
+        status: normalizeStatus((lifecycleData?.status as string) || (alertData.status as string)),
+        source: (alertData.source as string) || "unknown",
+        event_type: (alertData.event_type as string) || "unknown",
+        timestamp: (alertData.event_timestamp as string) || (alertData.created_at as string),
+        source_ip: alertData.source_ip as string | undefined,
+        destination_ip: alertData.destination_ip as string | undefined,
+        agent_name: alertData.agent_name as string | undefined,
+        rule_id: alertData.rule_id as string | undefined,
+        rule_mitre: alertData.rule_mitre ? String(alertData.rule_mitre).split(",") : [],
+        full_log: alertData.full_log as string | undefined,
+        assigned_to:
+          (lifecycleData?.assigned_to as Record<string, string> | undefined)?.username ||
+          (alertData.assigned_to as string | undefined),
+        notes: (lifecycleData?.notes as AlertDetails["notes"]) || [],
+        timeline: (lifecycleData?.timeline as AlertDetails["timeline"]) || [],
         correlated_alerts: [],
       };
 
       setAlert(normalized);
       await fetchCorrelatedAlerts(normalized);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load alert');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load alert");
     } finally {
       setLoading(false);
     }
@@ -259,108 +297,96 @@ export default function AlertDetailsPage() {
   // 刷新威胁情报
   const refreshThreatIntel = async () => {
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`/api/v1/alert-enrichment/process/${alertId}`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      await authFetchJSON(`/api/v1/alert-enrichment/process/${alertId}`, {
+        method: "POST",
       });
-      if (!response.ok) throw new Error('Failed to refresh');
 
       await fetchAlertDetails();
-      showToast('Threat intelligence refreshed', 'success');
+      showToast("Threat intelligence refreshed", "success");
     } catch (error) {
-      console.error('Failed to refresh threat intel:', error);
-      showToast('Failed to refresh threat intelligence', 'error');
+      console.error("Failed to refresh threat intel:", error);
+      showToast("Failed to refresh threat intelligence", "error");
     }
   };
 
   // 处理告警操作
-  const handleAction = async (action: string, data?: any) => {
+  const handleAction = async (action: string, data?: Record<string, unknown>) => {
     try {
-      let endpoint = '';
-      let body: any = {};
-      let method: 'POST' | 'PATCH' = 'POST';
+      let endpoint = "";
+      let body: Record<string, unknown> = data || {};
+      let method: "POST" | "PATCH" = "POST";
 
       switch (action) {
-        case 'resolve':
-        case 'false_positive':
+        case "resolve":
+        case "false_positive":
           endpoint = `/api/v1/alerts/${alertId}/resolve`;
-          body = data;
           break;
-        case 'assign':
+        case "assign":
           endpoint = `/api/v1/alerts/${alertId}/assign`;
-          body = data;
           break;
-        case 'escalate':
+        case "escalate":
           endpoint = `/api/v1/alerts/${alertId}/escalate`;
-          body = data;
           break;
-        case 'reopen':
+        case "reopen":
           endpoint = `/api/v1/alerts/${alertId}/status?status=new`;
-          method = 'PATCH';
+          method = "PATCH";
           break;
         default:
           return;
       }
 
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(endpoint, {
+      await authFetchJSON(endpoint, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: method === 'POST' ? JSON.stringify(body) : undefined,
+        headers: { "Content-Type": "application/json" },
+        body: method === "POST" ? JSON.stringify(body) : undefined,
       });
 
-      if (!response.ok) throw new Error('Action failed');
-
       await fetchAlertDetails();
-      showToast(`Action "${action}" completed`, 'success');
+      showToast(`Action "${action}" completed`, "success");
     } catch (error) {
-      console.error('Action failed:', error);
-      showToast(`Action "${action}" failed`, 'error');
+      console.error("Action failed:", error);
+      showToast(`Action "${action}" failed`, "error");
       throw error;
     }
   };
 
   // 添加备注
   const handleAddNote = async (content: string) => {
-    const token = localStorage.getItem("access_token");
-    const response = await fetch(`/api/v1/alerts/${alertId}/notes`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+    await authFetchJSON(`/api/v1/alerts/${alertId}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content }),
     });
 
-    if (!response.ok) throw new Error('Failed to add note');
     await fetchAlertDetails();
-    showToast('Note added', 'success');
+    showToast("Note added", "success");
   };
 
   const { AlertWebSocketComponent } = useAlertWebSocket({
     enabled: !!alert,
-    channels: ['alerts'],
+    channels: ["alerts"],
     onAlert: (incoming) => {
-      if (!alert || String(incoming?.id) !== String(alert.id)) return;
+      const incomingData = incoming as Record<string, unknown> | undefined;
+      if (!alert || String(incomingData?.id) !== String(alert.id)) return;
       setAlert((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
-          status: normalizeStatus(incoming?.status || prev.status),
-          severity: (incoming?.severity || prev.severity),
-          title: incoming?.title || prev.title,
-          description: incoming?.description ?? prev.description,
-          timestamp: incoming?.event_timestamp || incoming?.created_at || prev.timestamp,
-          source_ip: incoming?.source_ip ?? prev.source_ip,
-          destination_ip: incoming?.destination_ip ?? prev.destination_ip,
-          agent_name: incoming?.agent_name ?? prev.agent_name,
+          status: normalizeStatus((incomingData?.status as string) || prev.status),
+          severity: ((incomingData?.severity as string) ||
+            prev.severity) as AlertDetails["severity"],
+          title: (incomingData?.title as string) || prev.title,
+          description: (incomingData?.description as string) ?? prev.description,
+          timestamp:
+            (incomingData?.event_timestamp as string) ||
+            (incomingData?.created_at as string) ||
+            prev.timestamp,
+          source_ip: (incomingData?.source_ip as string) ?? prev.source_ip,
+          destination_ip: (incomingData?.destination_ip as string) ?? prev.destination_ip,
+          agent_name: (incomingData?.agent_name as string) ?? prev.agent_name,
         };
       });
-      showToast(t('realtimeUpdate'), 'info');
+      showToast(t("realtimeUpdate"), "info");
     },
   });
 
@@ -391,10 +417,11 @@ export default function AlertDetailsPage() {
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-red-900 dark:text-red-300 mb-2">
-              {error || 'Alert not found'}
+              {error || "Alert not found"}
             </h2>
             <button
               onClick={() => router.back()}
+              aria-label="Go back"
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
               Go Back
@@ -415,6 +442,7 @@ export default function AlertDetailsPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
+              aria-label="Go back"
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -425,9 +453,7 @@ export default function AlertDetailsPage() {
                 <SeverityBadge severity={alert.severity} />
                 <AlertStatusBadge status={alert.status} />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {alert.title}
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{alert.title}</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {alert.source} • {alert.event_type} • {new Date(alert.timestamp).toLocaleString()}
               </p>
@@ -435,6 +461,7 @@ export default function AlertDetailsPage() {
 
             <button
               onClick={fetchAlertDetails}
+              aria-label="Refresh alert details"
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               title="Refresh"
             >
@@ -453,18 +480,18 @@ export default function AlertDetailsPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="flex border-b border-gray-200 dark:border-gray-700">
                 {[
-                  { key: 'overview', label: 'Overview' },
-                  { key: 'timeline', label: 'Timeline' },
-                  { key: 'notes', label: 'Notes' },
-                  { key: 'correlations', label: 'Correlations' },
+                  { key: "overview", label: "Overview" },
+                  { key: "timeline", label: "Timeline" },
+                  { key: "notes", label: "Notes" },
+                  { key: "correlations", label: "Correlations" },
                 ].map((tab) => (
                   <button
                     key={tab.key}
-                    onClick={() => setActiveTab(tab.key as any)}
+                    onClick={() => setActiveTab(tab.key as typeof activeTab)}
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                       activeTab === tab.key
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                        ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                        : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     }`}
                   >
                     {tab.label}
@@ -473,7 +500,7 @@ export default function AlertDetailsPage() {
               </div>
 
               <div className="p-6">
-                {activeTab === 'overview' && (
+                {activeTab === "overview" && (
                   <div className="space-y-6">
                     {/* Description */}
                     {alert.description && (
@@ -490,25 +517,25 @@ export default function AlertDetailsPage() {
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">Source IP:</span>
                         <span className="ml-2 font-mono text-gray-900 dark:text-white">
-                          {alert.source_ip || 'N/A'}
+                          {alert.source_ip || "N/A"}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">Destination IP:</span>
                         <span className="ml-2 font-mono text-gray-900 dark:text-white">
-                          {alert.destination_ip || 'N/A'}
+                          {alert.destination_ip || "N/A"}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">Agent:</span>
                         <span className="ml-2 text-gray-900 dark:text-white">
-                          {alert.agent_name || 'N/A'}
+                          {alert.agent_name || "N/A"}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">Rule ID:</span>
                         <span className="ml-2 font-mono text-gray-900 dark:text-white">
-                          {alert.rule_id || 'N/A'}
+                          {alert.rule_id || "N/A"}
                         </span>
                       </div>
                     </div>
@@ -527,18 +554,15 @@ export default function AlertDetailsPage() {
                   </div>
                 )}
 
-                {activeTab === 'timeline' && (
+                {activeTab === "timeline" && (
                   <TimelineView events={(alert.timeline || []) as any} />
                 )}
 
-                {activeTab === 'notes' && (
-                  <AlertNotes
-                    notes={alert.notes || []}
-                    onAdd={handleAddNote}
-                  />
+                {activeTab === "notes" && (
+                  <AlertNotes notes={alert.notes || []} onAdd={handleAddNote} />
                 )}
 
-                {activeTab === 'correlations' && (
+                {activeTab === "correlations" && (
                   <CorrelatedAlerts
                     groups={correlationGroups}
                     onAlertClick={(id) => router.push(`/${locale}/alerts/${id}`)}
@@ -564,9 +588,9 @@ export default function AlertDetailsPage() {
               <ThreatIntelCard
                 data={{
                   iocs: (alert.iocs || []) as any,
-                  mitre_tactics: (alert.mitre_tactics || []) as any,
+                  mitre_tactics: alert.mitre_tactics || [],
                   threat_score: alert.threat_score || 0,
-                  enrichment_status: alert.enriched_at ? 'enriched' : 'pending',
+                  enrichment_status: alert.enriched_at ? "enriched" : "pending",
                   enriched_at: alert.enriched_at,
                 }}
                 onRefresh={refreshThreatIntel}
@@ -583,7 +607,7 @@ export default function AlertDetailsPage() {
             {/* Quick Timeline */}
             {alert.timeline && alert.timeline.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <RecentTimeline events={alert.timeline as any} limit={5} />
+                <RecentTimeline events={(alert.timeline || []) as any} limit={5} />
               </div>
             )}
 

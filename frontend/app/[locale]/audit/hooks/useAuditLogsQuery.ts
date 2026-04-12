@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { authFetchJSON } from '@/lib/auth';
-import { queryKeys } from '@/lib/queryClient';
-import type { AuditLog } from '../types';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { authFetchJSON } from "@/lib/auth";
+import { queryKeys } from "@/lib/queryClient";
+import type { AuditLog } from "../types";
 
 interface AuditLogStats {
   total_requests: number;
@@ -33,6 +34,8 @@ interface UseAuditLogsQueryResult {
   total: number;
   page: number;
   pageSize: number;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
   refetch: () => Promise<any>;
   invalidate: () => Promise<void>;
 }
@@ -42,21 +45,21 @@ interface UseAuditLogsQueryResult {
  */
 async function fetchAuditLogs(options: UseAuditLogsQueryOptions) {
   const params = new URLSearchParams();
-  params.append('page', (options.page || 1).toString());
-  params.append('limit', (options.pageSize || 50).toString());
+  params.append("page", (options.page || 1).toString());
+  params.append("limit", (options.pageSize || 50).toString());
 
-  if (options.filterAction) params.append('action', options.filterAction);
-  if (options.filterPath) params.append('path', options.filterPath);
-  if (options.filterStatusCode) params.append('status_code', options.filterStatusCode);
-  if (options.filterDateFrom) params.append('date_from', options.filterDateFrom);
-  if (options.filterDateTo) params.append('date_to', options.filterDateTo);
-  if (options.filterUserId) params.append('user_id', options.filterUserId);
-  if (options.filterIpAddress) params.append('ip_address', options.filterIpAddress);
+  if (options.filterAction) params.append("action", options.filterAction);
+  if (options.filterPath) params.append("path", options.filterPath);
+  if (options.filterStatusCode) params.append("status_code", options.filterStatusCode);
+  if (options.filterDateFrom) params.append("date_from", options.filterDateFrom);
+  if (options.filterDateTo) params.append("date_to", options.filterDateTo);
+  if (options.filterUserId) params.append("user_id", options.filterUserId);
+  if (options.filterIpAddress) params.append("ip_address", options.filterIpAddress);
 
   const response = await authFetchJSON(`/api/audit?${params.toString()}`);
-  
+
   if (!response.ok) {
-    throw new Error('Failed to fetch audit logs');
+    throw new Error("Failed to fetch audit logs");
   }
 
   return response.json();
@@ -67,24 +70,27 @@ async function fetchAuditLogs(options: UseAuditLogsQueryOptions) {
  */
 export function useAuditLogsQuery(options: UseAuditLogsQueryOptions = {}): UseAuditLogsQueryResult {
   const {
-    page = 1,
-    pageSize = 50,
-    filterAction = '',
-    filterPath = '',
-    filterStatusCode = '',
-    filterDateFrom = '',
-    filterDateTo = '',
-    filterUserId = '',
-    filterIpAddress = '',
+    page: initialPage = 1,
+    pageSize: initialPageSize = 50,
+    filterAction = "",
+    filterPath = "",
+    filterStatusCode = "",
+    filterDateFrom = "",
+    filterDateTo = "",
+    filterUserId = "",
+    filterIpAddress = "",
     enabled = true,
   } = options;
 
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [currentPageSize, setCurrentPageSize] = useState(initialPageSize);
+
   const queryClient = useQueryClient();
-  
+
   // Create query key based on all filter options
   const queryKey = queryKeys.audit.list({
-    page,
-    pageSize,
+    page: currentPage,
+    pageSize: currentPageSize,
     filterAction,
     filterPath,
     filterStatusCode,
@@ -94,15 +100,14 @@ export function useAuditLogsQuery(options: UseAuditLogsQueryOptions = {}): UseAu
     filterIpAddress,
   });
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey,
-    queryFn: () => fetchAuditLogs(options),
+    queryFn: () =>
+      fetchAuditLogs({
+        ...options,
+        page: currentPage,
+        pageSize: currentPageSize,
+      }),
     enabled,
     // Cache configuration
     staleTime: 30 * 1000, // 30 seconds
@@ -116,12 +121,12 @@ export function useAuditLogsQuery(options: UseAuditLogsQueryOptions = {}): UseAu
 
   // Prefetch next page
   const prefetchNextPage = () => {
-    const nextPage = page + 1;
+    const nextPage = currentPage + 1;
     const nextPageKey = queryKeys.audit.list({
       ...options,
       page: nextPage,
     });
-    
+
     queryClient.prefetchQuery({
       queryKey: nextPageKey,
       queryFn: () => fetchAuditLogs({ ...options, page: nextPage }),
@@ -130,16 +135,27 @@ export function useAuditLogsQuery(options: UseAuditLogsQueryOptions = {}): UseAu
 
   // Prefetch previous page
   const prefetchPrevPage = () => {
-    const prevPage = Math.max(1, page - 1);
+    const prevPage = Math.max(1, currentPage - 1);
     const prevPageKey = queryKeys.audit.list({
       ...options,
       page: prevPage,
     });
-    
+
     queryClient.prefetchQuery({
       queryKey: prevPageKey,
       queryFn: () => fetchAuditLogs({ ...options, page: prevPage }),
     });
+  };
+
+  // Set page with cache invalidation
+  const setPage = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  // Set page size with cache invalidation and reset to page 1
+  const setPageSize = (newPageSize: number) => {
+    setCurrentPageSize(newPageSize);
+    setCurrentPage(1);
   };
 
   // Invalidate cache for this query
@@ -148,19 +164,26 @@ export function useAuditLogsQuery(options: UseAuditLogsQueryOptions = {}): UseAu
   };
 
   // Auto-prefetch adjacent pages
-  if (!isLoading && data && page > 1) {
-    prefetchPrevPage();
-  }
-  if (!isLoading && data && page < Math.ceil((data.total || 0) / pageSize)) {
-    prefetchNextPage();
-  }
+  useEffect(() => {
+    if (!isLoading && data) {
+      if (currentPage > 1) {
+        prefetchPrevPage();
+      }
+      if (currentPage < Math.ceil((data.total || 0) / currentPageSize)) {
+        prefetchNextPage();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, isLoading, currentPage, currentPageSize]);
 
   return {
     logs: data?.logs || [],
     stats: data?.stats || null,
     total: data?.total || 0,
-    page,
-    pageSize,
+    page: currentPage,
+    pageSize: currentPageSize,
+    setPage,
+    setPageSize,
     isLoading,
     isError,
     error: error as Error | null,
@@ -176,8 +199,8 @@ export function useAuditStatsQuery() {
   return useQuery({
     queryKey: queryKeys.audit.stats(),
     queryFn: async () => {
-      const response = await authFetchJSON('/api/audit/stats');
-      if (!response.ok) throw new Error('Failed to fetch audit stats');
+      const response = await authFetchJSON("/api/audit/stats");
+      if (!response.ok) throw new Error("Failed to fetch audit stats");
       return response.json();
     },
     staleTime: 60 * 1000, // 1 minute
@@ -190,7 +213,7 @@ export function useAuditStatsQuery() {
  */
 export function usePrefetchAuditLogs(options: UseAuditLogsQueryOptions) {
   const queryClient = useQueryClient();
-  
+
   return () => {
     const queryKey = queryKeys.audit.list(options);
     queryClient.prefetchQuery({

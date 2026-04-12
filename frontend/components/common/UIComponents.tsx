@@ -30,7 +30,8 @@ export function DegradedWarning({ reason }: { reason?: string }) {
   return (
     <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
       <p className="text-amber-800 text-sm">
-        <span className="font-semibold">⚠️ Degraded mode:</span> The AI response failed validation. Some fields may be missing.
+        <span className="font-semibold">⚠️ Degraded mode:</span> The AI response failed validation.
+        Some fields may be missing.
         {reason && <span className="ml-2">Reason: {reason}</span>}
       </p>
     </div>

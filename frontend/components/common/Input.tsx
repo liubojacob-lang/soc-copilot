@@ -46,8 +46,7 @@ type InputSize = VariantProps<typeof inputVariants>["size"];
 // ============================================================================
 
 interface InputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size">,
-    VariantProps<typeof inputVariants> {
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size">, VariantProps<typeof inputVariants> {
   error?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
@@ -57,18 +56,7 @@ interface InputProps
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    {
-      className,
-      variant,
-      size,
-      error,
-      leftIcon,
-      rightIcon,
-      label,
-      helperText,
-      id,
-      ...props
-    },
+    { className, variant, size, error, leftIcon, rightIcon, label, helperText, id, ...props },
     ref
   ) => {
     const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
@@ -113,16 +101,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {error && (
-          <p className="mt-1.5 text-sm text-danger-600 dark:text-danger-400">
-            {error}
-          </p>
-        )}
+        {error && <p className="mt-1.5 text-sm text-danger-600 dark:text-danger-400">{error}</p>}
 
         {helperText && !error && (
-          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-            {helperText}
-          </p>
+          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
         )}
       </div>
     );
@@ -136,7 +118,8 @@ Input.displayName = "Input";
 // ============================================================================
 
 interface TextareaProps
-  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "size">,
+  extends
+    Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "size">,
     VariantProps<typeof inputVariants> {
   error?: string;
   label?: string;
@@ -144,19 +127,7 @@ interface TextareaProps
 }
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  (
-    {
-      className,
-      variant,
-      size,
-      error,
-      label,
-      helperText,
-      id,
-      ...props
-    },
-    ref
-  ) => {
+  ({ className, variant, size, error, label, helperText, id, ...props }, ref) => {
     const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
     const hasError = !!error || variant === "error";
     const effectiveVariant = hasError ? "error" : variant;
@@ -184,16 +155,10 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
 
-        {error && (
-          <p className="mt-1.5 text-sm text-danger-600 dark:text-danger-400">
-            {error}
-          </p>
-        )}
+        {error && <p className="mt-1.5 text-sm text-danger-600 dark:text-danger-400">{error}</p>}
 
         {helperText && !error && (
-          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-            {helperText}
-          </p>
+          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
         )}
       </div>
     );
@@ -207,7 +172,8 @@ Textarea.displayName = "Textarea";
 // ============================================================================
 
 interface SelectProps
-  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "size">,
+  extends
+    Omit<SelectHTMLAttributes<HTMLSelectElement>, "size">,
     VariantProps<typeof inputVariants> {
   error?: string;
   label?: string;
@@ -217,18 +183,7 @@ interface SelectProps
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
-    {
-      className,
-      variant,
-      size,
-      error,
-      label,
-      helperText,
-      id,
-      placeholder,
-      children,
-      ...props
-    },
+    { className, variant, size, error, label, helperText, id, placeholder, children, ...props },
     ref
   ) => {
     const selectId = id || `select-${Math.random().toString(36).substr(2, 9)}`;
@@ -270,16 +225,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </select>
         </div>
 
-        {error && (
-          <p className="mt-1.5 text-sm text-danger-600 dark:text-danger-400">
-            {error}
-          </p>
-        )}
+        {error && <p className="mt-1.5 text-sm text-danger-600 dark:text-danger-400">{error}</p>}
 
         {helperText && !error && (
-          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-            {helperText}
-          </p>
+          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
         )}
       </div>
     );
@@ -325,11 +274,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             </label>
           )}
         </div>
-        {error && (
-          <p className="mt-1.5 text-sm text-danger-600 dark:text-danger-400">
-            {error}
-          </p>
-        )}
+        {error && <p className="mt-1.5 text-sm text-danger-600 dark:text-danger-400">{error}</p>}
       </div>
     );
   }
@@ -352,13 +297,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
     return (
       <div className="flex items-center gap-3">
         <div className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer">
-          <input
-            type="checkbox"
-            ref={ref}
-            id={switchId}
-            className="peer sr-only"
-            {...props}
-          />
+          <input type="checkbox" ref={ref} id={switchId} className="peer sr-only" {...props} />
           <div
             className={cn(
               "h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-700",
@@ -391,14 +330,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
 
 Switch.displayName = "Switch";
 
-export {
-  Input,
-  Textarea,
-  Select,
-  Checkbox,
-  Switch,
-  inputVariants,
-};
+export { Input, Textarea, Select, Checkbox, Switch, inputVariants };
 export type {
   InputProps,
   TextareaProps,

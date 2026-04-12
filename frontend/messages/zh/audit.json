@@ -1,0 +1,51 @@
+{
+  "auditPage": {
+    "dateRange": {
+      "last15Minutes": "最近 15 分钟",
+      "lastHour": "最近 1 小时",
+      "today": "今天",
+      "yesterday": "昨天",
+      "last7Days": "最近 7 天",
+      "last30Days": "最近 30 天",
+      "thisWeek": "本周",
+      "thisMonth": "本月",
+      "custom": "自定义",
+      "from": "从",
+      "to": "至"
+    },
+    "quickFilters": {
+      "errors": "错误",
+      "errorsDesc": "仅显示错误响应",
+      "success": "成功",
+      "successDesc": "仅显示成功请求",
+      "login": "登录",
+      "loginDesc": "登录活动",
+      "users": "用户",
+      "usersDesc": "用户管理"
+    },
+    "filterGroups": {
+      "common": "常用",
+      "more": "更多",
+      "categories": "分类"
+    },
+    "httpMethods": {
+      "GET": "GET",
+      "POST": "POST",
+      "PUT": "PUT",
+      "PATCH": "PATCH",
+      "DELETE": "DELETE"
+    },
+    "errors": {
+      "failedToLoad": "加载审计日志失败",
+      "failedToLoadStats": "加载统计数据失败"
+    }
+  },
+  "adminAudit": {
+    "title": "审计日志",
+    "subtitle": "查看系统审计日志和活动",
+    "filter": "筛选日志",
+    "export": "导出日志",
+    "search": "搜索日志...",
+    "auditList": "审计日志列表将在此处显示"
+  }
+}

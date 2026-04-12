@@ -1,0 +1,39 @@
+{
+  "uebaPage": {
+    "title": "UEBA",
+    "subtitle": "User and Entity Behavior Analytics",
+    "riskFactors": {
+      "unusualDataAccess": "Unusual Data Access",
+      "geolocationAnomaly": "Geolocation Anomaly"
+    },
+    "riskLevel": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "monitoredUsers": "Monitored Users",
+    "highRiskUsers": "High Risk Users",
+    "anomalies24h": "Anomalies (24h)",
+    "criticalAlerts": "Critical Alerts",
+    "highRiskUsersSection": "High Risk Users",
+    "noHighRiskUsers": "No high risk users found",
+    "anomalousBehaviors": "{count} anomalous behaviors",
+    "riskScore": "Risk Score",
+    "topRiskFactors": "Top Risk Factors",
+    "offHoursLogin": "Off-Hours Login",
+    "times": "times",
+    "recentAnomalies": "Recent Anomalies",
+    "mlPowered": {
+      "title": "ML-Powered Analytics",
+      "description": "Leveraging machine learning to detect anomalous user behaviors and potential security threats."
+    }
+  },
+  "ueba": {
+    "title": "User and Entity Behavior Analytics",
+    "subtitle": "Detect insider threats and anomalous behavior",
+    "anomalies": "Anomaly Detection",
+    "riskScore": "Risk Score",
+    "behaviorProfile": "Behavior Profile",
+    "alerts": "Behavior Alerts"
+  }
+}

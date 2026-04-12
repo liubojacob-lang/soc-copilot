@@ -3,9 +3,9 @@
  * Use for smooth content transitions after loading
  */
 
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
 interface FadeInProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ interface FadeInProps {
   className?: string;
 }
 
-export function FadeIn({ children, delay = 0, duration = 300, className = '' }: FadeInProps) {
+export function FadeIn({ children, delay = 0, duration = 300, className = "" }: FadeInProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -31,8 +31,8 @@ export function FadeIn({ children, delay = 0, duration = 300, className = '' }: 
       style={{
         opacity: isVisible ? 1 : 0,
         transitionDuration: `${duration}ms`,
-        transitionProperty: 'opacity',
-        transitionTimingFunction: 'ease-in-out',
+        transitionProperty: "opacity",
+        transitionTimingFunction: "ease-in-out",
       }}
     >
       {children}
@@ -56,7 +56,7 @@ export function FadeInUp({
   delay = 0,
   duration = 300,
   distance = 20,
-  className = '',
+  className = "",
 }: FadeInUpProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -73,10 +73,10 @@ export function FadeInUp({
       className={className}
       style={{
         opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translateY(0)' : `translateY(${distance}px)`,
+        transform: isVisible ? "translateY(0)" : `translateY(${distance}px)`,
         transitionDuration: `${duration}ms`,
-        transitionProperty: 'opacity, transform',
-        transitionTimingFunction: 'ease-out',
+        transitionProperty: "opacity, transform",
+        transitionTimingFunction: "ease-out",
       }}
     >
       {children}
@@ -93,7 +93,11 @@ interface StaggerChildrenProps {
   className?: string;
 }
 
-export function StaggerChildren({ children, staggerDelay = 100, className = '' }: StaggerChildrenProps) {
+export function StaggerChildren({
+  children,
+  staggerDelay = 100,
+  className = "",
+}: StaggerChildrenProps) {
   const childrenArray = React.Children.toArray(children);
 
   return (

@@ -1,7 +1,7 @@
 /** Audit logs table component */
 
-import { formatDate, getStatusCodeClass, getMethodClass } from '../utils';
-import type { AuditLog } from '../types';
+import { formatDate, getStatusCodeClass, getMethodClass } from "../utils";
+import type { AuditLog } from "../types";
 
 interface AuditTableProps {
   logs: AuditLog[];
@@ -65,7 +65,9 @@ export function AuditTable({ logs }: AuditTableProps) {
                   </code>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded ${getMethodClass(log.method)}`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-semibold rounded ${getMethodClass(log.method)}`}
+                  >
                     {log.method}
                   </span>
                 </td>
@@ -73,7 +75,9 @@ export function AuditTable({ logs }: AuditTableProps) {
                   {log.path}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded ${getStatusCodeClass(log.status_code)}`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-semibold rounded ${getStatusCodeClass(log.status_code)}`}
+                  >
                     {log.status_code}
                   </span>
                 </td>

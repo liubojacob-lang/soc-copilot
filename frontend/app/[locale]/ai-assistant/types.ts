@@ -22,7 +22,7 @@ export interface AIChatResponse {
 }
 
 export interface QuickAction {
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   query: string;
   color: string;

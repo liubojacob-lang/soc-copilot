@@ -14,27 +14,23 @@
  * Created: 2026-02-17
  */
 
-import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
-import { join, relative } from 'path';
+import { readFileSync, readdirSync, statSync, existsSync } from "fs";
+import { join, relative } from "path";
 
 // Configuration
 const CONFIG = {
-  directories: [
-    'app',
-    'components',
-    'lib',
-  ],
-  extensions: ['.tsx', '.ts', '.jsx', '.js'],
+  directories: ["app", "components", "lib"],
+  extensions: [".tsx", ".ts", ".jsx", ".js"],
   exclude: [
-    'node_modules',
-    '.next',
-    'dist',
-    'build',
-    'messages',
-    'i18n',
-    'api',
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    "messages",
+    "i18n",
+    "api",
     // Skip these - they're mostly configuration or external
-    'middleware',
+    "middleware",
   ],
   // Common English words/phrases that indicate hardcoded UI text
   patterns: [
@@ -78,7 +74,7 @@ const CONFIG = {
 
     // Function/variable declarations
     /\b(function|const|let|var)\s+\w+\s*[=:]/g,
-    /\b\w+\s*:\s*\w+/g,  // Type annotations
+    /\b\w+\s*:\s*\w+/g, // Type annotations
 
     // JSX tag names
     /<\/?\w+[\s>]/g,
@@ -158,14 +154,14 @@ class I18nChecker {
    * Check if a directory should be excluded
    */
   shouldExclude(filePath: string): boolean {
-    return CONFIG.exclude.some(excluded => filePath.includes(excluded));
+    return CONFIG.exclude.some((excluded) => filePath.includes(excluded));
   }
 
   /**
    * Check if a file has valid extension
    */
   isValidExtension(filePath: string): boolean {
-    return CONFIG.extensions.some(ext => filePath.endsWith(ext));
+    return CONFIG.extensions.some((ext) => filePath.endsWith(ext));
   }
 
   /**
@@ -199,8 +195,8 @@ class I18nChecker {
    */
   scanFile(filePath: string, relativePath: string) {
     try {
-      const content = readFileSync(filePath, 'utf-8');
-      const lines = content.split('\n');
+      const content = readFileSync(filePath, "utf-8");
+      const lines = content.split("\n");
       this.filesScanned++;
 
       lines.forEach((line, lineIndex) => {
@@ -212,7 +208,7 @@ class I18nChecker {
         }
 
         // Check each pattern
-        CONFIG.patterns.forEach(pattern => {
+        CONFIG.patterns.forEach((pattern) => {
           const matches = line.matchAll(pattern);
 
           for (const match of matches) {
@@ -309,24 +305,134 @@ class I18nChecker {
 
     // 8. Skip common variable names and technical terms
     const commonVariables = [
-      'total', 'count', 'index', 'length', 'size', 'page', 'limit', 'offset',
-      'token', 'auth', 'user', 'admin', 'data', 'result', 'response', 'request',
-      'error', 'status', 'type', 'name', 'value', 'key', 'id', 'config',
-      'options', 'params', 'query', 'mutation', 'state', 'props', 'ref',
-      'items', 'list', 'array', 'object', 'string', 'number', 'bool',
-      'success', 'failed', 'pending', 'loading', 'running', 'error',
-      'from', 'to', 'at', 'in', 'of', 'by', 'with', 'for', 'and', 'or',
-      'step', 'node', 'edge', 'graph', 'tree', 'list', 'map', 'set',
-      'start', 'end', 'begin', 'finish', 'complete', 'incomplete',
-      'add', 'remove', 'update', 'delete', 'insert', 'append', 'prepend',
-      'get', 'set', 'has', 'check', 'find', 'search', 'filter', 'sort',
-      'create', 'read', 'write', 'update', 'delete', 'list',
-      'true', 'false', 'null', 'undefined', 'void', 'never', 'unknown',
-      'string', 'number', 'boolean', 'object', 'array', 'function', 'void',
-      'any', 'never', 'unknown', 'this', 'super', 'static', 'public', 'private', 'protected',
-      'async', 'await', 'promise', 'resolve', 'reject',
-      'class', 'interface', 'type', 'enum', 'namespace', 'module',
-      'import', 'export', 'default', 'from', 'as',
+      "total",
+      "count",
+      "index",
+      "length",
+      "size",
+      "page",
+      "limit",
+      "offset",
+      "token",
+      "auth",
+      "user",
+      "admin",
+      "data",
+      "result",
+      "response",
+      "request",
+      "error",
+      "status",
+      "type",
+      "name",
+      "value",
+      "key",
+      "id",
+      "config",
+      "options",
+      "params",
+      "query",
+      "mutation",
+      "state",
+      "props",
+      "ref",
+      "items",
+      "list",
+      "array",
+      "object",
+      "string",
+      "number",
+      "bool",
+      "success",
+      "failed",
+      "pending",
+      "loading",
+      "running",
+      "error",
+      "from",
+      "to",
+      "at",
+      "in",
+      "of",
+      "by",
+      "with",
+      "for",
+      "and",
+      "or",
+      "step",
+      "node",
+      "edge",
+      "graph",
+      "tree",
+      "list",
+      "map",
+      "set",
+      "start",
+      "end",
+      "begin",
+      "finish",
+      "complete",
+      "incomplete",
+      "add",
+      "remove",
+      "update",
+      "delete",
+      "insert",
+      "append",
+      "prepend",
+      "get",
+      "set",
+      "has",
+      "check",
+      "find",
+      "search",
+      "filter",
+      "sort",
+      "create",
+      "read",
+      "write",
+      "update",
+      "delete",
+      "list",
+      "true",
+      "false",
+      "null",
+      "undefined",
+      "void",
+      "never",
+      "unknown",
+      "string",
+      "number",
+      "boolean",
+      "object",
+      "array",
+      "function",
+      "void",
+      "any",
+      "never",
+      "unknown",
+      "this",
+      "super",
+      "static",
+      "public",
+      "private",
+      "protected",
+      "async",
+      "await",
+      "promise",
+      "resolve",
+      "reject",
+      "class",
+      "interface",
+      "type",
+      "enum",
+      "namespace",
+      "module",
+      "import",
+      "export",
+      "default",
+      "from",
+      "as",
     ];
 
     if (commonVariables.includes(matchText.toLowerCase())) {
@@ -337,7 +443,7 @@ class I18nChecker {
     }
 
     // 9. Skip if it's in template literal
-    if (before.includes('`') && !after.includes('`')) {
+    if (before.includes("`") && !after.includes("`")) {
       return true;
     }
 
@@ -349,7 +455,10 @@ class I18nChecker {
     // 11. Skip if it's an API endpoint or path
     if (before.includes("'") || before.includes('"')) {
       const quoteChar = before.endsWith("'") ? "'" : '"';
-      if (before.endsWith(quoteChar + '/') && (after.startsWith('/') || after.startsWith(quoteChar))) {
+      if (
+        before.endsWith(quoteChar + "/") &&
+        (after.startsWith("/") || after.startsWith(quoteChar))
+      ) {
         return true;
       }
     }
@@ -366,21 +475,21 @@ class I18nChecker {
    * Print results
    */
   printResults() {
-    console.log('\n📊 Scan Results:');
+    console.log("\n📊 Scan Results:");
     console.log(`   Files scanned: ${this.filesScanned}`);
     console.log(`   Violations found: ${this.violations.length}\n`);
 
     if (this.violations.length === 0) {
-      console.log('✅ No hardcoded English text found!\n');
-      console.log('All files are properly internationalized. Great job! 🎉\n');
+      console.log("✅ No hardcoded English text found!\n");
+      console.log("All files are properly internationalized. Great job! 🎉\n");
       return;
     }
 
-    console.log('❌ Hardcoded English text found:\n');
+    console.log("❌ Hardcoded English text found:\n");
 
     // Group by file
     const byFile = new Map<string, Violation[]>();
-    this.violations.forEach(v => {
+    this.violations.forEach((v) => {
       if (!byFile.has(v.file)) {
         byFile.set(v.file, []);
       }
@@ -392,11 +501,14 @@ class I18nChecker {
       console.log(`\n📄 ${file}`);
       console.log(`   ${violations.length} violation(s):\n`);
 
-      violations.slice(0, 10).forEach(v => { // Limit to 10 per file
+      violations.slice(0, 10).forEach((v) => {
+        // Limit to 10 per file
         console.log(`   Line ${v.line}:${v.column}`);
         console.log(`   Pattern: ${v.match}`);
-        console.log(`   Context: ${v.context.substring(0, 80)}${v.context.length > 80 ? '...' : ''}`);
-        console.log('');
+        console.log(
+          `   Context: ${v.context.substring(0, 80)}${v.context.length > 80 ? "..." : ""}`
+        );
+        console.log("");
       });
 
       if (violations.length > 10) {
@@ -404,10 +516,10 @@ class I18nChecker {
       }
     });
 
-    console.log('\n💡 Suggestions:');
+    console.log("\n💡 Suggestions:");
     console.log('   1. Replace hardcoded text with t("key") or useTranslations()');
-    console.log('   2. Add translation keys to messages/en.json and messages/zh.json');
-    console.log('   3. Run npm run i18n:check again to verify fixes\n');
+    console.log("   2. Add translation keys to messages/en.json and messages/zh.json");
+    console.log("   3. Run npm run i18n:check again to verify fixes\n");
   }
 
   /**
@@ -416,9 +528,9 @@ class I18nChecker {
   run(baseDir: string = process.cwd()): number {
     const frontendDir = join(baseDir);
 
-    console.log('🔍 Scanning for hardcoded English text...\n');
+    console.log("🔍 Scanning for hardcoded English text...\n");
 
-    CONFIG.directories.forEach(dir => {
+    CONFIG.directories.forEach((dir) => {
       const fullPath = join(frontendDir, dir);
       if (existsSync(fullPath)) {
         this.scanDirectory(fullPath, frontendDir);

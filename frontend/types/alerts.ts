@@ -2,12 +2,21 @@
  * Wazuh Integration Type Definitions
  */
 
-import { MITRETactic } from './alert';
+/**
+ * MITRE ATT&CK tactic information
+ */
+export interface MITRETactic {
+  id?: string;
+  tactic?: string;
+  technique?: string;
+  techniques?: string[];
+  tactics?: string[];
+}
 
 /**
  * Severity levels for alerts
  */
-export type SeverityLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
+export type SeverityLevel = "critical" | "high" | "medium" | "low" | "info";
 
 /**
  * Wazuh agent information
@@ -120,7 +129,7 @@ export interface AgentHealth {
   id: string;
   name: string;
   ip: string;
-  status: 'active' | 'disconnected' | 'never_connected';
+  status: "active" | "disconnected" | "never_connected";
   last_seen?: string;
   os?: {
     name: string;

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
@@ -25,10 +25,13 @@ const ICONS = {
 };
 
 const COLORS = {
-  success: "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300",
-  error: "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300",
+  success:
+    "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300",
+  error:
+    "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300",
   info: "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300",
-  warning: "bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-800 dark:text-yellow-300",
+  warning:
+    "bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-800 dark:text-yellow-300",
 };
 
 const ICON_COLORS = {
@@ -56,14 +59,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div 
+      <div
         className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
         role="region"
         aria-label="通知"
       >
         {toasts.map((toast) => {
           const Icon = ICONS[toast.type];
-          const alertType = toast.type === 'error' ? 'assertive' : 'polite';
+          const alertType = toast.type === "error" ? "assertive" : "polite";
           return (
             <div
               key={toast.id}
@@ -72,7 +75,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               aria-live={alertType}
               aria-atomic="true"
             >
-              <Icon className={`w-5 h-5 flex-shrink-0 ${ICON_COLORS[toast.type]}`} aria-hidden="true" />
+              <Icon
+                className={`w-5 h-5 flex-shrink-0 ${ICON_COLORS[toast.type]}`}
+                aria-hidden="true"
+              />
               <p className="flex-1 text-sm">{toast.message}</p>
               <button
                 onClick={() => removeToast(toast.id)}

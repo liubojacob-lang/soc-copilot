@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations, useLocale } from "next-intl";
 import { loadAuthState, authFetchJSON } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
 import { TableSkeleton } from "@/components/Skeleton";
@@ -27,9 +27,9 @@ interface Definition {
 }
 
 export default function TriggersPage() {
-  const t = useTranslations('triggers');
-  const tPage = useTranslations('triggersPage');
-  const tCommon = useTranslations('common');
+  const t = useTranslations("triggers");
+  const tPage = useTranslations("triggersPage");
+  const tCommon = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const [triggers, setTriggers] = useState<Trigger[]>([]);
@@ -39,7 +39,7 @@ export default function TriggersPage() {
   const [filterType, setFilterType] = useState<string>("all");
   const [copiedSecret, setCopiedSecret] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     const authState = loadAuthState();
@@ -52,11 +52,11 @@ export default function TriggersPage() {
 
   const fetchTriggers = async () => {
     try {
-      const data = await authFetchJSON<{items: Trigger[], total: number}>("/api/triggers");
+      const data = await authFetchJSON<{ items: Trigger[]; total: number }>("/api/triggers");
       setTriggers(data.items);
 
       // Fetch definitions to get names
-      const defPromises = data.items.map(t =>
+      const defPromises = data.items.map((t) =>
         authFetchJSON<Definition>(`/api/playbook-definitions/${t.definition_id}`)
       );
       const defResults = await Promise.allSettled(defPromises);
@@ -67,23 +67,23 @@ export default function TriggersPage() {
         }
       });
       setDefinitions(defMap);
-    } catch (err: any) {
-      setError(err.message || t('errors.loadFailed'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("errors.loadFailed"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteTrigger = async (id: string) => {
-    if (!confirm(t('modal.deleteConfirm'))) {
+    if (!confirm(t("modal.deleteConfirm"))) {
       return;
     }
 
     try {
       await authFetchJSON(`/api/triggers/${id}`, { method: "DELETE" });
       await fetchTriggers();
-    } catch (err: any) {
-      setError(err.message || t('errors.deleteFailed'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("errors.deleteFailed"));
     }
   };
 
@@ -94,8 +94,8 @@ export default function TriggersPage() {
         body: JSON.stringify({ is_active: !isActive }),
       });
       await fetchTriggers();
-    } catch (err: any) {
-      setError(err.message || t('errors.toggleFailed'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("errors.toggleFailed"));
     }
   };
 
@@ -112,18 +112,21 @@ export default function TriggersPage() {
 
   const handleTestWebhook = async (trigger: Trigger) => {
     if (!trigger.webhook_url) return;
-    
+
     setTestingWebhook(trigger.id);
     setTestResult(null);
 
     try {
-      const response = await authFetchJSON<{success: boolean; message: string}>(
+      const response = await authFetchJSON<{ success: boolean; message: string }>(
         `/api/triggers/${trigger.id}/test`,
         { method: "POST" }
       );
       setTestResult(response);
-    } catch (err: any) {
-      setTestResult({ success: false, message: err.message || "Test failed" });
+    } catch (err: unknown) {
+      setTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Test failed",
+      });
     } finally {
       setTestingWebhook(null);
     }
@@ -140,14 +143,12 @@ export default function TriggersPage() {
     }
   };
 
-  const filteredTriggers = triggers.filter(t =>
-    filterType === "all" || t.type === filterType
-  );
+  const filteredTriggers = triggers.filter((t) => filterType === "all" || t.type === filterType);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation title={t('title')} subtitle={t('subtitle')} />
+        <Navigation title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
             <div className="p-6">
@@ -161,7 +162,7 @@ export default function TriggersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t('title')} subtitle={t('subtitle')} />
+      <Navigation title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error Message */}
@@ -173,9 +174,12 @@ export default function TriggersPage() {
 
         {/* Test Result */}
         {testResult && (
-          <div className={`mb-4 p-4 rounded-md ${testResult.success ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+          <div
+            className={`mb-4 p-4 rounded-md ${testResult.success ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}
+          >
             <p className={`text-sm ${testResult.success ? "text-green-600" : "text-red-600"}`}>
-              {testResult.success ? "✓ " : "✗ "}{testResult.message}
+              {testResult.success ? "✓ " : "✗ "}
+              {testResult.message}
             </p>
           </div>
         )}
@@ -183,9 +187,11 @@ export default function TriggersPage() {
         {/* Page Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{tPage('pageHeader')}</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {tPage("pageHeader")}
+            </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {tPage('pageDescription')}
+              {tPage("pageDescription")}
             </p>
           </div>
           <div className="flex space-x-2">
@@ -193,13 +199,13 @@ export default function TriggersPage() {
               onClick={() => router.push(`/${locale}/triggers/webhook/new`)}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
             >
-              + {t('webhookTrigger')}
+              + {t("webhookTrigger")}
             </button>
             <button
               onClick={() => router.push(`/${locale}/triggers/cron/new`)}
               className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
             >
-              + {t('cronTrigger')}
+              + {t("cronTrigger")}
             </button>
           </div>
         </div>
@@ -214,7 +220,7 @@ export default function TriggersPage() {
                 : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
             }`}
           >
-            {tPage('all')}
+            {tPage("all")}
           </button>
           <button
             onClick={() => setFilterType("webhook")}
@@ -224,7 +230,7 @@ export default function TriggersPage() {
                 : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
             }`}
           >
-            {tPage('webhooks')}
+            {tPage("webhooks")}
           </button>
           <button
             onClick={() => setFilterType("cron")}
@@ -234,7 +240,7 @@ export default function TriggersPage() {
                 : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
             }`}
           >
-            {tPage('cron')}
+            {tPage("cron")}
           </button>
         </div>
 
@@ -243,7 +249,9 @@ export default function TriggersPage() {
           {filteredTriggers.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-gray-500 dark:text-gray-400">
-                {filterType === "all" ? tPage('noTriggers') : tPage('noTriggersType', { type: filterType })}
+                {filterType === "all"
+                  ? tPage("noTriggers")
+                  : tPage("noTriggersType", { type: filterType })}
               </p>
             </div>
           ) : (
@@ -252,25 +260,25 @@ export default function TriggersPage() {
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tPage('type')}
+                      {tPage("type")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tPage('name')}
+                      {tPage("name")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('playbook')}
+                      {t("playbook")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tPage('details')}
+                      {tPage("details")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('status')}
+                      {t("status")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('lastTriggered')}
+                      {t("lastTriggered")}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tCommon('actions')}
+                      {tCommon("actions")}
                     </th>
                   </tr>
                 </thead>
@@ -278,12 +286,16 @@ export default function TriggersPage() {
                   {filteredTriggers.map((trigger) => (
                     <tr key={trigger.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTriggerTypeBadge(trigger.type)}`}>
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${getTriggerTypeBadge(trigger.type)}`}
+                        >
                           {trigger.type}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {trigger.name || <span className="text-gray-400 italic">{tPage('unnamed')}</span>}
+                        {trigger.name || (
+                          <span className="text-gray-400 italic">{tPage("unnamed")}</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {definitions[trigger.definition_id] || trigger.definition_id}
@@ -298,7 +310,7 @@ export default function TriggersPage() {
                               onClick={() => handleCopyWebhookUrl(trigger.webhook_url!)}
                               className="text-blue-600 hover:text-blue-700 text-xs"
                             >
-                              {tCommon('copy')}
+                              {tCommon("copy")}
                             </button>
                           </div>
                         )}
@@ -311,18 +323,18 @@ export default function TriggersPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {trigger.is_active ? (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {t('active')}
+                            {t("active")}
                           </span>
                         ) : (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            {t('inactive')}
+                            {t("inactive")}
                           </span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {trigger.last_triggered_at
                           ? new Date(trigger.last_triggered_at).toLocaleString()
-                          : tPage('never')}
+                          : tPage("never")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {trigger.type === "webhook" && (
@@ -331,22 +343,24 @@ export default function TriggersPage() {
                             disabled={testingWebhook === trigger.id}
                             className="text-green-600 hover:text-green-900 mr-3 disabled:opacity-50"
                           >
-                            {testingWebhook === trigger.id ? "..." : tPage('test')}
+                            {testingWebhook === trigger.id ? "..." : tPage("test")}
                           </button>
                         )}
                         <button
                           onClick={() => handleToggleActive(trigger.id, trigger.is_active)}
                           className={`${
-                            trigger.is_active ? "text-orange-600 hover:text-orange-900" : "text-green-600 hover:text-green-900"
+                            trigger.is_active
+                              ? "text-orange-600 hover:text-orange-900"
+                              : "text-green-600 hover:text-green-900"
                           } mr-3`}
                         >
-                          {trigger.is_active ? tPage('disable') : tPage('enable')}
+                          {trigger.is_active ? tPage("disable") : tPage("enable")}
                         </button>
                         <button
                           onClick={() => handleDeleteTrigger(trigger.id)}
                           className="text-red-600 hover:text-red-900"
                         >
-                          {t('delete')}
+                          {t("delete")}
                         </button>
                       </td>
                     </tr>
@@ -359,11 +373,17 @@ export default function TriggersPage() {
 
         {/* Info Box */}
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">{tPage('infoBox.title')}</h3>
+          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+            {tPage("infoBox.title")}
+          </h3>
           <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
-            <li><strong>{tPage('infoBox.webhook')}</strong></li>
-            <li><strong>{tPage('infoBox.cron')}</strong></li>
-            <li>{tPage('infoBox.logs')}</li>
+            <li>
+              <strong>{tPage("infoBox.webhook")}</strong>
+            </li>
+            <li>
+              <strong>{tPage("infoBox.cron")}</strong>
+            </li>
+            <li>{tPage("infoBox.logs")}</li>
           </ul>
         </div>
       </main>

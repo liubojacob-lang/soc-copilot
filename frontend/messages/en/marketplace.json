@@ -1,0 +1,27 @@
+{
+  "marketplace": {
+    "title": "Marketplace",
+    "subtitle": "Discover and integrate security tools",
+    "browse": "Browse",
+    "installed": "Installed",
+    "install": "Install",
+    "uninstall": "Uninstall",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search playbooks...",
+    "allCategories": "All Categories",
+    "featured": "Featured",
+    "trending": "Trending",
+    "allPlaybooks": "All Playbooks ({count})",
+    "loaded": "Loaded {count} playbooks",
+    "noPlaybooks": "No playbooks found",
+    "downloadSuccess": "Successfully downloaded playbook \"{name}\"! Check the Playbook Definitions page.",
+    "downloadFailed": "Failed to download playbook",
+    "downloading": "Downloading...",
+    "loading": "Loading...",
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    }
+  }
+}

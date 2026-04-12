@@ -21,7 +21,7 @@ const INITIAL_MESSAGE: Message = {
 • Generating reports
 
 What would you like to do?`,
-  timestamp: new Date(0) // Use epoch time for initial render consistency
+  timestamp: new Date(0), // Use epoch time for initial render consistency
 };
 
 export default function AIAssistant() {
@@ -34,9 +34,9 @@ export default function AIAssistant() {
   // Update timestamp after mount to avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
-    setMessages(prev => prev.map((msg, i) => 
-      i === 0 ? { ...msg, timestamp: new Date() } : msg
-    ));
+    setMessages((prev) =>
+      prev.map((msg, i) => (i === 0 ? { ...msg, timestamp: new Date() } : msg))
+    );
   }, []);
 
   const scrollToBottom = () => {
@@ -53,26 +53,29 @@ export default function AIAssistant() {
 
     const userMessage = input.trim();
     setInput("");
-    
+
     // Add user message
-    setMessages(prev => [...prev, {
-      role: "user",
-      content: userMessage,
-      timestamp: new Date()
-    }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        content: userMessage,
+        timestamp: new Date(),
+      },
+    ]);
 
     setLoading(true);
 
     try {
       // First try natural language query
       const queryResponse = await api.post("/api/ai/query", {
-        query: userMessage
+        query: userMessage,
       });
 
-      const queryData = queryResponse as any;
+      const queryData = queryResponse as Record<string, unknown>;
       if (queryData.intent && queryData.intent !== "unknown") {
         // Handle specific intents
-        let response = queryData.response;
+        let response = queryData.response as string;
 
         // Add action buttons based on intent
         if (queryData.intent === "list_alerts") {
@@ -81,33 +84,42 @@ export default function AIAssistant() {
           response += "\n\n[View Playbooks](/playbooks/definitions)";
         }
 
-        setMessages(prev => [...prev, {
-          role: "assistant",
-          content: response,
-          timestamp: new Date()
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: response,
+            timestamp: new Date(),
+          },
+        ]);
       } else {
         // Fall back to chat
         const chatResponse = await api.post("/api/ai/chat", {
           message: userMessage,
-          conversation_history: messages.map(m => ({
+          conversation_history: messages.map((m) => ({
             role: m.role,
-            content: m.content
-          }))
+            content: m.content,
+          })),
         });
 
-        setMessages(prev => [...prev, {
-          role: "assistant",
-          content: (chatResponse as any).response,
-          timestamp: new Date()
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: (chatResponse as Record<string, unknown>).response as string,
+            timestamp: new Date(),
+          },
+        ]);
       }
-    } catch (error: any) {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: `I'm sorry, I encountered an error: ${error.message || "Unknown error"}`,
-        timestamp: new Date()
-      }]);
+    } catch (error: unknown) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `I'm sorry, I encountered an error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -117,7 +129,7 @@ export default function AIAssistant() {
     { label: "Analyze latest alert", query: "Analyze the most recent high severity alert" },
     { label: "Show active playbooks", query: "Show me active playbook definitions" },
     { label: "Recent alerts", query: "Show me alerts from the last 24 hours" },
-    { label: "Help", query: "What can you help me with?" }
+    { label: "Help", query: "What can you help me with?" },
   ];
 
   return (
@@ -157,32 +169,38 @@ export default function AIAssistant() {
             key={index}
             className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
           >
-            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-              message.role === "user"
-                ? "bg-blue-100 dark:bg-blue-900"
-                : "bg-purple-100 dark:bg-purple-900"
-            }`}>
+            <div
+              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                message.role === "user"
+                  ? "bg-blue-100 dark:bg-blue-900"
+                  : "bg-purple-100 dark:bg-purple-900"
+              }`}
+            >
               {message.role === "user" ? (
                 <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               ) : (
                 <Bot className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               )}
             </div>
-            <div className={`max-w-[80%] rounded-lg px-4 py-2 ${
-              message.role === "user"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            }`}>
+            <div
+              className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                message.role === "user"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              }`}
+            >
               <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-              <div className={`text-xs mt-1 ${
-                message.role === "user" ? "text-blue-200" : "text-gray-500 dark:text-gray-400"
-              }`}>
-                {mounted ? message.timestamp.toLocaleTimeString() : ''}
+              <div
+                className={`text-xs mt-1 ${
+                  message.role === "user" ? "text-blue-200" : "text-gray-500 dark:text-gray-400"
+                }`}
+              >
+                {mounted ? message.timestamp.toLocaleTimeString() : ""}
               </div>
             </div>
           </div>
         ))}
-        
+
         {loading && (
           <div className="flex gap-3">
             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
@@ -193,7 +211,7 @@ export default function AIAssistant() {
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
 

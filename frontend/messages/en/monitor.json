@@ -1,0 +1,95 @@
+{
+  "monitor": {
+    "title": "System Monitor",
+    "subtitle": "Real-time system performance and resource monitoring",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "disk": "Disk",
+    "network": "Network",
+    "live": "Live",
+    "offline": "Offline",
+    "pollingMode": "Polling Mode",
+    "latency": "Latency",
+    "sseConnected": "SSE Connected",
+    "actions": {
+      "exitFullscreen": "Exit Fullscreen",
+      "fullscreen": "Fullscreen",
+      "refresh": "Refresh"
+    },
+    "activities": {
+      "empty": "No activities",
+      "title": "Activities"
+    },
+    "chart": {
+      "title": "Chart",
+      "cpu": "CPU",
+      "memory": "Memory"
+    },
+    "resources": {
+      "cpu": "CPU",
+      "memory": "Memory",
+      "disk": "Disk"
+    },
+    "services": {
+      "title": "Services",
+      "database": "Database",
+      "redis": "Redis",
+      "ai": "AI",
+      "queue": "Queue"
+    },
+    "status": {
+      "ok": "OK",
+      "error": "Error",
+      "initializing": "Initializing",
+      "degraded": "Degraded",
+      "disabled": "Disabled"
+    },
+    "errors": {
+      "connectionFailed": "Connection Failed"
+    },
+    "threatLevel": "Threat Level",
+    "safe": "Safe",
+    "warning": "Warning",
+    "reputationDistribution": "Reputation Distribution",
+    "breakdownByType": "Breakdown by Type",
+    "count": "Count",
+    "percentage": "Percentage"
+  },
+  "websocket": {
+    "monitoring": {
+      "latency": "Latency",
+      "average": "Average",
+      "p95": "P95",
+      "p99": "P99",
+      "connectionDetails": "Connection Details",
+      "activeConnections": "Active Connections",
+      "totalConnections": "Total Connections",
+      "messageDetails": "Message Details",
+      "errorDetails": "Error Details",
+      "critical": "Critical",
+      "rate": "Rate",
+      "totalDisconnections": "Total Disconnections",
+      "connectionFailures": "Connection Failures",
+      "avgDuration": "Avg Duration",
+      "messagesSent": "Messages Sent",
+      "messagesReceived": "Messages Received",
+      "messagesFiltered": "Messages Filtered",
+      "messagesQueued": "Messages Queued",
+      "sendRate": "Send Rate",
+      "receiveRate": "Receive Rate",
+      "performanceDetails": "Performance Details",
+      "avgLatency": "Avg Latency",
+      "p50Latency": "P50 Latency",
+      "p95Latency": "P95 Latency",
+      "p99Latency": "P99 Latency",
+      "maxLatency": "Max Latency",
+      "errorBreakdown": "Error Breakdown"
+    },
+    "filters": {
+      "title": "Filters",
+      "add": "Add Filter",
+      "remove": "Remove",
+      "clear": "Clear"
+    }
+  }
+}

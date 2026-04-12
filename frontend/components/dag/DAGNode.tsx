@@ -54,7 +54,7 @@ const statusConfig = {
 };
 
 export function DAGNode({ data, selected }: NodeProps<NodeData>) {
-  const t = useTranslations('dag');
+  const t = useTranslations("dag");
   const config = statusConfig[data.status];
 
   const formatDuration = (ms?: number): string => {
@@ -83,15 +83,11 @@ export function DAGNode({ data, selected }: NodeProps<NodeData>) {
       {/* Header */}
       <div className="flex items-center gap-2 mb-1">
         {config.icon}
-        <span className={`font-medium text-sm ${config.textColor}`}>
-          {data.label}
-        </span>
+        <span className={`font-medium text-sm ${config.textColor}`}>{data.label}</span>
       </div>
 
       {/* Step ID */}
-      <div className={`text-xs opacity-70 ${config.textColor}`}>
-        {data.stepId}
-      </div>
+      <div className={`text-xs opacity-70 ${config.textColor}`}>{data.stepId}</div>
 
       {/* Duration */}
       {data.duration && data.status !== "running" && (
@@ -112,9 +108,11 @@ export function DAGNode({ data, selected }: NodeProps<NodeData>) {
       {data.output && Object.keys(data.output).length > 0 && data.status === "success" && (
         <details className="mt-2 text-xs">
           <summary className={`cursor-pointer opacity-70 ${config.textColor}`}>
-            {t('output')}
+            {t("output")}
           </summary>
-          <pre className={`mt-1 p-1 rounded bg-white/50 dark:bg-black/20 overflow-auto max-h-20 ${config.textColor}`}>
+          <pre
+            className={`mt-1 p-1 rounded bg-white/50 dark:bg-black/20 overflow-auto max-h-20 ${config.textColor}`}
+          >
             {JSON.stringify(data.output, null, 2)}
           </pre>
         </details>

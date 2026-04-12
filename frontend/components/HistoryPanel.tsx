@@ -12,7 +12,7 @@ interface HistoryPanelProps {
 }
 
 export function HistoryPanel({ module, onSelect, onClose }: HistoryPanelProps) {
-  const t = useTranslations('common');
+  const t = useTranslations("common");
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -117,13 +117,10 @@ export function HistoryPanel({ module, onSelect, onClose }: HistoryPanelProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div 
+      <div
         ref={modalRef}
         className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
       >
@@ -164,13 +161,15 @@ export function HistoryPanel({ module, onSelect, onClose }: HistoryPanelProps) {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">{t('loading')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">{t("loading")}</p>
             </div>
           ) : records.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <Clock className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
               <p className="text-gray-500 dark:text-gray-400">No history records</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Your analysis history will appear here</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                Your analysis history will appear here
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -202,7 +201,7 @@ export function HistoryPanel({ module, onSelect, onClose }: HistoryPanelProps) {
                           </span>
                         )}
                       </div>
-                      
+
                       <p className="text-sm text-gray-800 dark:text-gray-200 line-clamp-2">
                         {getTruncated(record.input_text)}
                       </p>

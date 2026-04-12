@@ -1,0 +1,27 @@
+{
+  "marketplace": {
+    "title": "市场",
+    "subtitle": "发现和集成安全工具",
+    "browse": "浏览",
+    "installed": "已安装",
+    "install": "安装",
+    "uninstall": "卸载",
+    "refresh": "刷新",
+    "searchPlaceholder": "搜索剧本...",
+    "allCategories": "所有分类",
+    "featured": "精选",
+    "trending": "热门",
+    "allPlaybooks": "所有剧本 ({count})",
+    "loaded": "已加载 {count} 个剧本",
+    "noPlaybooks": "没有找到剧本",
+    "downloadSuccess": "成功下载剧本 \"{name}\"！请查看剧本定义页面。",
+    "downloadFailed": "下载剧本失败",
+    "downloading": "下载中...",
+    "loading": "加载中...",
+    "difficulty": {
+      "beginner": "初级",
+      "intermediate": "中级",
+      "advanced": "高级"
+    }
+  }
+}

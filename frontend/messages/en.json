@@ -170,6 +170,9 @@
   "home": {
     "title": "SOC Copilot",
     "subtitle": "Security Operations Center",
+    "loading": "Loading...",
+    "securityOperations": "Security Operations",
+    "refreshData": "Refresh Data",
     "tabs": {
       "alertAnalyzer": "Alert Analyzer",
       "timelineBuilder": "Timeline Builder",
@@ -391,7 +394,21 @@
     "loadModelsFailed": "Failed to load models",
     "saveFailed": "Failed to save",
     "setDefaultFailed": "Failed to set as default",
-    "toggleFailed": "Failed to toggle"
+    "toggleFailed": "Failed to toggle",
+    "global": {
+      "title": "Critical Error",
+      "description": "The application encountered a critical error. Please refresh the page to try again.",
+      "refresh": "Refresh Page",
+      "errorDetails": "Error Details"
+    },
+    "page": {
+      "title": "Something Went Wrong",
+      "description": "The page encountered an unexpected error. Please try refreshing the page or return to the home page.",
+      "errorDetails": "Error Details (Development Mode Only)",
+      "retry": "Retry",
+      "goBack": "Go Back",
+      "goHome": "Go Home"
+    }
   },
   "playbooks": {
     "title": "Playbooks",
@@ -407,6 +424,7 @@
     "subtitle": "Automated security response playbooks",
     "started": "Started",
     "duration": "Duration",
+    "status": "Status",
     "mode": "Mode",
     "searchPlaceholder": "Search by name or ID...",
     "noPlaybookRuns": "No playbook runs found",
@@ -1026,7 +1044,61 @@
     "initializing": "Initializing",
     "degraded": "Degraded",
     "disabled": "Disabled",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "new": "New",
+    "investigating": "Investigating",
+    "resolved": "Resolved",
+    "falsePositive": "False Positive",
+    "escalated": "Escalated"
+  },
+  "alertActions": {
+    "title": "Response Actions",
+    "readyTo": "Ready to",
+    "quickActions": "Quick Actions",
+    "actions": {
+      "resolve": {
+        "label": "Resolve",
+        "description": "Mark this alert as resolved"
+      },
+      "falsePositive": {
+        "label": "False Positive",
+        "description": "Mark this alert as a false positive"
+      },
+      "assign": {
+        "label": "Assign",
+        "description": "Assign this alert to a user"
+      },
+      "escalate": {
+        "label": "Escalate",
+        "description": "Escalate to higher level"
+      },
+      "reopen": {
+        "label": "Reopen",
+        "description": "Reopen this alert"
+      },
+      "isolateHost": {
+        "label": "Isolate Host",
+        "description": "Isolate the affected host from network"
+      },
+      "blockIp": {
+        "label": "Block IP",
+        "description": "Block the IP address on firewall"
+      }
+    },
+    "autoResolve": "Auto-Resolve",
+    "assignToMe": "Assign to Me",
+    "dialog": {
+      "cancel": "Cancel",
+      "processing": "Processing...",
+      "assignTo": "Assign to",
+      "escalateTo": "Escalate to",
+      "placeholder": {
+        "username": "Enter username or role",
+        "note": "Add a note..."
+      },
+      "noteRequired": "Note (required)",
+      "noteOptional": "Note (optional)"
+    }
   },
   "statuses": {
     "running": "Running",
@@ -1508,5 +1580,27 @@
     "investigating": "Investigating",
     "resolved": "Resolved",
     "thisWeek": "This week"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
+  },
+  "notes": {
+    "title": "Notes",
+    "recentNotes": "Recent Notes",
+    "placeholder": "Add a note... (Markdown supported)",
+    "submitHint": "Press Ctrl+Enter to submit",
+    "adding": "Adding...",
+    "addNote": "Add Note",
+    "empty": "No notes yet",
+    "editNote": "Edit note",
+    "deleteNote": "Delete note",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edited": "Edited",
+    "viewAll": "View all {count} notes",
+    "deleteConfirm": "Are you sure you want to delete this note?"
   }
 }

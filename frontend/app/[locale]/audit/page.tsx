@@ -9,21 +9,21 @@ import { useEffect, useState } from "react";
 
 export default function AuditLogsPage() {
   const router = useRouter();
-  const t = useTranslations('audit');
+  const t = useTranslations("audit");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
       const authState = await loadAuthState();
-      
+
       if (!authState) {
-        router.push('/login');
+        router.push("/login");
         return;
       }
 
       if (!isAdmin(authState.user) && !isAnalystOrAdmin(authState.user)) {
-        router.push('/');
+        router.push("/");
         return;
       }
 
@@ -36,7 +36,7 @@ export default function AuditLogsPage() {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/login');
+    router.push("/login");
   };
 
   if (loading) {

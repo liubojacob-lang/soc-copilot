@@ -9,27 +9,37 @@ interface ThreatIntelSectionProps {
 }
 
 export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
-  const t = useTranslations('threatIntel');
+  const t = useTranslations("threatIntel");
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [showFiltered, setShowFiltered] = useState(false);
 
   const getVerdictColor = (verdict: Verdict) => {
     switch (verdict) {
-      case "malicious": return "bg-red-600 text-white";
-      case "suspicious": return "bg-orange-500 text-white";
-      case "unknown": return "bg-gray-500 text-white";
-      case "benign": return "bg-green-500 text-white";
-      default: return "bg-gray-400 text-white";
+      case "malicious":
+        return "bg-red-600 text-white";
+      case "suspicious":
+        return "bg-orange-500 text-white";
+      case "unknown":
+        return "bg-gray-500 text-white";
+      case "benign":
+        return "bg-green-500 text-white";
+      default:
+        return "bg-gray-400 text-white";
     }
   };
 
   const getVerdictIcon = (verdict: Verdict) => {
     switch (verdict) {
-      case "malicious": return "⚠️";
-      case "suspicious": return "⚡";
-      case "unknown": return "❓";
-      case "benign": return "✓";
-      default: return "?";
+      case "malicious":
+        return "⚠️";
+      case "suspicious":
+        return "⚡";
+      case "unknown":
+        return "❓";
+      case "benign":
+        return "✓";
+      default:
+        return "?";
     }
   };
 
@@ -42,14 +52,22 @@ export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
 
   const getFilterReasonLabel = (reason?: string) => {
     switch (reason) {
-      case "private_ip": return "Private IP";
-      case "internal_domain": return t('internalDomain');
-      case "blocked_tld": return "Blocked TLD";
-      case "url_private_ip_host": return "Private IP in URL";
-      case "url_internal_domain": return "Internal Domain in URL";
-      case "url_blocked_tld": return "Blocked TLD in URL";
-      case "rate_limit": return t('rateLimited');
-      default: return reason || "Filtered";
+      case "private_ip":
+        return "Private IP";
+      case "internal_domain":
+        return t("internalDomain");
+      case "blocked_tld":
+        return "Blocked TLD";
+      case "url_private_ip_host":
+        return "Private IP in URL";
+      case "url_internal_domain":
+        return "Internal Domain in URL";
+      case "url_blocked_tld":
+        return "Blocked TLD in URL";
+      case "rate_limit":
+        return t("rateLimited");
+      default:
+        return reason || "Filtered";
     }
   };
 
@@ -61,7 +79,8 @@ export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
           Threat Intel (OTX)
         </h4>
         <div className="text-sm text-gray-400 italic">
-          External threat intelligence is disabled. Configure ALLOW_EXTERNAL_TI=true and OTX_API_KEY to enable.
+          External threat intelligence is disabled. Configure ALLOW_EXTERNAL_TI=true and OTX_API_KEY
+          to enable.
         </div>
       </div>
     );
@@ -91,9 +110,9 @@ export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
       <h4 className="text-sm font-medium mb-3 flex items-center">
         <span className="mr-2">🛡️</span>
         Threat Intel (OTX)
-        {(threatIntel as any).cached !== undefined && (
+        {(threatIntel as unknown as Record<string, unknown>).cached !== undefined && (
           <span className="ml-2 text-xs text-gray-400">
-            {threatIntel.items.some((i: any) => i.cached) ? "(部分来自缓存)" : ""}
+            {threatIntel.items.some((i: { cached: boolean }) => i.cached) ? "(部分来自缓存)" : ""}
           </span>
         )}
         {threatIntel.skipped && (
@@ -109,16 +128,16 @@ export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
       </h4>
 
       {threatIntel.items.length === 0 && !hasFilteredItems ? (
-        <div className="text-sm text-gray-400 italic">
-          No threat intelligence data available.
-        </div>
+        <div className="text-sm text-gray-400 italic">No threat intelligence data available.</div>
       ) : (
         <div className="space-y-2">
           {threatIntel.items.map((item, idx) => (
             <div
               key={idx}
               className="border rounded bg-white p-2 cursor-pointer hover:bg-gray-100"
-              onClick={() => setExpandedItem(expandedItem === item.ioc_value ? null : item.ioc_value)}
+              onClick={() =>
+                setExpandedItem(expandedItem === item.ioc_value ? null : item.ioc_value)
+              }
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center flex-1 min-w-0">
@@ -127,7 +146,9 @@ export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
 
                   {!item.skipped ? (
                     <>
-                      <span className={`ml-3 px-2 py-0.5 rounded text-xs ${getVerdictColor(item.verdict)}`}>
+                      <span
+                        className={`ml-3 px-2 py-0.5 rounded text-xs ${getVerdictColor(item.verdict)}`}
+                      >
                         {getVerdictIcon(item.verdict)} {item.verdict.toUpperCase()}
                       </span>
                       {item.score > 0 && (
@@ -193,11 +214,7 @@ export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
                     </div>
                   )}
 
-                  {item.cached && (
-                    <div className="text-gray-400 italic">
-                      Result from cache
-                    </div>
-                  )}
+                  {item.cached && <div className="text-gray-400 italic">Result from cache</div>}
                 </div>
               )}
             </div>
@@ -212,7 +229,8 @@ export function ThreatIntelSection({ threatIntel }: ThreatIntelSectionProps) {
             onClick={() => setShowFiltered(!showFiltered)}
             className="text-xs text-purple-700 hover:text-purple-900 font-medium"
           >
-            {showFiltered ? "▼" : "▶"} 已过滤的 IOC ({threatIntel.filtered_items.length}) - 未发送至外部服务
+            {showFiltered ? "▼" : "▶"} 已过滤的 IOC ({threatIntel.filtered_items.length}) -
+            未发送至外部服务
           </button>
 
           {showFiltered && (

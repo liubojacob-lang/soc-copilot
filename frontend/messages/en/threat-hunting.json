@@ -1,0 +1,36 @@
+{
+  "threatHunting": {
+    "title": "Threat Hunting",
+    "subtitle": "Proactively detect and respond to advanced threats",
+    "search": "Search Threats",
+    "createHunt": "Create Hunt",
+    "activeHunts": "Active Hunts",
+    "huntResults": "Hunt Results",
+    "clean": "干净",
+    "critical": "严重",
+    "dataSources": "数据源",
+    "findings": "发现",
+    "findingsCount": "{count} 个发现",
+    "huntHypotheses": "狩猎假设",
+    "iocHunt": {
+      "title": "IOC 狩猎",
+      "description": "使用 IOC 进行主动威胁狩猎",
+      "button": "开始 IOC 狩猎",
+      "comingSoon": "即将推出"
+    },
+    "mitre": "MITRE",
+    "recentResults": "最近结果",
+    "run": "运行",
+    "running": "运行中",
+    "severity": {
+      "critical": "严重",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "successRate": "成功率",
+    "times": "次",
+    "topTechniques": "热门技术",
+    "totalHunts": "总狩猎次数"
+  }
+}

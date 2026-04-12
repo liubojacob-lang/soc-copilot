@@ -1,0 +1,140 @@
+{
+  "aiAssistant": {
+    "title": "AI 助手",
+    "subtitle": "智能安全运营助手",
+    "placeholder": "输入您的问题...",
+    "send": "发送",
+    "clear": "清除对话",
+    "typing": "AI 正在输入...",
+    "error": "AI 服务错误",
+    "quickActions": {
+      "analyzeAlert": {
+        "label": "分析告警",
+        "query": "分析这个安全告警并提供详细信息"
+      },
+      "recommendPlaybook": {
+        "label": "推荐剧本",
+        "query": "根据最近的安全事件，推荐合适的事件响应剧本"
+      },
+      "generateReport": {
+        "label": "生成报告",
+        "query": "生成过去24小时的安全摘要报告"
+      },
+      "threatHunt": {
+        "label": "威胁狩猎",
+        "query": "根据最近的IOC，帮我搜寻潜在威胁"
+      }
+    },
+    "analyzeAlert": "分析告警",
+    "extractIOCs": "提取 IOC",
+    "suggestPlaybooks": "推荐剧本",
+    "welcome": {
+      "title": "欢迎使用 SOC Copilot",
+      "greeting": "你好！我是您的 AI 安全运营助手",
+      "prompt": "有什么可以帮您？试试问：帮我分析最近的告警",
+      "capabilities": "AI 驱动的安全运营能力",
+      "features": {
+        "naturalLanguage": "使用自然语言与 AI 交互",
+        "alertAnalysis": "智能分析安全告警",
+        "playbookRecommend": "推荐最佳响应剧本",
+        "reportGeneration": "自动生成安全事件报告"
+      }
+    },
+    "errors": {
+      "loadModelsFailed": "加载 AI 模型失败",
+      "setDefaultFailed": "设置默认模型失败",
+      "copyFailed": "复制失败",
+      "serviceFailed": "服务错误: {message}"
+    },
+    "history": {
+      "justNow": "刚刚",
+      "minutesAgo": "{count}分钟前",
+      "hoursAgo": "{count}小时前",
+      "daysAgo": "{count}天前",
+      "title": "对话历史"
+    },
+    "sidebar": {
+      "capabilities": "功能列表",
+      "usageTips": "使用提示",
+      "currentModel": "当前模型",
+      "tips": {
+        "naturalLanguage": "使用自然语言描述您的安全问题",
+        "alertAnalysis": "可以上传告警日志进行分析",
+        "securityReports": "可以生成安全事件报告",
+        "recommendations": "AI 会根据上下文推荐最佳行动"
+      }
+    },
+    "model": {
+      "select": "选择模型",
+      "noModels": "暂无可用模型",
+      "testing": "测试中...",
+      "testConnection": "测试连接",
+      "isDefault": "已设为默认",
+      "setDefault": "设为默认"
+    },
+    "providers": {
+      "openai": "OpenAI",
+      "anthropic": "Anthropic",
+      "azure": "Azure OpenAI",
+      "google": "Google",
+      "local": "本地模型",
+      "nvidia": "NVIDIA",
+      "zhipu": "智谱 AI",
+      "moonshot": "Moonshot",
+      "openrouter": "OpenRouter"
+    },
+    "inputPlaceholder": "输入您的问题...",
+    "clearChat": "清除对话",
+    "pressEnterToSend": "按",
+    "toSend": "发送",
+    "forNewLine": "换行",
+    "thinking": "思考中...",
+    "userLabel": "您",
+    "actions": {
+      "quickActions": "快速操作",
+      "clearChat": "清除对话",
+      "copy": "复制"
+    }
+  },
+  "ai": {
+    "title": "AI助手",
+    "sendMessage": "发送",
+    "clear": "清除",
+    "typing": "AI正在输入...",
+    "error": "AI服务错误",
+    "quickActions": "快速操作",
+    "analyzeAlert": "分析告警",
+    "extractIOCs": "提取IOC",
+    "suggestPlaybooks": "推荐剧本"
+  },
+  "quickActions": {
+    "analyzeAlert": {
+      "label": "分析告警",
+      "query": "分析这个告警"
+    },
+    "generateReport": {
+      "label": "生成报告",
+      "query": "帮我生成一份安全事件报告"
+    },
+    "recommendPlaybook": {
+      "label": "推荐剧本",
+      "query": "推荐合适的响应剧本"
+    },
+    "threatHunt": {
+      "label": "威胁狩猎",
+      "query": "帮我分析最近的可疑活动"
+    }
+  },
+  "model": {
+    "testConnection": "测试连接",
+    "setDefault": "设为默认",
+    "noModels": "暂无模型",
+    "testing": "测试中...",
+    "isDefault": "默认",
+    "select": "选择"
+  },
+  "mlPowered": {
+    "title": "AI 驱动",
+    "description": "基于机器学习的威胁检测"
+  }
+}

@@ -1,6 +1,6 @@
 /**
  * Auto-save hook for form data with localStorage backup.
- * 
+ *
  * Features:
  * - Periodic auto-save with configurable interval
  * - Debounced save on data changes
@@ -9,7 +9,7 @@
  * - Save status tracking
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface AutoSaveOptions<T> {
   data: T;
@@ -47,12 +47,15 @@ export function useAutoSave<T>({
   // Save to localStorage as backup
   const saveBackup = useCallback(() => {
     try {
-      localStorage.setItem(`${key}_backup`, JSON.stringify({
-        data,
-        timestamp: new Date().toISOString(),
-      }));
+      localStorage.setItem(
+        `${key}_backup`,
+        JSON.stringify({
+          data,
+          timestamp: new Date().toISOString(),
+        })
+      );
     } catch (e) {
-      console.error('Failed to save backup:', e);
+      console.error("Failed to save backup:", e);
     }
   }, [data, key]);
 
@@ -74,12 +77,12 @@ export function useAutoSave<T>({
   // Perform save
   const performSave = useCallback(async () => {
     if (state.isSaving) return;
-    
-    setState(prev => ({ ...prev, isSaving: true, error: null }));
-    
+
+    setState((prev) => ({ ...prev, isSaving: true, error: null }));
+
     try {
       await saveFunction(data);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isSaving: false,
         lastSaved: new Date(),
@@ -87,7 +90,7 @@ export function useAutoSave<T>({
       }));
       clearBackup();
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isSaving: false,
         error: (error as Error).message,
@@ -101,8 +104,8 @@ export function useAutoSave<T>({
     const currentData = JSON.stringify(data);
     if (currentData !== previousDataRef.current) {
       previousDataRef.current = currentData;
-      setState(prev => ({ ...prev, hasUnsavedChanges: true }));
-      
+      setState((prev) => ({ ...prev, hasUnsavedChanges: true }));
+
       // Debounced backup save
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -122,7 +125,7 @@ export function useAutoSave<T>({
         }
       }, interval);
     }
-    
+
     return () => {
       if (intervalTimerRef.current) {
         clearInterval(intervalTimerRef.current);
@@ -138,12 +141,12 @@ export function useAutoSave<T>({
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (state.hasUnsavedChanges) {
         e.preventDefault();
-        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
       }
     };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [state.hasUnsavedChanges]);
 
   return [state, performSave, clearBackup];

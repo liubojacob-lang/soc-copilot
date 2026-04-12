@@ -2,22 +2,36 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations, useLocale } from "next-intl";
 import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
 import { SkeletonTable } from "@/components/common/LoadingState";
-import { STATUS_COLORS, MODE_COLORS } from './constants';
-import { usePlaybooks } from './hooks/usePlaybooks';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { Search, RefreshCw, Play, BookOpen, Clock, CheckCircle, XCircle, AlertCircle, Eye, Edit2, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { STATUS_COLORS, MODE_COLORS } from "./constants";
+import { usePlaybooks } from "./hooks/usePlaybooks";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import {
+  Search,
+  RefreshCw,
+  Play,
+  BookOpen,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Eye,
+  Edit2,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 export default function PlaybooksPage() {
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations('playbooks');
-  const tCommon = useTranslations('common');
-  const [activeTab, setActiveTab] = useState<'runs' | 'definitions' | 'create'>('runs');
+  const t = useTranslations("playbooks");
+  const tCommon = useTranslations("common");
+  const [activeTab, setActiveTab] = useState<"runs" | "definitions" | "create">("runs");
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -34,12 +48,12 @@ export default function PlaybooksPage() {
     filters,
     setFilters,
     loadData,
-    loadDefinitions
+    loadDefinitions,
   } = usePlaybooks();
 
   useEffect(() => {
     setMounted(true);
-    if (activeTab === 'definitions') {
+    if (activeTab === "definitions") {
       loadDefinitions(1);
     }
   }, [activeTab]);
@@ -69,59 +83,61 @@ export default function PlaybooksPage() {
 
   const totalRunsPages = Math.ceil(runsPagination.total / runsPagination.pageSize);
 
-  const filteredRuns = runs.filter(run => {
+  const filteredRuns = runs.filter((run) => {
     if (!searchQuery) return true;
     const search = searchQuery.toLowerCase();
     return (
-      run.playbook_name.toLowerCase().includes(search) ||
-      run.id.toLowerCase().includes(search)
+      run.playbook_name.toLowerCase().includes(search) || run.id.toLowerCase().includes(search)
     );
   });
 
   // Keyboard shortcuts
-  useKeyboardShortcuts({
-    'r': () => {
-      setRefreshing(true);
-      loadData(runsPagination.currentPage).finally(() => setRefreshing(false));
+  useKeyboardShortcuts(
+    {
+      r: () => {
+        setRefreshing(true);
+        loadData(runsPagination.currentPage).finally(() => setRefreshing(false));
+      },
+      "/": () => {
+        document.querySelector<HTMLInputElement>('input[type="text"]')?.focus();
+      },
+      "1": () => setActiveTab("runs"),
+      "2": () => setActiveTab("definitions"),
     },
-    '/': () => {
-      document.querySelector<HTMLInputElement>('input[type="text"]')?.focus();
-    },
-    '1': () => setActiveTab('runs'),
-    '2': () => setActiveTab('definitions'),
-  }, { enabled: mounted && !loading });
+    { enabled: mounted && !loading }
+  );
 
   if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t('title')} subtitle={t('subtitle')} />
+      <Navigation title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs */}
         <div className="mb-6">
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="-mb-px flex space-x-8">
-              <button 
-                onClick={() => setActiveTab('runs')} 
-                className={`${activeTab === 'runs' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
+              <button
+                onClick={() => setActiveTab("runs")}
+                className={`${activeTab === "runs" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
               >
                 <Play className="w-4 h-4" />
-                {t('tabs.runs')}
+                {t("tabs.runs")}
               </button>
-              <button 
-                onClick={() => setActiveTab('definitions')} 
-                className={`${activeTab === 'definitions' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
+              <button
+                onClick={() => setActiveTab("definitions")}
+                className={`${activeTab === "definitions" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
               >
                 <BookOpen className="w-4 h-4" />
-                {t('tabs.definitions')}
+                {t("tabs.definitions")}
               </button>
             </nav>
           </div>
         </div>
 
         {/* Runs Tab */}
-        {activeTab === 'runs' && (
+        {activeTab === "runs" && (
           <>
             {/* Queue Stats */}
             {queueStats && (
@@ -129,13 +145,21 @@ export default function PlaybooksPage() {
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{t('queue.running')}:</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{queueStats.running}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {t("queue.running")}:
+                    </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {queueStats.running}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{t('queue.queued')}:</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{queueStats.queued}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {t("queue.queued")}:
+                    </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {queueStats.queued}
+                    </span>
                   </div>
                   <div className="ml-auto text-xs text-gray-500 dark:text-gray-400">
                     Max concurrent: {queueStats.max_concurrent}
@@ -151,49 +175,55 @@ export default function PlaybooksPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder={t('searchPlaceholder')}
+                    placeholder={t("searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                <select 
-                  value={filters.playbook} 
-                  onChange={(e) => setFilters({ ...filters, playbook: e.target.value })} 
+                <select
+                  value={filters.playbook}
+                  onChange={(e) => setFilters({ ...filters, playbook: e.target.value })}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">{t('allPlaybooks')}</option>
-                  {Object.entries(playbooks).map(([key, pb]) => <option key={key} value={key}>{pb.name}</option>)}
+                  <option value="">{t("allPlaybooks")}</option>
+                  {Object.entries(playbooks).map(([key, pb]) => (
+                    <option key={key} value={key}>
+                      {pb.name}
+                    </option>
+                  ))}
                 </select>
-                <select 
-                  value={filters.status} 
-                  onChange={(e) => setFilters({ ...filters, status: e.target.value })} 
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">{t('allStatuses')}</option>
-                  <option value="running">{t('statuses.running')}</option>
-                  <option value="success">{t('statuses.success')}</option>
-                  <option value="failed">{t('statuses.failed')}</option>
+                  <option value="">{t("allStatuses")}</option>
+                  <option value="running">{t("statuses.running")}</option>
+                  <option value="success">{t("statuses.success")}</option>
+                  <option value="failed">{t("statuses.failed")}</option>
                 </select>
-                <button 
+                <button
                   onClick={handleRefresh}
                   disabled={refreshing}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
                 >
-                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  {refreshing ? tCommon('loading') : tCommon('refresh')}
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+                  {refreshing ? tCommon("loading") : tCommon("refresh")}
                 </button>
-                <button 
+                <button
                   onClick={() => setAutoRefresh(!autoRefresh)}
                   className={`px-3 py-2 border rounded-lg flex items-center gap-2 transition-colors ${
-                    autoRefresh 
-                      ? 'bg-green-50 border-green-300 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-400' 
-                      : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    autoRefresh
+                      ? "bg-green-50 border-green-300 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-400"
+                      : "border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
                   }`}
                   title={autoRefresh ? "Auto-refresh ON (10s)" : "Auto-refresh OFF"}
                 >
-                  <div className={`w-2 h-2 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                  <span className="text-sm">{autoRefresh ? 'Live' : 'Paused'}</span>
+                  <div
+                    className={`w-2 h-2 rounded-full ${autoRefresh ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+                  />
+                  <span className="text-sm">{autoRefresh ? "Live" : "Paused"}</span>
                 </button>
               </div>
             </div>
@@ -206,14 +236,18 @@ export default function PlaybooksPage() {
             )}
 
             {loading ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4"><SkeletonTable rows={5} columns={5} /></div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                <SkeletonTable rows={5} columns={5} />
+              </div>
             ) : filteredRuns.length === 0 ? (
               <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                   <Play className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">{t('noPlaybookRuns')}</p>
-                <p className="text-gray-400 dark:text-gray-500 text-sm">{t('runPlaybookHint')}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">
+                  {t("noPlaybookRuns")}
+                </p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm">{t("runPlaybookHint")}</p>
               </div>
             ) : (
               <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
@@ -221,39 +255,72 @@ export default function PlaybooksPage() {
                   <table className="w-full">
                     <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('playbook')}</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('status')}</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('mode')}</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('started')}</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('duration')}</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{tCommon('actions')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          {t("playbook")}
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          {t("status")}
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          {t("mode")}
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          {t("started")}
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          {t("duration")}
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          {tCommon("actions")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredRuns.map((run) => {
-                        const duration = run.finished_at ? Math.round((new Date(run.finished_at).getTime() - new Date(run.started_at).getTime()) / 1000) : null;
+                        const duration = run.finished_at
+                          ? Math.round(
+                              (new Date(run.finished_at).getTime() -
+                                new Date(run.started_at).getTime()) /
+                                1000
+                            )
+                          : null;
                         return (
-                          <tr key={run.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                          <tr
+                            key={run.id}
+                            className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                          >
                             <td className="px-6 py-4">
-                              <div className="font-medium text-gray-900 dark:text-white">{playbooks[run.playbook_name]?.name || run.playbook_name}</div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">{run.id.slice(0, 8)}...</div>
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {playbooks[run.playbook_name]?.name || run.playbook_name}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                                {run.id.slice(0, 8)}...
+                              </div>
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[run.status]}`}>
-                                {run.status === 'success' && <CheckCircle className="w-3 h-3" />}
-                                {run.status === 'failed' && <XCircle className="w-3 h-3" />}
-                                {run.status === 'running' && <div className="w-2 h-2 bg-current rounded-full animate-pulse" />}
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[run.status]}`}
+                              >
+                                {run.status === "success" && <CheckCircle className="w-3 h-3" />}
+                                {run.status === "failed" && <XCircle className="w-3 h-3" />}
+                                {run.status === "running" && (
+                                  <div className="w-2 h-2 bg-current rounded-full animate-pulse" />
+                                )}
                                 {t(`statuses.${run.status}`)}
                               </span>
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${MODE_COLORS[run.mode]}`}>
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-xs font-medium ${MODE_COLORS[run.mode]}`}
+                              >
                                 {run.mode}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                               {new Date(run.started_at).toLocaleDateString()}
-                              <div className="text-xs text-gray-400">{new Date(run.started_at).toLocaleTimeString()}</div>
+                              <div className="text-xs text-gray-400">
+                                {new Date(run.started_at).toLocaleTimeString()}
+                              </div>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                               {duration !== null ? (
@@ -263,12 +330,12 @@ export default function PlaybooksPage() {
                               )}
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <a 
-                                href={`/${locale}/playbooks/${run.id}`} 
+                              <a
+                                href={`/${locale}/playbooks/${run.id}`}
                                 className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
                               >
                                 <Eye className="w-4 h-4" />
-                                {tCommon('viewDetails')}
+                                {tCommon("viewDetails")}
                               </a>
                             </td>
                           </tr>
@@ -276,12 +343,17 @@ export default function PlaybooksPage() {
                       })}
                     </tbody>
                   </table>
-                  
+
                   {/* Pagination */}
                   {totalRunsPages > 1 && (
                     <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        Showing {((runsPagination.currentPage - 1) * runsPagination.pageSize) + 1} to {Math.min(runsPagination.currentPage * runsPagination.pageSize, runsPagination.total)} of {runsPagination.total} results
+                        Showing {(runsPagination.currentPage - 1) * runsPagination.pageSize + 1} to{" "}
+                        {Math.min(
+                          runsPagination.currentPage * runsPagination.pageSize,
+                          runsPagination.total
+                        )}{" "}
+                        of {runsPagination.total} results
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -311,12 +383,14 @@ export default function PlaybooksPage() {
         )}
 
         {/* Definitions Tab */}
-        {activeTab === 'definitions' && (
+        {activeTab === "definitions" && (
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('definitions.title')}</h2>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">{t('definitions.subtitle')}</p>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {t("definitions.title")}
+                </h2>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">{t("definitions.subtitle")}</p>
               </div>
             </div>
             {definitions.length === 0 ? (
@@ -324,32 +398,55 @@ export default function PlaybooksPage() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                   <BookOpen className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500 dark:text-gray-400 text-lg">{t('definitions.noDefinitions')}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">
+                  {t("definitions.noDefinitions")}
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('definitions.name')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('definitions.description')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('definitions.version')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('definitions.status')}</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('definitions.actions')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t("definitions.name")}
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t("definitions.description")}
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t("definitions.version")}
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t("definitions.status")}
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t("definitions.actions")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {definitions.map((def) => (
-                      <tr key={def.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{def.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">{def.description || '-'}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 font-mono">v{def.version}</td>
+                      <tr
+                        key={def.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                          {def.name}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
+                          {def.description || "-"}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 font-mono">
+                          v{def.version}
+                        </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                            def.status === 'published' 
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                              : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                          }`}>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                              def.status === "published"
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                            }`}
+                          >
                             {def.status}
                           </span>
                         </td>

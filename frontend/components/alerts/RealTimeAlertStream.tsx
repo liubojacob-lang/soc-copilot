@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { useTranslations } from 'next-intl';
-import { loadAuthState } from '@/lib/auth';
-import { getWazuhWebSocketClient, WazuhWebSocketClient } from '@/lib/wazuhWebSocket';
-import { AlertData, SeverityLevel } from '@/types/wazuh';
-import { VirtualList } from '@/components/common/VirtualList';
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useTranslations } from "next-intl";
+import { loadAuthState } from "@/lib/auth";
+import { getWazuhWebSocketClient, WazuhWebSocketClient } from "@/lib/wazuhWebSocket";
+import { AlertData, SeverityLevel } from "@/types/wazuh";
+import { VirtualList } from "@/components/common/VirtualList";
 import {
   Bell,
   BellOff,
@@ -20,15 +20,17 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
-  Loader2
-} from 'lucide-react';
+  Loader2,
+} from "lucide-react";
 
 const SEVERITY_COLORS: Record<SeverityLevel, string> = {
-  critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-300 dark:border-red-700',
-  high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300 dark:border-orange-700',
-  medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700',
-  low: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-700',
-  info: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400 border-gray-300 dark:border-gray-600',
+  critical:
+    "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-300 dark:border-red-700",
+  high: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300 dark:border-orange-700",
+  medium:
+    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700",
+  low: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+  info: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400 border-gray-300 dark:border-gray-600",
 };
 
 const SEVERITY_ICONS: Record<SeverityLevel, React.ReactNode> = {
@@ -50,10 +52,10 @@ export function WazuhAlertStream({
   maxAlerts = 100,
   autoScroll = true,
   showFilters = true,
-  onAlertClick
+  onAlertClick,
 }: AlertStreamProps) {
-  const t = useTranslations('wazuh.stream');
-  const tCommon = useTranslations('common');
+  const t = useTranslations("wazuh.stream");
+  const tCommon = useTranslations("common");
 
   // State
   const [alerts, setAlerts] = useState<AlertData[]>([]);
@@ -64,13 +66,13 @@ export function WazuhAlertStream({
 
   // Filters
   const [filters, setFilters] = useState<{
-    minSeverity: SeverityLevel | 'all';
+    minSeverity: SeverityLevel | "all";
     searchQuery: string;
     agentFilter: string;
   }>({
-    minSeverity: 'all',
-    searchQuery: '',
-    agentFilter: '',
+    minSeverity: "all",
+    searchQuery: "",
+    agentFilter: "",
   });
 
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
@@ -80,12 +82,12 @@ export function WazuhAlertStream({
   useEffect(() => {
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      setError('Not authenticated');
+      setError("Not authenticated");
       return;
     }
 
     const client = getWazuhWebSocketClient({
-      token: authState.token,
+      token: authState.tokens?.access_token,
       enableAggregation: true,
     });
 
@@ -103,7 +105,7 @@ export function WazuhAlertStream({
     // Set up alert handler
     const unsubscribeAlert = client.onAlert((alert) => {
       if (streamEnabled) {
-        setAlerts(prev => {
+        setAlerts((prev) => {
           const newAlerts = [alert, ...prev];
           return newAlerts.slice(0, maxAlerts);
         });
@@ -118,7 +120,7 @@ export function WazuhAlertStream({
 
     // Connect
     setConnecting(true);
-    client.connect(authState.token);
+    client.connect(authState.tokens?.access_token);
 
     return () => {
       unsubscribeConnection();
@@ -129,9 +131,9 @@ export function WazuhAlertStream({
 
   // Filter alerts
   const filteredAlerts = useMemo(() => {
-    return alerts.filter(alert => {
+    return alerts.filter((alert) => {
       // Severity filter
-      if (filters.minSeverity !== 'all') {
+      if (filters.minSeverity !== "all") {
         const severityOrder: Record<SeverityLevel, number> = {
           critical: 0,
           high: 1,
@@ -153,7 +155,9 @@ export function WazuhAlertStream({
           alert.source_ip,
           alert.agent.name,
           ...alert.iocs,
-        ].join(' ').toLowerCase();
+        ]
+          .join(" ")
+          .toLowerCase();
         if (!searchableText.includes(query)) return false;
       }
 
@@ -168,11 +172,14 @@ export function WazuhAlertStream({
 
   // Statistics - optimized with single reduce
   const stats = useMemo(() => {
-    return alerts.reduce((acc, alert) => {
-      acc.total++;
-      acc[alert.severity] = (acc[alert.severity] || 0) + 1;
-      return acc;
-    }, { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 } as Record<string, number>);
+    return alerts.reduce(
+      (acc, alert) => {
+        acc.total++;
+        acc[alert.severity] = (acc[alert.severity] || 0) + 1;
+        return acc;
+      },
+      { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 } as Record<string, number>
+    );
   }, [alerts]);
 
   // Handle connection toggle
@@ -185,7 +192,7 @@ export function WazuhAlertStream({
     } else {
       setConnecting(true);
       const authState = loadAuthState();
-      wsClient.connect(authState?.token);
+      wsClient.connect(authState?.tokens?.access_token);
       setStreamEnabled(true);
     }
   }, [wsClient, connected]);
@@ -198,9 +205,9 @@ export function WazuhAlertStream({
   // Export alerts
   const handleExportAlerts = useCallback(() => {
     const data = JSON.stringify(filteredAlerts, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
+    const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `wazuh-alerts-${new Date().toISOString()}.json`;
     a.click();
@@ -212,36 +219,44 @@ export function WazuhAlertStream({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold">{t('title')}</h3>
+          <h3 className="text-lg font-semibold">{t("title")}</h3>
 
           {/* Connection Status */}
           <div className="flex items-center gap-2">
             {connecting && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-full">
                 <Loader2 className="w-4 h-4 text-yellow-600 dark:text-yellow-400 animate-spin" />
-                <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Connecting...</span>
+                <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+                  Connecting...
+                </span>
               </div>
             )}
             {!connecting && (
               <>
                 {/* Status Badge */}
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors ${
-                  connected
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                    : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                }`}>
+                <div
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors ${
+                    connected
+                      ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                      : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                  }`}
+                >
                   {connected ? (
                     <>
                       <div className="relative">
                         <Wifi className="w-4 h-4 text-green-600 dark:text-green-400" />
                         <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                       </div>
-                      <span className="text-sm font-medium text-green-700 dark:text-green-400">Live</span>
+                      <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                        Live
+                      </span>
                     </>
                   ) : (
                     <>
                       <WifiOff className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      <span className="text-sm font-medium text-red-700 dark:text-red-400">Disconnected</span>
+                      <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                        Disconnected
+                      </span>
                     </>
                   )}
                 </div>
@@ -251,10 +266,10 @@ export function WazuhAlertStream({
                   onClick={handleToggleConnection}
                   className={`p-2 rounded-lg transition-colors ${
                     connected
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/40'
-                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/40"
+                      : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
-                  title={connected ? 'Stop streaming' : 'Start streaming'}
+                  title={connected ? "Stop streaming" : "Start streaming"}
                 >
                   {connected ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
                 </button>
@@ -270,10 +285,10 @@ export function WazuhAlertStream({
               onClick={() => setShowFiltersPanel(!showFiltersPanel)}
               className={`p-2 rounded-lg transition-colors ${
                 showFiltersPanel
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                  : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400"
               }`}
-              title={t('toggleFilters')}
+              title={t("toggleFilters")}
             >
               <Filter className="w-4 h-4" />
             </button>
@@ -281,14 +296,14 @@ export function WazuhAlertStream({
           <button
             onClick={handleClearAlerts}
             className="p-2 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title={t('clearAlerts')}
+            title={t("clearAlerts")}
           >
             <X className="w-4 h-4" />
           </button>
           <button
             onClick={handleExportAlerts}
             className="p-2 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title={t('exportAlerts')}
+            title={t("exportAlerts")}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -299,27 +314,31 @@ export function WazuhAlertStream({
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon('total')}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon("total")}</div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.critical}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon('critical')}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon("critical")}</div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.high}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon('high')}</div>
+          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            {stats.high}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon("high")}</div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-          <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.medium}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon('medium')}</div>
+          <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+            {stats.medium}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon("medium")}</div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.low}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon('low')}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon("low")}</div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
           <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.info}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon('info')}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{tCommon("info")}</div>
         </div>
       </div>
 
@@ -327,7 +346,7 @@ export function WazuhAlertStream({
       {showFiltersPanel && (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="font-medium">{t('filters')}</h4>
+            <h4 className="font-medium">{t("filters")}</h4>
             <button
               onClick={() => setShowFiltersPanel(false)}
               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
@@ -339,42 +358,44 @@ export function WazuhAlertStream({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Severity Filter */}
             <div>
-              <label className="block text-sm font-medium mb-2">{t('minSeverity')}</label>
+              <label className="block text-sm font-medium mb-2">{t("minSeverity")}</label>
               <select
                 value={filters.minSeverity}
-                onChange={(e) => setFilters({ ...filters, minSeverity: e.target.value as SeverityLevel | 'all' })}
+                onChange={(e) =>
+                  setFilters({ ...filters, minSeverity: e.target.value as SeverityLevel | "all" })
+                }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                <option value="all">{t('allSeverities')}</option>
-                <option value="critical">{tCommon('critical')}</option>
-                <option value="high">{tCommon('high')}</option>
-                <option value="medium">{tCommon('medium')}</option>
-                <option value="low">{tCommon('low')}</option>
-                <option value="info">{tCommon('info')}</option>
+                <option value="all">{t("allSeverities")}</option>
+                <option value="critical">{tCommon("critical")}</option>
+                <option value="high">{tCommon("high")}</option>
+                <option value="medium">{tCommon("medium")}</option>
+                <option value="low">{tCommon("low")}</option>
+                <option value="info">{tCommon("info")}</option>
               </select>
             </div>
 
             {/* Search Query */}
             <div>
-              <label className="block text-sm font-medium mb-2">{t('search')}</label>
+              <label className="block text-sm font-medium mb-2">{t("search")}</label>
               <input
                 type="text"
                 value={filters.searchQuery}
                 onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                placeholder={t('searchPlaceholder')}
+                placeholder={t("searchPlaceholder")}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
 
             {/* Agent Filter */}
             <div>
-              <label className="block text-sm font-medium mb-2">{t('agent')}</label>
+              <label className="block text-sm font-medium mb-2">{t("agent")}</label>
               <select
                 value={filters.agentFilter}
                 onChange={(e) => setFilters({ ...filters, agentFilter: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                <option value="">{t('allAgents')}</option>
+                <option value="">{t("allAgents")}</option>
                 {/* Add agent options dynamically */}
               </select>
             </div>
@@ -391,9 +412,11 @@ export function WazuhAlertStream({
                 <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-red-900 dark:text-red-100 mb-1">Connection Error</p>
+                <p className="text-sm font-medium text-red-900 dark:text-red-100 mb-1">
+                  Connection Error
+                </p>
                 <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
-                {error.includes('Authentication') && (
+                {error.includes("Authentication") && (
                   <p className="text-xs text-red-600 dark:text-red-500 mt-2">
                     Please refresh the page to re-authenticate
                   </p>
@@ -406,7 +429,7 @@ export function WazuhAlertStream({
                 if (wsClient) {
                   setConnecting(true);
                   const authState = loadAuthState();
-                  wsClient.connect(authState?.token);
+                  wsClient.connect(authState?.tokens?.access_token);
                 }
               }}
               className="px-3 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
@@ -418,19 +441,26 @@ export function WazuhAlertStream({
       )}
 
       {/* Reconnecting Status */}
-      {!connecting && !connected && !error && wsClient?.getState().reconnectAttempts > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <Loader2 className="w-4 h-4 text-yellow-600 dark:text-yellow-400 animate-spin" />
-            <div>
-              <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">Reconnecting...</p>
-              <p className="text-xs text-yellow-700 dark:text-yellow-400">
-                Attempt {wsClient.getState().reconnectAttempts} of {wsClient?.['config']?.maxReconnectAttempts || 10}
-              </p>
+      {!connecting &&
+        !connected &&
+        !error &&
+        wsClient &&
+        wsClient.getState().reconnectAttempts > 0 && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-4 h-4 text-yellow-600 dark:text-yellow-400 animate-spin" />
+              <div>
+                <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                  Reconnecting...
+                </p>
+                <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                  Attempt {wsClient.getState().reconnectAttempts} of{" "}
+                  {wsClient.getState().isManualClose ? 0 : 10}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Alerts List */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -438,7 +468,7 @@ export function WazuhAlertStream({
           <div className="p-8 text-center">
             <Bell className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400">
-              {connected ? t('noAlerts') : t('notConnected')}
+              {connected ? t("noAlerts") : t("notConnected")}
             </p>
           </div>
         ) : (
@@ -448,16 +478,12 @@ export function WazuhAlertStream({
             containerHeight={600}
             overscan={5}
             renderItem={(alert, index) => (
-              <AlertItem
-                key={alert.id}
-                alert={alert}
-                onClick={() => onAlertClick?.(alert)}
-              />
+              <AlertItem key={alert.id} alert={alert} onClick={() => onAlertClick?.(alert)} />
             )}
             emptyComponent={
               <div className="p-8 text-center">
                 <Bell className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">{t('noAlerts')}</p>
+                <p className="text-gray-500 dark:text-gray-400">{t("noAlerts")}</p>
               </div>
             }
           />
@@ -477,7 +503,7 @@ const AlertItem = memo(function AlertItem({ alert, onClick }: AlertItemProps) {
     <div
       onClick={onClick}
       className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer border-l-4 ${
-        SEVERITY_COLORS[alert.severity].split(' ')[2]
+        SEVERITY_COLORS[alert.severity].split(" ")[2]
       }`}
     >
       <div className="flex items-start justify-between gap-4">
@@ -487,9 +513,11 @@ const AlertItem = memo(function AlertItem({ alert, onClick }: AlertItemProps) {
             <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {alert.title}
             </h4>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-              SEVERITY_COLORS[alert.severity]
-            }`}>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                SEVERITY_COLORS[alert.severity]
+              }`}
+            >
               {alert.severity.toUpperCase()}
             </span>
           </div>

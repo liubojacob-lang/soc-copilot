@@ -5,27 +5,23 @@
  * Improved version with better false positive filtering
  */
 
-import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
-import { join, relative } from 'path';
+import { readFileSync, readdirSync, statSync, existsSync } from "fs";
+import { join, relative } from "path";
 
 // Configuration
 const CONFIG = {
-  directories: [
-    'app',
-    'components',
-    'lib',
-  ],
-  extensions: ['.tsx', '.ts', '.jsx', '.js'],
+  directories: ["app", "components", "lib"],
+  extensions: [".tsx", ".ts", ".jsx", ".js"],
   exclude: [
-    'node_modules',
-    '.next',
-    'dist',
-    'build',
-    'messages',
-    'i18n',
-    'api',
-    'middleware',
-    '.next',
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    "messages",
+    "i18n",
+    "api",
+    "middleware",
+    ".next",
   ],
 
   // Patterns for hardcoded UI text (more specific but still catches real issues)
@@ -113,11 +109,11 @@ class I18nChecker {
   filesScanned = 0;
 
   shouldExclude(filePath: string): boolean {
-    return CONFIG.exclude.some(excluded => filePath.includes(excluded));
+    return CONFIG.exclude.some((excluded) => filePath.includes(excluded));
   }
 
   isValidExtension(filePath: string): boolean {
-    return CONFIG.extensions.some(ext => filePath.endsWith(ext));
+    return CONFIG.extensions.some((ext) => filePath.endsWith(ext));
   }
 
   scanDirectory(dir: string, baseDir: string) {
@@ -145,8 +141,8 @@ class I18nChecker {
 
   scanFile(filePath: string, relativePath: string) {
     try {
-      const content = readFileSync(filePath, 'utf-8');
-      const lines = content.split('\n');
+      const content = readFileSync(filePath, "utf-8");
+      const lines = content.split("\n");
       this.filesScanned++;
 
       lines.forEach((line, lineIndex) => {
@@ -160,7 +156,7 @@ class I18nChecker {
         if (this.shouldExcludeLine(trimmedLine)) return;
 
         // Check each pattern
-        CONFIG.patterns.forEach(pattern => {
+        CONFIG.patterns.forEach((pattern) => {
           // Reset regex state
           pattern.lastIndex = 0;
 
@@ -171,7 +167,7 @@ class I18nChecker {
                 file: relativePath,
                 line: lineNumber,
                 column: match.index + 1,
-                match: match[0] || match[1] || '',
+                match: match[0] || match[1] || "",
                 context: trimmedLine,
               });
             }
@@ -184,25 +180,25 @@ class I18nChecker {
   }
 
   shouldExcludeLine(line: string): boolean {
-    return CONFIG.excludeContexts.some(pattern => pattern.test(line));
+    return CONFIG.excludeContexts.some((pattern) => pattern.test(line));
   }
 
   printResults() {
-    console.log('\n📊 Scan Results:');
+    console.log("\n📊 Scan Results:");
     console.log(`   Files scanned: ${this.filesScanned}`);
     console.log(`   Violations found: ${this.violations.length}\n`);
 
     if (this.violations.length === 0) {
-      console.log('✅ No hardcoded UI text found!\n');
-      console.log('All files are properly internationalized. Great job! 🎉\n');
+      console.log("✅ No hardcoded UI text found!\n");
+      console.log("All files are properly internationalized. Great job! 🎉\n");
       return 0;
     }
 
-    console.log('❌ Hardcoded UI text found:\n');
+    console.log("❌ Hardcoded UI text found:\n");
 
     // Group by file
     const byFile = new Map<string, Violation[]>();
-    this.violations.forEach(v => {
+    this.violations.forEach((v) => {
       if (!byFile.has(v.file)) {
         byFile.set(v.file, []);
       }
@@ -214,11 +210,13 @@ class I18nChecker {
       console.log(`📄 ${file}`);
       console.log(`   ${violations.length} violation(s):\n`);
 
-      violations.slice(0, 10).forEach(v => {
+      violations.slice(0, 10).forEach((v) => {
         console.log(`   Line ${v.line}:${v.column}`);
         console.log(`   Text: "${v.match}"`);
-        console.log(`   Context: ${v.context.substring(0, 80)}${v.context.length > 80 ? '...' : ''}`);
-        console.log('');
+        console.log(
+          `   Context: ${v.context.substring(0, 80)}${v.context.length > 80 ? "..." : ""}`
+        );
+        console.log("");
       });
 
       if (violations.length > 10) {
@@ -226,18 +224,18 @@ class I18nChecker {
       }
     });
 
-    console.log('\n💡 Suggestions:');
+    console.log("\n💡 Suggestions:");
     console.log('   1. Replace hardcoded text with t("key")');
-    console.log('   2. Add translation keys to messages/en.json and messages/zh.json');
-    console.log('   3. Run npm run i18n:check again to verify fixes\n');
+    console.log("   2. Add translation keys to messages/en.json and messages/zh.json");
+    console.log("   3. Run npm run i18n:check again to verify fixes\n");
 
     return 1;
   }
 
   run(baseDir: string = process.cwd()): number {
-    console.log('🔍 Scanning for hardcoded UI text...\n');
+    console.log("🔍 Scanning for hardcoded UI text...\n");
 
-    CONFIG.directories.forEach(dir => {
+    CONFIG.directories.forEach((dir) => {
       const fullPath = join(baseDir, dir);
       if (existsSync(fullPath)) {
         this.scanDirectory(fullPath, baseDir);

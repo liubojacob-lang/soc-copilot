@@ -1,0 +1,140 @@
+{
+  "aiAssistant": {
+    "title": "AI Assistant",
+    "subtitle": "Intelligent Security Operations Assistant",
+    "placeholder": "Ask your question...",
+    "send": "Send",
+    "clear": "Clear conversation",
+    "typing": "AI is typing...",
+    "error": "AI service error",
+    "quickActions": {
+      "analyzeAlert": {
+        "label": "Analyze Alert",
+        "query": "Analyze this security alert"
+      },
+      "recommendPlaybook": {
+        "label": "Recommend Playbook",
+        "query": "Recommend suitable response playbooks"
+      },
+      "generateReport": {
+        "label": "Generate Report",
+        "query": "Generate a security summary report"
+      },
+      "threatHunt": {
+        "label": "Threat Hunt",
+        "query": "Hunt for potential threats"
+      }
+    },
+    "welcome": {
+      "title": "Welcome to SOC Copilot",
+      "greeting": "Hello! I am your AI Security Operations Assistant",
+      "prompt": "What can I help you with? Try asking: Analyze recent alerts",
+      "capabilities": "AI-powered Security Operations",
+      "features": {
+        "naturalLanguage": "Interact with AI using natural language",
+        "alertAnalysis": "Intelligently analyze security alerts",
+        "playbookRecommend": "Recommend best response playbooks",
+        "reportGeneration": "Automatically generate security incident reports"
+      }
+    },
+    "errors": {
+      "loadModelsFailed": "Failed to load AI models",
+      "setDefaultFailed": "Failed to set default model",
+      "copyFailed": "Copy failed",
+      "serviceFailed": "Service error: {message}"
+    },
+    "history": {
+      "justNow": "Just now",
+      "minutesAgo": "{count} minutes ago",
+      "hoursAgo": "{count} hours ago",
+      "daysAgo": "{count} days ago",
+      "title": "Chat History"
+    },
+    "sidebar": {
+      "capabilities": "Capabilities",
+      "usageTips": "Usage Tips",
+      "currentModel": "Current Model",
+      "tips": {
+        "naturalLanguage": "Describe your security issues in natural language",
+        "alertAnalysis": "You can upload alert logs for analysis",
+        "securityReports": "You can generate security incident reports",
+        "recommendations": "AI will recommend best actions based on context"
+      }
+    },
+    "model": {
+      "select": "Select Model",
+      "noModels": "No models available",
+      "testing": "Testing...",
+      "testConnection": "Test Connection",
+      "isDefault": "Default",
+      "setDefault": "Set as Default"
+    },
+    "providers": {
+      "openai": "OpenAI",
+      "anthropic": "Anthropic",
+      "azure": "Azure OpenAI",
+      "google": "Google",
+      "local": "Local Model",
+      "nvidia": "NVIDIA",
+      "zhipu": "Zhipu AI",
+      "moonshot": "Moonshot",
+      "openrouter": "OpenRouter"
+    },
+    "inputPlaceholder": "Enter your question...",
+    "clearChat": "Clear Chat",
+    "pressEnterToSend": "Press",
+    "toSend": "to send",
+    "forNewLine": "for new line",
+    "thinking": "Thinking...",
+    "userLabel": "You",
+    "actions": {
+      "quickActions": "Quick Actions",
+      "clearChat": "Clear Chat",
+      "copy": "Copy"
+    },
+    "analyzeAlert": "分析告警",
+    "extractIOCs": "提取 IOC",
+    "suggestPlaybooks": "推荐剧本"
+  },
+  "ai": {
+    "title": "AI Assistant",
+    "sendMessage": "Send",
+    "clear": "Clear",
+    "typing": "AI is typing...",
+    "error": "AI service error",
+    "quickActions": "Quick Actions",
+    "analyzeAlert": "Analyze Alert",
+    "extractIOCs": "Extract IOCs",
+    "suggestPlaybooks": "Suggest Playbooks"
+  },
+  "quickActions": {
+    "analyzeAlert": {
+      "label": "Analyze Alert",
+      "query": "Analyze this alert"
+    },
+    "generateReport": {
+      "label": "Generate Report",
+      "query": "Help me generate a security incident report"
+    },
+    "recommendPlaybook": {
+      "label": "Recommend Playbook",
+      "query": "Recommend appropriate response playbook"
+    },
+    "threatHunt": {
+      "label": "Threat Hunt",
+      "query": "Help me analyze recent suspicious activities"
+    }
+  },
+  "model": {
+    "testConnection": "Test Connection",
+    "setDefault": "Set as Default",
+    "noModels": "No models available",
+    "testing": "Testing...",
+    "isDefault": "Default",
+    "select": "Select"
+  },
+  "mlPowered": {
+    "title": "AI Powered",
+    "description": "ML-based threat detection"
+  }
+}

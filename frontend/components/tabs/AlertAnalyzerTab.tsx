@@ -28,7 +28,7 @@ interface AlertAnalyzerTabProps {
 }
 
 export function AlertAnalyzerTab({ onHistoryToggle }: AlertAnalyzerTabProps) {
-  const t = useTranslations('alertAnalyzer');
+  const t = useTranslations("alertAnalyzer");
   const [input, setInput] = useState("");
   const [result, setResult] = useState<AlertAnalysisResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,7 +51,7 @@ export function AlertAnalyzerTab({ onHistoryToggle }: AlertAnalyzerTabProps) {
         setCurrentHistoryId(response.history_id);
       }
     } catch (e: unknown) {
-      const errorMsg = (e as Error)?.message ?? t('analysisFailed');
+      const errorMsg = (e as Error)?.message ?? t("analysisFailed");
       setError(errorMsg);
     } finally {
       setLoading(false);
@@ -66,23 +66,23 @@ export function AlertAnalyzerTab({ onHistoryToggle }: AlertAnalyzerTabProps) {
 
   return (
     <div className="flex">
-      <div className="flex-1 grid grid-cols-2 gap-6">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
-              {t('input')}
+              {t("input")}
             </h3>
             <button
               onClick={onHistoryToggle}
               className="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded transition-colors"
             >
-              {t('history')}
+              {t("history")}
             </button>
           </div>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t('placeholder')}
+            placeholder={t("placeholder")}
             className="w-full h-64 p-3 font-mono text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-soc-500 focus:border-soc-500 resize-none"
           />
           <button
@@ -90,13 +90,15 @@ export function AlertAnalyzerTab({ onHistoryToggle }: AlertAnalyzerTabProps) {
             disabled={loading || !input.trim()}
             className="w-full py-2.5 bg-soc-600 text-white font-medium rounded-lg hover:bg-soc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? t('analyzing') : t('analyze')}
+            {loading ? t("analyzing") : t("analyze")}
           </button>
         </div>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">{t('output')}</h3>
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+              {t("output")}
+            </h3>
             {result && <CopyButton content={JSON.stringify(result, null, 2)} />}
           </div>
 
@@ -115,46 +117,69 @@ export function AlertAnalyzerTab({ onHistoryToggle }: AlertAnalyzerTabProps) {
               />
 
               <div className="flex gap-4 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium border ${SEVERITY_COLORS[result.severity as Severity]}`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium border ${SEVERITY_COLORS[result.severity as Severity]}`}
+                >
                   {result.severity.toUpperCase()}
                 </span>
                 <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
                   {result.event_type.replace("_", " ").toUpperCase()}
                 </span>
                 <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
-                  {t('confidence')} {result.confidence}%
+                  {t("confidence")} {result.confidence}%
                 </span>
                 {result.escalation_needed && (
                   <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
-                    {t('escalate')}
+                    {t("escalate")}
                   </span>
                 )}
                 {result.request_id && (
                   <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-medium">
-                    {t('id')} {result.request_id}
+                    {t("id")} {result.request_id}
                   </span>
                 )}
               </div>
 
               <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase">{t('summary')}</h4>
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase">{t("summary")}</h4>
                   <p className="text-slate-800 mt-1">{result.summary}</p>
                 </div>
 
-                {result.entities.users.length || result.entities.hosts.length || result.entities.processes.length ? (
+                {result.entities.users.length ||
+                result.entities.hosts.length ||
+                result.entities.processes.length ? (
                   <div>
-                    <h4 className="text-xs font-semibold text-slate-500 uppercase">{t('entities')}</h4>
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase">
+                      {t("entities")}
+                    </h4>
                     <div className="mt-1 grid grid-cols-3 gap-2 text-sm">
-                      {result.entities.users.length && <div><span className="text-slate-500">{t('users')}</span> {result.entities.users.join(", ")}</div>}
-                      {result.entities.hosts.length && <div><span className="text-slate-500">{t('hosts')}</span> {result.entities.hosts.join(", ")}</div>}
-                      {result.entities.processes.length && <div><span className="text-slate-500">{t('processes')}</span> {result.entities.processes.join(", ")}</div>}
+                      {result.entities.users.length && (
+                        <div>
+                          <span className="text-slate-500">{t("users")}</span>{" "}
+                          {result.entities.users.join(", ")}
+                        </div>
+                      )}
+                      {result.entities.hosts.length && (
+                        <div>
+                          <span className="text-slate-500">{t("hosts")}</span>{" "}
+                          {result.entities.hosts.join(", ")}
+                        </div>
+                      )}
+                      {result.entities.processes.length && (
+                        <div>
+                          <span className="text-slate-500">{t("processes")}</span>{" "}
+                          {result.entities.processes.join(", ")}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : null}
 
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase">{t('evidencePoints')}</h4>
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase">
+                    {t("evidencePoints")}
+                  </h4>
                   <ul className="mt-1 space-y-1">
                     {result.evidence_points.map((point, i) => (
                       <li key={i} className="text-sm text-slate-700 flex items-start">
@@ -166,13 +191,22 @@ export function AlertAnalyzerTab({ onHistoryToggle }: AlertAnalyzerTabProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase">{t('recommendedActions')}</h4>
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase">
+                    {t("recommendedActions")}
+                  </h4>
                   <ul className="mt-1 space-y-2">
                     {result.recommended_actions.map((action, i) => (
-                      <li key={i} className="text-sm text-slate-700 p-2 bg-slate-50 rounded border border-slate-200">
+                      <li
+                        key={i}
+                        className="text-sm text-slate-700 p-2 bg-slate-50 rounded border border-slate-200"
+                      >
                         <div className="font-medium text-green-700">•{action.action}</div>
                         <div className="text-xs text-slate-600 mt-1">{action.details}</div>
-                        <div className="text-xs text-slate-500 mt-1"><em>{t('verify')} {action.verification}</em></div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          <em>
+                            {t("verify")} {action.verification}
+                          </em>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -183,16 +217,10 @@ export function AlertAnalyzerTab({ onHistoryToggle }: AlertAnalyzerTabProps) {
               <ImpactPanel impact={result.impact_analysis} />
 
               {/* Playbook Panel */}
-              <PlaybookPanel
-                historyId={currentHistoryId}
-                iocs={result.iocs}
-                module="analyzer"
-              />
+              <PlaybookPanel historyId={currentHistoryId} iocs={result.iocs} module="analyzer" />
 
               {/* v0.8: Event Correlation Panel */}
-              {result.request_id && (
-                <CorrelationPanel alertId={result.request_id} />
-              )}
+              {result.request_id && <CorrelationPanel alertId={result.request_id} />}
             </div>
           )}
         </div>

@@ -16,13 +16,13 @@ interface ReportWriterTabProps {
 }
 
 export function ReportWriterTab({ onHistoryToggle }: ReportWriterTabProps) {
-  const t = useTranslations('tabs');
+  const t = useTranslations("tabs");
   const [input, setInput] = useState("");
   const [notes, setNotes] = useState("");
   const [result, setReportResult] = useState<ReportGenerationResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [reportView, setReportView] = useState<"ticket" | "daily" | "postmortem">("ticket");
+  const [reportView, setReportView] = useState<"ticket" | "daily_report" | "postmortem">("ticket");
 
   const handleGenerate = async () => {
     if (!input.trim()) return;
@@ -84,14 +84,18 @@ export function ReportWriterTab({ onHistoryToggle }: ReportWriterTabProps) {
             disabled={loading || !input.trim()}
             className="w-full py-2.5 bg-soc-600 text-white font-medium rounded-lg hover:bg-soc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? t('generatingReports') : t('generateReports')}
+            {loading ? t("generatingReports") : t("generateReports")}
           </button>
         </div>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Output</h3>
-            {result && <CopyButton content={String(result[`${reportView}_template` as keyof typeof result] || "")} />}
+            {result && (
+              <CopyButton
+                content={String(result[`${reportView}_template` as keyof typeof result] || "")}
+              />
+            )}
           </div>
 
           {loading && <Loading />}
@@ -104,7 +108,7 @@ export function ReportWriterTab({ onHistoryToggle }: ReportWriterTabProps) {
               <div className="flex gap-2">
                 {[
                   { key: "ticket" as const, label: "Ticket" },
-                  { key: "daily" as const, label: "Daily Report" },
+                  { key: "daily_report" as const, label: "Daily Report" },
                   { key: "postmortem" as const, label: "Postmortem" },
                 ].map(({ key, label }) => (
                   <button
@@ -122,9 +126,11 @@ export function ReportWriterTab({ onHistoryToggle }: ReportWriterTabProps) {
               </div>
 
               <div className="bg-white border border-slate-200 rounded-lg p-4 max-h-96 overflow-y-auto">
-                <ReactMarkdown className="prose prose-slate max-w-none">
-                  {(result[`${reportView}_template` as keyof typeof result] as any) || null}
-                </ReactMarkdown>
+                <div className="prose prose-slate max-w-none">
+                  <ReactMarkdown>
+                    {String(result[`${reportView}_template` as keyof typeof result] ?? "") || null}
+                  </ReactMarkdown>
+                </div>
               </div>
 
               {result.request_id && (

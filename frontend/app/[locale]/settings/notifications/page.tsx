@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations, useLocale } from "next-intl";
 import { loadAuthState, authFetchJSON, isAdmin } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
-import { 
-  Bell, 
-  MessageSquare, 
-  Mail, 
-  Send, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Bell,
+  MessageSquare,
+  Mail,
+  Send,
+  CheckCircle,
+  XCircle,
   Loader2,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
 } from "lucide-react";
 
 interface ChannelStatus {
@@ -46,7 +46,7 @@ interface NotificationHealth {
 export default function NotificationSettingsPage() {
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations('notificationSettings');
+  const t = useTranslations("notificationSettings");
   const [channels, setChannels] = useState<ChannelStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState<string | null>(null);
@@ -79,8 +79,8 @@ export default function NotificationSettingsPage() {
       setChannels(channelsData);
       setQueueStats(queueData);
       setHealth(healthData);
-    } catch (err: any) {
-      setError(err.message || t('failedToLoad'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("failedToLoad"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -98,11 +98,15 @@ export default function NotificationSettingsPage() {
     try {
       const result = await authFetchJSON<TestResult>(`/api/v1/notifications/test`, {
         method: "POST",
-        body: JSON.stringify({ channels: [channel] })
+        body: JSON.stringify({ channels: [channel] }),
       });
       setTestResult(result);
-    } catch (err: any) {
-      setTestResult({ channel, success: false, message: err.message || "Test failed" });
+    } catch (err: unknown) {
+      setTestResult({
+        channel,
+        success: false,
+        message: err instanceof Error ? err.message : "Test failed",
+      });
     } finally {
       setTesting(null);
     }
@@ -113,16 +117,20 @@ export default function NotificationSettingsPage() {
     setTestResult(null);
     try {
       const result = await authFetchJSON<Record<string, boolean>>("/api/v1/notifications/test", {
-        method: "POST"
+        method: "POST",
       });
-      const allSuccess = Object.values(result).every(v => v);
-      setTestResult({ 
-        channel: "all", 
-        success: allSuccess, 
-        message: allSuccess ? "All notifications sent successfully" : "Some notifications failed" 
+      const allSuccess = Object.values(result).every((v) => v);
+      setTestResult({
+        channel: "all",
+        success: allSuccess,
+        message: allSuccess ? "All notifications sent successfully" : "Some notifications failed",
       });
-    } catch (err: any) {
-      setTestResult({ channel: "all", success: false, message: err.message || "Test failed" });
+    } catch (err: unknown) {
+      setTestResult({
+        channel: "all",
+        success: false,
+        message: err instanceof Error ? err.message : "Test failed",
+      });
     } finally {
       setTesting(null);
     }
@@ -131,7 +139,7 @@ export default function NotificationSettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation title={t('title')} subtitle={t('subtitle')} />
+        <Navigation title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
@@ -143,7 +151,7 @@ export default function NotificationSettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t('title')} subtitle={t('subtitle')} />
+      <Navigation title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {error && (
@@ -153,9 +161,17 @@ export default function NotificationSettingsPage() {
         )}
 
         {testResult && (
-          <div className={`mb-6 p-4 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"}`}>
-            <p className={`text-sm ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-              {testResult.success ? <CheckCircle className="w-4 h-4 inline mr-2" /> : <XCircle className="w-4 h-4 inline mr-2" />}
+          <div
+            className={`mb-6 p-4 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"}`}
+          >
+            <p
+              className={`text-sm ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+            >
+              {testResult.success ? (
+                <CheckCircle className="w-4 h-4 inline mr-2" />
+              ) : (
+                <XCircle className="w-4 h-4 inline mr-2" />
+              )}
               {testResult.message}
             </p>
           </div>
@@ -172,7 +188,11 @@ export default function NotificationSettingsPage() {
               disabled={refreshing}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
             >
-              {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4" />}
+              {refreshing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Bell className="w-4 h-4" />
+              )}
               Refresh
             </button>
             <button
@@ -180,8 +200,12 @@ export default function NotificationSettingsPage() {
               disabled={testing !== null}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
             >
-              {testing === "all" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              {t('testAll')}
+              {testing === "all" ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              {t("testAll")}
             </button>
           </div>
         </div>
@@ -192,7 +216,9 @@ export default function NotificationSettingsPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             {(["critical", "high", "medium", "low"] as const).map((level) => (
               <div key={level} className="p-3 rounded border border-gray-200 dark:border-gray-700">
-                <div className="font-medium capitalize text-gray-700 dark:text-gray-200">{level}</div>
+                <div className="font-medium capitalize text-gray-700 dark:text-gray-200">
+                  {level}
+                </div>
                 <div className="text-gray-500 dark:text-gray-400">
                   pending: {queueStats?.[level]?.pending ?? 0}
                 </div>
@@ -206,12 +232,14 @@ export default function NotificationSettingsPage() {
 
         {/* Health */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{t('serviceHealth')}</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+            {t("serviceHealth")}
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-            <HealthCell label={t('redis')} healthy={!!health?.redis} />
-            <HealthCell label={t('streams')} healthy={!!health?.streams} />
+            <HealthCell label={t("redis")} healthy={!!health?.redis} />
+            <HealthCell label={t("streams")} healthy={!!health?.streams} />
             <HealthCell
-              label={t('channelsConfigured')}
+              label={t("channelsConfigured")}
               healthy={!!health?.channels && Object.values(health.channels).some(Boolean)}
             />
           </div>
@@ -230,29 +258,35 @@ export default function NotificationSettingsPage() {
                   <MessageSquare className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('feishu')}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('feishuDesc')}</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    {t("feishu")}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t("feishuDesc")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 {channels?.feishu ? (
                   <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                     <CheckCircle className="w-5 h-5" />
-                    {t('configured')}
+                    {t("configured")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-gray-400">
                     <XCircle className="w-5 h-5" />
-                    {t('notConfigured')}
+                    {t("notConfigured")}
                   </span>
                 )}
                 <button
-                  onClick={() => testChannel('feishu')}
+                  onClick={() => testChannel("feishu")}
                   disabled={testing !== null || !channels?.feishu}
                   className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {testing === "feishu" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {t('test')}
+                  {testing === "feishu" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  {t("test")}
                 </button>
               </div>
             </div>
@@ -266,29 +300,35 @@ export default function NotificationSettingsPage() {
                   <MessageSquare className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('slack')}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('slackDesc')}</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    {t("slack")}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t("slackDesc")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 {channels?.slack ? (
                   <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                     <CheckCircle className="w-5 h-5" />
-                    {t('configured')}
+                    {t("configured")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-gray-400">
                     <XCircle className="w-5 h-5" />
-                    {t('notConfigured')}
+                    {t("notConfigured")}
                   </span>
                 )}
                 <button
-                  onClick={() => testChannel('slack')}
+                  onClick={() => testChannel("slack")}
                   disabled={testing !== null || !channels?.slack}
                   className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {testing === "slack" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {t('test')}
+                  {testing === "slack" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  {t("test")}
                 </button>
               </div>
             </div>
@@ -302,29 +342,35 @@ export default function NotificationSettingsPage() {
                   <Mail className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('email')}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('emailDesc')}</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    {t("email")}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t("emailDesc")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 {channels?.email ? (
                   <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                     <CheckCircle className="w-5 h-5" />
-                    {t('configured')}
+                    {t("configured")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-gray-400">
                     <XCircle className="w-5 h-5" />
-                    {t('notConfigured')}
+                    {t("notConfigured")}
                   </span>
                 )}
                 <button
-                  onClick={() => testChannel('email')}
+                  onClick={() => testChannel("email")}
                   disabled={testing !== null || !channels?.email}
                   className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {testing === "email" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {t('test')}
+                  {testing === "email" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  {t("test")}
                 </button>
               </div>
             </div>
@@ -336,14 +382,29 @@ export default function NotificationSettingsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
             <div>
-              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300">{t('configInfoTitle')}</h4>
-              <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
-                {t('configInfoDesc')}
-              </p>
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                {t("configInfoTitle")}
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">{t("configInfoDesc")}</p>
               <div className="mt-2 text-xs text-blue-600 dark:text-blue-400 space-y-1">
-                <p>• <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">FEISHU_WEBHOOK_URL</code></p>
-                <p>• <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">SLACK_WEBHOOK_URL</code></p>
-                <p>• <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">ALERT_EMAIL_TO</code></p>
+                <p>
+                  •{" "}
+                  <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">
+                    FEISHU_WEBHOOK_URL
+                  </code>
+                </p>
+                <p>
+                  •{" "}
+                  <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">
+                    SLACK_WEBHOOK_URL
+                  </code>
+                </p>
+                <p>
+                  •{" "}
+                  <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">
+                    ALERT_EMAIL_TO
+                  </code>
+                </p>
               </div>
             </div>
           </div>

@@ -3,15 +3,15 @@
 import { useTranslations } from "next-intl";
 
 export function SkipToContent() {
-  const t = useTranslations('common');
+  const t = useTranslations("common");
 
   const handleSkip = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    const mainContent = document.querySelector('main');
+    const mainContent = document.querySelector("main");
     if (mainContent) {
-      mainContent.setAttribute('tabindex', '-1');
+      mainContent.setAttribute("tabindex", "-1");
       mainContent.focus();
-      mainContent.removeAttribute('tabindex');
+      mainContent.removeAttribute("tabindex");
     }
   };
 
@@ -21,7 +21,7 @@ export function SkipToContent() {
       onClick={handleSkip}
       className="fixed left-4 top-4 z-[9999] -translate-y-20 bg-soc-600 text-white px-6 py-3 rounded-lg font-medium shadow-lg transition-transform duration-200 hover:bg-soc-700 focus:translate-y-0 focus:outline-none focus:ring-4 focus:ring-soc-300"
     >
-      {t('skipToContent') || 'Skip to main content'}
+      {t("skipToContent") || "Skip to main content"}
     </a>
   );
 }

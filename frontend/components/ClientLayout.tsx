@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { ReactNode } from "react";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -8,7 +8,7 @@ import { QueryProvider } from "./providers/QueryProvider";
 
 export function ClientLayout({ children }: { children: ReactNode }) {
   return (
-    <QueryProvider enableDevtools={process.env.NODE_ENV === 'development'}>
+    <QueryProvider enableDevtools={process.env.NODE_ENV === "development"}>
       <ToastProvider>
         <SkipToContent />
         {children}

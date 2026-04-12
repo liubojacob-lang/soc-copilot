@@ -2,48 +2,82 @@
  * Skeleton loading components for consistent loading states.
  */
 
-import React from 'react';
+import React from "react";
 
 interface SkeletonProps {
   className?: string;
   width?: string | number;
   height?: string | number;
-  rounded?: 'none' | 'sm' | 'md' | 'lg' | 'full';
+  rounded?: "none" | "sm" | "md" | "lg" | "full";
   animate?: boolean;
 }
 
 const roundedClasses = {
-  none: 'rounded-none', sm: 'rounded-sm', md: 'rounded-md', lg: 'rounded-lg', full: 'rounded-full',
+  none: "rounded-none",
+  sm: "rounded-sm",
+  md: "rounded-md",
+  lg: "rounded-lg",
+  full: "rounded-full",
 };
 
-export function Skeleton({ className = '', width, height, rounded = 'md', animate = true }: SkeletonProps) {
+export function Skeleton({
+  className = "",
+  width,
+  height,
+  rounded = "md",
+  animate = true,
+}: SkeletonProps) {
   return (
     <div
-      className={`bg-gray-200 dark:bg-gray-700 ${roundedClasses[rounded]} ${animate ? 'animate-pulse' : ''} ${className}`}
+      className={`bg-gray-200 dark:bg-gray-700 ${roundedClasses[rounded]} ${animate ? "animate-pulse" : ""} ${className}`}
       style={{ width, height }}
     />
   );
 }
 
-export function SkeletonText({ lines = 3, lineHeight = '1rem', lastLineWidth = '60%', className = '' }: {
-  lines?: number; lineHeight?: string; lastLineWidth?: string | number; className?: string;
+export function SkeletonText({
+  lines = 3,
+  lineHeight = "1rem",
+  lastLineWidth = "60%",
+  className = "",
+}: {
+  lines?: number;
+  lineHeight?: string;
+  lastLineWidth?: string | number;
+  className?: string;
 }) {
   return (
     <div className={`space-y-2 ${className}`}>
       {Array.from({ length: lines }).map((_, i) => (
-        <Skeleton key={i} height={lineHeight} width={i === lines - 1 ? lastLineWidth : '100%'} />
+        <Skeleton key={i} height={lineHeight} width={i === lines - 1 ? lastLineWidth : "100%"} />
       ))}
     </div>
   );
 }
 
-export function SkeletonAvatar({ size = 'md', className = '' }: { size?: 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {
-  const sizeMap = { sm: '2rem', md: '3rem', lg: '4rem', xl: '6rem' };
-  return <Skeleton width={sizeMap[size]} height={sizeMap[size]} rounded="full" className={className} />;
+export function SkeletonAvatar({
+  size = "md",
+  className = "",
+}: {
+  size?: "sm" | "md" | "lg" | "xl";
+  className?: string;
+}) {
+  const sizeMap = { sm: "2rem", md: "3rem", lg: "4rem", xl: "6rem" };
+  return (
+    <Skeleton width={sizeMap[size]} height={sizeMap[size]} rounded="full" className={className} />
+  );
 }
 
-export function SkeletonCard({ hasHeader = true, hasAvatar = false, lines = 3, className = '' }: {
-  hasHeader?: boolean; hasAvatar?: boolean; lines?: number; className?: string;
+export function SkeletonCard({
+  hasHeader = true,
+  hasAvatar = false,
+  lines = 3,
+  className = "",
+}: {
+  hasHeader?: boolean;
+  hasAvatar?: boolean;
+  lines?: number;
+  className?: string;
 }) {
   return (
     <div className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg ${className}`}>
@@ -61,20 +95,40 @@ export function SkeletonCard({ hasHeader = true, hasAvatar = false, lines = 3, c
   );
 }
 
-export function SkeletonTable({ rows = 5, columns = 4, hasHeader = true, className = '' }: {
-  rows?: number; columns?: number; hasHeader?: boolean; className?: string;
+export function SkeletonTable({
+  rows = 5,
+  columns = 4,
+  hasHeader = true,
+  className = "",
+}: {
+  rows?: number;
+  columns?: number;
+  hasHeader?: boolean;
+  className?: string;
 }) {
   return (
-    <div className={`overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg ${className}`}>
+    <div
+      className={`overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg ${className}`}
+    >
       {hasHeader && (
         <div className="bg-gray-50 dark:bg-gray-800 p-3 flex gap-4">
-          {Array.from({ length: columns }).map((_, i) => <Skeleton key={i} height="1rem" className="flex-1" />)}
+          {Array.from({ length: columns }).map((_, i) => (
+            <Skeleton key={i} height="1rem" className="flex-1" />
+          ))}
         </div>
       )}
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div key={rowIndex} className="p-3 flex gap-4 border-t border-gray-200 dark:border-gray-700">
+        <div
+          key={rowIndex}
+          className="p-3 flex gap-4 border-t border-gray-200 dark:border-gray-700"
+        >
           {Array.from({ length: columns }).map((_, colIndex) => (
-            <Skeleton key={colIndex} height="1rem" width={colIndex === 0 ? '80%' : '100%'} className="flex-1" />
+            <Skeleton
+              key={colIndex}
+              height="1rem"
+              width={colIndex === 0 ? "80%" : "100%"}
+              className="flex-1"
+            />
           ))}
         </div>
       ))}
@@ -82,13 +136,24 @@ export function SkeletonTable({ rows = 5, columns = 4, hasHeader = true, classNa
   );
 }
 
-export function SkeletonList({ items = 5, hasAvatar = true, hasSecondaryText = true, className = '' }: {
-  items?: number; hasAvatar?: boolean; hasSecondaryText?: boolean; className?: string;
+export function SkeletonList({
+  items = 5,
+  hasAvatar = true,
+  hasSecondaryText = true,
+  className = "",
+}: {
+  items?: number;
+  hasAvatar?: boolean;
+  hasSecondaryText?: boolean;
+  className?: string;
 }) {
   return (
     <div className={`space-y-3 ${className}`}>
       {Array.from({ length: items }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div
+          key={i}
+          className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+        >
           {hasAvatar && <SkeletonAvatar size="md" />}
           <div className="flex-1">
             <Skeleton height="1rem" width="70%" className="mb-1" />
@@ -101,7 +166,7 @@ export function SkeletonList({ items = 5, hasAvatar = true, hasSecondaryText = t
   );
 }
 
-export function SkeletonPlaybookRun({ className = '' }: { className?: string }) {
+export function SkeletonPlaybookRun({ className = "" }: { className?: string }) {
   return (
     <div className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg ${className}`}>
       <div className="flex items-center justify-between mb-3">
@@ -121,11 +186,14 @@ export function SkeletonPlaybookRun({ className = '' }: { className?: string }) 
   );
 }
 
-export function SkeletonChart({ type = 'bar', className = '' }: {
-  type?: 'bar' | 'line' | 'pie' | 'area';
+export function SkeletonChart({
+  type = "bar",
+  className = "",
+}: {
+  type?: "bar" | "line" | "pie" | "area";
   className?: string;
 }) {
-  if (type === 'pie') {
+  if (type === "pie") {
     return (
       <div className={`flex items-center justify-center p-6 ${className}`}>
         <Skeleton width="12rem" height="12rem" rounded="full" />
@@ -137,12 +205,7 @@ export function SkeletonChart({ type = 'bar', className = '' }: {
     <div className={`p-4 ${className}`}>
       <div className="flex items-end justify-between gap-2 h-48">
         {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton
-            key={i}
-            height={`${30 + Math.random() * 70}%`}
-            width="100%"
-            rounded="md"
-          />
+          <Skeleton key={i} height={`${30 + Math.random() * 70}%`} width="100%" rounded="md" />
         ))}
       </div>
       <div className="flex justify-between mt-4">
@@ -154,14 +217,21 @@ export function SkeletonChart({ type = 'bar', className = '' }: {
   );
 }
 
-export function SkeletonStatGrid({ count = 4, className = '' }: {
+export function SkeletonStatGrid({
+  count = 4,
+  className = "",
+}: {
   count?: number;
   className?: string;
 }) {
   return (
     <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg" style={{ animationDelay: `${i * 100}ms` }}>
+        <div
+          key={i}
+          className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+          style={{ animationDelay: `${i * 100}ms` }}
+        >
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <Skeleton height="0.875rem" width="60%" className="mb-2" />
@@ -176,7 +246,7 @@ export function SkeletonStatGrid({ count = 4, className = '' }: {
   );
 }
 
-export function SkeletonPage({ className = '' }: { className?: string }) {
+export function SkeletonPage({ className = "" }: { className?: string }) {
   return (
     <div className={`p-6 ${className}`}>
       <div className="mb-6 flex items-center justify-between">
@@ -191,7 +261,9 @@ export function SkeletonPage({ className = '' }: { className?: string }) {
       </div>
       <SkeletonStatGrid className="mb-6" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        <SkeletonCard /><SkeletonCard /><SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
       <SkeletonChart className="mb-6" />
       <SkeletonTable />

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { AlertTriangle, Link2, Clock, User, Server } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { AlertTriangle, Link2, Clock, User, Server } from "lucide-react";
 
 interface CorrelatedEvent {
   id: string;
@@ -29,7 +29,7 @@ interface CorrelationPanelProps {
 }
 
 export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
-  const t = useTranslations('correlation');
+  const t = useTranslations("correlation");
   const [incidents, setIncidents] = useState<CorrelatedEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIncident, setSelectedIncident] = useState<CorrelatedEvent | null>(null);
@@ -45,7 +45,7 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
       const data = await response.json();
       setIncidents(data);
     } catch (error) {
-      console.error('Failed to fetch correlated incidents:', error);
+      console.error("Failed to fetch correlated incidents:", error);
     } finally {
       setLoading(false);
     }
@@ -53,22 +53,22 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
 
   const getSeverityColor = (severity: string) => {
     const colors = {
-      critical: 'text-red-600 bg-red-50 border-red-200',
-      high: 'text-orange-600 bg-orange-50 border-orange-200',
-      medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-      low: 'text-blue-600 bg-blue-50 border-blue-200',
-      info: 'text-gray-600 bg-gray-50 border-gray-200',
+      critical: "text-red-600 bg-red-50 border-red-200",
+      high: "text-orange-600 bg-orange-50 border-orange-200",
+      medium: "text-yellow-600 bg-yellow-50 border-yellow-200",
+      low: "text-blue-600 bg-blue-50 border-blue-200",
+      info: "text-gray-600 bg-gray-50 border-gray-200",
     };
     return colors[severity as keyof typeof colors] || colors.low;
   };
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      open: 'bg-blue-100 text-blue-700',
-      investigating: 'bg-yellow-100 text-yellow-700',
-      resolved: 'bg-green-100 text-green-700',
-      false_positive: 'bg-gray-100 text-gray-700',
-      closed: 'bg-gray-200 text-gray-800',
+      open: "bg-blue-100 text-blue-700",
+      investigating: "bg-yellow-100 text-yellow-700",
+      resolved: "bg-green-100 text-green-700",
+      false_positive: "bg-gray-100 text-gray-700",
+      closed: "bg-gray-200 text-gray-800",
     };
     return badges[status as keyof typeof badges] || badges.open;
   };
@@ -87,7 +87,7 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
       <div className="p-4 border rounded-lg bg-gray-50">
         <div className="flex items-center gap-2 text-gray-500">
           <Link2 className="w-4 h-4" />
-          <span className="text-sm">{t('noIncidents')}</span>
+          <span className="text-sm">{t("noIncidents")}</span>
         </div>
       </div>
     );
@@ -98,7 +98,7 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
           <Link2 className="w-4 h-4" />
-          {t('relatedIncidents')} ({incidents.length})
+          {t("relatedIncidents")} ({incidents.length})
         </h3>
         <button
           onClick={fetchRelatedIncidents}
@@ -112,7 +112,7 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
         <div
           key={incident.id}
           className={`p-3 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
-            selectedIncident?.id === incident.id ? 'bg-blue-50 border-blue-300' : 'bg-white'
+            selectedIncident?.id === incident.id ? "bg-blue-50 border-blue-300" : "bg-white"
           }`}
           onClick={() => setSelectedIncident(incident)}
         >
@@ -125,14 +125,10 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <span
-                className={`text-xs px-2 py-1 rounded ${getSeverityColor(incident.severity)}`}
-              >
+              <span className={`text-xs px-2 py-1 rounded ${getSeverityColor(incident.severity)}`}>
                 {incident.severity}
               </span>
-              <span
-                className={`text-xs px-2 py-1 rounded ${getStatusBadge(incident.status)}`}
-              >
+              <span className={`text-xs px-2 py-1 rounded ${getStatusBadge(incident.status)}`}>
                 {incident.status}
               </span>
             </div>
@@ -147,7 +143,7 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               <span>
-                {new Date(incident.first_seen).toLocaleTimeString()} -{' '}
+                {new Date(incident.first_seen).toLocaleTimeString()} -{" "}
                 {new Date(incident.last_seen).toLocaleTimeString()}
               </span>
             </div>
@@ -170,8 +166,8 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
                 <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
                   <Server className="w-3 h-3 text-gray-500" />
                   <span className="text-gray-700">
-                    {incident.common_entities.ip_addresses.slice(0, 3).join(', ')}
-                    {incident.common_entities.ip_addresses.length > 3 && '...'}
+                    {incident.common_entities.ip_addresses.slice(0, 3).join(", ")}
+                    {incident.common_entities.ip_addresses.length > 3 && "..."}
                   </span>
                 </div>
               )}
@@ -179,8 +175,8 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
                 <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
                   <User className="w-3 h-3 text-gray-500" />
                   <span className="text-gray-700">
-                    {incident.common_entities.usernames.slice(0, 2).join(', ')}
-                    {incident.common_entities.usernames.length > 2 && '...'}
+                    {incident.common_entities.usernames.slice(0, 2).join(", ")}
+                    {incident.common_entities.usernames.length > 2 && "..."}
                   </span>
                 </div>
               )}
@@ -208,28 +204,27 @@ interface IncidentDetailModalProps {
 }
 
 function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModalProps) {
-  const t = useTranslations('triggers');
+  const t = useTranslations("triggers");
   const [status, setStatus] = useState(incident.status);
-  const [assignedTo, setAssignedTo] = useState(incident.assigned_to || '');
+  const [assignedTo, setAssignedTo] = useState(incident.assigned_to || "");
   const [updating, setUpdating] = useState(false);
 
   const handleUpdate = async () => {
     try {
       setUpdating(true);
       const params = new URLSearchParams({ status });
-      if (assignedTo) params.append('assigned_to', assignedTo);
+      if (assignedTo) params.append("assigned_to", assignedTo);
 
-      const response = await fetch(
-        `/api/correlation/incidents/${incident.id}/status?${params}`,
-        { method: 'PUT' }
-      );
+      const response = await fetch(`/api/correlation/incidents/${incident.id}/status?${params}`, {
+        method: "PUT",
+      });
 
       if (response.ok) {
         onUpdate();
         onClose();
       }
     } catch (error) {
-      console.error('Failed to update incident:', error);
+      console.error("Failed to update incident:", error);
     } finally {
       setUpdating(false);
     }
@@ -241,10 +236,7 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
         {/* Header */}
         <div className="p-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-semibold">Incident Details</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             ✕
           </button>
         </div>
@@ -261,7 +253,7 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="font-medium">Attack Type:</span>
-              <span className="ml-2">{incident.attack_type || 'N/A'}</span>
+              <span className="ml-2">{incident.attack_type || "N/A"}</span>
             </div>
             <div>
               <span className="font-medium">Risk Score:</span>
@@ -286,10 +278,7 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
                   <span className="font-medium">IP Addresses:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {incident.common_entities.ip_addresses.map((ip, i) => (
-                      <span
-                        key={i}
-                        className="bg-gray-100 px-2 py-1 rounded text-xs"
-                      >
+                      <span key={i} className="bg-gray-100 px-2 py-1 rounded text-xs">
                         {ip}
                       </span>
                     ))}
@@ -301,10 +290,7 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
                   <span className="font-medium">Usernames:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {incident.common_entities.usernames.map((user, i) => (
-                      <span
-                        key={i}
-                        className="bg-gray-100 px-2 py-1 rounded text-xs"
-                      >
+                      <span key={i} className="bg-gray-100 px-2 py-1 rounded text-xs">
                         {user}
                       </span>
                     ))}
@@ -346,7 +332,7 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
                 disabled={updating}
                 className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
               >
-                {updating ? t('updatingIncident') : t('updateIncident')}
+                {updating ? t("updatingIncident") : t("updateIncident")}
               </button>
               <button
                 onClick={onClose}

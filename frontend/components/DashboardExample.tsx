@@ -10,16 +10,10 @@ export function DashboardExample() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            安全运营中心
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            实时监控您的系统安全状态
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">安全运营中心</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">实时监控您的系统安全状态</p>
         </div>
-        <Button rightIcon={<ArrowUpRight />}>
-          查看报告
-        </Button>
+        <Button rightIcon={<ArrowUpRight />}>查看报告</Button>
       </div>
 
       <FadeInUp>
@@ -69,7 +63,11 @@ export function DashboardExample() {
             title="最新告警"
             subtitle="最近的 10 条告警"
             icon={<Bell className="w-5 h-5 text-soc-600 dark:text-soc-400" />}
-            action={<Button variant="ghost" size="sm">查看全部</Button>}
+            action={
+              <Button variant="ghost" size="sm">
+                查看全部
+              </Button>
+            }
           >
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -77,9 +75,11 @@ export function DashboardExample() {
                   key={i}
                   className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 >
-                  <div className={`w-3 h-3 rounded-full mt-2 ${
-                    i % 3 === 0 ? 'bg-danger-500' : i % 2 === 0 ? 'bg-warning-500' : 'bg-soc-500'
-                  }`} />
+                  <div
+                    className={`w-3 h-3 rounded-full mt-2 ${
+                      i % 3 === 0 ? "bg-danger-500" : i % 2 === 0 ? "bg-warning-500" : "bg-soc-500"
+                    }`}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-gray-900 dark:text-white">
@@ -100,10 +100,7 @@ export function DashboardExample() {
         </div>
 
         <div className="space-y-6">
-          <Card
-            title="快速操作"
-            icon={<Zap className="w-5 h-5 text-yellow-500" />}
-          >
+          <Card title="快速操作" icon={<Zap className="w-5 h-5 text-yellow-500" />}>
             <div className="space-y-3">
               <Button className="w-full justify-start" leftIcon={<ShieldAlert />}>
                 发起威胁狩猎

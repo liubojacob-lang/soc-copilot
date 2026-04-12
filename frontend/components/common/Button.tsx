@@ -44,8 +44,7 @@ type ButtonVariant = VariantProps<typeof buttonVariants>["variant"];
 type ButtonSize = VariantProps<typeof buttonVariants>["size"];
 
 interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   isLoading?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
@@ -79,20 +78,20 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const id = nextRippleId.current++;
-        
-        setRipples(prev => [...prev, { id, x, y }]);
-        
+
+        setRipples((prev) => [...prev, { id, x, y }]);
+
         setTimeout(() => {
-          setRipples(prev => prev.filter(r => r.id !== id));
+          setRipples((prev) => prev.filter((r) => r.id !== id));
         }, 600);
       }
-      
+
       onClick?.(e);
     };
 
     useEffect(() => {
       if (ref) {
-        if (typeof ref === 'function') {
+        if (typeof ref === "function") {
           ref(buttonRef.current);
         } else {
           ref.current = buttonRef.current;
@@ -108,18 +107,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         onClick={handleClick}
         {...props}
       >
-        {!disableRipple && ripples.map(ripple => (
-          <span
-            key={ripple.id}
-            className="absolute rounded-full bg-white/30 pointer-events-none animate-ripple"
-            style={{
-              left: ripple.x,
-              top: ripple.y,
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
-        ))}
-        
+        {!disableRipple &&
+          ripples.map((ripple) => (
+            <span
+              key={ripple.id}
+              className="absolute rounded-full bg-white/30 pointer-events-none animate-ripple"
+              style={{
+                left: ripple.x,
+                top: ripple.y,
+                transform: "translate(-50%, -50%)",
+              }}
+            />
+          ))}
+
         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin relative z-10" />}
         {!isLoading && leftIcon && <span className="mr-2 relative z-10">{leftIcon}</span>}
         <span className="relative z-10">{children}</span>

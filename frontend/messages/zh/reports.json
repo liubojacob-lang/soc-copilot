@@ -1,0 +1,64 @@
+{
+  "reports": {
+    "title": "报告",
+    "generate": "生成报告",
+    "download": "下载",
+    "history": "报告历史",
+    "templates": {
+      "ticket": {
+        "name": "事件工单",
+        "description": "创建格式化的事件工单用于跟踪和升级"
+      },
+      "daily": {
+        "name": "每日 SOC 报告",
+        "description": "每日安全运营中心摘要报告"
+      },
+      "postmortem": {
+        "name": "事后分析报告",
+        "description": "详细的事后分析和经验教训"
+      }
+    },
+    "sharing": "分享",
+    "format": "格式",
+    "pdf": "PDF",
+    "html": "HTML",
+    "json": "JSON",
+    "csv": "CSV",
+    "subtitle": "生成和管理安全报告",
+    "additionalNotes": "额外备注",
+    "alertId": "告警 ID",
+    "alertIdPlaceholder": "例如：alert-123",
+    "availableTemplates": "可用模板",
+    "description": "描述",
+    "enterAlertId": "请输入告警 ID",
+    "generateFailed": "生成报告失败",
+    "generateReports": "生成报告",
+    "generating": "生成中...",
+    "noReportsDescription": "输入告警 ID 并点击生成来创建报告模板",
+    "noReportsGenerated": "未生成报告",
+    "notesPlaceholder": "任何特定要求或备注...",
+    "createReport": "创建报告",
+    "deleteConfirm": "确定要删除此报告吗？",
+    "deleteReport": "删除报告",
+    "endDate": "结束日期",
+    "incidentId": "事件 ID",
+    "noReports": "未找到报告",
+    "notes": "备注",
+    "reportType": "报告类型",
+    "searchPlaceholder": "搜索报告...",
+    "startDate": "开始日期"
+  },
+  "tabs": {
+    "alertAnalyzer": "告警分析器",
+    "timelineBuilder": "时间线构建器",
+    "reportWriter": "报告编写器",
+    "assets": "资产",
+    "definitions": "定义",
+    "runs": "运行"
+  },
+  "resources": {
+    "cpu": "CPU",
+    "memory": "内存",
+    "disk": "磁盘"
+  }
+}

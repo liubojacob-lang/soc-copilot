@@ -1,0 +1,23 @@
+{
+  "dashboard": "Dashboard",
+  "infoBox": {
+    "title": "Information",
+    "logs": "Logs",
+    "cron": "Cron",
+    "webhook": "Webhook"
+  },
+  "sidebar": {
+    "capabilities": "Capabilities",
+    "usageTips": "Usage Tips",
+    "currentModel": "Current Model",
+    "tips": {
+      "naturalLanguage": "Describe your security needs in natural language",
+      "alertAnalysis": "Intelligently analyze security alerts",
+      "securityReports": "Auto-generate security reports",
+      "recommendations": "Recommend best response playbooks"
+    }
+  },
+  "breadcrumbs": {
+    "home": "Home"
+  }
+}

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { memo, useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { memo, useCallback, useMemo, useState, useRef, useEffect } from "react";
 
 interface VirtualTableProps<T> {
   data: T[];
@@ -27,10 +27,10 @@ function VirtualTableInner<T>({
   containerHeight = 600,
   overscan = 5,
   onRowClick,
-  emptyMessage = 'No data available',
+  emptyMessage = "No data available",
   loading = false,
   loadingComponent,
-  className = '',
+  className = "",
 }: VirtualTableProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
@@ -40,7 +40,7 @@ function VirtualTableInner<T>({
     const visibleCount = Math.ceil(containerHeight / rowHeight);
     const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
     const endIndex = Math.min(data.length - 1, startIndex + visibleCount + overscan * 2);
-    
+
     return { startIndex, endIndex, totalHeight };
   }, [data.length, rowHeight, containerHeight, scrollTop, overscan]);
 
@@ -67,9 +67,7 @@ function VirtualTableInner<T>({
   if (data.length === 0) {
     return (
       <div className={`bg-white dark:bg-gray-800 rounded-lg shadow ${className}`}>
-        <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-          {emptyMessage}
-        </div>
+        <div className="p-8 text-center text-gray-500 dark:text-gray-400">{emptyMessage}</div>
       </div>
     );
   }
@@ -77,7 +75,7 @@ function VirtualTableInner<T>({
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden ${className}`}>
       <div className="overflow-x-auto">
-        <table className="min-w-full" style={{ display: 'block' }}>
+        <table className="min-w-full" style={{ display: "block" }}>
           <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
             <tr>
               {columns.map((col) => (
@@ -98,11 +96,11 @@ function VirtualTableInner<T>({
         onScroll={handleScroll}
         style={{
           height: containerHeight,
-          overflow: 'auto',
-          position: 'relative',
+          overflow: "auto",
+          position: "relative",
         }}
       >
-        <div style={{ height: totalHeight, position: 'relative' }}>
+        <div style={{ height: totalHeight, position: "relative" }}>
           <table className="min-w-full">
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {visibleData.map((item, idx) => {
@@ -112,16 +110,16 @@ function VirtualTableInner<T>({
                     key={actualIndex}
                     onClick={() => onRowClick?.(item, actualIndex)}
                     className={`hover:bg-gray-50 dark:hover:bg-gray-750 ${
-                      onRowClick ? 'cursor-pointer' : ''
+                      onRowClick ? "cursor-pointer" : ""
                     }`}
                     style={{
-                      position: 'absolute',
+                      position: "absolute",
                       top: actualIndex * rowHeight,
                       left: 0,
                       right: 0,
                       height: rowHeight,
-                      display: 'flex',
-                      width: '100%',
+                      display: "flex",
+                      width: "100%",
                     }}
                   >
                     {columns.map((col) => (
@@ -152,12 +150,12 @@ export function useVirtualTable<T>(
   rowHeight: number = 56
 ) {
   const [scrollTop, setScrollTop] = useState(0);
-  
+
   const visibleRange = useMemo(() => {
     const startIndex = Math.floor(scrollTop / rowHeight);
     const visibleCount = Math.ceil(containerHeight / rowHeight);
     const endIndex = Math.min(data.length - 1, startIndex + visibleCount);
-    
+
     return { startIndex, endIndex };
   }, [scrollTop, rowHeight, containerHeight, data.length]);
 

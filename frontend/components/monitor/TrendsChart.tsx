@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
 /**
  * TrendsChart Component
  * 告警趋势图表 - 使用 Recharts
  */
 
-import React, { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import React, { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   LineChart,
   Line,
@@ -20,8 +20,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
-import { TrendingUp } from 'lucide-react';
+} from "recharts";
+import { TrendingUp } from "lucide-react";
 
 interface TrendData {
   timestamp: string;
@@ -35,40 +35,46 @@ interface TrendData {
 
 interface TrendsChartProps {
   data: TrendData[];
-  type?: 'line' | 'area' | 'bar';
+  type?: "line" | "area" | "bar";
   showLegend?: boolean;
   height?: number;
 }
 
 const COLORS = {
-  critical: '#dc2626',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#3b82f6',
-  total: '#6b7280',
+  critical: "#dc2626",
+  high: "#f97316",
+  medium: "#eab308",
+  low: "#3b82f6",
+  total: "#6b7280",
 };
 
 export function TrendsChart({
   data,
-  type = 'area',
+  type = "area",
   showLegend = true,
   height = 300,
 }: TrendsChartProps) {
-  const tSeverity = useTranslations('severity');
+  const tSeverity = useTranslations("severity");
 
   // 格式化数据
   const chartData = useMemo(() => {
-    return data.map(item => ({
+    return data.map((item) => ({
       ...item,
-      date: new Date(item.timestamp).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
+      date: new Date(item.timestamp).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
       }),
     }));
   }, [data]);
 
   // 自定义 Tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean;
+    payload?: Array<{ value: number; name: string; color: string; payload: { date: string } }>;
+  }) => {
     if (!active || !payload || !payload.length) return null;
 
     return (
@@ -76,18 +82,11 @@ export function TrendsChart({
         <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">
           {payload[0].payload.date}
         </p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: { value: number; name: string; color: string }, index: number) => (
           <div key={index} className="flex items-center gap-2 text-xs">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-gray-600 dark:text-gray-400">
-              {entry.name}:
-            </span>
-            <span className="font-semibold text-gray-900 dark:text-white">
-              {entry.value}
-            </span>
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span className="text-gray-600 dark:text-gray-400">{entry.name}:</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{entry.value}</span>
           </div>
         ))}
       </div>
@@ -101,7 +100,7 @@ export function TrendsChart({
     };
 
     switch (type) {
-      case 'line':
+      case "line":
         return (
           <LineChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} />
@@ -121,7 +120,7 @@ export function TrendsChart({
               stroke={COLORS.critical}
               strokeWidth={2}
               dot={{ r: 3 }}
-              name={tSeverity('critical')}
+              name={tSeverity("critical")}
             />
             <Line
               type="monotone"
@@ -129,7 +128,7 @@ export function TrendsChart({
               stroke={COLORS.high}
               strokeWidth={2}
               dot={{ r: 3 }}
-              name={tSeverity('high')}
+              name={tSeverity("high")}
             />
             <Line
               type="monotone"
@@ -137,7 +136,7 @@ export function TrendsChart({
               stroke={COLORS.medium}
               strokeWidth={2}
               dot={{ r: 3 }}
-              name={tSeverity('medium')}
+              name={tSeverity("medium")}
             />
             <Line
               type="monotone"
@@ -145,12 +144,12 @@ export function TrendsChart({
               stroke={COLORS.low}
               strokeWidth={2}
               dot={{ r: 3 }}
-              name={tSeverity('low')}
+              name={tSeverity("low")}
             />
           </LineChart>
         );
 
-      case 'bar':
+      case "bar":
         return (
           <BarChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} />
@@ -164,14 +163,24 @@ export function TrendsChart({
             <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
             <Tooltip content={<CustomTooltip />} />
             {showLegend && <Legend />}
-            <Bar dataKey="critical" fill={COLORS.critical} name={tSeverity('critical')} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="high" fill={COLORS.high} name={tSeverity('high')} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="medium" fill={COLORS.medium} name={tSeverity('medium')} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="low" fill={COLORS.low} name={tSeverity('low')} radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="critical"
+              fill={COLORS.critical}
+              name={tSeverity("critical")}
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar dataKey="high" fill={COLORS.high} name={tSeverity("high")} radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="medium"
+              fill={COLORS.medium}
+              name={tSeverity("medium")}
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar dataKey="low" fill={COLORS.low} name={tSeverity("low")} radius={[4, 4, 0, 0]} />
           </BarChart>
         );
 
-      case 'area':
+      case "area":
       default:
         return (
           <AreaChart {...commonProps}>
@@ -210,7 +219,7 @@ export function TrendsChart({
               stroke={COLORS.critical}
               strokeWidth={2}
               fill="url(#colorCritical)"
-              name={tSeverity('critical')}
+              name={tSeverity("critical")}
             />
             <Area
               type="monotone"
@@ -218,7 +227,7 @@ export function TrendsChart({
               stroke={COLORS.high}
               strokeWidth={2}
               fill="url(#colorHigh)"
-              name={tSeverity('high')}
+              name={tSeverity("high")}
             />
             <Area
               type="monotone"
@@ -226,7 +235,7 @@ export function TrendsChart({
               stroke={COLORS.medium}
               strokeWidth={2}
               fill="url(#colorMedium)"
-              name={tSeverity('medium')}
+              name={tSeverity("medium")}
             />
             <Area
               type="monotone"
@@ -234,7 +243,7 @@ export function TrendsChart({
               stroke={COLORS.low}
               strokeWidth={2}
               fill="url(#colorLow)"
-              name={tSeverity('low')}
+              name={tSeverity("low")}
             />
           </AreaChart>
         );
@@ -264,10 +273,10 @@ export function TrendsChart({
 // 简化版：仅显示总数趋势
 export function SimpleTrendChart({ data, height = 200 }: { data: TrendData[]; height?: number }) {
   const chartData = useMemo(() => {
-    return data.map(item => ({
-      date: new Date(item.timestamp).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
+    return data.map((item) => ({
+      date: new Date(item.timestamp).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
       }),
       count: item.total,
     }));
@@ -287,21 +296,16 @@ export function SimpleTrendChart({ data, height = 200 }: { data: TrendData[]; he
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.3} />
-        <XAxis
-          dataKey="date"
-          stroke="#6b7280"
-          fontSize={11}
-          tickLine={false}
-          axisLine={false}
-        />
+        <XAxis dataKey="date" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
         <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
         <Tooltip
-          content={({ active, payload }: any) => {
+          content={({ active, payload }) => {
             if (!active || !payload || !payload.length) return null;
+            const data = payload[0] as { value: number; payload: { date: string } };
             return (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2">
                 <p className="text-xs font-medium text-gray-900 dark:text-white">
-                  {payload[0].payload.date}: {payload[0].value} alerts
+                  {data.payload.date}: {data.value} alerts
                 </p>
               </div>
             );

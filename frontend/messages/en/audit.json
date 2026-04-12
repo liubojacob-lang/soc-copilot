@@ -1,0 +1,51 @@
+{
+  "auditPage": {
+    "dateRange": {
+      "last15Minutes": "Last 15 minutes",
+      "lastHour": "Last hour",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last7Days": "Last 7 days",
+      "last30Days": "Last 30 days",
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "custom": "Custom",
+      "from": "From",
+      "to": "To"
+    },
+    "quickFilters": {
+      "errors": "Errors",
+      "errorsDesc": "Show only error responses",
+      "success": "Success",
+      "successDesc": "Only successful requests",
+      "login": "Login",
+      "loginDesc": "Login activity",
+      "users": "Users",
+      "usersDesc": "User management"
+    },
+    "filterGroups": {
+      "common": "Common",
+      "more": "More",
+      "categories": "Categories"
+    },
+    "httpMethods": {
+      "GET": "GET",
+      "POST": "POST",
+      "PUT": "PUT",
+      "PATCH": "PATCH",
+      "DELETE": "DELETE"
+    },
+    "errors": {
+      "failedToLoad": "Failed to load audit logs",
+      "failedToLoadStats": "Failed to load stats"
+    }
+  },
+  "adminAudit": {
+    "title": "Audit Logs",
+    "subtitle": "View system audit logs and activities",
+    "filter": "Filter Logs",
+    "export": "Export Logs",
+    "search": "Search logs...",
+    "auditList": "Audit log list will be displayed here"
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "playbooks": {
+    "title": "Playbooks",
+    "execute": "Execute",
+    "history": "Run History",
+    "dag": "DAG Visualization",
+    "create": "Create Playbook",
+    "edit": "Edit Playbook",
+    "delete": "Delete Playbook",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "subtitle": "Automated security response playbooks",
+    "started": "Started",
+    "duration": "Duration",
+    "mode": "Mode",
+    "searchPlaceholder": "Search by name or ID...",
+    "noPlaybookRuns": "No playbook runs found",
+    "runPlaybookHint": "Run a playbook to see it here",
+    "noDefinitions": "No playbook definitions found",
+    "statuses": {
+      "running": "Running",
+      "success": "Success",
+      "failed": "Failed",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Expired"
+    },
+    "definitions": {
+      "title": "Playbook Definitions",
+      "subtitle": "Manage playbook definitions",
+      "name": "Name",
+      "description": "Description",
+      "version": "Version",
+      "status": "Status",
+      "actions": "Actions",
+      "noDefinitions": "No playbook definitions found",
+      "searchPlaceholder": "Search definitions...",
+      "createFirst": "Create your first playbook definition",
+      "createNew": "Create new definition",
+      "updated": "Updated"
+    },
+    "tabs": {
+      "runs": "Runs",
+      "definitions": "Definitions",
+      "approvals": "Approvals",
+      "history": "History",
+      "dag": "DAG"
+    },
+    "allPlaybooks": "All Playbooks",
+    "allStatuses": "All Statuses",
+    "approvals": {
+      "title": "Playbook Execution Approvals",
+      "subtitle": "Approve playbook execution requests",
+      "status": "Status",
+      "requestedBy": "Requested By",
+      "runId": "Run ID",
+      "searchPlaceholder": "Search approvals...",
+      "actions": "Actions",
+      "approve": "Approve",
+      "reject": "Reject",
+      "created": "Created",
+      "noApprovals": "No pending approvals",
+      "noApprovalsDesc": "No playbook executions awaiting approval"
+    },
+    "playbook": "Playbook",
+    "queue": {
+      "queued": "Queued",
+      "running": "Running"
+    }
+  },
+  "definitions": {
+    "name": "Name",
+    "subtitle": "Playbook Definitions",
+    "title": "Playbook Definitions",
+    "createFirst": "Create your first playbook definition",
+    "createNew": "Create New Definition",
+    "actions": "Actions"
+  },
+  "approvals": {
+    "status": "Status",
+    "noApprovals": "No pending approvals",
+    "created": "Created",
+    "subtitle": "Playbook Execution Approvals",
+    "approve": "Approve",
+    "searchPlaceholder": "Search approvals...",
+    "noApprovalsDesc": "No playbook executions requiring approval",
+    "requestedBy": "Requested by",
+    "runId": "Run ID",
+    "reject": "Reject",
+    "title": "Playbook Execution Approvals",
+    "actions": "Actions"
+  },
+  "runs": "Runs",
+  "history": {
+    "justNow": "Just now",
+    "title": "History"
+  },
+  "queue": {
+    "running": "Running",
+    "queued": "Queued"
+  },
+  "difficulty": {
+    "advanced": "Advanced",
+    "intermediate": "Intermediate",
+    "beginner": "Beginner"
+  },
+  "playbookPanel": {
+    "title": "Playbook Assistant",
+    "tabs": {
+      "queries": "Queries",
+      "actions": "Actions"
+    },
+    "errors": {
+      "noIOCs": "No IOCs available",
+      "generateQueriesFailed": "Failed to generate queries",
+      "noHistoryId": "No history ID available",
+      "generateActionsFailed": "Failed to generate actions"
+    },
+    "queries": {
+      "platform": "Platform",
+      "platforms": {
+        "splunk": "Splunk",
+        "elastic_kql": "Elastic KQL",
+        "sentinel_kql": "Sentinel KQL"
+      },
+      "timeRange": "Time Range",
+      "timeRanges": {
+        "last_1h": "Last 1 hour",
+        "last_24h": "Last 24 hours",
+        "last_7d": "Last 7 days"
+      },
+      "generate": "Generate Queries",
+      "generating": "Generating...",
+      "fields": "fields",
+      "prerequisite": "Prerequisite",
+      "expectedFields": "Expected Fields"
+    },
+    "actions": {
+      "policy": "Policy",
+      "policies": {
+        "safe": "Safe",
+        "moderate": "Moderate",
+        "aggressive": "Aggressive"
+      },
+      "generate": "Generate Actions",
+      "generating": "Generating...",
+      "copyMD": "Copy MD",
+      "risk": "risk",
+      "priority": "Priority",
+      "steps": "Steps",
+      "verification": "Verification",
+      "rollback": "Rollback"
+    }
+  },
+  "dag": {
+    "output": "Output"
+  }
+}

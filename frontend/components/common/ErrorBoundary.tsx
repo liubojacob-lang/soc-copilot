@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
 /**
  * Error Boundary Component
- * 
+ *
  * Catches JavaScript errors anywhere in the child component tree,
  * logs those errors, and displays a fallback UI.
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
@@ -38,19 +38,30 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error to console
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+
     // Update state with error info
     this.setState({ errorInfo });
-    
+
     // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
-    
+
     // Report to Sentry if available
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.captureException(error, {
+    if (
+      typeof window !== "undefined" &&
+      (
+        window as Window & {
+          Sentry?: { captureException: (error: Error, options?: Record<string, unknown>) => void };
+        }
+      ).Sentry
+    ) {
+      (
+        window as Window & {
+          Sentry?: { captureException: (error: Error, options?: Record<string, unknown>) => void };
+        }
+      ).Sentry!.captureException(error, {
         contexts: {
           react: {
             componentStack: errorInfo.componentStack,
@@ -74,7 +85,7 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) {
         return this.props.fallback;
       }
-      
+
       // Default error UI
       return (
         <div className="min-h-[200px] flex items-center justify-center p-8">
@@ -102,7 +113,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <p className="mt-2 text-sm text-red-700 dark:text-red-300">
                   An error occurred while rendering this component.
                 </p>
-                {process.env.NODE_ENV === 'development' && this.state.error && (
+                {process.env.NODE_ENV === "development" && this.state.error && (
                   <details className="mt-4">
                     <summary className="cursor-pointer text-sm font-medium text-red-800 dark:text-red-200">
                       Error Details
@@ -163,9 +174,7 @@ export const PageErrorBoundary: React.FC<{ children: ReactNode }> = ({ children 
     fallback={
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Page Error
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Page Error</h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             This page encountered an error. Please try refreshing.
           </p>
@@ -187,9 +196,7 @@ export const CardErrorBoundary: React.FC<{ children: ReactNode }> = ({ children 
   <ErrorBoundary
     fallback={
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-        <p className="text-sm text-red-600 dark:text-red-400">
-          This section failed to load.
-        </p>
+        <p className="text-sm text-red-600 dark:text-red-400">This section failed to load.</p>
       </div>
     }
   >

@@ -5,24 +5,24 @@
 
 export const i18nConfig = {
   // Supported locales
-  locales: ['en', 'zh'] as const,
+  locales: ["en", "zh"] as const,
 
   // Default locale to use when no locale is specified
-  defaultLocale: 'en' as const,
+  defaultLocale: "en" as const,
 
   // Fallback locale to use when a translation key is missing
-  fallbackLocale: 'en' as const,
+  fallbackLocale: "en" as const,
 
   // Locale names for display in UI
   localeNames: {
-    en: 'English',
-    zh: '中文',
+    en: "English",
+    zh: "中文",
   } as const,
 
   // Locale flags for display in UI
   localeFlags: {
-    en: '🇺🇸',
-    zh: '🇨🇳',
+    en: "🇺🇸",
+    zh: "🇨🇳",
   } as const,
 } as const;
 
@@ -35,62 +35,62 @@ export type LocaleFlags = typeof i18nConfig.localeFlags;
  * This defines the shape of translation keys for type safety
  */
 export type TranslationNamespace =
-  | 'meta'
-  | 'common'
-  | 'nav'
-  | 'home'
-  | 'login'
-  | 'users'
-  | 'admin'
-  | 'adminDashboard'
-  | 'adminSettings'
-  | 'adminAudit'
-  | 'alertsPage'
-  | 'settings'
-  | 'notificationSettings'
-  | 'errors'
-  | 'playbooks'
-  | 'alerts'
-  | 'reports'
-  | 'monitor'
-  | 'ai'
-  | 'aiAssistant'
-  | 'threatIntel'
-  | 'marketplace'
-  | 'threatHunting'
-  | 'ueba'
-  | 'difyPage'
-  | 'triggers'
-  | 'triggersPage'
-  | 'assets'
-  | 'correlation'
-  | 'cloudNative'
-  | 'actions'
-  | 'activities'
-  | 'approvals'
-  | 'chart'
-  | 'configModal'
-  | 'definitions'
-  | 'difficulty'
-  | 'history'
-  | 'infoBox'
-  | 'manualImport'
-  | 'mlPowered'
-  | 'modal'
-  | 'model'
-  | 'queue'
-  | 'quickActions'
-  | 'resources'
-  | 'services'
-  | 'severity'
-  | 'sidebar'
-  | 'status'
-  | 'statuses'
-  | 'tabs'
-  | 'welcome'
-  | 'iocHunt'
-  | 'settingsApiKeys'
-  | 'navigation';
+  | "meta"
+  | "common"
+  | "nav"
+  | "home"
+  | "login"
+  | "users"
+  | "admin"
+  | "adminDashboard"
+  | "adminSettings"
+  | "adminAudit"
+  | "alertsPage"
+  | "settings"
+  | "notificationSettings"
+  | "errors"
+  | "playbooks"
+  | "alerts"
+  | "reports"
+  | "monitor"
+  | "ai"
+  | "aiAssistant"
+  | "threatIntel"
+  | "marketplace"
+  | "threatHunting"
+  | "ueba"
+  | "difyPage"
+  | "triggers"
+  | "triggersPage"
+  | "assets"
+  | "correlation"
+  | "cloudNative"
+  | "actions"
+  | "activities"
+  | "approvals"
+  | "chart"
+  | "configModal"
+  | "definitions"
+  | "difficulty"
+  | "history"
+  | "infoBox"
+  | "manualImport"
+  | "mlPowered"
+  | "modal"
+  | "model"
+  | "queue"
+  | "quickActions"
+  | "resources"
+  | "services"
+  | "severity"
+  | "sidebar"
+  | "status"
+  | "statuses"
+  | "tabs"
+  | "welcome"
+  | "iocHunt"
+  | "settingsApiKeys"
+  | "navigation";
 
 /**
  * Helper to check if a string is a valid locale

@@ -4,12 +4,12 @@
  * Provides helper functions for authentication in E2E tests.
  */
 
-import { Page } from '@playwright/test';
+import { Page } from "@playwright/test";
 
 export interface TestUser {
   username: string;
   password: string;
-  role?: 'admin' | 'analyst' | 'auditor';
+  role?: "admin" | "analyst" | "auditor";
 }
 
 /**
@@ -17,19 +17,19 @@ export interface TestUser {
  */
 export const TEST_USERS: Record<string, TestUser> = {
   admin: {
-    username: process.env.E2E_ADMIN_USERNAME || 'admin',
-    password: process.env.E2E_ADMIN_PASSWORD || 'admin123',
-    role: 'admin',
+    username: process.env.E2E_ADMIN_USERNAME || "admin",
+    password: process.env.E2E_ADMIN_PASSWORD || "admin123",
+    role: "admin",
   },
   analyst: {
-    username: process.env.E2E_ANALYST_USERNAME || 'analyst',
-    password: process.env.E2E_ANALYST_PASSWORD || 'analyst123',
-    role: 'analyst',
+    username: process.env.E2E_ANALYST_USERNAME || "analyst",
+    password: process.env.E2E_ANALYST_PASSWORD || "analyst123",
+    role: "analyst",
   },
   auditor: {
-    username: process.env.E2E_AUDITOR_USERNAME || 'auditor',
-    password: process.env.E2E_AUDITOR_PASSWORD || 'auditor123',
-    role: 'auditor',
+    username: process.env.E2E_AUDITOR_USERNAME || "auditor",
+    password: process.env.E2E_AUDITOR_PASSWORD || "auditor123",
+    role: "auditor",
   },
 };
 
@@ -37,28 +37,24 @@ export const TEST_USERS: Record<string, TestUser> = {
  * Get locale for E2E tests
  */
 function getLocale(): string {
-  return process.env.E2E_LOCALE || 'en';
+  return process.env.E2E_LOCALE || "en";
 }
 
 /**
  * Perform login via the UI
  */
-export async function login(
-  page: Page,
-  username: string,
-  password: string
-): Promise<void> {
+export async function login(page: Page, username: string, password: string): Promise<void> {
   const locale = getLocale();
 
   // Navigate to login page with locale
   await page.goto(`/${locale}/login`);
 
   // Wait for page to load
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState("networkidle");
 
   // Fill in credentials using id selector
-  await page.fill('#username', username);
-  await page.fill('#password', password);
+  await page.fill("#username", username);
+  await page.fill("#password", password);
 
   // Submit form
   await page.click('button[type="submit"]');
@@ -80,9 +76,9 @@ export async function logout(page: Page): Promise<void> {
   // Navigate to a page that has logout functionality
   // Since we don't have a logout button in the current UI, call API directly
   await page.evaluate(() => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user");
   });
 
   // Also clear cookies
@@ -91,7 +87,7 @@ export async function logout(page: Page): Promise<void> {
 
   // Navigate to login page
   await page.goto(`/${locale}/login`);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState("networkidle");
 }
 
 /**
@@ -102,9 +98,9 @@ export async function isLoggedIn(page: Page): Promise<boolean> {
     // Check if we have auth tokens
     const hasToken = await page.evaluate(() => {
       return !!(
-        localStorage.getItem('access_token') ||
-        localStorage.getItem('refresh_token') ||
-        document.cookie.includes('access_token')
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("refresh_token") ||
+        document.cookie.includes("access_token")
       );
     });
     return hasToken;
@@ -122,9 +118,9 @@ export async function getAuthToken(
   baseUrl: string
 ): Promise<string> {
   const response = await fetch(`${baseUrl}/api/auth/login`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({ username, password }),
   });

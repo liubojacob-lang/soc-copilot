@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { authFetchJSON } from '@/lib/auth';
-import type { AuditLog } from '../types';
+import { useState, useEffect, useCallback } from "react";
+import { authFetchJSON } from "@/lib/auth";
+import type { AuditLog } from "../types";
 
 interface AuditLogStats {
   total_requests: number;
@@ -39,35 +39,35 @@ export function useAuditLogs(options: UseAuditLogsOptions = {}): UseAuditLogsRes
   const {
     page: initialPage = 1,
     pageSize: initialPageSize = 50,
-    filterAction = '',
-    filterPath = '',
-    filterStatusCode = '',
-    filterDateFrom = '',
-    filterDateTo = '',
-    filterUserId = '',
-    filterIpAddress = '',
+    filterAction = "",
+    filterPath = "",
+    filterStatusCode = "",
+    filterDateFrom = "",
+    filterDateTo = "",
+    filterUserId = "",
+    filterIpAddress = "",
   } = options;
 
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [stats, setStats] = useState<AuditLogStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [total, setTotal] = useState(0);
 
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', pageSize.toString());
+    params.append("page", page.toString());
+    params.append("limit", pageSize.toString());
 
-    if (filterAction) params.append('action', filterAction);
-    if (filterPath) params.append('path', filterPath);
-    if (filterStatusCode) params.append('status_code', filterStatusCode);
-    if (filterDateFrom) params.append('date_from', filterDateFrom);
-    if (filterDateTo) params.append('date_to', filterDateTo);
-    if (filterUserId) params.append('user_id', filterUserId);
-    if (filterIpAddress) params.append('ip_address', filterIpAddress);
+    if (filterAction) params.append("action", filterAction);
+    if (filterPath) params.append("path", filterPath);
+    if (filterStatusCode) params.append("status_code", filterStatusCode);
+    if (filterDateFrom) params.append("date_from", filterDateFrom);
+    if (filterDateTo) params.append("date_to", filterDateTo);
+    if (filterUserId) params.append("user_id", filterUserId);
+    if (filterIpAddress) params.append("ip_address", filterIpAddress);
 
     return params.toString();
   }, [
@@ -84,7 +84,7 @@ export function useAuditLogs(options: UseAuditLogsOptions = {}): UseAuditLogsRes
 
   const fetchAuditLogs = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const queryParams = buildQueryParams();
@@ -96,12 +96,12 @@ export function useAuditLogs(options: UseAuditLogsOptions = {}): UseAuditLogsRes
         setTotal(data.total || 0);
         setStats(data.stats || null);
       } else {
-        setError('Failed to fetch audit logs');
+        setError("Failed to fetch audit logs");
         setLogs([]);
         setTotal(0);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : "Unknown error");
       setLogs([]);
       setTotal(0);
     } finally {

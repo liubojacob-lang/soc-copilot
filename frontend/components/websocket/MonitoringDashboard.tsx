@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { loadAuthState } from '@/lib/auth';
+import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { loadAuthState } from "@/lib/auth";
 import {
   Activity,
   MessageSquare,
@@ -14,8 +14,8 @@ import {
   Clock,
   Network,
   BarChart3,
-  RefreshCw
-} from 'lucide-react';
+  RefreshCw,
+} from "lucide-react";
 
 interface ConnectionMetrics {
   active_connections: number;
@@ -58,15 +58,15 @@ interface MetricsData {
   timestamp: string;
 }
 
-type TimeRange = '1h' | '6h' | '24h' | '7d';
+type TimeRange = "1h" | "6h" | "24h" | "7d";
 
 export function MonitoringDashboard() {
-  const t = useTranslations('websocket.monitoring');
+  const t = useTranslations("websocket.monitoring");
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
-  const [timeRange, setTimeRange] = useState<TimeRange>('1h');
+  const [timeRange, setTimeRange] = useState<TimeRange>("1h");
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   const fetchMetrics = async () => {
@@ -76,9 +76,9 @@ export function MonitoringDashboard() {
 
       setRefreshing(true);
 
-      const response = await fetch('/api/v1/ws/monitoring/metrics', {
+      const response = await fetch("/api/v1/ws/monitoring/metrics", {
         headers: {
-          'Authorization': `Bearer ${authState.token}`,
+          Authorization: `Bearer ${authState.tokens?.access_token}`,
         },
       });
 
@@ -87,7 +87,7 @@ export function MonitoringDashboard() {
         setMetrics(data);
       }
     } catch (error) {
-      console.error('Error fetching metrics:', error);
+      console.error("Error fetching metrics:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -128,11 +128,12 @@ export function MonitoringDashboard() {
     );
   }
 
-  const healthStatus = metrics.health_score >= 70 ? 'healthy' : metrics.health_score >= 50 ? 'degraded' : 'critical';
+  const healthStatus =
+    metrics.health_score >= 70 ? "healthy" : metrics.health_score >= 50 ? "degraded" : "critical";
   const healthColors = {
-    healthy: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    degraded: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-    critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    healthy: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    degraded: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+    critical: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   };
 
   return (
@@ -178,7 +179,7 @@ export function MonitoringDashboard() {
             disabled={refreshing}
             className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
           >
-            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
@@ -212,8 +213,8 @@ export function MonitoringDashboard() {
           label="Active"
           color="blue"
           details={[
-            { label: 'Total', value: metrics.connection.total_connections },
-            { label: 'Failures', value: metrics.connection.total_connection_failures },
+            { label: "Total", value: metrics.connection.total_connections },
+            { label: "Failures", value: metrics.connection.total_connection_failures },
           ]}
         />
 
@@ -225,8 +226,8 @@ export function MonitoringDashboard() {
           label="Sent"
           color="green"
           details={[
-            { label: 'Received', value: metrics.message.total_messages_received },
-            { label: 'Filtered', value: metrics.message.total_messages_filtered },
+            { label: "Received", value: metrics.message.total_messages_received },
+            { label: "Filtered", value: metrics.message.total_messages_filtered },
           ]}
         />
 
@@ -238,22 +239,22 @@ export function MonitoringDashboard() {
           label="Total"
           color="red"
           details={[
-            { label: 'Critical', value: metrics.error.total_critical_errors },
-            { label: 'Rate', value: `${metrics.message.current_send_rate.toFixed(1)}/s` },
+            { label: "Critical", value: metrics.error.total_critical_errors },
+            { label: "Rate", value: `${metrics.message.current_send_rate.toFixed(1)}/s` },
           ]}
           highlight={metrics.error.total_errors > 0}
         />
 
         {/* Performance Metrics */}
         <MetricCard
-          title={t('latency')}
+          title={t("latency")}
           icon={Zap}
           value={`${metrics.performance.avg_latency_ms.toFixed(1)}ms`}
-          label={t('average')}
+          label={t("average")}
           color="purple"
           details={[
-            { label: t('p95'), value: `${metrics.performance.p95_latency_ms.toFixed(1)}ms` },
-            { label: t('p99'), value: `${metrics.performance.p99_latency_ms.toFixed(1)}ms` },
+            { label: t("p95"), value: `${metrics.performance.p95_latency_ms.toFixed(1)}ms` },
+            { label: t("p99"), value: `${metrics.performance.p99_latency_ms.toFixed(1)}ms` },
           ]}
           highlight={metrics.performance.p95_latency_ms > 500}
         />
@@ -263,47 +264,53 @@ export function MonitoringDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Connection Details */}
         <DetailsCard
-          title={t('connectionDetails')}
+          title={t("connectionDetails")}
           icon={Network}
           data={[
-            { label: t('activeConnections'), value: metrics.connection.active_connections },
-            { label: t('totalConnections'), value: metrics.connection.total_connections },
-            { label: t('totalDisconnections'), value: metrics.connection.total_disconnections },
-            { label: t('connectionFailures'), value: metrics.connection.total_connection_failures },
-            { label: t('avgDuration'), value: `${metrics.connection.avg_connection_duration_seconds.toFixed(1)}s` },
+            { label: t("activeConnections"), value: metrics.connection.active_connections },
+            { label: t("totalConnections"), value: metrics.connection.total_connections },
+            { label: t("totalDisconnections"), value: metrics.connection.total_disconnections },
+            { label: t("connectionFailures"), value: metrics.connection.total_connection_failures },
+            {
+              label: t("avgDuration"),
+              value: `${metrics.connection.avg_connection_duration_seconds.toFixed(1)}s`,
+            },
           ]}
         />
 
         {/* Message Details */}
         <DetailsCard
-          title={t('messageDetails')}
+          title={t("messageDetails")}
           icon={MessageSquare}
           data={[
-            { label: t('messagesSent'), value: metrics.message.total_messages_sent },
-            { label: t('messagesReceived'), value: metrics.message.total_messages_received },
-            { label: t('messagesFiltered'), value: metrics.message.total_messages_filtered },
-            { label: t('messagesQueued'), value: metrics.message.total_messages_queued },
-            { label: t('sendRate'), value: `${metrics.message.current_send_rate.toFixed(1)}/s` },
-            { label: t('receiveRate'), value: `${metrics.message.current_receive_rate.toFixed(1)}/s` },
+            { label: t("messagesSent"), value: metrics.message.total_messages_sent },
+            { label: t("messagesReceived"), value: metrics.message.total_messages_received },
+            { label: t("messagesFiltered"), value: metrics.message.total_messages_filtered },
+            { label: t("messagesQueued"), value: metrics.message.total_messages_queued },
+            { label: t("sendRate"), value: `${metrics.message.current_send_rate.toFixed(1)}/s` },
+            {
+              label: t("receiveRate"),
+              value: `${metrics.message.current_receive_rate.toFixed(1)}/s`,
+            },
           ]}
         />
 
         {/* Performance Details */}
         <DetailsCard
-          title={t('performanceDetails')}
+          title={t("performanceDetails")}
           icon={Clock}
           data={[
-            { label: t('avgLatency'), value: `${metrics.performance.avg_latency_ms.toFixed(2)}ms` },
-            { label: t('p50Latency'), value: `${metrics.performance.p50_latency_ms.toFixed(2)}ms` },
-            { label: t('p95Latency'), value: `${metrics.performance.p95_latency_ms.toFixed(2)}ms` },
-            { label: t('p99Latency'), value: `${metrics.performance.p99_latency_ms.toFixed(2)}ms` },
-            { label: t('maxLatency'), value: `${metrics.performance.max_latency_ms.toFixed(2)}ms` },
+            { label: t("avgLatency"), value: `${metrics.performance.avg_latency_ms.toFixed(2)}ms` },
+            { label: t("p50Latency"), value: `${metrics.performance.p50_latency_ms.toFixed(2)}ms` },
+            { label: t("p95Latency"), value: `${metrics.performance.p95_latency_ms.toFixed(2)}ms` },
+            { label: t("p99Latency"), value: `${metrics.performance.p99_latency_ms.toFixed(2)}ms` },
+            { label: t("maxLatency"), value: `${metrics.performance.max_latency_ms.toFixed(2)}ms` },
           ]}
         />
 
         {/* Error Breakdown */}
         <DetailsCard
-          title={t('errorBreakdown')}
+          title={t("errorBreakdown")}
           icon={AlertTriangle}
           data={Object.entries(metrics.error.errors_by_type).map(([type, count]) => ({
             label: type,
@@ -318,26 +325,36 @@ export function MonitoringDashboard() {
 
 interface MetricCardProps {
   title: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   value: number | string;
   label: string;
-  color: 'blue' | 'green' | 'red' | 'purple';
+  color: "blue" | "green" | "red" | "purple";
   details: Array<{ label: string; value: number | string }>;
   highlight?: boolean;
 }
 
-function MetricCard({ title, icon: Icon, value, label, color, details, highlight }: MetricCardProps) {
+function MetricCard({
+  title,
+  icon: Icon,
+  value,
+  label,
+  color,
+  details,
+  highlight,
+}: MetricCardProps) {
   const colorClasses = {
-    blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-    green: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    red: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+    blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    green: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    red: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    purple: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
   };
 
   return (
-    <div className={`p-4 rounded-lg border ${highlight ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'} bg-white dark:bg-gray-800`}>
+    <div
+      className={`p-4 rounded-lg border ${highlight ? "border-red-300 dark:border-red-700" : "border-gray-200 dark:border-gray-700"} bg-white dark:bg-gray-800`}
+    >
       <div className="flex items-center gap-2 mb-3">
-        <Icon className={`w-5 h-5 ${colorClasses[color].split(' ')[1]}`} />
+        <Icon className={`w-5 h-5 ${colorClasses[color].split(" ")[1]}`} />
         <h4 className="font-medium text-gray-900 dark:text-white">{title}</h4>
       </div>
 
@@ -360,14 +377,16 @@ function MetricCard({ title, icon: Icon, value, label, color, details, highlight
 
 interface DetailsCardProps {
   title: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   data: Array<{ label: string; value: number | string }>;
   highlight?: boolean;
 }
 
 function DetailsCard({ title, icon: Icon, data, highlight }: DetailsCardProps) {
   return (
-    <div className={`p-4 rounded-lg border ${highlight ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'} bg-white dark:bg-gray-800`}>
+    <div
+      className={`p-4 rounded-lg border ${highlight ? "border-red-300 dark:border-red-700" : "border-gray-200 dark:border-gray-700"} bg-white dark:bg-gray-800`}
+    >
       <div className="flex items-center gap-2 mb-4">
         <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         <h4 className="font-medium text-gray-900 dark:text-white">{title}</h4>

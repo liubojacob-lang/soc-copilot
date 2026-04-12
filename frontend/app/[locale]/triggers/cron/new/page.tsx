@@ -27,9 +27,9 @@ interface CronTriggerResponse {
 
 export default function NewCronTriggerPage() {
   const router = useRouter();
-  const t = useTranslations('triggers');
-  const tNewCron = useTranslations('triggers.newCron');
-  const tCommon = useTranslations('common');
+  const t = useTranslations("triggers");
+  const tNewCron = useTranslations("triggers.newCron");
+  const tCommon = useTranslations("common");
 
   const [definitions, setDefinitions] = useState<Definition[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,10 +68,12 @@ export default function NewCronTriggerPage() {
 
   const fetchDefinitions = async () => {
     try {
-      const data = await authFetchJSON<{items: any[], total: number}>("/api/playbook-definitions?page=1&page_size=100");
+      const data = await authFetchJSON<{ items: Definition[]; total: number }>(
+        "/api/playbook-definitions?page=1&page_size=100"
+      );
       setDefinitions(data.items.filter((d: Definition) => d.is_active));
-    } catch (err: any) {
-      setError(err.message || t('failedToLoadDefinitions'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("failedToLoadDefinitions"));
     } finally {
       setLoading(false);
     }
@@ -94,8 +96,8 @@ export default function NewCronTriggerPage() {
 
       setCreatedTrigger(response);
       setShowSuccessModal(true);
-    } catch (err: any) {
-      setError(err.message || t('failedToCreateCron'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("failedToCreateCron"));
     } finally {
       setCreating(false);
     }
@@ -109,14 +111,14 @@ export default function NewCronTriggerPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-gray-600 dark:text-gray-400">{tCommon('loading')}</div>
+        <div className="text-gray-600 dark:text-gray-400">{tCommon("loading")}</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={tNewCron('title')} subtitle={tNewCron('subtitle')} />
+      <Navigation title={tNewCron("title")} subtitle={tNewCron("subtitle")} />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error Message */}
@@ -131,8 +133,12 @@ export default function NewCronTriggerPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Playbook Definition */}
             <div>
-              <label htmlFor="definition_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('playbookDefinition')}{t('required')}
+              <label
+                htmlFor="definition_id"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                {t("playbookDefinition")}
+                {t("required")}
               </label>
               <select
                 id="definition_id"
@@ -141,7 +147,7 @@ export default function NewCronTriggerPage() {
                 onChange={(e) => setFormData({ ...formData, definition_id: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
-                <option value="">{t('selectPlaybook')}</option>
+                <option value="">{t("selectPlaybook")}</option>
                 {definitions.map((def) => (
                   <option key={def.id} value={def.id}>
                     {def.name} {def.description ? `- ${def.description}` : ""}
@@ -152,8 +158,12 @@ export default function NewCronTriggerPage() {
 
             {/* Cron Expression */}
             <div>
-              <label htmlFor="cron_expr" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('cronExpression')}{t('required')}
+              <label
+                htmlFor="cron_expr"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                {t("cronExpression")}
+                {t("required")}
               </label>
               <input
                 id="cron_expr"
@@ -162,17 +172,15 @@ export default function NewCronTriggerPage() {
                 value={formData.cron_expr}
                 onChange={(e) => setFormData({ ...formData, cron_expr: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono"
-                placeholder={t('cronExpressionPlaceholder')}
+                placeholder={t("cronExpressionPlaceholder")}
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {t('cronFormat')}
-              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t("cronFormat")}</p>
             </div>
 
             {/* Cron Presets */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('quickPresets')}
+                {t("quickPresets")}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {Object.entries(cronPresets).map(([key, { expr, descriptionKey }]) => (
@@ -195,8 +203,11 @@ export default function NewCronTriggerPage() {
 
             {/* Trigger Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('triggerName')}
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                {t("triggerName")}
               </label>
               <input
                 id="name"
@@ -204,7 +215,7 @@ export default function NewCronTriggerPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder={t('cronTriggerNamePlaceholder')}
+                placeholder={t("cronTriggerNamePlaceholder")}
               />
             </div>
 
@@ -217,8 +228,11 @@ export default function NewCronTriggerPage() {
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                 className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
               />
-              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900 dark:text-white">
-                {t('activateTrigger')}
+              <label
+                htmlFor="is_active"
+                className="ml-2 block text-sm text-gray-900 dark:text-white"
+              >
+                {t("activateTrigger")}
               </label>
             </div>
 
@@ -229,14 +243,14 @@ export default function NewCronTriggerPage() {
                 onClick={() => router.push("/triggers")}
                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
               >
-                {tCommon('cancel')}
+                {tCommon("cancel")}
               </button>
               <button
                 type="submit"
                 disabled={creating}
                 className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {creating ? t('creatingCron') : t('createCron')}
+                {creating ? t("creatingCron") : t("createCron")}
               </button>
             </div>
           </form>
@@ -244,12 +258,14 @@ export default function NewCronTriggerPage() {
 
         {/* Info Box */}
         <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-md">
-          <h3 className="text-sm font-medium text-purple-800 dark:text-purple-300 mb-2">{t('aboutCronTriggers')}</h3>
+          <h3 className="text-sm font-medium text-purple-800 dark:text-purple-300 mb-2">
+            {t("aboutCronTriggers")}
+          </h3>
           <ul className="text-sm text-purple-700 dark:text-purple-400 space-y-1 list-disc list-inside">
-            <li>{t('aboutCronInfo1')}</li>
-            <li>{t('aboutCronInfo2')}</li>
-            <li>{t('aboutCronInfo3')}</li>
-            <li>{t('aboutCronInfo4')}</li>
+            <li>{t("aboutCronInfo1")}</li>
+            <li>{t("aboutCronInfo2")}</li>
+            <li>{t("aboutCronInfo3")}</li>
+            <li>{t("aboutCronInfo4")}</li>
           </ul>
         </div>
       </main>
@@ -260,25 +276,42 @@ export default function NewCronTriggerPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
             <div className="mb-4">
               <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white text-center">{t('cronTriggerCreated')}</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white text-center">
+                {t("cronTriggerCreated")}
+              </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
-                {t('cronCreatedDesc')}
+                {t("cronCreatedDesc")}
               </p>
             </div>
 
             <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
               <div className="text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">{t('schedule')}</span>
-                  <span className="font-mono text-gray-900 dark:text-white">{createdTrigger.cron_expr}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t("schedule")}</span>
+                  <span className="font-mono text-gray-900 dark:text-white">
+                    {createdTrigger.cron_expr}
+                  </span>
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className="text-gray-600 dark:text-gray-400">{t('playbook')}</span>
-                  <span className="text-gray-900 dark:text-white">{definitions.find(d => d.id === createdTrigger.definition_id)?.name || createdTrigger.definition_id}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t("playbook")}</span>
+                  <span className="text-gray-900 dark:text-white">
+                    {definitions.find((d) => d.id === createdTrigger.definition_id)?.name ||
+                      createdTrigger.definition_id}
+                  </span>
                 </div>
               </div>
             </div>
@@ -287,7 +320,7 @@ export default function NewCronTriggerPage() {
               onClick={handleCloseModal}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
             >
-              {tCommon('done')}
+              {tCommon("done")}
             </button>
           </div>
         </div>

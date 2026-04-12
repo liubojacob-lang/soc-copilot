@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
 /**
  * ThreatIntelCard Component
  * 威胁情报展示卡片
  */
 
-import React from 'react';
-import { Shield, AlertTriangle, CheckCircle, Clock, Globe, Server } from 'lucide-react';
+import React from "react";
+import { Shield, AlertTriangle, CheckCircle, Clock, Globe, Server } from "lucide-react";
 
 interface IOC {
-  type: 'ip' | 'domain' | 'url' | 'hash' | 'email';
+  type: "ip" | "domain" | "url" | "hash" | "email";
   value: string;
-  reputation: 'malicious' | 'suspicious' | 'benign' | 'unknown';
+  reputation: "malicious" | "suspicious" | "benign" | "unknown";
   confidence: number;
   first_seen?: string;
   last_seen?: string;
@@ -27,7 +27,7 @@ interface ThreatIntelData {
   iocs: IOC[];
   mitre_tactics: MITRETactic[];
   threat_score: number;
-  enrichment_status: 'pending' | 'enriched' | 'failed';
+  enrichment_status: "pending" | "enriched" | "failed";
   enriched_at?: string;
 }
 
@@ -38,24 +38,28 @@ interface ThreatIntelCardProps {
 
 const REPUTATION_CONFIG = {
   malicious: {
-    color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-300 dark:border-red-700',
+    color:
+      "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-300 dark:border-red-700",
     icon: AlertTriangle,
-    label: 'Malicious',
+    label: "Malicious",
   },
   suspicious: {
-    color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700',
+    color:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700",
     icon: Clock,
-    label: 'Suspicious',
+    label: "Suspicious",
   },
   benign: {
-    color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-300 dark:border-green-700',
+    color:
+      "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-300 dark:border-green-700",
     icon: CheckCircle,
-    label: 'Benign',
+    label: "Benign",
   },
   unknown: {
-    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300 dark:border-gray-700',
+    color:
+      "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300 dark:border-gray-700",
     icon: Shield,
-    label: 'Unknown',
+    label: "Unknown",
   },
 };
 
@@ -83,20 +87,24 @@ export function ThreatIntelCard({ data, onRefresh }: ThreatIntelCardProps) {
 
         <div className="flex items-center gap-3">
           {/* Enrichment Status */}
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-            enrichment_status === 'enriched'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-              : enrichment_status === 'pending'
-              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-          }`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${
-              enrichment_status === 'enriched'
-                ? 'bg-green-500'
-                : enrichment_status === 'pending'
-                ? 'bg-yellow-500 animate-pulse'
-                : 'bg-red-500'
-            }`} />
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+              enrichment_status === "enriched"
+                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                : enrichment_status === "pending"
+                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                  : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+            }`}
+          >
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${
+                enrichment_status === "enriched"
+                  ? "bg-green-500"
+                  : enrichment_status === "pending"
+                    ? "bg-yellow-500 animate-pulse"
+                    : "bg-red-500"
+              }`}
+            />
             {enrichment_status}
           </div>
 
@@ -107,8 +115,18 @@ export function ThreatIntelCard({ data, onRefresh }: ThreatIntelCardProps) {
               className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               title="Refresh threat intelligence"
             >
-              <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <svg
+                className="w-4 h-4 text-gray-600 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
             </button>
           )}
@@ -149,21 +167,23 @@ export function ThreatIntelCard({ data, onRefresh }: ThreatIntelCardProps) {
                 strokeDasharray={`${(threat_score / 100) * 251} 251`}
                 className={`${
                   threat_score >= 70
-                    ? 'text-red-500'
+                    ? "text-red-500"
                     : threat_score >= 40
-                    ? 'text-yellow-500'
-                    : 'text-green-500'
+                      ? "text-yellow-500"
+                      : "text-green-500"
                 }`}
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Shield className={`w-8 h-8 ${
-                threat_score >= 70
-                  ? 'text-red-500'
-                  : threat_score >= 40
-                  ? 'text-yellow-500'
-                  : 'text-green-500'
-              }`} />
+              <Shield
+                className={`w-8 h-8 ${
+                  threat_score >= 70
+                    ? "text-red-500"
+                    : threat_score >= 40
+                      ? "text-yellow-500"
+                      : "text-green-500"
+                }`}
+              />
             </div>
           </div>
         </div>
@@ -191,7 +211,10 @@ export function ThreatIntelCard({ data, onRefresh }: ThreatIntelCardProps) {
               const ReputationIcon = config.icon;
 
               return (
-                <div key={index} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <div
+                  key={index}
+                  className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
@@ -241,7 +264,9 @@ export function ThreatIntelCard({ data, onRefresh }: ThreatIntelCardProps) {
                     </div>
 
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${config.color}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${config.color}`}
+                      >
                         <ReputationIcon className="w-3 h-3" />
                         {config.label}
                       </span>

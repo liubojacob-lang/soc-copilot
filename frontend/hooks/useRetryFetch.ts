@@ -4,23 +4,23 @@
  * React hook for API calls with automatic retry and UI feedback
  */
 
-'use client';
+"use client";
 
-import { useState, useCallback, useRef } from 'react';
-import { fetchWithRetryEnhanced } from '@/lib/retryHandler';
-import { type RetryState, getRetryState, getRetryStrategy } from '@/lib/retryConfig';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { fetchWithRetryEnhanced } from "@/lib/retryHandler";
+import { type RetryState } from "@/lib/retryConfig";
 
-interface UseRetryFetchOptions {
-  onSuccess?: (data: any) => void;
-  onError?: (error: any) => void;
-  onRetry?: (attempt: number, error: any, delay: number) => void;
+interface UseRetryFetchOptions<T = unknown> {
+  onSuccess?: (data: T) => void;
+  onError?: (error: Error) => void;
+  onRetry?: (attempt: number, error: Error, delay: number) => void;
   showRetryUI?: boolean;
 }
 
-interface UseRetryFetchReturn {
-  execute: <T>(request: RequestInfo | URL, init?: RequestInit) => Promise<T>;
-  data: any;
-  error: any;
+interface UseRetryFetchReturn<T = unknown> {
+  execute: (request: RequestInfo | URL, init?: RequestInit) => Promise<T>;
+  data: T | null;
+  error: Error | null;
   isLoading: boolean;
   isRetrying: boolean;
   retryState: RetryState | undefined;
@@ -48,39 +48,21 @@ interface UseRetryFetchReturn {
  * }
  * ```
  */
-export function useRetryFetch(options: UseRetryFetchOptions = {}): UseRetryFetchReturn {
+export function useRetryFetch<T = unknown>(
+  options: UseRetryFetchOptions<T> = {}
+): UseRetryFetchReturn<T> {
   const { onSuccess, onError, onRetry, showRetryUI = true } = options;
 
-  const [data, setData] = useState<any>(null);
-  const [error, setError] = useState<any>(null);
+  const [data, setData] = useState<T | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [retryState, setRetryState] = useState<RetryState | undefined>(undefined);
-  const [currentEndpoint, setCurrentEndpoint] = useState<string>('');
+  const [currentEndpoint, setCurrentEndpoint] = useState<string>("");
 
   const abortControllerRef = useRef<AbortController | null>(null);
-  const retryIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Poll retry state
-  const startRetryPolling = useCallback((endpoint: string) => {
-    if (retryIntervalRef.current) {
-      clearInterval(retryIntervalRef.current);
-    }
-
-    retryIntervalRef.current = setInterval(() => {
-      const state = getRetryState(endpoint);
-      setRetryState(state || undefined);
-    }, 100);
-  }, []);
-
-  const stopRetryPolling = useCallback(() => {
-    if (retryIntervalRef.current) {
-      clearInterval(retryIntervalRef.current);
-      retryIntervalRef.current = null;
-    }
-  }, []);
 
   const execute = useCallback(
-    async <T,>(request: RequestInfo | URL, init?: RequestInit): Promise<T> => {
+    async (request: RequestInfo | URL, init?: RequestInit): Promise<T> => {
       // Cancel previous request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -89,17 +71,12 @@ export function useRetryFetch(options: UseRetryFetchOptions = {}): UseRetryFetch
       abortControllerRef.current = new AbortController();
 
       const endpoint =
-        typeof request === 'string' ? request : request instanceof URL ? request.href : request.url;
+        typeof request === "string" ? request : request instanceof URL ? request.href : request.url;
       setCurrentEndpoint(endpoint);
 
       setIsLoading(true);
       setError(null);
       setRetryState(undefined);
-
-      // Start polling retry state
-      if (showRetryUI) {
-        startRetryPolling(endpoint);
-      }
 
       try {
         const response = await fetchWithRetryEnhanced(
@@ -107,14 +84,13 @@ export function useRetryFetch(options: UseRetryFetchOptions = {}): UseRetryFetch
           {
             ...init,
             signal: abortControllerRef.current?.signal,
-            onRetry: (attempt, error, delay) => {
-              console.log(`[Retry] Attempt ${attempt} for ${endpoint} in ${delay}ms`);
-              onRetry?.(attempt, error, delay);
+            onRetry: (attempt, err, delay) => {
+              onRetry?.(attempt, err instanceof Error ? err : new Error(String(err)), delay);
             },
           },
           async (input, init) => {
             // Custom fetch that supports auth headers
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem("access_token");
             const headers = {
               ...init?.headers,
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -128,7 +104,6 @@ export function useRetryFetch(options: UseRetryFetchOptions = {}): UseRetryFetch
 
         setData(result);
         setIsLoading(false);
-        stopRetryPolling();
 
         onSuccess?.(result);
         return result;
@@ -136,13 +111,12 @@ export function useRetryFetch(options: UseRetryFetchOptions = {}): UseRetryFetch
         const errorObj = err instanceof Error ? err : new Error(String(err));
         setError(errorObj);
         setIsLoading(false);
-        stopRetryPolling();
 
         onError?.(errorObj);
         throw errorObj;
       }
     },
-    [onSuccess, onError, onRetry, showRetryUI, startRetryPolling, stopRetryPolling]
+    [onSuccess, onError, onRetry, showRetryUI]
   );
 
   const reset = useCallback(() => {
@@ -150,8 +124,7 @@ export function useRetryFetch(options: UseRetryFetchOptions = {}): UseRetryFetch
     setError(null);
     setIsLoading(false);
     setRetryState(undefined);
-    stopRetryPolling();
-  }, [stopRetryPolling]);
+  }, []);
 
   const cancel = useCallback(() => {
     if (abortControllerRef.current) {
@@ -160,18 +133,16 @@ export function useRetryFetch(options: UseRetryFetchOptions = {}): UseRetryFetch
     }
     setIsLoading(false);
     setRetryState(undefined);
-    stopRetryPolling();
-  }, [stopRetryPolling]);
+  }, []);
 
   // Cleanup on unmount
-  useState(() => {
+  useEffect(() => {
     return () => {
-      stopRetryPolling();
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  });
+  }, []);
 
   return {
     execute,
@@ -188,13 +159,15 @@ export function useRetryFetch(options: UseRetryFetchOptions = {}): UseRetryFetch
 /**
  * Hook for multiple parallel fetches with retry
  */
-export function useRetryFetchParallel<T = any>(
+export function useRetryFetchParallel<T = unknown>(
   requests: Array<RequestInfo | URL>,
-  options: UseRetryFetchOptions = {}
+  options: UseRetryFetchOptions<T> = {}
 ) {
   const [results, setResults] = useState<(T | null)[]>(new Array(requests.length).fill(null));
-  const [errors, setErrors] = useState<(any | null)[]>(new Array(requests.length).fill(null));
-  const [loadingStates, setLoadingStates] = useState<boolean[]>(new Array(requests.length).fill(false));
+  const [errors, setErrors] = useState<(Error | null)[]>(new Array(requests.length).fill(null));
+  const [loadingStates, setLoadingStates] = useState<boolean[]>(
+    new Array(requests.length).fill(false)
+  );
   const [retryStates, setRetryStates] = useState<(RetryState | undefined)[]>(
     new Array(requests.length).fill(undefined)
   );
@@ -202,9 +175,9 @@ export function useRetryFetchParallel<T = any>(
   const executeAll = useCallback(async () => {
     const promises = requests.map(async (request, index) => {
       const endpoint =
-        typeof request === 'string' ? request : request instanceof URL ? request.href : request.url;
+        typeof request === "string" ? request : request instanceof URL ? request.href : request.url;
 
-      setLoadingStates(prev => {
+      setLoadingStates((prev) => {
         const next = [...prev];
         next[index] = true;
         return next;
@@ -216,12 +189,11 @@ export function useRetryFetchParallel<T = any>(
           {
             endpoint,
             onRetry: (attempt, error, delay) => {
-              console.log(`[Parallel Retry] Request ${index}: attempt ${attempt}`);
               options.onRetry?.(attempt, error, delay);
             },
           },
           async (input, init) => {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem("access_token");
             const headers = {
               ...init?.headers,
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -232,13 +204,13 @@ export function useRetryFetchParallel<T = any>(
 
         const result: T = await response.json();
 
-        setResults(prev => {
+        setResults((prev) => {
           const next = [...prev];
           next[index] = result;
           return next;
         });
 
-        setLoadingStates(prev => {
+        setLoadingStates((prev) => {
           const next = [...prev];
           next[index] = false;
           return next;
@@ -246,13 +218,13 @@ export function useRetryFetchParallel<T = any>(
 
         return result;
       } catch (err) {
-        setErrors(prev => {
+        setErrors((prev) => {
           const next = [...prev];
-          next[index] = err;
+          next[index] = err instanceof Error ? err : new Error(String(err));
           return next;
         });
 
-        setLoadingStates(prev => {
+        setLoadingStates((prev) => {
           const next = [...prev];
           next[index] = false;
           return next;

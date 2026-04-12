@@ -4,17 +4,17 @@
  * Tests IOC queries, OTX integration, and threat intel enrichment.
  */
 
-import { test, expect } from '@playwright/test';
-import { login, TEST_USERS } from '../utils/auth';
+import { test, expect } from "@playwright/test";
+import { login, TEST_USERS } from "../utils/auth";
 
-test.describe('Threat Intelligence - IOC Queries', () => {
+test.describe("Threat Intelligence - IOC Queries", () => {
   test.beforeEach(async ({ page }) => {
     const admin = TEST_USERS.admin;
     await login(page, admin.username, admin.password);
   });
 
-  test('should display threat intel dashboard', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should display threat intel dashboard", async ({ page }) => {
+    await page.goto("/threat-intel");
 
     // Check page title
     await expect(page.locator('h1:has-text("Threat Intelligence")')).toBeVisible();
@@ -26,12 +26,12 @@ test.describe('Threat Intelligence - IOC Queries', () => {
     await expect(page.locator('[data-testid="query-history"]')).toBeVisible();
   });
 
-  test('should query IP address', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should query IP address", async ({ page }) => {
+    await page.goto("/threat-intel");
 
     // Enter IP address
-    await page.fill('[data-testid="ioc-search-input"]', '1.1.1.1');
-    await page.selectOption('[data-testid="ioc-type-select"]', 'ip');
+    await page.fill('[data-testid="ioc-search-input"]', "1.1.1.1");
+    await page.selectOption('[data-testid="ioc-type-select"]', "ip");
 
     // Click search
     await page.click('button:has-text("Search")');
@@ -45,14 +45,14 @@ test.describe('Threat Intelligence - IOC Queries', () => {
     });
 
     // Should show IP details
-    await expect(page.locator('[data-testid="ip-address"]')).toContainText('1.1.1.1');
+    await expect(page.locator('[data-testid="ip-address"]')).toContainText("1.1.1.1");
   });
 
-  test('should query domain', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should query domain", async ({ page }) => {
+    await page.goto("/threat-intel");
 
-    await page.fill('[data-testid="ioc-search-input"]', 'example.com');
-    await page.selectOption('[data-testid="ioc-type-select"]', 'domain');
+    await page.fill('[data-testid="ioc-search-input"]', "example.com");
+    await page.selectOption('[data-testid="ioc-type-select"]', "domain");
     await page.click('button:has-text("Search")');
 
     // Should show domain results
@@ -67,11 +67,11 @@ test.describe('Threat Intelligence - IOC Queries', () => {
     }
   });
 
-  test('should query URL', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should query URL", async ({ page }) => {
+    await page.goto("/threat-intel");
 
-    await page.fill('[data-testid="ioc-search-input"]', 'http://example.com/malware');
-    await page.selectOption('[data-testid="ioc-type-select"]', 'url');
+    await page.fill('[data-testid="ioc-search-input"]', "http://example.com/malware");
+    await page.selectOption('[data-testid="ioc-type-select"]', "url");
     await page.click('button:has-text("Search")');
 
     // Should show URL analysis
@@ -80,12 +80,12 @@ test.describe('Threat Intelligence - IOC Queries', () => {
     });
   });
 
-  test('should query file hash', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should query file hash", async ({ page }) => {
+    await page.goto("/threat-intel");
 
-    const testHash = '44d88612fea8a8f36de82e1278abb02f'; // EICAR test file
+    const testHash = "44d88612fea8a8f36de82e1278abb02f"; // EICAR test file
     await page.fill('[data-testid="ioc-search-input"]', testHash);
-    await page.selectOption('[data-testid="ioc-type-select"]', 'hash');
+    await page.selectOption('[data-testid="ioc-type-select"]', "hash");
     await page.click('button:has-text("Search")');
 
     // Should show hash results
@@ -98,21 +98,21 @@ test.describe('Threat Intelligence - IOC Queries', () => {
   });
 });
 
-test.describe('Threat Intelligence - Batch Queries', () => {
+test.describe("Threat Intelligence - Batch Queries", () => {
   test.beforeEach(async ({ page }) => {
     const admin = TEST_USERS.admin;
     await login(page, admin.username, admin.password);
   });
 
-  test('should query multiple IOCs', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should query multiple IOCs", async ({ page }) => {
+    await page.goto("/threat-intel");
 
     // Click batch query button
     await page.click('button:has-text("Batch Query")');
 
     // Enter multiple IOCs
     const batchInput = page.locator('textarea[data-testid="batch-input"]');
-    await batchInput.fill('1.1.1.1\n8.8.8.8\nexample.com');
+    await batchInput.fill("1.1.1.1\n8.8.8.8\nexample.com");
 
     // Submit batch
     await page.click('button:has-text("Query All")');
@@ -130,14 +130,14 @@ test.describe('Threat Intelligence - Batch Queries', () => {
     await expect(results).toHaveCount(3);
   });
 
-  test('should handle batch query errors gracefully', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should handle batch query errors gracefully", async ({ page }) => {
+    await page.goto("/threat-intel");
 
     await page.click('button:has-text("Batch Query")');
 
     // Mix valid and invalid IOCs
     const batchInput = page.locator('textarea[data-testid="batch-input"]');
-    await batchInput.fill('1.1.1.1\ninvalid-ip\n!@#$%');
+    await batchInput.fill("1.1.1.1\ninvalid-ip\n!@#$%");
 
     await page.click('button:has-text("Query All")');
 
@@ -148,17 +148,17 @@ test.describe('Threat Intelligence - Batch Queries', () => {
   });
 });
 
-test.describe('Threat Intelligence - OTX Integration', () => {
+test.describe("Threat Intelligence - OTX Integration", () => {
   test.beforeEach(async ({ page }) => {
     const admin = TEST_USERS.admin;
     await login(page, admin.username, admin.password);
   });
 
-  test('should show OTX pulses for IOC', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should show OTX pulses for IOC", async ({ page }) => {
+    await page.goto("/threat-intel");
 
-    await page.fill('[data-testid="ioc-search-input"]', '1.1.1.1');
-    await page.selectOption('[data-testid="ioc-type-select"]', 'ip');
+    await page.fill('[data-testid="ioc-search-input"]', "1.1.1.1");
+    await page.selectOption('[data-testid="ioc-type-select"]', "ip");
     await page.click('button:has-text("Search")');
 
     // Should show OTX section
@@ -167,11 +167,11 @@ test.describe('Threat Intelligence - OTX Integration', () => {
     });
   });
 
-  test('should display OTX pulse details', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should display OTX pulse details", async ({ page }) => {
+    await page.goto("/threat-intel");
 
-    await page.fill('[data-testid="ioc-search-input"]', '1.1.1.1');
-    await page.selectOption('[data-testid="ioc-type-select"]', 'ip');
+    await page.fill('[data-testid="ioc-search-input"]', "1.1.1.1");
+    await page.selectOption('[data-testid="ioc-type-select"]', "ip");
     await page.click('button:has-text("Search")');
 
     // Wait for results
@@ -188,14 +188,14 @@ test.describe('Threat Intelligence - OTX Integration', () => {
   });
 });
 
-test.describe('Threat Intelligence - Cache Management', () => {
+test.describe("Threat Intelligence - Cache Management", () => {
   test.beforeEach(async ({ page }) => {
     const admin = TEST_USERS.admin;
     await login(page, admin.username, admin.password);
   });
 
-  test('should display cache statistics', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should display cache statistics", async ({ page }) => {
+    await page.goto("/threat-intel");
 
     // Click on cache stats
     await page.click('[data-testid="cache-stats-toggle"]');
@@ -205,8 +205,8 @@ test.describe('Threat Intelligence - Cache Management', () => {
     await expect(page.locator('[data-testid="cache-size"]')).toBeVisible();
   });
 
-  test('should clear IOC cache', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should clear IOC cache", async ({ page }) => {
+    await page.goto("/threat-intel");
 
     // Open cache settings
     await page.click('[data-testid="cache-settings-btn"]');
@@ -216,17 +216,17 @@ test.describe('Threat Intelligence - Cache Management', () => {
     await page.click('button:has-text("Confirm")');
 
     // Should show success message
-    await expect(page.locator('text=/cache cleared/i')).toBeVisible();
+    await expect(page.locator("text=/cache cleared/i")).toBeVisible();
   });
 
-  test('should use cached results on repeat query', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should use cached results on repeat query", async ({ page }) => {
+    await page.goto("/threat-intel");
 
-    const testIP = '1.1.1.1';
+    const testIP = "1.1.1.1";
 
     // First query
     await page.fill('[data-testid="ioc-search-input"]', testIP);
-    await page.selectOption('[data-testid="ioc-type-select"]', 'ip');
+    await page.selectOption('[data-testid="ioc-type-select"]', "ip");
     await page.click('button:has-text("Search")');
 
     await expect(page.locator('[data-testid="ioc-results"]')).toBeVisible({
@@ -251,14 +251,14 @@ test.describe('Threat Intelligence - Cache Management', () => {
   });
 });
 
-test.describe('Threat Intelligence - IOC Enrichment', () => {
+test.describe("Threat Intelligence - IOC Enrichment", () => {
   test.beforeEach(async ({ page }) => {
     const admin = TEST_USERS.admin;
     await login(page, admin.username, admin.password);
   });
 
-  test('should enrich alert IOCs from threat intel', async ({ page }) => {
-    await page.goto('/alerts');
+  test("should enrich alert IOCs from threat intel", async ({ page }) => {
+    await page.goto("/alerts");
     await page.click('[data-testid="alert-row"]:first-child');
 
     // Go to IOCs tab
@@ -278,8 +278,8 @@ test.describe('Threat Intelligence - IOC Enrichment', () => {
     }
   });
 
-  test('should filter IOCs by threat level', async ({ page }) => {
-    await page.goto('/alerts');
+  test("should filter IOCs by threat level", async ({ page }) => {
+    await page.goto("/alerts");
     await page.click('[data-testid="alert-row"]:first-child');
     await page.click('button:has-text("IOCs")');
 
@@ -290,21 +290,22 @@ test.describe('Threat Intelligence - IOC Enrichment', () => {
 
     // Should only show malicious IOCs
     const visibleIOCs = page.locator('[data-testid="ioc-item"][data-threat-level="malicious"]');
-    await expect(visibleIOCs).toHaveCount.greaterThan(0);
+    const iocCount = await visibleIOCs.count();
+    await expect(iocCount).toBeGreaterThan(0);
   });
 });
 
-test.describe('Threat Intelligence - Export', () => {
+test.describe("Threat Intelligence - Export", () => {
   test.beforeEach(async ({ page }) => {
     const admin = TEST_USERS.admin;
     await login(page, admin.username, admin.password);
   });
 
-  test('should export IOC query results', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should export IOC query results", async ({ page }) => {
+    await page.goto("/threat-intel");
 
-    await page.fill('[data-testid="ioc-search-input"]', '1.1.1.1');
-    await page.selectOption('[data-testid="ioc-type-select"]', 'ip');
+    await page.fill('[data-testid="ioc-search-input"]', "1.1.1.1");
+    await page.selectOption('[data-testid="ioc-type-select"]', "ip");
     await page.click('button:has-text("Search")');
 
     await expect(page.locator('[data-testid="ioc-results"]')).toBeVisible({
@@ -316,12 +317,12 @@ test.describe('Threat Intelligence - Export', () => {
     await page.click('button:has-text("JSON")');
 
     // Should trigger download
-    const download = await page.waitForEvent('download');
+    const download = await page.waitForEvent("download");
     expect(download.suggestedFilename()).toMatch(/.*threat-intel.*\.json$/);
   });
 
-  test('should export query history', async ({ page }) => {
-    await page.goto('/threat-intel');
+  test("should export query history", async ({ page }) => {
+    await page.goto("/threat-intel");
 
     // Click on history tab
     await page.click('button:has-text("History")');
@@ -329,7 +330,7 @@ test.describe('Threat Intelligence - Export', () => {
     // Export history
     await page.click('button:has-text("Export History")');
 
-    const download = await page.waitForEvent('download');
+    const download = await page.waitForEvent("download");
     expect(download.suggestedFilename()).toMatch(/.*query-history.*\.csv$/);
   });
 });

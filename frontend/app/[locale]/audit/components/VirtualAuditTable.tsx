@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { FixedSizeList } from 'react-window';
-import { formatDate, getStatusCodeClass, getMethodClass } from '../utils';
-import type { AuditLog } from '../types';
+import { FixedSizeList } from "react-window";
+import { formatDate, getStatusCodeClass, getMethodClass } from "../utils";
+import type { AuditLog } from "../types";
 
 interface VirtualAuditTableProps {
   logs: AuditLog[];
@@ -15,7 +15,10 @@ const ROW_HEIGHT = 64;
 
 function AuditLogRow({ log, style }: { log: AuditLog; style: React.CSSProperties }) {
   return (
-    <div style={style} className="flex items-center border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+    <div
+      style={style}
+      className="flex items-center border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+    >
       <div className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 w-40">
         {formatDate(log.created_at)}
       </div>
@@ -38,7 +41,9 @@ function AuditLogRow({ log, style }: { log: AuditLog; style: React.CSSProperties
         </div>
       </div>
       <div className="px-4 py-3 whitespace-nowrap w-20">
-        <span className={`px-2 py-1 text-xs font-semibold rounded ${getStatusCodeClass(log.status_code)}`}>
+        <span
+          className={`px-2 py-1 text-xs font-semibold rounded ${getStatusCodeClass(log.status_code)}`}
+        >
           {log.status_code}
         </span>
       </div>
@@ -56,7 +61,11 @@ function AuditLogRow({ log, style }: { log: AuditLog; style: React.CSSProperties
   );
 }
 
-export function VirtualAuditTable({ logs, height = 600, rowHeight = ROW_HEIGHT }: VirtualAuditTableProps) {
+export function VirtualAuditTable({
+  logs,
+  height = 600,
+  rowHeight = ROW_HEIGHT,
+}: VirtualAuditTableProps) {
   const emptyComponent = (
     <div className="p-8 text-center">
       <p className="text-gray-500 dark:text-gray-400">No audit logs found.</p>
@@ -80,7 +89,10 @@ export function VirtualAuditTable({ logs, height = 600, rowHeight = ROW_HEIGHT }
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <div className="overflow-x-auto">
         {/* Table Header */}
-        <div className="flex items-center bg-gray-50 dark:bg-gray-700 sticky top-0 z-10" style={{ height: HEADER_HEIGHT }}>
+        <div
+          className="flex items-center bg-gray-50 dark:bg-gray-700 sticky top-0 z-10"
+          style={{ height: HEADER_HEIGHT }}
+        >
           <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
             Time
           </div>

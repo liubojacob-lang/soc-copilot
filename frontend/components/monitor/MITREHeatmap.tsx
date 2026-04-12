@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
 /**
  * MITREHeatmap Component
  * MITRE ATT&CK 战术热图 - 矩阵图
  */
 
-import React, { useMemo } from 'react';
-import { Target } from 'lucide-react';
+import React, { useMemo } from "react";
+import { Target } from "lucide-react";
 
 interface MITRETacticData {
   tactic: string;
@@ -25,24 +25,24 @@ interface MITREHeatmapProps {
 
 // MITRE ATT&CK 战术定义（按顺序）
 const TACTICS: Record<string, { id: string; name: string; color: string }> = {
-  reconnaissance: { id: 'TA0043', name: 'Reconnaissance', color: '#a855f7' },
-  resource_development: { id: 'TA0042', name: 'Resource Development', color: '#8b5cf6' },
-  initial_access: { id: 'TA0001', name: 'Initial Access', color: '#ef4444' },
-  execution: { id: 'TA0002', name: 'Execution', color: '#f97316' },
-  persistence: { id: 'TA0003', name: 'Persistence', color: '#eab308' },
-  privilege_escalation: { id: 'TA0004', name: 'Privilege Escalation', color: '#84cc16' },
-  defense_evasion: { id: 'TA0005', name: 'Defense Evasion', color: '#ec4899' },
-  credential_access: { id: 'TA0006', name: 'Credential Access', color: '#f43f5e' },
-  discovery: { id: 'TA0007', name: 'Discovery', color: '#06b6d4' },
-  lateral_movement: { id: 'TA0008', name: 'Lateral Movement', color: '#14b8a6' },
-  collection: { id: 'TA0009', name: 'Collection', color: '#6366f1' },
-  command_and_control: { id: 'TA0011', name: 'Command and Control', color: '#3b82f6' },
-  exfiltration: { id: 'TA0010', name: 'Exfiltration', color: '#22c55e' },
-  impact: { id: 'TA0040', name: 'Impact', color: '#64748b' },
+  reconnaissance: { id: "TA0043", name: "Reconnaissance", color: "#a855f7" },
+  resource_development: { id: "TA0042", name: "Resource Development", color: "#8b5cf6" },
+  initial_access: { id: "TA0001", name: "Initial Access", color: "#ef4444" },
+  execution: { id: "TA0002", name: "Execution", color: "#f97316" },
+  persistence: { id: "TA0003", name: "Persistence", color: "#eab308" },
+  privilege_escalation: { id: "TA0004", name: "Privilege Escalation", color: "#84cc16" },
+  defense_evasion: { id: "TA0005", name: "Defense Evasion", color: "#ec4899" },
+  credential_access: { id: "TA0006", name: "Credential Access", color: "#f43f5e" },
+  discovery: { id: "TA0007", name: "Discovery", color: "#06b6d4" },
+  lateral_movement: { id: "TA0008", name: "Lateral Movement", color: "#14b8a6" },
+  collection: { id: "TA0009", name: "Collection", color: "#6366f1" },
+  command_and_control: { id: "TA0011", name: "Command and Control", color: "#3b82f6" },
+  exfiltration: { id: "TA0010", name: "Exfiltration", color: "#22c55e" },
+  impact: { id: "TA0040", name: "Impact", color: "#64748b" },
 };
 
 function getTacticKey(tacticName: string): string {
-  const normalized = tacticName.toLowerCase().replace(/ /g, '_').replace(/-/g, '_');
+  const normalized = tacticName.toLowerCase().replace(/ /g, "_").replace(/-/g, "_");
   return normalized;
 }
 
@@ -51,7 +51,7 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
   const heatmapData = useMemo(() => {
     const tacticMap = new Map<string, MITRETacticData>();
 
-    data.forEach(item => {
+    data.forEach((item) => {
       const key = getTacticKey(item.tactic);
       tacticMap.set(key, item);
     });
@@ -62,8 +62,8 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
   // 计算最大值用于颜色深度
   const maxCount = useMemo(() => {
     let max = 0;
-    data.forEach(tactic => {
-      tactic.techniques.forEach(tech => {
+    data.forEach((tactic) => {
+      tactic.techniques.forEach((tech) => {
         if (tech.count > max) max = tech.count;
       });
     });
@@ -72,7 +72,7 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
 
   // 获取单元格颜色
   const getCellColor = (count: number, tacticColor: string) => {
-    if (count === 0) return '#f3f4f6'; // gray-100
+    if (count === 0) return "#f3f4f6"; // gray-100
 
     const opacity = Math.min(0.2 + (count / maxCount) * 0.8, 1);
     return tacticColor; // 使用战术颜色，透明度通过 CSS 设置
@@ -114,11 +114,15 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
       {/* 摘要统计 */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
-          <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{totalTactics}</div>
+          <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+            {totalTactics}
+          </div>
           <div className="text-xs text-purple-600 dark:text-purple-400">Tactics</div>
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-          <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{totalTechniques}</div>
+          <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+            {totalTechniques}
+          </div>
           <div className="text-xs text-blue-600 dark:text-blue-400">Techniques</div>
         </div>
         <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
@@ -142,12 +146,12 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
                   key={key}
                   className="flex-1 min-w-[60px] text-center px-1 py-2"
                   style={{
-                    backgroundColor: hasData ? tactic.color : '#f3f4f6',
+                    backgroundColor: hasData ? tactic.color : "#f3f4f6",
                     opacity: hasData ? 1 : 0.3,
                   }}
                 >
                   <div className="text-[10px] font-bold text-white leading-tight">
-                    {tactic.name.split(' ')[0]}
+                    {tactic.name.split(" ")[0]}
                   </div>
                 </div>
               );
@@ -184,13 +188,11 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
                           title={`${tactic.name} > ${technique.technique}: ${technique.count} alerts`}
                         >
                           <span className="text-xs font-semibold text-white">
-                            {technique.count > 0 ? technique.count : ''}
+                            {technique.count > 0 ? technique.count : ""}
                           </span>
                         </div>
                       );
-                    }) || (
-                      <div className="flex-1 h-8 bg-gray-100 dark:bg-gray-700 rounded" />
-                    )}
+                    }) || <div className="flex-1 h-8 bg-gray-100 dark:bg-gray-700 rounded" />}
                   </div>
                 </div>
               );
@@ -221,7 +223,7 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {data.map((tactic) => {
             const key = getTacticKey(tactic.tactic);
-            const config = TACTICS[key] || { color: '#6b7280' };
+            const config = TACTICS[key] || { color: "#6b7280" };
 
             return (
               <div
@@ -239,7 +241,7 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
                     </span>
                   </div>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {tactic.techniques.length} technique{tactic.techniques.length !== 1 ? 's' : ''}
+                    {tactic.techniques.length} technique{tactic.techniques.length !== 1 ? "s" : ""}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1">
@@ -267,7 +269,13 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
 }
 
 // 简化版：仅显示战术条形图
-export function SimpleMITRETactics({ data, limit = 5 }: { data: MITRETacticData[]; limit?: number }) {
+export function SimpleMITRETactics({
+  data,
+  limit = 5,
+}: {
+  data: MITRETacticData[];
+  limit?: number;
+}) {
   const sortedData = [...data]
     .sort((a, b) => {
       const aCount = a.techniques.reduce((sum, t) => sum + t.count, 0);
@@ -289,7 +297,7 @@ export function SimpleMITRETactics({ data, limit = 5 }: { data: MITRETacticData[
     <div className="space-y-3">
       {sortedData.map((tactic) => {
         const key = getTacticKey(tactic.tactic);
-        const config = TACTICS[key] || { color: '#6b7280' };
+        const config = TACTICS[key] || { color: "#6b7280" };
         const count = tactic.techniques.reduce((sum, t) => sum + t.count, 0);
         const percentage = (count / maxCount) * 100;
 

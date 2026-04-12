@@ -1,0 +1,23 @@
+{
+  "dashboard": "仪表盘",
+  "infoBox": {
+    "title": "信息",
+    "logs": "日志",
+    "cron": "Cron",
+    "webhook": "Webhook"
+  },
+  "sidebar": {
+    "capabilities": "功能",
+    "usageTips": "使用技巧",
+    "currentModel": "当前模型",
+    "tips": {
+      "naturalLanguage": "使用自然语言描述您的安全需求",
+      "alertAnalysis": "智能分析安全告警",
+      "securityReports": "自动生成安全报告",
+      "recommendations": "推荐最佳响应剧本"
+    }
+  },
+  "breadcrumbs": {
+    "home": "首页"
+  }
+}

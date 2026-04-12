@@ -15,86 +15,83 @@
  */
 
 declare interface Messages {
-Messages:
-{
-actions: Actions;
-activities: Activities;
-admin: Admin;
-adminAudit: Adminaudit;
-adminDashboard: Admindashboard;
-adminSettings: Adminsettings;
-ai: Ai;
-aiAssistant: Aiassistant;
-aiCopilot: string;
-aiModels: string;
-alerts: Alerts;
-alertsPage: Alertspage;
-analytics: string;
-api: string;
-apiKeys: string;
-approvals: Approvals;
-assets: Assets;
-audit: string;
-chart: Chart;
-checking: string;
-cloudNative: Cloudnative;
-common: Common;
-configModal: Configmodal;
-correlation: Correlation;
-dashboard: string;
-definitions: Definitions;
-difficulty: Difficulty;
-dify: string;
-difyPage: Difypage;
-errors: Errors;
-history: History;
-home: Home;
-infoBox: Infobox;
-iocHunt: Iochunt;
-login: Login;
-logout: string;
-manualImport: Manualimport;
-marketplace: Marketplace;
-meta: Meta;
-mlPowered: Mlpowered;
-modal: Modal;
-model: Model;
-monitor: Monitor;
-nav: Nav;
-navigation: Navigation;
-notificationSettings: Notificationsettings;
-playbooks: Playbooks;
-queue: Queue;
-quickActions: Quickactions;
-reports: Reports;
-resources: Resources;
-runs: string;
-services: Services;
-settings: Settings;
-settingsApiKeys: Settingsapikeys;
-severity: Severity;
-sidebar: Sidebar;
-status: Status;
-statusError: string;
-statuses: Statuses;
-tabs: Tabs;
-threatHunting: Threathunting;
-threatIntel: Threatintel;
-triggers: Triggers;
-triggersPage: Triggerspage;
-ueba: Ueba;
-uebaPage: Uebapage;
-users: Users;
-welcome: Welcome;
-}
+  Messages: {
+    actions: Actions;
+    activities: Activities;
+    admin: Admin;
+    adminAudit: Adminaudit;
+    adminDashboard: Admindashboard;
+    adminSettings: Adminsettings;
+    ai: Ai;
+    aiAssistant: Aiassistant;
+    aiCopilot: string;
+    aiModels: string;
+    alerts: Alerts;
+    alertsPage: Alertspage;
+    analytics: string;
+    api: string;
+    apiKeys: string;
+    approvals: Approvals;
+    assets: Assets;
+    audit: string;
+    chart: Chart;
+    checking: string;
+    cloudNative: Cloudnative;
+    common: Common;
+    configModal: Configmodal;
+    correlation: Correlation;
+    dashboard: string;
+    definitions: Definitions;
+    difficulty: Difficulty;
+    dify: string;
+    difyPage: Difypage;
+    errors: Errors;
+    history: History;
+    home: Home;
+    infoBox: Infobox;
+    iocHunt: Iochunt;
+    login: Login;
+    logout: string;
+    manualImport: Manualimport;
+    marketplace: Marketplace;
+    meta: Meta;
+    mlPowered: Mlpowered;
+    modal: Modal;
+    model: Model;
+    monitor: Monitor;
+    nav: Nav;
+    navigation: Navigation;
+    notificationSettings: Notificationsettings;
+    playbooks: Playbooks;
+    queue: Queue;
+    quickActions: Quickactions;
+    reports: Reports;
+    resources: Resources;
+    runs: string;
+    services: Services;
+    settings: Settings;
+    settingsApiKeys: Settingsapikeys;
+    severity: Severity;
+    sidebar: Sidebar;
+    status: Status;
+    statusError: string;
+    statuses: Statuses;
+    tabs: Tabs;
+    threatHunting: Threathunting;
+    threatIntel: Threatintel;
+    triggers: Triggers;
+    triggersPage: Triggerspage;
+    ueba: Ueba;
+    uebaPage: Uebapage;
+    users: Users;
+    welcome: Welcome;
+  };
 }
 
 /**
  * Translation key type - all possible translation keys in the format "namespace.key"
  */
-export type TranslationKey =
-  | `${keyof Messages}.${string}`
-  | keyof Messages;
+export type TranslationKey = `${keyof Messages}.${string}` | keyof Messages;
 
 /**
  * Type-safe translation wrapper
@@ -111,7 +108,7 @@ export type TranslationKey =
  * ```
  */
 
-import { useTranslations as useNextIntlTranslations } from 'next-intl';
+import { useTranslations as useNextIntlTranslations } from "next-intl";
 
 /**
  * Type-safe translation hook
@@ -121,9 +118,7 @@ import { useTranslations as useNextIntlTranslations } from 'next-intl';
 export function useTranslations<N extends keyof Messages = keyof Messages>(
   namespace?: N
 ): (
-  key: N extends keyof Messages
-    ? keyof Messages[N]
-    : keyof Messages,
+  key: N extends keyof Messages ? keyof Messages[N] : keyof Messages,
   params?: Record<string, string | number>
 ) => string {
   return useNextIntlTranslations(namespace);
@@ -148,9 +143,7 @@ export function t<K extends TranslationKey>(
  * @param namespace - Translation namespace
  * @returns Array of translation keys
  */
-export function getTranslationKeys<N extends keyof Messages>(
-  namespace: N
-): (keyof Messages[N])[] {
+export function getTranslationKeys<N extends keyof Messages>(namespace: N): (keyof Messages[N])[] {
   // Placeholder - would return actual keys
   return [];
 }

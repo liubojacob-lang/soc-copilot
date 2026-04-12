@@ -1,0 +1,19 @@
+{
+  "threatIntel": {
+    "title": "威胁情报",
+    "query": "查询IOC",
+    "cache": "缓存管理",
+    "ipAddress": "IP地址",
+    "domain": "域名",
+    "url": "URL",
+    "hash": "文件哈希",
+    "pulse": "OTX Pulse",
+    "threatLevel": "威胁级别"
+  },
+  "iocHunt": {
+    "button": "开始 IOC 狩猎",
+    "comingSoon": "即将推出",
+    "description": "使用 IOC 进行主动威胁狩猎",
+    "title": "IOC 狩猎"
+  }
+}

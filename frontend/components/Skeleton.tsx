@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
 import { ReactNode } from "react";
 
 interface SkeletonProps {
   className?: string;
-  variant?: 'text' | 'circular' | 'rectangular';
+  variant?: "text" | "circular" | "rectangular";
   width?: string | number;
   height?: string | number;
   lines?: number;
 }
 
-export function Skeleton({ 
-  className = "", 
-  variant = 'rectangular',
+export function Skeleton({
+  className = "",
+  variant = "rectangular",
   width,
   height,
-  lines = 1
+  lines = 1,
 }: SkeletonProps) {
   const baseClass = "animate-pulse bg-gray-200 dark:bg-gray-700";
-  
+
   const variantClass = {
     text: "rounded h-4",
     circular: "rounded-full",
@@ -31,7 +31,7 @@ export function Skeleton({
         {Array.from({ length: lines }).map((_, i) => (
           <div
             key={i}
-            className={`${baseClass} ${variantClass[variant]} ${i === lines - 1 ? 'w-3/4' : 'w-full'}`}
+            className={`${baseClass} ${variantClass[variant]} ${i === lines - 1 ? "w-3/4" : "w-full"}`}
             style={{ width: width, height: height }}
           />
         ))}
@@ -51,16 +51,19 @@ export function TableSkeleton({ rows = 5, cols = 5 }: { rows?: number; cols?: nu
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div
+        className="grid gap-4"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
         {Array.from({ length: cols }).map((_, i) => (
           <Skeleton key={i} variant="text" className="h-4" />
         ))}
       </div>
       {/* Rows */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div 
-          key={rowIndex} 
-          className="grid gap-4" 
+        <div
+          key={rowIndex}
+          className="grid gap-4"
           style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
         >
           {Array.from({ length: cols }).map((_, colIndex) => (

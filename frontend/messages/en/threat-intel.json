@@ -1,0 +1,19 @@
+{
+  "threatIntel": {
+    "title": "Threat Intelligence",
+    "query": "Query IOC",
+    "cache": "Cache Management",
+    "ipAddress": "IP Address",
+    "domain": "Domain",
+    "url": "URL",
+    "hash": "File Hash",
+    "pulse": "OTX Pulse",
+    "threatLevel": "Threat Level"
+  },
+  "iocHunt": {
+    "title": "IOC Hunt",
+    "description": "Active threat hunting using IOCs",
+    "button": "Start IOC Hunt",
+    "comingSoon": "Coming Soon"
+  }
+}

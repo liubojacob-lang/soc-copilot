@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
 /**
  * SeverityDistribution Component
  * 告警严重程度分布 - 饼图/环形图
  */
 
-import React, { useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { PieChart as PieChartIcon } from 'lucide-react';
+import React, { useMemo } from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart as PieChartIcon } from "lucide-react";
 
 interface SeverityData {
   name: string;
@@ -23,30 +23,30 @@ interface SeverityDistributionProps {
     low: number;
     info: number;
   };
-  type?: 'pie' | 'donut';
+  type?: "pie" | "donut";
   showLegend?: boolean;
   height?: number;
 }
 
 const SEVERITY_COLORS = {
-  critical: '#dc2626',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#3b82f6',
-  info: '#6b7280',
+  critical: "#dc2626",
+  high: "#f97316",
+  medium: "#eab308",
+  low: "#3b82f6",
+  info: "#6b7280",
 };
 
 const SEVERITY_LABELS = {
-  critical: 'Critical',
-  high: 'High',
-  medium: 'Medium',
-  low: 'Low',
-  info: 'Info',
+  critical: "Critical",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+  info: "Info",
 };
 
 export function SeverityDistribution({
   data,
-  type = 'donut',
+  type = "donut",
   showLegend = true,
   height = 300,
 }: SeverityDistributionProps) {
@@ -68,7 +68,13 @@ export function SeverityDistribution({
   }, [data]);
 
   // 自定义 Tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean;
+    payload?: Array<{ value: number; name: string; payload: { color: string } }>;
+  }) => {
     if (!active || !payload || !payload.length) return null;
 
     const data = payload[0];
@@ -77,13 +83,8 @@ export function SeverityDistribution({
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3">
         <div className="flex items-center gap-2 mb-1">
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: data.payload.color }}
-          />
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
-            {data.name}
-          </span>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.color }} />
+          <span className="text-sm font-medium text-gray-900 dark:text-white">{data.name}</span>
         </div>
         <div className="space-y-1 text-xs">
           <div className="flex justify-between gap-4">
@@ -100,7 +101,31 @@ export function SeverityDistribution({
   };
 
   // 自定义标签
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  const renderCustomizedLabel = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+  }: {
+    cx?: number;
+    cy?: number;
+    midAngle?: number;
+    innerRadius?: number;
+    outerRadius?: number;
+    percent?: number;
+  }) => {
+    if (
+      cx === undefined ||
+      cy === undefined ||
+      midAngle === undefined ||
+      innerRadius === undefined ||
+      outerRadius === undefined ||
+      percent === undefined
+    ) {
+      return null;
+    }
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -113,7 +138,7 @@ export function SeverityDistribution({
         x={x}
         y={y}
         fill="white"
-        textAnchor={x > cx ? 'start' : 'end'}
+        textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
         fontSize={12}
         fontWeight="600"
@@ -143,9 +168,9 @@ export function SeverityDistribution({
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={type === 'pie' ? renderCustomizedLabel : false}
-            outerRadius={type === 'donut' ? 80 : 100}
-            innerRadius={type === 'donut' ? 60 : 0}
+            label={type === "pie" ? renderCustomizedLabel : false}
+            outerRadius={type === "donut" ? 80 : 100}
+            innerRadius={type === "donut" ? 60 : 0}
             paddingAngle={2}
             dataKey="value"
           >
@@ -159,9 +184,9 @@ export function SeverityDistribution({
               verticalAlign="bottom"
               height={36}
               iconType="circle"
-              formatter={(value, entry: any) => (
+              formatter={(value, entry) => (
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {value} ({entry.payload.value})
+                  {value} ({(entry.payload as { value: number })?.value ?? 0})
                 </span>
               )}
             />
@@ -170,7 +195,7 @@ export function SeverityDistribution({
       </ResponsiveContainer>
 
       {/* 中心总数显示（仅环形图） */}
-      {type === 'donut' && (
+      {type === "donut" && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             <div className="text-3xl font-bold text-gray-900 dark:text-white">{total}</div>
@@ -187,7 +212,7 @@ export function SeverityBars({
   data,
   limit = 5,
 }: {
-  data: SeverityDistributionProps['data'];
+  data: SeverityDistributionProps["data"];
   limit?: number;
 }) {
   const chartData = useMemo(() => {
@@ -202,7 +227,7 @@ export function SeverityBars({
       .slice(0, limit);
   }, [data, limit]);
 
-  const maxValue = Math.max(...chartData.map(d => d.value));
+  const maxValue = Math.max(...chartData.map((d) => d.value));
 
   if (chartData.length === 0) {
     return null;
@@ -236,7 +261,7 @@ export function SeverityBars({
 }
 
 // 紧凑版：仅显示统计卡片
-export function SeverityCards({ data }: { data: SeverityDistributionProps['data'] }) {
+export function SeverityCards({ data }: { data: SeverityDistributionProps["data"] }) {
   const cards = useMemo(() => {
     return Object.entries(data)
       .filter(([_, value]) => value > 0)
@@ -261,17 +286,12 @@ export function SeverityCards({ data }: { data: SeverityDistributionProps['data'
           className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3"
         >
           <div className="flex items-center gap-2 mb-2">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: card.color }}
-            />
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: card.color }} />
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
               {card.label}
             </span>
           </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {card.value}
-          </div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</div>
         </div>
       ))}
     </div>

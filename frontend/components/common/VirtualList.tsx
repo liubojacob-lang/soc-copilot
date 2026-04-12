@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 /**
  * Virtual List Component for efficient rendering of large lists.
- * 
+ *
  * Features:
  * - Only renders visible items
  * - Variable item height support
@@ -10,14 +10,7 @@
  * - Resize observer for responsive containers
  */
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-  memo,
-} from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 
 interface VirtualListProps<T> {
   items: T[];
@@ -46,7 +39,7 @@ function VirtualListComponent<T>({
   containerHeight,
   renderItem,
   overscan = 3,
-  className = '',
+  className = "",
   onScroll,
   onLoadMore,
   hasMore = false,
@@ -56,9 +49,7 @@ function VirtualListComponent<T>({
 }: VirtualListProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
-  const [measuredHeights, setMeasuredHeights] = useState<Map<number, number>>(
-    new Map()
-  );
+  const [measuredHeights, setMeasuredHeights] = useState<Map<number, number>>(new Map());
 
   // Calculate item positions
   const itemPositions = useMemo<ItemPosition[]>(() => {
@@ -67,10 +58,10 @@ function VirtualListComponent<T>({
 
     for (let i = 0; i < items.length; i++) {
       let height: number;
-      
+
       if (measuredHeights.has(i)) {
         height = measuredHeights.get(i)!;
-      } else if (typeof itemHeight === 'function') {
+      } else if (typeof itemHeight === "function") {
         height = itemHeight(i);
       } else {
         height = itemHeight;
@@ -105,7 +96,7 @@ function VirtualListComponent<T>({
     while (low <= high) {
       const mid = Math.floor((low + high) / 2);
       const pos = itemPositions[mid];
-      
+
       if (pos.offset + pos.height < scrollTop) {
         low = mid + 1;
       } else {
@@ -120,7 +111,7 @@ function VirtualListComponent<T>({
     while (low <= high) {
       const mid = Math.floor((low + high) / 2);
       const pos = itemPositions[mid];
-      
+
       if (pos.offset <= scrollTop + containerHeight) {
         low = mid + 1;
       } else {
@@ -143,7 +134,7 @@ function VirtualListComponent<T>({
       if (onLoadMore && hasMore && !loadingMore) {
         const scrollBottom = newScrollTop + containerHeight;
         const threshold = totalHeight - containerHeight * 0.2; // Load when 20% from bottom
-        
+
         if (scrollBottom >= threshold) {
           onLoadMore();
         }
@@ -154,14 +145,14 @@ function VirtualListComponent<T>({
 
   // Measure item heights after render
   useEffect(() => {
-    if (typeof itemHeight !== 'function' || !containerRef.current) return;
+    if (typeof itemHeight !== "function" || !containerRef.current) return;
 
     const container = containerRef.current;
-    const items = container.querySelectorAll('[data-index]');
+    const items = container.querySelectorAll("[data-index]");
     const newHeights = new Map<number, number>();
 
     items.forEach((item) => {
-      const index = parseInt(item.getAttribute('data-index') || '', 10);
+      const index = parseInt(item.getAttribute("data-index") || "", 10);
       if (!isNaN(index)) {
         const height = item.getBoundingClientRect().height;
         if (height > 0) {
@@ -193,10 +184,7 @@ function VirtualListComponent<T>({
   }
 
   // Get visible items
-  const visibleItems = itemPositions.slice(
-    visibleRange.startIndex,
-    visibleRange.endIndex + 1
-  );
+  const visibleItems = itemPositions.slice(visibleRange.startIndex, visibleRange.endIndex + 1);
 
   return (
     <div
@@ -204,15 +192,15 @@ function VirtualListComponent<T>({
       className={className}
       style={{
         height: containerHeight,
-        overflow: 'auto',
-        position: 'relative',
+        overflow: "auto",
+        position: "relative",
       }}
       onScroll={handleScroll}
     >
       <div
         style={{
           height: totalHeight,
-          position: 'relative',
+          position: "relative",
         }}
       >
         {visibleItems.map((pos) => (
@@ -220,7 +208,7 @@ function VirtualListComponent<T>({
             key={pos.index}
             data-index={pos.index}
             style={{
-              position: 'absolute',
+              position: "absolute",
               top: pos.offset,
               left: 0,
               right: 0,
@@ -231,22 +219,20 @@ function VirtualListComponent<T>({
           </div>
         ))}
       </div>
-      
+
       {/* Loading indicator */}
       {loadingMore && (
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 0,
             left: 0,
             right: 0,
-            padding: '16px',
-            textAlign: 'center',
+            padding: "16px",
+            textAlign: "center",
           }}
         >
-          {loadingComponent || (
-            <div className="text-gray-400">Loading more...</div>
-          )}
+          {loadingComponent || <div className="text-gray-400">Loading more...</div>}
         </div>
       )}
     </div>
@@ -276,7 +262,7 @@ export function useInfiniteScroll<T>(
 
     try {
       const newItems = await fetchMore(page + 1);
-      
+
       if (newItems.length < pageSize) {
         setHasMore(false);
       }

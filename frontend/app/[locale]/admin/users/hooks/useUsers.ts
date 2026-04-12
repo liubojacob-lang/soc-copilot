@@ -1,8 +1,8 @@
 /** Admin users page types and hooks */
 
-import { useState, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { loadAuthState, isAdmin, authFetchJSON } from '@/lib/auth';
+import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { loadAuthState, isAdmin, authFetchJSON } from "@/lib/auth";
 
 export interface User {
   id: string;
@@ -30,47 +30,54 @@ export function useUsers() {
     page: 1,
     limit: 10,
     total: 0,
-    totalPages: 0
+    totalPages: 0,
   });
   const [filters, setFilters] = useState({
     role: "" as "" | "admin" | "analyst" | "auditor",
     status: "" as "" | "active" | "inactive",
-    search: ""
+    search: "",
   });
 
-  const fetchUsers = useCallback(async (page: number = 1) => {
-    setLoading(true);
-    setError("");
-    try {
-      const skip = (page - 1) * pagination.limit;
-      const params = new URLSearchParams({
-        skip: skip.toString(),
-        limit: pagination.limit.toString()
-      });
-      
-      if (filters.role) params.append("role", filters.role);
-      if (filters.status) params.append("is_active", filters.status === "active" ? "true" : "false");
-      if (filters.search) params.append("search", filters.search);
+  const fetchUsers = useCallback(
+    async (page: number = 1) => {
+      setLoading(true);
+      setError("");
+      try {
+        const skip = (page - 1) * pagination.limit;
+        const params = new URLSearchParams({
+          skip: skip.toString(),
+          limit: pagination.limit.toString(),
+        });
 
-      const data = await authFetchJSON<{items: User[], total: number}>(`/api/users?${params}`);
-      setUsers(data.items);
-      setPagination(prev => ({
-        ...prev,
-        page,
-        total: data.total,
-        totalPages: Math.ceil(data.total / prev.limit)
-      }));
-    } catch (err: any) {
-      setError(err.message || "Failed to load users");
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.limit, filters]);
+        if (filters.role) params.append("role", filters.role);
+        if (filters.status)
+          params.append("is_active", filters.status === "active" ? "true" : "false");
+        if (filters.search) params.append("search", filters.search);
 
-  const handleFilterChange = useCallback((newFilters: Partial<typeof filters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    fetchUsers(1); // Reset to page 1 when filters change
-  }, [fetchUsers]);
+        const data = await authFetchJSON<{ items: User[]; total: number }>(`/api/users?${params}`);
+        setUsers(data.items);
+        setPagination((prev) => ({
+          ...prev,
+          page,
+          total: data.total,
+          totalPages: Math.ceil(data.total / prev.limit),
+        }));
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to load users");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pagination.limit, filters]
+  );
+
+  const handleFilterChange = useCallback(
+    (newFilters: Partial<typeof filters>) => {
+      setFilters((prev) => ({ ...prev, ...newFilters }));
+      fetchUsers(1); // Reset to page 1 when filters change
+    },
+    [fetchUsers]
+  );
 
   const deleteUser = useCallback(async (userId: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
@@ -78,14 +85,14 @@ export function useUsers() {
     const token = localStorage.getItem("access_token");
     const response = await fetch(`/api/users/${userId}`, {
       method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (response.ok) {
-      setUsers(prev => prev.filter(u => u.id !== userId));
-      setPagination(prev => ({
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setPagination((prev) => ({
         ...prev,
-        total: prev.total - 1
+        total: prev.total - 1,
       }));
     }
   }, []);
@@ -94,16 +101,16 @@ export function useUsers() {
     const token = localStorage.getItem("access_token");
     const response = await fetch(`/api/users/${userId}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(updates)
+      body: JSON.stringify(updates),
     });
 
     if (response.ok) {
       const updatedUser = await response.json();
-      setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+      setUsers((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
       return updatedUser;
     }
     return null;
@@ -131,7 +138,7 @@ export function useUsers() {
     fetchUsers,
     deleteUser,
     updateUser,
-    handleFilterChange
+    handleFilterChange,
   };
 }
 

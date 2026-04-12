@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
 /**
  * MITREMapping Component
  * MITRE ATT&CK 映射可视化
  */
 
-import React from 'react';
-import { Shield, Target, Zap } from 'lucide-react';
+import React from "react";
+import { Shield, Target, Zap } from "lucide-react";
 
 interface MITRETactic {
   id: string;
@@ -24,62 +24,69 @@ interface MITRETechnique {
 
 interface MITREMappingProps {
   tactics: MITRETactic[];
-  stage?: 'reconnaissance' | 'initial_access' | 'execution' | 'persistence' | 'defense_evasion' | 'command_control' | 'exfiltration';
+  stage?:
+    | "reconnaissance"
+    | "initial_access"
+    | "execution"
+    | "persistence"
+    | "defense_evasion"
+    | "command_control"
+    | "exfiltration";
 }
 
 const TACTIC_COLORS = {
   reconnaissance: {
-    bg: 'bg-purple-50 dark:bg-purple-900/20',
-    border: 'border-purple-300 dark:border-purple-700',
-    text: 'text-purple-700 dark:text-purple-300',
-    icon: '🔍',
+    bg: "bg-purple-50 dark:bg-purple-900/20",
+    border: "border-purple-300 dark:border-purple-700",
+    text: "text-purple-700 dark:text-purple-300",
+    icon: "🔍",
   },
   initial_access: {
-    bg: 'bg-red-50 dark:bg-red-900/20',
-    border: 'border-red-300 dark:border-red-700',
-    text: 'text-red-700 dark:text-red-300',
-    icon: '🚪',
+    bg: "bg-red-50 dark:bg-red-900/20",
+    border: "border-red-300 dark:border-red-700",
+    text: "text-red-700 dark:text-red-300",
+    icon: "🚪",
   },
   execution: {
-    bg: 'bg-orange-50 dark:bg-orange-900/20',
-    border: 'border-orange-300 dark:border-orange-700',
-    text: 'text-orange-700 dark:text-orange-300',
-    icon: '⚡',
+    bg: "bg-orange-50 dark:bg-orange-900/20",
+    border: "border-orange-300 dark:border-orange-700",
+    text: "text-orange-700 dark:text-orange-300",
+    icon: "⚡",
   },
   persistence: {
-    bg: 'bg-yellow-50 dark:bg-yellow-900/20',
-    border: 'border-yellow-300 dark:border-yellow-700',
-    text: 'text-yellow-700 dark:text-yellow-300',
-    icon: '📌',
+    bg: "bg-yellow-50 dark:bg-yellow-900/20",
+    border: "border-yellow-300 dark:border-yellow-700",
+    text: "text-yellow-700 dark:text-yellow-300",
+    icon: "📌",
   },
   defense_evasion: {
-    bg: 'bg-pink-50 dark:bg-pink-900/20',
-    border: 'border-pink-300 dark:border-pink-700',
-    text: 'text-pink-700 dark:text-pink-300',
-    icon: '🎭',
+    bg: "bg-pink-50 dark:bg-pink-900/20",
+    border: "border-pink-300 dark:border-pink-700",
+    text: "text-pink-700 dark:text-pink-300",
+    icon: "🎭",
   },
   command_control: {
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
-    border: 'border-blue-300 dark:border-blue-700',
-    text: 'text-blue-700 dark:text-blue-300',
-    icon: '🎮',
+    bg: "bg-blue-50 dark:bg-blue-900/20",
+    border: "border-blue-300 dark:border-blue-700",
+    text: "text-blue-700 dark:text-blue-300",
+    icon: "🎮",
   },
   exfiltration: {
-    bg: 'bg-green-50 dark:bg-green-900/20',
-    border: 'border-green-300 dark:border-green-700',
-    text: 'text-green-700 dark:text-green-300',
-    icon: '📤',
+    bg: "bg-green-50 dark:bg-green-900/20",
+    border: "border-green-300 dark:border-green-700",
+    text: "text-green-700 dark:text-green-300",
+    icon: "📤",
   },
 };
 
 const KILL_CHAIN_ORDER = [
-  'reconnaissance',
-  'initial_access',
-  'execution',
-  'persistence',
-  'defense_evasion',
-  'command_control',
-  'exfiltration',
+  "reconnaissance",
+  "initial_access",
+  "execution",
+  "persistence",
+  "defense_evasion",
+  "command_control",
+  "exfiltration",
 ];
 
 export function MITREMapping({ tactics, stage }: MITREMappingProps) {
@@ -114,9 +121,7 @@ export function MITREMapping({ tactics, stage }: MITREMappingProps) {
       {/* Kill Chain Visualization */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-            Attack Kill Chain
-          </h4>
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Attack Kill Chain</h4>
         </div>
 
         <div className="p-4">
@@ -128,15 +133,12 @@ export function MITREMapping({ tactics, stage }: MITREMappingProps) {
             {/* Stages */}
             <div className="flex justify-between relative">
               {KILL_CHAIN_ORDER.map((killChainStage) => {
-                const hasTactics = sortedTactics.some(t => t.id === killChainStage);
+                const hasTactics = sortedTactics.some((t) => t.id === killChainStage);
                 const isCurrentStage = stage === killChainStage;
                 const config = TACTIC_COLORS[killChainStage as keyof typeof TACTIC_COLORS];
 
                 return (
-                  <div
-                    key={killChainStage}
-                    className="flex flex-col items-center gap-2"
-                  >
+                  <div key={killChainStage} className="flex flex-col items-center gap-2">
                     {/* Stage Node */}
                     <div
                       className={`
@@ -145,29 +147,32 @@ export function MITREMapping({ tactics, stage }: MITREMappingProps) {
                         ${
                           hasTactics
                             ? `${config.bg} ${config.border} ${config.text}`
-                            : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400'
+                            : "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400"
                         }
                         ${
                           isCurrentStage
-                            ? 'ring-4 ring-offset-2 ring-blue-500 dark:ring-offset-gray-900'
-                            : ''
+                            ? "ring-4 ring-offset-2 ring-blue-500 dark:ring-offset-gray-900"
+                            : ""
                         }
                       `}
-                      title={killChainStage.replace('_', ' ')}
+                      title={killChainStage.replace("_", " ")}
                     >
-                      {hasTactics ? config.icon : '•'}
+                      {hasTactics ? config.icon : "•"}
                     </div>
 
                     {/* Stage Label */}
                     <div className="text-xs text-center max-w-[80px]">
-                      <div className={`font-medium ${
-                        hasTactics ? 'text-gray-900 dark:text-white' : 'text-gray-400'
-                      }`}>
-                        {killChainStage.replace('_', ' ')}
+                      <div
+                        className={`font-medium ${
+                          hasTactics ? "text-gray-900 dark:text-white" : "text-gray-400"
+                        }`}
+                      >
+                        {killChainStage.replace("_", " ")}
                       </div>
                       {hasTactics && (
                         <div className="text-gray-500 dark:text-gray-400">
-                          {sortedTactics.find(t => t.id === killChainStage)?.techniques.length || 0}
+                          {sortedTactics.find((t) => t.id === killChainStage)?.techniques.length ||
+                            0}
                         </div>
                       )}
                     </div>
@@ -183,10 +188,10 @@ export function MITREMapping({ tactics, stage }: MITREMappingProps) {
       <div className="space-y-3">
         {sortedTactics.map((tactic) => {
           const config = TACTIC_COLORS[tactic.id as keyof typeof TACTIC_COLORS] || {
-            bg: 'bg-gray-50 dark:bg-gray-900/20',
-            border: 'border-gray-300 dark:border-gray-700',
-            text: 'text-gray-700 dark:text-gray-300',
-            icon: '•',
+            bg: "bg-gray-50 dark:bg-gray-900/20",
+            border: "border-gray-300 dark:border-gray-700",
+            text: "text-gray-700 dark:text-gray-300",
+            icon: "•",
           };
 
           return (
@@ -195,13 +200,13 @@ export function MITREMapping({ tactics, stage }: MITREMappingProps) {
               className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden`}
             >
               {/* Tactic Header */}
-              <div className={`px-4 py-3 border-b border-gray-200 dark:border-gray-700 ${config.bg}`}>
+              <div
+                className={`px-4 py-3 border-b border-gray-200 dark:border-gray-700 ${config.bg}`}
+              >
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{config.icon}</span>
                   <div>
-                    <h5 className={`font-semibold ${config.text}`}>
-                      {tactic.name}
-                    </h5>
+                    <h5 className={`font-semibold ${config.text}`}>{tactic.name}</h5>
                     {tactic.description && (
                       <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                         {tactic.description}
@@ -268,13 +273,13 @@ export function MITREMapping({ tactics, stage }: MITREMappingProps) {
               <div>
                 <span className="text-gray-600 dark:text-gray-400">Kill Chain Coverage:</span>
                 <span className="ml-2 font-semibold text-gray-900 dark:text-white">
-                  {new Set(tactics.map(t => t.id)).size} / {KILL_CHAIN_ORDER.length}
+                  {new Set(tactics.map((t) => t.id)).size} / {KILL_CHAIN_ORDER.length}
                 </span>
               </div>
               <div>
                 <span className="text-gray-600 dark:text-gray-400">Current Stage:</span>
                 <span className="ml-2 font-semibold text-purple-700 dark:text-purple-300">
-                  {stage ? stage.replace('_', ' ') : 'Unknown'}
+                  {stage ? stage.replace("_", " ") : "Unknown"}
                 </span>
               </div>
             </div>

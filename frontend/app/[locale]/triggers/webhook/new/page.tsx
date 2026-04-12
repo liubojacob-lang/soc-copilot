@@ -28,9 +28,9 @@ interface WebhookTriggerResponse {
 
 export default function NewWebhookTriggerPage() {
   const router = useRouter();
-  const t = useTranslations('triggers');
-  const tNewWebhook = useTranslations('triggers.newWebhook');
-  const tCommon = useTranslations('common');
+  const t = useTranslations("triggers");
+  const tNewWebhook = useTranslations("triggers.newWebhook");
+  const tCommon = useTranslations("common");
   const [definitions, setDefinitions] = useState<Definition[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -56,10 +56,12 @@ export default function NewWebhookTriggerPage() {
 
   const fetchDefinitions = async () => {
     try {
-      const data = await authFetchJSON<{items: any[], total: number}>("/api/playbook-definitions?page=1&page_size=100");
+      const data = await authFetchJSON<{ items: Definition[]; total: number }>(
+        "/api/playbook-definitions?page=1&page_size=100"
+      );
       setDefinitions(data.items.filter((d: Definition) => d.is_active));
-    } catch (err: any) {
-      setError(err.message || t('failedToLoadDefinitions'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("failedToLoadDefinitions"));
     } finally {
       setLoading(false);
     }
@@ -78,8 +80,8 @@ export default function NewWebhookTriggerPage() {
 
       setCreatedTrigger(response);
       setShowSuccessModal(true);
-    } catch (err: any) {
-      setError(err.message || t('failedToCreateWebhook'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("failedToCreateWebhook"));
     } finally {
       setCreating(false);
     }
@@ -109,14 +111,14 @@ export default function NewWebhookTriggerPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-gray-600 dark:text-gray-400">{tCommon('loading')}</div>
+        <div className="text-gray-600 dark:text-gray-400">{tCommon("loading")}</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={tNewWebhook('title')} subtitle={tNewWebhook('subtitle')} />
+      <Navigation title={tNewWebhook("title")} subtitle={tNewWebhook("subtitle")} />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error Message */}
@@ -131,8 +133,12 @@ export default function NewWebhookTriggerPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Playbook Definition */}
             <div>
-              <label htmlFor="definition_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('playbookDefinition')}{t('required')}
+              <label
+                htmlFor="definition_id"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                {t("playbookDefinition")}
+                {t("required")}
               </label>
               <select
                 id="definition_id"
@@ -141,7 +147,7 @@ export default function NewWebhookTriggerPage() {
                 onChange={(e) => setFormData({ ...formData, definition_id: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
-                <option value="">{t('selectPlaybook')}</option>
+                <option value="">{t("selectPlaybook")}</option>
                 {definitions.map((def) => (
                   <option key={def.id} value={def.id}>
                     {def.name} {def.description ? `- ${def.description}` : ""}
@@ -152,8 +158,11 @@ export default function NewWebhookTriggerPage() {
 
             {/* Trigger Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('triggerName')}
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                {t("triggerName")}
               </label>
               <input
                 id="name"
@@ -161,7 +170,7 @@ export default function NewWebhookTriggerPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder={t('webhookTriggerNamePlaceholder')}
+                placeholder={t("webhookTriggerNamePlaceholder")}
               />
             </div>
 
@@ -174,8 +183,11 @@ export default function NewWebhookTriggerPage() {
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900 dark:text-white">
-                {t('activateTrigger')}
+              <label
+                htmlFor="is_active"
+                className="ml-2 block text-sm text-gray-900 dark:text-white"
+              >
+                {t("activateTrigger")}
               </label>
             </div>
 
@@ -186,14 +198,14 @@ export default function NewWebhookTriggerPage() {
                 onClick={() => router.push("/triggers")}
                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
               >
-                {tCommon('cancel')}
+                {tCommon("cancel")}
               </button>
               <button
                 type="submit"
                 disabled={creating}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {creating ? t('creatingWebhook') : t('createWebhook')}
+                {creating ? t("creatingWebhook") : t("createWebhook")}
               </button>
             </div>
           </form>
@@ -201,12 +213,14 @@ export default function NewWebhookTriggerPage() {
 
         {/* Info Box */}
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">{t('aboutWebhookTriggers')}</h3>
+          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+            {t("aboutWebhookTriggers")}
+          </h3>
           <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
-            <li>{t('aboutWebhookInfo1')}</li>
-            <li>{t('aboutWebhookInfo2')}</li>
-            <li>{t('aboutWebhookInfo3')}</li>
-            <li>{t('aboutWebhookInfo4')}</li>
+            <li>{t("aboutWebhookInfo1")}</li>
+            <li>{t("aboutWebhookInfo2")}</li>
+            <li>{t("aboutWebhookInfo3")}</li>
+            <li>{t("aboutWebhookInfo4")}</li>
           </ul>
         </div>
       </main>
@@ -217,20 +231,32 @@ export default function NewWebhookTriggerPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4">
             <div className="mb-4">
               <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white text-center">{t('webhookTriggerCreated')}</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white text-center">
+                {t("webhookTriggerCreated")}
+              </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
-                {t('webhookCreatedDesc')}
+                {t("webhookCreatedDesc")}
               </p>
             </div>
 
             {/* Webhook URL */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('webhookUrl')}
+                {t("webhookUrl")}
               </label>
               <div className="flex">
                 <input
@@ -243,7 +269,7 @@ export default function NewWebhookTriggerPage() {
                   onClick={handleCopyUrl}
                   className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-r-md hover:bg-blue-700"
                 >
-                  {copied ? tCommon('copied') : tCommon('copy')}
+                  {copied ? tCommon("copied") : tCommon("copy")}
                 </button>
               </div>
             </div>
@@ -251,7 +277,7 @@ export default function NewWebhookTriggerPage() {
             {/* Secret */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('webhookSecret')}
+                {t("webhookSecret")}
               </label>
               <div className="flex">
                 <input
@@ -264,16 +290,16 @@ export default function NewWebhookTriggerPage() {
                   onClick={handleCopySecret}
                   className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-r-md hover:bg-blue-700"
                 >
-                  {copied ? tCommon('copied') : tCommon('copy')}
+                  {copied ? tCommon("copied") : tCommon("copy")}
                 </button>
               </div>
             </div>
 
             {/* Usage Example */}
             <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">{t('usageExample')}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">{t("usageExample")}</p>
               <pre className="text-xs text-gray-800 dark:text-gray-300 overflow-x-auto">
-{`curl -X POST ${createdTrigger.webhook_url} \\
+                {`curl -X POST ${createdTrigger.webhook_url} \\
   -H "X-Webhook-Secret: ${createdTrigger.secret}" \\
   -H "Content-Type: application/json" \\
   -d '{"alert_id": "12345", "severity": "high"}'`}
@@ -284,7 +310,7 @@ export default function NewWebhookTriggerPage() {
               onClick={handleCloseModal}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
             >
-              {t('iveSavedMyWebhook')}
+              {t("iveSavedMyWebhook")}
             </button>
           </div>
         </div>

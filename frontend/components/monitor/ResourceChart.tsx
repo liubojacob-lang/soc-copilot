@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   AreaChart,
@@ -8,9 +8,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from 'recharts';
-import { useState, useMemo, useEffect } from 'react';
-import type { ResourceMetrics, HistoryPoint } from '@/lib/monitor';
+} from "recharts";
+import { useState, useMemo, useEffect } from "react";
+import type { ResourceMetrics, HistoryPoint } from "@/lib/monitor";
 
 interface ResourceChartProps {
   currentResources: ResourceMetrics;
@@ -23,36 +23,41 @@ interface ResourceChartProps {
   onTimeRangeChange?: (minutes: number) => void;
 }
 
-type TimeRange = '1h' | '6h' | '24h' | 'all';
+type TimeRange = "1h" | "6h" | "24h" | "all";
 
 // Time range to minutes mapping
 const TIME_RANGE_MINUTES: Record<TimeRange, number> = {
-  '1h': 60,
-  '6h': 360,
-  '24h': 1440,
-  'all': 1440, // Max 24 hours for 'all'
+  "1h": 60,
+  "6h": 360,
+  "24h": 1440,
+  all: 1440, // Max 24 hours for 'all'
 };
 
-export function ResourceChart({ currentResources, history = [], translations, onTimeRangeChange }: ResourceChartProps) {
+export function ResourceChart({
+  currentResources,
+  history = [],
+  translations,
+  onTimeRangeChange,
+}: ResourceChartProps) {
   // Calculate default time range based on history data span
   const getDefaultTimeRange = (): TimeRange => {
-    if (history.length === 0) return '24h';
-    return '24h'; // Always default to 24h for consistency
+    if (history.length === 0) return "24h";
+    return "24h"; // Always default to 24h for consistency
   };
 
   // Use 24h as default to show more historical data
-  const [timeRange, setTimeRange] = useState<TimeRange>('24h');
+  const [timeRange, setTimeRange] = useState<TimeRange>("24h");
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const t = translations || { title: 'Resource Trends', cpu: 'CPU', memory: 'Memory' };
+  const t = translations || { title: "Resource Trends", cpu: "CPU", memory: "Memory" };
 
   // Update translations for 'all' option
   const rangeLabels = {
-    '1h': '1h',
-    '6h': '6h',
-    '24h': '24h',
-    'all': 'All',
+    "1h": "1h",
+    "6h": "6h",
+    "24h": "24h",
+    all: "All",
   };
 
   // Handle time range change - fetch more data if needed
@@ -64,25 +69,23 @@ export function ResourceChart({ currentResources, history = [], translations, on
     }
   };
 
-  // Check dark mode - only after mount to avoid hydration mismatch
+  // Check dark mode using MutationObserver (no polling)
   useEffect(() => {
     setMounted(true);
-    const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    };
-    checkDarkMode();
-    // Check periodically
-    const interval = setInterval(checkDarkMode, 1000);
-    return () => clearInterval(interval);
+    setIsDark(document.documentElement.classList.contains("dark"));
+
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
   }, []);
 
   // Transform history data for chart
   const chartData = useMemo(() => {
-    console.log('[ResourceChart] Processing history:', {
-      historyLength: history.length,
-      timeRange,
-    });
-
     // Don't render anything until mounted to avoid hydration mismatch
     if (!mounted) {
       return [];
@@ -93,7 +96,7 @@ export function ResourceChart({ currentResources, history = [], translations, on
       const now = new Date();
       return [
         {
-          time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
+          time: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
           cpu: currentResources.cpu_percent,
           memory: currentResources.memory_percent,
         },
@@ -102,18 +105,17 @@ export function ResourceChart({ currentResources, history = [], translations, on
 
     const now = Date.now();
     const rangeMs = {
-      '1h': 60 * 60 * 1000,
-      '6h': 6 * 60 * 60 * 1000,
-      '24h': 24 * 60 * 60 * 1000,
-      'all': Infinity, // Show all data regardless of time
+      "1h": 60 * 60 * 1000,
+      "6h": 6 * 60 * 60 * 1000,
+      "24h": 24 * 60 * 60 * 1000,
+      all: Infinity, // Show all data regardless of time
     }[timeRange];
 
     // Smart time range filtering:
     // 1. Try to show data from [now - range, now] (last N hours up to now)
     // 2. If data is old and none falls in this range, show the most recent N hours of available data
-    const latestPointTime = history.length > 0
-      ? Math.max(...history.map(p => new Date(p.timestamp).getTime()))
-      : now;
+    const latestPointTime =
+      history.length > 0 ? Math.max(...history.map((p) => new Date(p.timestamp).getTime())) : now;
 
     const dataAge = now - latestPointTime;
 
@@ -123,7 +125,7 @@ export function ResourceChart({ currentResources, history = [], translations, on
     const referenceTime = useCurrentTimeRef ? now : latestPointTime;
 
     const filtered = history.filter((point) => {
-      if (timeRange === 'all') return true;
+      if (timeRange === "all") return true;
 
       const pointTime = new Date(point.timestamp).getTime();
       const age = referenceTime - pointTime;
@@ -132,61 +134,29 @@ export function ResourceChart({ currentResources, history = [], translations, on
       return isInRange;
     });
 
-    // Debug: Show time range info
-    if (filtered.length < 50 && history.length > 0) {
-      const timestamps = history.map(h => new Date(h.timestamp).getTime());
-      const oldestPoint = history.find(h => new Date(h.timestamp).getTime() === Math.min(...timestamps));
-      const latestPoint = history.find(h => new Date(h.timestamp).getTime() === Math.max(...timestamps));
-
-      console.log(`[ResourceChart] ⚠️ ${timeRange} range has only ${filtered.length} points`, {
-        input: history.length,
-        output: filtered.length,
-        reference: useCurrentTimeRef ? 'current_time' : 'latest_history',
-        referenceTime: new Date(referenceTime).toISOString(),
-        dataAge: Math.round(dataAge / 60000) + 'min',
-        timeRange: rangeMs / 3600000 + 'h',
-        latest: latestPoint?.timestamp,
-        oldest: oldestPoint?.timestamp,
-        timeSpan: latestPoint && oldestPoint ?
-          Math.round((new Date(latestPoint.timestamp).getTime() - new Date(oldestPoint.timestamp).getTime()) / 60000) + 'min'
-          : 'N/A',
-      });
-    }
-
-    console.log('[ResourceChart] Filtered result:', {
-      input: history.length,
-      output: filtered.length,
-    });
-
     const mapped = filtered.map((point) => {
       const date = new Date(point.timestamp);
       return {
         // Use manual time formatting to avoid locale-dependent hydration issues
-        time: `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`,
+        time: `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`,
         cpu: point.resources.cpu_percent,
         memory: point.resources.memory_percent,
       };
-    });
-
-    console.log('[ResourceChart] Chart data sample:', {
-      total: mapped.length,
-      first: mapped[0],
-      last: mapped[mapped.length - 1],
     });
 
     return mapped;
   }, [history, currentResources, timeRange, mounted]);
 
   const colors = {
-    grid: isDark ? '#334155' : '#e5e7eb',
-    text: isDark ? '#94a3b8' : '#6b7280',
+    grid: isDark ? "#334155" : "#e5e7eb",
+    text: isDark ? "#94a3b8" : "#6b7280",
     cpu: {
-      stroke: '#3b82f6',
-      fill: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+      stroke: "#3b82f6",
+      fill: isDark ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.1)",
     },
     memory: {
-      stroke: '#10b981',
-      fill: isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
+      stroke: "#10b981",
+      fill: isDark ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.1)",
     },
   };
 
@@ -195,11 +165,9 @@ export function ResourceChart({ currentResources, history = [], translations, on
     return (
       <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-slate-100">
-            {t.title}
-          </h3>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-slate-100">{t.title}</h3>
           <div className="flex gap-1">
-            {(['1h', '6h', '24h', 'all'] as TimeRange[]).map((range) => (
+            {(["1h", "6h", "24h", "all"] as TimeRange[]).map((range) => (
               <button
                 key={range}
                 disabled
@@ -220,20 +188,18 @@ export function ResourceChart({ currentResources, history = [], translations, on
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-900 dark:text-slate-100">
-          {t.title}
-        </h3>
+        <h3 className="text-sm font-medium text-gray-900 dark:text-slate-100">{t.title}</h3>
         <div className="flex gap-1">
-          {(['1h', '6h', '24h', 'all'] as TimeRange[]).map((range) => (
+          {(["1h", "6h", "24h", "all"] as TimeRange[]).map((range) => (
             <button
               key={range}
               onClick={() => handleTimeRangeChange(range)}
               className={`px-2 py-1 text-xs rounded transition-colors ${
                 timeRange === range
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                  : "text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700"
               }`}
-              title={range === 'all' ? 'Show all historical data' : `Show last ${range}`}
+              title={range === "all" ? "Show all historical data" : `Show last ${range}`}
             >
               {rangeLabels[range]}
             </button>
@@ -269,10 +235,10 @@ export function ResourceChart({ currentResources, history = [], translations, on
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                border: `1px solid ${isDark ? '#334155' : '#e5e7eb'}`,
-                borderRadius: '8px',
-                color: isDark ? '#e2e8f0' : '#1f2937',
+                backgroundColor: isDark ? "#1e293b" : "#ffffff",
+                border: `1px solid ${isDark ? "#334155" : "#e5e7eb"}`,
+                borderRadius: "8px",
+                color: isDark ? "#e2e8f0" : "#1f2937",
               }}
             />
             <Area

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import "../globals.css";
 import BackToTop from "@/components/BackToTop";
@@ -9,10 +9,10 @@ import { PageErrorBoundary } from "@/components/common/ErrorBoundary";
 import { ClientLayout } from "@/components/ClientLayout";
 import { WebVitals } from "@/components/WebVitals";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
-import { locales, type Locale } from '@/i18n';
+import { locales, type Locale } from "@/i18n";
 
 export async function generateMetadata({
-  params
+  params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
@@ -26,8 +26,8 @@ export async function generateMetadata({
   const t = await getTranslations({ locale });
 
   return {
-    title: t('meta.title'),
-    description: t('meta.description'),
+    title: t("meta.title"),
+    description: t("meta.description"),
   };
 }
 
@@ -48,14 +48,14 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({
   children,
-  params
+  params,
 }: {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
   // Await params before using (Next.js 15 requirement)
   const { locale } = await params;
-  
+
   // Validate locale
   if (!locales.includes(locale as Locale)) {
     notFound();
@@ -79,9 +79,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <ResponsiveProvider>
             <PageErrorBoundary>
-              <ClientLayout>
-                {children}
-              </ClientLayout>
+              <ClientLayout>{children}</ClientLayout>
             </PageErrorBoundary>
             <BackToTop />
             <KeyboardShortcutsHelp />

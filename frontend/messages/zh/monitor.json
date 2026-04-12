@@ -1,0 +1,95 @@
+{
+  "monitor": {
+    "title": "系统监控",
+    "subtitle": "实时监控系统性能和资源使用",
+    "cpu": "CPU",
+    "memory": "内存",
+    "disk": "磁盘",
+    "network": "网络",
+    "live": "实时",
+    "offline": "离线",
+    "pollingMode": "轮询模式",
+    "latency": "延迟",
+    "sseConnected": "SSE 已连接",
+    "actions": {
+      "exitFullscreen": "退出全屏",
+      "fullscreen": "全屏",
+      "refresh": "刷新"
+    },
+    "activities": {
+      "empty": "暂无活动",
+      "title": "活动"
+    },
+    "chart": {
+      "title": "图表",
+      "cpu": "CPU",
+      "memory": "内存"
+    },
+    "resources": {
+      "cpu": "CPU",
+      "memory": "内存",
+      "disk": "磁盘"
+    },
+    "services": {
+      "title": "服务",
+      "database": "数据库",
+      "redis": "Redis",
+      "ai": "AI",
+      "queue": "队列"
+    },
+    "status": {
+      "ok": "正常",
+      "error": "错误",
+      "initializing": "初始化中",
+      "degraded": "降级",
+      "disabled": "已禁用"
+    },
+    "errors": {
+      "connectionFailed": "连接失败"
+    },
+    "threatLevel": "威胁等级",
+    "safe": "安全",
+    "warning": "警告",
+    "reputationDistribution": "声誉分布",
+    "breakdownByType": "按类型细分",
+    "count": "数量",
+    "percentage": "百分比"
+  },
+  "websocket": {
+    "monitoring": {
+      "latency": "延迟",
+      "average": "平均",
+      "p95": "P95",
+      "p99": "P99",
+      "connectionDetails": "连接详情",
+      "activeConnections": "活跃连接",
+      "totalConnections": "总连接",
+      "messageDetails": "消息详情",
+      "errorDetails": "错误详情",
+      "critical": "严重",
+      "rate": "速率",
+      "totalDisconnections": "总断开",
+      "connectionFailures": "连接失败",
+      "avgDuration": "平均持续时间",
+      "messagesSent": "已发送消息",
+      "messagesReceived": "已接收消息",
+      "messagesFiltered": "已过滤消息",
+      "messagesQueued": "队列中消息",
+      "sendRate": "发送速率",
+      "receiveRate": "接收速率",
+      "performanceDetails": "性能详情",
+      "avgLatency": "平均延迟",
+      "p50Latency": "P50 延迟",
+      "p95Latency": "P95 延迟",
+      "p99Latency": "P99 延迟",
+      "maxLatency": "最大延迟",
+      "errorBreakdown": "错误细分"
+    },
+    "filters": {
+      "title": "筛选器",
+      "add": "添加筛选器",
+      "remove": "移除",
+      "clear": "清除"
+    }
+  }
+}

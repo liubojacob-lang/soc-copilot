@@ -8,11 +8,52 @@ import { loadAuthState, isAdmin, authFetchJSON } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
 import { CheckCircle, XCircle, RefreshCw, Database, HardDrive, Cpu, Settings } from "lucide-react";
 
+interface DatabaseHealth {
+  status: string;
+  latency_ms?: number;
+  version?: string;
+  error?: string;
+}
+
+interface RedisHealth {
+  status: string;
+  latency_ms?: number;
+  connected_clients?: number;
+  error?: string;
+}
+
+interface MemoryInfo {
+  percent_used: number;
+  used_gb: number;
+  total_gb: number;
+}
+
+interface DiskInfo {
+  percent_used: number;
+  used_gb: number;
+  total_gb: number;
+}
+
+interface SystemResources {
+  cpu_percent: number;
+  memory?: MemoryInfo;
+  disk?: DiskInfo;
+  platform?: string;
+  uptime_seconds?: number;
+}
+
+interface DashboardHealth {
+  database?: DatabaseHealth;
+  redis?: RedisHealth;
+  system?: SystemResources;
+  features?: Record<string, boolean>;
+}
+
 interface HealthState {
-  dashboard: any | null;
-  database: any | null;
-  redis: any | null;
-  resources: any | null;
+  dashboard: DashboardHealth | null;
+  database: DatabaseHealth | null;
+  redis: RedisHealth | null;
+  resources: SystemResources | null;
   features: Record<string, boolean> | null;
 }
 
@@ -50,8 +91,8 @@ export default function AdminHealthPage() {
         resources,
         features,
       });
-    } catch (err: any) {
-      setError(err?.message || "Failed to load health data");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load health data");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -84,7 +125,10 @@ export default function AdminHealthPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("systemHealth", { default: "System Health" })} subtitle={t("subtitle", { default: "Runtime status and infrastructure health" })} />
+      <Navigation
+        title={t("systemHealth", { default: "System Health" })}
+        subtitle={t("subtitle", { default: "Runtime status and infrastructure health" })}
+      />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-end mb-6">
@@ -131,35 +175,37 @@ export default function AdminHealthPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">{t('resources')}</h3>
+                <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">
+                  {t("resources")}
+                </h3>
                 <div className="space-y-2 text-sm">
-                  <Row label={t('cpu')} value={`${resources?.cpu_percent ?? 0}%`} />
+                  <Row label={t("cpu")} value={`${resources?.cpu_percent ?? 0}%`} />
                   <Row
-                    label={t('memory')}
+                    label={t("memory")}
                     value={`${resources?.memory?.percent_used ?? 0}% (${resources?.memory?.used_gb ?? 0} / ${resources?.memory?.total_gb ?? 0} GB)`}
                   />
                   <Row
-                    label={t('disk')}
+                    label={t("disk")}
                     value={`${resources?.disk?.percent_used ?? 0}% (${resources?.disk?.used_gb ?? 0} / ${resources?.disk?.total_gb ?? 0} GB)`}
                   />
-                  <Row label={t('platform')} value={resources?.platform || "-"} />
+                  <Row label={t("platform")} value={resources?.platform || "-"} />
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                 <h3 className="font-semibold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
                   <Settings className="w-4 h-4" />
-                  {t('features')}
+                  {t("features")}
                 </h3>
                 <div className="space-y-2 text-sm">
                   {Object.keys(features).length === 0 ? (
-                    <div className="text-gray-500">{t('noFeatures')}</div>
+                    <div className="text-gray-500">{t("noFeatures")}</div>
                   ) : (
                     Object.entries(features).map(([key, enabled]) => (
                       <div key={key} className="flex items-center justify-between">
                         <span className="text-gray-600 dark:text-gray-300">{key}</span>
                         <span className={enabled ? "text-green-600" : "text-gray-500"}>
-                          {enabled ? t('enabled') : t('disabled')}
+                          {enabled ? t("enabled") : t("disabled")}
                         </span>
                       </div>
                     ))

@@ -1,19 +1,17 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations, useLocale } from "next-intl";
 import { loadAuthState, logout, isAdmin } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
-import {
-  Settings as SettingsIcon,
-} from "lucide-react";
+import { Settings as SettingsIcon } from "lucide-react";
 
 export default function SettingsPage() {
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations('settings');
-  const tCommon = useTranslations('common');
+  const t = useTranslations("settings");
+  const tCommon = useTranslations("common");
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -25,7 +23,7 @@ export default function SettingsPage() {
       return;
     }
     if (!isAdmin(authState.user)) {
-      setError(t('errors.adminOnly'));
+      setError(t("errors.adminOnly"));
       return;
     }
   }, [router, t]);
@@ -59,12 +57,8 @@ export default function SettingsPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {t('title')}
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {t('description')}
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">{t("description")}</p>
         </div>
 
         {/* Settings Sections */}
@@ -74,15 +68,19 @@ export default function SettingsPage() {
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <SettingsIcon className="w-5 h-5" />
-                {t('otherSettings')}
+                {t("otherSettings")}
               </h3>
               <div className="space-y-2">
                 <a
                   href="/settings/api-keys"
                   className="block px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <div className="font-medium text-gray-900 dark:text-white">{t('apiKeysSection')}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{t('apiKeysDescription')}</div>
+                  <div className="font-medium text-gray-900 dark:text-white">
+                    {t("apiKeysSection")}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {t("apiKeysDescription")}
+                  </div>
                 </a>
               </div>
             </div>

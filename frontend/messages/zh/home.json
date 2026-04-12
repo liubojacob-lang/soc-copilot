@@ -1,0 +1,27 @@
+{
+  "home": {
+    "title": "SOC Copilot",
+    "subtitle": "安全运营中心",
+    "loading": "加载中...",
+    "securityOperations": "安全运营",
+    "refreshData": "刷新数据",
+    "tabs": {
+      "alertAnalyzer": "告警分析器",
+      "timelineBuilder": "时间线构建器",
+      "reportWriter": "报告编写器",
+      "assets": "资产管理"
+    }
+  },
+  "welcome": {
+    "title": "欢迎使用 SOC Copilot",
+    "greeting": "你好！我是您的 AI 安全运营助手",
+    "prompt": "有什么可以帮您？试试问：\"帮我分析最近的告警\"",
+    "capabilities": "AI 驱动的安全运营能力",
+    "features": {
+      "naturalLanguage": "使用自然语言与 AI 交互",
+      "alertAnalysis": "智能分析安全告警",
+      "playbookRecommend": "推荐最佳响应剧本",
+      "reportGeneration": "自动生成安全事件报告"
+    }
+  }
+}

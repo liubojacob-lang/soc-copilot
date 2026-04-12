@@ -2,11 +2,11 @@
  * ErrorDisplay - User-friendly error display component
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import type { AppError } from '@/lib/errorHandler';
+import React from "react";
+import { useRouter } from "next/navigation";
+import type { AppError } from "@/lib/errorHandler";
 
 interface ErrorDisplayProps {
   error: AppError | Error | string;
@@ -22,7 +22,7 @@ export function ErrorDisplay({
   onRetry,
   onDismiss,
   showRequestId = true,
-  className = '',
+  className = "",
   compact = false,
 }: ErrorDisplayProps) {
   const router = useRouter();
@@ -35,8 +35,8 @@ export function ErrorDisplay({
       normalizedError.action();
     } else if (onRetry) {
       onRetry();
-    } else if (normalizedError.actionLabel === 'Go to Login') {
-      router.push('/login');
+    } else if (normalizedError.actionLabel === "Go to Login") {
+      router.push("/login");
     }
   };
 
@@ -53,11 +53,8 @@ export function ErrorDisplay({
         </svg>
         <span className="text-sm font-medium">{normalizedError.message}</span>
         {(normalizedError.actionLabel || onRetry) && (
-          <button
-            onClick={handleAction}
-            className="text-xs underline hover:no-underline ml-2"
-          >
-            {normalizedError.actionLabel || 'Retry'}
+          <button onClick={handleAction} className="text-xs underline hover:no-underline ml-2">
+            {normalizedError.actionLabel || "Retry"}
           </button>
         )}
       </div>
@@ -85,9 +82,7 @@ export function ErrorDisplay({
       </h3>
 
       {/* Error Message */}
-      <p className="text-gray-600 dark:text-gray-400 mb-2 max-w-md">
-        {normalizedError.message}
-      </p>
+      <p className="text-gray-600 dark:text-gray-400 mb-2 max-w-md">{normalizedError.message}</p>
 
       {/* Suggestion */}
       {normalizedError.suggestion && (
@@ -110,7 +105,7 @@ export function ErrorDisplay({
             onClick={handleAction}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
-            {normalizedError.actionLabel || 'Retry'}
+            {normalizedError.actionLabel || "Retry"}
           </button>
         )}
         {onDismiss && (
@@ -136,11 +131,13 @@ interface ErrorAlertProps {
   className?: string;
 }
 
-export function ErrorAlert({ error, onRetry, onDismiss, className = '' }: ErrorAlertProps) {
+export function ErrorAlert({ error, onRetry, onDismiss, className = "" }: ErrorAlertProps) {
   const normalizedError = normalizeError(error);
 
   return (
-    <div className={`bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 ${className}`}>
+    <div
+      className={`bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 ${className}`}
+    >
       <div className="flex items-start">
         <div className="flex-shrink-0">
           <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -230,9 +227,7 @@ export function ErrorToast({ error, onRetry, onDismiss, duration = 5000 }: Error
           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {normalizedError.title}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {normalizedError.message}
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{normalizedError.message}</p>
         </div>
         <div className="ml-4 flex flex-shrink-0 gap-2">
           {onRetry && (
@@ -261,21 +256,21 @@ export function ErrorToast({ error, onRetry, onDismiss, duration = 5000 }: Error
  * Normalize error to AppError format
  */
 function normalizeError(error: AppError | Error | string): AppError {
-  if (typeof error === 'string') {
+  if (typeof error === "string") {
     return {
-      code: 'GENERIC_ERROR',
-      title: 'Error',
+      code: "GENERIC_ERROR",
+      title: "Error",
       message: error,
-      suggestion: 'Please try again.',
+      suggestion: "Please try again.",
     };
   }
 
   if (error instanceof Error) {
     return {
-      code: 'GENERIC_ERROR',
-      title: 'Error',
+      code: "GENERIC_ERROR",
+      title: "Error",
       message: error.message,
-      suggestion: 'Please try again.',
+      suggestion: "Please try again.",
       details: error.stack,
     };
   }

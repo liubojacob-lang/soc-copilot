@@ -1,0 +1,64 @@
+{
+  "reports": {
+    "title": "Reports",
+    "generate": "Generate",
+    "download": "Download",
+    "history": "History",
+    "templates": {
+      "ticket": {
+        "name": "Incident Ticket",
+        "description": "Create a formatted incident ticket for tracking and escalation"
+      },
+      "daily": {
+        "name": "Daily SOC Report",
+        "description": "Daily security operations center summary report"
+      },
+      "postmortem": {
+        "name": "Post-Incident Report",
+        "description": "Detailed post-incident analysis and lessons learned"
+      }
+    },
+    "sharing": "分享",
+    "format": "格式",
+    "pdf": "PDF",
+    "html": "HTML",
+    "json": "JSON",
+    "csv": "CSV",
+    "subtitle": "Generate and manage security reports",
+    "searchPlaceholder": "Search reports...",
+    "noReports": "No reports found",
+    "createReport": "Create Report",
+    "reportType": "Report Type",
+    "incidentId": "Incident ID",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "notes": "Notes",
+    "notesPlaceholder": "Any specific requirements or notes...",
+    "generating": "Generating...",
+    "generateFailed": "Failed to generate report",
+    "deleteReport": "Delete Report",
+    "deleteConfirm": "Are you sure you want to delete this report?",
+    "additionalNotes": "Additional Notes",
+    "alertId": "Alert ID",
+    "alertIdPlaceholder": "e.g., alert-123",
+    "availableTemplates": "Available Templates",
+    "description": "Description",
+    "enterAlertId": "Please enter an alert ID",
+    "generateReports": "Generate Reports",
+    "noReportsDescription": "Enter an alert ID and click Generate to create report templates",
+    "noReportsGenerated": "No Reports Generated"
+  },
+  "tabs": {
+    "alertAnalyzer": "Alert Analyzer",
+    "timelineBuilder": "Timeline Builder",
+    "reportWriter": "Report Writer",
+    "assets": "Assets",
+    "definitions": "Definitions",
+    "runs": "Runs"
+  },
+  "resources": {
+    "cpu": "CPU",
+    "memory": "Memory",
+    "disk": "Disk"
+  }
+}

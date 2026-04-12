@@ -7,35 +7,31 @@ import { cn } from "@/lib/utils";
 /**
  * Card 组件变体配置
  */
-const cardVariants = cva(
-  "rounded-2xl border transition-all duration-300 overflow-hidden",
-  {
-    variants: {
-      variant: {
-        default:
-          "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-card hover:shadow-elevated",
-        outlined:
-          "bg-transparent border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-card",
-        elevated:
-          "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-elevated hover:shadow-[0_20px_25px_-5px_rgb(0_0_0/0.1),0_8px_10px_-6px_rgb(0_0_0/0.1)]",
-        glass:
-          "bg-white/75 dark:bg-gray-800/75 backdrop-blur-glass border-white/50 dark:border-gray-700/50 shadow-glass hover:bg-white/85 dark:hover:bg-gray-800/85",
-        neumorphic:
-          "bg-gray-75 dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-neumorphic dark:shadow-neumorphic-dark",
-      },
-      padding: {
-        none: "",
-        sm: "p-3",
-        md: "p-5",
-        lg: "p-6",
-      },
+const cardVariants = cva("rounded-2xl border transition-all duration-300 overflow-hidden", {
+  variants: {
+    variant: {
+      default:
+        "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-card hover:shadow-elevated",
+      outlined: "bg-transparent border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-card",
+      elevated:
+        "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-elevated hover:shadow-[0_20px_25px_-5px_rgb(0_0_0/0.1),0_8px_10px_-6px_rgb(0_0_0/0.1)]",
+      glass:
+        "bg-white/75 dark:bg-gray-800/75 backdrop-blur-glass border-white/50 dark:border-gray-700/50 shadow-glass hover:bg-white/85 dark:hover:bg-gray-800/85",
+      neumorphic:
+        "bg-gray-75 dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-neumorphic dark:shadow-neumorphic-dark",
     },
-    defaultVariants: {
-      variant: "default",
-      padding: "md",
+    padding: {
+      none: "",
+      sm: "p-3",
+      md: "p-5",
+      lg: "p-6",
     },
-  }
-);
+  },
+  defaultVariants: {
+    variant: "default",
+    padding: "md",
+  },
+});
 
 type CardVariant = VariantProps<typeof cardVariants>["variant"];
 type CardPadding = VariantProps<typeof cardVariants>["padding"];
@@ -61,9 +57,7 @@ function Card({
   className,
   onClick,
 }: CardProps) {
-  const hoverClasses = onClick
-    ? "cursor-pointer hover:-translate-y-1 active:translate-y-0"
-    : "";
+  const hoverClasses = onClick ? "cursor-pointer hover:-translate-y-1 active:translate-y-0" : "";
 
   const paddingClasses = {
     none: "",
@@ -99,23 +93,17 @@ function Card({
             )}
             <div>
               {title && (
-                <h3 className="font-semibold text-gray-900 dark:text-white text-base">
-                  {title}
-                </h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white text-base">{title}</h3>
               )}
               {subtitle && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                  {subtitle}
-                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>
               )}
             </div>
           </div>
           {action && <div>{action}</div>}
         </div>
       )}
-      <div className={paddingClasses[padding || "md"]}>
-        {children}
-      </div>
+      <div className={paddingClasses[padding || "md"]}>{children}</div>
     </div>
   );
 }
@@ -210,13 +198,13 @@ function StatCard({
   const gradientTextClass = `bg-gradient-to-r ${colors.gradient}`;
 
   return (
-    <Card 
-      variant="elevated" 
+    <Card
+      variant="elevated"
       className={cn(
-        delayClass, 
-        colors.glow, 
-        "group", 
-        "hover:-translate-y-1", 
+        delayClass,
+        colors.glow,
+        "group",
+        "hover:-translate-y-1",
         "transition-all duration-300",
         className
       )}
@@ -226,18 +214,18 @@ function StatCard({
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 transition-colors group-hover:text-gray-700 dark:group-hover:text-gray-200">
             {title}
           </p>
-          <p className={cn(
-            "mt-2 text-3xl font-bold tracking-tight",
-            "bg-clip-text text-transparent",
-            gradientTextClass,
-            "-webkit-background-clip text"
-          )}>
+          <p
+            className={cn(
+              "mt-2 text-3xl font-bold tracking-tight",
+              "bg-clip-text text-transparent",
+              gradientTextClass,
+              "-webkit-background-clip text"
+            )}
+          >
             {value}
           </p>
           {subtitle && (
-            <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-              {subtitle}
-            </p>
+            <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
           )}
           {trend && (
             <div className="mt-2.5 flex items-center gap-1.5">
@@ -248,8 +236,8 @@ function StatCard({
                   trendDirection === "up"
                     ? "text-success-600 dark:text-success-400"
                     : trendDirection === "down"
-                    ? "text-danger-600 dark:text-danger-400"
-                    : "text-gray-500 dark:text-gray-400"
+                      ? "text-danger-600 dark:text-danger-400"
+                      : "text-gray-500 dark:text-gray-400"
                 )}
               >
                 {trend}
@@ -258,13 +246,15 @@ function StatCard({
           )}
         </div>
         {icon && (
-          <div className={cn(
-            "p-3.5 rounded-2xl",
-            colors.iconBg,
-            colors.text,
-            colors.border,
-            "group-hover:scale-110 group-hover:rotate-5 transition-all duration-300"
-          )}>
+          <div
+            className={cn(
+              "p-3.5 rounded-2xl",
+              colors.iconBg,
+              colors.text,
+              colors.border,
+              "group-hover:scale-110 group-hover:rotate-5 transition-all duration-300"
+            )}
+          >
             {icon}
           </div>
         )}
