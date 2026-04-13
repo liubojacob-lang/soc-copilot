@@ -10,7 +10,7 @@ import { useChatHistory, type ChatConversation } from "@/hooks/useChatHistory";
 import { ChatHistorySidebar } from "@/components/ChatHistorySidebar";
 import { ChatHeader, ChatInput, ChatMessages, QuickActions } from "./components";
 import { useAIChat } from "./hooks/useAIChat";
-import { getErrorMessage, cleanModelName } from "./utils";
+import { getErrorMessage, cleanModelName, convertToHistoryMessage } from "./utils";
 import type { QuickAction } from "./types";
 import { AlertTriangle, Lightbulb, FileText, Brain, Zap } from "lucide-react";
 
@@ -111,7 +111,6 @@ ${t("welcome.prompt")}`;
     }
     const hasUserMessages = messages.some((m) => m.role === "user");
     if (hasUserMessages) {
-      const { convertToHistoryMessage } = require("./utils");
       const historyMessages = messages.map(convertToHistoryMessage) as any[];
       saveConversation(historyMessages, selectedModel?.id, selectedModel?.display_name);
     }

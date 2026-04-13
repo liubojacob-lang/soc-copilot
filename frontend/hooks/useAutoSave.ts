@@ -74,12 +74,19 @@ export function useAutoSave<T>({
     localStorage.removeItem(`${key}_backup`);
   }, [key]);
 
-  // Perform save
+  // Track saving state with a ref to avoid stale-closure issues
+  const isSavingRef = useRef(false);
+  const hasUnsavedChangesRef = useRef(false);
+
+  // Update ref when state changes
+  useEffect(() => {
+    hasUnsavedChangesRef.current = state.hasUnsavedChanges;
+  }, [state.hasUnsavedChanges]);
+
   const performSave = useCallback(async () => {
-    if (state.isSaving) return;
-
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
     setState((prev) => ({ ...prev, isSaving: true, error: null }));
-
     try {
       await saveFunction(data);
       setState((prev) => ({
@@ -96,8 +103,10 @@ export function useAutoSave<T>({
         error: (error as Error).message,
       }));
       saveBackup(); // Save backup on failure
+    } finally {
+      isSavingRef.current = false;
     }
-  }, [data, saveFunction, state.isSaving, clearBackup, saveBackup]);
+  }, [data, saveFunction, clearBackup, saveBackup]);
 
   // Detect changes
   useEffect(() => {
@@ -116,11 +125,11 @@ export function useAutoSave<T>({
     }
   }, [data, debounce, saveBackup]);
 
-  // Periodic auto-save
+  // Periodic auto-save - use ref to avoid interval recreation on state changes
   useEffect(() => {
     if (interval > 0) {
       intervalTimerRef.current = setInterval(() => {
-        if (state.hasUnsavedChanges) {
+        if (hasUnsavedChangesRef.current) {
           performSave();
         }
       }, interval);
@@ -134,7 +143,7 @@ export function useAutoSave<T>({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [interval, state.hasUnsavedChanges, performSave]);
+  }, [interval, performSave]);
 
   // Warn on page close
   useEffect(() => {
