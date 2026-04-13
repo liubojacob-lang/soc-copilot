@@ -129,6 +129,7 @@ export function GlobalSearch() {
           <button
             onClick={() => setIsOpen(false)}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            aria-label="Close search"
           >
             <X className="w-4 h-4 text-gray-400" />
           </button>

@@ -121,6 +121,9 @@ export function HistoryPanel({ module, onSelect, onClose }: HistoryPanelProps) {
 
       {/* Modal */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="History"
         ref={modalRef}
         className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
       >

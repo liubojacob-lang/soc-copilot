@@ -205,7 +205,7 @@ export const AlertNotes = React.memo(function AlertNotes({
                         <button
                           onClick={() => handleEditStart(note)}
                           className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                          title={t("editNote")}
+                          aria-label={t("editNote")}
                         >
                           <Edit className="w-4 h-4 text-gray-500" />
                         </button>
@@ -214,7 +214,7 @@ export const AlertNotes = React.memo(function AlertNotes({
                       <button
                         onClick={() => handleDelete(note.id)}
                         className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
-                        title={t("deleteNote")}
+                        aria-label={t("deleteNote")}
                       >
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </button>

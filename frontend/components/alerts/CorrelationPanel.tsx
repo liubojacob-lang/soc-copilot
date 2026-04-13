@@ -233,7 +233,12 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Incident details"
+    >
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
         {/* Header */}
         <div className="p-4 border-b flex items-center justify-between">

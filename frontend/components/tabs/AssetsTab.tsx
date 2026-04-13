@@ -260,12 +260,14 @@ export const AssetsTab = React.memo(function AssetsTab() {
                 <button
                   onClick={() => openEditModal(asset)}
                   className="p-1 text-gray-400 hover:text-blue-600 rounded"
+                  aria-label={t("editAsset")}
                 >
                   <Edit className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => handleDelete(asset.id)}
                   className="p-1 text-gray-400 hover:text-red-600 rounded"
+                  aria-label={t("deleteAsset")}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -321,12 +323,18 @@ function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div
+        className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-gray-700">
           <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
           <button
             onClick={onClose}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            aria-label="Close"
           >
             <X className="w-4 h-4 text-gray-400" />
           </button>

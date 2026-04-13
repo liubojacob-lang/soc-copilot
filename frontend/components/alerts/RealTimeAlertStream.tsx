@@ -350,6 +350,7 @@ export function WazuhAlertStream({
             <button
               onClick={() => setShowFiltersPanel(false)}
               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              aria-label="Close filters"
             >
               <X className="w-4 h-4" />
             </button>

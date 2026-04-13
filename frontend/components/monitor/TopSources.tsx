@@ -189,7 +189,10 @@ export const TopSources = React.memo(function TopSources({
                   </div>
 
                   {/* 展开按钮 */}
-                  <button className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
+                  <button
+                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    aria-label={isExpanded ? "Collapse" : "Expand"}
+                  >
                     {isExpanded ? (
                       <ChevronUp className="w-4 h-4 text-gray-500" />
                     ) : (

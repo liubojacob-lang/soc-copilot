@@ -178,6 +178,7 @@ export const MonitoringDashboard = React.memo(function MonitoringDashboard() {
             onClick={fetchMetrics}
             disabled={refreshing}
             className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            aria-label="Refresh metrics"
           >
             <RefreshCw className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} />
           </button>
