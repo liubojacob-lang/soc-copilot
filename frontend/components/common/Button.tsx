@@ -4,6 +4,7 @@ import { ReactNode, ButtonHTMLAttributes, forwardRef, useState, useRef, useEffec
 import { cva, type VariantProps } from "class-variance-authority";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { patterns, transitions } from "@/styles/designTokens";
 
 interface Ripple {
   id: number;
@@ -11,34 +12,27 @@ interface Ripple {
   y: number;
 }
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation relative overflow-hidden",
-  {
-    variants: {
-      variant: {
-        primary:
-          "bg-soc-600 text-white hover:bg-soc-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-soc-500 focus:ring-offset-2 active:bg-soc-800",
-        secondary:
-          "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2",
-        ghost:
-          "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2",
-        danger:
-          "bg-danger-600 text-white hover:bg-danger-700 focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2 active:bg-danger-800",
-        outline:
-          "border border-gray-300 dark:border-gray-600 bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2",
-      },
-      size: {
-        sm: "px-3 py-1.5 text-sm",
-        md: "px-4 py-2.5 text-sm",
-        lg: "px-6 py-3 text-base",
-      },
+// Extract Tailwind classes from design tokens
+const buttonVariants = cva(patterns.button.base, {
+  variants: {
+    variant: {
+      primary: patterns.button.variants.primary,
+      secondary: patterns.button.variants.secondary,
+      ghost: patterns.button.variants.ghost,
+      danger: patterns.button.variants.danger,
+      outline: patterns.button.variants.outline,
     },
-    defaultVariants: {
-      variant: "primary",
-      size: "md",
+    size: {
+      sm: patterns.button.sizes.sm,
+      md: patterns.button.sizes.md,
+      lg: patterns.button.sizes.lg,
     },
-  }
-);
+  },
+  defaultVariants: {
+    variant: "primary",
+    size: "md",
+  },
+});
 
 type ButtonVariant = VariantProps<typeof buttonVariants>["variant"];
 type ButtonSize = VariantProps<typeof buttonVariants>["size"];
