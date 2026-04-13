@@ -29,7 +29,7 @@ interface AlertNotesProps {
   canEdit?: boolean;
 }
 
-export function AlertNotes({
+export const AlertNotes = React.memo(function AlertNotes({
   notes,
   onAdd,
   onDelete,
@@ -266,7 +266,7 @@ export function AlertNotes({
       </div>
     </div>
   );
-}
+});
 
 // 简化版：仅用于侧边栏显示
 export function CompactNotes({ notes, limit = 3 }: { notes: AlertNote[]; limit?: number }) {

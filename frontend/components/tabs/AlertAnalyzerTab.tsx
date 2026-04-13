@@ -5,7 +5,7 @@
  * v0.8.2: Extracted from page.tsx for better code organization
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import ReactMarkdown from "react-markdown";
 import { api, AlertAnalysisResponse, HistoryRecord } from "@/lib/api";
@@ -27,7 +27,9 @@ interface AlertAnalyzerTabProps {
   onHistoryToggle: () => void;
 }
 
-export function AlertAnalyzerTab({ onHistoryToggle }: AlertAnalyzerTabProps) {
+export const AlertAnalyzerTab = React.memo(function AlertAnalyzerTab({
+  onHistoryToggle,
+}: AlertAnalyzerTabProps) {
   const t = useTranslations("alertAnalyzer");
   const [input, setInput] = useState("");
   const [result, setResult] = useState<AlertAnalysisResponse | null>(null);
@@ -227,4 +229,4 @@ export function AlertAnalyzerTab({ onHistoryToggle }: AlertAnalyzerTabProps) {
       </div>
     </div>
   );
-}
+});

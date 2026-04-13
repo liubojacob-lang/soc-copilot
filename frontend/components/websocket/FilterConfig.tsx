@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { loadAuthState } from "@/lib/auth";
 import { Shield, Filter, Plus, Trash2, Save, RefreshCw, CheckCircle } from "lucide-react";
@@ -28,7 +28,7 @@ interface FilterSet {
 
 const SEVERITY_LEVELS: SeverityLevel[] = ["critical", "high", "medium", "low", "info"];
 
-export function FilterConfig() {
+export const FilterConfig = React.memo(function FilterConfig() {
   const t = useTranslations("websocket.filters");
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -485,4 +485,4 @@ export function FilterConfig() {
       </div>
     </div>
   );
-}
+});

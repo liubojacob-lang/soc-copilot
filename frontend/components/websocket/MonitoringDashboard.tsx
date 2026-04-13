@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { loadAuthState } from "@/lib/auth";
 import {
@@ -60,7 +60,7 @@ interface MetricsData {
 
 type TimeRange = "1h" | "6h" | "24h" | "7d";
 
-export function MonitoringDashboard() {
+export const MonitoringDashboard = React.memo(function MonitoringDashboard() {
   const t = useTranslations("websocket.monitoring");
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -321,7 +321,7 @@ export function MonitoringDashboard() {
       </div>
     </div>
   );
-}
+});
 
 interface MetricCardProps {
   title: string;

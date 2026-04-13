@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { authFetchJSON } from "@/lib/auth";
 import { Search, Plus, Edit, Trash2, X, Server, User, Building } from "lucide-react";
@@ -26,7 +26,7 @@ const CRITICALITY_COLORS = {
   critical: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
-export function AssetsTab() {
+export const AssetsTab = React.memo(function AssetsTab() {
   const t = useTranslations("assets");
   const tCommon = useTranslations("common");
 
@@ -306,7 +306,7 @@ export function AssetsTab() {
       )}
     </div>
   );
-}
+});
 
 // Modal Component
 function Modal({

@@ -5,7 +5,7 @@
  * v0.8.2: Extracted from page.tsx for better code organization
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import ReactMarkdown from "react-markdown";
 import { api, ReportGenerationResponse, HistoryRecord } from "@/lib/api";
@@ -15,7 +15,9 @@ interface ReportWriterTabProps {
   onHistoryToggle: () => void;
 }
 
-export function ReportWriterTab({ onHistoryToggle }: ReportWriterTabProps) {
+export const ReportWriterTab = React.memo(function ReportWriterTab({
+  onHistoryToggle,
+}: ReportWriterTabProps) {
   const t = useTranslations("tabs");
   const [input, setInput] = useState("");
   const [notes, setNotes] = useState("");
@@ -142,4 +144,4 @@ export function ReportWriterTab({ onHistoryToggle }: ReportWriterTabProps) {
       </div>
     </div>
   );
-}
+});

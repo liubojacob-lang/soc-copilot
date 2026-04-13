@@ -55,7 +55,7 @@ const ACTION_COLORS = {
     "bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300",
 };
 
-export function AlertActions({
+export const AlertActions = React.memo(function AlertActions({
   alertId,
   currentStatus,
   canResolve = true,
@@ -234,7 +234,7 @@ export function AlertActions({
       )}
     </>
   );
-}
+});
 
 interface ActionDialogProps {
   action: Action;

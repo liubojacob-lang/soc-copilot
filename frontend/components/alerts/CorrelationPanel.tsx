@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { AlertTriangle, Link2, Clock, User, Server } from "lucide-react";
 
@@ -28,7 +28,9 @@ interface CorrelationPanelProps {
   alertId: string;
 }
 
-export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
+export const CorrelationPanel = React.memo(function CorrelationPanel({
+  alertId,
+}: CorrelationPanelProps) {
   const t = useTranslations("correlation");
   const [incidents, setIncidents] = useState<CorrelatedEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,7 +197,7 @@ export function CorrelationPanel({ alertId }: CorrelationPanelProps) {
       )}
     </div>
   );
-}
+});
 
 interface IncidentDetailModalProps {
   incident: CorrelatedEvent;

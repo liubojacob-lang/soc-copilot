@@ -5,7 +5,7 @@
  * v0.8.2: Extracted from page.tsx for better code organization
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import { api, TimelineResponse, HistoryRecord, SuspiciousEvent } from "@/lib/api";
 import { Loading, Error, CopyButton } from "@/components/common/UIComponents";
@@ -15,7 +15,9 @@ interface TimelineBuilderTabProps {
   onHistoryToggle: () => void;
 }
 
-export function TimelineBuilderTab({ onHistoryToggle }: TimelineBuilderTabProps) {
+export const TimelineBuilderTab = React.memo(function TimelineBuilderTab({
+  onHistoryToggle,
+}: TimelineBuilderTabProps) {
   const t = useTranslations("tabs");
   const [input, setInput] = useState("");
   const [logType, setLogType] = useState<string>("");
@@ -182,4 +184,4 @@ Feb  5 10:23:46 server01 sshd[1234]: Failed password for root from 192.168.1.100
       </div>
     </div>
   );
-}
+});

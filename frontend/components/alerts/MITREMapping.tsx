@@ -89,7 +89,10 @@ const KILL_CHAIN_ORDER = [
   "exfiltration",
 ];
 
-export function MITREMapping({ tactics, stage }: MITREMappingProps) {
+export const MITREMapping = React.memo(function MITREMapping({
+  tactics,
+  stage,
+}: MITREMappingProps) {
   if (!tactics || tactics.length === 0) {
     return (
       <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
@@ -288,4 +291,4 @@ export function MITREMapping({ tactics, stage }: MITREMappingProps) {
       </div>
     </div>
   );
-}
+});
