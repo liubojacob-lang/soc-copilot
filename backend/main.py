@@ -74,6 +74,8 @@ from routers import (
     users,
     webhooks,
     websocket_filters,
+    alert_stream,
+    alerts_to_loki,
 )
 from routers import websocket as ws_router
 
@@ -491,6 +493,8 @@ app.include_router(monitoring_alerts.router)  # v0.9.1: Monitoring alert rules
 app.include_router(export.router)  # v0.8.5: Data export functionality
 app.include_router(system_dashboard.router)  # v0.8.5: System health dashboard
 app.include_router(security_vulnerabilities.router)  # v0.9.2: Security vulnerability management
+app.include_router(alert_stream.router)  # v0.9.0: Wazuh alert stream management
+app.include_router(alerts_to_loki.router)  # v0.9.0: Send alerts to Loki
 
 
 # Global OPTIONS handler for CORS preflight

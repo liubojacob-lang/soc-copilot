@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
-from db.session import get_db
+from db.session import get_session
 from dependencies.auth import get_current_user
 from dependencies.authorization import require_admin
 from models.user import UserModel
@@ -26,11 +26,11 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/marketplace", tags=["marketplace", "community"])
 
 
-def get_marketplace_repo(db: AsyncSession = Depends(get_db)) -> MarketplaceRepository:
+def get_marketplace_repo(db: AsyncSession = Depends(get_session)) -> MarketplaceRepository:
     return MarketplaceRepository(db)
 
 
-def get_playbook_repo(db: AsyncSession = Depends(get_db)) -> PlaybookDefinitionRepository:
+def get_playbook_repo(db: AsyncSession = Depends(get_session)) -> PlaybookDefinitionRepository:
     return PlaybookDefinitionRepository(db)
 
 
