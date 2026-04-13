@@ -1,24 +1,14 @@
-"""HTTP Request node plugin with hostname whitelist sandbox (v0.7.4)."""
+"""HTTP Request node plugin with SSRF protection (v0.7.4)."""
 
 import logging
 from typing import Any
-from urllib.parse import urlparse
 
 import aiohttp
 
+from core.ssrf_protection import is_url_safe
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
 logger = logging.getLogger(__name__)
-
-# Banned hosts that should never be accessible
-BANNED_HOSTS = {
-    "localhost",
-    "127.0.0.1",
-    "0.0.0.0",
-    "::1",
-    "169.254.169.254",  # AWS metadata service
-    "metadata.google.internal",  # GCP metadata service
-}
 
 
 class HttpRequestPlugin(BaseNodePlugin):
@@ -75,34 +65,16 @@ class HttpRequestPlugin(BaseNodePlugin):
         body = context.input_json.get("body")
         timeout = context.input_json.get("timeout", 30)
 
-        # Sandbox validation
-        parsed = urlparse(url)
-
-        # Check against banned hosts
-        if parsed.hostname in BANNED_HOSTS:
-            raise ValueError(
-                f"Access to '{parsed.hostname}' is blocked by security policy. "
-                f"Cannot make requests to localhost or internal addresses."
-            )
-
-        # Check hostname whitelist if configured
+        # SSRF protection with comprehensive private IP and hostname validation
         from core.config import settings
 
-        allowed_hosts = (
-            settings.http_allowed_hosts.split(",")
-            if settings.http_allowed_hosts
-            else []
-        )
+        allowed_hosts = None
+        if settings.http_allowed_hosts:
+            allowed_hosts = [h.strip() for h in settings.http_allowed_hosts.split(",") if h.strip()]
 
-        if allowed_hosts and allowed_hosts != [""]:
-            # Remove empty strings from split
-            allowed_hosts = [h.strip() for h in allowed_hosts if h.strip()]
-
-            if allowed_hosts and parsed.hostname not in allowed_hosts:
-                raise ValueError(
-                    f"Host '{parsed.hostname}' is not in the allowed hosts list. "
-                    f"Allowed hosts: {', '.join(allowed_hosts)}"
-                )
+        is_safe, reason = is_url_safe(url, allowed_hosts)
+        if not is_safe:
+            raise ValueError(f"URL blocked by SSRF protection: {reason}")
 
         logger.info(f"[{context.run_id}] HTTP {method} {url}")
 

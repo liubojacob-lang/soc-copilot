@@ -6,6 +6,7 @@ from typing import Any
 import httpx
 
 from core.logger import get_logger
+from core.ssrf_protection import is_url_safe
 
 logger = get_logger(__name__)
 
@@ -126,6 +127,12 @@ class HttpCallbackService:
             True if sent successfully, False otherwise
         """
         import asyncio
+
+        # SSRF protection: validate URL before making request
+        is_safe, reason = is_url_safe(url)
+        if not is_safe:
+            logger.error(f"HTTP callback URL blocked by SSRF protection: {reason}")
+            return False
 
         for attempt in range(1, self.max_retries + 1):
             try:
