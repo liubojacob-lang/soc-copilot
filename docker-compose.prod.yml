@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 # Production Docker Compose Configuration
 # Usage: docker-compose -f docker-compose.prod.yml up -d
@@ -15,8 +15,8 @@ services:
       - postgres_prod_data:/var/lib/postgresql/data
       - ./backups:/backups
     ports:
-      - "127.0.0.1:5432:5432"  # Only bind to localhost for security
-    command: 
+      - "127.0.0.1:5432:5432" # Only bind to localhost for security
+    command:
       - "postgres"
       - "-c"
       - "shared_buffers=256MB"
@@ -34,13 +34,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: soc-copilot-redis-prod
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_prod_data:/data
     ports:
       - "127.0.0.1:6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,7 +53,7 @@ services:
     container_name: soc-copilot-backend-prod
     environment:
       - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - SECRET_KEY=${SECRET_KEY}
       - ENVIRONMENT=production
       - DIFY_API_URL=${DIFY_API_URL}
@@ -71,7 +71,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: "2"
           memory: 2G
 
   frontend:
@@ -86,7 +86,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 1G
 
   nginx:
@@ -113,7 +113,7 @@ services:
     # Note: container_name removed to support replicas (unique names auto-generated)
     command: python workers/alert_worker.py
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - WORKER_ID=${WORKER_ID:-1}
       - FEISHU_WEBHOOK_URL=${FEISHU_WEBHOOK_URL}
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
@@ -132,13 +132,13 @@ services:
     restart: always
     deploy:
       mode: replicated
-      replicas: 3  # 水平扩展：3个 Worker 实例
+      replicas: 3 # 水平扩展：3个 Worker 实例
       resources:
         limits:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 256M
         reservations:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 128M
 
 volumes:
