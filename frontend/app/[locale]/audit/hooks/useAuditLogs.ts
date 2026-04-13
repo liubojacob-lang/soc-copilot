@@ -88,7 +88,10 @@ export function useAuditLogs(options: UseAuditLogsOptions = {}): UseAuditLogsRes
 
     try {
       const queryParams = buildQueryParams();
-      const response = await authFetchJSON(`/api/audit?${queryParams}`);
+      const response = await authFetchJSON<{
+        ok: boolean;
+        json: () => Promise<{ logs: AuditLog[]; total: number; stats: AuditLogStats | null }>;
+      }>(`/api/audit?${queryParams}`);
 
       if (response.ok) {
         const data = await response.json();

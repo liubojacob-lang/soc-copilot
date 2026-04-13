@@ -56,7 +56,7 @@ async function fetchAuditLogs(options: UseAuditLogsQueryOptions) {
   if (options.filterUserId) params.append("user_id", options.filterUserId);
   if (options.filterIpAddress) params.append("ip_address", options.filterIpAddress);
 
-  const response = await authFetchJSON(`/api/audit?${params.toString()}`);
+  const response = await authFetchJSON<Response>(`/api/audit?${params.toString()}`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch audit logs");
@@ -199,7 +199,7 @@ export function useAuditStatsQuery() {
   return useQuery({
     queryKey: queryKeys.audit.stats(),
     queryFn: async () => {
-      const response = await authFetchJSON("/api/audit/stats");
+      const response = await authFetchJSON<Response>("/api/audit/stats");
       if (!response.ok) throw new Error("Failed to fetch audit stats");
       return response.json();
     },

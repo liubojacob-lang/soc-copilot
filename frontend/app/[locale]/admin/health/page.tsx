@@ -77,11 +77,11 @@ export default function AdminHealthPage() {
     setError(null);
     try {
       const [dashboard, database, redis, resources, features] = await Promise.all([
-        authFetchJSON("/api/system/dashboard").catch(() => null),
-        authFetchJSON("/api/system/database").catch(() => null),
-        authFetchJSON("/api/system/redis").catch(() => null),
-        authFetchJSON("/api/system/resources").catch(() => null),
-        authFetchJSON("/api/system/features").catch(() => null),
+        authFetchJSON<DashboardHealth>("/api/system/dashboard").catch(() => null),
+        authFetchJSON<DatabaseHealth>("/api/system/database").catch(() => null),
+        authFetchJSON<RedisHealth>("/api/system/redis").catch(() => null),
+        authFetchJSON<SystemResources>("/api/system/resources").catch(() => null),
+        authFetchJSON<Record<string, boolean>>("/api/system/features").catch(() => null),
       ]);
 
       setData({

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { loadAuthState, authFetchJSON } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
-import { TableSkeleton } from "@/components/Skeleton";
+import { SkeletonTable } from "@/components/common/Skeleton";
 
 interface Trigger {
   id: string;
@@ -152,7 +152,7 @@ export default function TriggersPage() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
             <div className="p-6">
-              <TableSkeleton rows={5} cols={7} />
+              <SkeletonTable rows={5} columns={7} />
             </div>
           </div>
         </main>
