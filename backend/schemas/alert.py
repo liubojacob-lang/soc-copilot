@@ -97,7 +97,7 @@ class RecommendedAction(BaseModel):
 class AlertAnalysisRequest(BaseModel):
     """Request for alert analysis."""
 
-    raw_log: str = Field(..., description="Raw alert/log content", min_length=1)
+    raw_log: str = Field(..., description="Raw alert/log content", min_length=10, max_length=50000)
 
 
 class AlertAnalysisResponse(BaseModel):
@@ -124,14 +124,10 @@ class AlertAnalysisResponse(BaseModel):
     model_used: str | None = Field(None, description="AI model used")
     degraded: bool = Field(False, description="Whether degraded mode was used")
     error_reason: str | None = Field(None, description="Error reason if degraded")
-    history_id: str | None = Field(
-        None, description="History record ID for this analysis"
-    )
+    history_id: str | None = Field(None, description="History record ID for this analysis")
 
     # Impact analysis (v0.3)
     impact_analysis: ImpactAnalysis = Field(..., description="Impact analysis result")
 
     # Threat intelligence (v0.4)
-    threat_intel: ThreatIntelAnalysis = Field(
-        ..., description="Threat intelligence analysis"
-    )
+    threat_intel: ThreatIntelAnalysis = Field(..., description="Threat intelligence analysis")

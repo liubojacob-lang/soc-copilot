@@ -1,12 +1,13 @@
 """Router for secrets management (v0.7.4)."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
+from middleware.rate_limiter import rate_limit
 from models.user import UserModel, UserRole
 from repositories.secret_repository import SecretRepository
 from services.security.secret_service import get_secret_service
@@ -22,20 +23,14 @@ router = APIRouter(prefix="/api/secrets", tags=["secrets"])
 class SecretCreate(BaseModel):
     """Schema for creating a secret."""
 
-    name: str = Field(
-        ..., min_length=1, max_length=100, description="Unique secret name"
-    )
-    value: str = Field(
-        ..., min_length=1, description="Secret value (will be encrypted)"
-    )
+    name: str = Field(..., min_length=1, max_length=100, description="Unique secret name")
+    value: str = Field(..., min_length=1, description="Secret value (will be encrypted)")
 
 
 class SecretUpdate(BaseModel):
     """Schema for updating a secret."""
 
-    value: str = Field(
-        ..., min_length=1, description="New secret value (will be encrypted)"
-    )
+    value: str = Field(..., min_length=1, description="New secret value (will be encrypted)")
 
 
 class SecretResponse(BaseModel):
@@ -90,8 +85,10 @@ def mask_secret_value(value: str, visible_chars: int = 4) -> str:
 
 
 @router.post("", response_model=SecretResponse, status_code=status.HTTP_201_CREATED)
+@rate_limit(max_requests=10, window_seconds=60)
 async def create_secret(
     data: SecretCreate,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -107,9 +104,7 @@ async def create_secret(
     # Check if secret already exists
     existing = await repo.get_by_name(data.name)
     if existing:
-        raise HTTPException(
-            status_code=400, detail=f"Secret '{data.name}' already exists"
-        )
+        raise HTTPException(status_code=400, detail=f"Secret '{data.name}' already exists")
 
     # Encrypt the value
     secret_service = get_secret_service()
@@ -215,9 +210,11 @@ async def get_secret(
 
 
 @router.patch("/{secret_name}", response_model=SecretResponse)
+@rate_limit(max_requests=10, window_seconds=60)
 async def update_secret(
     secret_name: str,
     data: SecretUpdate,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -260,8 +257,10 @@ async def update_secret(
 
 
 @router.delete("/{secret_name}", status_code=status.HTTP_204_NO_CONTENT)
+@rate_limit(max_requests=10, window_seconds=60)
 async def delete_secret(
     secret_name: str,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):

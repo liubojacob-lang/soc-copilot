@@ -46,7 +46,7 @@ function getTacticKey(tacticName: string): string {
   return normalized;
 }
 
-export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
+export const MITREHeatmap = React.memo(function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
   // 转换数据格式
   const heatmapData = useMemo(() => {
     const tacticMap = new Map<string, MITRETacticData>();
@@ -266,7 +266,7 @@ export function MITREHeatmap({ data, onClick }: MITREHeatmapProps) {
       </div>
     </div>
   );
-}
+});
 
 // 简化版：仅显示战术条形图
 export function SimpleMITRETactics({

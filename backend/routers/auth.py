@@ -2,13 +2,14 @@
 
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.cookie_auth import clear_auth_cookies, set_auth_cookies
 from core.csrf import generate_csrf_token, set_csrf_cookie
 from core.logger import get_logger
+from middleware.rate_limiter import rate_limit
 from core.security import (
     create_access_token,
     create_refresh_token,
@@ -82,8 +83,10 @@ LOCKOUT_DURATION_MINUTES = 30
         423: {"description": "账户已被锁定"},
     },
 )
+@rate_limit(max_requests=5, window_seconds=60)
 async def login(
     credentials: UserLogin,
+    request: Request,
     response: Response,
     session: AsyncSession = Depends(get_session),
 ):

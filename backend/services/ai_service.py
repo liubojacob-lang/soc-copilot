@@ -42,6 +42,9 @@ def clean_json_content(content: str) -> str:
 
 
 class AIService:
+    # Singleton HTTP client for connection reuse
+    _http_client: httpx.AsyncClient | None = None
+
     def __init__(self):
         self.max_retries = settings.max_retries
         self.provider = settings.ai_provider.lower()
@@ -49,12 +52,21 @@ class AIService:
         if self.provider == "zhipu":
             self.api_key = settings.zhipu_api_key
             self.base_url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-            self.model = "glm-4-plus"  # Changed from glm-4-flash to glm-4-plus
+            self.model = "glm-4-plus"
         else:  # anthropic
             from anthropic import AsyncAnthropic
 
             self.client = AsyncAnthropic(api_key=settings.anthropic_api_key)
             self.model = "claude-3-5-sonnet-20241022"
+
+    @classmethod
+    def get_http_client(cls) -> httpx.AsyncClient:
+        """Get singleton HTTP client with connection pooling."""
+        if cls._http_client is None:
+            cls._http_client = httpx.AsyncClient(
+                timeout=90.0, limits=httpx.Limits(max_connections=100, max_keepalive_connections=20)
+            )
+        return cls._http_client
 
     def get_model_name(self) -> str:
         """Get the name of the model being used."""
@@ -133,14 +145,15 @@ Respond with JSON that matches the schema above:"""
                 {"role": "user", "content": user_prompt},
             ],
             "temperature": 0.1,
-            "max_tokens": 2048,  # Reduced from 4096 for faster response
+            "max_tokens": 2048,
         }
 
-        async with httpx.AsyncClient(timeout=90.0) as client:  # Increased timeout
-            response = await client.post(self.base_url, headers=headers, json=payload)
-            response.raise_for_status()
-            result = response.json()
-            return result["choices"][0]["message"]["content"]
+        # Use singleton HTTP client for connection reuse
+        client = self.get_http_client()
+        response = await client.post(self.base_url, headers=headers, json=payload)
+        response.raise_for_status()
+        result = response.json()
+        return result["choices"][0]["message"]["content"]
 
     async def _call_anthropic(self, system_prompt: str, user_prompt: str) -> str:
         response = await self.client.messages.create(
@@ -176,9 +189,7 @@ class IncidentAnalysisResult(BaseModel):
 class AIIncidentAnalyzer:
     """Adapter interface for future LLM-backed incident analysis providers."""
 
-    async def analyze_incident(
-        self, request: IncidentAnalysisRequest
-    ) -> IncidentAnalysisResult:
+    async def analyze_incident(self, request: IncidentAnalysisRequest) -> IncidentAnalysisResult:
         raise NotImplementedError
 
 
@@ -188,7 +199,5 @@ class VectorStoreProvider:
     async def upsert_documents(self, namespace: str, documents: list[dict]) -> None:
         raise NotImplementedError
 
-    async def similarity_search(
-        self, namespace: str, query: str, top_k: int = 5
-    ) -> list[dict]:
+    async def similarity_search(self, namespace: str, query: str, top_k: int = 5) -> list[dict]:
         raise NotImplementedError

@@ -89,7 +89,10 @@ const EVENT_CONFIG = {
   },
 };
 
-export function TimelineView({ events, showEmpty = true }: TimelineViewProps) {
+export const TimelineView = React.memo(function TimelineView({
+  events,
+  showEmpty = true,
+}: TimelineViewProps) {
   if (!events || events.length === 0) {
     return showEmpty ? (
       <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
@@ -185,7 +188,7 @@ export function TimelineView({ events, showEmpty = true }: TimelineViewProps) {
       </div>
     </div>
   );
-}
+});
 
 // 简化版：仅显示最近事件
 export function RecentTimeline({ events, limit = 5 }: TimelineViewProps & { limit?: number }) {

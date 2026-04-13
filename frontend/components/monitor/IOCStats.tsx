@@ -74,7 +74,11 @@ const TYPE_ICONS = {
   email: "📧",
 };
 
-export function IOCStats({ stats, breakdown, showTrend = true }: IOCStatsProps) {
+export const IOCStats = React.memo(function IOCStats({
+  stats,
+  breakdown,
+  showTrend = true,
+}: IOCStatsProps) {
   const tReputation = useTranslations("reputation");
   const tCommon = useTranslations("common");
   const tMonitor = useTranslations("monitor");
@@ -274,7 +278,7 @@ export function IOCStats({ stats, breakdown, showTrend = true }: IOCStatsProps) 
       </div>
     </div>
   );
-}
+});
 
 // Stat Card Component
 function StatCard({

@@ -2,12 +2,13 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
+from middleware.rate_limiter import rate_limit
 from models.user import UserModel
 from schemas.alert import AlertAnalysisRequest, AlertAnalysisResponse
 from services.alerting.alert_service import AlertService
@@ -17,8 +18,10 @@ router = APIRouter(tags=["alert"])
 
 
 @router.post("/api/analyze-alert", response_model=AlertAnalysisResponse)
+@rate_limit(max_requests=10, window_seconds=60)
 async def analyze_alert(
     request: AlertAnalysisRequest,
+    http_request: Request,
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ) -> AlertAnalysisResponse:

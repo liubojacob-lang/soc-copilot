@@ -43,7 +43,7 @@ const SEVERITY_COLORS = {
   low: "#3b82f6",
 };
 
-export function TopSources({
+export const TopSources = React.memo(function TopSources({
   sources,
   type = "both",
   limit = 10,
@@ -270,7 +270,7 @@ export function TopSources({
       )}
     </div>
   );
-}
+});
 
 // Block IP Button Component
 interface BlockIPButtonProps {

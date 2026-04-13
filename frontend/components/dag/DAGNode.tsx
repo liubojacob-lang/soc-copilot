@@ -53,7 +53,7 @@ const statusConfig = {
   },
 };
 
-export function DAGNode({ data, selected }: NodeProps<NodeData>) {
+export const DAGNode = React.memo(function DAGNode({ data, selected }: NodeProps<NodeData>) {
   const t = useTranslations("dag");
   const config = statusConfig[data.status];
 
@@ -126,6 +126,6 @@ export function DAGNode({ data, selected }: NodeProps<NodeData>) {
       />
     </div>
   );
-}
+});
 
 export default DAGNode;

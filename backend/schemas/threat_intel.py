@@ -1,8 +1,15 @@
 """Schemas for threat intelligence."""
 
+import ipaddress
+import re
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+_DOMAIN_RE = re.compile(
+    r"^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$"
+)
+_HASH_RE = re.compile(r"^[a-fA-F0-9]+$")
 
 
 class IOCType(str, Enum):
@@ -37,9 +44,7 @@ class ThreatIntelItem(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Threat tags")
     references: list[str] = Field(default_factory=list, description="Reference URLs")
     cached: bool = Field(default=False, description="Whether from cache")
-    skipped: bool = Field(
-        default=False, description="Whether skipped due to limit/filter"
-    )
+    skipped: bool = Field(default=False, description="Whether skipped due to limit/filter")
     skipped_reason: str | None = Field(
         None,
         description="Reason for skipping (e.g., 'private_ip', 'internal_domain', 'blocked_tld', 'rate_limit')",
@@ -65,9 +70,7 @@ class ThreatIntelResponse(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Threat tags")
     references: list[str] = Field(default_factory=list, description="Reference URLs")
     raw: dict = Field(default_factory=dict, description="Raw response from provider")
-    error_reason: str | None = Field(
-        None, description="Error message if lookup failed"
-    )
+    error_reason: str | None = Field(None, description="Error message if lookup failed")
     skipped_reason: str | None = Field(
         None, description="Reason for skipping (e.g., 'private_ip', 'internal_domain')"
     )
@@ -79,6 +82,21 @@ class BulkThreatIntelRequestItem(BaseModel):
     ioc_type: str = Field(..., description="IOC type (ip/domain/url/hash)")
     ioc_value: str = Field(..., description="IOC value")
 
+    @field_validator("ioc_type")
+    @classmethod
+    def validate_ioc_type(cls, v: str) -> str:
+        valid = {e.value for e in IOCType}
+        if v not in valid:
+            raise ValueError(f"Invalid IOC type '{v}'. Must be one of: {', '.join(sorted(valid))}")
+        return v
+
+    @field_validator("ioc_value")
+    @classmethod
+    def validate_ioc_value(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("IOC value must not be empty")
+        return v.strip()
+
 
 class BulkThreatIntelRequest(BaseModel):
     """Bulk threat intel lookup request."""
@@ -86,6 +104,8 @@ class BulkThreatIntelRequest(BaseModel):
     items: list[BulkThreatIntelRequestItem] = Field(
         ...,
         description="List of IOCs to lookup",
+        min_length=1,
+        max_length=50,
     )
 
 
@@ -101,9 +121,7 @@ class BulkThreatIntelResponse(BaseModel):
     results: list[ThreatIntelResponse] = Field(
         default_factory=list, description="List of lookup results"
     )
-    skipped_count: int = Field(
-        default=0, description="Number of IOCs skipped due to rate limiting"
-    )
+    skipped_count: int = Field(default=0, description="Number of IOCs skipped due to rate limiting")
     skipped_items: list[ThreatIntelItem] = Field(
         default_factory=list, description="List of IOCs skipped due to rate limiting"
     )
@@ -137,6 +155,4 @@ class ThreatIntelAnalysis(BaseModel):
         default_factory=list,
         description="IOCs filtered by compliance policy (not sent to external TI)",
     )
-    error_reason: str | None = Field(
-        None, description="Error message if lookup failed"
-    )
+    error_reason: str | None = Field(None, description="Error message if lookup failed")

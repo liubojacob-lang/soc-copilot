@@ -71,7 +71,10 @@ const IOC_ICONS = {
   email: Shield,
 };
 
-export function ThreatIntelCard({ data, onRefresh }: ThreatIntelCardProps) {
+export const ThreatIntelCard = React.memo(function ThreatIntelCard({
+  data,
+  onRefresh,
+}: ThreatIntelCardProps) {
   const { iocs, mitre_tactics, threat_score, enrichment_status, enriched_at } = data;
 
   return (
@@ -335,4 +338,4 @@ export function ThreatIntelCard({ data, onRefresh }: ThreatIntelCardProps) {
       )}
     </div>
   );
-}
+});

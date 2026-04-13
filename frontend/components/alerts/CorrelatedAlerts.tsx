@@ -68,7 +68,10 @@ const CORRELATION_TYPE_CONFIG = {
   },
 };
 
-export function CorrelatedAlerts({ groups, onAlertClick }: CorrelatedAlertsProps) {
+export const CorrelatedAlerts = React.memo(function CorrelatedAlerts({
+  groups,
+  onAlertClick,
+}: CorrelatedAlertsProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const toggleGroup = (groupId: string) => {
@@ -269,7 +272,7 @@ export function CorrelatedAlerts({ groups, onAlertClick }: CorrelatedAlertsProps
       </div>
     </div>
   );
-}
+});
 
 // 简化版：仅显示关联告警列表
 export function SimpleCorrelationList({ groups, onAlertClick }: CorrelatedAlertsProps) {

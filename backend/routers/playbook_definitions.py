@@ -5,13 +5,14 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, Union
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
+from middleware.rate_limiter import rate_limit
 from models.user import UserModel, UserRole
 from repositories.playbook_definition_repository import PlaybookDefinitionRepository
 from repositories.playbook_node_run_repository import PlaybookNodeRunRepository
@@ -43,9 +44,7 @@ queue_router = APIRouter(prefix="/api/runs", tags=["runs"])
 # ============ Playbook Definition CRUD ============
 
 
-@router.post(
-    "", response_model=PlaybookDefinitionResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=PlaybookDefinitionResponse, status_code=status.HTTP_201_CREATED)
 async def create_definition(
     data: PlaybookDefinitionCreate,
     current_user: UserModel = Depends(get_current_user),
@@ -229,17 +228,13 @@ async def delete_definition(
 ):
     """Delete a DAG playbook definition (admin only)."""
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=403, detail="Only admins can delete definitions"
-        )
+        raise HTTPException(status_code=403, detail="Only admins can delete definitions")
 
     repo = PlaybookDefinitionRepository(db)
     success = await repo.delete(definition_id)
 
     if not success:
-        raise HTTPException(
-            status_code=404, detail="Definition not found or has associated runs"
-        )
+        raise HTTPException(status_code=404, detail="Definition not found or has associated runs")
 
 
 # ============ DAG Playbook Execution ============
@@ -250,9 +245,11 @@ async def delete_definition(
     response_model=Union[DAGPlaybookRunResponse, PlaybookRunErrorResponse],
     responses={500: {"model": PlaybookRunErrorResponse}},
 )
+@rate_limit(max_requests=5, window_seconds=60)
 async def run_dag_playbook(
     definition_id: str,
     data: DAGPlaybookRunCreate,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -408,9 +405,7 @@ async def run_dag_playbook(
                 updates["error_message"] = "Cancelled by user"
             await run_repo.update(run.id, updates)
             run.status = final_status
-            logger.info(
-                f"[{trace_id}] Run {run.id} completed with status {final_status}"
-            )
+            logger.info(f"[{trace_id}] Run {run.id} completed with status {final_status}")
 
         except Exception as e:
             error_trace = traceback.format_exc()
@@ -448,9 +443,7 @@ async def run_dag_playbook(
     except Exception as e:
         # Catch-all for any unexpected errors
         error_trace = traceback.format_exc()
-        logger.error(
-            f"[{trace_id}] Unexpected error in run_dag_playbook: {e}\n{error_trace}"
-        )
+        logger.error(f"[{trace_id}] Unexpected error in run_dag_playbook: {e}\n{error_trace}")
 
         return PlaybookRunErrorResponse(
             success=False,
@@ -524,9 +517,7 @@ async def _execute_dry_run(
                 }
                 completed_nodes.append(node_id)
 
-            logger.info(
-                f"[{trace_id}] [DRY_RUN] Mock executed node {node_id} ({node_type})"
-            )
+            logger.info(f"[{trace_id}] [DRY_RUN] Mock executed node {node_id} ({node_type})")
 
         except Exception as e:
             logger.warning(f"[{trace_id}] [DRY_RUN] Node {node_id} mock failed: {e}")
@@ -667,9 +658,7 @@ async def cancel_dag_run(
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
     if run.status not in ("pending", "running"):
-        raise HTTPException(
-            status_code=400, detail=f"Cannot cancel run in status: {run.status}"
-        )
+        raise HTTPException(status_code=400, detail=f"Cannot cancel run in status: {run.status}")
 
     from services.playbook.playbook_dag_scheduler import get_running_scheduler
 
@@ -784,9 +773,7 @@ async def internal_extract_iocs(
             extracted["ips"].extend(ips)
 
             # Extract domains
-            domains = re.findall(
-                r"\b(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b", text
-            )
+            domains = re.findall(r"\b(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b", text)
             extracted["domains"].extend(domains)
 
             # Extract hashes
