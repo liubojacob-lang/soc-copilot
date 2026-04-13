@@ -9,8 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.logger import get_logger
 from core.metrics import observe_correlation_rule_hit
 from db.session import get_session
+from dependencies.auth import get_current_user
 from models.correlated_event import CorrelatedEvent
 from models.correlation_rule import CorrelationRule
+from models.user import UserModel
 from services.correlation import CorrelationRuleDSL, RuleEngine
 from services.event_bus import get_event_bus
 from services.event_correlation_service import (
@@ -97,6 +99,7 @@ async def correlate_events(
     http_request: Request,
     request: CorrelationRequest,
     db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """
     Correlate a batch of events into incidents.
@@ -145,7 +148,7 @@ async def correlate_events(
 
 
 @router.get("/dsl/example", response_model=dict)
-async def get_rule_dsl_example() -> dict:
+async def get_rule_dsl_example(current_user: UserModel = Depends(get_current_user)) -> dict:
     """Get a DSL sample for building advanced correlation rules."""
     return RuleEngine().dsl_example()
 
@@ -153,6 +156,7 @@ async def get_rule_dsl_example() -> dict:
 @router.post("/engine/evaluate", response_model=RuleEngineEvaluateResponse)
 async def evaluate_rule_engine(
     request: RuleEngineEvaluateRequest,
+    current_user: UserModel = Depends(get_current_user),
 ) -> RuleEngineEvaluateResponse:
     """Evaluate rules using DSL engine (non-persistent)."""
     engine = RuleEngine()
@@ -171,6 +175,7 @@ async def list_correlated_events(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """
     List correlated incidents.
@@ -200,7 +205,9 @@ async def list_correlated_events(
 
 @router.get("/incidents/{incident_id}", response_model=CorrelatedEventResponse)
 async def get_correlated_event(
-    incident_id: str, db: AsyncSession = Depends(get_session)
+    incident_id: str,
+    db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Get details of a specific correlated incident."""
     from sqlalchemy import select
@@ -221,6 +228,7 @@ async def update_incident_status(
     status: str = Query(..., description="New status"),
     assigned_to: str | None = Query(None, description="Assign to analyst"),
     db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """
     Update incident status and assignment.
@@ -270,6 +278,7 @@ async def update_incident_status(
 async def list_correlation_rules(
     enabled_only: bool = Query(False, description="Only show enabled rules"),
     db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """List all correlation rules."""
     from sqlalchemy import select
@@ -307,7 +316,9 @@ async def list_correlation_rules(
 
 @router.post("/rules")
 async def create_correlation_rule(
-    rule: CorrelationRuleCreate, db: AsyncSession = Depends(get_session)
+    rule: CorrelationRuleCreate,
+    db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Create a new correlation rule."""
     try:
@@ -351,6 +362,7 @@ async def update_correlation_rule(
     rule_id: str,
     updates: CorrelationRuleUpdate,
     db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Update an existing correlation rule."""
     from sqlalchemy import select
@@ -384,7 +396,9 @@ async def update_correlation_rule(
 
 @router.delete("/rules/{rule_id}")
 async def delete_correlation_rule(
-    rule_id: str, db: AsyncSession = Depends(get_session)
+    rule_id: str,
+    db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Delete a correlation rule."""
     from sqlalchemy import select
@@ -410,7 +424,9 @@ async def delete_correlation_rule(
 
 @router.post("/rules/{rule_id}/toggle")
 async def toggle_correlation_rule(
-    rule_id: str, db: AsyncSession = Depends(get_session)
+    rule_id: str,
+    db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Enable or disable a correlation rule."""
     from sqlalchemy import select
@@ -434,7 +450,9 @@ async def toggle_correlation_rule(
 
 # Statistics
 @router.get("/stats")
-async def get_correlation_stats(db: AsyncSession = Depends(get_session)):
+async def get_correlation_stats(
+    db: AsyncSession = Depends(get_session), current_user: UserModel = Depends(get_current_user)
+):
     """Get correlation statistics."""
     from sqlalchemy import func, select
 
@@ -469,9 +487,7 @@ async def get_correlation_stats(db: AsyncSession = Depends(get_session)):
     active_count = active_rules.scalar() or 0
 
     # Total correlations performed
-    total_correlations = await db.execute(
-        select(func.sum(CorrelationRule.total_correlations))
-    )
+    total_correlations = await db.execute(select(func.sum(CorrelationRule.total_correlations)))
     correlations_count = total_correlations.scalar() or 0
 
     return {
@@ -491,7 +507,10 @@ async def get_correlation_stats(db: AsyncSession = Depends(get_session)):
 
 @router.post("/test")
 async def test_correlation_rule(
-    rule_id: str, test_events: list[dict], db: AsyncSession = Depends(get_session)
+    rule_id: str,
+    test_events: list[dict],
+    db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """
     Test a correlation rule against sample events.
@@ -509,9 +528,7 @@ async def test_correlation_rule(
 
     try:
         service = EventCorrelationService(db)
-        correlated_events = await service.correlate_events(
-            events=test_events, rule_ids=[rule_id]
-        )
+        correlated_events = await service.correlate_events(events=test_events, rule_ids=[rule_id])
 
         return {
             "success": True,

@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user
+from models.user import UserModel
 from schemas.alert import AlertAnalysisRequest, AlertAnalysisResponse
 from services.alerting.alert_service import AlertService
 
@@ -18,6 +20,7 @@ router = APIRouter(tags=["alert"])
 async def analyze_alert(
     request: AlertAnalysisRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> AlertAnalysisResponse:
     """Analyze a security alert/log.
 

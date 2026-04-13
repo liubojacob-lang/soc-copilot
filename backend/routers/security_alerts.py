@@ -12,7 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user
 from models.security_alert import SecurityAlert
+from models.user import UserModel
 from schemas.security_alert import (
     SecurityAlertIngest,
     SecurityAlertListResponse,
@@ -34,6 +36,7 @@ router = APIRouter(prefix="/api/v1/security-alerts", tags=["security-alerts"])
 async def ingest_alert(
     alert_data: SecurityAlertIngest,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> dict:
     """
     Ingest an alert from an external security monitoring tool.
@@ -55,9 +58,7 @@ async def ingest_alert(
 
         # Parse timestamp
         try:
-            event_timestamp = datetime.fromisoformat(
-                alert_data.timestamp.replace("Z", "+00:00")
-            )
+            event_timestamp = datetime.fromisoformat(alert_data.timestamp.replace("Z", "+00:00"))
         except ValueError:
             raise HTTPException(
                 status_code=400,
@@ -101,12 +102,8 @@ async def ingest_alert(
             agent_ip=alert_data.agent_ip,
             rule_id=alert_data.rule_id,
             rule_level=alert_data.rule_level,
-            rule_groups=(
-                ",".join(alert_data.rule_groups) if alert_data.rule_groups else None
-            ),
-            rule_mitre=(
-                ",".join(alert_data.rule_mitre) if alert_data.rule_mitre else None
-            ),
+            rule_groups=(",".join(alert_data.rule_groups) if alert_data.rule_groups else None),
+            rule_mitre=(",".join(alert_data.rule_mitre) if alert_data.rule_mitre else None),
             full_log=alert_data.full_log,
             location=alert_data.location,
             geoip=alert_data.geoip,
@@ -144,13 +141,9 @@ async def ingest_alert(
                 "agent_name": new_alert.agent_name,
                 "rule_id": new_alert.rule_id,
                 "rule_level": new_alert.rule_level,
-                "created_at": (
-                    new_alert.created_at.isoformat() if new_alert.created_at else None
-                ),
+                "created_at": (new_alert.created_at.isoformat() if new_alert.created_at else None),
                 "event_timestamp": (
-                    new_alert.event_timestamp.isoformat()
-                    if new_alert.event_timestamp
-                    else None
+                    new_alert.event_timestamp.isoformat() if new_alert.event_timestamp else None
                 ),
             }
 
@@ -196,6 +189,7 @@ async def list_alerts(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> SecurityAlertListResponse:
     """
     List security alerts with filtering and pagination.
@@ -263,6 +257,7 @@ async def list_alerts(
 async def get_alert(
     alert_id: int,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> SecurityAlertResponse:
     """Get detailed information about a specific alert."""
     try:
@@ -288,6 +283,7 @@ async def update_alert(
     alert_id: int,
     update_data: SecurityAlertUpdate,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> SecurityAlertResponse:
     """
     Update alert status and metadata.
@@ -342,6 +338,7 @@ async def update_alert(
 @cached(ttl=60, prefix="alert_stats")
 async def get_alert_statistics(
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> SecurityAlertStats:
     """
     Get alert statistics summary.
@@ -360,23 +357,23 @@ async def get_alert_statistics(
         total = total_result.scalar() or 0
 
         # By severity
-        severity_query = select(
-            SecurityAlert.severity, func.count(SecurityAlert.id)
-        ).group_by(SecurityAlert.severity)
+        severity_query = select(SecurityAlert.severity, func.count(SecurityAlert.id)).group_by(
+            SecurityAlert.severity
+        )
         severity_result = await session.execute(severity_query)
         by_severity = {row[0]: row[1] for row in severity_result.all()}
 
         # By status
-        status_query = select(
-            SecurityAlert.status, func.count(SecurityAlert.id)
-        ).group_by(SecurityAlert.status)
+        status_query = select(SecurityAlert.status, func.count(SecurityAlert.id)).group_by(
+            SecurityAlert.status
+        )
         status_result = await session.execute(status_query)
         by_status = {row[0]: row[1] for row in status_result.all()}
 
         # By source
-        source_query = select(
-            SecurityAlert.source, func.count(SecurityAlert.id)
-        ).group_by(SecurityAlert.source)
+        source_query = select(SecurityAlert.source, func.count(SecurityAlert.id)).group_by(
+            SecurityAlert.source
+        )
         source_result = await session.execute(source_query)
         by_source = {row[0]: row[1] for row in source_result.all()}
 
@@ -416,15 +413,14 @@ async def get_alert_statistics(
 
     except Exception as e:
         logger.error(f"Error getting alert statistics: {e!s}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get statistics: {e!s}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {e!s}")
 
 
 @router.delete("/{alert_id}", response_model=dict)
 async def delete_alert(
     alert_id: int,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> dict:
     """
     Delete an alert.

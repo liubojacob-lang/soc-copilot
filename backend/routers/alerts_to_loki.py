@@ -2,9 +2,11 @@
 告警路由 - 发送告警到 Loki
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from core.logger import get_logger
+from dependencies import get_current_user
+from models.user import UserModel
 from services.loki_alert_sender import get_loki_sender
 
 logger = get_logger(__name__)
@@ -12,7 +14,10 @@ router = APIRouter(prefix="/api/v1/alerts", tags=["Alerts"])
 
 
 @router.post("/send")
-async def send_alert(alert: dict):
+async def send_alert(
+    alert: dict,
+    current_user: UserModel = Depends(get_current_user),
+):
     """发送告警到 Loki 和前端"""
     try:
         # 发送到 Loki
@@ -28,7 +33,7 @@ async def send_alert(alert: dict):
 
 
 @router.post("/test")
-async def test_alert():
+async def test_alert(current_user: UserModel = Depends(get_current_user)):
     """发送测试告警"""
     loki_sender = get_loki_sender()
     success = await loki_sender.send_test_alert()
