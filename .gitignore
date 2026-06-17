@@ -100,3 +100,6 @@ coverage.json
 # Temporary JSON files
 test_*.json
 grafana-*.json
+
+# TypeScript incremental build info
+*.tsbuildinfo

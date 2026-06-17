@@ -187,27 +187,20 @@ class AITaskQueueService:
             await session.commit()
 
         try:
-            # Process based on task type
+            # Process the task via the retry-aware LLM service. All task
+            # types currently produce free-form text (no fixed schema), so
+            # response_class=None routes through the free-form path that
+            # skips pydantic coercion. When a concrete schema is introduced
+            # for a task type, pass it here instead of None.
             llm_service = get_llm_retry_service()
 
-            if task.task_type in [
-                AITaskType.ALERT_ANALYSIS.value,
-                AITaskType.TIMELINE_ANALYSIS.value,
-                AITaskType.IOC_ANALYSIS.value,
-            ]:
-                result = await asyncio.wait_for(
-                    llm_service.generate_structured(
-                        prompt=task.prompt,
-                        response_class=dict,  # Will be handled by llm_retry
-                    ),
-                    timeout=task.timeout_seconds,
-                )
-            else:
-                # Generic chat completion
-                result = await asyncio.wait_for(
-                    llm_service.ai_service.generate(task.prompt),
-                    timeout=task.timeout_seconds,
-                )
+            result, model_used, degraded = await asyncio.wait_for(
+                llm_service.generate_structured(
+                    prompt=task.prompt,
+                    response_class=None,
+                ),
+                timeout=task.timeout_seconds,
+            )
 
             # Update with result
             async with self.session_factory() as session:
@@ -217,9 +210,11 @@ class AITaskQueueService:
 
                 if task:
                     task.status = AITaskStatus.COMPLETED.value
-                    task.result = (
-                        result if isinstance(result, dict) else {"content": result}
-                    )
+                    task.result = {
+                        "content": result,
+                        "model_used": model_used,
+                        "degraded": degraded,
+                    }
                     task.completed_at = datetime.now(UTC)
                     await session.commit()
                     logger.info(f"Completed AI task {task_id}")

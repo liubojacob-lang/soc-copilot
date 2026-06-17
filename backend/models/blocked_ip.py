@@ -14,8 +14,8 @@ class BlockedIP(Base):
     __tablename__ = "blocked_ips"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
 
     value = Column(String(255), nullable=False, index=True)
     type = Column(String(20), nullable=False, default="ip")

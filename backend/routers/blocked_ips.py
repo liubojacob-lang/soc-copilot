@@ -46,7 +46,7 @@ async def block_ip(
         # Calculate expiration
         expires_at = None
         if data.expires_in_hours:
-            expires_at = datetime.utcnow() + timedelta(hours=data.expires_in_hours)
+            expires_at = datetime.now(datetime.UTC) + timedelta(hours=data.expires_in_hours)
 
         blocked = BlockedIP(
             value=data.value,
@@ -199,7 +199,7 @@ async def unblock_ip(
             )
 
         blocked.is_active = False
-        blocked.deactivated_at = datetime.utcnow()
+        blocked.deactivated_at = datetime.now(datetime.UTC)
         blocked.deactivated_by = current_user.username
 
         await session.commit()
@@ -231,7 +231,7 @@ async def check_if_blocked(
         )
         blocked = result.scalar_one_or_none()
 
-        if blocked and blocked.expires_at and blocked.expires_at < datetime.utcnow():
+        if blocked and blocked.expires_at and blocked.expires_at < datetime.now(datetime.UTC):
             # Expired, update status
             blocked.is_active = False
             await session.commit()

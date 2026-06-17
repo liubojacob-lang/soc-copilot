@@ -1,5 +1,6 @@
 """LLM retry service with schema validation and degraded mode."""
 
+import asyncio
 import json
 import uuid
 from typing import Any, TypeVar
@@ -8,7 +9,7 @@ from pydantic import BaseModel, ValidationError
 
 from core.config import settings
 from core.logger import get_logger
-from services.ai_service import AIService
+from services.ai_service_enhanced import EnhancedAIService
 
 logger = get_logger(__name__)
 T = TypeVar("T", bound=BaseModel)
@@ -21,7 +22,7 @@ class LLMRetryService:
 
     def __init__(self) -> None:
         """Initialize LLM retry service."""
-        self.ai_service = AIService()
+        self.ai_service = EnhancedAIService()
 
     def _generate_request_id(self) -> str:
         """Generate unique request ID."""
@@ -201,20 +202,29 @@ Please provide the corrected JSON response:"""
     async def generate_structured(
         self,
         prompt: str,
-        response_class: type[T],
+        response_class: type[T] | None = None,
         extracted_iocs: dict[str, list[str]] | None = None,
-    ) -> tuple[T, str, bool]:
+    ) -> tuple[T | str, str, bool]:
         """Generate structured response with retry and degraded fallback.
 
         Args:
             prompt: The prompt to send to LLM
-            response_class: Pydantic model for response validation
+            response_class: Pydantic model for response validation. When
+                ``None``, free-form text generation is used (no schema
+                coercion) — suitable for task types like CHAT_COMPLETION
+                that do not map to a fixed schema.
             extracted_iocs: Pre-extracted IOCs to include
 
         Returns:
-            Tuple of (validated_response, model_used, was_degraded)
+            Tuple of (validated_response, model_used, was_degraded). When
+            ``response_class`` is None, the first element is the raw model
+            text.
         """
         request_id = self._generate_request_id()
+
+        # ---- Free-form path: no schema, no validation, no degraded payload ----
+        if response_class is None:
+            return await self._generate_freeform(prompt, request_id)
 
         last_error = ""
         last_attempt = ""
@@ -300,6 +310,44 @@ Please provide the corrected JSON response:"""
                 settings.ai_provider,
                 True,
             )
+
+    async def _generate_freeform(
+        self, prompt: str, request_id: str
+    ) -> tuple[str, str, bool]:
+        """Free-form generation: retry on error, no schema validation.
+
+        Used when ``response_class`` is None. Returns the raw model text plus
+        metadata; ``was_degraded`` is True only if every retry failed.
+        """
+        last_error = ""
+        for attempt in range(self.MAX_RETRIES + 1):
+            try:
+                content = await self.ai_service.generate(prompt)
+                model_used = self.ai_service.get_model_name()
+                logger.info(
+                    f"Generated free-form response for request {request_id}, "
+                    f"model: {model_used}"
+                )
+                return content, model_used, False
+            except Exception as e:
+                last_error = str(e)
+                logger.error(
+                    f"Free-form generation error (attempt {attempt}): {last_error}"
+                )
+                if attempt < self.MAX_RETRIES:
+                    await self._backoff(attempt)
+                    continue
+
+        # All retries failed — return an empty string rather than raising so
+        # callers (task queue) can still persist a terminal record.
+        logger.warning(
+            f"Free-form generation exhausted for {request_id}: {last_error}"
+        )
+        return "", self.ai_service.get_model_name(), True
+
+    async def _backoff(self, attempt: int) -> None:
+        """Exponential backoff between free-form retries."""
+        await asyncio.sleep(0.5 * (attempt + 1))
 
 
 # Singleton instance

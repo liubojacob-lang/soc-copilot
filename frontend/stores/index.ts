@@ -1,10 +1,16 @@
 /**
  * Stores Index
- * Re-exports all Zustand stores
+ * Re-exports all stores
  */
 
 export {
   useAuthStore,
+  hydrateAuthStore,
+  login as loginAction,
+  logoutAction,
+  refreshToken,
+  fetchUser,
+  clearError,
   selectUser,
   selectIsAuthenticated,
   selectIsAdmin,

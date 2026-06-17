@@ -17,6 +17,7 @@ from core.security import (
     get_password_hash,
     verify_password,
 )
+from core.token_blacklist import add_token_to_blacklist
 from db.session import get_session
 from dependencies.auth import (
     get_current_user,
@@ -273,9 +274,14 @@ async def login(
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
     refresh_data: TokenRefresh,
+    response: Response,
     session: AsyncSession = Depends(get_session),
 ):
-    """Refresh access token using refresh token."""
+    """Refresh access token using refresh token.
+
+    Implements token rotation: old refresh token is blacklisted
+    after new tokens are issued to prevent replay attacks.
+    """
     # Decode refresh token
     payload = decode_token(refresh_data.refresh_token)
     if not payload or payload.get("type") != "refresh":
@@ -291,6 +297,17 @@ async def refresh_token(
             detail="Invalid refresh token",
         )
 
+    # Check if the old refresh token has already been blacklisted (replay detection)
+    from core.token_blacklist import get_token_blacklist
+
+    blacklist = get_token_blacklist()
+    if await blacklist.is_blacklisted(refresh_data.refresh_token):
+        logger.warning(f"Reused refresh token detected for user {user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has been revoked. Please login again.",
+        )
+
     # Get user
     user_repo = UserRepository(session)
     user = await user_repo.get_by_id(user_id)
@@ -299,6 +316,9 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
         )
+
+    # Blacklist the old refresh token (rotation)
+    await add_token_to_blacklist(refresh_data.refresh_token, reason="token_rotation")
 
     # Create new tokens with role for authorization
     access_token = create_access_token(
@@ -314,6 +334,9 @@ async def refresh_token(
             "role": user.role.value if hasattr(user.role, "value") else user.role,
         }
     )
+
+    # Update httpOnly cookies with new tokens
+    set_auth_cookies(response, access_token, new_refresh_token)
 
     # Create audit log
     from repositories.audit_repository import AuditRepository
@@ -337,11 +360,31 @@ async def refresh_token(
 
 @router.post("/logout")
 async def logout(
+    request: Request,
     response: Response,
     current_user: UserModel = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Logout user and clear httpOnly cookies."""
+    """Logout user, blacklist tokens, and clear httpOnly cookies."""
+    from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, COOKIE_REFRESH_TOKEN_NAME
+    from core.cookie_auth import get_token_from_cookie as _get_cookie
+
+    # Extract tokens from cookies and blacklist them
+    cookie_header = request.headers.get("cookie")
+    access_token = _get_cookie(cookie_header, COOKIE_ACCESS_TOKEN_NAME)
+    refresh_token = _get_cookie(cookie_header, COOKIE_REFRESH_TOKEN_NAME)
+
+    if access_token:
+        await add_token_to_blacklist(access_token, reason="logout")
+    if refresh_token:
+        await add_token_to_blacklist(refresh_token, reason="logout")
+
+    # Also blacklist Bearer token if present
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        bearer_token = auth_header[7:]
+        await add_token_to_blacklist(bearer_token, reason="logout")
+
     from repositories.audit_repository import AuditRepository
 
     audit_repo = AuditRepository(session)

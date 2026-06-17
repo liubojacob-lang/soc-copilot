@@ -3,9 +3,6 @@ AI Service Module - SOC Copilot AI Assistant
 Provides intelligent analysis and recommendations using LLM
 """
 
-from dataclasses import dataclass
-from typing import Any
-
 import httpx
 
 from core.config import settings
@@ -13,29 +10,6 @@ from core.http_client import get_http_client
 from core.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-@dataclass
-class AIAnalysisResult:
-    """Result of AI analysis."""
-
-    summary: str
-    root_cause: str
-    recommendations: list[str]
-    confidence: float
-    related_cases: list[dict[str, Any]]
-    suggested_playbooks: list[str]
-
-
-@dataclass
-class NaturalLanguageQuery:
-    """Natural language query result."""
-
-    query: str
-    intent: str
-    parameters: dict[str, Any]
-    sql_or_filter: str | None
-    response: str
 
 
 class LLMProvider:

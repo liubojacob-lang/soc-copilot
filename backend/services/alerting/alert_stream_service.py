@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
 from routers.websocket import get_manager, push_alert
-from schemas.wazuh_stream import (
+from schemas.alert_stream import (
     AlertAggregation,
     AlertStreamFilter,
     AlertStreamStats,

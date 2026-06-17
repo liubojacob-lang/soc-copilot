@@ -125,9 +125,9 @@ class SecurityAlert(Base):
     )
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(datetime.UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC)
     )
 
     # Event timestamp (from source system)

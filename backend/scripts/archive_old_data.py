@@ -37,7 +37,7 @@ class DataArchiver:
         self.archive_days_audit = archive_days_audit
 
     async def archive_alerts(self) -> int:
-        cutoff_date = datetime.utcnow() - timedelta(days=self.archive_days_alerts)
+        cutoff_date = datetime.now(datetime.UTC) - timedelta(days=self.archive_days_alerts)
 
         count_query = select(func.count(SecurityAlert.id)).where(
             and_(
@@ -71,7 +71,7 @@ class DataArchiver:
         return archived_count
 
     async def archive_history(self) -> int:
-        cutoff_date = datetime.utcnow() - timedelta(days=self.archive_days_history)
+        cutoff_date = datetime.now(datetime.UTC) - timedelta(days=self.archive_days_history)
 
         count_query = select(func.count(History.id)).where(
             History.created_at < cutoff_date
@@ -97,7 +97,7 @@ class DataArchiver:
         return archived_count
 
     async def archive_audit_logs(self) -> int:
-        cutoff_date = datetime.utcnow() - timedelta(days=self.archive_days_audit)
+        cutoff_date = datetime.now(datetime.UTC) - timedelta(days=self.archive_days_audit)
 
         count_query = select(func.count(AuditLog.id)).where(
             AuditLog.created_at < cutoff_date

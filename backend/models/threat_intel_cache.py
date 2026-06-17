@@ -16,8 +16,8 @@ class ThreatIntelCacheDB(Base):
     __tablename__ = "threat_intel_cache"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), index=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
     provider = Column(String, nullable=False, index=True)  # e.g., "otx"
     ioc_type = Column(String, nullable=False, index=True)  # ip/domain/url/hash
     ioc_value = Column(String, nullable=False, index=True)

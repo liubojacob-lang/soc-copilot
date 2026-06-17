@@ -309,7 +309,7 @@ async def update_alert(
             alert.status = update_data.status.lower()
             # Set closed_at if status is closed or false_positive
             if alert.status in ["closed", "false_positive"] and not alert.closed_at:
-                alert.closed_at = datetime.utcnow()
+                alert.closed_at = datetime.now(datetime.UTC)
 
         if update_data.assigned_to:
             alert.assigned_to = update_data.assigned_to
@@ -378,7 +378,7 @@ async def get_alert_statistics(
         by_source = {row[0]: row[1] for row in source_result.all()}
 
         # Time-based counts
-        now = datetime.utcnow()
+        now = datetime.now(datetime.UTC)
 
         last_24h_query = (
             select(func.count())

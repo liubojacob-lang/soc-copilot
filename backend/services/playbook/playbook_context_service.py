@@ -320,7 +320,7 @@ class PlaybookContextService:
         """Initialize context for a new playbook run."""
         metadata = {
             "run_id": run_id,
-            "started_at": datetime.utcnow().isoformat(),
+            "started_at": datetime.now(datetime.UTC).isoformat(),
             "definition_id": definition_id,
         }
 

@@ -193,6 +193,93 @@ class TestAITaskQueueService:
 
         assert success is False
 
+    @pytest.mark.asyncio
+    async def test_process_task_persists_tuple_result_correctly(
+        self, ai_task_service, mock_session_factory
+    ):
+        """P0-1 regression: _process_task must unpack the (result, model, degraded) tuple.
+
+        Previously it assigned the whole tuple to `result` and stored it as
+        {"content": <tuple>}. Now it unpacks and stores structured metadata.
+        """
+        _, session = mock_session_factory
+
+        # First query: return a PENDING task to process
+        task = AITaskModel(
+            id="proc-1",
+            task_type=AITaskType.CHAT_COMPLETION.value,
+            status=AITaskStatus.PENDING.value,
+            prompt="summarize this",
+            created_at=datetime.now(UTC),
+            timeout_seconds=300,
+        )
+        first_result = MagicMock()
+        first_result.scalar_one_or_none.return_value = task
+        # Second query (result refresh) returns the same task object
+        second_result = MagicMock()
+        second_result.scalar_one_or_none.return_value = task
+
+        session.execute = AsyncMock(side_effect=[first_result, second_result])
+
+        # Mock the LLM service to return a properly-shaped tuple
+        with patch(
+            "services.ai_task_service.get_llm_retry_service"
+        ) as mock_get_llm:
+            mock_llm = MagicMock()
+            mock_llm.generate_structured = AsyncMock(
+                return_value=("summary text", "glm-4-test", False)
+            )
+            mock_get_llm.return_value = mock_llm
+
+            await ai_task_service._process_task("proc-1")
+
+        # The task result must be a dict with content/model_used/degraded —
+        # NOT a bare tuple and NOT {"content": <tuple>}.
+        assert task.status == AITaskStatus.COMPLETED.value
+        assert isinstance(task.result, dict)
+        assert task.result["content"] == "summary text"
+        assert task.result["model_used"] == "glm-4-test"
+        assert task.result["degraded"] is False
+        # generate_structured must be called with response_class=None
+        call_kwargs = mock_llm.generate_structured.call_args.kwargs
+        assert call_kwargs["response_class"] is None
+
+    @pytest.mark.asyncio
+    async def test_process_task_degraded_result_still_persisted(
+        self, ai_task_service, mock_session_factory
+    ):
+        """When LLM degrades (empty content), the task still reaches COMPLETED."""
+        _, session = mock_session_factory
+
+        task = AITaskModel(
+            id="proc-2",
+            task_type=AITaskType.ALERT_ANALYSIS.value,
+            status=AITaskStatus.PENDING.value,
+            prompt="analyze",
+            created_at=datetime.now(UTC),
+            timeout_seconds=300,
+        )
+        first_result = MagicMock()
+        first_result.scalar_one_or_none.return_value = task
+        second_result = MagicMock()
+        second_result.scalar_one_or_none.return_value = task
+        session.execute = AsyncMock(side_effect=[first_result, second_result])
+
+        with patch(
+            "services.ai_task_service.get_llm_retry_service"
+        ) as mock_get_llm:
+            mock_llm = MagicMock()
+            mock_llm.generate_structured = AsyncMock(
+                return_value=("", "glm-4-test", True)  # degraded
+            )
+            mock_get_llm.return_value = mock_llm
+
+            await ai_task_service._process_task("proc-2")
+
+        assert task.status == AITaskStatus.COMPLETED.value
+        assert task.result["degraded"] is True
+        assert task.result["content"] == ""
+
 
 class TestAITaskModel:
     """Tests for AITaskModel."""

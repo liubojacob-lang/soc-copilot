@@ -45,6 +45,7 @@
     "@eslint/eslintrc": "^3.3.5",
     "@faker-js/faker": "^10.3.0",
     "@playwright/test": "^1.40.0",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^25.3.3",
     "@types/react": "^19",

@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from dependencies import get_current_user
 from models.user import UserModel
-from schemas.wazuh_stream import (
+from schemas.alert_stream import (
     AlertStreamFilter,
     AlertStreamStats,
     SeverityLevel,

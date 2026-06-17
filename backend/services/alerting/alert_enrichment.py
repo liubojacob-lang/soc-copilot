@@ -43,7 +43,7 @@ class ThreatIntelEnricher:
         Returns enrichment data to be stored in alert
         """
         enrichment = {
-            "enriched_at": datetime.utcnow().isoformat(),
+            "enriched_at": datetime.now(datetime.UTC).isoformat(),
             "indicators": {},
             "threat_scores": {},
             "tags": [],
@@ -227,7 +227,7 @@ class AlertEnrichmentService:
                 if alert.raw_data and alert.raw_data.get("enriched_at"):
                     # Check if enriched in last 24h
                     enriched_at = datetime.fromisoformat(alert.raw_data["enriched_at"])
-                    if (datetime.utcnow() - enriched_at).days < 1:
+                    if (datetime.now(datetime.UTC) - enriched_at).days < 1:
                         logger.debug(f"Alert {alert_id} already enriched recently")
                         return False
 
@@ -262,7 +262,7 @@ class AlertEnrichmentService:
             async with AsyncSessionLocal() as session:
                 from datetime import timedelta
 
-                cutoff = datetime.utcnow() - timedelta(hours=hours)
+                cutoff = datetime.now(datetime.UTC) - timedelta(hours=hours)
 
                 query = (
                     select(SecurityAlert)

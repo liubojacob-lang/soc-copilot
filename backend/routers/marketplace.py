@@ -6,8 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
-from dependencies.authorization import require_admin
+from dependencies.auth import get_current_user, require_admin
 from models.user import UserModel
 from repositories.marketplace_repository import MarketplaceRepository
 from repositories.playbook_definition_repository import PlaybookDefinitionRepository

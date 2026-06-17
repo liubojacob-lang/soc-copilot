@@ -9,11 +9,6 @@ type WebVitalsMetric = Metric & {
 
 function sendToAnalytics(metric: WebVitalsMetric) {
   if (process.env.NODE_ENV === "development") {
-    console.log("[Web Vitals]", metric.name, {
-      value: Math.round(metric.value),
-      rating: metric.rating,
-      id: metric.id,
-    });
     return;
   }
 

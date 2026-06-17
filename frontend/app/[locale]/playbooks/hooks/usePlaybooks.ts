@@ -3,9 +3,20 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
-import { api, type PlaybookRunResponse, type PlaybookMetadata } from "@/lib/api";
+import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
-import type { QueueStats } from "../constants";
+import type { QueueStats, PlaybookMetadata } from "../constants";
+
+interface PlaybookRunResponse {
+  id: string;
+  playbook_name: string;
+  status: string;
+  mode: string;
+  started_at: string;
+  finished_at: string | null;
+  items?: PlaybookRunResponse[];
+  total?: number;
+}
 
 interface PlaybookDefinition {
   id: string;

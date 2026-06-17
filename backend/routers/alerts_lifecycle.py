@@ -223,7 +223,7 @@ async def batch_update_alerts(
 
             if batch.assigned_to:
                 alert.assigned_to = batch.assigned_to
-                alert.assigned_at = datetime.utcnow()
+                alert.assigned_at = datetime.now(datetime.UTC)
 
             if batch.tags:
                 current_tags = alert.tags or []
@@ -238,7 +238,7 @@ async def batch_update_alerts(
                     # Default: replace
                     alert.tags = batch.tags
 
-            alert.updated_at = datetime.utcnow()
+            alert.updated_at = datetime.now(datetime.UTC)
             updated_count += 1
 
         except Exception as e:

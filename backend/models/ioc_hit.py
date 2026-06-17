@@ -16,7 +16,7 @@ class IOCHitDB(Base):
     __tablename__ = "ioc_hits"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), index=True)
     history_id = Column(String, ForeignKey("history.id"), nullable=True, index=True)
     asset_id = Column(String, ForeignKey("assets.id"), nullable=True, index=True)
     ioc_type = Column(String, nullable=False, index=True)

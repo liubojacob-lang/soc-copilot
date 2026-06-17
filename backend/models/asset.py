@@ -16,8 +16,8 @@ class AssetDB(Base):
     __tablename__ = "assets"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
     hostname = Column(String, unique=True, nullable=True, index=True)
     ip = Column(String, unique=True, nullable=True, index=True)
     owner = Column(String, nullable=True)

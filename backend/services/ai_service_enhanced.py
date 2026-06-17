@@ -5,43 +5,23 @@ Adds RAG (Retrieval Augmented Generation) and advanced AI capabilities
 
 import asyncio
 import json
-import re
 from typing import Any, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
 from core.config import settings
 from core.logger import get_logger
+from core.prompt_sanitizer import (
+    sanitize_alert_data,
+    sanitize_json_for_prompt,
+    sanitize_prompt_input,
+)
 from services.ai_providers import LLMFactory, LLMProvider
-from services.vector_store import get_vector_store
+from services.ai_utils import clean_json_content
 
 logger = get_logger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
-
-
-def clean_json_content(content: str) -> str:
-    """Clean AI response content for valid JSON parsing."""
-    content = content.strip()
-
-    # Find JSON content - might be wrapped in ```json ... ``` or ``` ... ```
-    if content.startswith("```"):
-        end_marker = content.find("```", 3)
-        if end_marker != -1:
-            content = content[3:end_marker].strip()
-        else:
-            parts = content.split("```")
-            if len(parts) >= 2:
-                content = parts[1].strip()
-
-        # Remove json language identifier if present
-        if content.startswith("json"):
-            content = content[4:].strip()
-
-    # Remove control characters that could break JSON parsing
-    content = re.sub(r"[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]", "", content)
-
-    return content
 
 
 class AIAnalysisResult(BaseModel):
@@ -98,6 +78,43 @@ class EnhancedAIService:
                 logger.warning("No LLM provider available")
         except Exception as e:
             logger.error(f"Failed to initialize LLM: {e}")
+
+    def get_model_name(self) -> str:
+        """Return the model identifier currently in use.
+
+        Falls back to the configured provider name when no concrete provider
+        is initialized (e.g. degraded mode / missing API key). This keeps
+        downstream consumers (LLMRetryService, audit metadata) working even
+        when the LLM itself is unavailable.
+        """
+        if self.llm is not None and getattr(self.llm, "model", None):
+            return self.llm.model
+        return getattr(settings, "ai_provider", "unknown")
+
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "You are a cybersecurity expert assistant.",
+        temperature: float = 0.7,
+    ) -> str:
+        """Generate a plain-text completion for the given prompt.
+
+        Unlike ``generate_structured`` (which enforces a JSON schema), this is
+        the escape hatch for task types that produce free-form text
+        (e.g. CHAT_COMPLETION, REPORT_GENERATION). Returns the raw model
+        output as a string.
+        """
+        if not self.llm:
+            raise ValueError("AI service not initialized")
+
+        content = await self.llm.chat_completion(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=temperature,
+        )
+        return content
 
     async def generate_structured(
         self,
@@ -191,30 +208,21 @@ Respond with JSON that matches the schema above:"""
             raise ValueError("AI service not available")
 
         try:
+            # Sanitize alert data to prevent prompt injection
+            safe_alert = sanitize_alert_data(alert_data)
+
             # Build base prompt
             alert_summary = f"""
-Alert: {alert_data.get("title", "N/A")}
-Description: {alert_data.get("description", "N/A")}
-Severity: {alert_data.get("severity", "unknown")}
-Source: {alert_data.get("source", "N/A")}
-Type: {alert_data.get("alert_type", "N/A")}
+Alert: {safe_alert.get("title", "N/A")}
+Description: {safe_alert.get("description", "N/A")}
+Severity: {safe_alert.get("severity", "unknown")}
+Source: {safe_alert.get("source", "N/A")}
+Type: {safe_alert.get("alert_type", "N/A")}
 """
 
-            # Add RAG context if enabled
+            # RAG context: vector search is not yet wired (see roadmap);
+            # keep the placeholder so the prompt template stays intact.
             rag_context = ""
-            if use_rag:
-                try:
-                    vector_store = await get_vector_store()
-                    # Search for similar historical alerts
-                    query_text = f"{alert_data.get('title', '')} {alert_data.get('description', '')}"
-                    # Note: In real implementation, you'd generate embedding for the query
-                    # For now, we'll skip the vector search and use text-based similarity
-
-                    rag_context = """
-Consider similar historical cases and best practices in your analysis.
-"""
-                except Exception as e:
-                    logger.warning(f"RAG search failed: {e}")
 
             system_prompt = """You are an expert SOC analyst. Analyze this security alert and provide:
 1. Concise summary
@@ -287,7 +295,7 @@ Parse the query and extract:
 3. Filter criteria for database queries
 4. Natural language acknowledgment"""
 
-            user_prompt = f"Query: {query}"
+            user_prompt = f"Query: {sanitize_prompt_input(query)}"
             if user_context:
                 user_prompt += f"\nUser: {user_context.get('username', 'unknown')}"
                 user_prompt += f"\nRole: {user_context.get('role', 'unknown')}"
@@ -338,10 +346,10 @@ Respond with an array of recommendations, each with:
 - estimated_time (string, optional, e.g., "5 minutes")"""
 
             user_prompt = f"""Alert:
-{json.dumps(alert_data, indent=2)}
+{sanitize_json_for_prompt(alert_data)}
 
 Available Playbooks ({len(available_playbooks)}):
-{json.dumps(available_playbooks[:10], indent=2)}  # Limit to 10 for token efficiency
+{sanitize_json_for_prompt(available_playbooks[:10])}
 
 Provide your recommendations:"""
 
@@ -460,10 +468,10 @@ Generate a professional Markdown report with:
 - Conclusion"""
 
             user_prompt = f"""Generate an investigation report for:
-Alert ID: {alert_id}
+Alert ID: {sanitize_prompt_input(alert_id)}
 
 Investigation Data:
-{json.dumps(investigation_data, indent=2, default=str)}
+{sanitize_json_for_prompt(investigation_data)}
 
 Format the report in Markdown."""
 
@@ -495,5 +503,36 @@ def get_enhanced_ai_service() -> EnhancedAIService:
     return _enhanced_ai_service
 
 
-# Backwards compatibility
-ai_service = get_enhanced_ai_service()
+# -------- Extension Interfaces --------
+
+class IncidentAnalysisRequest(BaseModel):
+    incident_id: str
+    title: str
+    summary: str
+    indicators: list[str] = []
+    raw_events: list[dict] = []
+
+
+class IncidentAnalysisResult(BaseModel):
+    incident_id: str
+    risk_score: float
+    root_cause: str
+    recommendations: list[str] = []
+    confidence: float = 0.0
+
+
+class AIIncidentAnalyzer:
+    """Adapter interface for future LLM-backed incident analysis providers."""
+
+    async def analyze_incident(self, request: IncidentAnalysisRequest) -> IncidentAnalysisResult:
+        raise NotImplementedError
+
+
+class VectorStoreProvider:
+    """Extension point for vector DB integrations (pgvector/milvus/faiss/etc)."""
+
+    async def upsert_documents(self, namespace: str, documents: list[dict]) -> None:
+        raise NotImplementedError
+
+    async def similarity_search(self, namespace: str, query: str, top_k: int = 5) -> list[dict]:
+        raise NotImplementedError
