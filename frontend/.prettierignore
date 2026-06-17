@@ -3,6 +3,11 @@ node_modules
 .pnp
 .pnp.js
 
+# Python (misplaced venv should not be here, but ignore to be safe)
+venv
+__pycache__
+*.pyc
+
 # Production
 build
 dist

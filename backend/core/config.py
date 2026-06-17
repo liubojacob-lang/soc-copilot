@@ -119,12 +119,23 @@ class Settings(BaseSettings):
     wazuh_batch_size: int = 100  # Maximum events to fetch per poll
     wazuh_lookback_minutes: int = 5  # Minutes to look back on startup
 
+    @property
+    def enforce_strict_checks(self) -> bool:
+        """Whether strict security checks are enforced.
+
+        Strict mode is active when either:
+        - explicitly enabled via STRICT_PRODUCTION_CHECKS=true, OR
+        - running in production environment (defense-in-depth: a prod
+          deployment with weak secrets must fail fast rather than warn)
+        """
+        return self.strict_production_checks or self.environment == "production"
+
     @field_validator("jwt_secret")
     @classmethod
     def validate_jwt_secret(cls, v: str, info) -> str:
         """Validate JWT secret key strength."""
         environment = info.data.get("environment", "development")
-        strict_mode = info.data.get("strict_production_checks", False)
+        strict_mode = info.data.get("strict_production_checks", False) or environment == "production"
 
         # Production requires JWT secret
         if environment == "production":
@@ -159,7 +170,7 @@ class Settings(BaseSettings):
     def validate_admin_password(cls, v: str, info) -> str:
         """Validate bootstrap admin password strength."""
         environment = info.data.get("environment", "development")
-        strict_mode = info.data.get("strict_production_checks", False)
+        strict_mode = info.data.get("strict_production_checks", False) or environment == "production"
 
         # Production requires admin password
         if environment == "production":
@@ -213,7 +224,7 @@ class Settings(BaseSettings):
         Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
         """
         environment = info.data.get("environment", "development")
-        strict_mode = info.data.get("strict_production_checks", False)
+        strict_mode = info.data.get("strict_production_checks", False) or environment == "production"
 
         # Production requires a valid Fernet key
         if environment == "production":

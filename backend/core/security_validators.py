@@ -102,7 +102,7 @@ def validate_jwt_secret() -> tuple[bool, str | None]:
 
     # Check minimum length
     if len(secret) < 32:
-        if settings.strict_production_checks:
+        if settings.enforce_strict_checks:
             return (
                 False,
                 f"JWT_SECRET must be at least 32 characters long. Current length: {len(secret)}",
@@ -115,7 +115,7 @@ def validate_jwt_secret() -> tuple[bool, str | None]:
     # Check entropy (basic check)
     unique_chars = len(set(secret))
     if unique_chars < 16:
-        if settings.strict_production_checks:
+        if settings.enforce_strict_checks:
             return (
                 False,
                 f"JWT_SECRET has low entropy. Only {unique_chars} unique characters.",
@@ -194,7 +194,7 @@ def validate_bootstrap_password() -> tuple[bool, str | None]:
 
     # Check if using default password
     if password == "admin123!":
-        if settings.strict_production_checks:
+        if settings.enforce_strict_checks:
             return (
                 False,
                 "Bootstrap admin password is using default value 'admin123!'. This is not allowed with strict production checks.",
@@ -210,7 +210,7 @@ def validate_bootstrap_password() -> tuple[bool, str | None]:
         password, settings.bootstrap_admin_username
     )
     if not is_valid:
-        if settings.strict_production_checks:
+        if settings.enforce_strict_checks:
             return False, f"Bootstrap admin password is weak: {'; '.join(errors)}"
         else:
             logger.warning(f"Bootstrap admin password is weak: {'; '.join(errors)}")

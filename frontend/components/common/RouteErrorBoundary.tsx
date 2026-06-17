@@ -23,9 +23,7 @@ export default function RouteError({ error, reset }: ErrorProps) {
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
           {t("title")}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-          {t("description")}
-        </p>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">{t("description")}</p>
 
         {process.env.NODE_ENV === "development" && (
           <details className="mb-6 text-left bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -37,9 +35,7 @@ export default function RouteError({ error, reset }: ErrorProps) {
                 {error.name}: {error.message}
               </p>
               {error.digest && (
-                <p className="text-xs text-gray-500 font-mono mb-2">
-                  Error ID: {error.digest}
-                </p>
+                <p className="text-xs text-gray-500 font-mono mb-2">Error ID: {error.digest}</p>
               )}
               {error.stack && (
                 <pre className="text-xs text-red-500 dark:text-red-400 bg-white dark:bg-gray-800 p-3 rounded border border-red-200 dark:border-red-800 overflow-auto max-h-48 whitespace-pre-wrap break-words">

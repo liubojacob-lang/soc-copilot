@@ -255,10 +255,10 @@ async def lifespan(app_instance: FastAPI):
     security_errors = run_production_security_checks()
     if security_errors:
         msg = "Production security validation failed: " + "; ".join(security_errors)
-        if settings.strict_production_checks:
+        if settings.enforce_strict_checks:
             logger.critical(msg)
             raise RuntimeError(msg)
-        logger.critical(msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=true to fail)")
+        logger.critical(msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=true or ENVIRONMENT=production to fail)")
 
     # Run migrations
     await run_migrations()

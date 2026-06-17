@@ -37,7 +37,7 @@ export interface ConversationGroup {
 export function useGroupedConversations(
   conversations: ChatConversation[],
   t: (key: string) => string,
-  mounted: boolean,
+  mounted: boolean
 ): ConversationGroup[] {
   return useMemo(() => {
     if (!mounted) return [];
