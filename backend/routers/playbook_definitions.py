@@ -410,7 +410,10 @@ async def run_dag_playbook(
         except Exception as e:
             error_trace = traceback.format_exc()
             logger.error(f"[{trace_id}] DAG execution failed: {e}\n{error_trace}")
-            await run_repo.update(run.id, {"status": "failed", "error_message": str(e)})
+            # Do not store raw exception text in DB (surfaced to clients); keep generic.
+            await run_repo.update(
+                run.id, {"status": "failed", "error_message": "DAG execution failed"}
+            )
 
         return DAGPlaybookRunResponse(
             id=run.id,
@@ -448,9 +451,8 @@ async def run_dag_playbook(
         return PlaybookRunErrorResponse(
             success=False,
             error_code="PLAYBOOK_RUN_FAILED",
-            message=f"Internal error during playbook execution: {e!s}",
+            message="Internal error during playbook execution. Check server logs for details.",
             details={
-                "exception": str(e),
                 "definition_id": definition_id,
                 "mode": data.mode,
             },

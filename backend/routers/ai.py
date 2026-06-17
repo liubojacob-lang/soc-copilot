@@ -158,11 +158,13 @@ async def analyze_alert(
             processed_at=datetime.now().isoformat(),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error analyzing alert: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to analyze alert: {e!s}",
+            detail="Failed to analyze alert. Check server logs for details.",
         )
 
 
@@ -202,11 +204,13 @@ async def natural_language_query(
             processed_at=datetime.now().isoformat(),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing query: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process query: {e!s}",
+            detail="Failed to process query. Check server logs for details.",
         )
 
 
@@ -260,11 +264,13 @@ async def recommend_playbooks(
             generated_at=datetime.now().isoformat(),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error recommending playbooks: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to recommend playbooks: {e!s}",
+            detail="Failed to recommend playbooks. Check server logs for details.",
         )
 
 
@@ -355,7 +361,7 @@ async def chat(
         logger.error(f"Error in chat: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Chat error: {e!s}",
+            detail="Chat error. Check server logs for details.",
         )
 
 
@@ -381,11 +387,13 @@ async def generate_report(
             "generated_at": datetime.now().isoformat(),
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error generating report: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate report: {e!s}",
+            detail="Failed to generate report. Check server logs for details.",
         )
 
 

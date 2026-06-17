@@ -82,7 +82,8 @@ async def send_test_notification(
     except Exception as e:
         logger.error(f"Error sending test notification: {e!s}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to send test notification: {e!s}"
+            status_code=500,
+            detail="Failed to send test notification. Check server logs for details.",
         )
 
 
@@ -109,7 +110,10 @@ async def get_notification_channels(
 
     except Exception as e:
         logger.error(f"Error getting notification channels: {e!s}")
-        raise HTTPException(status_code=500, detail=f"Failed to get channels: {e!s}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get notification channels. Check server logs for details.",
+        )
 
 
 @router.get("/queue/stats", response_model=dict[str, dict[str, int | str]])

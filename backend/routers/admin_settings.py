@@ -132,7 +132,11 @@ async def update_settings(
 
         logger.error(f"Failed to update settings: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
-        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+        # Do NOT expose exception details or traceback to the client — info leak.
+        return {
+            "success": False,
+            "error": "Failed to update settings. Check server logs for details.",
+        }
 
 
 @router.get("/timeouts", response_model=TimeoutConfigResponse)
