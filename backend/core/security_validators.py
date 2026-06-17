@@ -89,7 +89,7 @@ def validate_jwt_secret() -> tuple[bool, str | None]:
 
     # Check if using default secret
     if secret == default_secret:
-        if settings.environment == "production" or settings.strict_production_checks:
+        if settings.enforce_strict_checks:
             return (
                 False,
                 "JWT_SECRET is using default value. This is not allowed in production.",
