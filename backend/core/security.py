@@ -5,7 +5,8 @@ import secrets
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError
 
 from core.config import settings
 from core.logger import get_logger
@@ -101,7 +102,7 @@ def decode_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
         return payload
-    except JWTError as e:
+    except PyJWTError as e:
         logger.debug(f"Token decode failed: {e}")
         return None
 
