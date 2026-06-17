@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user
+from models.user import UserModel
 from schemas.timeline import TimelineRequest, TimelineResponse
 from services.timeline_service import TimelineService
 
@@ -18,6 +20,7 @@ router = APIRouter(tags=["timeline"])
 async def build_timeline(
     request: TimelineRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> TimelineResponse:
     """Build a security timeline from logs.
 

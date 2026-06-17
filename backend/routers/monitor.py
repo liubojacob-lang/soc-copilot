@@ -12,7 +12,7 @@ from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select, text
@@ -21,7 +21,9 @@ from core.config import settings
 from core.logger import get_logger
 from core.token_blacklist import REDIS_AVAILABLE
 from db.session import AsyncSessionLocal
+from dependencies.auth import get_current_user
 from models.monitor_history import MonitorHistoryModel
+from models.user import UserModel
 
 logger = get_logger(__name__)
 
@@ -329,13 +331,11 @@ async def monitor_event_generator() -> AsyncGenerator[str, None]:
 
 
 @router.get("/stream")
-async def monitor_stream(request: Request) -> StreamingResponse:
-    """
-    SSE endpoint for real-time monitoring data.
-
-    Note: Admin check should be added via dependency injection.
-    For now, open access for development.
-    """
+async def monitor_stream(
+    request: Request,
+    current_user: UserModel = Depends(get_current_user),
+) -> StreamingResponse:
+    """SSE endpoint for real-time monitoring data (requires authentication)."""
     return StreamingResponse(
         monitor_event_generator(),
         media_type="text/event-stream",
@@ -348,8 +348,10 @@ async def monitor_stream(request: Request) -> StreamingResponse:
 
 
 @router.get("/snapshot")
-async def get_monitor_snapshot() -> dict[str, Any]:
-    """Get current monitoring snapshot (single request)."""
+async def get_monitor_snapshot(
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Get current monitoring snapshot (single request, requires authentication)."""
     data = await get_monitor_data()
     # Also save to database for history
     await save_monitor_data_to_db(data)
@@ -357,7 +359,10 @@ async def get_monitor_snapshot() -> dict[str, Any]:
 
 
 @router.get("/history")
-async def get_monitor_history(minutes: int = 60) -> dict[str, Any]:
+async def get_monitor_history(
+    minutes: int = 60,
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Get historical monitoring data from persistent storage.
 
@@ -430,7 +435,10 @@ async def get_monitor_history(minutes: int = 60) -> dict[str, Any]:
 
 
 @router.delete("/history/cleanup")
-async def cleanup_old_monitor_history(days: int = 7) -> dict[str, Any]:
+async def cleanup_old_monitor_history(
+    days: int = 7,
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Clean up monitor history older than specified days.
 
@@ -479,7 +487,9 @@ async def cleanup_old_monitor_history(days: int = 7) -> dict[str, Any]:
 
 
 @router.delete("/history/clear")
-async def clear_all_monitor_history() -> dict[str, Any]:
+async def clear_all_monitor_history(
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Clear ALL monitor history data.
 

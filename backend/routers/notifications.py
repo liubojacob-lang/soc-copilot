@@ -10,10 +10,12 @@ Notifications Router
 
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from core.logger import get_logger
+from dependencies.auth import get_current_user
+from models.user import UserModel
 from services.message_queue_manager import get_message_queue_manager
 from services.notification_service import get_notification_service
 
@@ -39,6 +41,7 @@ class QueueStatsResponse(BaseModel):
 @router.post("/test", response_model=dict[str, bool])
 async def send_test_notification(
     request: TestNotificationRequest | None = None,
+    current_user: UserModel = Depends(get_current_user),
 ) -> dict[str, bool]:
     """
     发送测试通知
@@ -84,7 +87,9 @@ async def send_test_notification(
 
 
 @router.get("/channels", response_model=dict[str, bool])
-async def get_notification_channels() -> dict[str, bool]:
+async def get_notification_channels(
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, bool]:
     """
     获取通知渠道状态
 
@@ -108,7 +113,9 @@ async def get_notification_channels() -> dict[str, bool]:
 
 
 @router.get("/queue/stats", response_model=dict[str, dict[str, int | str]])
-async def get_queue_stats() -> dict[str, dict[str, int | str]]:
+async def get_queue_stats(
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, dict[str, int | str]]:
     """
     获取消息队列统计信息
 
@@ -144,7 +151,9 @@ async def get_queue_stats() -> dict[str, dict[str, int | str]]:
 
 
 @router.get("/health")
-async def get_notification_health() -> dict:
+async def get_notification_health(
+    current_user: UserModel = Depends(get_current_user),
+) -> dict:
     """
     获取通知系统健康状态
 
