@@ -4,21 +4,19 @@ import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from core.config import settings
 from core.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Password hashing with configurable bcrypt rounds
+# Password hashing with bcrypt (native API, not passlib which is unmaintained
+# and incompatible with bcrypt>=4.0 — see P0-4 security audit).
 # Development: 10 rounds (faster, ~100ms)
 # Production: 12 rounds (default, ~250ms)
 bcrypt_rounds = 10 if settings.environment == "development" else 12
-pwd_context = CryptContext(
-    schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=bcrypt_rounds
-)
 
 # JWT settings - always use fresh settings.jwt_secret, not cached constant
 JWT_ALGORITHM = "HS256"
@@ -33,13 +31,26 @@ def get_jwt_secret() -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password against its bcrypt hash.
+
+    Handles legacy passlib hashes (starting with $2b$/$2a$) transparently —
+    bcrypt native checkpw accepts the same hash format.
+    """
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            hashed_password.encode("utf-8"),
+        )
+    except (ValueError, TypeError):
+        # Malformed hash (e.g. legacy SHA-256 API keys handled elsewhere)
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password."""
-    return pwd_context.hash(password)
+    """Hash a password using bcrypt."""
+    return bcrypt.hashpw(
+        password.encode("utf-8"), bcrypt.gensalt(rounds=bcrypt_rounds)
+    ).decode("utf-8")
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
@@ -168,7 +179,7 @@ def hash_api_key(api_key: str) -> str:
     New keys always use bcrypt.
     """
     # Use bcrypt for new keys (prefix with 'v2:' to identify)
-    return f"v2:{pwd_context.hash(api_key)}"
+    return f"v2:{get_password_hash(api_key)}"
 
 
 def verify_api_key(plain_api_key: str, hashed_api_key: str) -> bool:
@@ -177,8 +188,8 @@ def verify_api_key(plain_api_key: str, hashed_api_key: str) -> bool:
     Supports both legacy SHA256 (v1) and new bcrypt (v2) hashes.
     """
     if hashed_api_key.startswith("v2:"):
-        # New bcrypt hash
-        return pwd_context.verify(plain_api_key, hashed_api_key[3:])
+        # New bcrypt hash (native API)
+        return verify_password(plain_api_key, hashed_api_key[3:])
     else:
         # Legacy SHA256 hash - for backward compatibility
         legacy_hash = hashlib.sha256(plain_api_key.encode()).hexdigest()

@@ -28,9 +28,9 @@ dependencies = [
     "redis==7.2.1",
     "tenacity==8.2.3",
     "requests==2.31.0",
-    "passlib[bcrypt]==1.7.4",
+    # P0-4: removed passlib (unmaintained, incompatible with bcrypt>=4.0)
     "python-jose[cryptography]==3.3.0",
-    "bcrypt>=5.0.0",
+    "bcrypt>=4.0.0,<5.0.0",
     "croniter==3.0.3",
     "alembic==1.14.0",
     "chromadb==1.5.2",

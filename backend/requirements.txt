@@ -14,9 +14,10 @@ tenacity==8.2.3
 requests==2.31.0
 
 # v0.6.2 additions
-passlib[bcrypt]==1.7.4
+# P0-4: removed passlib (unmaintained, incompatible with bcrypt>=4.0).
+# Password/API-key hashing now uses bcrypt native API directly.
 python-jose[cryptography]==3.3.0
-bcrypt>=5.0.0
+bcrypt>=4.0.0,<5.0.0
 
 # v0.7.1 additions (trigger system)
 croniter==3.0.3
