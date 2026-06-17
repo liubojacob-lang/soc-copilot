@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -329,7 +329,7 @@ async def get_vulnerability_statistics(
     stats = await service.get_vulnerability_statistics()
 
     return success_response(
-        data={"statistics": stats, "last_updated": datetime.now(datetime.UTC).isoformat()},
+        data={"statistics": stats, "last_updated": datetime.now(UTC).isoformat()},
         message="Statistics retrieved successfully",
         trace_id=get_trace_id(),
     )
@@ -384,7 +384,7 @@ async def export_vulnerabilities(
             data={
                 "format": format,
                 "data": export_data,
-                "exported_at": datetime.now(datetime.UTC).isoformat(),
+                "exported_at": datetime.now(UTC).isoformat(),
             },
             message="Export completed successfully",
             trace_id=get_trace_id(),

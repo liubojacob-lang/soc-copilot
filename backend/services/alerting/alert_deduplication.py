@@ -5,7 +5,7 @@ to reduce alert fatigue.
 """
 
 import hashlib
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, func, or_, select
@@ -89,7 +89,7 @@ class AlertDeduplicator:
             Existing duplicate alert or None
         """
         fingerprint = self.generate_fingerprint(alert, fingerprint_method)
-        cutoff_time = datetime.now(datetime.UTC) - timedelta(hours=time_window_hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=time_window_hours)
 
         query = select(SecurityAlert).where(
             and_(
@@ -124,7 +124,7 @@ class AlertAggregator:
         Returns:
             Tuple of (aggregated_alert, is_new_alert)
         """
-        cutoff_time = datetime.now(datetime.UTC) - timedelta(hours=time_window_hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=time_window_hours)
 
         query = select(SecurityAlert).where(
             and_(
@@ -164,7 +164,7 @@ class AlertAggregator:
             primary_alert.aggregated_count = 1
 
         primary_alert.aggregated_count += 1
-        primary_alert.last_seen_at = datetime.now(datetime.UTC)
+        primary_alert.last_seen_at = datetime.now(UTC)
 
         severity_order = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
         new_severity_level = severity_order.get(new_alert.severity, 0)
@@ -216,7 +216,7 @@ class AlertStormSuppressor:
         Returns:
             Tuple of (is_storm, alert_count)
         """
-        cutoff_time = datetime.now(datetime.UTC) - timedelta(minutes=time_window_minutes)
+        cutoff_time = datetime.now(UTC) - timedelta(minutes=time_window_minutes)
 
         query = select(func.count(SecurityAlert.id)).where(
             and_(
@@ -247,7 +247,7 @@ class AlertStormSuppressor:
         Returns:
             List of suppressed source information
         """
-        cutoff_time = datetime.now(datetime.UTC) - timedelta(
+        cutoff_time = datetime.now(UTC) - timedelta(
             minutes=self.suppression_window_minutes
         )
 
@@ -276,7 +276,7 @@ class AlertStormSuppressor:
                         "count": count,
                         "threshold": threshold,
                         "suppressed_until": (
-                            datetime.now(datetime.UTC)
+                            datetime.now(UTC)
                             + timedelta(minutes=self.suppression_window_minutes)
                         ).isoformat(),
                     }

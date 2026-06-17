@@ -4,7 +4,7 @@ Automatically enrich security alerts with threat intelligence data
 """
 
 import asyncio
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -43,7 +43,7 @@ class ThreatIntelEnricher:
         Returns enrichment data to be stored in alert
         """
         enrichment = {
-            "enriched_at": datetime.now(datetime.UTC).isoformat(),
+            "enriched_at": datetime.now(UTC).isoformat(),
             "indicators": {},
             "threat_scores": {},
             "tags": [],
@@ -227,7 +227,7 @@ class AlertEnrichmentService:
                 if alert.raw_data and alert.raw_data.get("enriched_at"):
                     # Check if enriched in last 24h
                     enriched_at = datetime.fromisoformat(alert.raw_data["enriched_at"])
-                    if (datetime.now(datetime.UTC) - enriched_at).days < 1:
+                    if (datetime.now(UTC) - enriched_at).days < 1:
                         logger.debug(f"Alert {alert_id} already enriched recently")
                         return False
 
@@ -262,7 +262,7 @@ class AlertEnrichmentService:
             async with AsyncSessionLocal() as session:
                 from datetime import timedelta
 
-                cutoff = datetime.now(datetime.UTC) - timedelta(hours=hours)
+                cutoff = datetime.now(UTC) - timedelta(hours=hours)
 
                 query = (
                     select(SecurityAlert)

@@ -4,7 +4,7 @@ Wazuh Real-time Alert Stream Schemas
 Defines data models for real-time alert streaming via WebSocket.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -87,7 +87,7 @@ class WazuhAlertStream(BaseModel):
 
     # Processing metadata
     received_at: datetime = Field(
-        default_factory=lambda: datetime.now(datetime.UTC),
+        default_factory=lambda: datetime.now(UTC),
         description="When SOC Copilot received the alert",
     )
     processed_at: datetime | None = Field(
@@ -106,7 +106,7 @@ class WazuhStreamMessage(BaseModel):
     type: str = Field(..., description="Message type: alert, heartbeat, stats, error")
     data: dict[str, Any] = Field(..., description="Message payload")
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(datetime.UTC), description="Message timestamp"
+        default_factory=lambda: datetime.now(UTC), description="Message timestamp"
     )
     channel: str = Field(default="wazuh", description="Channel name")
 

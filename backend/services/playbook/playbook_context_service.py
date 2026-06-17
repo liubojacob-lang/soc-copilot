@@ -9,7 +9,7 @@ This service handles:
 
 import logging
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -320,7 +320,7 @@ class PlaybookContextService:
         """Initialize context for a new playbook run."""
         metadata = {
             "run_id": run_id,
-            "started_at": datetime.now(datetime.UTC).isoformat(),
+            "started_at": datetime.now(UTC).isoformat(),
             "definition_id": definition_id,
         }
 

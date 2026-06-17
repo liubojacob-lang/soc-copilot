@@ -36,7 +36,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import IntEnum
 from typing import Any
 
@@ -342,7 +342,7 @@ class LifecycleManager:
                 await service.start()
 
                 state.started = True
-                state.started_at = datetime.now(datetime.UTC)
+                state.started_at = datetime.now(UTC)
                 started_services.append(service_name)
 
                 logger.info(f"Service started: {service_name}")
@@ -395,7 +395,7 @@ class LifecycleManager:
                 await service.stop()
 
                 state.started = False
-                state.stopped_at = datetime.now(datetime.UTC)
+                state.stopped_at = datetime.now(UTC)
                 stopped_services.append(service_name)
 
                 logger.info(f"Service stopped: {service_name}")
@@ -428,7 +428,7 @@ class LifecycleManager:
                 await service.stop()
                 if state:
                     state.started = False
-                    state.stopped_at = datetime.now(datetime.UTC)
+                    state.stopped_at = datetime.now(UTC)
             except Exception as e:
                 logger.error(f"Rollback failed for '{service_name}': {e}")
 

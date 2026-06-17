@@ -2,7 +2,7 @@
 告警生命周期管理服务
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, desc, func, select
@@ -175,7 +175,7 @@ class AlertLifecycleService:
 
         old_status = alert.status
         alert.status = status.value
-        alert.updated_at = datetime.now(datetime.UTC)
+        alert.updated_at = datetime.now(UTC)
 
         await self.db.commit()
         await self.db.refresh(alert)
@@ -204,8 +204,8 @@ class AlertLifecycleService:
             return None
 
         alert.assigned_to = assignment.assigned_to
-        alert.assigned_at = datetime.now(datetime.UTC)
-        alert.updated_at = datetime.now(datetime.UTC)
+        alert.assigned_at = datetime.now(UTC)
+        alert.updated_at = datetime.now(UTC)
 
         await self.db.commit()
         await self.db.refresh(alert)
@@ -234,9 +234,9 @@ class AlertLifecycleService:
         alert.resolution_note = resolution.resolution_note
         alert.root_cause = resolution.root_cause
         alert.remediation = resolution.remediation
-        alert.resolved_at = datetime.now(datetime.UTC)
+        alert.resolved_at = datetime.now(UTC)
         alert.resolved_by = user_id
-        alert.updated_at = datetime.now(datetime.UTC)
+        alert.updated_at = datetime.now(UTC)
 
         await self.db.commit()
         await self.db.refresh(alert)
@@ -261,9 +261,9 @@ class AlertLifecycleService:
 
         alert.status = AlertStatus.ESCALATED.value
         alert.escalated_to = escalation.escalated_to
-        alert.escalated_at = datetime.now(datetime.UTC)
+        alert.escalated_at = datetime.now(UTC)
         alert.escalation_reason = escalation.reason
-        alert.updated_at = datetime.now(datetime.UTC)
+        alert.updated_at = datetime.now(UTC)
 
         await self.db.commit()
         await self.db.refresh(alert)
@@ -319,7 +319,7 @@ class AlertLifecycleService:
         from models.security_alert import SecurityAlert
 
         if not end_date:
-            end_date = datetime.now(datetime.UTC)
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=7)
 
@@ -417,7 +417,7 @@ class AlertLifecycleService:
         """
 
         if not end_date:
-            end_date = datetime.now(datetime.UTC)
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=7)
 
@@ -481,7 +481,7 @@ class AlertLifecycleService:
                     timestamp = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
                     timestamp += timedelta(weeks=week - 1, days=-timestamp.weekday())
                 else:
-                    timestamp = datetime.now(datetime.UTC)
+                    timestamp = datetime.now(UTC)
 
             # 构建严重性统计
             by_severity = {
@@ -518,7 +518,7 @@ class AlertLifecycleService:
         from models.security_alert import SecurityAlert
 
         if not end_date:
-            end_date = datetime.now(datetime.UTC)
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=7)
 
@@ -577,7 +577,7 @@ class AlertLifecycleService:
         from models.security_alert import SecurityAlert
 
         if not end_date:
-            end_date = datetime.now(datetime.UTC)
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=7)
 

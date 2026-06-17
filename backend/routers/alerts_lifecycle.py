@@ -2,7 +2,7 @@
 告警生命周期管理 API 路由
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -223,7 +223,7 @@ async def batch_update_alerts(
 
             if batch.assigned_to:
                 alert.assigned_to = batch.assigned_to
-                alert.assigned_at = datetime.now(datetime.UTC)
+                alert.assigned_at = datetime.now(UTC)
 
             if batch.tags:
                 current_tags = alert.tags or []
@@ -238,7 +238,7 @@ async def batch_update_alerts(
                     # Default: replace
                     alert.tags = batch.tags
 
-            alert.updated_at = datetime.now(datetime.UTC)
+            alert.updated_at = datetime.now(UTC)
             updated_count += 1
 
         except Exception as e:

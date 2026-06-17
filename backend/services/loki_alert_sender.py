@@ -4,7 +4,7 @@ Loki 告警发送服务
 """
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -72,13 +72,13 @@ class LokiAlertSender:
 
     def _get_timestamp_ns(self) -> str:
         """获取纳秒时间戳"""
-        return str(int(datetime.now(datetime.UTC).timestamp() * 1_000_000_000))
+        return str(int(datetime.now(UTC).timestamp() * 1_000_000_000))
 
     def _format_log_entry(self, alert: dict[str, Any]) -> str:
         """格式化日志条目"""
         return json.dumps(
             {
-                "timestamp": alert.get("timestamp", datetime.now(datetime.UTC).isoformat()),
+                "timestamp": alert.get("timestamp", datetime.now(UTC).isoformat()),
                 "event_type": alert.get("event_type"),
                 "severity": alert.get("severity"),
                 "agent_id": alert.get("agent_id"),
@@ -91,7 +91,7 @@ class LokiAlertSender:
     async def send_test_alert(self) -> bool:
         """发送测试告警"""
         test_alert = {
-            "timestamp": datetime.now(datetime.UTC).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "event_type": "system_test",
             "severity": "info",
             "agent_id": "test-001",

@@ -3,7 +3,7 @@ Security Alert Ingestion Router
 Receives and manages alerts from external security monitoring tools (Wazuh, Snort, OSQuery, etc).
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import ValidationError
@@ -309,7 +309,7 @@ async def update_alert(
             alert.status = update_data.status.lower()
             # Set closed_at if status is closed or false_positive
             if alert.status in ["closed", "false_positive"] and not alert.closed_at:
-                alert.closed_at = datetime.now(datetime.UTC)
+                alert.closed_at = datetime.now(UTC)
 
         if update_data.assigned_to:
             alert.assigned_to = update_data.assigned_to
@@ -378,7 +378,7 @@ async def get_alert_statistics(
         by_source = {row[0]: row[1] for row in source_result.all()}
 
         # Time-based counts
-        now = datetime.now(datetime.UTC)
+        now = datetime.now(UTC)
 
         last_24h_query = (
             select(func.count())

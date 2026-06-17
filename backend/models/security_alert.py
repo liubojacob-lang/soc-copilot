@@ -2,7 +2,7 @@
 Security Alert data model for ingested alerts from external security tools.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import (
@@ -125,9 +125,9 @@ class SecurityAlert(Base):
     )
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(datetime.UTC))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Event timestamp (from source system)
