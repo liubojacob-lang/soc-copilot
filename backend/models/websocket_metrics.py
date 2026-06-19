@@ -20,8 +20,14 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
-class MetricType(str, Enum):
-    """Types of metrics collected."""
+class MetricCategory(str, Enum):
+    """Categories of metrics collected.
+
+    Renamed from MetricType to avoid collision with the unrelated
+    AlertMetricType in monitoring_alerts.py (which enumerates the specific
+    metric names that can trigger alerts). This enum groups metrics by
+    collection domain (connection / message / error / performance).
+    """
 
     CONNECTION = "connection"
     MESSAGE = "message"
@@ -452,7 +458,7 @@ class MetricsQuery(BaseModel):
 
     start_time: str | None = None  # ISO format timestamp
     end_time: str | None = None  # ISO format timestamp
-    metric_types: list[MetricType] = Field(default_factory=list)
+    metric_types: list[MetricCategory] = Field(default_factory=list)
     limit: int = 100
     offset: int = 0
     aggregate_by: str | None = None  # "1m", "5m", "1h", etc.
