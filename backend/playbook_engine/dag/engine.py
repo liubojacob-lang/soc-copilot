@@ -727,7 +727,7 @@ class DAGExecutionEngine:
             run_id: Playbook run ID
             definition: DAG definition
         """
-        from models.playbook_definition import PlaybookNodeRunModel
+        from models.playbook_node_run import PlaybookNodeRunModel
 
         for node_id, node in definition.nodes.items():
             node_run = PlaybookNodeRunModel(
@@ -759,7 +759,7 @@ class DAGExecutionEngine:
             output: Optional output data
             error: Optional error message
         """
-        from models.playbook_definition import PlaybookNodeRunModel
+        from models.playbook_node_run import PlaybookNodeRunModel
 
         now = datetime.now(UTC)
 
@@ -806,7 +806,7 @@ class DAGExecutionEngine:
             node_id: Node ID
             inputs: Rendered input data
         """
-        from models.playbook_definition import PlaybookNodeRunModel
+        from models.playbook_node_run import PlaybookNodeRunModel
 
         stmt = select(PlaybookNodeRunModel).where(
             PlaybookNodeRunModel.run_id == run_id,
@@ -965,7 +965,6 @@ class DAGExecutionEngine:
             logger.error(f"[{run_id}] Failed to send failure notification: {e}")
 
 
-@dataclass
 @dataclass
 class NodeExecutionResult:
     """Result of executing a single DAG node."""

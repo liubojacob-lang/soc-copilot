@@ -311,7 +311,7 @@ async def get_playbook_run_nodes(
     Returns:
         Node execution details
     """
-    from models.playbook_definition import PlaybookNodeRunModel
+    from models.playbook_node_run import PlaybookNodeRunModel
     from repositories.playbook_run_repository import PlaybookRunRepository
 
     # Verify run access

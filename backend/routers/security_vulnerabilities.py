@@ -379,10 +379,10 @@ async def export_vulnerabilities(
     service = get_security_vulnerability_service(db_session)
 
     try:
-        export_data = await service.export_vulnerabilities(format=format)
+        export_data = await service.export_vulnerabilities(format=export_format)
         return success_response(
             data={
-                "format": format,
+                "format": export_format,
                 "data": export_data,
                 "exported_at": datetime.now(UTC).isoformat(),
             },
