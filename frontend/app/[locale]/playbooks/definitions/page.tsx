@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import Navigation from "@/components/Navigation";
 import { SkeletonTable } from "@/components/common/LoadingState";
-import { loadAuthState } from "@/lib/auth";
+import { loadAuthState, authFetch } from "@/lib/auth";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import {
   Search,
@@ -60,12 +60,8 @@ export default function PlaybookDefinitionsPage() {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(
-        `/api/playbook-definitions?page=${page}&page_size=${pagination.pageSize}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await authFetch(
+        `/api/playbook-definitions?page=${page}&page_size=${pagination.pageSize}`
       );
 
       if (response.ok) {

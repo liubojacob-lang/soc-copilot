@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { authFetch } from "@/lib/auth";
 import { useAuditLogsQuery } from "../hooks/useAuditLogsQuery";
 import { AuditStats } from "./AuditStats";
 import { AuditFilters } from "./AuditFilters";
@@ -89,11 +90,7 @@ export function AuditPageContainer() {
       if (filterUserId) params.append("user_id", filterUserId);
       if (filterIpAddress) params.append("ip_address", filterIpAddress);
 
-      const response = await fetch(`/api/audit/export?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-      });
+      const response = await authFetch(`/api/audit/export?${params.toString()}`);
 
       if (response.ok) {
         const blob = await response.blob();

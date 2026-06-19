@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import Navigation from "@/components/Navigation";
 import { SkeletonTable } from "@/components/common/LoadingState";
-import { loadAuthState } from "@/lib/auth";
+import { loadAuthState, authFetch } from "@/lib/auth";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import {
   Search,
@@ -66,7 +66,6 @@ export default function PlaybookApprovalsPage() {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("access_token");
       const params = new URLSearchParams({
         page: page.toString(),
         page_size: pagination.pageSize.toString(),
@@ -75,9 +74,7 @@ export default function PlaybookApprovalsPage() {
         params.append("status", statusFilter);
       }
 
-      const response = await fetch(`/api/approvals?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await authFetch(`/api/approvals?${params.toString()}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -114,11 +111,9 @@ export default function PlaybookApprovalsPage() {
   const handleApprove = async (approvalId: string) => {
     setActionLoading(approvalId);
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`/api/approvals/${approvalId}/approve`, {
+      const response = await authFetch(`/api/approvals/${approvalId}/approve`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ comments: "" }),
@@ -140,11 +135,9 @@ export default function PlaybookApprovalsPage() {
   const handleReject = async (approvalId: string) => {
     setActionLoading(approvalId);
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`/api/approvals/${approvalId}/reject`, {
+      const response = await authFetch(`/api/approvals/${approvalId}/reject`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ comments: "" }),

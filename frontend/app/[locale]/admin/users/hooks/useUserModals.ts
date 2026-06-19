@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { authFetch } from "@/lib/auth";
 import { generatePassword, type User } from "./useUsers";
 
 interface FormErrors {
@@ -85,11 +86,10 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
       setCreating(true);
 
       try {
-        const token = localStorage.getItem("access_token");
         const password = generatedPassword || generatePassword();
-        const response = await fetch("/api/users", {
+        const response = await authFetch("/api/users", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, email, password, role, is_active: isActive }),
         });
 
@@ -117,10 +117,9 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
       setSaving(true);
 
       try {
-        const token = localStorage.getItem("access_token");
-        const response = await fetch(`/api/users/${selectedUser.id}`, {
+        const response = await authFetch(`/api/users/${selectedUser.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, role, is_active: isActive }),
         });
 
@@ -142,10 +141,8 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
     if (!selectedUser) return;
     setDeleting(true);
     try {
-      const token = localStorage.getItem("access_token");
-      await fetch(`/api/users/${selectedUser.id}`, {
+      await authFetch(`/api/users/${selectedUser.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
       setShowDeleteModal(false);
       setSelectedUser(null);
@@ -162,10 +159,9 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
       setResetting(true);
 
       try {
-        const token = localStorage.getItem("access_token");
-        const response = await fetch(`/api/users/${selectedUser.id}/reset-password`, {
+        const response = await authFetch(`/api/users/${selectedUser.id}/reset-password`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ new_password: resetNewPassword }),
         });
 

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { api } from "@/lib/api";
-import { loadAuthState } from "@/lib/auth";
+import { loadAuthState, authFetch } from "@/lib/auth";
 import type { QueueStats, PlaybookMetadata } from "../constants";
 
 interface PlaybookRunResponse {
@@ -112,12 +112,8 @@ export function usePlaybooks() {
     async (page: number = 1) => {
       setData((prev) => ({ ...prev, loading: true }));
       try {
-        const token = localStorage.getItem("access_token");
-        const response = await fetch(
-          `/api/playbook-definitions?page=${page}&page_size=${definitionsPagination.pageSize}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+        const response = await authFetch(
+          `/api/playbook-definitions?page=${page}&page_size=${definitionsPagination.pageSize}`
         );
 
         if (response.ok) {
