@@ -18,6 +18,7 @@ from models.security_vulnerability import (
 )
 from models.user import UserModel
 from schemas.common import paginated_response, success_response
+from schemas.security_vulnerability import VulnerabilityCreate, VulnerabilityResponse
 from services.security.security_vulnerability_service import (
     get_security_vulnerability_service,
 )
@@ -31,22 +32,9 @@ router = APIRouter(
 )
 
 
-@router.post("", response_model=dict)
+@router.post("", response_model=VulnerabilityResponse)
 async def create_vulnerability(
-    title: str,
-    description: str,
-    severity: VulnerabilitySeverity,
-    vulnerability_type: VulnerabilityType,
-    affected_component: str,
-    affected_version: str | None = None,
-    attack_vector: str | None = None,
-    impact: str | None = None,
-    reproduction_steps: str | None = None,
-    fix_recommendation: str | None = None,
-    cve_id: str | None = None,
-    cvss_score: float | None = None,
-    reference_urls: str | None = None,
-    assigned_to: str | None = None,
+    payload: VulnerabilityCreate,
     current_user: UserModel = Depends(get_current_user),
     db_session: AsyncSession = Depends(get_session),
 ):
@@ -54,32 +42,28 @@ async def create_vulnerability(
     service = get_security_vulnerability_service(db_session)
 
     vulnerability = await service.create_vulnerability(
-        title=title,
-        description=description,
-        severity=severity,
-        vulnerability_type=vulnerability_type,
-        affected_component=affected_component,
-        affected_version=affected_version,
-        attack_vector=attack_vector,
-        impact=impact,
-        reproduction_steps=reproduction_steps,
-        fix_recommendation=fix_recommendation,
-        cve_id=cve_id,
-        cvss_score=cvss_score,
-        reference_urls=reference_urls,
-        assigned_to=assigned_to,
+        title=payload.title,
+        description=payload.description,
+        severity=payload.severity,
+        vulnerability_type=payload.vulnerability_type,
+        affected_component=payload.affected_component,
+        affected_version=payload.affected_version,
+        attack_vector=payload.attack_vector,
+        impact=payload.impact,
+        reproduction_steps=payload.reproduction_steps,
+        fix_recommendation=payload.fix_recommendation,
+        cve_id=payload.cve_id,
+        cvss_score=payload.cvss_score,
+        reference_urls=payload.reference_urls,
+        assigned_to=payload.assigned_to,
         reporter=current_user.username,
     )
 
-    return success_response(
-        data={
-            "id": vulnerability.id,
-            "title": vulnerability.title,
-            "status": vulnerability.status.value,
-            "severity": vulnerability.severity.value,
-        },
-        message="Vulnerability created successfully",
-        trace_id=get_trace_id(),
+    return VulnerabilityResponse(
+        id=vulnerability.id,
+        title=vulnerability.title,
+        status=vulnerability.status,
+        severity=vulnerability.severity,
     )
 
 
