@@ -23,23 +23,22 @@ services:
       - backend-net
       - database-net
 
-  # Frontend - Development mode
+  # Frontend - Use production build from Dockerfile
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    command: npm run dev
     ports:
-      - "3003:3003"
+      - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
     networks:
       - frontend-net
       - backend-net  # Allow direct API access
 
-  # Redis - No password in development for simplicity
+  # Redis - Keep password for backend compatibility
   redis:
-    command: redis-server --appendonly yes --loglevel warning
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required} --loglevel warning
     ports:
       - "6379:6379"  # Expose for local debugging
 

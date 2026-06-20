@@ -398,7 +398,7 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 
 ## Version History
 
-### v0.8.0 (Current Version)
+### v0.9.0 (Current Version)
 
 - ✨ **Added**: Node plugin system with dynamic auto-loading
 - ✨ **Added**: Secrets management with Fernet encryption
@@ -540,6 +540,6 @@ This project is an internal security operations tool for authorized users only.
 
 ---
 
-**Version**: v0.8.0
-**Last Updated**: 2026-02-10
+**Version**: v0.9.0
+**Last Updated**: 2026-06-19
 **Maintainer**: SOC Team

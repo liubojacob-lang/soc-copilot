@@ -80,8 +80,8 @@ case $CHOICE in
 
         # 如果 .env 不存在，从模板创建
         if [ ! -f "$ENV_FILE" ]; then
-            if [ -f ".env.notifications.example" ]; then
-                cp .env.notifications.example "$ENV_FILE"
+            if [ -f ".env.example" ]; then
+                cp .env.example "$ENV_FILE"
                 echo -e "${GREEN}✅ 已从模板创建 .env 文件${NC}"
             else
                 touch "$ENV_FILE"

@@ -38,7 +38,7 @@ class AuditLogModel(Base):
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     extra_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=lambda: {})
     created_at: Mapped[datetime] = mapped_column(
-        String(30),
+        String(255),
         index=True,
         nullable=False,
         default=lambda: datetime.now().isoformat(),

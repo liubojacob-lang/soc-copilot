@@ -80,10 +80,15 @@ export class WazuhWebSocketClient {
       const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
       if (wsUrl) {
         this.config.url = wsUrl;
-      } else {
-        // Fallback: derive from API_URL
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      } else if (typeof window !== "undefined") {
+        // Browser: derive same-origin WebSocket URL from current location.
+        // Avoids embedding container-internal host (http://backend:8000) into
+        // the client bundle, which browsers cannot resolve.
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        this.config.url = `${protocol}//${window.location.host}`;
+      } else {
+        // Server-side fallback (SSR): use internal API URL.
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const wsProtocolUrl = apiUrl.replace("http://", "ws://").replace("https://", "wss://");
         this.config.url = wsProtocolUrl;
       }

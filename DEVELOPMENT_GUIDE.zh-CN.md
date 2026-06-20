@@ -1,7 +1,7 @@
 # SOC Copilot — 开发指南
 
 > 基于全代码库分析自动生成。这是一份活文档,架构变更时请同步更新。
-> 项目:**SOC Copilot** v0.8.2 · 一个安全运营中心(SOC)平台,提供 AI 辅助告警分诊、基于 DAG 的自动化剧本(playbook)、威胁情报富化以及 Wazuh 集成。
+> 项目:**SOC Copilot** v0.9.0 · 一个安全运营中心(SOC)平台,提供 AI 辅助告警分诊、基于 DAG 的自动化剧本(playbook)、威胁情报富化以及 Wazuh 集成。
 
 ---
 
@@ -65,16 +65,17 @@
 sec/
 ├── backend/                  # FastAPI API 服务端(Python)
 ├── frontend/                 # Next.js App Router 单页应用(TypeScript)
-├── ai-assistant-release/     # 独立可嵌入的 AI 助手组件
 ├── k8s/                      # Kubernetes 清单
 ├── nginx/                    # 反向代理配置
 ├── docker-compose*.yml       # 基础 + 生产 + 安全 + override
 ├── docs/                     # 项目文档(50+ 文件)
-├── scripts/ , Lib/           # 杂项辅助脚本
+├── scripts/                  # 辅助脚本与工具
 ├── AGENTS.md                 # 代理/贡献者指南(按角色划分工作流)
 ├── README.md                 # 项目主 README
 └── package.json              # 根工作区(npm workspaces:frontend)
 ```
+
+> **外部发布产物**：独立的 `ai-assistant-release/` 与 `ai-assistant-release-sanitized/` 包已移出主仓库，作为离线发行包另行分发（建议通过 GitHub Release Assets 或独立仓库维护）。
 
 ### 后端地图(`backend/`)
 

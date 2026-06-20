@@ -146,9 +146,9 @@ jobs:
     - name: Auto-fix ESLint issues (if any)
       working-directory: ./frontend
       if: failure()
-        run: |
-          npm run lint:fix
-          echo "::warning::ESLint issues were auto-fixed. Please commit the changes."
+      run: |
+        npm run lint:fix
+        echo "::warning::ESLint issues were auto-fixed. Please commit the changes."
 
     - name: Check code formatting with Prettier
       working-directory: ./frontend

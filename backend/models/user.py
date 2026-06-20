@@ -35,21 +35,21 @@ class UserModel(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
-        String(30),
+        String(255),
         index=True,
         nullable=False,
         default=lambda: datetime.now(UTC).isoformat(),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        String(30), nullable=False, default=lambda: datetime.now(UTC).isoformat()
+        String(255), nullable=False, default=lambda: datetime.now(UTC).isoformat()
     )
-    last_login_at: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    last_login_at: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Password security fields
-    password_changed_at: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    password_changed_at: Mapped[str | None] = mapped_column(String(255), nullable=True)
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     failed_login_attempts: Mapped[int] = mapped_column(default=0, nullable=False)
-    locked_until: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    locked_until: Mapped[str | None] = mapped_column(String(255), nullable=True)
     password_history: Mapped[dict] = mapped_column(JSON, nullable=False, default=lambda: [])
 
     # Composite indexes for common queries

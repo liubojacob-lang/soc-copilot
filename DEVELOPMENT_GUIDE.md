@@ -1,7 +1,7 @@
 # SOC Copilot — Development Guide
 
 > Auto-generated from full codebase analysis. Living document — update when architecture changes.
-> Project: **SOC Copilot** v0.8.2 · A Security Operations Center platform with AI-assisted alert triage, DAG-based automation playbooks, threat intelligence enrichment, and Wazuh integration.
+> Project: **SOC Copilot** v0.9.0 · A Security Operations Center platform with AI-assisted alert triage, DAG-based automation playbooks, threat intelligence enrichment, and Wazuh integration.
 
 ---
 
@@ -65,16 +65,17 @@
 sec/
 ├── backend/                  # FastAPI API server (Python)
 ├── frontend/                 # Next.js App Router SPA (TypeScript)
-├── ai-assistant-release/     # Standalone embeddable AI assistant widget
 ├── k8s/                      # Kubernetes manifests
 ├── nginx/                    # Reverse-proxy config
 ├── docker-compose*.yml       # base + prod + security + override
 ├── docs/                     # Project documentation (50+ files)
-├── scripts/ , Lib/           # Misc helper scripts
+├── scripts/                  # Helper scripts and tooling
 ├── AGENTS.md                 # Agent/contributor guide (per-role workflows)
 ├── README.md                 # Main project README
 └── package.json              # Root workspace (npm workspaces: frontend)
 ```
+
+> **External release artifacts**: the standalone `ai-assistant-release/` and `ai-assistant-release-sanitized/` packages have been moved out of the main repository. They are kept as offline release bundles and should be distributed via GitHub Release Assets or a separate repository.
 
 ### Backend map (`backend/`)
 

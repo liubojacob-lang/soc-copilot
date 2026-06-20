@@ -49,8 +49,8 @@ class AIModelModel(Base):
         JSON, nullable=True
     )  # Non-sensitive config like base_url, default temperature
     created_at: Mapped[str] = mapped_column(
-        String(30), nullable=False, default=lambda: datetime.now().isoformat()
+        String(255), nullable=False, default=lambda: datetime.now().isoformat()
     )
     updated_at: Mapped[str] = mapped_column(
-        String(30), nullable=False, default=lambda: datetime.now().isoformat()
+        String(255), nullable=False, default=lambda: datetime.now().isoformat()
     )

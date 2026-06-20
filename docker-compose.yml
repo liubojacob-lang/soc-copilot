@@ -66,11 +66,20 @@ services:
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - DIFY_API_URL=${DIFY_API_URL:-}
       - DIFY_API_KEY=${DIFY_API_KEY:-}
+      - AI_PROVIDER=${AI_PROVIDER:-zhipu}
+      - ZHIPU_API_KEY=${ZHIPU_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - BOOTSTRAP_ADMIN_USERNAME=${BOOTSTRAP_ADMIN_USERNAME:-admin}
+      - BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:-Admin123!}
+      - BOOTSTRAP_ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}
     volumes:
       - ./backend:/app
       - /app/__pycache__
     expose:
       - "8000"
+    ports:
+      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,6 +88,7 @@ services:
     networks:
       - backend-net
       - database-net
+      - frontend-net
     restart: unless-stopped
     deploy:
       resources:
@@ -100,6 +110,8 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
     expose:
       - "3000"
+    ports:
+      - "3000:3000"
     depends_on:
       - backend
     networks:

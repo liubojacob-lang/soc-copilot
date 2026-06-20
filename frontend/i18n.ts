@@ -1,10 +1,18 @@
 import { getRequestConfig } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import enMessages from "./messages/en.json";
+import zhMessages from "./messages/zh.json";
+
 // Can be imported from a shared config
 export const locales = ["en", "zh"] as const;
 export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = "en";
+
+const messagesByLocale: Record<Locale, typeof enMessages> = {
+  en: enMessages,
+  zh: zhMessages,
+};
 
 export default getRequestConfig(async ({ requestLocale }) => {
   // Get the locale from the request
@@ -17,6 +25,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    messages: messagesByLocale[locale as Locale],
   };
 });

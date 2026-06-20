@@ -25,8 +25,8 @@ class AIUserSettingModel(Base):
         String(100), nullable=True
     )  # References ai_models.id
     created_at: Mapped[str] = mapped_column(
-        String(30), nullable=False, default=lambda: datetime.now().isoformat()
+        String(255), nullable=False, default=lambda: datetime.now().isoformat()
     )
     updated_at: Mapped[str] = mapped_column(
-        String(30), nullable=False, default=lambda: datetime.now().isoformat()
+        String(255), nullable=False, default=lambda: datetime.now().isoformat()
     )

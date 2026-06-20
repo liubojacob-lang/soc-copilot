@@ -192,7 +192,7 @@ async def health_detailed() -> HealthStatus:
 
     return HealthStatus(
         status=overall_status,
-        version="0.8.2",
+        version="0.9.0",
         timestamp=datetime.now(UTC).isoformat(),
         uptime_seconds=round(time.time() - _startup_time, 2),
         components=components,
@@ -202,7 +202,7 @@ async def health_detailed() -> HealthStatus:
 # Prometheus metrics
 METRICS_TEMPLATE = """# HELP soc_copilot_info Application information
 # TYPE soc_copilot_info gauge
-soc_copilot_info{{version="0.8.2",environment="{environment}"}} 1
+soc_copilot_info{{version="0.9.0",environment="{environment}"}} 1
 
 # HELP soc_copilot_uptime_seconds Application uptime in seconds
 # TYPE soc_copilot_uptime_seconds gauge

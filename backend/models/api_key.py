@@ -33,13 +33,13 @@ class APIKeyModel(Base):
     description: Mapped[str] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        String(30),
+        String(255),
         index=True,
         nullable=False,
         default=lambda: datetime.now().isoformat(),
     )
-    last_used_at: Mapped[str | None] = mapped_column(String(30), nullable=True)
-    expires_at: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    last_used_at: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    expires_at: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     @staticmethod
     def generate_key() -> str:

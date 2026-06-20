@@ -11,7 +11,13 @@
 
 import { ApiError } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Browser requests use same-origin relative paths ("/api/...") and are proxied
+// to the backend by next.config.js rewrites() — this avoids embedding a
+// container-internal host (e.g. http://backend:8000) into the client bundle,
+// which browsers cannot resolve. Server-side rendering needs the internal URL,
+// resolved at request time (not build-inlined into the public bundle).
+const INTERNAL_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = typeof window !== "undefined" ? "" : INTERNAL_API_URL;
 
 // Retry configuration
 const RETRY_CONFIG = {

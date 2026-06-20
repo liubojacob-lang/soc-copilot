@@ -238,7 +238,7 @@ async def lifespan(app_instance: FastAPI):
     startup and shutdown of all services.
     """
     # Startup
-    logger.info("Initializing SOC Copilot API v0.8.0")
+    logger.info("Initializing SOC Copilot API v0.9.0")
     logger.info(f"Environment: {settings.environment}")
     logger.info("Playbook Engine: ENABLED (DAG-based with Node Plugin System)")
     logger.info("Trigger System: ENABLED (webhook + cron)")

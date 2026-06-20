@@ -19,12 +19,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /data && \
+    chown -R appuser:appuser /data
+COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
+ENV PATH=/home/appuser/.local/bin:$PATH
 
-COPY . .
-
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+COPY --chown=appuser:appuser . .
 USER appuser
 
 EXPOSE 8000

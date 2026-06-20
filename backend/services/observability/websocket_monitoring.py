@@ -247,7 +247,7 @@ class WebSocketMetricsCollector:
         try:
             from core.redis_client import get_redis_client
 
-            redis_client = get_redis_client()
+            redis_client = await get_redis_client()
 
             # Create snapshot
             snapshot = MetricsSnapshot(
@@ -408,7 +408,7 @@ class WebSocketMonitoringService:
         try:
             from core.redis_client import get_redis_client
 
-            redis_client = get_redis_client()
+            redis_client = await get_redis_client()
 
             # Get snapshot keys from time series
             now = time.time()
