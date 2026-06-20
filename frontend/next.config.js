@@ -53,8 +53,11 @@ const nextConfig = {
         key: "Content-Security-Policy",
         value: [
           "default-src 'self'",
+          // Next.js inlines bootstrap scripts in the HTML (no nonce in
+          // standalone output), so pure 'self' blocks hydration. Allow
+          // inline scripts; tighten to nonce-based CSP as a follow-up.
           process.env.NODE_ENV === "production"
-            ? "script-src 'self'"
+            ? "script-src 'self' 'unsafe-inline'"
             : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
           "style-src 'self' 'unsafe-inline'",
           "img-src 'self' data: blob: https:",
