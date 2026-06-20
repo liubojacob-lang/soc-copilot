@@ -199,7 +199,7 @@ export function useAuditStatsQuery() {
   return useQuery({
     queryKey: queryKeys.audit.stats(),
     queryFn: async () => {
-      const response = await authFetchJSON<Response>("/api/audit/stats");
+      const response = await authFetchJSON<Response>("/api/audit-logs/stats/summary");
       if (!response.ok) throw new Error("Failed to fetch audit stats");
       return response.json();
     },

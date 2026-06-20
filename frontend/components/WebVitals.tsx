@@ -12,16 +12,22 @@ function sendToAnalytics(metric: WebVitalsMetric) {
     return;
   }
 
-  if (navigator.sendBeacon) {
-    const body = JSON.stringify({
-      name: metric.name,
-      value: metric.value,
-      rating: metric.rating,
-      id: metric.id,
-      page: window.location.pathname,
-    });
-    navigator.sendBeacon("/api/analytics/vitals", body);
+  // Only report when a vitals ingestion endpoint is configured; the backend
+  // has no /api/analytics/vitals handler today, so reporting would only
+  // generate failed beacon requests on every page load.
+  const endpoint = process.env.NEXT_PUBLIC_VITALS_ENDPOINT;
+  if (!endpoint || !navigator.sendBeacon) {
+    return;
   }
+
+  const body = JSON.stringify({
+    name: metric.name,
+    value: metric.value,
+    rating: metric.rating,
+    id: metric.id,
+    page: window.location.pathname,
+  });
+  navigator.sendBeacon(endpoint, body);
 }
 
 export function WebVitals() {

@@ -102,7 +102,7 @@ export const cacheUtils = {
     await queryClient.prefetchQuery({
       queryKey: queryKeys.audit.stats(),
       queryFn: async () => {
-        const response = await fetch("/api/audit/stats");
+        const response = await fetch("/api/audit-logs/stats/summary");
         if (!response.ok) throw new Error("Failed to fetch audit stats");
         return response.json();
       },
@@ -112,7 +112,7 @@ export const cacheUtils = {
     await queryClient.prefetchQuery({
       queryKey: ["user", "profile"],
       queryFn: async () => {
-        const response = await fetch("/api/user/profile");
+        const response = await fetch("/api/users/me");
         if (!response.ok) throw new Error("Failed to fetch user profile");
         return response.json();
       },
