@@ -11,6 +11,23 @@ import { WebVitals } from "@/components/WebVitals";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { locales, type Locale } from "@/i18n";
 
+const THEME_INIT_SCRIPT = `
+  (function() {
+    try {
+      const stored = localStorage.getItem('theme-storage');
+      let theme = 'system';
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        theme = parsed.state?.theme || 'system';
+      }
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const resolved = theme === 'system' ? (prefersDark ? 'dark' : 'light') : theme;
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(resolved);
+    } catch (e) {}
+  })();
+`;
+
 export async function generateMetadata({
   params,
 }: {
@@ -37,8 +54,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#1f2937" },
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#1e293b" },
   ],
 };
 
@@ -74,8 +91,9 @@ export default async function LocaleLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className="antialiased min-h-screen bg-slate-50 dark:bg-gray-900">
+      <body className="antialiased min-h-screen">
         <NextIntlClientProvider messages={messages}>
           <ResponsiveProvider>
             <PageErrorBoundary>

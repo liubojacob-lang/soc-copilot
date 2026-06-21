@@ -34,6 +34,9 @@ scikit-learn==1.4.0
 # Phase 4: Observability
 prometheus-fastapi-instrumentator==7.0.0  # v0.8.2: Metrics
 
+# P1-24: LLM tracing (optional)
+langfuse>=2.0
+
 # v0.9.0: Notifications
 aiohttp==3.13.3  # Async HTTP client for notifications
 backoff==2.2.1  # Exponential backoff for retry logic

@@ -55,7 +55,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "object-src 'none'; "
         )
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         response = await call_next(request)
 
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -66,16 +68,37 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
             "magnetometer=(), microphone=(), payment=(), usb=()"
         )
-
         if "Content-Security-Policy" not in response.headers:
-            response.headers["Content-Security-Policy"] = self.csp_policy
+            path = request.url.path
+            if (
+                path == "/docs"
+                or path.startswith("/docs/")
+                or path == "/redoc"
+                or path.startswith("/redoc/")
+            ):
+                response.headers["Content-Security-Policy"] = (
+                    "default-src 'self'; "
+                    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+                    "img-src 'self' data: blob: https:; "
+                    "font-src 'self' data: https://fonts.gstatic.com; "
+                    "connect-src 'self' ws: wss: https:; "
+                    "frame-ancestors 'none'; "
+                    "base-uri 'self'; "
+                    "form-action 'self'; "
+                    "object-src 'none'; "
+                )
+            else:
+                response.headers["Content-Security-Policy"] = self.csp_policy
 
         if self.enable_hsts and request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = (
                 f"max-age={self.hsts_max_age}; includeSubDomains; preload"
             )
 
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, proxy-revalidate"
+        )
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
 
@@ -90,7 +113,9 @@ class APISecurityHeadersMiddleware(BaseHTTPMiddleware):
     Less restrictive CSP for API endpoints.
     """
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         response = await call_next(request)
 
         response.headers["X-Content-Type-Options"] = "nosniff"

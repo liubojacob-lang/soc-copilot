@@ -98,17 +98,15 @@ Base = declarative_base()
 async def get_session() -> AsyncSession:
     """Get database session for dependency injection.
 
-    Uses explicit transaction management to ensure data is persisted.
+    The caller (route handler) is responsible for explicitly calling
+    await session.commit() when the operation succeeds. This prevents
+    premature commits if an exception occurs in a response interceptor or
+    downstream middleware after the route handler has returned.
     """
     session = AsyncSessionLocal()
     try:
         yield session
-        # Explicit commit at the end
-        await session.commit()
-    except Exception as e:
-        import logging
-
-        logging.getLogger(__name__).error(f"Session error, rolling back: {e}")
+    except Exception:
         await session.rollback()
         raise
     finally:

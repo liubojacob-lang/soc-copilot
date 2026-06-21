@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { TabButton, TabList } from "@/components/ui/Tabs";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { loadAuthState, authFetchJSON, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
@@ -157,30 +158,19 @@ export default function CorrelationPage() {
       <Navigation title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2">
-            <button
+          <TabList>
+            <TabButton
+              active={activeTab === "incidents"}
               onClick={() => setActiveTab("incidents")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === "incidents"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
-            >
-              {t("incidents")}
-            </button>
-            <button
+              label={t("incidents")}
+            />
+            <TabButton
+              active={activeTab === "rules"}
               onClick={() => setActiveTab("rules")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === "rules"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
-            >
-              {t("rules")}
-            </button>
-          </div>
+              label={t("rules")}
+            />
+          </TabList>
           <button
             onClick={handleRefresh}
             disabled={refreshing}

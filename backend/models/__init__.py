@@ -19,6 +19,7 @@ from models.playbook_node_attempt import PlaybookNodeAttemptModel
 from models.playbook_node_run import PlaybookNodeRunModel
 from models.playbook_output import PlaybookOutputModel
 from models.playbook_run import PlaybookRunModel, PlaybookRunStepModel
+from models.prompt_registry import PromptEnvironment, PromptRegistryModel
 from models.rbac import Permission, Role
 from models.root_cause_analysis import RootCauseAnalysis
 from models.secret import SecretModel
@@ -57,6 +58,8 @@ __all__ = [
     "PlaybookRunModel",
     "PlaybookRunStepModel",
     "PlaybookTriggerModel",
+    "PromptEnvironment",
+    "PromptRegistryModel",
     "Role",
     "RootCauseAnalysis",
     "SecretModel",

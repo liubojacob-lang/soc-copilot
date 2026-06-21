@@ -6,22 +6,24 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        soc: {
-          50: "#f0f9ff",
-          100: "#e0f2fe",
-          200: "#bae6fd",
-          300: "#7dd3fc",
-          400: "#38bdf8",
-          500: "#0ea5e9",
-          600: "#0284c7",
-          700: "#0369a1",
-          800: "#075985",
-          900: "#0c4a6e",
-          950: "#082f49",
+        // Primary: Slate 色系（企业级沉稳、权威）
+        primary: {
+          50: "#f8fafc",
+          100: "#f1f5f9",
+          200: "#e2e8f0",
+          300: "#cbd5e1",
+          400: "#94a3b8",
+          500: "#64748b",
+          600: "#475569",
+          700: "#334155",
+          800: "#1e293b",
+          900: "#0f172a",
         },
+        // Semantic colors — 低饱和度沉稳色调，禁止荧光色
         success: {
           50: "#ecfdf5",
           100: "#d1fae5",
@@ -74,53 +76,95 @@ const config: Config = {
           900: "#1e3a8a",
           950: "#172554",
         },
-        gray: {
-          50: "#f9fafb",
-          75: "#f3f4f6",
-          100: "#e5e7eb",
-          200: "#d1d5db",
-          300: "#9ca3af",
-          400: "#6b7280",
-          500: "#4b5563",
-          600: "#374151",
-          700: "#1f2937",
-          800: "#111827",
-          900: "#030712",
+        // Severity colors — 与语义色保持一致，同色系明度变化
+        severity: {
+          critical: "#dc2626",
+          high: "#ea580c",
+          medium: "#d97706",
+          low: "#059669",
+          info: "#2563eb",
+        },
+        // Surface background layers
+        surface: {
+          page: "#f8fafc",
+          card: "#ffffff",
+          hover: "#f1f5f9",
+          active: "#e2e8f0",
+          input: "#ffffff",
+        },
+        // Text color layers
+        text: {
+          primary: "#0f172a",
+          secondary: "#334155",
+          tertiary: "#64748b",
+          disabled: "#94a3b8",
+          inverse: "#f8fafc",
+          link: "#2563eb",
+          mono: "#0f172a",
+        },
+        // Border colors
+        border: {
+          subtle: "#e2e8f0",
+          default: "#cbd5e1",
+          focus: "#2563eb",
         },
       },
+      fontFamily: {
+        sans: [
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "'Segoe UI'",
+          "Roboto",
+          "sans-serif",
+        ],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "'Cascadia Code'", "monospace"],
+      },
+      fontSize: {
+        display: ["32px", { lineHeight: "1.2", fontWeight: "500" }],
+        h1: ["24px", { lineHeight: "1.3", fontWeight: "600" }],
+        h2: ["18px", { lineHeight: "1.4", fontWeight: "600" }],
+        h3: ["16px", { lineHeight: "1.5", fontWeight: "500" }],
+        body: ["14px", { lineHeight: "1.5", fontWeight: "400" }],
+        small: ["12px", { lineHeight: "1.5", fontWeight: "400" }],
+        caption: ["11px", { lineHeight: "1.4", fontWeight: "400" }],
+      },
+      spacing: {
+        "0": "0px",
+        "1": "4px",
+        "2": "8px",
+        "3": "12px",
+        "4": "16px",
+        "5": "20px",
+        "6": "24px",
+        "8": "32px",
+        "10": "40px",
+        "12": "48px",
+        "16": "64px",
+      },
+      borderRadius: {
+        none: "0px",
+        sm: "4px",
+        md: "8px",
+        lg: "12px",
+        full: "9999px",
+      },
       boxShadow: {
-        soft: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-        card: "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)",
-        elevated: "0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08)",
-        glow: "0 0 20px -5px rgba(14, 165, 233, 0.3)",
-        "glow-success": "0 0 20px -5px rgba(16, 185, 129, 0.3)",
-        "glow-danger": "0 0 20px -5px rgba(239, 68, 68, 0.3)",
-        glass: "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
-        neumorphic: "8px 8px 16px rgba(0, 0, 0, 0.1), -8px -8px 16px rgba(255, 255, 255, 0.9)",
-        "neumorphic-inset":
-          "inset 4px 4px 8px rgba(0, 0, 0, 0.1), inset -4px -4px 8px rgba(255, 255, 255, 0.9)",
-        "neumorphic-dark":
-          "8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.05)",
-        "neumorphic-inset-dark":
-          "inset 4px 4px 8px rgba(0, 0, 0, 0.3), inset -4px -4px 8px rgba(255, 255, 255, 0.05)",
+        none: "none",
+        subtle: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        sm: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+        md: "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)",
+        lg: "0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08)",
       },
       animation: {
-        "fade-in": "fadeIn 0.3s ease-out",
-        "fade-in-up": "fadeInUp 0.4s ease-out",
-        "fade-in-up-stagger-1": "fadeInUp 0.4s ease-out 0.1s both",
-        "fade-in-up-stagger-2": "fadeInUp 0.4s ease-out 0.2s both",
-        "fade-in-up-stagger-3": "fadeInUp 0.4s ease-out 0.3s both",
-        "fade-in-up-stagger-4": "fadeInUp 0.4s ease-out 0.4s both",
-        "slide-in-right": "slideInRight 0.3s ease-out",
-        "pulse-soft": "pulseSoft 2s ease-in-out infinite",
-        float: "float 6s ease-in-out infinite",
-        "glow-pulse": "glowPulse 2s ease-in-out infinite",
-        shimmer: "shimmer 2s linear infinite",
-        "bounce-soft": "bounceSoft 2s ease-in-out infinite",
-        wiggle: "wiggle 1s ease-in-out infinite",
-        "scale-in": "scaleIn 0.3s ease-out",
-        "rotate-slow": "rotateSlow 20s linear infinite",
-        morph: "morph 8s ease-in-out infinite",
+        "fade-in": "fadeIn 150ms ease-out",
+        "fade-in-up": "fadeInUp 200ms ease-out",
+        "fade-in-up-stagger-1": "fadeInUp 200ms ease-out 0.1s both",
+        "fade-in-up-stagger-2": "fadeInUp 200ms ease-out 0.2s both",
+        "fade-in-up-stagger-3": "fadeInUp 200ms ease-out 0.3s both",
+        "fade-in-up-stagger-4": "fadeInUp 200ms ease-out 0.4s both",
+        "slide-in-right": "slideInRight 200ms ease-out",
       },
       keyframes: {
         fadeIn: {
@@ -128,60 +172,17 @@ const config: Config = {
           "100%": { opacity: "1" },
         },
         fadeInUp: {
-          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         slideInRight: {
-          "0%": { opacity: "0", transform: "translateX(20px)" },
+          "0%": { opacity: "0", transform: "translateX(8px)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
         },
-        pulseSoft: {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.7" },
-        },
-        float: {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-10px)" },
-        },
-        glowPulse: {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(14, 165, 233, 0.4)" },
-          "50%": { boxShadow: "0 0 0 10px rgba(14, 165, 233, 0)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
-        bounceSoft: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-5px)" },
-        },
-        wiggle: {
-          "0%, 100%": { transform: "rotate(-3deg)" },
-          "50%": { transform: "rotate(3deg)" },
-        },
-        scaleIn: {
-          "0%": { opacity: "0", transform: "scale(0.9)" },
-          "100%": { opacity: "1", transform: "scale(1)" },
-        },
-        rotateSlow: {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" },
-        },
-        morph: {
-          "0%, 100%": { borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%" },
-          "50%": { borderRadius: "30% 60% 70% 40%/50% 60% 30% 60%" },
-        },
       },
-      backdropBlur: {
-        xs: "2px",
-      },
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic": "conic-gradient(var(--tw-gradient-stops))",
-        "glass-gradient":
-          "linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)",
-        "glass-gradient-dark":
-          "linear-gradient(135deg, rgba(31,41,55,0.9) 0%, rgba(31,41,55,0.7) 100%)",
+      transitionDuration: {
+        "150": "150ms",
+        "200": "200ms",
       },
     },
   },

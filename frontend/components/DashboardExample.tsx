@@ -1,7 +1,8 @@
 "use client";
 
 import { ShieldAlert, Activity, Zap, Clock, ArrowUpRight, Bell } from "lucide-react";
-import { Card, StatCard } from "@/components/common/Card";
+import { Card } from "@/components/common/Card";
+import { StatCard } from "@/components/dashboard/StatCard";
 import { Button } from "@/components/common/Button";
 import { FadeInUp } from "@/components/common/FadeIn";
 
@@ -24,7 +25,6 @@ export function DashboardExample() {
             trend="+12%"
             trendDirection="up"
             icon={<Activity className="w-6 h-6" />}
-            colorScheme="soc"
             subtitle="过去 24 小时"
           />
           <StatCard
@@ -33,7 +33,6 @@ export function DashboardExample() {
             trend="-8%"
             trendDirection="down"
             icon={<ShieldAlert className="w-6 h-6" />}
-            colorScheme="danger"
             subtitle="需要立即处理"
           />
           <StatCard
@@ -42,7 +41,6 @@ export function DashboardExample() {
             trend="+3%"
             trendDirection="neutral"
             icon={<Clock className="w-6 h-6" />}
-            colorScheme="warning"
             subtitle="正在调查"
           />
           <StatCard
@@ -51,7 +49,6 @@ export function DashboardExample() {
             trend="+24%"
             trendDirection="up"
             icon={<Zap className="w-6 h-6" />}
-            colorScheme="success"
             subtitle="本周"
           />
         </div>
@@ -108,7 +105,7 @@ export function DashboardExample() {
               <Button variant="secondary" className="w-full justify-start" leftIcon={<Activity />}>
                 查看系统状态
               </Button>
-              <Button variant="outline" className="w-full justify-start" leftIcon={<Bell />}>
+              <Button variant="ghost" className="w-full justify-start" leftIcon={<Bell />}>
                 配置告警规则
               </Button>
             </div>

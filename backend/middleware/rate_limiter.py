@@ -53,6 +53,21 @@ class AsyncRateLimiter:
         self._healthy: bool = False
         self._last_health_check: datetime | None = None
 
+        # Security: endpoint patterns considered sensitive (fail-closed when Redis unavailable)
+        self._SENSITIVE_ENDPOINT_PATTERNS: set[str] = {
+            "auth",
+            "login",
+            "api_key",
+            "token",
+            "password",
+            "register",
+            "signup",
+            "oauth",
+            "mfa",
+            "2fa",
+            "otp",
+        }
+
     async def _init_redis(self) -> bool:
         """Initialize async Redis client with connection pool.
 
@@ -174,17 +189,50 @@ class AsyncRateLimiter:
         current_time = datetime.now()
         window_start = current_time - timedelta(seconds=window_seconds)
 
+        is_sensitive = any(
+            p in endpoint.lower() for p in self._SENSITIVE_ENDPOINT_PATTERNS
+        )
+
         # Try Redis first
         if await self._ensure_connection():
-            return await self._check_redis(key, max_requests, window_seconds)
+            return await self._check_redis(
+                key, max_requests, window_seconds, endpoint, is_sensitive
+            )
         else:
-            # Fallback to in-memory
+            # Redis unavailable
+            # P1-13: In production, Redis is mandatory — fail-closed for all endpoints
+            if settings.environment == "production":
+                logger.error(
+                    f"Redis unavailable in production for {endpoint}, fail-closed (503)"
+                )
+                return False, {
+                    "limit": max_requests,
+                    "remaining": 0,
+                    "reset": window_seconds,
+                    "redis_unavailable": True,
+                }
+            if is_sensitive:
+                logger.error(
+                    f"Redis unavailable for sensitive endpoint {endpoint}, fail-closed"
+                )
+                return False, {
+                    "limit": max_requests,
+                    "remaining": 0,
+                    "reset": window_seconds,
+                    "redis_unavailable": True,
+                }
+            # Fallback to in-memory for non-sensitive endpoints (development only)
             return self._check_in_memory(
                 key, max_requests, window_seconds, window_start
             )
 
     async def _check_redis(
-        self, key: str, max_requests: int, window_seconds: int
+        self,
+        key: str,
+        max_requests: int,
+        window_seconds: int,
+        endpoint: str,
+        sensitive: bool,
     ) -> tuple[bool, dict]:
         """Check rate limit using async Redis.
 
@@ -214,9 +262,33 @@ class AsyncRateLimiter:
                 "reset": window_seconds,
             }
         except Exception as e:
-            logger.error(f"Redis rate limit check failed: {e}")
+            logger.error(f"Redis rate limit check failed for {endpoint}: {e}")
             self._healthy = False
-            # Fallback to allow request if Redis fails (fail-open)
+            # P1-13: In production, Redis is mandatory — fail-closed for all endpoints
+            if settings.environment == "production":
+                logger.error(
+                    f"Redis unavailable in production for {endpoint}, fail-closed (503)"
+                )
+                return False, {
+                    "limit": max_requests,
+                    "remaining": 0,
+                    "reset": window_seconds,
+                    "redis_unavailable": True,
+                }
+            if sensitive:
+                logger.error(
+                    f"Redis unavailable for sensitive endpoint {endpoint}, fail-closed"
+                )
+                return False, {
+                    "limit": max_requests,
+                    "remaining": 0,
+                    "reset": window_seconds,
+                    "redis_unavailable": True,
+                }
+            # Fallback to allow request if Redis fails (fail-open) for non-sensitive endpoints
+            logger.warning(
+                f"Redis unavailable for non-sensitive endpoint {endpoint}, fail-open (in-memory fallback)"
+            )
             return True, {
                 "limit": max_requests,
                 "remaining": max_requests,
@@ -405,6 +477,15 @@ def rate_limit(max_requests: int = 10, window_seconds: int = 60):
             )
 
             if not allowed:
+                if info.get("redis_unavailable"):
+                    logger.error(
+                        f"Rate limit service unavailable for {identifier} on {request.url.path}"
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Rate limiting service unavailable. Please try again later.",
+                    )
+
                 logger.warning(
                     f"Rate limit exceeded for {identifier} on {request.url.path}"
                 )

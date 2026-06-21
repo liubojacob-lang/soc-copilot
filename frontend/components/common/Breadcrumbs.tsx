@@ -2,8 +2,9 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronRight, Home } from "lucide-react";
+import { Home } from "lucide-react";
 import { useMemo } from "react";
+import { Caption } from "@/components/ui/Typography";
 
 interface BreadcrumbItem {
   label: string;
@@ -107,18 +108,15 @@ export default function Breadcrumbs({
   if (items.length <= 1) return null;
 
   return (
-    <nav
-      aria-label="Breadcrumb"
-      className={`flex items-center text-sm text-gray-500 dark:text-gray-400 ${className}`}
-    >
+    <nav aria-label="Breadcrumb" className={`flex items-center ${className}`}>
       <ol className="flex items-center flex-wrap gap-1">
         {displayItems.map((item, index) => {
           // Handle ellipsis
           if (item === null) {
             return (
               <li key={`ellipsis-${index}`} className="flex items-center">
-                <span className="px-1 text-gray-400">...</span>
-                <ChevronRight className="w-3 h-3 mx-1" />
+                <Caption className="text-sm text-slate-400 dark:text-slate-500">...</Caption>
+                <span className="mx-1 text-slate-400 dark:text-slate-500">/</span>
               </li>
             );
           }
@@ -127,23 +125,27 @@ export default function Breadcrumbs({
 
           return (
             <li key={item.path} className="flex items-center">
-              {index > 0 && (
-                <ChevronRight className="w-3 h-3 mx-1 text-gray-400 dark:text-gray-500" />
-              )}
+              {index > 0 && <span className="mx-1 text-slate-400 dark:text-slate-500">/</span>}
               {isLast ? (
-                <span
-                  className="font-medium text-gray-900 dark:text-gray-100 truncate max-w-[150px]"
+                <Caption
+                  color="primary"
+                  className="text-sm font-medium dark:text-white truncate max-w-[150px]"
                   aria-current="page"
                 >
                   {item.label}
-                </span>
+                </Caption>
               ) : (
                 <button
                   onClick={() => router.push(item.path)}
-                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate max-w-[100px] flex items-center gap-1"
+                  className="transition-colors truncate max-w-[100px] flex items-center gap-1"
                 >
-                  {index === 0 && showHome && <Home className="w-3 h-3" />}
-                  {item.label}
+                  <Caption
+                    color="tertiary"
+                    className="text-sm dark:text-slate-400 flex items-center gap-1"
+                  >
+                    {index === 0 && showHome && <Home className="w-5 h-5 text-slate-500" />}
+                    {item.label}
+                  </Caption>
                 </button>
               )}
             </li>

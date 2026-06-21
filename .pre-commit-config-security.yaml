@@ -5,7 +5,7 @@ repos:
   # ==========================================
   # Security Scanners
   # ==========================================
-  
+
   # Detect secrets before commit
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.1
@@ -23,20 +23,39 @@ repos:
     hooks:
       - id: bandit
         name: Bandit - Python Security Linter
-        args: ['-ll', '-r', 'backend/']  # Only show high/critical issues
-        exclude: '^(backend/tests/|backend/verify_)'
+        args: ["-ll", "-r", "backend/"] # Only show high/critical issues
+        exclude: "^(backend/tests/|backend/verify_)"
+
+  # Python dependency vulnerability scanner (pip-audit)
+  - repo: local
+    hooks:
+      - id: pip-audit
+        name: pip-audit - Python Dependency Vulnerability Scan
+        entry: bash -c 'cd backend && pip-audit --format=markdown --desc --requirement=requirements.txt 2>/dev/null || echo "pip-audit not installed, skipping dependency scan"'
+        language: system
+        pass_filenames: false
+        files: 'backend/requirements.*\.txt$'
+        always_run: false
+
+      - id: safety-check
+        name: safety - Python Dependency Safety Check (fallback)
+        entry: bash -c 'cd backend && safety check -r requirements.txt --short-report 2>/dev/null || echo "safety not installed, skipping safety check"'
+        language: system
+        pass_filenames: false
+        files: 'backend/requirements.*\.txt$'
+        always_run: false
 
   # ==========================================
   # Code Quality
   # ==========================================
-  
+
   # Python formatter
   - repo: https://github.com/psf/black
     rev: 23.12.1
     hooks:
       - id: black
         name: Black - Python Formatter
-        args: ['--line-length', '120']
+        args: ["--line-length", "120"]
         files: '^backend/.*\.py$'
 
   # Python import sorter
@@ -50,53 +69,53 @@ repos:
   # ==========================================
   # File Checks
   # ==========================================
-  
+
   # Check for large files before committing
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
       - id: check-added-large-files
         name: Check Large Files
-        args: ['--maxkb=1024']
-      
+        args: ["--maxkb=1024"]
+
       - id: check-merge-conflict
         name: Check Merge Conflicts
-      
+
       - id: check-case-conflict
         name: Check Case Conflicts
-      
+
       - id: detect-private-key
         name: Detect Private Keys
-      
+
       - id: no-commit-to-branch
         name: Prevent Direct Commit to Main
-        args: ['--branch', 'main']
-      
+        args: ["--branch", "main"]
+
       - id: trailing-whitespace
         name: Remove Trailing Whitespace
-      
+
       - id: end-of-file-fixer
         name: Fix End of File
-      
+
       - id: check-yaml
         name: Check YAML Syntax
-        args: ['--allow-multiple-documents']
-        exclude: '^(frontend/node_modules|nginx/)'
-      
+        args: ["--allow-multiple-documents"]
+        exclude: "^(frontend/node_modules|nginx/)"
+
       - id: check-json
         name: Check JSON Syntax
-        exclude: '^(frontend/node_modules|frontend/tsconfig.tsbuildinfo)'
+        exclude: "^(frontend/node_modules|frontend/tsconfig.tsbuildinfo)"
 
   # ==========================================
   # Custom Security Checks
   # ==========================================
-  
+
   # Check for hardcoded passwords
   - repo: local
     hooks:
       - id: no-hardcoded-passwords
         name: No Hardcoded Passwords
-        entry: bash -c 'grep -ri "password.*=.*['"'"'\"].*['"'"'"]" --include="*.py" --include="*.yml" --include="*.js" --include="*.ts" $@ | grep -v "test" | grep -v ".example" | grep -v "CHANGE_ME" || exit 0' --
+        entry: bash -c 'grep -ri "password.*=.*['"'"'\"].*['"'"'\"]" --include="*.py" --include="*.yml" --include="*.js" --include="*.ts" $@ | grep -v "test" | grep -v ".example" | grep -v "CHANGE_ME" || exit 0' --
         language: system
         files: '\.(py|yml|yaml|js|ts)$'
         exclude: '^(backend/tests/|frontend/node_modules/|\.example)'

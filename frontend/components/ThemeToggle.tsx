@@ -1,55 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
-
-const THEME_KEY = "soc-copilot-theme";
+import { useThemeStore } from "@/stores/themeStore";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { resolvedTheme, toggleTheme } = useThemeStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Check localStorage first, then system preference
-    const savedTheme = localStorage.getItem(THEME_KEY) as "light" | "dark" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      if (savedTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      }
-    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setTheme("dark");
-      document.documentElement.classList.add("dark");
-    }
   }, []);
 
-  const toggle = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem(THEME_KEY, newTheme);
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-
+  // Prevent hydration mismatch: render a neutral placeholder until mounted
   if (!mounted) {
     return (
-      <button className="p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors opacity-50">
-        <Sun className="w-5 h-5" />
+      <button
+        className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors opacity-50"
+        aria-label="Loading theme toggle"
+        disabled
+      >
+        <Sun className="w-5 h-5" strokeWidth={1.5} />
       </button>
     );
   }
 
   return (
     <button
-      onClick={toggle}
-      className="p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-      title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+      onClick={toggleTheme}
+      className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+      title={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+      aria-label={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
     >
-      {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+      {resolvedTheme === "light" ? (
+        <Moon className="w-5 h-5" strokeWidth={1.5} />
+      ) : (
+        <Sun className="w-5 h-5" strokeWidth={1.5} />
+      )}
     </button>
   );
 }

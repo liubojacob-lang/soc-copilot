@@ -1,274 +1,353 @@
 /**
  * Design Tokens
- * Centralized design system configuration for consistent UI
+ * 3 层设计令牌系统（Core → Semantic → Component）
+ * 唯一视觉真相源，覆盖颜色、字体、间距、圆角、阴影、边框
  */
 
-// ==================== Colors ====================
-export const colors = {
-  // Primary brand colors
-  primary: {
-    50: "#eff6ff",
-    100: "#dbeafe",
-    200: "#bfdbfe",
-    300: "#93c5fd",
-    400: "#60a5fa",
-    500: "#3b82f6",
-    600: "#2563eb",
-    700: "#1d4ed8",
-    800: "#1e40af",
-    900: "#1e3a8a",
+// ==================== Core Tokens ====================
+// 平台无关的基础物理值（色值 hex、尺寸 px、字体名）
+
+export const coreColors = {
+  // Slate 主色板
+  slate: {
+    50: "#f8fafc",
+    100: "#f1f5f9",
+    200: "#e2e8f0",
+    300: "#cbd5e1",
+    400: "#94a3b8",
+    500: "#64748b",
+    600: "#475569",
+    700: "#334155",
+    800: "#1e293b",
+    900: "#0f172a",
   },
-  // Semantic colors
+  // 语义色板
   semantic: {
-    success: "#10b981",
-    warning: "#f59e0b",
-    danger: "#ef4444",
-    info: "#3b82f6",
+    success: "#059669",
+    warning: "#d97706",
+    danger: "#dc2626",
+    info: "#2563eb",
+    neutral: "#64748b",
   },
-  // Severity colors (for alerts/security)
+  // 语义色背景（浅色模式）
+  semanticBgLight: {
+    success: "#ecfdf5",
+    warning: "#fffbeb",
+    danger: "#fef2f2",
+    info: "#eff6ff",
+    neutral: "#f8fafc",
+  },
+  // 语义色背景（深色模式）
+  semanticBgDark: {
+    success: "#064e3b",
+    warning: "#78350f",
+    danger: "#7f1d1d",
+    info: "#1e3a8a",
+    neutral: "#0f172a",
+  },
+  // 语义色文字（浅色模式）
+  semanticTextLight: {
+    success: "#065f46",
+    warning: "#92400e",
+    danger: "#991b1b",
+    info: "#1e40af",
+    neutral: "#475569",
+  },
+  // 语义色文字（深色模式）
+  semanticTextDark: {
+    success: "#6ee7b7",
+    warning: "#fcd34d",
+    danger: "#fca5a5",
+    info: "#93c5fd",
+    neutral: "#94a3b8",
+  },
+  // 严重程度色板
   severity: {
     critical: "#dc2626",
     high: "#ea580c",
     medium: "#d97706",
-    low: "#65a30d",
-    info: "#3b82f6",
+    low: "#059669",
+    info: "#2563eb",
   },
-  // Grayscale
-  gray: {
-    50: "#f9fafb",
-    100: "#f3f4f6",
-    200: "#e5e7eb",
-    300: "#d1d5db",
-    400: "#9ca3af",
-    500: "#6b7280",
-    600: "#4b5563",
-    700: "#374151",
-    800: "#1f2937",
-    900: "#111827",
-  },
-  // Dark mode background colors
-  dark: {
-    bg: "#111827",
-    surface: "#1f2937",
-    border: "#374151",
-    text: "#f9fafb",
-    textMuted: "#9ca3af",
-  },
-};
+} as const;
 
-// ==================== Spacing ====================
-export const spacing = {
-  xs: "0.25rem", // 4px
-  sm: "0.5rem", // 8px
-  md: "1rem", // 16px
-  lg: "1.5rem", // 24px
-  xl: "2rem", // 32px
-  "2xl": "2.5rem", // 40px
-  "3xl": "3rem", // 48px
-};
-
-// ==================== Border Radius ====================
-export const borderRadius = {
-  none: "0",
-  sm: "0.125rem", // 2px
-  md: "0.375rem", // 6px
-  lg: "0.5rem", // 8px
-  xl: "0.75rem", // 12px
-  "2xl": "1rem", // 16px
-  full: "9999px",
-};
-
-// ==================== Shadows ====================
-export const shadows = {
-  sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-  md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-  lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-  xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-  inner: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
-  dark: {
-    md: "0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)",
-    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2)",
-  },
-};
-
-// ==================== Typography ====================
-export const typography = {
+export const coreTypography = {
   fontFamily: {
-    sans: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    sans: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, 'Cascadia Code', monospace",
   },
   fontSize: {
-    xs: "0.75rem",
-    sm: "0.875rem",
-    md: "1rem",
-    lg: "1.125rem",
-    xl: "1.25rem",
-    "2xl": "1.5rem",
-    "3xl": "1.875rem",
-    "4xl": "2.25rem",
+    display: { size: "32px", weight: 500, lineHeight: 1.2 },
+    h1: { size: "24px", weight: 600, lineHeight: 1.3 },
+    h2: { size: "18px", weight: 600, lineHeight: 1.4 },
+    h3: { size: "16px", weight: 500, lineHeight: 1.5 },
+    body: { size: "14px", weight: 400, lineHeight: 1.5 },
+    small: { size: "12px", weight: 400, lineHeight: 1.5 },
+    caption: { size: "11px", weight: 400, lineHeight: 1.4 },
   },
-  fontWeight: {
-    normal: "400",
-    medium: "500",
-    semibold: "600",
-    bold: "700",
+} as const;
+
+export const coreSpacing = {
+  "0": "0px",
+  "1": "4px",
+  "2": "8px",
+  "3": "12px",
+  "4": "16px",
+  "5": "20px",
+  "6": "24px",
+  "8": "32px",
+  "10": "40px",
+  "12": "48px",
+  "16": "64px",
+} as const;
+
+export const coreBorderRadius = {
+  none: "0px",
+  sm: "4px",
+  md: "8px",
+  lg: "12px",
+  full: "9999px",
+} as const;
+
+export const coreShadows = {
+  none: "none",
+  subtle: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+  sm: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+  md: "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)",
+  lg: "0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08)",
+} as const;
+
+export const coreBorders = {
+  width: "1px",
+  subtleLight: "#e2e8f0",
+  subtleDark: "#334155",
+  defaultLight: "#cbd5e1",
+  defaultDark: "#475569",
+  focusLight: "#2563eb",
+  focusDark: "#60a5fa",
+} as const;
+
+// ==================== Semantic Tokens ====================
+// 带有语义含义的抽象值，映射到 Core Tokens
+
+export const semanticTokens = {
+  color: {
+    // 背景层级
+    bgPage: { light: coreColors.slate[50], dark: coreColors.slate[900] },
+    bgCard: { light: "#ffffff", dark: coreColors.slate[800] },
+    bgHover: { light: coreColors.slate[100], dark: coreColors.slate[700] },
+    bgActive: { light: coreColors.slate[200], dark: coreColors.slate[600] },
+    bgInput: { light: "#ffffff", dark: coreColors.slate[900] },
+    // 文字层级
+    textPrimary: { light: coreColors.slate[900], dark: coreColors.slate[100] },
+    textSecondary: { light: coreColors.slate[700], dark: coreColors.slate[400] },
+    textTertiary: { light: coreColors.slate[500], dark: coreColors.slate[500] },
+    textDisabled: { light: coreColors.slate[400], dark: coreColors.slate[600] },
+    textInverse: { light: coreColors.slate[50], dark: coreColors.slate[900] },
+    textLink: { light: coreColors.semantic.info, dark: "#60a5fa" },
+    textMono: { light: coreColors.slate[900], dark: coreColors.slate[100] },
+    // 边框
+    borderSubtle: { light: coreBorders.subtleLight, dark: coreBorders.subtleDark },
+    borderDefault: { light: coreBorders.defaultLight, dark: coreBorders.defaultDark },
+    borderFocus: { light: coreBorders.focusLight, dark: coreBorders.focusDark },
   },
-  lineHeight: {
-    tight: "1.25",
-    normal: "1.5",
-    relaxed: "1.625",
+  shadow: {
+    card: coreShadows.sm,
+    cardHover: coreShadows.md,
+    dropdown: coreShadows.md,
+    modal: coreShadows.lg,
+    nav: coreShadows.subtle,
   },
-};
+  radius: {
+    card: coreBorderRadius.md,
+    cardLarge: coreBorderRadius.lg,
+    input: coreBorderRadius.md,
+    button: coreBorderRadius.md,
+    badge: coreBorderRadius.sm,
+    tag: coreBorderRadius.sm,
+    table: coreBorderRadius.none,
+    avatar: coreBorderRadius.full,
+  },
+  spacing: {
+    pagePadding: coreSpacing["12"],
+    moduleGap: coreSpacing["6"],
+    cardPadding: coreSpacing["4"],
+    cardGap: coreSpacing["4"],
+    tableRowHeight: "48px",
+    navHeight: "56px",
+    sidebarWidth: "256px",
+  },
+} as const;
 
-// ==================== Transitions ====================
-export const transitions = {
-  fast: "150ms ease-in-out",
-  normal: "200ms ease-in-out",
-  slow: "300ms ease-in-out",
-};
+// ==================== Component Tokens ====================
+// 组件级专用值，直接对应组件的样式需求
 
-// ==================== Z-Index ====================
-export const zIndex = {
-  hide: -1,
-  base: 0,
-  docked: 10,
-  dropdown: 1000,
-  sticky: 1100,
-  banner: 1200,
-  overlay: 1300,
-  modal: 1400,
-  popover: 1500,
-  skipLink: 1600,
-  toast: 1700,
-  tooltip: 1800,
-};
+export const componentTokens = {
+  // KPI Card
+  kpiCard: {
+    radius: semanticTokens.radius.card,
+    shadow: semanticTokens.shadow.card,
+    padding: semanticTokens.spacing.cardPadding,
+    valueSize: coreTypography.fontSize.display,
+    labelSize: coreTypography.fontSize.small,
+    gap: coreSpacing["2"],
+  },
+  // Chart Card
+  chartCard: {
+    radius: semanticTokens.radius.card,
+    shadow: semanticTokens.shadow.card,
+    padding: semanticTokens.spacing.cardPadding,
+    titleSize: coreTypography.fontSize.h2,
+  },
+  // Data Table
+  dataTable: {
+    radius: semanticTokens.radius.table,
+    rowHeight: semanticTokens.spacing.tableRowHeight,
+    rowGap: coreSpacing["0"],
+    headerSize: coreTypography.fontSize.body,
+    cellSize: coreTypography.fontSize.body,
+    borderColor: semanticTokens.color.borderSubtle,
+    hoverBg: { light: coreColors.slate[50], dark: coreColors.slate[800] },
+  },
+  // Navigation
+  nav: {
+    topHeight: "56px",
+    sidebarWidth: semanticTokens.spacing.sidebarWidth,
+    sidebarCollapsedWidth: "64px",
+    itemPadding: `${coreSpacing["3"]} ${coreSpacing["4"]}`,
+    activeIndicator: "3px",
+    activeIndicatorColor: coreColors.semantic.info,
+  },
+  // Button
+  button: {
+    radius: semanticTokens.radius.button,
+    padding: {
+      sm: `${coreSpacing["2"]} ${coreSpacing["3"]}`,
+      md: `${coreSpacing["2"]} ${coreSpacing["4"]}`,
+      lg: `${coreSpacing["3"]} ${coreSpacing["6"]}`,
+    },
+    pressScale: "0.98",
+    pressDuration: "100ms",
+  },
+  // Badge
+  badge: {
+    radius: semanticTokens.radius.badge,
+    padding: `${coreSpacing["1"]} ${coreSpacing["2"]}`,
+    size: coreTypography.fontSize.small,
+  },
+  // Input
+  input: {
+    radius: semanticTokens.radius.input,
+    borderWidth: coreBorders.width,
+    borderColor: semanticTokens.color.borderDefault,
+    focusBorderColor: semanticTokens.color.borderFocus,
+    bg: semanticTokens.color.bgInput,
+    padding: `${coreSpacing["3"]} ${coreSpacing["4"]}`,
+  },
+  // Modal / Dropdown
+  overlay: {
+    radius: semanticTokens.radius.cardLarge,
+    shadow: semanticTokens.shadow.modal,
+    padding: coreSpacing["6"],
+  },
+  // Tooltip
+  tooltip: {
+    radius: semanticTokens.radius.card,
+    shadow: semanticTokens.shadow.card,
+    padding: coreSpacing["3"],
+    bg: semanticTokens.color.bgCard,
+    size: coreTypography.fontSize.small,
+  },
+  // Empty State
+  emptyState: {
+    iconSize: "64px",
+    iconColor: semanticTokens.color.textTertiary,
+    titleSize: coreTypography.fontSize.h3,
+    descSize: coreTypography.fontSize.body,
+  },
+  // Status Indicator
+  status: {
+    dotSize: "8px",
+    size: coreTypography.fontSize.small,
+  },
+} as const;
 
-// ==================== Common Component Patterns ====================
+// ==================== Dark Mode Helpers ====================
+
+export type ThemeMode = "light" | "dark";
+
+export function getSemanticColor(
+  token: keyof typeof semanticTokens.color,
+  mode: ThemeMode
+): string {
+  const value = semanticTokens.color[token];
+  return value[mode];
+}
+
+export function getSemanticShadow(token: keyof typeof semanticTokens.shadow): string {
+  return semanticTokens.shadow[token];
+}
+
+export function getComponentToken<T extends keyof typeof componentTokens>(
+  component: T
+): (typeof componentTokens)[T] {
+  return componentTokens[component];
+}
+
+// ==================== Re-exports for convenience ====================
+
+export const colors = coreColors;
+export const typography = coreTypography;
+export const spacing = coreSpacing;
+export const borderRadius = coreBorderRadius;
+export const shadows = coreShadows;
+export const borders = coreBorders;
+
+// ==================== Legacy Compatibility ====================
+// 旧 patterns / transitions API 兼容层，映射到新设计系统的 Tailwind 类名
+
 export const patterns = {
-  // Card pattern
+  button: {
+    base: "relative inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+    variants: {
+      primary: "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800",
+      secondary: "bg-surface-hover text-text-primary hover:bg-surface-active",
+      ghost: "bg-transparent text-text-primary hover:bg-surface-hover",
+      danger: "bg-danger-600 text-white hover:bg-danger-700 active:bg-danger-800",
+      outline:
+        "border border-border-default bg-transparent text-text-primary hover:bg-surface-hover",
+    },
+    sizes: {
+      sm: "h-8 px-3 text-sm rounded-md",
+      md: "h-10 px-4 text-sm rounded-md",
+      lg: "h-12 px-6 text-base rounded-md",
+    },
+  },
   card: {
-    base: "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700",
-    hover: "hover:border-gray-300 dark:hover:border-gray-600 transition-colors",
+    base: "bg-surface-card border border-border-subtle",
     shadow: "shadow-sm",
-    border: "border-gray-200 dark:border-gray-700",
+    hover: "hover:bg-surface-hover transition-colors duration-200",
+    border: "border border-border-subtle",
     padding: {
       sm: "p-3",
       md: "p-4",
       lg: "p-6",
     },
   },
-  // Button pattern
-  button: {
-    base: "inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2",
-    sizes: {
-      sm: "px-3 py-1.5 text-sm",
-      md: "px-4 py-2 text-sm",
-      lg: "px-6 py-3 text-base",
-    },
-    variants: {
-      primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
-      secondary:
-        "bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600",
-      danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
-      ghost:
-        "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800",
-      outline:
-        "border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800",
-    },
-  },
-  // Form input pattern
-  input: {
-    base: "block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500",
-    sizes: {
-      sm: "px-3 py-1.5 text-sm",
-      md: "px-4 py-2 text-base",
-      lg: "px-4 py-3 text-lg",
-    },
-  },
-  // Badge pattern
-  badge: {
-    base: "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-    variants: {
-      default: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200",
-      success: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      warning: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      danger: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-      info: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    },
-  },
-  // Status indicator pattern
-  status: {
-    base: "inline-flex items-center gap-1.5",
-    dot: "w-2 h-2 rounded-full",
-    variants: {
-      online: "text-green-600 dark:text-green-400",
-      offline: "text-gray-500 dark:text-gray-400",
-      warning: "text-yellow-600 dark:text-yellow-400",
-      error: "text-red-600 dark:text-red-400",
-    },
-  },
-};
+} as const;
 
-// ==================== Severity Styles (for alerts) ====================
-export const severityStyles = {
-  critical: {
-    bg: "bg-red-50 dark:bg-red-900/20",
-    border: "border-red-200 dark:border-red-800",
-    text: "text-red-800 dark:text-red-200",
-    icon: "text-red-500",
-    badge: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  },
-  high: {
-    bg: "bg-orange-50 dark:bg-orange-900/20",
-    border: "border-orange-200 dark:border-orange-800",
-    text: "text-orange-800 dark:text-orange-200",
-    icon: "text-orange-500",
-    badge: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-  },
-  medium: {
-    bg: "bg-amber-50 dark:bg-amber-900/20",
-    border: "border-amber-200 dark:border-amber-800",
-    text: "text-amber-800 dark:text-amber-200",
-    icon: "text-amber-500",
-    badge: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-  },
-  low: {
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    border: "border-blue-200 dark:border-blue-800",
-    text: "text-blue-800 dark:text-blue-200",
-    icon: "text-blue-500",
-    badge: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  },
-  info: {
-    bg: "bg-gray-50 dark:bg-gray-800/50",
-    border: "border-gray-200 dark:border-gray-700",
-    text: "text-gray-800 dark:text-gray-200",
-    icon: "text-gray-500",
-    badge: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200",
-  },
-};
-
-// ==================== Layout ====================
-export const layout = {
-  container: {
-    sm: "max-w-screen-sm",
-    md: "max-w-screen-md",
-    lg: "max-w-screen-lg",
-    xl: "max-w-screen-xl",
-    "2xl": "max-w-screen-2xl",
-  },
-  grid: {
-    1: "grid-cols-1",
-    2: "grid-cols-1 md:grid-cols-2",
-    3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-    4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
-  },
-};
+export const transitions = {
+  default: "all 150ms ease-out",
+  fast: "all 100ms ease-out",
+  slow: "all 200ms ease-out",
+} as const;
 
 // Type exports
-export type ColorToken = keyof typeof colors;
-export type SpacingToken = keyof typeof spacing;
-export type BorderRadiusToken = keyof typeof borderRadius;
-export type ShadowToken = keyof typeof shadows;
-export type FontSizeToken = keyof typeof typography.fontSize;
-export type SeverityLevel = keyof typeof severityStyles;
+export type CoreColorToken = keyof typeof coreColors;
+export type SemanticColorToken = keyof typeof semanticTokens.color;
+export type ComponentToken = keyof typeof componentTokens;
+export type SeverityLevel = keyof typeof coreColors.severity;
+export type SpacingToken = keyof typeof coreSpacing;
+export type BorderRadiusToken = keyof typeof coreBorderRadius;
+export type ShadowToken = keyof typeof coreShadows;
+export type FontSizeToken = keyof typeof coreTypography.fontSize;

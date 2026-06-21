@@ -2,7 +2,7 @@ import secrets
 import string
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -49,6 +49,7 @@ class Settings(BaseSettings):
 
     # v0.6.2: Authentication & JWT Settings
     jwt_secret: str = ""  # MUST be set in production (min 32 characters)
+    jwt_secret_previous: str = ""  # P1-17: Previous JWT secret for rotation过渡期
     jwt_expire_minutes: int = 720  # 12 hours
     jwt_refresh_expire_minutes: int = 10080  # 7 days
     allow_public_readonly: bool = False  # Allow unauthenticated read-only access
@@ -101,6 +102,11 @@ class Settings(BaseSettings):
         True  # Enable performance monitoring middleware
     )
 
+    # P1-24: Langfuse LLM Tracing Settings (optional)
+    langfuse_public_key: str = ""  # Langfuse public key (optional)
+    langfuse_secret_key: str = ""  # Langfuse secret key (optional)
+    langfuse_host: str = "https://cloud.langfuse.com"  # Langfuse API host
+
     # v1.0.0: Wazuh SIEM Integration Settings
     wazuh_enabled: bool = False  # Enable Wazuh integration
     wazuh_required: bool = False  # Fail startup if Wazuh initialization fails
@@ -135,7 +141,10 @@ class Settings(BaseSettings):
     def validate_jwt_secret(cls, v: str, info) -> str:
         """Validate JWT secret key strength."""
         environment = info.data.get("environment", "development")
-        strict_mode = info.data.get("strict_production_checks", False) or environment == "production"
+        strict_mode = (
+            info.data.get("strict_production_checks", False)
+            or environment == "production"
+        )
 
         # Production requires JWT secret
         if environment == "production":
@@ -170,7 +179,10 @@ class Settings(BaseSettings):
     def validate_admin_password(cls, v: str, info) -> str:
         """Validate bootstrap admin password strength."""
         environment = info.data.get("environment", "development")
-        strict_mode = info.data.get("strict_production_checks", False) or environment == "production"
+        strict_mode = (
+            info.data.get("strict_production_checks", False)
+            or environment == "production"
+        )
 
         # Production requires admin password
         if environment == "production":
@@ -224,7 +236,10 @@ class Settings(BaseSettings):
         Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
         """
         environment = info.data.get("environment", "development")
-        strict_mode = info.data.get("strict_production_checks", False) or environment == "production"
+        strict_mode = (
+            info.data.get("strict_production_checks", False)
+            or environment == "production"
+        )
 
         # Production requires a valid Fernet key
         if environment == "production":
@@ -289,6 +304,37 @@ class Settings(BaseSettings):
                 return ""
 
         return v
+
+    @field_validator("http_allowed_hosts")
+    @classmethod
+    def validate_http_allowed_hosts(cls, v: str, info) -> str:
+        """Validate HTTP_ALLOWED_HOSTS is configured in production."""
+        environment = info.data.get("environment", "development")
+        if environment == "production":
+            if not v or not v.strip():
+                raise ValueError(
+                    "HTTP_ALLOWED_HOSTS must be configured in production. "
+                    "Set a comma-separated list of allowed hostnames for HTTP sandbox security."
+                )
+        return v or ""
+
+    @model_validator(mode="after")
+    def validate_redis_in_production(self):
+        """P1-13: Enforce Redis configuration in production.
+
+        Production deployments must have Redis enabled for:
+        - Token blacklist (distributed logout)
+        - Rate limiting (consistent across instances)
+        - Idempotency key storage
+        """
+        if self.environment == "production":
+            if not self.redis_enabled or not self.redis_url:
+                raise ValueError(
+                    "REDIS_ENABLED and REDIS_URL must be configured in production. "
+                    "Set REDIS_ENABLED=true and REDIS_URL=redis://host:port/db. "
+                    "Redis is required for token blacklist and rate limiting."
+                )
+        return self
 
     # Pydantic V2 config using SettingsConfigDict
     model_config = SettingsConfigDict(

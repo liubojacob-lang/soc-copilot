@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { TabButton, TabList } from "@/components/ui/Tabs";
 import {
   api,
   Platform,
@@ -136,31 +137,19 @@ ${action.rollback.map((r: string, i: number) => `${i + 1}. ${r}`).join("\n")}
       <h3 className="text-sm font-semibold text-slate-700 mb-3">{t("title")}</h3>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-4">
-        <button
+      <TabList className="mb-4">
+        <TabButton
+          active={tab === "queries"}
           onClick={() => setTab("queries")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
-            tab === "queries"
-              ? "bg-soc-600 text-white shadow-sm"
-              : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-soc-300"
-          }`}
-        >
-          {t("tabs.queries")}
-        </button>
-        <button
+          label={t("tabs.queries")}
+        />
+        <TabButton
+          active={tab === "actions"}
           onClick={() => setTab("actions")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            !historyId
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : tab === "actions"
-                ? "bg-soc-600 text-white shadow-sm"
-                : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-soc-300 cursor-pointer"
-          }`}
+          label={t("tabs.actions")}
           disabled={!historyId}
-        >
-          {t("tabs.actions")}
-        </button>
-      </div>
+        />
+      </TabList>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">

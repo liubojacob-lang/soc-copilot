@@ -9,14 +9,17 @@ import { api, HistoryRecord } from "@/lib/api";
 import { loadAuthState, logout, type User } from "@/lib/auth";
 import { HistoryPanel } from "@/components/HistoryPanel";
 import Navigation from "@/components/Navigation";
+import Breadcrumbs from "@/components/common/Breadcrumbs";
+import { Heading, Text } from "@/components/ui/Typography";
 import {
   Card,
-  StatCard,
   RippleButton,
   LoadingSpinner,
   TabTransition,
   SkeletonCard,
 } from "@/components/common";
+import { TabButton, TabList } from "@/components/ui/Tabs";
+import { StatCard } from "@/components/dashboard/StatCard";
 
 const AlertAnalyzerTab = lazy(() =>
   import("@/components/tabs/AlertAnalyzerTab").then((mod) => ({ default: mod.AlertAnalyzerTab }))
@@ -78,7 +81,6 @@ export default function HomePage() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    // 模拟数据刷新
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsRefreshing(false);
   }, []);
@@ -133,7 +135,7 @@ export default function HomePage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-soc-50/30 to-gray-50 dark:from-gray-900 dark:via-soc-950/20 dark:to-gray-900 bg-dots">
+      <div className="min-h-screen bg-surface-page dark:bg-slate-900">
         <div className="flex items-center justify-center min-h-screen">
           <LoadingSpinner size="xl" color="soc" label={t("loading")} />
         </div>
@@ -142,7 +144,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-soc-50/30 to-gray-50 dark:from-gray-900 dark:via-soc-950/20 dark:to-gray-900 bg-dots">
+    <div className="min-h-screen bg-surface-page dark:bg-slate-900">
       <Navigation
         title={t("title")}
         subtitle={t("subtitle")}
@@ -152,14 +154,16 @@ export default function HomePage() {
       />
 
       <main className="flex relative">
-        <div className="flex-1 min-h-[calc(100vh-16rem)] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 max-w-[calc(100%-4rem)] xl:max-w-7xl">
-          <div className="mb-10 sm:mb-12 animate-fade-in">
+        <div className="flex-1 min-h-[calc(100vh-16rem)] mx-auto px-6 py-8 lg:px-12 lg:py-8 max-w-[calc(100%-4rem)] xl:max-w-7xl">
+          <Breadcrumbs className="mb-6" />
+
+          <div className="mb-8 animate-fade-in">
             <div className="flex items-start sm:items-center justify-between gap-4 mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-gradient-to-br from-soc-100 to-soc-50 dark:from-soc-900/40 dark:to-soc-800/30 rounded-xl shadow-sm">
-                  <ShieldCheck className="w-6 h-6 text-soc-600 dark:text-soc-400" />
+                <div className="p-2.5 bg-primary-100 dark:bg-primary-800 rounded-lg shadow-sm">
+                  <ShieldCheck className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                 </div>
-                <span className="text-sm font-semibold text-soc-600 dark:text-soc-400 uppercase tracking-wide">
+                <span className="text-sm font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wide">
                   {t("securityOperations")}
                 </span>
               </div>
@@ -173,12 +177,12 @@ export default function HomePage() {
                 {t("refreshData")}
               </RippleButton>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight leading-tight">
-              <span className="text-gradient">{t("title")}</span>
-            </h1>
-            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
+            <Heading level={1} color="primary" className="mb-3">
+              {t("title")}
+            </Heading>
+            <Text color="tertiary" className="max-w-2xl">
               {t("subtitle")}
-            </p>
+            </Text>
           </div>
 
           <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -188,9 +192,7 @@ export default function HomePage() {
               trend="+12%"
               trendDirection="up"
               icon={<Activity className="w-6 h-6" />}
-              colorScheme="soc"
               subtitle={tStats("last24h")}
-              delay={0}
             />
             <StatCard
               title={tStats("highSeverity")}
@@ -198,9 +200,7 @@ export default function HomePage() {
               trend="-8%"
               trendDirection="down"
               icon={<AlertTriangle className="w-6 h-6" />}
-              colorScheme="danger"
               subtitle={tStats("needsAttention")}
-              delay={1}
             />
             <StatCard
               title={tStats("inProgress")}
@@ -208,9 +208,7 @@ export default function HomePage() {
               trend="+3%"
               trendDirection="neutral"
               icon={<Clock className="w-6 h-6" />}
-              colorScheme="warning"
               subtitle={tStats("investigating")}
-              delay={2}
             />
             <StatCard
               title={tStats("resolved")}
@@ -218,33 +216,25 @@ export default function HomePage() {
               trend="+24%"
               trendDirection="up"
               icon={<Zap className="w-6 h-6" />}
-              colorScheme="success"
               subtitle={tStats("thisWeek")}
-              delay={3}
             />
           </div>
 
-          <Card variant="glass" className="animate-fade-in-up">
-            <div className="border-b border-gray-200 dark:border-gray-700/50 px-4 pt-4 mb-6 bg-gradient-to-r from-gray-50/30 to-transparent dark:from-gray-800/20">
-              <nav className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                {tabDefs.map((tab, index) => (
-                  <button
+          <Card variant="default" className="animate-fade-in-up">
+            <div className="px-4 pt-4 mb-6 bg-surface-hover dark:bg-slate-800/30">
+              <TabList className="overflow-x-auto scrollbar-hide">
+                {tabDefs.map((tab) => (
+                  <TabButton
                     key={tab.key}
+                    active={activeTab === tab.key}
                     onClick={() => {
                       setActiveTab(tab.key);
                       setHistoryOpen(false);
                     }}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-300 whitespace-nowrap ${
-                      activeTab === tab.key
-                        ? "bg-gradient-to-r from-soc-500 to-soc-600 text-white shadow-lg shadow-soc-500/25"
-                        : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                    }`}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    {tab.label}
-                  </button>
+                    label={tab.label}
+                  />
                 ))}
-              </nav>
+              </TabList>
             </div>
 
             <TabTransition activeKey={activeTab} children={tabContents} />

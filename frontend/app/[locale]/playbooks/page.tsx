@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
 import Navigation from "@/components/Navigation";
 import { SkeletonTable } from "@/components/common/LoadingState";
+import { TabButton, TabList } from "@/components/ui/Tabs";
 import { STATUS_COLORS, MODE_COLORS } from "./constants";
 import { usePlaybooks } from "./hooks/usePlaybooks";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -116,24 +117,20 @@ export default function PlaybooksPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs */}
         <div className="mb-6">
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab("runs")}
-                className={`${activeTab === "runs" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
-              >
-                <Play className="w-4 h-4" />
-                {t("tabs.runs")}
-              </button>
-              <button
-                onClick={() => setActiveTab("definitions")}
-                className={`${activeTab === "definitions" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
-              >
-                <BookOpen className="w-4 h-4" />
-                {t("tabs.definitions")}
-              </button>
-            </nav>
-          </div>
+          <TabList>
+            <TabButton
+              active={activeTab === "runs"}
+              onClick={() => setActiveTab("runs")}
+              label={t("tabs.runs")}
+              icon={<Play className="w-4 h-4" />}
+            />
+            <TabButton
+              active={activeTab === "definitions"}
+              onClick={() => setActiveTab("definitions")}
+              label={t("tabs.definitions")}
+              icon={<BookOpen className="w-4 h-4" />}
+            />
+          </TabList>
         </div>
 
         {/* Runs Tab */}

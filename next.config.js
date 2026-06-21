@@ -32,12 +32,20 @@ const nextConfig = {
     ];
   },
   async headers() {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    // 开发环境默认允许 localhost:3000；生产环境必须通过环境变量配置具体域名
+    const allowedOrigin = appUrl || "http://localhost:3000";
+
+    // 安全防御：通配符 * 与 Access-Control-Allow-Credentials: true 不能共存，
+    // 否则浏览器会拒绝响应，导致凭证泄露风险。若配置错误则回退到 localhost。
+    const originValue = allowedOrigin === "*" ? "http://localhost:3000" : allowedOrigin;
+
     return [
       {
         source: "/api/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Origin", value: originValue },
           { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
           {
             key: "Access-Control-Allow-Headers",

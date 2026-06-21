@@ -1,17 +1,38 @@
 /**
  * Theme Store
- * Manages light/dark mode theme preference
+ * Manages light/dark/system theme preference with resolvedTheme support
  */
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark" | "system";
 
 interface ThemeState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  getEffectiveTheme: () => "light" | "dark";
+  toggleTheme: () => void;
+  resolvedTheme: "light" | "dark";
+}
+
+const STORAGE_KEY = "theme-storage";
+
+function getSystemTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function getResolvedTheme(theme: Theme): "light" | "dark" {
+  if (theme === "system") return getSystemTheme();
+  return theme;
+}
+
+function applyThemeClass(theme: Theme) {
+  if (typeof document === "undefined") return;
+  const resolved = getResolvedTheme(theme);
+  const root = document.documentElement;
+  root.classList.remove("light", "dark");
+  root.classList.add(resolved);
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -21,53 +42,38 @@ export const useThemeStore = create<ThemeState>()(
 
       setTheme: (theme: Theme) => {
         set({ theme });
-
-        // Apply theme to document
-        if (typeof document !== "undefined") {
-          const effectiveTheme = getEffectiveTheme(theme);
-          document.documentElement.classList.remove("light", "dark");
-          document.documentElement.classList.add(effectiveTheme);
-        }
+        applyThemeClass(theme);
       },
 
-      getEffectiveTheme: () => {
-        const { theme } = get();
+      toggleTheme: () => {
+        const current = get().resolvedTheme;
+        const next = current === "light" ? "dark" : "light";
+        set({ theme: next });
+        applyThemeClass(next);
+      },
 
-        if (theme === "system") {
-          // Check system preference
-          if (typeof window !== "undefined" && window.matchMedia) {
-            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-          }
-          return "light";
-        }
-
-        return theme;
+      get resolvedTheme(): "light" | "dark" {
+        return getResolvedTheme(get().theme);
       },
     }),
     {
-      name: "theme-storage",
+      name: STORAGE_KEY,
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          applyThemeClass(state.theme);
+        }
+      },
     }
   )
 );
 
-// Helper function to get effective theme
-function getEffectiveTheme(theme: Theme): "light" | "dark" {
-  if (theme === "system") {
-    if (typeof window !== "undefined" && window.matchMedia) {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+// Listen to system preference changes
+if (typeof window !== "undefined") {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener("change", () => {
+    const store = useThemeStore.getState();
+    if (store.theme === "system") {
+      applyThemeClass("system");
     }
-    return "light";
-  }
-  return theme;
-}
-
-// Initialize theme on app load
-if (typeof document !== "undefined") {
-  const storedTheme = localStorage.getItem("theme-storage");
-  if (storedTheme) {
-    const theme = JSON.parse(storedTheme).state.theme;
-    const effectiveTheme = getEffectiveTheme(theme);
-    document.documentElement.classList.remove("light", "dark");
-    document.documentElement.classList.add(effectiveTheme);
-  }
+  });
 }

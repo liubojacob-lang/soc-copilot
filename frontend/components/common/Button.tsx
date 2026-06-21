@@ -4,7 +4,6 @@ import { ReactNode, ButtonHTMLAttributes, forwardRef, useState, useRef, useEffec
 import { cva, type VariantProps } from "class-variance-authority";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { patterns, transitions } from "@/styles/designTokens";
 
 interface Ripple {
   id: number;
@@ -12,27 +11,28 @@ interface Ripple {
   y: number;
 }
 
-// Extract Tailwind classes from design tokens
-const buttonVariants = cva(patterns.button.base, {
-  variants: {
-    variant: {
-      primary: patterns.button.variants.primary,
-      secondary: patterns.button.variants.secondary,
-      ghost: patterns.button.variants.ghost,
-      danger: patterns.button.variants.danger,
-      outline: patterns.button.variants.outline,
+const buttonVariants = cva(
+  "relative inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        primary: "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800",
+        secondary: "bg-surface-hover text-text-primary hover:bg-surface-active",
+        ghost: "bg-transparent text-text-primary hover:bg-surface-hover",
+        danger: "bg-danger-600 text-white hover:bg-danger-700 active:bg-danger-800",
+      },
+      size: {
+        sm: "h-9 px-3 text-sm rounded-md",
+        md: "h-10 px-4 text-sm rounded-md",
+        lg: "h-12 px-6 text-base rounded-md",
+      },
     },
-    size: {
-      sm: patterns.button.sizes.sm,
-      md: patterns.button.sizes.md,
-      lg: patterns.button.sizes.lg,
+    defaultVariants: {
+      variant: "primary",
+      size: "md",
     },
-  },
-  defaultVariants: {
-    variant: "primary",
-    size: "md",
-  },
-});
+  }
+);
 
 type ButtonVariant = VariantProps<typeof buttonVariants>["variant"];
 type ButtonSize = VariantProps<typeof buttonVariants>["size"];

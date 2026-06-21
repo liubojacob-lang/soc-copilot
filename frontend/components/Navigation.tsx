@@ -193,7 +193,7 @@ export default function Navigation({
 
         {isHovered && (
           <div
-            className={`absolute ${alignRight ? "right-0" : "left-0"} top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-2 z-50 animate-fade-in overflow-hidden`}
+            className={`absolute ${alignRight ? "right-0" : "left-0"} top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-1 z-50 animate-fade-in overflow-hidden`}
             onMouseEnter={() => {
               if (dropdownTimeoutRef.current) {
                 clearTimeout(dropdownTimeoutRef.current);
@@ -208,7 +208,7 @@ export default function Navigation({
                   router.push(item.path);
                   setHoveredDropdown(null);
                 }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 ${
+                className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-200 ${
                   isLinkActive(item.path)
                     ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"
@@ -319,7 +319,7 @@ export default function Navigation({
 
                       {hoveredDropdown === "adminGroup" && (
                         <div
-                          className="absolute right-0 top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-2 z-50 animate-fade-in overflow-hidden"
+                          className="absolute right-0 top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-1 z-50 animate-fade-in overflow-hidden"
                           onMouseEnter={() => {
                             if (dropdownTimeoutRef.current) {
                               clearTimeout(dropdownTimeoutRef.current);
@@ -338,7 +338,7 @@ export default function Navigation({
                                 router.push(item.path);
                                 setHoveredDropdown(null);
                               }}
-                              className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 ${
+                              className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-200 ${
                                 isLinkActive(item.path)
                                   ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
                                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"

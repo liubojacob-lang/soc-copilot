@@ -14,6 +14,7 @@ from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
 from models.user import UserModel
+from observability.llm_tracing import observe_endpoint
 from services.ai_service_enhanced import (
     AIAnalysisResult,
     PlaybookRecommendation,
@@ -122,6 +123,7 @@ class ReportGenerationRequest(BaseModel):
 
 
 @router.post("/analyze-alert", response_model=AlertAnalysisResponse)
+@observe_endpoint("ai_analyze_alert")
 async def analyze_alert(
     request: AlertAnalysisRequest,
     current_user: UserModel = Depends(get_current_user),
@@ -275,6 +277,7 @@ async def recommend_playbooks(
 
 
 @router.post("/chat")
+@observe_endpoint("ai_chat")
 async def chat(
     request: ChatRequest,
     current_user: UserModel = Depends(get_current_user),
@@ -302,7 +305,9 @@ async def chat(
                     detail=f"Model {model_id} not found or not enabled",
                 )
             model_provider = model.provider
-            logger.info(f"Using requested model: {model_id} (provider: {model_provider})")
+            logger.info(
+                f"Using requested model: {model_id} (provider: {model_provider})"
+            )
         else:
             # Use user's default model
             from repositories.ai_model_repository import (
@@ -334,7 +339,8 @@ async def chat(
         history = None
         if request.conversation_history:
             history = [
-                {"role": msg.role, "content": msg.content} for msg in request.conversation_history
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
             ]
 
         # Get complete response directly
@@ -409,7 +415,9 @@ async def get_ai_status(
 
         # Check if AI service is properly initialized
         if not ai_service._initialized:
-            logger.warning(f"AI service not initialized. Provider: {ai_service.provider}")
+            logger.warning(
+                f"AI service not initialized. Provider: {ai_service.provider}"
+            )
             return {
                 "status": "unavailable",
                 "provider": ai_service.provider,

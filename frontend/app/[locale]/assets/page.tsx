@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api, AssetResponse, Criticality } from "@/lib/api";
 import { SkeletonTable } from "@/components/common/LoadingState";
+import { Modal } from "@/components/common/Modal";
 import { useTranslations } from "next-intl";
 
 export default function AssetsPage() {
@@ -220,19 +221,16 @@ export default function AssetsPage() {
 
       {/* Import Modal */}
       {showImport && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">{t("importTitle")}</h2>
-            <textarea
-              value={importJson}
-              onChange={(e) => setImportJson(e.target.value)}
-              placeholder={t("importPlaceholder")}
-              className="w-full h-64 px-3 py-2 border rounded font-mono text-sm"
-            />
-            <div className="mt-4 flex justify-end space-x-2">
+        <Modal
+          open
+          onClose={() => setShowImport(false)}
+          title={t("importTitle")}
+          size="xl"
+          footer={
+            <>
               <button
                 onClick={() => setShowImport(false)}
-                className="px-4 py-2 border rounded hover:bg-gray-100"
+                className="px-4 py-2 border rounded hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
               >
                 {tCommon("cancel")}
               </button>
@@ -242,9 +240,16 @@ export default function AssetsPage() {
               >
                 {tCommon("import")}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <textarea
+            value={importJson}
+            onChange={(e) => setImportJson(e.target.value)}
+            placeholder={t("importPlaceholder")}
+            className="w-full h-64 px-3 py-2 border rounded font-mono text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </Modal>
       )}
 
       {/* Asset Form Modal */}
@@ -317,108 +322,113 @@ function AssetForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-        <h2 className="text-xl font-bold mb-4">{asset ? t("editAsset") : t("addAssetTitle")}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("hostname")}</label>
-            <input
-              type="text"
-              value={formData.hostname}
-              onChange={(e) => setFormData({ ...formData, hostname: e.target.value })}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("ipAddress")}</label>
-            <input
-              type="text"
-              value={formData.ip}
-              onChange={(e) => setFormData({ ...formData, ip: e.target.value })}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("owner")}</label>
-            <input
-              type="text"
-              value={formData.owner}
-              onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("businessUnit")}</label>
-            <input
-              type="text"
-              value={formData.business}
-              onChange={(e) => setFormData({ ...formData, business: e.target.value })}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("criticality")}</label>
-            <select
-              value={formData.criticality}
-              onChange={(e) =>
-                setFormData({ ...formData, criticality: e.target.value as Criticality })
-              }
-              className="w-full px-3 py-2 border rounded"
-            >
-              <option value="low">{tCommon("low")}</option>
-              <option value="medium">{tCommon("medium")}</option>
-              <option value="high">{tCommon("high")}</option>
-              <option value="critical">{tCommon("critical")}</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("tags")}</label>
-            <input
-              type="text"
-              value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t("notes")}</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-3 py-2 border rounded"
-              rows={3}
-            />
-          </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isActive"
-              checked={formData.is_active}
-              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="mr-2"
-            />
-            <label htmlFor="isActive" className="text-sm">
-              {t("active")}
-            </label>
-          </div>
-          <div className="flex justify-end space-x-2 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border rounded hover:bg-gray-100"
-            >
-              {tCommon("cancel")}
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              {tCommon("save")}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal
+      open
+      onClose={onClose}
+      title={asset ? t("editAsset") : t("addAssetTitle")}
+      size="md"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 border rounded hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            {tCommon("cancel")}
+          </button>
+          <button
+            type="submit"
+            form="asset-form"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            {tCommon("save")}
+          </button>
+        </>
+      }
+    >
+      <form id="asset-form" onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t("hostname")}</label>
+          <input
+            type="text"
+            value={formData.hostname}
+            onChange={(e) => setFormData({ ...formData, hostname: e.target.value })}
+            className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t("ipAddress")}</label>
+          <input
+            type="text"
+            value={formData.ip}
+            onChange={(e) => setFormData({ ...formData, ip: e.target.value })}
+            className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t("owner")}</label>
+          <input
+            type="text"
+            value={formData.owner}
+            onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
+            className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t("businessUnit")}</label>
+          <input
+            type="text"
+            value={formData.business}
+            onChange={(e) => setFormData({ ...formData, business: e.target.value })}
+            className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t("criticality")}</label>
+          <select
+            value={formData.criticality}
+            onChange={(e) =>
+              setFormData({ ...formData, criticality: e.target.value as Criticality })
+            }
+            className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          >
+            <option value="low">{tCommon("low")}</option>
+            <option value="medium">{tCommon("medium")}</option>
+            <option value="high">{tCommon("high")}</option>
+            <option value="critical">{tCommon("critical")}</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t("tags")}</label>
+          <input
+            type="text"
+            value={formData.tags}
+            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+            className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t("notes")}</label>
+          <textarea
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            rows={3}
+          />
+        </div>
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={formData.is_active}
+            onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+            className="mr-2"
+          />
+          <label htmlFor="isActive" className="text-sm">
+            {t("active")}
+          </label>
+        </div>
+      </form>
+    </Modal>
   );
 }

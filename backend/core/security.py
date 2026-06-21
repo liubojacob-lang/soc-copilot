@@ -98,13 +98,24 @@ def create_refresh_token(data: dict) -> str:
 
 
 def decode_token(token: str) -> dict | None:
-    """Decode and validate a JWT token."""
-    try:
-        payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
-        return payload
-    except PyJWTError as e:
-        logger.debug(f"Token decode failed: {e}")
-        return None
+    """Decode and validate a JWT token.
+
+    P1-17: Supports JWT secret rotation — tries current secret first,
+    then falls back to jwt_secret_previous for transition period compatibility.
+    """
+    secrets_to_try = [get_jwt_secret()]
+    if settings.jwt_secret_previous:
+        secrets_to_try.append(settings.jwt_secret_previous)
+
+    for secret in secrets_to_try:
+        try:
+            payload = jwt.decode(token, secret, algorithms=[JWT_ALGORITHM])
+            return payload
+        except PyJWTError:
+            continue
+
+    logger.debug("Token decode failed with all secrets")
+    return None
 
 
 def is_token_invalidated_by_user_update(
@@ -170,6 +181,35 @@ def is_token_invalidated_by_user_update(
         )
 
     return is_invalidated
+
+
+def check_password_history(new_password: str, password_history: list) -> bool:
+    """Check if new password exists in the recent password history.
+
+    P1-19: Prevents password reuse by comparing against the last 5 passwords
+    using bcrypt verify.
+
+    Args:
+        new_password: Plain-text new password to check
+        password_history: List of previous password entries (dict or str hashes)
+
+    Returns:
+        True if password is found in history (should be rejected)
+        False if password is not in history (allowed)
+    """
+    if not password_history:
+        return False
+
+    for entry in password_history[:5]:
+        if isinstance(entry, dict):
+            old_hash = entry.get("hashed_password", "")
+        else:
+            old_hash = str(entry)
+
+        if old_hash and verify_password(new_password, old_hash):
+            return True
+
+    return False
 
 
 # API Key hashing with salt - using bcrypt for security

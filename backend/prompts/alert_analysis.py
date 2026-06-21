@@ -1,6 +1,15 @@
 """
 告警分析 Prompt 模板
+
+P1-23: 支持从数据库 Prompt Registry 动态加载，回退到本地文件。
 """
+
+from typing import Any
+
+from core.config import settings
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 ALERT_ANALYSIS_SYSTEM_PROMPT = """你是一名资深SOC分析师，精通MITRE ATT&CK框架、威胁情报分析和事件响应。
 
@@ -40,17 +49,17 @@ ALERT_ANALYSIS_USER_PROMPT = """## 原始告警
   "alert_name": "{alert_name}",
   "alert_source": "siem",
   "original_raw_log": "...",
-  
+
   "event_category": "initial_access",
   "event_subcategory": "phishing_campaign",
   "attack_technique_ids": ["T1566", "T1566.001"],
   "attack_tactic_ids": ["TA0001"],
-  
+
   "verdict": "true_positive",
   "severity": "high",
   "confidence": "high",
   "confidence_score": 0.85,
-  
+
   "iocs": {{
     "ips": ["192.168.1.100"],
     "domains": ["evil.com"],
@@ -69,11 +78,11 @@ ALERT_ANALYSIS_USER_PROMPT = """## 原始告警
     "is_research_related": false
   }},
   "enriched_iocs": [],
-  
+
   "entities": {{"users": [], "hosts": [], "accounts": [], "processes": []}},
   "evidence_points": [],
   "timeline": [],
-  
+
   "impact": {{
     "affected_assets": [],
     "business_impact_level": "medium",
@@ -82,24 +91,24 @@ ALERT_ANALYSIS_USER_PROMPT = """## 原始告警
     "contains_pii": false,
     "contains_phi": false
   }},
-  
+
   "root_cause": {{
     "primary_cause": "一句话描述",
     "attack_vector": "钓鱼邮件",
     "initial_compromise_method": "恶意链接",
     "attack_phase": "installation"
   }},
-  
+
   "recommended_actions": [],
   "suggested_playbooks": [],
   "escalation_required": false,
-  
+
   "summary": "一句话摘要",
   "full_narrative": "完整叙事",
   "key_findings": [],
   "next_investigation_steps": [],
   "references": [],
-  
+
   "request_id": "{request_id}",
   "degraded_mode": false,
   "error_message": null
@@ -129,6 +138,39 @@ QUICK_ANALYSIS_SYSTEM_PROMPT = (
 PROMPT_CONFIG = {"temperature": 0.1, "max_tokens": 4096, "retry_count": 3}
 
 
+async def _load_prompt_from_registry(name: str) -> tuple[str | None, str | None]:
+    """Try to load prompt from database registry.
+
+    Returns (system_prompt, user_prompt_template) or (None, None) if not found.
+    """
+    try:
+        from db.session import AsyncSessionLocal
+        from repositories.prompt_registry_repository import PromptRegistryRepository
+
+        async with AsyncSessionLocal() as session:
+            repo = PromptRegistryRepository(session)
+            env = getattr(settings, "environment", "development")
+            # Map environment
+            env_map = {
+                "development": "dev",
+                "staging": "staging",
+                "production": "prod",
+            }
+            mapped_env = env_map.get(env, "dev")
+
+            prompt = await repo.get_active_by_name_env(name, mapped_env)
+            if prompt and prompt.content:
+                # If content contains a separator, split into system/user
+                if "---USER---" in prompt.content:
+                    parts = prompt.content.split("---USER---", 1)
+                    return parts[0].strip(), parts[1].strip()
+                # Fallback: use default system prompt + registry content as user template
+                return ALERT_ANALYSIS_SYSTEM_PROMPT, prompt.content
+    except Exception as e:
+        logger.debug(f"Failed to load prompt '{name}' from registry: {e}")
+    return None, None
+
+
 def get_analysis_prompt(
     raw_log,
     alert_id="N/A",
@@ -137,6 +179,10 @@ def get_analysis_prompt(
     request_id="N/A",
     model_name="unknown",
 ):
+    """Get alert analysis prompt pair.
+
+    P1-23: Attempts to load from Prompt Registry first; falls back to local file.
+    """
     user_prompt = ALERT_ANALYSIS_USER_PROMPT.format(
         raw_log=raw_log[:8000],
         alert_id=alert_id,
@@ -147,6 +193,34 @@ def get_analysis_prompt(
         request_id=request_id,
     )
     return ALERT_ANALYSIS_SYSTEM_PROMPT, user_prompt
+
+
+async def get_analysis_prompt_async(
+    raw_log: str,
+    alert_id: str = "N/A",
+    alert_name: str = "N/A",
+    alert_source: str = "unknown",
+    request_id: str = "N/A",
+    model_name: str = "unknown",
+) -> tuple[str, str]:
+    """Async version that attempts dynamic loading from Prompt Registry."""
+    system_prompt, user_template = await _load_prompt_from_registry("alert_analysis")
+
+    if system_prompt is None or user_template is None:
+        # Fallback to local static prompt
+        system_prompt = ALERT_ANALYSIS_SYSTEM_PROMPT
+        user_template = ALERT_ANALYSIS_USER_PROMPT
+
+    user_prompt = user_template.format(
+        raw_log=raw_log[:8000],
+        alert_id=alert_id,
+        alert_name=alert_name,
+        alert_source=alert_source,
+        timestamp="2024-01-15T10:00:00Z",
+        model_name=model_name,
+        request_id=request_id,
+    )
+    return system_prompt, user_prompt
 
 
 def get_quick_prompt(raw_log):

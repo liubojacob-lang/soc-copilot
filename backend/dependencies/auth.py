@@ -33,7 +33,9 @@ _PERMISSION_CACHE_TTL_SECONDS = 300  # 5 minutes TTL
 security = HTTPBearer(auto_error=False)
 
 
-async def get_user_by_username(session: AsyncSession, username: str) -> UserModel | None:
+async def get_user_by_username(
+    session: AsyncSession, username: str
+) -> UserModel | None:
     """Get user by username."""
     validated_username = validate_sql_input(username)
     result = await session.execute(
@@ -270,8 +272,14 @@ async def get_current_user_optional(
     if authorization:
         token = authorization.credentials
 
+    # Also try JWT from cookie
+    if not token and cookie:
+        from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, get_token_from_cookie
+
+        token = get_token_from_cookie(cookie, COOKIE_ACCESS_TOKEN_NAME)
+
     if token:
-        # Check if token is blacklisted
+        # Check if token is blacklisted (Redis-backed for distributed deployments)
         from core.token_blacklist import get_token_blacklist
 
         blacklist = get_token_blacklist()
@@ -336,7 +344,9 @@ def require_role(*roles: UserRole):
 require_admin = require_role(UserRole.ADMIN)
 require_analyst_or_admin = require_role(UserRole.ADMIN, UserRole.ANALYST)
 require_auditor_or_admin = require_role(UserRole.ADMIN, UserRole.AUDITOR)
-require_analyst = require_role(UserRole.ANALYST)  # Includes admin implicitly by logic above
+require_analyst = require_role(
+    UserRole.ANALYST
+)  # Includes admin implicitly by logic above
 
 
 async def get_api_key_user(

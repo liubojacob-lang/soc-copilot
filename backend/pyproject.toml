@@ -37,6 +37,8 @@ dependencies = [
     "alembic==1.14.0",
     "chromadb==1.5.2",
     "scikit-learn==1.4.0",
+    # P1-24: LLM tracing (optional)
+    "langfuse>=2.0",
 ]
 
 [project.optional-dependencies]
