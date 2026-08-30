@@ -1,15 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { NextIntlClientProvider } from "next-intl";
+import { headers } from "next/headers";
+import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import "../globals.css";
+
 import BackToTop from "@/components/BackToTop";
 import { ResponsiveProvider } from "@/components/common/ResponsiveLayout";
 import { PageErrorBoundary } from "@/components/common/ErrorBoundary";
 import { ClientLayout } from "@/components/ClientLayout";
 import { WebVitals } from "@/components/WebVitals";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
-import { locales, type Locale } from "@/i18n";
+import { locales } from "@/i18n/routing";
+import { buildAlternates, getMetadataBase } from "@/lib/seo";
+import "../globals.css";
 
 const THEME_INIT_SCRIPT = `
   (function() {
@@ -35,16 +38,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
 
-  // Validate locale
-  if (!locales.includes(locale as Locale)) {
+  if (!hasLocale(locales, locale)) {
     return {};
   }
 
-  const t = await getTranslations({ locale });
+  const t = await getTranslations({ locale, namespace: "meta" });
 
   return {
-    title: t("meta.title"),
-    description: t("meta.description"),
+    metadataBase: getMetadataBase(),
+    title: {
+      default: t("title"),
+      template: `%s | ${t("title")}`,
+    },
+    description: t("description"),
+    alternates: buildAlternates("/"),
   };
 }
 
@@ -70,19 +77,21 @@ export default async function LocaleLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  // Await params before using (Next.js 15 requirement)
   const { locale } = await params;
 
-  // Validate locale
-  if (!locales.includes(locale as Locale)) {
+  // Unknown locale segments are handled by the nearest not-found boundary.
+  if (!hasLocale(locales, locale)) {
     notFound();
   }
 
-  // Enable static rendering
+  // Enable static rendering / ISR for this request.
   setRequestLocale(locale);
 
-  // Get translation messages
   const messages = await getMessages();
+
+  // Nonce issued by middleware for the production CSP; the theme script is
+  // the only hand-written inline script in the document.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -91,7 +100,7 @@ export default async function LocaleLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="antialiased min-h-screen">
         <NextIntlClientProvider messages={messages}>

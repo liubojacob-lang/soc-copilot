@@ -75,7 +75,12 @@
     "subtitle": "管理用于编程访问的 API 密钥",
     "title": "API 密钥",
     "yourApiKey": "您的 API 密钥",
-    "yourApiKeys": "您的 API 密钥"
+    "yourApiKeys": "您的 API 密钥",
+    "deletedSuccess": "API 密钥已删除",
+    "disabledSuccess": "API 密钥已禁用",
+    "enabledSuccess": "API 密钥已启用",
+    "deleteKeyTitle": "删除 API 密钥",
+    "deleteKeyConfirm": "确定要删除此 API 密钥吗？此操作无法撤销。"
   },
   "notificationSettings": {
     "title": "通知设置",

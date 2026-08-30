@@ -63,4 +63,4 @@ export interface MonitorHistory {
 
 export type Theme = "light" | "dark" | "system";
 
-export type Locale = "en" | "zh";
+export type Locale = "en" | "zh-CN";

@@ -36,10 +36,12 @@
       "failedToLoad": "Failed to load secrets",
       "failedToCreate": "Failed to create secret",
       "failedToDelete": "Failed to delete secret",
-      "addSecret": "添加密钥",
-      "key": "键",
-      "noSecrets": "暂无密钥",
-      "value": "值"
+      "addSecret": "Add Secret",
+      "key": "Key",
+      "noSecrets": "No Secrets",
+      "value": "Value",
+      "createdSuccess": "Secret created successfully",
+      "deletedSuccess": "Secret deleted successfully"
     },
     "resources": "Resources",
     "cpu": "CPU",

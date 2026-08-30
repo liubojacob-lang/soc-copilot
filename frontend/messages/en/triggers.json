@@ -63,7 +63,17 @@
     },
     "cronTriggerNamePlaceholder": "e.g., Daily Security Scan",
     "webhookTriggerNamePlaceholder": "e.g., SIEM Alert Webhook",
-    "required": " *"
+    "required": " *",
+    "modal": {
+      "deleteConfirm": "Are you sure you want to delete this trigger?"
+    },
+    "errors": {
+      "deleteFailed": "Failed to delete trigger",
+      "toggleFailed": "Failed to update trigger status",
+      "loadFailed": "Failed to load triggers"
+    },
+    "deleteSuccess": "Trigger deleted successfully",
+    "toggleSuccess": "Trigger status updated"
   },
   "triggersPage": {
     "pageHeader": "Trigger Management",
@@ -91,7 +101,7 @@
       "cron": "Cron",
       "webhook": "Webhook"
     },
-    "subtitle": "管理 Webhook 和 Cron 触发器",
-    "title": "触发器管理"
+    "subtitle": "Manage webhook and cron triggers",
+    "title": "Trigger Management"
   }
 }

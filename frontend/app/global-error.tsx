@@ -6,8 +6,9 @@ import { useEffect, useState } from "react";
  * Global error boundary for Next.js App Router.
  * This catches errors in the root layout, including the html and body tags.
  *
- * Note: This component is outside the NextIntlClientProvider, so we use
- * client-side locale detection for translations.
+ * It renders OUTSIDE the NextIntlClientProvider (it replaces the whole
+ * document), so translations come from the statically imported catalogs of
+ * `errors.global` instead of the next-intl runtime.
  *
  * @see https://nextjs.org/docs/app/building-your-application/routing/error-handling#handling-errors-in-root-layouts
  */
@@ -17,68 +18,49 @@ interface GlobalErrorProps {
   reset: () => void;
 }
 
-// Simple translation dictionary for error messages
-const translations = {
-  en: {
-    title: "Critical Error",
-    description:
-      "The application encountered a critical error. Please refresh the page to try again.",
-    refresh: "Refresh Page",
-    errorDetails: "Error Details",
-    errorId: "Error ID",
-  },
-  zh: {
-    title: "发生严重错误",
-    description: "应用遇到了一个严重错误，请刷新页面重试。",
-    refresh: "刷新页面",
-    errorDetails: "错误详情",
-    errorId: "错误 ID",
-  },
-};
-
-type Locale = "en" | "zh";
+type Locale = "zh-CN" | "en";
 
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
-  const [locale, setLocale] = useState<Locale>("en");
+  const [locale, setLocale] = useState<Locale>("zh-CN");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
 
-    // Detect locale from URL path or localStorage
     const detectLocale = (): Locale => {
-      // Try to get from URL path
       if (typeof window !== "undefined") {
+        // Try to get from URL path
         const pathLocale = window.location.pathname.split("/")[1];
-        if (pathLocale === "zh" || pathLocale === "en") {
+        if (pathLocale === "zh-CN" || pathLocale === "en") {
           return pathLocale;
         }
 
-        // Try to get from localStorage
-        const storedLocale = localStorage.getItem("locale");
-        if (storedLocale === "zh" || storedLocale === "en") {
-          return storedLocale;
+        // Try the locale cookie written by next-intl middleware
+        const cookieLocale = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("NEXT_LOCALE="))
+          ?.split("=")[1];
+        if (cookieLocale === "zh-CN" || cookieLocale === "en") {
+          return cookieLocale;
         }
 
         // Try browser language
         const browserLang = navigator.language.toLowerCase();
         if (browserLang.startsWith("zh")) {
-          return "zh";
+          return "zh-CN";
         }
       }
 
-      return "en";
+      return "zh-CN";
     };
 
     setLocale(detectLocale());
   }, []);
 
-  const t = translations[locale];
-
   // Prevent hydration mismatch by rendering nothing until mounted
   if (!mounted) {
     return (
-      <html lang="en">
+      <html lang={locale}>
         <body style={{ margin: 0, padding: 0 }}>
           <div style={{ minHeight: "100vh", backgroundColor: "#fff" }} />
         </body>
@@ -87,7 +69,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
   }
 
   return (
-    <html lang={locale === "zh" ? "zh-CN" : "en"}>
+    <html lang={locale}>
       <body
         style={{
           margin: 0,
@@ -121,59 +103,95 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
             >
               ⚠️
             </h1>
-            <h2
-              style={{
-                fontSize: "24px",
-                margin: "0 0 12px 0",
-                color: "#1a1a1a",
-              }}
-            >
-              {t.title}
-            </h2>
-            <p
-              style={{
-                fontSize: "16px",
-                color: "#666",
-                margin: "0 0 24px 0",
-              }}
-            >
-              {t.description}
-            </p>
-            {process.env.NODE_ENV === "development" && (
-              <pre
-                style={{
-                  textAlign: "left",
-                  padding: "16px",
-                  backgroundColor: "#f5f5f5",
-                  borderRadius: "8px",
-                  overflow: "auto",
-                  fontSize: "12px",
-                  color: "#d32f2f",
-                  marginBottom: "24px",
-                }}
-              >
-                {error.message}
-                {error.digest && `\n\n${t.errorId}: ${error.digest}`}
-              </pre>
-            )}
-            <button
-              onClick={reset}
-              style={{
-                padding: "12px 32px",
-                fontSize: "16px",
-                fontWeight: 500,
-                color: "#fff",
-                backgroundColor: "#1890ff",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-              }}
-            >
-              {t.refresh}
-            </button>
+            <GlobalErrorContent error={error} locale={locale} onReset={reset} />
           </div>
         </div>
       </body>
     </html>
+  );
+}
+
+function GlobalErrorContent({
+  error,
+  locale,
+  onReset,
+}: {
+  error: Error & { digest?: string };
+  locale: Locale;
+  onReset: () => void;
+}) {
+  const [messages, setMessages] = useState<Record<string, string> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Lazy-load the catalog so the two full message bundles are not shipped
+    // with every page just for this edge-case screen.
+    Promise.all([import("@/messages/en.json"), import("@/messages/zh-CN.json")])
+      .then(([en, zhCN]) => {
+        if (cancelled) return;
+        const catalog = locale === "en" ? en.default : zhCN.default;
+        setMessages(catalog.errors.global as Record<string, string>);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+
+  const t = (key: string) => messages?.[key] ?? "";
+
+  return (
+    <>
+      <h2
+        style={{
+          fontSize: "24px",
+          margin: "0 0 12px 0",
+          color: "#1a1a1a",
+        }}
+      >
+        {t("title")}
+      </h2>
+      <p
+        style={{
+          fontSize: "16px",
+          color: "#666",
+          margin: "0 0 24px 0",
+        }}
+      >
+        {t("description")}
+      </p>
+      {process.env.NODE_ENV === "development" && (
+        <pre
+          style={{
+            textAlign: "left",
+            padding: "16px",
+            backgroundColor: "#f5f5f5",
+            borderRadius: "8px",
+            overflow: "auto",
+            fontSize: "12px",
+            color: "#d32f2f",
+            marginBottom: "24px",
+          }}
+        >
+          {error.message}
+          {error.digest && `\n\n${t("errorId")}: ${error.digest}`}
+        </pre>
+      )}
+      <button
+        onClick={onReset}
+        style={{
+          padding: "12px 32px",
+          fontSize: "16px",
+          fontWeight: 500,
+          color: "#fff",
+          backgroundColor: "#1890ff",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer",
+        }}
+      >
+        {t("refresh")}
+      </button>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 {
   "cloudNative": {
-    "subtitle": "云环境安全监控和管理",
-    "title": "云原生安全",
+    "subtitle": "Cloud environment security monitoring",
+    "title": "Cloud-Native Security",
     "aws": "AWS",
     "azure": "Azure",
     "gcp": "GCP",

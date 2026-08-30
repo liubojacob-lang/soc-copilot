@@ -124,39 +124,48 @@
     "done": "Done",
     "copied": "Copied",
     "failed": "Failed",
-    "aiModels": "AI 模型",
-    "autoRefresh": "自动刷新",
-    "checkedIn": "已检入",
-    "checkedOut": "已检出",
-    "database": "数据库",
-    "databaseDetails": "数据库详情",
-    "diskUsage": "磁盘使用",
-    "features": "功能",
-    "free": "空闲",
-    "lastUpdated": "最后更新",
-    "latency": "延迟",
-    "memory": "内存",
-    "noAiModels": "未配置 AI 模型",
-    "overflow": "溢出",
-    "platform": "平台",
-    "poolInfoNotAvailable": "连接池信息不可用",
-    "poolSize": "连接池大小",
-    "requests": "请求",
-    "size": "大小",
-    "status": "状态",
-    "systemInfo": "系统信息",
-    "total": "总计",
-    "uptime": "运行时间",
-    "usage": "使用情况",
-    "used": "已使用",
-    "usedSpace": "已使用空间",
-    "version": "版本"
+    "aiModels": "AI Models",
+    "autoRefresh": "Auto Refresh",
+    "checkedIn": "Checked In",
+    "checkedOut": "Checked Out",
+    "database": "Database",
+    "databaseDetails": "Database Details",
+    "diskUsage": "Disk Usage",
+    "features": "Features",
+    "free": "Free",
+    "lastUpdated": "Last Updated",
+    "latency": "Latency",
+    "memory": "Memory",
+    "noAiModels": "No AI Models Configured",
+    "overflow": "Overflow",
+    "platform": "Platform",
+    "poolInfoNotAvailable": "Pool Info Unavailable",
+    "poolSize": "Pool Size",
+    "requests": "Requests",
+    "size": "Size",
+    "status": "Status",
+    "systemInfo": "System Info",
+    "total": "Total",
+    "uptime": "Uptime",
+    "usage": "Usage",
+    "used": "Used",
+    "usedSpace": "Used Space",
+    "version": "Version",
+    "language": {
+      "switch": "Switch language",
+      "zhCN": "中文",
+      "en": "English"
+    },
+    "noData": "No data found",
+    "errorDescription": "Something went wrong. Please try again later.",
+    "skipToContent": "Skip to content"
   },
   "nav": {
     "home": "Home",
     "runs": "Playbooks",
     "ai": "AI Assistant",
     "alerts": "Alerts",
+    "cases": "Cases",
     "reports": "Reports",
     "threatIntel": "Threat Intel",
     "admin": "Admin",
@@ -173,11 +182,31 @@
     "loading": "Loading...",
     "securityOperations": "Security Operations",
     "refreshData": "Refresh Data",
-    "tabs": {
-      "alertAnalyzer": "Alert Analyzer",
-      "timelineBuilder": "Timeline Builder",
-      "reportWriter": "Report Writer",
-      "assets": "Assets"
+    "dashboard": {
+      "unresolved": "Unresolved Alerts",
+      "unresolvedSub": "new + investigating",
+      "criticalHigh": "Critical & High",
+      "criticalHighSub": "need triage now",
+      "openCases": "Open Cases",
+      "openCasesSub": "{overdue} overdue",
+      "iocToday": "IOC Hits Today",
+      "iocTodaySub": "Playbook runs today: {runs}",
+      "trend7d": "Alert Trend (7 days)",
+      "severityDist": "By Severity",
+      "statusDist": "By Status",
+      "topAssets": "Top Risky Assets",
+      "asset": "Asset",
+      "alerts": "Alerts",
+      "riskScore": "Risk Score",
+      "noAssets": "No asset risk data yet",
+      "mttr": "MTTR",
+      "minutes": "min",
+      "quickLinks": "Quick Actions",
+      "goAlerts": "Triage Alerts",
+      "goCases": "Open Cases",
+      "goPlaybooks": "Playbook Runs",
+      "goApprovals": "Pending Approvals",
+      "sources": "Top Alert Sources"
     }
   },
   "login": {
@@ -231,7 +260,11 @@
     "resetSuccess": "Password reset successfully",
     "saveChanges": "Save Changes",
     "searchPlaceholder": "Search users...",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "deleteSuccess": "User deleted successfully",
+    "deleteFailed": "Failed to delete user",
+    "updateSuccess": "User updated successfully",
+    "updateFailed": "Failed to update user"
   },
   "admin": {
     "title": "Admin Panel",
@@ -269,10 +302,12 @@
       "failedToLoad": "Failed to load secrets",
       "failedToCreate": "Failed to create secret",
       "failedToDelete": "Failed to delete secret",
-      "addSecret": "添加密钥",
-      "key": "键",
-      "noSecrets": "暂无密钥",
-      "value": "值"
+      "addSecret": "Add Secret",
+      "key": "Key",
+      "noSecrets": "No Secrets",
+      "value": "Value",
+      "createdSuccess": "Secret created successfully",
+      "deletedSuccess": "Secret deleted successfully"
     },
     "resources": "Resources",
     "cpu": "CPU",
@@ -366,18 +401,18 @@
     "apiKeyPlaceholder": "sk-...",
     "noExpiration": "Leave empty for no expiration",
     "apiKeys": {
-      "title": "API 密钥管理",
-      "subtitle": "管理用于外部集成的 API 密钥",
-      "createKey": "创建新密钥",
-      "keyName": "密钥名称",
-      "keyValue": "密钥值",
-      "expiresAt": "过期时间",
-      "lastUsed": "最后使用",
-      "neverUsed": "从未使用",
-      "noKeys": "暂无 API 密钥",
-      "deleteConfirm": "确定要删除此 API 密钥吗？",
-      "createdSuccess": "API 密钥创建成功",
-      "deletedSuccess": "API 密钥已删除"
+      "title": "API Key Management",
+      "subtitle": "Manage API keys for external integrations",
+      "createKey": "Create New Key",
+      "keyName": "Key Name",
+      "keyValue": "Key Value",
+      "expiresAt": "Expires At",
+      "lastUsed": "Last Used",
+      "neverUsed": "Never Used",
+      "noKeys": "No API Keys",
+      "deleteConfirm": "Delete this API key?",
+      "createdSuccess": "API key created",
+      "deletedSuccess": "API key deleted"
     }
   },
   "errors": {
@@ -399,7 +434,8 @@
       "title": "Critical Error",
       "description": "The application encountered a critical error. Please refresh the page to try again.",
       "refresh": "Refresh Page",
-      "errorDetails": "Error Details"
+      "errorDetails": "Error Details",
+      "errorId": "Error ID"
     },
     "page": {
       "title": "Something Went Wrong",
@@ -408,6 +444,11 @@
       "retry": "Retry",
       "goBack": "Go Back",
       "goHome": "Go Home"
+    },
+    "notFound": {
+      "title": "Page Not Found",
+      "description": "The page you are looking for does not exist or has been moved.",
+      "backHome": "Back to Home"
     }
   },
   "playbooks": {
@@ -484,6 +525,7 @@
   },
   "alerts": {
     "title": "Alerts",
+    "subtitle": "Security alert management and triage",
     "filter": "Filter Alerts",
     "assign": "Assign",
     "status": "Status",
@@ -495,7 +537,59 @@
     "open": "Open",
     "investigating": "Investigating",
     "resolved": "Resolved",
-    "closed": "Closed"
+    "closed": "Closed",
+    "statusNew": "New",
+    "statusInvestigating": "Investigating",
+    "statusResolved": "Resolved",
+    "statusFalsePositive": "False Positive",
+    "statusEscalated": "Escalated",
+    "severityCritical": "Critical",
+    "severityHigh": "High",
+    "severityMedium": "Medium",
+    "severityLow": "Low",
+    "severityInfo": "Info",
+    "list": {
+      "title": "Title",
+      "status": "Status",
+      "source": "Source",
+      "time": "Time",
+      "searchPlaceholder": "Search by title, description, IP...",
+      "emptyTitle": "No alerts found",
+      "emptyDescription": "Try adjusting your search or filters"
+    },
+    "detail": {
+      "description": "Description",
+      "triageTitle": "Triage",
+      "currentStatus": "Current Status",
+      "tabOverview": "Overview",
+      "tabTimeline": "Timeline",
+      "tabNotes": "Notes",
+      "fieldID": "ID",
+      "fieldSourceIP": "Source IP",
+      "fieldDestIP": "Dest IP",
+      "fieldAgent": "Agent",
+      "fieldRuleID": "Rule ID",
+      "fieldEventType": "Event Type",
+      "fieldProtocol": "Protocol",
+      "fieldRuleLevel": "Rule Level",
+      "fieldMITRE": "MITRE",
+      "fieldFullLog": "Full Log",
+      "fieldCreated": "Created",
+      "fieldEventTime": "Event Time",
+      "fieldResolved": "Resolved",
+      "fieldResolvedBy": "Resolved By",
+      "fieldResolution": "Resolution",
+      "noIOCs": "No IOCs detected",
+      "iocTitle": "IOCs",
+      "threatIntelTitle": "Threat Intelligence",
+      "quickInfoTitle": "Quick Info",
+      "threatScoreTitle": "Threat Score",
+      "affectedAssetTitle": "Affected Asset",
+      "noTimeline": "No timeline events",
+      "noNotes": "No notes yet",
+      "addNotePlaceholder": "Add a note..."
+    },
+    "importAlerts": "Import Alerts"
   },
   "reports": {
     "title": "Reports",
@@ -516,8 +610,8 @@
         "description": "Detailed post-incident analysis and lessons learned"
       }
     },
-    "sharing": "分享",
-    "format": "格式",
+    "sharing": "Share",
+    "format": "Format",
     "pdf": "PDF",
     "html": "HTML",
     "json": "JSON",
@@ -566,7 +660,14 @@
     "url": "URL",
     "hash": "File Hash",
     "pulse": "OTX Pulse",
-    "threatLevel": "Threat Level"
+    "threatLevel": "Threat Level",
+    "dashboard": {
+      "title": "Threat Intelligence Dashboard",
+      "subtitle": "Security threat overview and analysis",
+      "totalAlerts": "Total Alerts",
+      "criticalThreats": "Critical Threats",
+      "activeCampaigns": "Active Campaigns"
+    }
   },
   "marketplace": {
     "title": "Marketplace",
@@ -600,32 +701,46 @@
     "createHunt": "Create Hunt",
     "activeHunts": "Active Hunts",
     "huntResults": "Hunt Results",
-    "clean": "干净",
-    "critical": "严重",
-    "dataSources": "数据源",
-    "findings": "发现",
-    "findingsCount": "{count} 个发现",
-    "huntHypotheses": "狩猎假设",
+    "clean": "Clean",
+    "critical": "Critical",
+    "dataSources": "Data Sources",
+    "findings": "Findings",
+    "findingsCount": "{count} findings",
+    "huntHypotheses": "Hunt Hypotheses",
     "iocHunt": {
-      "title": "IOC 狩猎",
-      "description": "使用 IOC 进行主动威胁狩猎",
-      "button": "开始 IOC 狩猎",
-      "comingSoon": "即将推出"
+      "title": "IOC Hunt",
+      "description": "Proactive hunting using IOCs",
+      "button": "Start IOC Hunt",
+      "comingSoon": "Coming Soon"
     },
     "mitre": "MITRE",
-    "recentResults": "最近结果",
-    "run": "运行",
-    "running": "运行中",
+    "recentResults": "Recent Results",
+    "run": "Run",
+    "running": "Running",
     "severity": {
-      "critical": "严重",
-      "high": "高",
-      "medium": "中",
-      "low": "低"
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
     },
-    "successRate": "成功率",
-    "times": "次",
-    "topTechniques": "热门技术",
-    "totalHunts": "总狩猎次数"
+    "successRate": "Success Rate",
+    "times": "times",
+    "topTechniques": "Top Techniques",
+    "totalHunts": "Total Hunts",
+    "sigmaRules": "Sigma Rules",
+    "sigmaRulesList": "Sigma Detection Rules",
+    "all": "All",
+    "status": "Status",
+    "author": "Author",
+    "logsource": "Log Source",
+    "generatedSQL": "Generated SQL",
+    "executeSearch": "Execute Search",
+    "searching": "Searching...",
+    "matchCount": "Matches",
+    "matchesFound": "Threats Found!",
+    "noSigmaRules": "No Sigma rules found for this category",
+    "sigmaQuickStats": "Sigma Rules Overview",
+    "totalRules": "Total Rules"
   },
   "ueba": {
     "title": "User and Entity Behavior Analytics",
@@ -699,7 +814,17 @@
     },
     "cronTriggerNamePlaceholder": "e.g., Daily Security Scan",
     "webhookTriggerNamePlaceholder": "e.g., SIEM Alert Webhook",
-    "required": " *"
+    "required": " *",
+    "modal": {
+      "deleteConfirm": "Are you sure you want to delete this trigger?"
+    },
+    "errors": {
+      "deleteFailed": "Failed to delete trigger",
+      "toggleFailed": "Failed to update trigger status",
+      "loadFailed": "Failed to load triggers"
+    },
+    "deleteSuccess": "Trigger deleted successfully",
+    "toggleSuccess": "Trigger status updated"
   },
   "settingsApiKeys": {
     "title": "API Keys",
@@ -734,7 +859,12 @@
     "failedToCreate": "Failed to create API key",
     "failedToDelete": "Failed to delete API key",
     "failedToDisable": "Failed to disable API key",
-    "failedToEnable": "Failed to enable API key"
+    "failedToEnable": "Failed to enable API key",
+    "deletedSuccess": "API key deleted successfully",
+    "disabledSuccess": "API key disabled",
+    "enabledSuccess": "API key enabled",
+    "deleteKeyTitle": "Delete API Key",
+    "deleteKeyConfirm": "Are you sure you want to delete this API key? This action cannot be undone."
   },
   "notificationSettings": {
     "title": "Notification Settings",
@@ -761,11 +891,11 @@
     "configInfoDesc": "Configure notification channels to receive alerts",
     "configInfoTitle": "Notification Configuration",
     "testAll": "Test All",
-    "disabled": "已禁用",
-    "emailNotifications": "邮件通知",
-    "enabled": "已启用",
-    "slackNotifications": "Slack 通知",
-    "webhookNotifications": "Webhook 通知"
+    "disabled": "Disabled",
+    "emailNotifications": "Email Notifications",
+    "enabled": "Enabled",
+    "slackNotifications": "Slack Notifications",
+    "webhookNotifications": "Webhook Notifications"
   },
   "monitor": {
     "title": "System Monitor",
@@ -821,7 +951,13 @@
     "reputationDistribution": "Reputation Distribution",
     "breakdownByType": "Breakdown by Type",
     "count": "Count",
-    "percentage": "Percentage"
+    "percentage": "Percentage",
+    "severityChart": {
+      "title": "Severity Distribution"
+    },
+    "total": "Total",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit Fullscreen"
   },
   "uebaPage": {
     "title": "UEBA",
@@ -1025,7 +1161,8 @@
     "critical": "Critical",
     "high": "High",
     "medium": "Medium",
-    "low": "Low"
+    "low": "Low",
+    "info": "Info"
   },
   "sidebar": {
     "capabilities": "Capabilities",
@@ -1222,9 +1359,9 @@
       "clearChat": "Clear Chat",
       "copy": "Copy"
     },
-    "analyzeAlert": "分析告警",
-    "extractIOCs": "提取 IOC",
-    "suggestPlaybooks": "推荐剧本"
+    "analyzeAlert": "Analyze Alert",
+    "extractIOCs": "Extract IOCs",
+    "suggestPlaybooks": "Suggest Playbooks"
   },
   "triggersPage": {
     "pageHeader": "Trigger Management",
@@ -1252,12 +1389,12 @@
       "cron": "Cron",
       "webhook": "Webhook"
     },
-    "subtitle": "管理 Webhook 和 Cron 触发器",
-    "title": "触发器管理"
+    "subtitle": "Manage webhook and cron triggers",
+    "title": "Trigger Management"
   },
   "cloudNative": {
-    "subtitle": "云环境安全监控和管理",
-    "title": "云原生安全",
+    "subtitle": "Cloud environment security monitoring",
+    "title": "Cloud-Native Security",
     "aws": "AWS",
     "azure": "Azure",
     "gcp": "GCP",
@@ -1286,14 +1423,35 @@
     "connected": "Connected",
     "notConfigured": "Not Configured",
     "recentVulnerabilities": "Recent Vulnerabilities",
-    "supportedCloudProviders": "Supported Cloud Providers"
+    "supportedCloudProviders": "Supported Cloud Providers",
+    "imageScanning": "Image Scanning",
+    "imageScanningTrivy": "Image Scanning — Trivy",
+    "scanFailed": "Scan failed",
+    "enterImageToScan": "Enter a container image to scan for vulnerabilities",
+    "scanExamples": "Examples",
+    "packageName": "Package",
+    "installedVersion": "Installed",
+    "fixedVersion": "Fixed",
+    "vulnerabilityDetails": "Vulnerability Details",
+    "scannedAt": "Scanned at",
+    "falcoAlerts": "Falco Alerts",
+    "falcoAlertsToday": "Falco Alerts (Today)",
+    "falcoHighCritical": "High/Critical (Today)",
+    "totalAlerts24h": "Total Alerts (24h)",
+    "today": "Today",
+    "topFalcoRules": "Top Falco Rules",
+    "topFalcoHosts": "Top Hosts",
+    "falcoNotConfigured": "Falco not configured",
+    "falcoSetupHint": "Configure Falco Sidekick to forward alerts to SOC Copilot for automatic triage.",
+    "falcoSetupTitle": "Falco Sidekick Setup",
+    "falcoSetupDesc": "Forward Falco runtime security alerts to SOC Copilot:"
   },
   "correlation": {
-    "createRule": "创建规则",
-    "noRules": "暂无关联规则",
-    "rules": "规则列表",
-    "subtitle": "配置和管理关联规则",
-    "title": "关联分析"
+    "createRule": "Create Rule",
+    "noRules": "No Correlation Rules",
+    "rules": "Rules",
+    "subtitle": "Configure and manage correlation rules",
+    "title": "Correlation Analysis"
   },
   "navigation": {
     "home": "Home",
@@ -1307,6 +1465,7 @@
     "marketplace": "Marketplace",
     "cloudNative": "Cloud Native",
     "alerts": "Alerts",
+    "cases": "Cases",
     "triggers": "Triggers",
     "dashboard": "Dashboard",
     "settings": "Settings",
@@ -1317,12 +1476,64 @@
     "logout": "Logout",
     "api": "API",
     "checking": "Checking",
-    "statusError": "Error"
+    "statusError": "Error",
+    "admin": "Admin",
+    "approvals": "Approvals",
+    "assets": "Assets",
+    "correlation": "Correlation",
+    "monitor": "Monitor",
+    "reports": "Reports",
+    "threatIntel": "Threat Intelligence"
   },
   "runs": "Runs",
   "analytics": "Analytics",
   "aiCopilot": "AI Copilot",
-  "dashboard": "Dashboard",
+  "dashboard": {
+    "title": "SOC Operations Dashboard",
+    "overview": "Overview",
+    "realTimeMetrics": "Real-time Metrics",
+    "totalAlerts": "Total Alerts",
+    "unresolved": "Unresolved Alerts",
+    "unresolvedSub": "Awaiting triage or response",
+    "unresolvedAlerts": "Unresolved Alerts",
+    "criticalHigh": "Critical & High",
+    "criticalHighSub": "Critical or high severity alerts",
+    "openCases": "Open Cases",
+    "openCasesSub": "{overdue} overdue",
+    "iocToday": "IOCs Today",
+    "iocTodaySub": "{runs} playbook runs today",
+    "needsAction": "Needs Action",
+    "activeCases": "Active Cases",
+    "last24h": "Last 24h",
+    "meanTimeToResolve": "Mean Time to Resolve",
+    "mttr": "MTTR",
+    "minutes": "min",
+    "days": "days",
+    "trend7d": "7-Day Trend",
+    "alertTrends": "Alert Trends",
+    "alerts": "Alerts",
+    "severityDist": "Severity Distribution",
+    "statusDist": "Status Distribution",
+    "sources": "Top Sources",
+    "asset": "Assets",
+    "topAssets": "Top Assets",
+    "assetRiskTop10": "Asset Risk Top 10",
+    "riskScore": "Risk Score",
+    "noAssets": "No asset data",
+    "iocStats": "IOC Statistics",
+    "mitreAttack": "MITRE ATT&CK",
+    "quickLinks": "Quick Links",
+    "goAlerts": "View Alerts",
+    "goCases": "View Cases",
+    "goPlaybooks": "View Playbooks",
+    "goApprovals": "View Approvals",
+    "fallbackUser": "Analyst",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    }
+  },
   "aiModels": "AI Models",
   "apiKeys": "API Keys",
   "audit": {
@@ -1602,5 +1813,12 @@
     "edited": "Edited",
     "viewAll": "View all {count} notes",
     "deleteConfirm": "Are you sure you want to delete this note?"
+  },
+  "loading": {
+    "title": "Loading…"
+  },
+  "cases": {
+    "notFoundTitle": "Case Not Found",
+    "notFoundDescription": "The requested case could not be loaded."
   }
 }

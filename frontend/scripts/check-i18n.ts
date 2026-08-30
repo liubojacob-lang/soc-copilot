@@ -518,7 +518,7 @@ class I18nChecker {
 
     console.log("\n💡 Suggestions:");
     console.log('   1. Replace hardcoded text with t("key") or useTranslations()');
-    console.log("   2. Add translation keys to messages/en.json and messages/zh.json");
+    console.log("   2. Add translation keys to messages/en.json and messages/zh-CN.json");
     console.log("   3. Run npm run i18n:check again to verify fixes\n");
   }
 

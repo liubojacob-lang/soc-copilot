@@ -6,6 +6,8 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
+
 import { Skeleton } from "./Skeleton";
 import { InlineLoader } from "./PageLoader";
 
@@ -27,8 +29,8 @@ export function LoadingState({
   isLoading,
   error,
   empty = false,
-  emptyMessage = "No data found",
-  errorMessage = "Something went wrong",
+  emptyMessage,
+  errorMessage,
   loadingMessage,
   type = "skeleton",
   children,
@@ -36,6 +38,7 @@ export function LoadingState({
   skeletonProps = {},
   onRetry,
 }: LoadingStateProps) {
+  const tCommon = useTranslations("common");
   // Error state
   if (error && !isLoading) {
     return (
@@ -50,9 +53,13 @@ export function LoadingState({
             />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Error</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          {tCommon("error")}
+        </h3>
         <p className="text-gray-600 dark:text-gray-400 mb-4">
-          {typeof error === "string" ? error : error.message || errorMessage}
+          {typeof error === "string"
+            ? error
+            : error.message || errorMessage || tCommon("errorDescription")}
         </p>
         {onRetry && (
           <button
@@ -135,7 +142,7 @@ export function LoadingState({
           </svg>
         </div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Data</h3>
-        <p className="text-gray-600 dark:text-gray-400">{emptyMessage}</p>
+        <p className="text-gray-600 dark:text-gray-400">{emptyMessage ?? tCommon("noData")}</p>
       </div>
     );
   }

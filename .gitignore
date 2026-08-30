@@ -27,8 +27,8 @@ env/
 ENV/
 env.bak/
 venv.bak/
-lib/
-Lib/
+/lib/
+/Lib/
 
 # Embedded virtual environment artifacts
 Lib/site-packages/

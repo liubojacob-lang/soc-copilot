@@ -1,21 +1,23 @@
 "use client";
 
-import { useLocale } from "next-intl";
-import { useRouter, usePathname } from "@/i18n/routing";
+import { useLocale, useTranslations } from "next-intl";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
+
 import { i18nCache } from "@/lib/i18n-cache";
 import { getRequiredNamespaces } from "@/i18n/namespaces";
 
-type LocaleCode = "en" | "zh";
+type LocaleCode = "en" | "zh-CN";
 
-const locales: { code: LocaleCode; label: string; flag: string }[] = [
-  { code: "en", label: "English", flag: "EN" },
-  { code: "zh", label: "中文", flag: "中" },
+const LOCALE_OPTIONS: { code: LocaleCode; labelKey: string; flag: string }[] = [
+  { code: "zh-CN", labelKey: "zhCN", flag: "中" },
+  { code: "en", labelKey: "en", flag: "EN" },
 ];
 
 export function LanguageSwitcher() {
   const locale = useLocale() as LocaleCode;
+  const tLanguage = useTranslations("common.language");
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +26,7 @@ export function LanguageSwitcher() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const otherLocale = locale === "en" ? "zh" : "en";
+    const otherLocale: LocaleCode = locale === "en" ? "zh-CN" : "en";
     const namespaces = getRequiredNamespaces(pathname);
 
     i18nCache.preloadLocale(otherLocale, namespaces).then(() => {
@@ -61,12 +63,8 @@ export function LanguageSwitcher() {
       setIsSwitching(true);
 
       try {
-        document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=${60 * 60 * 24 * 365};SameSite=lax`;
-
-        const namespaces = getRequiredNamespaces(pathname);
-        await i18nCache.switchLocale(newLocale);
-
-        router.push(pathname, { locale: newLocale });
+        // `replace` keeps the current path and swaps only the locale prefix.
+        router.replace(pathname, { locale: newLocale });
         setIsOpen(false);
       } catch (error) {
         console.error("Language switch failed:", error);
@@ -76,8 +74,6 @@ export function LanguageSwitcher() {
     },
     [isSwitching, locale, router, pathname]
   );
-
-  const currentLocale = locales.find((l) => l.code === locale);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -93,14 +89,16 @@ export function LanguageSwitcher() {
           }
           ${isSwitching ? "opacity-50 cursor-wait" : ""}
         `}
-        aria-label="Switch language"
+        aria-label={tLanguage("switch")}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
         {isSwitching ? (
           <Loader2 className="w-3 h-3 animate-spin" />
         ) : (
-          <span className="font-medium">{currentLocale?.flag}</span>
+          <span className="font-medium">
+            {LOCALE_OPTIONS.find((option) => option.code === locale)?.flag}
+          </span>
         )}
         <ChevronDown
           className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -114,9 +112,10 @@ export function LanguageSwitcher() {
           <div
             className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 py-1"
             role="listbox"
-            aria-label="Language options"
+            aria-label={tLanguage("switch")}
           >
-            {locales.map(({ code, label, flag }) => {
+            {LOCALE_OPTIONS.map(({ code, labelKey, flag }) => {
+              // Highlight the active locale reported by useLocale().
               const isActive = locale === code;
               const isPreloaded = preloadStatus[code];
 
@@ -138,10 +137,13 @@ export function LanguageSwitcher() {
                   aria-selected={isActive}
                 >
                   <span className="w-4 text-center font-medium">{flag}</span>
-                  <span className="flex-1 text-left">{label}</span>
+                  <span className="flex-1 text-left">{tLanguage(labelKey)}</span>
                   {isActive && <Check className="w-3 h-3" />}
                   {isPreloaded && !isActive && (
-                    <span className="w-2 h-2 rounded-full bg-green-400" title="Preloaded" />
+                    <span
+                      className="w-2 h-2 rounded-full bg-green-400"
+                      title={tLanguage("switch")}
+                    />
                   )}
                 </button>
               );

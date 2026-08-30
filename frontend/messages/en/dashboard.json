@@ -1,23 +1,22 @@
 {
-  "dashboard": "Dashboard",
-  "infoBox": {
-    "title": "Information",
-    "logs": "Logs",
-    "cron": "Cron",
-    "webhook": "Webhook"
-  },
-  "sidebar": {
-    "capabilities": "Capabilities",
-    "usageTips": "Usage Tips",
-    "currentModel": "Current Model",
-    "tips": {
-      "naturalLanguage": "Describe your security needs in natural language",
-      "alertAnalysis": "Intelligently analyze security alerts",
-      "securityReports": "Auto-generate security reports",
-      "recommendations": "Recommend best response playbooks"
-    }
-  },
-  "breadcrumbs": {
-    "home": "Home"
+  "dashboard": {
+    "title": "Operations Dashboard",
+    "overview": "Real-time SOC monitoring and metrics",
+    "realTimeMetrics": "Real-time Metrics",
+    "totalAlerts": "Total Alerts",
+    "unresolvedAlerts": "Unresolved",
+    "activeCases": "Active Cases",
+    "mttr": "MTTR",
+    "last24h": "Last 24 hours",
+    "needsAction": "Needs action",
+    "openCases": "Currently open",
+    "meanTimeToResolve": "Mean time to resolve",
+    "alertTrends": "Alert Trends",
+    "severityDistribution": "Severity Distribution",
+    "mitreAttack": "MITRE ATT&CK Heatmap",
+    "assetRiskTop10": "Asset Risk Top 10",
+    "iocStats": "IOC Hit Statistics",
+    "days": "days",
+    "noData": "No data available"
   }
 }

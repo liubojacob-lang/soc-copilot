@@ -39,7 +39,9 @@
       "secretValuePlaceholder": "https://hooks.slack.com/services/...",
       "secrets": "Secrets",
       "usingSecrets": "Using Secrets in Playbooks",
-      "usingSecretsInfo": "Reference secrets in playbook node inputs using the {{secret.secret_name}} syntax:"
+      "usingSecretsInfo": "Reference secrets in playbook node inputs using the {{secret.secret_name}} syntax:",
+      "createdSuccess": "密钥创建成功",
+      "deletedSuccess": "密钥删除成功"
     },
     "resources": "资源",
     "cpu": "CPU",

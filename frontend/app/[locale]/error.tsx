@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+import { useRouter } from "@/i18n/navigation";
+
 /**
- * Global error boundary for Next.js App Router.
- * This file catches runtime errors in the root layout and renders a fallback UI.
+ * Error boundary for the [locale] segment. Catches runtime errors below the
+ * locale layout and renders a localized fallback UI.
  *
  * @see https://nextjs.org/docs/app/building-your-application/routing/error-handling
  */
@@ -16,13 +17,13 @@ interface ErrorProps {
   reset: () => void;
 }
 
-export default function GlobalError({ error, reset }: ErrorProps) {
+export default function ErrorPage({ error, reset }: ErrorProps) {
   const router = useRouter();
   const t = useTranslations("errors.page");
 
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error("Global error caught:", error);
+    console.error("Route error caught:", error);
 
     // You could send this to a monitoring service like Sentry
     // captureException(error);

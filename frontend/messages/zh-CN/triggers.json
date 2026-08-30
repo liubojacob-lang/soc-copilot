@@ -63,7 +63,17 @@
     },
     "cronTriggerNamePlaceholder": "例如：每日安全扫描",
     "webhookTriggerNamePlaceholder": "例如：SIEM 告警 Webhook",
-    "required": "（必填）"
+    "required": "（必填）",
+    "modal": {
+      "deleteConfirm": "确定要删除此触发器吗？"
+    },
+    "errors": {
+      "deleteFailed": "删除触发器失败",
+      "toggleFailed": "更新触发器状态失败",
+      "loadFailed": "加载触发器失败"
+    },
+    "deleteSuccess": "触发器删除成功",
+    "toggleSuccess": "触发器状态已更新"
   },
   "triggersPage": {
     "title": "触发器管理",

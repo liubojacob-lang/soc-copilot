@@ -28,18 +28,18 @@
     "apiKeyPlaceholder": "sk-...",
     "noExpiration": "Leave empty for no expiration",
     "apiKeys": {
-      "title": "API 密钥管理",
-      "subtitle": "管理用于外部集成的 API 密钥",
-      "createKey": "创建新密钥",
-      "keyName": "密钥名称",
-      "keyValue": "密钥值",
-      "expiresAt": "过期时间",
-      "lastUsed": "最后使用",
-      "neverUsed": "从未使用",
-      "noKeys": "暂无 API 密钥",
-      "deleteConfirm": "确定要删除此 API 密钥吗？",
-      "createdSuccess": "API 密钥创建成功",
-      "deletedSuccess": "API 密钥已删除"
+      "title": "API Key Management",
+      "subtitle": "Manage API keys for external integrations",
+      "createKey": "Create New Key",
+      "keyName": "Key Name",
+      "keyValue": "Key Value",
+      "expiresAt": "Expires At",
+      "lastUsed": "Last Used",
+      "neverUsed": "Never Used",
+      "noKeys": "No API Keys",
+      "deleteConfirm": "Delete this API key?",
+      "createdSuccess": "API key created",
+      "deletedSuccess": "API key deleted"
     }
   },
   "settingsApiKeys": {
@@ -75,7 +75,12 @@
     "failedToCreate": "Failed to create API key",
     "failedToDelete": "Failed to delete API key",
     "failedToDisable": "Failed to disable API key",
-    "failedToEnable": "Failed to enable API key"
+    "failedToEnable": "Failed to enable API key",
+    "deletedSuccess": "API key deleted successfully",
+    "disabledSuccess": "API key disabled",
+    "enabledSuccess": "API key enabled",
+    "deleteKeyTitle": "Delete API Key",
+    "deleteKeyConfirm": "Are you sure you want to delete this API key? This action cannot be undone."
   },
   "notificationSettings": {
     "title": "Notification Settings",
@@ -102,11 +107,11 @@
     "configInfoDesc": "Configure notification channels to receive alerts",
     "configInfoTitle": "Notification Configuration",
     "testAll": "Test All",
-    "disabled": "已禁用",
-    "emailNotifications": "邮件通知",
-    "enabled": "已启用",
-    "slackNotifications": "Slack 通知",
-    "webhookNotifications": "Webhook 通知"
+    "disabled": "Disabled",
+    "emailNotifications": "Email Notifications",
+    "enabled": "Enabled",
+    "slackNotifications": "Slack Notifications",
+    "webhookNotifications": "Webhook Notifications"
   },
   "configModal": {
     "connected": "Connected",

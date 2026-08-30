@@ -18,8 +18,8 @@
         "description": "Detailed post-incident analysis and lessons learned"
       }
     },
-    "sharing": "分享",
-    "format": "格式",
+    "sharing": "Share",
+    "format": "Format",
     "pdf": "PDF",
     "html": "HTML",
     "json": "JSON",

@@ -1,7 +1,8 @@
 "use client";
 
 const CACHE_PREFIX = "i18n:";
-const CACHE_VERSION = "v1";
+// v2: invalidate entries stored under the pre-rename "zh" locale key.
+const CACHE_VERSION = "v2";
 const MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 interface CacheEntry {

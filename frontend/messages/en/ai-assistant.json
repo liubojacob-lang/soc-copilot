@@ -92,9 +92,9 @@
       "clearChat": "Clear Chat",
       "copy": "Copy"
     },
-    "analyzeAlert": "分析告警",
-    "extractIOCs": "提取 IOC",
-    "suggestPlaybooks": "推荐剧本"
+    "analyzeAlert": "Analyze Alert",
+    "extractIOCs": "Extract IOCs",
+    "suggestPlaybooks": "Suggest Playbooks"
   },
   "ai": {
     "title": "AI Assistant",

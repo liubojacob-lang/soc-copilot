@@ -6,31 +6,31 @@
     "createHunt": "Create Hunt",
     "activeHunts": "Active Hunts",
     "huntResults": "Hunt Results",
-    "clean": "干净",
-    "critical": "严重",
-    "dataSources": "数据源",
-    "findings": "发现",
-    "findingsCount": "{count} 个发现",
-    "huntHypotheses": "狩猎假设",
+    "clean": "Clean",
+    "critical": "Critical",
+    "dataSources": "Data Sources",
+    "findings": "Findings",
+    "findingsCount": "{count} findings",
+    "huntHypotheses": "Hunt Hypotheses",
     "iocHunt": {
-      "title": "IOC 狩猎",
-      "description": "使用 IOC 进行主动威胁狩猎",
-      "button": "开始 IOC 狩猎",
-      "comingSoon": "即将推出"
+      "title": "IOC Hunt",
+      "description": "Proactive hunting using IOCs",
+      "button": "Start IOC Hunt",
+      "comingSoon": "Coming Soon"
     },
     "mitre": "MITRE",
-    "recentResults": "最近结果",
-    "run": "运行",
-    "running": "运行中",
+    "recentResults": "Recent Results",
+    "run": "Run",
+    "running": "Running",
     "severity": {
-      "critical": "严重",
-      "high": "高",
-      "medium": "中",
-      "low": "低"
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
     },
-    "successRate": "成功率",
-    "times": "次",
-    "topTechniques": "热门技术",
-    "totalHunts": "总狩猎次数"
+    "successRate": "Success Rate",
+    "times": "times",
+    "topTechniques": "Top Techniques",
+    "totalHunts": "Total Hunts"
   }
 }

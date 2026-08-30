@@ -8,6 +8,7 @@
     "loading": "加载中...",
     "error": "错误",
     "success": "成功",
+    "info": "信息",
     "save": "保存",
     "cancel": "取消",
     "delete": "删除",
@@ -75,87 +76,96 @@
     "high": "高",
     "low": "低",
     "medium": "中",
-    "admin": "Admin",
-    "all": "All",
-    "allCategories": "All Categories",
-    "allCriticality": "All Criticality",
-    "allPlaybooks": "All Playbooks",
-    "allRoles": "All Roles",
-    "allSeverity": "All Severity",
-    "allStatus": "All Status",
-    "allStatuses": "All Statuses",
-    "analyst": "Analyst",
-    "apiKey": "API Key",
-    "apiKeysSection": "API Keys",
+    "admin": "管理员",
+    "all": "全部",
+    "allCategories": "所有分类",
+    "allCriticality": "所有关键性",
+    "allPlaybooks": "所有剧本",
+    "allRoles": "所有角色",
+    "allSeverity": "所有严重级别",
+    "allStatus": "所有状态",
+    "allStatuses": "所有状态",
+    "analyst": "分析师",
+    "apiKey": "API 密钥",
+    "apiKeysSection": "API 密钥",
     "apiUrl": "API URL",
-    "configure": "Configure",
-    "configured": "Configured",
-    "connected": "Connected",
-    "connectionFailed": "Connection failed",
-    "createCron": "Create Cron",
-    "createUser": "Create User",
-    "createWebhook": "Create Webhook",
-    "critical": "Critical",
-    "cron": "Cron",
-    "currentConfig": "Current Configuration",
-    "description": "Description",
-    "details": "Details",
-    "failed": "Failed",
-    "generate": "Generate",
-    "header": "Header",
-    "incident": "Incident",
-    "incidents": "Incidents",
-    "inputPlaceholder": "Enter...",
-    "lastLogin": "Last Login",
-    "mode": "Mode",
-    "name": "Name",
-    "never": "Never",
-    "noDescription": "No description",
-    "noUsers": "No users",
-    "notConnected": "Not Connected",
-    "openDashboard": "Open Dashboard",
-    "password": "Password",
-    "playbook": "Playbook",
-    "playbookDefinitions": "Playbook Definitions",
-    "priority": "Priority",
-    "realtimeFeature1": "Receive alerts in real-time",
-    "realtimeFeature2": "Filter by severity level",
-    "realtimeFeature3": "Filter by type",
-    "realtimeFeature4": "Auto-refresh list",
-    "role": "Role",
-    "rule": "Rule",
-    "rules": "Rules",
-    "run": "Run",
-    "runs": "Runs",
-    "saveChanges": "Save Changes",
-    "saveConfig": "Save Configuration",
-    "saved": "Saved",
-    "saving": "Saving",
-    "searchPlaceholder": "Search...",
-    "severity": "Severity",
-    "subtitle": "Subtitle",
-    "sync": "Sync",
-    "test": "Test",
-    "testAll": "Test All",
-    "testConnection": "Test Connection",
-    "testing": "Testing",
-    "title": "Title",
-    "toSend": "Send",
-    "totalContainers": "Total Containers",
-    "totalCorrelations": "Total Correlations",
-    "totalHunts": "Total Hunts",
-    "totalIncidents": "Total Incidents",
-    "type": "Type",
-    "username": "Username",
-    "viewDetails": "View Details",
+    "configure": "配置",
+    "configured": "已配置",
+    "connected": "已连接",
+    "connectionFailed": "连接失败",
+    "createCron": "创建定时任务",
+    "createUser": "创建用户",
+    "createWebhook": "创建 Webhook",
+    "critical": "严重",
+    "cron": "定时任务",
+    "currentConfig": "当前配置",
+    "description": "描述",
+    "details": "详情",
+    "failed": "失败",
+    "generate": "生成",
+    "header": "请求头",
+    "incident": "事件",
+    "incidents": "事件",
+    "inputPlaceholder": "请输入...",
+    "lastLogin": "最后登录",
+    "mode": "模式",
+    "name": "名称",
+    "never": "从未",
+    "noDescription": "无描述",
+    "noUsers": "无用户",
+    "notConnected": "未连接",
+    "openDashboard": "打开仪表盘",
+    "password": "密码",
+    "playbook": "剧本",
+    "playbookDefinitions": "剧本定义",
+    "priority": "优先级",
+    "realtimeFeature1": "实时接收告警",
+    "realtimeFeature2": "按严重级别筛选",
+    "realtimeFeature3": "按类型筛选",
+    "realtimeFeature4": "自动刷新列表",
+    "role": "角色",
+    "rule": "规则",
+    "rules": "规则",
+    "run": "运行",
+    "runs": "运行",
+    "saveChanges": "保存更改",
+    "saveConfig": "保存配置",
+    "saved": "已保存",
+    "saving": "保存中",
+    "searchPlaceholder": "搜索...",
+    "severity": "严重级别",
+    "subtitle": "副标题",
+    "sync": "同步",
+    "test": "测试",
+    "testAll": "测试全部",
+    "testConnection": "测试连接",
+    "testing": "测试中",
+    "title": "标题",
+    "toSend": "发送",
+    "totalContainers": "容器总数",
+    "totalCorrelations": "关联总数",
+    "totalHunts": "狩猎总数",
+    "totalIncidents": "事件总数",
+    "type": "类型",
+    "username": "用户名",
+    "viewDetails": "查看详情",
     "webhook": "Webhook",
-    "webhooks": "Webhooks"
+    "webhooks": "Webhooks",
+    "language": {
+      "switch": "切换语言",
+      "zhCN": "中文",
+      "en": "English"
+    },
+    "noData": "暂无数据",
+    "errorDescription": "发生了错误，请稍后重试。",
+    "skipToContent": "跳转到主要内容"
   },
   "nav": {
     "home": "首页",
     "runs": "剧本",
     "ai": "AI助手",
     "alerts": "告警",
+    "cases": "案例",
     "reports": "报告",
     "threatIntel": "威胁情报",
     "admin": "管理",
@@ -169,11 +179,34 @@
   "home": {
     "title": "SOC Copilot",
     "subtitle": "安全运营中心",
-    "tabs": {
-      "alertAnalyzer": "告警分析器",
-      "timelineBuilder": "时间线构建器",
-      "reportWriter": "报告编写器",
-      "assets": "资产管理"
+    "loading": "加载中...",
+    "securityOperations": "安全运营",
+    "refreshData": "刷新数据",
+    "dashboard": {
+      "unresolved": "未处理告警",
+      "unresolvedSub": "新建 + 调查中",
+      "criticalHigh": "严重与高危",
+      "criticalHighSub": "需立即分诊",
+      "openCases": "进行中案例",
+      "openCasesSub": "{overdue} 个已超时",
+      "iocToday": "今日 IOC 命中",
+      "iocTodaySub": "今日 Playbook 执行：{runs} 次",
+      "trend7d": "告警趋势（近 7 天）",
+      "severityDist": "按严重度",
+      "statusDist": "按状态",
+      "topAssets": "高风险资产",
+      "asset": "资产",
+      "alerts": "告警数",
+      "riskScore": "风险分",
+      "noAssets": "暂无资产风险数据",
+      "mttr": "平均解决时长",
+      "minutes": "分钟",
+      "quickLinks": "快捷入口",
+      "goAlerts": "分诊告警",
+      "goCases": "查看案例",
+      "goPlaybooks": "执行历史",
+      "goApprovals": "待审批",
+      "sources": "主要告警来源"
     }
   },
   "login": {
@@ -184,7 +217,8 @@
     "signIn": "登录",
     "signingIn": "登录中...",
     "error": "凭据无效",
-    "devMode": "开发模式"
+    "devMode": "开发模式",
+    "checkServerLogs": "检查服务器日志获取默认凭据"
   },
   "users": {
     "title": "用户",
@@ -226,7 +260,11 @@
     "resetSuccess": "密码重置成功",
     "saveChanges": "保存更改",
     "searchPlaceholder": "搜索用户...",
-    "cancel": "取消"
+    "cancel": "取消",
+    "deleteSuccess": "用户删除成功",
+    "deleteFailed": "删除用户失败",
+    "updateSuccess": "用户更新成功",
+    "updateFailed": "更新用户失败"
   },
   "admin": {
     "title": "管理面板",
@@ -267,7 +305,9 @@
       "secretValuePlaceholder": "https://hooks.slack.com/services/...",
       "secrets": "Secrets",
       "usingSecrets": "Using Secrets in Playbooks",
-      "usingSecretsInfo": "Reference secrets in playbook node inputs using the {{secret.secret_name}} syntax:"
+      "usingSecretsInfo": "Reference secrets in playbook node inputs using the {{secret.secret_name}} syntax:",
+      "createdSuccess": "密钥创建成功",
+      "deletedSuccess": "密钥删除成功"
     },
     "resources": "资源",
     "cpu": "CPU",
@@ -294,9 +334,9 @@
     "highAlerts": "高危告警",
     "mediumAlerts": "中危告警",
     "lowAlerts": "低危告警",
-    "autoRefresh": "Auto-refresh",
-    "error": "Failed to load",
-    "lastUpdated": "Last updated"
+    "autoRefresh": "自动刷新",
+    "error": "加载失败",
+    "lastUpdated": "最后更新"
   },
   "adminSettings": {
     "title": "系统设置",
@@ -306,7 +346,7 @@
     "notifications": "通知设置",
     "integrations": "集成设置",
     "advanced": "高级设置",
-    "settingsForm": "设置表单将在此显示"
+    "settingsForm": "设置表单将在此处显示"
   },
   "adminAudit": {
     "title": "审计日志",
@@ -314,7 +354,7 @@
     "filter": "筛选日志",
     "export": "导出日志",
     "search": "搜索日志...",
-    "auditList": "审计日志列表将在此显示"
+    "auditList": "审计日志列表将在此处显示"
   },
   "alertsPage": {
     "title": "安全告警中心",
@@ -373,7 +413,7 @@
       "deletedSuccess": "API 密钥已删除"
     },
     "apiKeyPlaceholder": "sk-...",
-    "noExpiration": "Leave empty for no expiration"
+    "noExpiration": "留空表示永不过期"
   },
   "errors": {
     "accessDenied": "访问被拒绝",
@@ -381,15 +421,35 @@
     "unauthorized": "未授权",
     "pageNotFound": "页面未找到",
     "serverError": "服务器错误",
-    "adminOnly": "Only administrators can access this page",
-    "connectionFailed": "Connection failed",
-    "copyFailed": "Failed to copy",
-    "deleteFailed": "Failed to delete",
-    "loadFailed": "Failed to load",
-    "loadModelsFailed": "Failed to load models",
-    "saveFailed": "Failed to save",
-    "setDefaultFailed": "Failed to set as default",
-    "toggleFailed": "Failed to toggle"
+    "adminOnly": "只有管理员才能访问此页面",
+    "connectionFailed": "连接失败",
+    "copyFailed": "复制失败",
+    "deleteFailed": "删除失败",
+    "loadFailed": "加载失败",
+    "loadModelsFailed": "加载模型失败",
+    "saveFailed": "保存失败",
+    "setDefaultFailed": "设置默认失败",
+    "toggleFailed": "切换失败",
+    "global": {
+      "title": "发生严重错误",
+      "description": "应用遇到了一个严重错误，请刷新页面重试。",
+      "refresh": "刷新页面",
+      "errorDetails": "错误详情",
+      "errorId": "错误 ID"
+    },
+    "page": {
+      "title": "出现了一些问题",
+      "description": "页面遇到了一个意外错误，请尝试刷新页面或返回首页。",
+      "errorDetails": "错误详情（仅开发环境可见）",
+      "retry": "重试",
+      "goBack": "返回上一页",
+      "goHome": "返回首页"
+    },
+    "notFound": {
+      "title": "页面未找到",
+      "description": "您访问的页面不存在或已被移动。",
+      "backHome": "返回首页"
+    }
   },
   "playbooks": {
     "title": "剧本",
@@ -406,12 +466,31 @@
     "duration": "持续时间",
     "mode": "模式",
     "started": "开始时间",
+    "playbook": "剧本",
+    "status": "状态",
+    "searchPlaceholder": "按名称或ID搜索...",
+    "noPlaybookRuns": "暂无剧本运行",
+    "runPlaybookHint": "运行剧本以在此处查看",
+    "noDefinitions": "暂无剧本定义",
+    "statuses": {
+      "running": "运行中",
+      "success": "成功",
+      "failed": "失败",
+      "pending": "待审批",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "expired": "已过期"
+    },
+    "queue": {
+      "queued": "队列中",
+      "running": "运行中"
+    },
     "tabs": {
       "definitions": "定义",
       "runs": "运行",
-      "approvals": "Approvals",
+      "approvals": "审批",
       "dag": "DAG",
-      "history": "History"
+      "history": "历史"
     },
     "allPlaybooks": "所有剧本",
     "allStatuses": "所有状态",
@@ -442,19 +521,11 @@
       "createFirst": "创建第一个剧本定义",
       "createNew": "创建新定义",
       "updated": "更新时间"
-    },
-    "noPlaybookRuns": "暂无剧本运行",
-    "playbook": "剧本",
-    "queue": {
-      "queued": "排队中",
-      "running": "运行中"
-    },
-    "runPlaybookHint": "运行剧本以在此处查看",
-    "noDefinitions": "No playbook definitions found",
-    "searchPlaceholder": "Search by name or ID..."
+    }
   },
   "alerts": {
-    "title": "告警",
+    "title": "告警管理",
+    "subtitle": "安全告警管理与分诊",
     "filter": "筛选告警",
     "assign": "分配",
     "status": "状态",
@@ -466,7 +537,59 @@
     "open": "开放",
     "investigating": "调查中",
     "resolved": "已解决",
-    "closed": "已关闭"
+    "closed": "已关闭",
+    "statusNew": "新建",
+    "statusInvestigating": "调查中",
+    "statusResolved": "已解决",
+    "statusFalsePositive": "误报",
+    "statusEscalated": "已升级",
+    "severityCritical": "严重",
+    "severityHigh": "高危",
+    "severityMedium": "中危",
+    "severityLow": "低危",
+    "severityInfo": "信息",
+    "list": {
+      "title": "标题",
+      "status": "状态",
+      "source": "来源",
+      "time": "时间",
+      "searchPlaceholder": "按标题、描述、IP 搜索...",
+      "emptyTitle": "未找到告警",
+      "emptyDescription": "请尝试调整搜索条件或筛选器"
+    },
+    "detail": {
+      "description": "描述",
+      "triageTitle": "分诊操作",
+      "currentStatus": "当前状态",
+      "tabOverview": "概览",
+      "tabTimeline": "时间线",
+      "tabNotes": "备注",
+      "fieldID": "ID",
+      "fieldSourceIP": "源 IP",
+      "fieldDestIP": "目标 IP",
+      "fieldAgent": "代理",
+      "fieldRuleID": "规则 ID",
+      "fieldEventType": "事件类型",
+      "fieldProtocol": "协议",
+      "fieldRuleLevel": "规则等级",
+      "fieldMITRE": "MITRE",
+      "fieldFullLog": "完整日志",
+      "fieldCreated": "创建时间",
+      "fieldEventTime": "事件时间",
+      "fieldResolved": "解决时间",
+      "fieldResolvedBy": "解决人",
+      "fieldResolution": "解决说明",
+      "noIOCs": "未检测到 IOC",
+      "iocTitle": "IOC 指标",
+      "threatIntelTitle": "威胁情报",
+      "quickInfoTitle": "快速信息",
+      "threatScoreTitle": "威胁评分",
+      "affectedAssetTitle": "受影响资产",
+      "noTimeline": "暂无时间线事件",
+      "noNotes": "暂无备注",
+      "addNotePlaceholder": "添加备注..."
+    },
+    "importAlerts": "导入告警"
   },
   "reports": {
     "title": "报告",
@@ -506,16 +629,16 @@
     "noReportsDescription": "输入告警 ID 并点击生成来创建报告模板",
     "noReportsGenerated": "未生成报告",
     "notesPlaceholder": "任何特定要求或备注...",
-    "createReport": "Create Report",
-    "deleteConfirm": "Are you sure you want to delete this report?",
-    "deleteReport": "Delete Report",
-    "endDate": "End Date",
-    "incidentId": "Incident ID",
-    "noReports": "No reports found",
-    "notes": "Notes",
-    "reportType": "Report Type",
-    "searchPlaceholder": "Search reports...",
-    "startDate": "Start Date"
+    "createReport": "创建报告",
+    "deleteConfirm": "确定要删除此报告吗？",
+    "deleteReport": "删除报告",
+    "endDate": "结束日期",
+    "incidentId": "事件 ID",
+    "noReports": "未找到报告",
+    "notes": "备注",
+    "reportType": "报告类型",
+    "searchPlaceholder": "搜索报告...",
+    "startDate": "开始日期"
   },
   "ai": {
     "title": "AI助手",
@@ -537,7 +660,14 @@
     "url": "URL",
     "hash": "文件哈希",
     "pulse": "OTX Pulse",
-    "threatLevel": "威胁级别"
+    "threatLevel": "威胁级别",
+    "dashboard": {
+      "title": "威胁情报仪表盘",
+      "subtitle": "安全威胁概览与分析",
+      "totalAlerts": "告警总数",
+      "criticalThreats": "严重威胁",
+      "activeCampaigns": "活跃攻击活动"
+    }
   },
   "marketplace": {
     "title": "市场",
@@ -596,7 +726,21 @@
       "description": "使用 IOC 进行主动威胁狩猎",
       "button": "开始 IOC 狩猎",
       "comingSoon": "即将推出"
-    }
+    },
+    "sigmaRules": "Sigma 规则",
+    "sigmaRulesList": "Sigma 检测规则",
+    "all": "全部",
+    "status": "状态",
+    "author": "作者",
+    "logsource": "日志源",
+    "generatedSQL": "生成的 SQL",
+    "executeSearch": "执行搜索",
+    "searching": "搜索中...",
+    "matchCount": "匹配数",
+    "matchesFound": "发现威胁！",
+    "noSigmaRules": "该分类下没有 Sigma 规则",
+    "sigmaQuickStats": "Sigma 规则概览",
+    "totalRules": "规则总数"
   },
   "ueba": {
     "title": "用户和实体行为分析",
@@ -670,7 +814,17 @@
     },
     "cronTriggerNamePlaceholder": "例如：每日安全扫描",
     "webhookTriggerNamePlaceholder": "例如：SIEM 告警 Webhook",
-    "required": "（必填）"
+    "required": "（必填）",
+    "modal": {
+      "deleteConfirm": "确定要删除此触发器吗？"
+    },
+    "errors": {
+      "deleteFailed": "删除触发器失败",
+      "toggleFailed": "更新触发器状态失败",
+      "loadFailed": "加载触发器失败"
+    },
+    "deleteSuccess": "触发器删除成功",
+    "toggleSuccess": "触发器状态已更新"
   },
   "notificationSettings": {
     "title": "通知设置",
@@ -693,15 +847,15 @@
     "slackDesc": "向 Slack 频道发送通知",
     "test": "发送测试",
     "testAll": "测试所有",
-    "failedToLoad": "Failed to load notification status",
-    "length": "Length",
-    "pending": "Pending",
-    "priorityLevel": "Priority Level",
-    "processing": "Processing",
-    "queueStats": "Queue Statistics",
+    "failedToLoad": "加载通知状态失败",
+    "length": "长度",
+    "pending": "待处理",
+    "priorityLevel": "优先级",
+    "processing": "处理中",
+    "queueStats": "队列统计",
     "redis": "Redis",
-    "serviceHealth": "Service Health",
-    "streams": "Streams"
+    "serviceHealth": "服务健康",
+    "streams": "流"
   },
   "aiAssistant": {
     "title": "AI 助手",
@@ -959,7 +1113,13 @@
     "reputationDistribution": "声誉分布",
     "breakdownByType": "按类型细分",
     "count": "数量",
-    "percentage": "百分比"
+    "percentage": "百分比",
+    "severityChart": {
+      "title": "严重度分布"
+    },
+    "total": "总计",
+    "fullscreen": "全屏",
+    "exitFullscreen": "退出全屏"
   },
   "cloudNative": {
     "title": "云原生安全",
@@ -992,7 +1152,28 @@
     "connected": "已连接",
     "notConfigured": "未配置",
     "recentVulnerabilities": "最近漏洞",
-    "supportedCloudProviders": "支持的云提供商"
+    "supportedCloudProviders": "支持的云提供商",
+    "imageScanning": "镜像扫描",
+    "imageScanningTrivy": "镜像扫描 — Trivy",
+    "scanFailed": "扫描失败",
+    "enterImageToScan": "输入容器镜像名称进行漏洞扫描",
+    "scanExamples": "示例",
+    "packageName": "软件包",
+    "installedVersion": "当前版本",
+    "fixedVersion": "修复版本",
+    "vulnerabilityDetails": "漏洞详情",
+    "scannedAt": "扫描时间",
+    "falcoAlerts": "Falco 告警",
+    "falcoAlertsToday": "Falco 今日告警",
+    "falcoHighCritical": "高危/严重 (今日)",
+    "totalAlerts24h": "24小时告警总数",
+    "today": "今日",
+    "topFalcoRules": "Top Falco 规则",
+    "topFalcoHosts": "Top 主机",
+    "falcoNotConfigured": "Falco 未配置",
+    "falcoSetupHint": "配置 Falco Sidekick 将运行安全告警转发至 SOC Copilot 进行自动分诊。",
+    "falcoSetupTitle": "Falco Sidekick 配置",
+    "falcoSetupDesc": "将 Falco 运行时安全告警转发到 SOC Copilot："
   },
   "actions": {
     "quickActions": "快速操作",
@@ -1121,7 +1302,8 @@
     "critical": "严重",
     "high": "高",
     "medium": "中",
-    "low": "低"
+    "low": "低",
+    "info": "信息"
   },
   "sidebar": {
     "capabilities": "功能",
@@ -1140,7 +1322,61 @@
     "initializing": "初始化",
     "degraded": "降级",
     "disabled": "禁用",
-    "unknown": "未知"
+    "unknown": "未知",
+    "new": "新建",
+    "investigating": "调查中",
+    "resolved": "已解决",
+    "falsePositive": "误报",
+    "escalated": "已升级"
+  },
+  "alertActions": {
+    "title": "响应操作",
+    "readyTo": "准备",
+    "quickActions": "快速操作",
+    "actions": {
+      "resolve": {
+        "label": "解决",
+        "description": "将此告警标记为已解决"
+      },
+      "falsePositive": {
+        "label": "误报",
+        "description": "将此告警标记为误报"
+      },
+      "assign": {
+        "label": "分配",
+        "description": "将此告警分配给用户"
+      },
+      "escalate": {
+        "label": "升级",
+        "description": "升级到更高级别"
+      },
+      "reopen": {
+        "label": "重新打开",
+        "description": "重新打开此告警"
+      },
+      "isolateHost": {
+        "label": "隔离主机",
+        "description": "将受影响的主机从网络中隔离"
+      },
+      "blockIp": {
+        "label": "阻断 IP",
+        "description": "在防火墙上阻断该 IP 地址"
+      }
+    },
+    "autoResolve": "自动解决",
+    "assignToMe": "分配给我",
+    "dialog": {
+      "cancel": "取消",
+      "processing": "处理中...",
+      "assignTo": "分配给",
+      "escalateTo": "升级给",
+      "placeholder": {
+        "username": "输入用户名或角色",
+        "note": "添加备注..."
+      },
+      "noteRequired": "备注（必填）",
+      "noteOptional": "备注（可选）"
+    }
   },
   "statuses": {
     "running": "运行中",
@@ -1172,10 +1408,10 @@
     }
   },
   "iocHunt": {
-    "button": "Start IOC Hunt",
-    "comingSoon": "Coming Soon",
-    "description": "Active threat hunting using IOCs",
-    "title": "IOC Hunt"
+    "button": "开始 IOC 狩猎",
+    "comingSoon": "即将推出",
+    "description": "使用 IOC 进行主动威胁狩猎",
+    "title": "IOC 狩猎"
   },
   "settingsApiKeys": {
     "aboutApiKeys": "About API Keys",
@@ -1210,7 +1446,12 @@
     "subtitle": "Manage your API keys for programmatic access",
     "title": "API Keys",
     "yourApiKey": "Your API Key",
-    "yourApiKeys": "Your API Keys"
+    "yourApiKeys": "Your API Keys",
+    "deletedSuccess": "API 密钥已删除",
+    "disabledSuccess": "API 密钥已禁用",
+    "enabledSuccess": "API 密钥已启用",
+    "deleteKeyTitle": "删除 API 密钥",
+    "deleteKeyConfirm": "确定要删除此 API 密钥吗？此操作无法撤销。"
   },
   "navigation": {
     "home": "首页",
@@ -1224,6 +1465,7 @@
     "marketplace": "市场",
     "cloudNative": "云原生",
     "alerts": "告警",
+    "cases": "案例",
     "triggers": "触发器",
     "dashboard": "仪表板",
     "settings": "设置",
@@ -1234,12 +1476,64 @@
     "logout": "登出",
     "api": "API",
     "checking": "检查中",
-    "statusError": "错误"
+    "statusError": "错误",
+    "admin": "管理",
+    "approvals": "审批",
+    "assets": "资产管理",
+    "correlation": "关联分析",
+    "monitor": "监控",
+    "reports": "报告",
+    "threatIntel": "威胁情报"
   },
   "runs": "运行",
   "analytics": "分析",
   "aiCopilot": "AI 助手",
-  "dashboard": "仪表盘",
+  "dashboard": {
+    "title": "安全运营仪表盘",
+    "overview": "概览",
+    "realTimeMetrics": "实时指标",
+    "totalAlerts": "告警总数",
+    "unresolved": "未处理告警",
+    "unresolvedSub": "等待分诊或响应",
+    "unresolvedAlerts": "未处理告警",
+    "criticalHigh": "严重与高危",
+    "criticalHighSub": "严重或高危级别告警",
+    "openCases": "未结案例",
+    "openCasesSub": "{overdue} 个已逾期",
+    "iocToday": "今日新增 IOC",
+    "iocTodaySub": "今日剧本执行 {runs} 次",
+    "needsAction": "待处理",
+    "activeCases": "进行中案例",
+    "last24h": "近 24 小时",
+    "meanTimeToResolve": "平均解决时长",
+    "mttr": "MTTR",
+    "minutes": "分钟",
+    "days": "天",
+    "trend7d": "近 7 天趋势",
+    "alertTrends": "告警趋势",
+    "alerts": "告警",
+    "severityDist": "严重度分布",
+    "statusDist": "状态分布",
+    "sources": "主要来源",
+    "asset": "资产",
+    "topAssets": "重点资产",
+    "assetRiskTop10": "资产风险 Top 10",
+    "riskScore": "风险评分",
+    "noAssets": "暂无资产数据",
+    "iocStats": "IOC 统计",
+    "mitreAttack": "MITRE ATT&CK",
+    "quickLinks": "快捷入口",
+    "goAlerts": "查看告警",
+    "goCases": "查看案例",
+    "goPlaybooks": "查看剧本",
+    "goApprovals": "查看审批",
+    "fallbackUser": "分析师",
+    "greeting": {
+      "morning": "早上好",
+      "afternoon": "下午好",
+      "evening": "晚上好"
+    }
+  },
   "aiModels": "AI 模型",
   "apiKeys": "API 密钥",
   "audit": {
@@ -1497,5 +1791,34 @@
     "investigating": "调查中",
     "resolved": "已解决",
     "thisWeek": "本周"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{count}分钟前",
+    "hoursAgo": "{count}小时前",
+    "daysAgo": "{count}天前"
+  },
+  "notes": {
+    "title": "备注",
+    "recentNotes": "最近备注",
+    "placeholder": "添加备注...（支持 Markdown）",
+    "submitHint": "按 Ctrl+Enter 提交",
+    "adding": "添加中...",
+    "addNote": "添加备注",
+    "empty": "暂无备注",
+    "editNote": "编辑备注",
+    "deleteNote": "删除备注",
+    "save": "保存",
+    "cancel": "取消",
+    "edited": "已编辑",
+    "viewAll": "查看全部 {count} 条备注",
+    "deleteConfirm": "确定要删除此备注吗？"
+  },
+  "loading": {
+    "title": "正在加载…"
+  },
+  "cases": {
+    "notFoundTitle": "案例未找到",
+    "notFoundDescription": "无法加载所请求的案例。"
   }
 }

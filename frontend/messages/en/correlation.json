@@ -1,9 +1,9 @@
 {
   "correlation": {
-    "createRule": "创建规则",
-    "noRules": "暂无关联规则",
-    "rules": "规则列表",
-    "subtitle": "配置和管理关联规则",
-    "title": "关联分析"
+    "createRule": "Create Rule",
+    "noRules": "No Correlation Rules",
+    "rules": "Rules",
+    "subtitle": "Configure and manage correlation rules",
+    "title": "Correlation Analysis"
   }
 }

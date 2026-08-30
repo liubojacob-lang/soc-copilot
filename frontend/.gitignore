@@ -1,0 +1,6 @@
+# Test artifacts
+test-results
+playwright-report
+
+# Security-scan tooling state
+.mimosa
