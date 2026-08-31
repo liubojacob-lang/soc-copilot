@@ -111,3 +111,7 @@ grafana-*.json
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Local agent tool artifacts
+.mimosa/
+.cospec/
