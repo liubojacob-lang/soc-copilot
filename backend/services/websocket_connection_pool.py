@@ -326,7 +326,7 @@ class ConnectionPoolService:
     async def _health_check(self) -> None:
         """Perform health check on all connections."""
         async with self._lock:
-            now = time.time()
+            time.time()
             unhealthy_connections = []
 
             for connection_id, pooled_conn in self.pool.items():

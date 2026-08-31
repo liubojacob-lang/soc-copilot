@@ -82,10 +82,7 @@ class MessageCompressionService:
             return False
 
         # Check size threshold
-        if len(data) < self.config.min_size_bytes:
-            return False
-
-        return True
+        return not len(data) < self.config.min_size_bytes
 
     def compress_message(
         self, message: dict[str, Any]

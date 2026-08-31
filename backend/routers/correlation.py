@@ -10,6 +10,7 @@ from core.logger import get_logger
 from core.metrics import observe_correlation_rule_hit
 from db.session import get_session
 from dependencies.auth import get_current_user
+from models.correlation_rule import CorrelationRule
 from models.user import UserModel
 from services.correlation import CorrelationRuleDSL, RuleEngine
 from services.event_bus import get_event_bus
@@ -23,6 +24,7 @@ router = APIRouter(tags=["correlation"], prefix="/api/v1/correlation")
 
 
 # ── Request/Response Schemas ────────────────────────────────────────────────
+
 
 class CorrelationRequest(BaseModel):
     """Request to correlate events."""
@@ -94,6 +96,7 @@ class RuleEngineEvaluateResponse(BaseModel):
 
 # ── Helper to instantiate the service ───────────────────────────────────────
 
+
 def _svc(db: AsyncSession) -> EventCorrelationService:
     return EventCorrelationService(db)
 
@@ -101,6 +104,7 @@ def _svc(db: AsyncSession) -> EventCorrelationService:
 # ══════════════════════════════════════════════════════════════════════════════
 # Correlation Endpoints
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @router.post("/correlate", response_model=list[CorrelatedEventResponse])
 async def correlate_events(
@@ -156,7 +160,9 @@ async def correlate_events(
 
 
 @router.get("/dsl/example", response_model=dict)
-async def get_rule_dsl_example(current_user: UserModel = Depends(get_current_user)) -> dict:
+async def get_rule_dsl_example(
+    current_user: UserModel = Depends(get_current_user),
+) -> dict:
     """Get a DSL sample for building advanced correlation rules."""
     return RuleEngine().dsl_example()
 
@@ -178,6 +184,7 @@ async def evaluate_rule_engine(
 # ══════════════════════════════════════════════════════════════════════════════
 # Incident Endpoints (S0-8/9: refactored to use Service layer)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @router.get("/incidents", response_model=list[CorrelatedEventResponse])
 async def list_correlated_events(
@@ -258,6 +265,7 @@ async def update_incident_status(
 # ══════════════════════════════════════════════════════════════════════════════
 # Rule CRUD Endpoints (S0-8/9: refactored to use Service layer)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @router.get("/rules")
 async def list_correlation_rules(
@@ -371,6 +379,7 @@ async def toggle_correlation_rule(
 # Statistics (S0-8/9: refactored to use Service layer)
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 @router.get("/stats")
 async def get_correlation_stats(
     db: AsyncSession = Depends(get_session),
@@ -384,6 +393,7 @@ async def get_correlation_stats(
 # ══════════════════════════════════════════════════════════════════════════════
 # Rule Testing
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @router.post("/test")
 async def test_correlation_rule(

@@ -128,9 +128,7 @@ async def _compute_enrichment_stats() -> dict[str, Any]:
 
             # SQLite/PG both support chunked streaming via yield_per; only the
             # raw_data column is fetched, one JSON blob at a time.
-            stream = await session.stream(
-                select(SecurityAlert.raw_data).yield_per(500)
-            )
+            stream = await session.stream(select(SecurityAlert.raw_data).yield_per(500))
             async for (raw_data,) in stream:
                 if not raw_data:
                     continue

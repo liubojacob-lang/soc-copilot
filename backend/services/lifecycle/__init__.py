@@ -49,22 +49,22 @@ from .websocket_monitoring_service import (
 )
 
 __all__ = [
-    # Core lifecycle components
-    "LifecycleService",
-    "LifecycleManager",
-    "ServicePriority",
-    "ServiceState",
-    "get_lifecycle_manager",
-    "reset_lifecycle_manager",
+    "AITaskProcessorService",
+    "AlertEvaluatorService",
+    "AlertPipelineService",
+    "AuditArchiveService",
+    "CronSchedulerServiceWrapper",
+    "DataRetentionService",
     # Service implementations
     "DatabaseService",
+    "LifecycleManager",
+    # Core lifecycle components
+    "LifecycleService",
     "QueueManagerService",
-    "CronSchedulerServiceWrapper",
-    "AITaskProcessorService",
-    "AlertPipelineService",
-    "DataRetentionService",
     "RateLimiterService",
+    "ServicePriority",
+    "ServiceState",
     "WebSocketMonitoringService",
-    "AlertEvaluatorService",
-    "AuditArchiveService",
+    "get_lifecycle_manager",
+    "reset_lifecycle_manager",
 ]

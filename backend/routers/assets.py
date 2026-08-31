@@ -1,6 +1,6 @@
 """Assets router for asset management API."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -95,12 +95,17 @@ async def delete_asset(
         raise HTTPException(status_code=404, detail="Not found")
 
 
-
 @router.post("/discover", status_code=200)
 async def discover_assets(
-    targets: str | None = Query(None, description="IP ranges to scan (comma-separated)"),
-    provider: str = Query("network", description="Discovery provider: network, aws, azure, gcp, all"),
-    ports: str | None = Query(None, description="Port specification for nmap (e.g. 1-1024)"),
+    targets: str | None = Query(
+        None, description="IP ranges to scan (comma-separated)"
+    ),
+    provider: str = Query(
+        "network", description="Discovery provider: network, aws, azure, gcp, all"
+    ),
+    ports: str | None = Query(
+        None, description="Port specification for nmap (e.g. 1-1024)"
+    ),
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ):

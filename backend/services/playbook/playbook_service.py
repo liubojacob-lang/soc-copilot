@@ -2,6 +2,7 @@
 
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -388,7 +389,12 @@ class PlaybookService:
         }
 
     async def create_definition(
-        self, name: str, description: str | None, version: str, definition_json: dict, created_by: str
+        self,
+        name: str,
+        description: str | None,
+        version: str,
+        definition_json: dict,
+        created_by: str,
     ) -> dict[str, object]:
         """Create a new DAG playbook definition."""
         import uuid

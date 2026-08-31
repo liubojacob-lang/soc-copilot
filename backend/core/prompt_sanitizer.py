@@ -82,7 +82,9 @@ def sanitize_alert_data(alert_data: dict) -> dict:
     return sanitized
 
 
-def sanitize_json_for_prompt(data: dict | list, max_length: int = MAX_JSON_INPUT_LENGTH) -> str:
+def sanitize_json_for_prompt(
+    data: dict | list, max_length: int = MAX_JSON_INPUT_LENGTH
+) -> str:
     """Sanitize and serialize data for prompt embedding.
 
     Returns a sanitized JSON string safe for prompt inclusion.

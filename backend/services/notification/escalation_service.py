@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
-from sqlalchemy import and_, select
+from sqlalchemy import select
 
 from core.logger import get_logger
 from db.session import AsyncSessionLocal
@@ -42,7 +42,6 @@ class EscalationService:
 
         Returns a summary dict of actions taken.
         """
-        from models.security_alert import SecurityAlert
 
         summary = {
             "checked_at": datetime.now(UTC).isoformat(),
@@ -129,11 +128,7 @@ class EscalationService:
         result = await session.execute(
             select(SecurityAlert)
             .where(SecurityAlert.created_at < threshold)
-            .where(
-                SecurityAlert.status.in_(
-                    ["new", "investigating"]
-                )
-            )
+            .where(SecurityAlert.status.in_(["new", "investigating"]))
             .order_by(SecurityAlert.created_at.asc())
             .limit(50)  # Process in batches to avoid overwhelming
         )

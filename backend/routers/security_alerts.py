@@ -59,7 +59,9 @@ async def ingest_alert(
 
         # Parse timestamp
         try:
-            event_timestamp = datetime.fromisoformat(alert_data.timestamp.replace("Z", "+00:00"))
+            event_timestamp = datetime.fromisoformat(
+                alert_data.timestamp.replace("Z", "+00:00")
+            )
         except ValueError:
             raise HTTPException(
                 status_code=400,
@@ -103,8 +105,12 @@ async def ingest_alert(
             agent_ip=alert_data.agent_ip,
             rule_id=alert_data.rule_id,
             rule_level=alert_data.rule_level,
-            rule_groups=(",".join(alert_data.rule_groups) if alert_data.rule_groups else None),
-            rule_mitre=(",".join(alert_data.rule_mitre) if alert_data.rule_mitre else None),
+            rule_groups=(
+                ",".join(alert_data.rule_groups) if alert_data.rule_groups else None
+            ),
+            rule_mitre=(
+                ",".join(alert_data.rule_mitre) if alert_data.rule_mitre else None
+            ),
             full_log=alert_data.full_log,
             location=alert_data.location,
             geoip=alert_data.geoip,
@@ -168,9 +174,13 @@ async def ingest_alert(
                 "agent_name": new_alert.agent_name,
                 "rule_id": new_alert.rule_id,
                 "rule_level": new_alert.rule_level,
-                "created_at": (new_alert.created_at.isoformat() if new_alert.created_at else None),
+                "created_at": (
+                    new_alert.created_at.isoformat() if new_alert.created_at else None
+                ),
                 "event_timestamp": (
-                    new_alert.event_timestamp.isoformat() if new_alert.event_timestamp else None
+                    new_alert.event_timestamp.isoformat()
+                    if new_alert.event_timestamp
+                    else None
                 ),
             }
 
@@ -384,23 +394,23 @@ async def get_alert_statistics(
         total = total_result.scalar() or 0
 
         # By severity
-        severity_query = select(SecurityAlert.severity, func.count(SecurityAlert.id)).group_by(
-            SecurityAlert.severity
-        )
+        severity_query = select(
+            SecurityAlert.severity, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.severity)
         severity_result = await session.execute(severity_query)
         by_severity = {row[0]: row[1] for row in severity_result.all()}
 
         # By status
-        status_query = select(SecurityAlert.status, func.count(SecurityAlert.id)).group_by(
-            SecurityAlert.status
-        )
+        status_query = select(
+            SecurityAlert.status, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.status)
         status_result = await session.execute(status_query)
         by_status = {row[0]: row[1] for row in status_result.all()}
 
         # By source
-        source_query = select(SecurityAlert.source, func.count(SecurityAlert.id)).group_by(
-            SecurityAlert.source
-        )
+        source_query = select(
+            SecurityAlert.source, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.source)
         source_result = await session.execute(source_query)
         by_source = {row[0]: row[1] for row in source_result.all()}
 

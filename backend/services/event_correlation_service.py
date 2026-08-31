@@ -229,7 +229,7 @@ class EventCorrelationService:
             # Group by common entities
             entity_groups = await self._group_by_entities(events, entity_types)
 
-            for entity_key, group_events in entity_groups.items():
+            for _entity_key, group_events in entity_groups.items():
                 # Check minimum event count
                 if len(group_events) < 2:
                     continue
@@ -605,7 +605,13 @@ class EventCorrelationService:
         if not incident:
             return None
 
-        valid_statuses = {"open", "investigating", "resolved", "false_positive", "closed"}
+        valid_statuses = {
+            "open",
+            "investigating",
+            "resolved",
+            "false_positive",
+            "closed",
+        }
         if status is not None:
             if status not in valid_statuses:
                 raise ValueError(
@@ -646,7 +652,8 @@ class EventCorrelationService:
             name=rule_data["name"],
             description=rule_data.get("description"),
             time_window_seconds=rule_data.get("time_window_seconds", 300),
-            entity_types=rule_data.get("entity_types") or {"ip_address": True, "username": True},
+            entity_types=rule_data.get("entity_types")
+            or {"ip_address": True, "username": True},
             min_similarity=rule_data.get("min_similarity", 0.7),
             conditions=rule_data.get("conditions"),
             action=rule_data.get("action", "aggregate"),
@@ -715,20 +722,22 @@ class EventCorrelationService:
                 CorrelatedEvent.status
             )
         )
-        by_status = {status: count for status, count in status_counts.all()}
+        by_status = dict(status_counts.all())
 
         severity_counts = await self.db.execute(
             select(CorrelatedEvent.severity, func.count(CorrelatedEvent.id)).group_by(
                 CorrelatedEvent.severity
             )
         )
-        by_severity = {severity: count for severity, count in severity_counts.all()}
+        by_severity = dict(severity_counts.all())
 
         total_rules = await self.db.execute(select(func.count(CorrelationRule.id)))
         rules_count = total_rules.scalar() or 0
 
         active_rules = await self.db.execute(
-            select(func.count(CorrelationRule.id)).where(CorrelationRule.enabled == True)
+            select(func.count(CorrelationRule.id)).where(
+                CorrelationRule.enabled == True
+            )
         )
         active_count = active_rules.scalar() or 0
 

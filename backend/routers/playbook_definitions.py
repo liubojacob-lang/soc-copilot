@@ -11,7 +11,6 @@ Provides:
 """
 
 import uuid
-from typing import Union
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,7 +48,9 @@ router = APIRouter(prefix="/api/v1/playbook-definitions", tags=["playbook-defini
 # ============ Playbook Definition CRUD ============
 
 
-@router.post("", response_model=PlaybookDefinitionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=PlaybookDefinitionResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_definition(
     data: PlaybookDefinitionCreate,
     current_user: UserModel = Depends(get_current_user),
@@ -231,13 +232,17 @@ async def delete_definition(
 ):
     """Delete a DAG playbook definition (admin only)."""
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Only admins can delete definitions")
+        raise HTTPException(
+            status_code=403, detail="Only admins can delete definitions"
+        )
 
     repo = PlaybookDefinitionRepository(db)
     success = await repo.delete(definition_id)
 
     if not success:
-        raise HTTPException(status_code=404, detail="Definition not found or has associated runs")
+        raise HTTPException(
+            status_code=404, detail="Definition not found or has associated runs"
+        )
 
 
 # ============ DAG Playbook Execution ============
@@ -245,7 +250,7 @@ async def delete_definition(
 
 @router.post(
     "/{definition_id}/run",
-    response_model=Union[DAGPlaybookRunResponse, PlaybookRunErrorResponse],
+    response_model=DAGPlaybookRunResponse | PlaybookRunErrorResponse,
     responses={500: {"model": PlaybookRunErrorResponse}},
 )
 @rate_limit(max_requests=5, window_seconds=60)

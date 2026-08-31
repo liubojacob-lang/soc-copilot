@@ -1,4 +1,5 @@
 import uuid
+
 """Threat Intelligence router for OTX API endpoints."""
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
@@ -265,11 +266,13 @@ async def batch_ioc_query(
                     )
                 )
             except ValueError as e:
-                errors.append({
-                    "ioc_type": item.ioc_type,
-                    "ioc_value": item.ioc_value,
-                    "error": str(e),
-                })
+                errors.append(
+                    {
+                        "ioc_type": item.ioc_type,
+                        "ioc_value": item.ioc_value,
+                        "error": str(e),
+                    }
+                )
                 results.append(
                     IOCBatchResultItem(
                         ioc_type=item.ioc_type,
@@ -283,13 +286,17 @@ async def batch_ioc_query(
             except Exception as e:
                 logger.warning(
                     "Batch IOC query failed for %s:%s: %s",
-                    item.ioc_type, item.ioc_value, e,
+                    item.ioc_type,
+                    item.ioc_value,
+                    e,
                 )
-                errors.append({
-                    "ioc_type": item.ioc_type,
-                    "ioc_value": item.ioc_value,
-                    "error": str(e),
-                })
+                errors.append(
+                    {
+                        "ioc_type": item.ioc_type,
+                        "ioc_value": item.ioc_value,
+                        "error": str(e),
+                    }
+                )
                 results.append(
                     IOCBatchResultItem(
                         ioc_type=item.ioc_type,
@@ -312,5 +319,6 @@ async def batch_ioc_query(
     except Exception as e:
         logger.error(f"Batch IOC query error: {e!s}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
 
 # Add uuid import if not already present at module top

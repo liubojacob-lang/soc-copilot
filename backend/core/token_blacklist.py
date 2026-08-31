@@ -344,7 +344,9 @@ class TokenBlacklist:
                 )
 
         if primary_failed or not self._primary_backend:
-            logger.debug("Using in-memory blacklist for token removal (single-worker fallback)")
+            logger.debug(
+                "Using in-memory blacklist for token removal (single-worker fallback)"
+            )
             success = await self._fallback_backend.remove(token) or success
         return success
 
@@ -352,7 +354,11 @@ class TokenBlacklist:
         """Get blacklist info for debugging."""
         return {
             "redis_available": REDIS_AVAILABLE and self._use_redis,
-            "primary": (await self._primary_backend.get_info() if self._primary_backend else None),
+            "primary": (
+                await self._primary_backend.get_info()
+                if self._primary_backend
+                else None
+            ),
             "fallback": await self._fallback_backend.get_info(),
         }
 

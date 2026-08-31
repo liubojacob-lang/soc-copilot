@@ -1,6 +1,5 @@
 """Schemas for report generation."""
 
-
 from pydantic import BaseModel, ConfigDict, Field
 
 

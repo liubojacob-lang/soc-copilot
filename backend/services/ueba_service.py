@@ -149,7 +149,13 @@ async def _extract_behavior_features_from_db(
                   AND (action LIKE :a1 OR action LIKE :a2 OR action LIKE :a3)
                 """
             ),
-            {"uid": user_id, "since": since_iso, "a1": "%file%", "a2": "%read%", "a3": "%download%"},
+            {
+                "uid": user_id,
+                "since": since_iso,
+                "a1": "%file%",
+                "a2": "%read%",
+                "a3": "%download%",
+            },
         )
         row = result.fetchone()
         if row:
@@ -281,7 +287,9 @@ class UEBAEngine:
         logger.info(f"Building DB-backed baseline for user {user_id}")
 
         # Step 1: Extract features from DB
-        features = await _extract_behavior_features_from_db(db, user_id, days_of_history)
+        features = await _extract_behavior_features_from_db(
+            db, user_id, days_of_history
+        )
         self.feature_cache[user_id] = features
 
         total_events = (
@@ -331,7 +339,9 @@ class UEBAEngine:
             X_scaled = self.scaler.fit_transform(X_train)
             self.isolation_forest.fit(X_scaled)
             self._model_trained = True
-            logger.info(f"IsolationForest trained for {user_id} ({X_train.shape[0]} samples)")
+            logger.info(
+                f"IsolationForest trained for {user_id} ({X_train.shape[0]} samples)"
+            )
         except Exception as e:
             logger.error(f"ML training failed for {user_id}: {e}")
 
@@ -455,7 +465,9 @@ class UEBAEngine:
             # Restore model
             if model_bytes:
                 try:
-                    self.isolation_forest = pickle.loads(model_bytes)
+                    self.isolation_forest = pickle.loads(
+                        model_bytes
+                    )  # nosec B301 - model bytes from access-controlled app DB
                     self._model_trained = True
                 except Exception as e:
                     logger.warning(f"Failed to deserialize model for {user_id}: {e}")
@@ -466,8 +478,12 @@ class UEBAEngine:
                 login_times=[9, 10, 11, 14, 15, 16],
                 accessed_resources=[],
                 peer_group=[],
-                typical_data_volume=features.get("data_volume_mb", 100.0) if features_json else 100.0,
-                typical_connections=features.get("network_connections", 10) if features_json else 10,
+                typical_data_volume=(
+                    features.get("data_volume_mb", 100.0) if features_json else 100.0
+                ),
+                typical_connections=(
+                    features.get("network_connections", 10) if features_json else 10
+                ),
                 last_updated=datetime.now(),
             )
             self.baselines[user_id] = baseline
@@ -501,9 +517,7 @@ class UEBAEngine:
                 return db_baseline
 
         # Fallback to in-memory defaults
-        logger.info(
-            f"Building baseline for {entity_type} {entity_id} (defaults)"
-        )
+        logger.info(f"Building baseline for {entity_type} {entity_id} (defaults)")
         baseline = BehaviorBaseline(
             entity_id=entity_id,
             entity_type=entity_type,
@@ -636,11 +650,13 @@ class UEBAEngine:
         if features:
             # Generate real risk factors based on extracted features
             if features.get("login_failures", 0) > 5:
-                risk_factors.append({
-                    "type": "authentication",
-                    "severity": "medium",
-                    "description": f"Elevated login failures: {features['login_failures']}",
-                })
+                risk_factors.append(
+                    {
+                        "type": "authentication",
+                        "severity": "medium",
+                        "description": f"Elevated login failures: {features['login_failures']}",
+                    }
+                )
                 sample_anomalies.append(
                     AnomalyDetection(
                         entity_id=user_id,
@@ -649,17 +665,22 @@ class UEBAEngine:
                         risk_level=RiskLevel.MEDIUM,
                         description=f"Multiple login failures detected ({features['login_failures']})",
                         indicators=["brute_force_attempt", "credential_stuffing"],
-                        recommended_actions=["review_auth_logs", "check_account_lockout"],
+                        recommended_actions=[
+                            "review_auth_logs",
+                            "check_account_lockout",
+                        ],
                         detected_at=datetime.now(),
                     )
                 )
 
             if features.get("privilege_escalation", 0) > 0:
-                risk_factors.append({
-                    "type": "privilege",
-                    "severity": "high",
-                    "description": f"Privilege escalation attempts: {features['privilege_escalation']}",
-                })
+                risk_factors.append(
+                    {
+                        "type": "privilege",
+                        "severity": "high",
+                        "description": f"Privilege escalation attempts: {features['privilege_escalation']}",
+                    }
+                )
                 sample_anomalies.append(
                     AnomalyDetection(
                         entity_id=user_id,
@@ -668,17 +689,22 @@ class UEBAEngine:
                         risk_level=RiskLevel.HIGH,
                         description=f"Privilege escalation detected ({features['privilege_escalation']} attempts)",
                         indicators=["sudo_abuse", "unauthorized_role_change"],
-                        recommended_actions=["audit_sudo_logs", "review_rbac_assignments"],
+                        recommended_actions=[
+                            "audit_sudo_logs",
+                            "review_rbac_assignments",
+                        ],
                         detected_at=datetime.now(),
                     )
                 )
 
             if features.get("lateral_movement", 0) > 0:
-                risk_factors.append({
-                    "type": "lateral_movement",
-                    "severity": "high",
-                    "description": f"Lateral movement indicators: {features['lateral_movement']}",
-                })
+                risk_factors.append(
+                    {
+                        "type": "lateral_movement",
+                        "severity": "high",
+                        "description": f"Lateral movement indicators: {features['lateral_movement']}",
+                    }
+                )
                 sample_anomalies.append(
                     AnomalyDetection(
                         entity_id=user_id,
@@ -696,7 +722,9 @@ class UEBAEngine:
             risk_factors = []
             sample_anomalies = []
 
-        risk_score, risk_level = await self.calculate_risk_score(user_id, sample_anomalies)
+        risk_score, risk_level = await self.calculate_risk_score(
+            user_id, sample_anomalies
+        )
 
         # Get username from DB if possible
         username = f"user_{user_id}"
@@ -794,7 +822,9 @@ class UEBAEngine:
         logger.info("Batch-building baselines for all users...")
         try:
             result = await session.execute(
-                text("SELECT DISTINCT user_id FROM audit_logs WHERE user_id IS NOT NULL")
+                text(
+                    "SELECT DISTINCT user_id FROM audit_logs WHERE user_id IS NOT NULL"
+                )
             )
             user_ids = [row[0] for row in result.fetchall()]
         except Exception as e:
@@ -808,7 +838,9 @@ class UEBAEngine:
 
         for uid in user_ids:
             try:
-                baseline = await self.build_baseline_from_db(uid, days_of_history, session)
+                baseline = await self.build_baseline_from_db(
+                    uid, days_of_history, session
+                )
                 if baseline:
                     success += 1
                 else:

@@ -29,7 +29,9 @@ class AssetBase(BaseModel):
     ip: str | None = Field(None, description="Asset IP address")
     owner: str | None = Field(None, description="Asset owner")
     business: str | None = Field(None, description="Business unit")
-    criticality: Criticality = Field(default=Criticality.medium, description="Asset criticality")
+    criticality: Criticality = Field(
+        default=Criticality.medium, description="Asset criticality"
+    )
     tags: list[str] = Field(default_factory=list, description="Asset tags")
     notes: str | None = Field(None, description="Additional notes")
     is_active: bool = Field(default=True, description="Whether asset is active")

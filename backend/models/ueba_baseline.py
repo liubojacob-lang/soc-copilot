@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, LargeBinary, String, Float, Integer, Text
+from sqlalchemy import Column, DateTime, Float, Integer, LargeBinary, String, Text
 
 from db.session import Base
 
@@ -34,9 +34,7 @@ class UEBABaselineModel(Base):
     anomaly_threshold = Column(Float, nullable=True)
     training_samples = Column(Integer, nullable=False, default=0)
 
-    created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
-    )
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

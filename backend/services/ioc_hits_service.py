@@ -1,6 +1,5 @@
 """IOC Hits service for business logic."""
 
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger

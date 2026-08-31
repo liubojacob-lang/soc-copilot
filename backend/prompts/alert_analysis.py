@@ -4,8 +4,6 @@
 P1-23: 支持从数据库 Prompt Registry 动态加载，回退到本地文件。
 """
 
-from typing import Any
-
 from core.config import settings
 from core.logger import get_logger
 

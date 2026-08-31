@@ -134,12 +134,8 @@ class FilterRule(BaseModel):
     )
 
     # Metadata
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
-    updated_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     last_triggered_at: str | None = None
 
     def matches(self, message_data: dict[str, Any]) -> bool:
@@ -231,9 +227,7 @@ class FilterSet(BaseModel):
     default_action: str = Field(
         default="allow", description="Default action if no rules match: allow or block"
     )
-    updated_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    updated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def get_active_rules(self) -> list[FilterRule]:
         """Get enabled rules sorted by priority (highest first)"""
@@ -288,9 +282,7 @@ class FilterSet(BaseModel):
                 return True
         return False
 
-    def update_rule(
-        self, rule_id: str, updates: dict[str, Any]
-    ) -> FilterRule | None:
+    def update_rule(self, rule_id: str, updates: dict[str, Any]) -> FilterRule | None:
         """Update a rule by ID"""
         for rule in self.rules:
             if rule.id == rule_id:

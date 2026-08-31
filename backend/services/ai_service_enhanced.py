@@ -505,6 +505,7 @@ def get_enhanced_ai_service() -> EnhancedAIService:
 
 # -------- Extension Interfaces --------
 
+
 class IncidentAnalysisRequest(BaseModel):
     incident_id: str
     title: str
@@ -524,7 +525,9 @@ class IncidentAnalysisResult(BaseModel):
 class AIIncidentAnalyzer:
     """Adapter interface for future LLM-backed incident analysis providers."""
 
-    async def analyze_incident(self, request: IncidentAnalysisRequest) -> IncidentAnalysisResult:
+    async def analyze_incident(
+        self, request: IncidentAnalysisRequest
+    ) -> IncidentAnalysisResult:
         raise NotImplementedError
 
 
@@ -534,5 +537,7 @@ class VectorStoreProvider:
     async def upsert_documents(self, namespace: str, documents: list[dict]) -> None:
         raise NotImplementedError
 
-    async def similarity_search(self, namespace: str, query: str, top_k: int = 5) -> list[dict]:
+    async def similarity_search(
+        self, namespace: str, query: str, top_k: int = 5
+    ) -> list[dict]:
         raise NotImplementedError

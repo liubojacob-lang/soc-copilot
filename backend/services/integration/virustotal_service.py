@@ -60,7 +60,9 @@ async def _rate_limit(
                 await asyncio.sleep(wait)
                 now = time.monotonic()
                 window_start = now - 60.0
-                _last_request_times = [t for t in _last_request_times if t > window_start]
+                _last_request_times = [
+                    t for t in _last_request_times if t > window_start
+                ]
 
         _last_request_times.append(now)
 
@@ -155,7 +157,11 @@ class VirusTotalService:
             )
             row = result.scalar_one_or_none()
             if row is not None and row.response_json:
-                return json.loads(row.response_json) if isinstance(row.response_json, str) else row.response_json
+                return (
+                    json.loads(row.response_json)
+                    if isinstance(row.response_json, str)
+                    else row.response_json
+                )
         except Exception:
             logger.exception("Failed to read VT cache for %s:%s", ioc_type, ioc_value)
 
@@ -221,7 +227,9 @@ class VirusTotalService:
 
     # ── HTTP helpers ────────────────────────────────────────────────────
 
-    async def _get(self, endpoint: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def _get(
+        self, endpoint: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Execute a rate-limited GET request to the VT API."""
         if not self._enabled:
             raise RuntimeError("VirusTotal API key not configured")
@@ -229,7 +237,6 @@ class VirusTotalService:
         await _rate_limit()
 
         client = await self._get_client()
-        url = f"{VT_API_BASE}{endpoint}"
 
         try:
             response = await client.get(endpoint, params=params)
@@ -247,7 +254,9 @@ class VirusTotalService:
             if exc.response.status_code == 403:
                 logger.error("VT: API key invalid or forbidden (403)")
                 raise RuntimeError("VirusTotal API key is invalid or lacks permission")
-            logger.error("VT HTTP error %d on %s: %s", exc.response.status_code, endpoint, exc)
+            logger.error(
+                "VT HTTP error %d on %s: %s", exc.response.status_code, endpoint, exc
+            )
             raise
         except httpx.RequestError as exc:
             logger.error("VT network error on %s: %s", endpoint, exc)
@@ -277,7 +286,9 @@ class VirusTotalService:
         try:
             data = await self._get(f"/ip_addresses/{ioc_value}")
         except Exception:
-            logger.exception("VT IP lookup failed for %s, returning degraded result", ioc_value)
+            logger.exception(
+                "VT IP lookup failed for %s, returning degraded result", ioc_value
+            )
             return await self._degraded_result(ioc_type, ioc_value, use_cache)
 
         result = self._parse_ip_response(data)
@@ -294,7 +305,9 @@ class VirusTotalService:
 
         return result
 
-    async def lookup_domain(self, domain: str, use_cache: bool = True) -> dict[str, Any]:
+    async def lookup_domain(
+        self, domain: str, use_cache: bool = True
+    ) -> dict[str, Any]:
         """Look up a domain in VirusTotal."""
         ioc_type = "domain"
         ioc_value = domain.strip().lower()
@@ -324,7 +337,9 @@ class VirusTotalService:
 
         return result
 
-    async def lookup_hash(self, file_hash: str, use_cache: bool = True) -> dict[str, Any]:
+    async def lookup_hash(
+        self, file_hash: str, use_cache: bool = True
+    ) -> dict[str, Any]:
         """Look up a file hash (MD5/SHA-1/SHA-256) in VirusTotal."""
         ioc_type = "hash"
         ioc_value = file_hash.strip().lower()
@@ -504,7 +519,7 @@ class VirusTotalService:
         malicious = stats.get("malicious", 0)
         suspicious = stats.get("suspicious", 0)
         harmless = stats.get("harmless", 0)
-        undetected = stats.get("undetected", 0)
+        stats.get("undetected", 0)
         total = sum(stats.values())
 
         # Compute VT-style score (proportion of malicious + suspicious)
@@ -523,7 +538,7 @@ class VirusTotalService:
         # Extract tags from last_analysis_results
         tags: list[str] = []
         analysis_results = attrs.get("last_analysis_results", {})
-        for engine, result in analysis_results.items():
+        for _engine, result in analysis_results.items():
             if result.get("category") in ("malicious", "suspicious"):
                 engine_result = result.get("result", "")
                 if engine_result:

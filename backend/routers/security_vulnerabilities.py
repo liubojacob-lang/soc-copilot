@@ -78,7 +78,9 @@ async def get_vulnerability(
     vulnerability = await service.get_vulnerability(vulnerability_id)
 
     if not vulnerability:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found"
+        )
 
     # Get notes
     notes = await service.get_vulnerability_notes(vulnerability_id)
@@ -100,19 +102,31 @@ async def get_vulnerability(
             "fix_implementation": vulnerability.fix_implementation,
             "reporter": vulnerability.reporter,
             "reported_at": (
-                vulnerability.reported_at.isoformat() if vulnerability.reported_at else None
+                vulnerability.reported_at.isoformat()
+                if vulnerability.reported_at
+                else None
             ),
             "triaged_at": (
-                vulnerability.triaged_at.isoformat() if vulnerability.triaged_at else None
+                vulnerability.triaged_at.isoformat()
+                if vulnerability.triaged_at
+                else None
             ),
             "in_progress_at": (
-                vulnerability.in_progress_at.isoformat() if vulnerability.in_progress_at else None
+                vulnerability.in_progress_at.isoformat()
+                if vulnerability.in_progress_at
+                else None
             ),
-            "fixed_at": (vulnerability.fixed_at.isoformat() if vulnerability.fixed_at else None),
+            "fixed_at": (
+                vulnerability.fixed_at.isoformat() if vulnerability.fixed_at else None
+            ),
             "verified_at": (
-                vulnerability.verified_at.isoformat() if vulnerability.verified_at else None
+                vulnerability.verified_at.isoformat()
+                if vulnerability.verified_at
+                else None
             ),
-            "closed_at": (vulnerability.closed_at.isoformat() if vulnerability.closed_at else None),
+            "closed_at": (
+                vulnerability.closed_at.isoformat() if vulnerability.closed_at else None
+            ),
             "cve_id": vulnerability.cve_id,
             "cvss_score": vulnerability.cvss_score,
             "reference_urls": vulnerability.reference_urls,
@@ -162,7 +176,7 @@ async def list_vulnerabilities(
     )
 
     # Get statistics
-    stats = await service.get_vulnerability_statistics()
+    await service.get_vulnerability_statistics()
 
     vulnerability_items = [
         {
@@ -258,7 +272,9 @@ async def update_vulnerability(
     )
 
     if not vulnerability:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found"
+        )
 
     return success_response(
         data={
@@ -285,7 +301,9 @@ async def add_vulnerability_note(
     # Check if vulnerability exists
     vulnerability = await service.get_vulnerability(vulnerability_id)
     if not vulnerability:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found"
+        )
 
     note = await service.add_vulnerability_note(
         vulnerability_id=vulnerability_id, content=content, author=current_user.username
@@ -374,4 +392,6 @@ async def export_vulnerabilities(
             trace_id=get_trace_id(),
         )
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bad request")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Bad request"
+        )

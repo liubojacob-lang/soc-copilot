@@ -64,7 +64,7 @@ class AssetEnrichPlugin(BaseNodePlugin):
                 "dry_run": True,
                 "enriched": {
                     "hostname": hostname or "unknown-host",
-                    "ip": ip_address or "0.0.0.0",
+                    "ip": ip_address or "0.0.0.0",  # nosec B104 - mock data value
                     "os": "Linux (mock)",
                     "criticality": "medium (mock)",
                     "owner": "security-team@example.com (mock)",
@@ -81,7 +81,7 @@ class AssetEnrichPlugin(BaseNodePlugin):
             "status": "success",
             "enriched": {
                 "hostname": hostname or "unknown-host",
-                "ip": ip_address or "0.0.0.0",
+                "ip": ip_address or "0.0.0.0",  # nosec B104 - mock data value
                 "enriched": True,
                 "source": "cmdb_mock",
             },

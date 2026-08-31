@@ -11,7 +11,8 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select, case as sa_case
+from sqlalchemy import case as sa_case
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -81,7 +82,9 @@ class DashboardStats(BaseModel):
 
     alerts_total: int = 0
     alerts_unresolved: int = 0
-    alerts_by_severity: SeverityDistribution = Field(default_factory=SeverityDistribution)
+    alerts_by_severity: SeverityDistribution = Field(
+        default_factory=SeverityDistribution
+    )
     alerts_by_status: StatusDistribution = Field(default_factory=StatusDistribution)
     cases_open: int = 0
     cases_overdue: int = 0
@@ -254,8 +257,7 @@ async def _compute_dashboard_stats(session: AsyncSession) -> DashboardStats:
     )
     top_sources_result = await session.execute(top_sources_query)
     top_alert_sources = [
-        TopSource(source=row[0], count=row[1])
-        for row in top_sources_result.all()
+        TopSource(source=row[0], count=row[1]) for row in top_sources_result.all()
     ]
 
     # ── Top Risky Assets ───────────────────────────────────────────
@@ -299,9 +301,7 @@ async def _compute_dashboard_stats(session: AsyncSession) -> DashboardStats:
 
     # ── IOC Hits Today ─────────────────────────────────────────────
     ioc_result = await session.execute(
-        select(func.count(IOCHitModel.id)).where(
-            IOCHitModel.created_at >= today_start
-        )
+        select(func.count(IOCHitModel.id)).where(IOCHitModel.created_at >= today_start)
     )
     ioc_hits_today = ioc_result.scalar() or 0
 

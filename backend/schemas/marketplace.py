@@ -5,13 +5,13 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from models.marketplace import MarketplacePlaybookStatus
-
 
 class MarketplacePlaybookCreate(BaseModel):
     """Request to publish a playbook to marketplace."""
 
-    source_definition_id: str = Field(..., description="Local playbook definition ID to publish")
+    source_definition_id: str = Field(
+        ..., description="Local playbook definition ID to publish"
+    )
     category: str = Field(..., description="Playbook category")
     difficulty: str = Field(default="intermediate", description="Difficulty level")
     tags: list[str] = Field(default_factory=list, description="Tags for search")
@@ -61,7 +61,9 @@ class MarketplaceReviewCreate(BaseModel):
     """Request to submit a review."""
 
     rating: int = Field(..., ge=1, le=5, description="Rating 1-5")
-    comment: str = Field(..., min_length=10, max_length=1000, description="Review comment")
+    comment: str = Field(
+        ..., min_length=10, max_length=1000, description="Review comment"
+    )
 
 
 class MarketplaceReviewResponse(BaseModel):
@@ -83,8 +85,12 @@ class MarketplaceApprovalRequest(BaseModel):
 
     approved: bool = Field(..., description="Approve or reject")
     review_note: str | None = Field(None, description="Optional review note")
-    featured: bool = Field(default=False, description="Mark as featured (only if approved)")
-    verified: bool = Field(default=False, description="Mark as verified (only if approved)")
+    featured: bool = Field(
+        default=False, description="Mark as featured (only if approved)"
+    )
+    verified: bool = Field(
+        default=False, description="Mark as verified (only if approved)"
+    )
 
 
 class MarketplaceStats(BaseModel):

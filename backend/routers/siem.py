@@ -21,9 +21,8 @@ from core.logger import get_logger
 from core.response import APIResponse
 from db.session import get_session
 from dependencies.auth import get_current_user
-from dependencies.siem import get_siem_service
 from models.user import UserModel
-from schemas.common import PaginatedData, PaginatedResponse, paginated_response, success_response
+from schemas.common import PaginatedResponse, paginated_response, success_response
 from services.integration.elasticsearch_service import (
     get_log_by_id,
     index_logs_batch,
@@ -106,7 +105,6 @@ async def ingest_logs(
     Logs are persisted to SQLite with optional Elasticsearch indexing
     for advanced search capabilities.
     """
-    from dependencies.tenant import get_tenant_id
 
     # Get tenant context from request state (set by TenantMiddleware)
     # For now, use user ID as tenant fallback
@@ -115,14 +113,16 @@ async def ingest_logs(
     try:
         log_dicts = []
         for entry in body.logs:
-            log_dicts.append({
-                "timestamp": entry.timestamp,
-                "source": entry.source,
-                "log_type": entry.log_type,
-                "raw_data": entry.raw_data,
-                "parsed_fields": entry.parsed_fields,
-                "alert_id": entry.alert_id,
-            })
+            log_dicts.append(
+                {
+                    "timestamp": entry.timestamp,
+                    "source": entry.source,
+                    "log_type": entry.log_type,
+                    "raw_data": entry.raw_data,
+                    "parsed_fields": entry.parsed_fields,
+                    "alert_id": entry.alert_id,
+                }
+            )
 
         results = await index_logs_batch(session, log_dicts, tenant_id)
         await session.commit()
@@ -144,7 +144,7 @@ async def ingest_logs(
     except Exception as e:
         await session.rollback()
         logger.error(f"SIEM log ingestion failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ingestion failed: {e!s}")
 
 
 @router.get("/logs", response_model=PaginatedResponse[LogDetailResponse])
@@ -181,7 +181,7 @@ async def search_siem_logs(
     except ValueError as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid timestamp format. Use ISO 8601: {str(e)}",
+            detail=f"Invalid timestamp format. Use ISO 8601: {e!s}",
         )
 
     try:
@@ -207,7 +207,7 @@ async def search_siem_logs(
         )
     except Exception as e:
         logger.error(f"SIEM log search failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {e!s}")
 
 
 @router.get("/logs/{log_id}", response_model=APIResponse[LogDetailResponse])
@@ -232,4 +232,4 @@ async def get_siem_log(
         raise
     except Exception as e:
         logger.error(f"Failed to get SIEM log {log_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve log: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve log: {e!s}")

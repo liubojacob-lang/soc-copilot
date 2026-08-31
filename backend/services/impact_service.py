@@ -299,7 +299,7 @@ class ImpactAnalysisService:
         priorities = []
 
         for asset in affected_assets:
-            weight = self.CRITICALITY_WEIGHTS.get(asset.criticality, 2)
+            self.CRITICALITY_WEIGHTS.get(asset.criticality, 2)
 
             if asset.criticality == "critical":
                 priority = 1

@@ -28,7 +28,14 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
 
 from core.logger import get_logger
 from core.security import decode_token
@@ -60,7 +67,7 @@ async def push_alert(alert_data: dict[str, Any]):
     if message_queue and await message_queue.is_available():
         from models.message_queue import MessageType
 
-        for user_id in manager.known_users.keys():
+        for user_id in manager.known_users:
             # Check if user is currently connected
             is_connected = any(
                 conn.get("user_id") == user_id
@@ -88,7 +95,7 @@ async def push_playbook_run_update(run_data: dict[str, Any]):
     if message_queue and await message_queue.is_available():
         from models.message_queue import MessageType
 
-        for user_id in manager.known_users.keys():
+        for user_id in manager.known_users:
             is_connected = any(
                 conn.get("user_id") == user_id
                 for conn in manager.active_connections.values()
@@ -304,7 +311,6 @@ async def get_monitoring_metrics(user=Depends(get_current_user)):
             "health_score": 100.0,
             "connection": {},
             "message": {},
-            "error": {},
             "performance": {},
         }
 
@@ -402,9 +408,7 @@ async def flush_batches(user=Depends(get_current_user)):
         return {"message": "All batches flushed successfully"}
     except Exception as e:
         logger.error(f"Failed to flush batches: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to flush batches: {e!s}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to flush batches: {e!s}")
 
 
 @router.get("/ws/pool/stats")

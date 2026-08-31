@@ -147,9 +147,7 @@ async def export_audit_logs(
     status_code: str | None = Query(
         default=None, description="Filter by status code (2xx, 4xx, 5xx, etc.)"
     ),
-    date_from: str | None = Query(
-        default=None, description="Start date (ISO format)"
-    ),
+    date_from: str | None = Query(default=None, description="Start date (ISO format)"),
     date_to: str | None = Query(default=None, description="End date (ISO format)"),
     limit: int = Query(
         default=10000, ge=1, le=50000, description="Maximum records to export"
@@ -281,13 +279,9 @@ async def export_playbook_runs(
     format: str = Query(
         default=ExportFormat.JSON, description="Export format: json, csv, xlsx"
     ),
-    playbook_id: str | None = Query(
-        default=None, description="Filter by playbook ID"
-    ),
+    playbook_id: str | None = Query(default=None, description="Filter by playbook ID"),
     status: str | None = Query(default=None, description="Filter by status"),
-    date_from: str | None = Query(
-        default=None, description="Start date (ISO format)"
-    ),
+    date_from: str | None = Query(default=None, description="Start date (ISO format)"),
     date_to: str | None = Query(default=None, description="End date (ISO format)"),
     limit: int = Query(
         default=10000, ge=1, le=50000, description="Maximum records to export"
@@ -419,9 +413,7 @@ async def export_alerts(
     ),
     severity: str | None = Query(default=None, description="Filter by severity"),
     status: str | None = Query(default=None, description="Filter by status"),
-    date_from: str | None = Query(
-        default=None, description="Start date (ISO format)"
-    ),
+    date_from: str | None = Query(default=None, description="Start date (ISO format)"),
     date_to: str | None = Query(default=None, description="End date (ISO format)"),
     limit: int = Query(
         default=10000, ge=1, le=50000, description="Maximum records to export"

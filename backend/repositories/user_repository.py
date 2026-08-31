@@ -5,7 +5,8 @@ from datetime import UTC, datetime
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.user import UserModel as _UserModel, UserRole
+from models.user import UserModel as _UserModel
+from models.user import UserRole
 from repositories.base import BaseRepository
 
 # Re-export with alias for BaseRepository generic
@@ -151,7 +152,9 @@ class UserRepository(BaseRepository[UserModel]):
                 0,
                 {
                     "hashed_password": user.hashed_password,
-                    "changed_at": datetime.now(UTC).isoformat(),  # JSON-safe (datetime not serializable)
+                    "changed_at": datetime.now(
+                        UTC
+                    ).isoformat(),  # JSON-safe (datetime not serializable)
                 },
             )
             # Retain only the last 5 entries

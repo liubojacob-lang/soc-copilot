@@ -190,7 +190,9 @@ class AssetService:
         assets = await self.repository.get_by_ips(self.session, ips)
         return [self._to_response(a) for a in assets]
 
-    async def get_by_hostnames(self, hostnames: builtins.list[str]) -> builtins.list[AssetResponse]:
+    async def get_by_hostnames(
+        self, hostnames: builtins.list[str]
+    ) -> builtins.list[AssetResponse]:
         """Get assets by list of hostnames.
 
         Args:

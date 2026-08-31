@@ -153,9 +153,7 @@ def clear_auth_cookies(response: Response, request: Request | None = None) -> No
     )
 
 
-def get_token_from_cookie(
-    request: Request, token_type: str = "access"
-) -> str | None:
+def get_token_from_cookie(request: Request, token_type: str = "access") -> str | None:
     """Get token from cookie.
 
     Args:

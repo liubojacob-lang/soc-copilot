@@ -4,10 +4,10 @@ Integrates with Trivy CLI for container image vulnerability scanning.
 Caches results in DB to avoid redundant scans (24h TTL).
 """
 
+import asyncio
 import json
 import os
 import subprocess
-import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -106,7 +106,9 @@ class TrivyService:
                 logger.info(f"Trivy CLI found at: {alt_path}")
                 return True
 
-        logger.warning("Trivy CLI not found. Install: https://github.com/aquasecurity/trivy")
+        logger.warning(
+            "Trivy CLI not found. Install: https://github.com/aquasecurity/trivy"
+        )
         return False
 
     async def _get_cached_scan(self, image: str) -> dict | None:
@@ -122,7 +124,9 @@ class TrivyService:
                 ),
                 {
                     "image": image,
-                    "cutoff": (datetime.now(UTC) - timedelta(hours=SCAN_CACHE_TTL_HOURS)).isoformat(),
+                    "cutoff": (
+                        datetime.now(UTC) - timedelta(hours=SCAN_CACHE_TTL_HOURS)
+                    ).isoformat(),
                 },
             )
             row = result.fetchone()
@@ -182,9 +186,17 @@ class TrivyService:
                     )
                 )
 
-        vulnerabilities.sort(key=lambda v: self.SEVERITY_ORDER.get(v.severity.upper(), 99))
+        vulnerabilities.sort(
+            key=lambda v: self.SEVERITY_ORDER.get(v.severity.upper(), 99)
+        )
 
-        severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "UNKNOWN": 0}
+        severity_counts = {
+            "CRITICAL": 0,
+            "HIGH": 0,
+            "MEDIUM": 0,
+            "LOW": 0,
+            "UNKNOWN": 0,
+        }
         for v in vulnerabilities:
             sev = v.severity.upper()
             severity_counts[sev] = severity_counts.get(sev, 0) + 1
@@ -216,7 +228,9 @@ class TrivyService:
 
         # 2. Check trivy installation
         if not self._check_trivy_installed():
-            logger.warning(f"Trivy not installed; returning mock data for image: {image}")
+            logger.warning(
+                f"Trivy not installed; returning mock data for image: {image}"
+            )
             mock_result = self._generate_mock_result(image)
             await self._cache_scan_result(image, mock_result)
             return mock_result
@@ -230,7 +244,8 @@ class TrivyService:
             cmd = [
                 trivy_cmd,
                 "image",
-                "--format", "json",
+                "--format",
+                "json",
                 "--no-progress",
                 "--quiet",
                 image,
@@ -244,14 +259,16 @@ class TrivyService:
 
             try:
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 proc.kill()
                 raise RuntimeError(f"Trivy scan timed out for image: {image}")
 
             if proc.returncode != 0:
                 stderr_text = stderr.decode("utf-8", errors="replace")
                 logger.error(f"Trivy scan failed for {image}: {stderr_text}")
-                raise RuntimeError(f"Trivy scan failed (exit {proc.returncode}): {stderr_text[:500]}")
+                raise RuntimeError(
+                    f"Trivy scan failed (exit {proc.returncode}): {stderr_text[:500]}"
+                )
 
             # 4. Parse JSON output
             raw_json = json.loads(stdout.decode("utf-8"))
@@ -341,7 +358,13 @@ class TrivyService:
             ),
         ]
 
-        severity_counts = {"CRITICAL": 0, "HIGH": 3, "MEDIUM": 2, "LOW": 0, "UNKNOWN": 0}
+        severity_counts = {
+            "CRITICAL": 0,
+            "HIGH": 3,
+            "MEDIUM": 2,
+            "LOW": 0,
+            "UNKNOWN": 0,
+        }
 
         return {
             "image": image,

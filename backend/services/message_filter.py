@@ -205,9 +205,7 @@ class RateLimiter:
         self.message_counts: dict[str, list[datetime]] = {}
         self._lock = asyncio.Lock()
 
-    async def check_rate_limit(
-        self, user_id: str, max_per_minute: int | None
-    ) -> bool:
+    async def check_rate_limit(self, user_id: str, max_per_minute: int | None) -> bool:
         """
         Check if user is within their rate limit.
 

@@ -1,6 +1,5 @@
 """Schemas for threat intelligence."""
 
-import ipaddress
 import re
 from enum import Enum
 
@@ -44,7 +43,9 @@ class ThreatIntelItem(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Threat tags")
     references: list[str] = Field(default_factory=list, description="Reference URLs")
     cached: bool = Field(default=False, description="Whether from cache")
-    skipped: bool = Field(default=False, description="Whether skipped due to limit/filter")
+    skipped: bool = Field(
+        default=False, description="Whether skipped due to limit/filter"
+    )
     skipped_reason: str | None = Field(
         None,
         description="Reason for skipping (e.g., 'private_ip', 'internal_domain', 'blocked_tld', 'rate_limit')",
@@ -87,7 +88,9 @@ class BulkThreatIntelRequestItem(BaseModel):
     def validate_ioc_type(cls, v: str) -> str:
         valid = {e.value for e in IOCType}
         if v not in valid:
-            raise ValueError(f"Invalid IOC type '{v}'. Must be one of: {', '.join(sorted(valid))}")
+            raise ValueError(
+                f"Invalid IOC type '{v}'. Must be one of: {', '.join(sorted(valid))}"
+            )
         return v
 
     @field_validator("ioc_value")
@@ -121,7 +124,9 @@ class BulkThreatIntelResponse(BaseModel):
     results: list[ThreatIntelResponse] = Field(
         default_factory=list, description="List of lookup results"
     )
-    skipped_count: int = Field(default=0, description="Number of IOCs skipped due to rate limiting")
+    skipped_count: int = Field(
+        default=0, description="Number of IOCs skipped due to rate limiting"
+    )
     skipped_items: list[ThreatIntelItem] = Field(
         default_factory=list, description="List of IOCs skipped due to rate limiting"
     )
@@ -160,6 +165,7 @@ class ThreatIntelAnalysis(BaseModel):
 
 # ── v0.9.0 IOC Batch Query (simplified batch) ──────────────────────
 
+
 class IOCBatchRequestItem(BaseModel):
     """Single IOC for batch query."""
 
@@ -171,7 +177,9 @@ class IOCBatchRequestItem(BaseModel):
     def validate_ioc_type(cls, v: str) -> str:
         valid = {e.value for e in IOCType}
         if v not in valid:
-            raise ValueError(f"Invalid IOC type '{v}'. Must be one of: {', '.join(sorted(valid))}")
+            raise ValueError(
+                f"Invalid IOC type '{v}'. Must be one of: {', '.join(sorted(valid))}"
+            )
         return v
 
     @field_validator("ioc_value")
@@ -201,7 +209,9 @@ class IOCBatchResultItem(BaseModel):
     pulse_count: int = Field(default=0, description="Number of threat pulses")
     tags: list[str] = Field(default_factory=list)
     references: list[str] = Field(default_factory=list)
-    details: dict = Field(default_factory=dict, description="Additional details/raw data")
+    details: dict = Field(
+        default_factory=dict, description="Additional details/raw data"
+    )
     cached: bool = Field(default=False)
     error: str | None = Field(None, description="Error if lookup failed")
 

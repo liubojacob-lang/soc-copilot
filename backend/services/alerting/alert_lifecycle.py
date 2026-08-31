@@ -48,9 +48,7 @@ class AlertLifecycleService:
         }
         return mapping.get((raw_status or "").lower(), AlertStatus.NEW)
 
-    async def get_alert_lifecycle(
-        self, alert_id: str
-    ) -> AlertLifecycleResponse | None:
+    async def get_alert_lifecycle(self, alert_id: str) -> AlertLifecycleResponse | None:
         """获取告警生命周期信息"""
         from models.alert_note import AlertNoteModel
         from models.security_alert import SecurityAlert
@@ -358,7 +356,7 @@ class AlertLifecycleService:
             )
             .group_by(SecurityAlert.severity)
         )
-        by_severity = {severity: count for severity, count in severity_result.all()}
+        by_severity = dict(severity_result.all())
 
         # 按来源统计
         source_result = await self.db.execute(
@@ -373,7 +371,7 @@ class AlertLifecycleService:
             .order_by(desc(func.count(SecurityAlert.id)))
             .limit(10)
         )
-        by_source = {source: count for source, count in source_result.all()}
+        by_source = dict(source_result.all())
 
         # 计算平均解决时间
         mttr_result = await self.db.execute(
@@ -424,11 +422,9 @@ class AlertLifecycleService:
         # 确定时间分组格式
         if interval == "hour":
             # 按小时分组: YYYY-MM-DD HH:00:00
-            date_format = "%Y-%m-%d %H:00:00"
             date_trunc = "strftime('%Y-%m-%d %H:00:00', created_at)"
         elif interval == "day":
             # 按天分组: YYYY-MM-DD
-            date_format = "%Y-%m-%d"
             date_trunc = "date(created_at)"
         elif interval == "week":
             # 按周分组: YYYY-WW
@@ -440,20 +436,24 @@ class AlertLifecycleService:
 
         # 使用原生SQL进行时间序列聚合（SQLite特定）
         # 获取每个时间段的告警统计
-        query = f"""
-            SELECT
-                {date_trunc} as period,
-                COUNT(*) as total,
-                SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical,
-                SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END) as high,
-                SUM(CASE WHEN severity = 'medium' THEN 1 ELSE 0 END) as medium,
-                SUM(CASE WHEN severity = 'low' THEN 1 ELSE 0 END) as low,
-                SUM(CASE WHEN severity = 'info' THEN 1 ELSE 0 END) as info
-            FROM security_alerts
-            WHERE created_at >= :start_date AND created_at <= :end_date
-            GROUP BY period
-            ORDER BY period
-        """
+        # date_trunc comes from the whitelisted interval mapping above;
+        # everything else is constant SQL, values are passed as bound params
+        query = "\n".join(
+            [
+                "SELECT",
+                f"    {date_trunc} as period,",
+                "    COUNT(*) as total,",
+                "    SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical,",
+                "    SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END) as high,",
+                "    SUM(CASE WHEN severity = 'medium' THEN 1 ELSE 0 END) as medium,",
+                "    SUM(CASE WHEN severity = 'low' THEN 1 ELSE 0 END) as low,",
+                "    SUM(CASE WHEN severity = 'info' THEN 1 ELSE 0 END) as info",
+                "FROM security_alerts",
+                "WHERE created_at >= :start_date AND created_at <= :end_date",
+                "GROUP BY period",
+                "ORDER BY period",
+            ]
+        )
 
         from sqlalchemy import text
 
@@ -476,8 +476,6 @@ class AlertLifecycleService:
                 if len(parts) == 2:
                     year, week = int(parts[0]), int(parts[1])
                     # 计算周的开始时间（周一）
-                    from datetime import timedelta
-
                     timestamp = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
                     timestamp += timedelta(weeks=week - 1, days=-timestamp.weekday())
                 else:

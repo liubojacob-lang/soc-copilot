@@ -105,12 +105,8 @@ class AlertRule(BaseModel):
     max_notifications_per_hour: int = 10
 
     # Timestamps
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
-    updated_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     last_triggered_at: str | None = None
 
     # Trigger count
@@ -225,9 +221,7 @@ class AlertNotification(BaseModel):
     error_message: str | None = None
 
     # Timestamps
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     sent_at: str | None = None
 
 

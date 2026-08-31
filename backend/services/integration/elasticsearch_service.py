@@ -288,25 +288,25 @@ async def _search_es(
     must_clauses: list[dict[str, Any]] = [{"term": {"tenant_id": tenant_id}}]
 
     if timestamp_from:
-        must_clauses.append({
-            "range": {"timestamp": {"gte": timestamp_from.isoformat()}}
-        })
+        must_clauses.append(
+            {"range": {"timestamp": {"gte": timestamp_from.isoformat()}}}
+        )
     if timestamp_to:
-        must_clauses.append({
-            "range": {"timestamp": {"lte": timestamp_to.isoformat()}}
-        })
+        must_clauses.append({"range": {"timestamp": {"lte": timestamp_to.isoformat()}}})
     if source:
         must_clauses.append({"term": {"source": source}})
     if log_type:
         must_clauses.append({"term": {"log_type": log_type}})
     if keyword:
         safe_keyword = keyword.replace('"', '\\"')
-        must_clauses.append({
-            "query_string": {
-                "query": safe_keyword,
-                "fields": ["raw_data", "parsed_fields"],
+        must_clauses.append(
+            {
+                "query_string": {
+                    "query": safe_keyword,
+                    "fields": ["raw_data", "parsed_fields"],
+                }
             }
-        })
+        )
 
     es_query = {
         "query": {"bool": {"must": must_clauses}},
@@ -392,17 +392,19 @@ async def _search_sqlite(
 
     items = []
     for row in rows:
-        items.append({
-            "id": row.id,
-            "tenant_id": row.tenant_id,
-            "timestamp": row.timestamp.isoformat() if row.timestamp else None,
-            "source": row.source,
-            "log_type": row.log_type,
-            "raw_data": row.raw_data,
-            "parsed_fields": row.parsed_fields,
-            "alert_id": row.alert_id,
-            "created_at": row.created_at.isoformat() if row.created_at else None,
-        })
+        items.append(
+            {
+                "id": row.id,
+                "tenant_id": row.tenant_id,
+                "timestamp": row.timestamp.isoformat() if row.timestamp else None,
+                "source": row.source,
+                "log_type": row.log_type,
+                "raw_data": row.raw_data,
+                "parsed_fields": row.parsed_fields,
+                "alert_id": row.alert_id,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+        )
 
     total_pages = max(1, math.ceil(total / page_size)) if total > 0 else 0
 

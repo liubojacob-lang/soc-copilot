@@ -10,13 +10,13 @@ incident-response playbooks to contain threats at the network edge.
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
 from typing import Any
 
 import httpx
 
 from core.config import settings
 from core.ssrf_protection import is_url_safe
+
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
 logger = logging.getLogger(__name__)
@@ -263,11 +263,14 @@ class FirewallBlockIPNode(BaseNodePlugin):
 
         timeout = 30
 
-        logger.info("[%s] Palo Alto API: add %s to group %s", context.run_id, ip, address_group)
+        logger.info(
+            "[%s] Palo Alto API: add %s to group %s", context.run_id, ip, address_group
+        )
 
+        verify_ssl = bool(context.input_json.get("verify_ssl", False))
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(timeout),
-            verify=False,  # Many firewall management certs are self-signed
+            verify=verify_ssl,
         ) as client:
             resp = await client.post(
                 firewall_url,
@@ -306,10 +309,11 @@ class FirewallBlockIPNode(BaseNodePlugin):
     ) -> None:
         """Issue a PAN-OS commit to activate pending config changes."""
         commit_url = firewall_url
+        verify_ssl = bool(context.input_json.get("verify_ssl", False))
 
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(60.0),
-            verify=False,
+            verify=verify_ssl,
         ) as client:
             resp = await client.post(
                 commit_url,
@@ -369,11 +373,14 @@ class FirewallBlockIPNode(BaseNodePlugin):
             "Content-Type": "application/json",
         }
 
-        logger.info("[%s] FortiGate API: add %s to group %s", context.run_id, ip, address_group)
+        logger.info(
+            "[%s] FortiGate API: add %s to group %s", context.run_id, ip, address_group
+        )
 
+        verify_ssl = bool(context.input_json.get("verify_ssl", False))
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(30.0),
-            verify=False,
+            verify=verify_ssl,
         ) as client:
             resp = await client.post(url, json=payload, headers=headers)
 
@@ -400,7 +407,9 @@ class FirewallBlockIPNode(BaseNodePlugin):
         """Validate that the firewall management URL is safe (SSRF check)."""
         allowed = None
         if settings.http_allowed_hosts:
-            allowed = [h.strip() for h in settings.http_allowed_hosts.split(",") if h.strip()]
+            allowed = [
+                h.strip() for h in settings.http_allowed_hosts.split(",") if h.strip()
+            ]
         return is_url_safe(url, allowed)
 
     @staticmethod

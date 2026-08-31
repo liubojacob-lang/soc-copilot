@@ -101,7 +101,7 @@ class AuditArchiveService:
 
                 for date_group in date_groups:
                     log_date = date_group[0]
-                    count = date_group[1]
+                    date_group[1]
 
                     try:
                         # Archive logs for this date

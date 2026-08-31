@@ -84,7 +84,9 @@ class Settings(BaseSettings):
     # for defense-in-depth (default deny). Only endpoints explicitly listed
     # are accessible without authentication.
     public_readonly_endpoints: list[str] = []
-    expose_tokens_in_body: bool = False  # v1.0: Expose access/refresh tokens in login response body (security risk)
+    expose_tokens_in_body: bool = (
+        False  # v1.0: Expose access/refresh tokens in login response body (security risk)
+    )
 
     # v0.6.2: Bootstrap Admin Settings
     bootstrap_admin_username: str = "admin"
@@ -120,7 +122,9 @@ class Settings(BaseSettings):
     redis_enabled: bool = False  # Enable Redis for token blacklist and idempotency
 
     # v1.1: Message queue backend selection
-    queue_backend: str = "redis"  # redis | kafka | memory (auto-degrades if Redis unreachable)
+    queue_backend: str = (
+        "redis"  # redis | kafka | memory (auto-degrades if Redis unreachable)
+    )
 
     # v0.8.3: DAG Concurrency Settings
     dag_concurrency_default: int = 5  # Default concurrent nodes per DAG execution

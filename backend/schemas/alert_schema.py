@@ -10,7 +10,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
@@ -57,10 +56,16 @@ class AlertCreate(BaseModel):
     """Schema for creating a new alert manually."""
 
     tenant_id: str = Field(default="default", max_length=64)
-    source: str = Field(..., max_length=50, description="Alert source: wazuh, snort, osquery, etc.")
+    source: str = Field(
+        ..., max_length=50, description="Alert source: wazuh, snort, osquery, etc."
+    )
     external_event_id: str | None = Field(None, max_length=255)
-    event_type: str = Field(..., max_length=100, description="Event type: malware, bruteforce, etc.")
-    severity: str = Field(..., max_length=20, description="critical, high, medium, low, info")
+    event_type: str = Field(
+        ..., max_length=100, description="Event type: malware, bruteforce, etc."
+    )
+    severity: str = Field(
+        ..., max_length=20, description="critical, high, medium, low, info"
+    )
     title: str = Field(..., min_length=1)
     description: str | None = None
     source_ip: str | None = Field(None, max_length=50)
@@ -127,7 +132,9 @@ class AlertFilter(BaseModel):
     agent_name: str | None = Field(None, description="Filter by agent name")
     source_ip: str | None = Field(None, description="Filter by source IP")
     assigned_to: str | None = Field(None, description="Filter by assigned user")
-    search: str | None = Field(None, description="Search in title, description, source_ip, full_log")
+    search: str | None = Field(
+        None, description="Search in title, description, source_ip, full_log"
+    )
     created_from: datetime | None = Field(None, description="Created after (UTC)")
     created_to: datetime | None = Field(None, description="Created before (UTC)")
     tenant_id: str | None = Field(None, description="Filter by tenant (admin only)")
@@ -229,7 +236,9 @@ class AlertTriageResponse(BaseModel):
     changed_at: datetime
     resolution_note: str | None = None
 
+
 # ── v0.9.0 Batch Alert Update (comprehensive) ─────────────────────
+
 
 class BatchAlertUpdateItem(BaseModel):
     """Single item in batch alert update."""

@@ -60,7 +60,7 @@ def _normalize_obfuscation(text: str) -> str:
 
 
 def _unique_sorted(items: list[str]) -> list[str]:
-    return sorted(list(dict.fromkeys(items)))
+    return sorted(dict.fromkeys(items))
 
 
 @dataclass

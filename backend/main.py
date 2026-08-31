@@ -31,12 +31,10 @@ from middleware import (
     setup_exception_handlers,
     setup_trace_logging,
 )
-from routers.playbook import internal as playbook_internal
 from middleware.csrf_middleware import setup_csrf_middleware
 from middleware.performance import PerformanceMiddleware
 from middleware.security_headers import SecurityHeadersMiddleware
 from middleware.tenant_middleware import TenantMiddleware
-from observability.llm_tracing import get_tracer
 from observability.logging import setup_json_logging
 from observability.tracing import setup_tracing
 from routers import (
@@ -46,13 +44,17 @@ from routers import (
     ai_tasks,
     alert,
     alert_enrichment,
+    alert_stream,
+    alerts_to_loki,
     api_keys,
     assets,
     audit,
     auth,
     blocked_ips,
+    cases,
     cloud_native,
     correlation,
+    dashboard,
     export,
     health,
     history,
@@ -62,12 +64,13 @@ from routers import (
     monitoring_alerts,
     notifications,
     playbook,
-    prompt_registry,
     playbook_definitions,
+    prompt_registry,
     report,
     secrets,
     security_alerts,
     security_vulnerabilities,
+    siem,
     system_dashboard,
     threat_hunting,
     threat_intel,
@@ -77,13 +80,9 @@ from routers import (
     users,
     webhooks,
     websocket_filters,
-    alert_stream,
-    alerts_to_loki,
-    cases,
-    dashboard,
-    siem,
 )
 from routers import websocket as ws_router
+from routers.playbook import internal as playbook_internal
 
 setup_json_logging(settings.log_level)
 logger = get_logger(__name__)
@@ -210,8 +209,8 @@ def register_lifecycle_services():
         AlertPipelineService,
         AuditArchiveService,
         CronSchedulerServiceWrapper,
-        DataRetentionService,
         DatabaseService,
+        DataRetentionService,
         QueueManagerService,
         RateLimiterService,
         WebSocketMonitoringService,
@@ -477,6 +476,7 @@ setup_exception_handlers(app)
 # v1.1: API version redirect - /api/* (non-/api/v1/*) → 301 /api/v1/*
 # ============================================================================
 
+
 @app.middleware("http")
 async def api_version_redirect(request: Request, call_next):
     """Redirect legacy /api/* paths to /api/v1/* (308 Permanent Redirect - preserves method).
@@ -487,8 +487,11 @@ async def api_version_redirect(request: Request, call_next):
     if path.startswith("/api/") and not path.startswith("/api/v1/"):
         new_path = path.replace("/api/", "/api/v1/", 1)
         redirect_url = str(request.url.replace(path=new_path))
-        return RedirectResponse(url=redirect_url, status_code=308)  # 308 preserves POST method
+        return RedirectResponse(
+            url=redirect_url, status_code=308
+        )  # 308 preserves POST method
     return await call_next(request)
+
 
 # Setup CSRF protection (must be before exception handlers in request chain)
 setup_csrf_middleware(
@@ -558,9 +561,6 @@ app.include_router(siem.router)  # v1.1: SIEM log storage and search
 
 
 # Global OPTIONS handler for CORS preflight
-from fastapi.responses import Response
-
-
 @app.options("/{path:path}")
 async def options_handler(path: str, request: Request):
     """Handle OPTIONS preflight requests for CORS.
@@ -629,7 +629,7 @@ if __name__ == "__main__":
     # Increase timeout for long AI analysis requests (120 seconds)
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104 - container entrypoint, port published by compose
         port=8000,
         reload=True,
         timeout_keep_alive=120,

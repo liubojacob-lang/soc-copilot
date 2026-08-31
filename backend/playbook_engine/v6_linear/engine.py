@@ -8,10 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import AsyncSessionLocal
+from services.alerting.alert_ingest_queue import ingest_playbook_result
 
 from .models import StepResult
 from .registry import get_registry
-from services.alerting.alert_ingest_queue import ingest_playbook_result
 
 logger = get_logger(__name__)
 
@@ -91,6 +91,7 @@ class PlaybookExecutionEngine:
             "mode": mode,
         }
         import asyncio as _asyncio
+
         _asyncio.create_task(ingest_playbook_result(result_data))
         return result_data
 
@@ -175,8 +176,6 @@ class PlaybookExecutionEngine:
         run_repo = PlaybookRunRepository(session)
 
         steps_output = []
-        failed_steps = []
-        skipped_steps = []
 
         try:
             for idx, step_id in enumerate(step_ids):
@@ -212,12 +211,17 @@ class PlaybookExecutionEngine:
             )
             # v1.1: fire-and-forget failure result
             import asyncio as _asyncio
-            _asyncio.create_task(ingest_playbook_result({
-                "run_id": run_id,
-                "status": "failed",
-                "playbook_name": playbook_name,
-                "error": str(e),
-            }))
+
+            _asyncio.create_task(
+                ingest_playbook_result(
+                    {
+                        "run_id": run_id,
+                        "status": "failed",
+                        "playbook_name": playbook_name,
+                        "error": str(e),
+                    }
+                )
+            )
             raise  # Re-raise so caller can handle
 
     async def _execute_steps(
@@ -246,8 +250,6 @@ class PlaybookExecutionEngine:
             run_repo = PlaybookRunRepository(session)
 
             steps_output = []
-            failed_steps = []
-            skipped_steps = []
 
             try:
                 for idx, step_id in enumerate(step_ids):
@@ -271,11 +273,16 @@ class PlaybookExecutionEngine:
                 logger.info(f"[{run_id}] Playbook completed successfully")
                 # v1.1: fire-and-forget result enqueue
                 import asyncio as _asyncio
-                _asyncio.create_task(ingest_playbook_result({
-                    "run_id": run_id,
-                    "status": "success",
-                    "playbook_name": playbook_name,
-                }))
+
+                _asyncio.create_task(
+                    ingest_playbook_result(
+                        {
+                            "run_id": run_id,
+                            "status": "success",
+                            "playbook_name": playbook_name,
+                        }
+                    )
+                )
 
             except Exception as e:
                 logger.error(f"[{run_id}] Playbook execution error: {e}")

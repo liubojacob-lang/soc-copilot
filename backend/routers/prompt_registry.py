@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user, require_admin

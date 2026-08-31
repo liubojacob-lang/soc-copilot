@@ -85,9 +85,7 @@ class AlertPipelineService(LifecycleService):
             return
 
         self._watermark = datetime.now(UTC) - timedelta(hours=1)
-        self._task = asyncio.create_task(
-            self._run_loop(), name="alert-pipeline-loop"
-        )
+        self._task = asyncio.create_task(self._run_loop(), name="alert-pipeline-loop")
         logger.info(
             "Alert pipeline started (interval=%ss, batch=%s, ai_min_severity=%s)",
             settings.alert_pipeline_interval_seconds,
@@ -121,7 +119,6 @@ class AlertPipelineService(LifecycleService):
             await asyncio.sleep(settings.alert_pipeline_interval_seconds)
 
     async def _process_cycle(self) -> None:
-        from core.config import settings
 
         assert self._watermark is not None
         await self._enrich_and_triage()
@@ -167,9 +164,7 @@ class AlertPipelineService(LifecycleService):
                         await self._process_one(alert, enricher, min_level, session)
                         processed += 1
                     except Exception as e:
-                        logger.warning(
-                            f"Pipeline failed for alert {alert.id}: {e}"
-                        )
+                        logger.warning(f"Pipeline failed for alert {alert.id}: {e}")
                         await session.rollback()
             if processed:
                 logger.info(f"Alert pipeline processed {processed} alerts")
@@ -254,9 +249,7 @@ class AlertPipelineService(LifecycleService):
             from services.event_correlation_service import EventCorrelationService
 
             events = [self._to_correlation_event(a) for a in pending]
-            incidents = await EventCorrelationService(session).correlate_events(
-                events
-            )
+            incidents = await EventCorrelationService(session).correlate_events(events)
 
             now_iso = datetime.now(UTC).isoformat()
             for alert in pending:

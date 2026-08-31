@@ -37,6 +37,7 @@ class ReportExportService:
         """Check if WeasyPrint is available."""
         try:
             import weasyprint  # type: ignore[import-untyped] # noqa: F401
+
             return True
         except ImportError:
             logger.warning(
@@ -218,9 +219,7 @@ class ReportExportService:
 
     # ── Compliance report generators ───────────────────────────────────
 
-    async def generate_iso27001_report(
-        self, report_data: dict[str, Any]
-    ) -> bytes:
+    async def generate_iso27001_report(self, report_data: dict[str, Any]) -> bytes:
         """Generate ISO 27001 compliance report.
 
         Maps incident to ISO 27001 Annex A controls:
@@ -240,9 +239,7 @@ class ReportExportService:
         context = {**report_data, "iso_controls": iso_mapping}
         return await self.export_pdf(context, "compliance_iso27001.html")
 
-    async def generate_gdpr_report(
-        self, report_data: dict[str, Any]
-    ) -> bytes:
+    async def generate_gdpr_report(self, report_data: dict[str, Any]) -> bytes:
         """Generate GDPR compliance report.
 
         Maps incident to GDPR articles:
@@ -261,9 +258,7 @@ class ReportExportService:
         context = {**report_data, "gdpr_articles": gdpr_mapping}
         return await self.export_pdf(context, "compliance_gdpr.html")
 
-    async def generate_nist_report(
-        self, report_data: dict[str, Any]
-    ) -> bytes:
+    async def generate_nist_report(self, report_data: dict[str, Any]) -> bytes:
         """Generate NIST CSF compliance report.
 
         Maps incident to NIST CSF categories:
@@ -315,7 +310,8 @@ class ReportExportService:
                 "control_id": "A.9.2",
                 "control_name": "User Access Management",
                 "description": "Ensure authorized user access and prevent unauthorized access",
-                "applicable": "authentication" in incident_type or "login" in incident_type,
+                "applicable": "authentication" in incident_type
+                or "login" in incident_type,
                 "evidence": "Access control review initiated",
             },
             {
@@ -345,7 +341,9 @@ class ReportExportService:
                 "article": "Art. 33",
                 "title": "Notification of Personal Data Breach",
                 "description": "Notify supervisory authority within 72 hours",
-                "applicable": "data" in incident_type or "exfil" in incident_type or "breach" in incident_type,
+                "applicable": "data" in incident_type
+                or "exfil" in incident_type
+                or "breach" in incident_type,
                 "action_required": "Assess data exposure; prepare notification",
             },
             {
@@ -389,7 +387,9 @@ class ReportExportService:
                 "function": "PROTECT (PR)",
                 "category": "PR.AC — Identity Management and Access Control",
                 "description": "Limit access to authorized users and devices",
-                "applicable": "auth" in incident_type or "login" in incident_type or "access" in incident_type,
+                "applicable": "auth" in incident_type
+                or "login" in incident_type
+                or "access" in incident_type,
                 "evidence": "Access control mechanisms triggered",
             },
             {

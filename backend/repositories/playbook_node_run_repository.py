@@ -179,7 +179,7 @@ class PlaybookNodeRunRepository:
         )
 
         result = await self.session.execute(stmt)
-        status_counts = {status: count for status, count in result.all()}
+        status_counts = dict(result.all())
 
         total_stmt = select(func.count()).select_from(
             select(PlaybookNodeRunModel)

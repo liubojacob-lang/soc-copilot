@@ -165,7 +165,7 @@ def is_token_invalidated_by_user_update(
 
     # Parse token iat (may be float timestamp or datetime)
     try:
-        if isinstance(token_iat, (int, float)):
+        if isinstance(token_iat, int | float):
             token_issued = datetime.fromtimestamp(token_iat, tz=UTC)
         else:
             token_issued = token_iat

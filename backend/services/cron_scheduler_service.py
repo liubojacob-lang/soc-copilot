@@ -66,6 +66,7 @@ class CronSchedulerService:
                 from services.notification.escalation_service import (
                     ESCALATION_CHECK_INTERVAL_SECONDS,
                 )
+
                 if now_ts - _last_escalation_check >= ESCALATION_CHECK_INTERVAL_SECONDS:
                     await self._check_escalations()
                     _last_escalation_check = now_ts

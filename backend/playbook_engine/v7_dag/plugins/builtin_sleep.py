@@ -34,7 +34,7 @@ class SleepPlugin(BaseNodePlugin):
     def validate_input(self, input_json: dict[str, Any]) -> None:
         """Validate input before execution."""
         seconds = input_json.get("seconds", 0)
-        if not isinstance(seconds, (int, float)) or seconds < 0:
+        if not isinstance(seconds, int | float) or seconds < 0:
             raise ValueError("seconds must be a non-negative number")
 
     async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:

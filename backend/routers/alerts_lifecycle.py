@@ -140,7 +140,9 @@ async def add_alert_note(
     if not lifecycle:
         raise HTTPException(status_code=404, detail="Alert not found")
 
-    return await service.add_note(alert_id, note, current_user.id, current_user.username)
+    return await service.add_note(
+        alert_id, note, current_user.id, current_user.username
+    )
 
 
 @router.get("/statistics/summary", response_model=AlertStatistics)
@@ -210,7 +212,9 @@ async def batch_update_alerts(
 
     for alert_id in batch.alert_ids:
         try:
-            result = await db.execute(select(SecurityAlert).where(SecurityAlert.id == alert_id))
+            result = await db.execute(
+                select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            )
             alert = result.scalar_one_or_none()
 
             if not alert:
@@ -230,7 +234,9 @@ async def batch_update_alerts(
                 if batch.tags_operation == "add":
                     # Order-preserving dedup: existing tags first, then new unique tags
                     existing_set = set(current_tags)
-                    alert.tags = current_tags + [t for t in batch.tags if t not in existing_set]
+                    alert.tags = current_tags + [
+                        t for t in batch.tags if t not in existing_set
+                    ]
                 elif batch.tags_operation == "remove":
                     remove_set = set(batch.tags)
                     alert.tags = [tag for tag in current_tags if tag not in remove_set]

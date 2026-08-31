@@ -13,30 +13,29 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Severity mappings
 # ---------------------------------------------------------------------------
 
 # Syslog PRI severity → human-readable label
 SYSLOG_SEVERITY_MAP: dict[int, str] = {
-    0: "critical",   # Emergency
-    1: "critical",   # Alert
-    2: "critical",   # Critical
-    3: "high",       # Error
-    4: "high",       # Warning
-    5: "medium",     # Notice
-    6: "low",        # Informational
-    7: "info",       # Debug
+    0: "critical",  # Emergency
+    1: "critical",  # Alert
+    2: "critical",  # Critical
+    3: "high",  # Error
+    4: "high",  # Warning
+    5: "medium",  # Notice
+    6: "low",  # Informational
+    7: "info",  # Debug
 }
 
 # CEF severity (0-10) → our severity label
 CEF_SEVERITY_MAP: dict[int, str] = {
-    **{s: "critical" for s in range(9, 11)},
-    **{s: "high" for s in range(7, 9)},
-    **{s: "medium" for s in range(4, 7)},
-    **{s: "low" for s in range(1, 4)},
-    **{s: "info" for s in range(0, 1)},
+    **dict.fromkeys(range(9, 11), "critical"),
+    **dict.fromkeys(range(7, 9), "high"),
+    **dict.fromkeys(range(4, 7), "medium"),
+    **dict.fromkeys(range(1, 4), "low"),
+    **dict.fromkeys(range(0, 1), "info"),
 }
 
 
@@ -100,22 +99,22 @@ class AlertParser:
     # CEF header pattern: CEF:Version|Device Vendor|Device Product|Device Version|...
     # We split on '|' up to the Extension field
     CEF_PATTERN = re.compile(
-        r"^CEF:(\d+)\|"          # CEF:Version|
-        r"([^|]*)\|"             # Device Vendor
-        r"([^|]*)\|"             # Device Product
-        r"([^|]*)\|"             # Device Version
-        r"([^|]*)\|"             # Signature ID
-        r"([^|]*)\|"             # Name
-        r"([^|]*)\|"             # Severity
-        r"(.*)$"                 # Extension
+        r"^CEF:(\d+)\|"  # CEF:Version|
+        r"([^|]*)\|"  # Device Vendor
+        r"([^|]*)\|"  # Device Product
+        r"([^|]*)\|"  # Device Version
+        r"([^|]*)\|"  # Signature ID
+        r"([^|]*)\|"  # Name
+        r"([^|]*)\|"  # Severity
+        r"(.*)$"  # Extension
     )
 
     # Syslog header: <PRI>TIMESTAMP HOSTNAME MSG
     SYSLOG_PATTERN = re.compile(
-        r"^<(\d{1,3})>"                           # <PRI>
+        r"^<(\d{1,3})>"  # <PRI>
         r"(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})"  # Timestamp (e.g. "Jan  1 12:00:00")
-        r"\s+(\S+)"                                # Hostname
-        r"\s+(.+)$"                                # Message
+        r"\s+(\S+)"  # Hostname
+        r"\s+(.+)$"  # Message
     )
 
     # IPv4 regex for extracting IPs from raw text
@@ -163,7 +162,9 @@ class AlertParser:
         if not match:
             raise ValueError(f"Invalid CEF format: {line[:120]}...")
 
-        version, vendor, product, dev_version, sig_id, name, sev_str, extension = match.groups()
+        version, vendor, product, dev_version, sig_id, name, sev_str, extension = (
+            match.groups()
+        )
 
         # Parse severity
         try:
@@ -176,8 +177,16 @@ class AlertParser:
         ext_pairs = AlertParser._parse_cef_extension(extension)
 
         # Extract IPs
-        src_ip = ext_pairs.get("src") or ext_pairs.get("spt") or ext_pairs.get("sourceAddress")
-        dst_ip = ext_pairs.get("dst") or ext_pairs.get("dpt") or ext_pairs.get("destinationAddress")
+        src_ip = (
+            ext_pairs.get("src")
+            or ext_pairs.get("spt")
+            or ext_pairs.get("sourceAddress")
+        )
+        dst_ip = (
+            ext_pairs.get("dst")
+            or ext_pairs.get("dpt")
+            or ext_pairs.get("destinationAddress")
+        )
 
         # Extract agent info
         agent_name = ext_pairs.get("dhost") or ext_pairs.get("shost") or vendor
@@ -188,7 +197,9 @@ class AlertParser:
         description = f"Product: {vendor}/{product} v{dev_version} | Signature: {sig_id} | Extension: {extension[:200]}"
 
         # Parse timestamp
-        event_ts = AlertParser._parse_cef_timestamp(ext_pairs.get("rt") or ext_pairs.get("start") or ext_pairs.get("end"))
+        event_ts = AlertParser._parse_cef_timestamp(
+            ext_pairs.get("rt") or ext_pairs.get("start") or ext_pairs.get("end")
+        )
 
         return ParsedAlert(
             source=f"cef-{vendor.lower()}" if vendor else "cef",
@@ -203,7 +214,10 @@ class AlertParser:
             agent_ip=agent_ip,
             rule_id=sig_id,
             full_log=line.strip(),
-            raw_data={"cef_header": {k: v for k, v in match.groupdict().items()}, "extensions": ext_pairs},
+            raw_data={
+                "cef_header": dict(match.groupdict().items()),
+                "extensions": ext_pairs,
+            },
             event_timestamp=event_ts,
         )
 
@@ -220,7 +234,9 @@ class AlertParser:
             if "=" in token:
                 key, _, value = token.partition("=")
                 # Unescape CEF escapes
-                value = value.replace("\\=", "=").replace("\\|", "|").replace("\\\\", "\\")
+                value = (
+                    value.replace("\\=", "=").replace("\\|", "|").replace("\\\\", "\\")
+                )
                 pairs[key] = value
 
         return pairs
@@ -327,13 +343,27 @@ class AlertParser:
         msg_lower = message.lower()
 
         # Security-related patterns
-        if any(kw in msg_lower for kw in ["failed password", "authentication failure", "invalid user", "break-in"]):
+        if any(
+            kw in msg_lower
+            for kw in [
+                "failed password",
+                "authentication failure",
+                "invalid user",
+                "break-in",
+            ]
+        ):
             return "authentication_failure"
-        if any(kw in msg_lower for kw in ["accepted password", "successful login", "session opened"]):
+        if any(
+            kw in msg_lower
+            for kw in ["accepted password", "successful login", "session opened"]
+        ):
             return "authentication_success"
         if any(kw in msg_lower for kw in ["sudo", "su:", "privilege"]):
             return "privilege_escalation"
-        if any(kw in msg_lower for kw in ["firewall", "iptables", "denied", "blocked", "drop"]):
+        if any(
+            kw in msg_lower
+            for kw in ["firewall", "iptables", "denied", "blocked", "drop"]
+        ):
             return "firewall"
         if any(kw in msg_lower for kw in ["segfault", "oops", "kernel panic", "bug"]):
             return "system_error"
@@ -344,13 +374,13 @@ class AlertParser:
 
         # Facility-based
         if facility is not None:
-            if facility == 4:   # auth
+            if facility == 4:  # auth
                 return "authentication"
             if facility == 10:  # security/authorization
                 return "authorization"
-            if facility == 0:   # kernel
+            if facility == 0:  # kernel
                 return "kernel"
-            if facility == 1:   # user
+            if facility == 1:  # user
                 return "user"
 
         return "syslog"
@@ -394,7 +424,10 @@ class AlertParser:
 
         return ParsedAlert(
             source=payload.get("source") or "json",
-            event_type=payload.get("event_type") or payload.get("type") or payload.get("category") or "json_event",
+            event_type=payload.get("event_type")
+            or payload.get("type")
+            or payload.get("category")
+            or "json_event",
             severity=severity,
             title=str(title),
             description=str(description)[:1000] if description else "",
@@ -419,7 +452,9 @@ class AlertParser:
                 or payload.get("computer")
             ),
             agent_ip=payload.get("agent_ip") or payload.get("host_ip"),
-            rule_id=payload.get("rule_id") or payload.get("rule") or payload.get("signature_id"),
+            rule_id=payload.get("rule_id")
+            or payload.get("rule")
+            or payload.get("signature_id"),
             rule_level=payload.get("rule_level") or payload.get("level"),
             full_log=json.dumps(payload, ensure_ascii=False),
             raw_data=payload,
@@ -429,7 +464,7 @@ class AlertParser:
     @staticmethod
     def _normalize_severity(value: Any) -> str:
         """Normalize severity value to one of: critical, high, medium, low, info."""
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             sev_num = int(value)
             if sev_num >= 9:
                 return "critical"
@@ -485,13 +520,30 @@ class AlertParser:
         else:
             # Auto-detect: treat as header only if typical column names appear
             first_row = [h.strip().lower() for h in rows[0]]
-            header_keywords = {"title", "severity", "source", "event_type", "description", "timestamp"}
+            header_keywords = {
+                "title",
+                "severity",
+                "source",
+                "event_type",
+                "description",
+                "timestamp",
+            }
             if header_keywords & set(first_row):
                 header = first_row
                 data_rows = rows[1:]
             else:
                 # No header – use positional mapping
-                header = ["title", "severity", "source", "event_type", "description", "source_ip", "destination_ip", "agent_name", "full_log"]
+                header = [
+                    "title",
+                    "severity",
+                    "source",
+                    "event_type",
+                    "description",
+                    "source_ip",
+                    "destination_ip",
+                    "agent_name",
+                    "full_log",
+                ]
                 data_rows = rows
 
         alerts: list[ParsedAlert] = []
@@ -523,14 +575,20 @@ class AlertParser:
             event_type=row.get("event_type", row.get("type", "csv_event")),
             severity=severity,
             title=row.get("title", row.get("name", "CSV Alert")),
-            description=row.get("description", row.get("detail", row.get("message", "")))[:1000],
+            description=row.get(
+                "description", row.get("detail", row.get("message", ""))
+            )[:1000],
             source_ip=row.get("source_ip") or row.get("src_ip") or row.get("src"),
-            destination_ip=row.get("destination_ip") or row.get("dst_ip") or row.get("dst"),
+            destination_ip=row.get("destination_ip")
+            or row.get("dst_ip")
+            or row.get("dst"),
             protocol=row.get("protocol") or row.get("proto"),
             agent_name=row.get("agent_name") or row.get("host") or row.get("hostname"),
             agent_ip=row.get("agent_ip") or row.get("host_ip"),
             rule_id=row.get("rule_id") or row.get("rule"),
-            rule_level=int(row["rule_level"]) if row.get("rule_level", "").isdigit() else None,
+            rule_level=(
+                int(row["rule_level"]) if row.get("rule_level", "").isdigit() else None
+            ),
             full_log=row.get("full_log") or row.get("raw") or row.get("log"),
             raw_data=row,
         )
@@ -582,7 +640,9 @@ class AlertParser:
             if not line:
                 continue
             try:
-                line_fmt = "auto" if fmt in ("cef", "syslog") else cls.detect_format(line)
+                line_fmt = (
+                    "auto" if fmt in ("cef", "syslog") else cls.detect_format(line)
+                )
                 if line_fmt == "cef":
                     alerts.append(cls.parse_cef(line))
                 elif line_fmt == "syslog":
@@ -591,13 +651,15 @@ class AlertParser:
                     alerts.append(cls.parse_json(line))
                 else:
                     # Raw fallback
-                    alerts.append(ParsedAlert(
-                        source="raw",
-                        event_type="unknown",
-                        severity="info",
-                        title=line[:120],
-                        full_log=line,
-                    ))
+                    alerts.append(
+                        ParsedAlert(
+                            source="raw",
+                            event_type="unknown",
+                            severity="info",
+                            title=line[:120],
+                            full_log=line,
+                        )
+                    )
             except Exception:
                 # Skip lines that can't be parsed
                 continue

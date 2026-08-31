@@ -114,7 +114,7 @@ class RetryExecutor:
         while attempt_number <= self.policy.max_attempts:
             try:
                 # Execute with timeout
-                result = await asyncio.wait_for(
+                await asyncio.wait_for(
                     func(*args, **kwargs), timeout=self.policy.get_timeout_seconds()
                 )
 
@@ -134,7 +134,7 @@ class RetryExecutor:
 
             # Calculate backoff and wait
             backoff = self.policy.calculate_backoff(attempt_number)
-            next_retry_at = datetime.now(UTC) + timedelta(seconds=backoff)
+            datetime.now(UTC) + timedelta(seconds=backoff)
 
             attempt_number += 1
 

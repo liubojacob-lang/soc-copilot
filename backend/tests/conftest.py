@@ -38,7 +38,9 @@ def pytest_configure(config):
     os.environ["ENVIRONMENT"] = "test"
     os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
     os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
-    os.environ["SECRET_KEY"] = "test-secret-key-min-32-characters-long-for-testing-purposes"
+    os.environ["SECRET_KEY"] = (
+        "test-secret-key-min-32-characters-long-for-testing-purposes"
+    )
     os.environ["DB_PASSWORD"] = "test-db-password-min-32-characters"
     os.environ["EXPOSE_TOKENS_IN_BODY"] = "true"
 
@@ -47,11 +49,15 @@ def pytest_configure(config):
 async def client():
     """Async HTTP client for testing."""
     if app is None:
-        pytest.skip("main.app could not be imported (router import error); "
-                    "integration fixtures unavailable")
+        pytest.skip(
+            "main.app could not be imported (router import error); "
+            "integration fixtures unavailable"
+        )
     async with LifespanManager(app):
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test", follow_redirects=True) as ac:
+        async with AsyncClient(
+            transport=transport, base_url="http://test", follow_redirects=True
+        ) as ac:
             yield ac
 
 
@@ -66,6 +72,7 @@ async def reset_account_lockouts():
     """
     try:
         from sqlalchemy import text
+
         from db.session import AsyncSessionLocal
 
         async with AsyncSessionLocal() as session:

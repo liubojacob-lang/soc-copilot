@@ -32,7 +32,9 @@ IS_SQLITE = DATABASE_URL.startswith("sqlite")
 # Use separate test database in test environment
 if IS_TEST_ENV and IS_SQLITE:
     # Use in-memory database for tests (faster and isolated)
-    TEST_DB_PATH = os.getenv("TEST_DB_PATH", "/tmp/soc_copilot_test.db")
+    TEST_DB_PATH = os.getenv(
+        "TEST_DB_PATH", "/tmp/soc_copilot_test.db"
+    )  # nosec B108 - test-only path
     DATABASE_URL = f"sqlite+aiosqlite:///{TEST_DB_PATH}"
 
 # Create engine with appropriate settings based on database type

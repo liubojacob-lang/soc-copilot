@@ -44,12 +44,8 @@ class SecurityAlertIngest(BaseModel):
     # Log and location
     full_log: str | None = Field(None, description="Full log message")
     location: str | None = Field(None, description="Log file location")
-    geoip: dict[str, Any] | None = Field(
-        None, description="Geographic IP information"
-    )
-    raw_data: dict[str, Any] | None = Field(
-        None, description="Original raw alert data"
-    )
+    geoip: dict[str, Any] | None = Field(None, description="Geographic IP information")
+    raw_data: dict[str, Any] | None = Field(None, description="Original raw alert data")
 
     class Config:
         json_schema_extra = {

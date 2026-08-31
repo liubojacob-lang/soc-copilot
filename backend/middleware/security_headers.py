@@ -1,13 +1,12 @@
 """Security headers middleware for HTTP responses."""
 
-
 import secrets
 
-from core.config import settings
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
 
+from core.config import settings
 from core.logger import get_logger
 
 logger = get_logger(__name__)

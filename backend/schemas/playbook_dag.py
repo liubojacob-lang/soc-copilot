@@ -114,9 +114,7 @@ class PlaybookDefinitionOut(BaseModel):
     status: str = Field(
         "draft", description="Playbook status (draft/published/archived)"
     )
-    published_at: datetime | None = Field(
-        None, description="When this was published"
-    )
+    published_at: datetime | None = Field(None, description="When this was published")
     current_version_no: int = Field(1, description="Current version number")
 
     # Computed fields
@@ -274,9 +272,7 @@ class PlaybookDefinitionPublish(BaseModel):
 class PlaybookDefinitionRestore(BaseModel):
     """Schema for restoring a playbook definition from version."""
 
-    change_note: str | None = Field(
-        None, description="Change note for the restoration"
-    )
+    change_note: str | None = Field(None, description="Change note for the restoration")
 
 
 class PlaybookVersionListResponse(BaseModel):

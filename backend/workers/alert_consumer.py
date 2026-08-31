@@ -22,19 +22,18 @@ import logging
 import os
 import signal
 import sys
-from datetime import datetime
 from typing import Any
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from db.session import AsyncSessionLocal
+from schemas.alert_schema import AlertCreate
+from services.alert_crud_service import AlertCRUDService
 from services.message_broker import (
     ConsumerConfig,
     EventEnvelope,
     get_broker,
 )
-from services.alert_crud_service import AlertCRUDService
-from db.session import AsyncSessionLocal
-from schemas.alert_schema import AlertCreate
 
 logger = logging.getLogger("alert_consumer")
 
@@ -52,7 +51,9 @@ class AlertConsumer:
 
     async def run(self) -> None:
         broker = await get_broker()
-        logger.info("AlertConsumer %s starting on stream=%s", self.consumer_id, self.STREAM)
+        logger.info(
+            "AlertConsumer %s starting on stream=%s", self.consumer_id, self.STREAM
+        )
         signal.signal(signal.SIGTERM, self._shutdown)
         signal.signal(signal.SIGINT, self._shutdown)
 
@@ -74,9 +75,7 @@ class AlertConsumer:
                     try:
                         await self._handle(msg, broker)
                     except Exception:
-                        logger.exception(
-                            "Handler failed msg_id=%s", msg.message_id
-                        )
+                        logger.exception("Handler failed msg_id=%s", msg.message_id)
 
                 await asyncio.sleep(0.1)  # tiny back-pressure valve
         finally:

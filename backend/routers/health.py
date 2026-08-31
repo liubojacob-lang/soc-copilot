@@ -258,7 +258,6 @@ async def metrics() -> Response:
 
 # --- CSP Nonce endpoint (for nonce-based CSP frontend integration) ---
 
-from typing import Union
 
 from fastapi import Request
 
@@ -271,5 +270,5 @@ async def get_csp_nonce(request: Request) -> dict:
     the current nonce to inject into dynamically created <script> tags.
     For SSR pages, access request.state.csp_nonce directly in templates.
     """
-    nonce: Union[str, None] = getattr(request.state, "csp_nonce", None)
+    nonce: str | None = getattr(request.state, "csp_nonce", None)
     return {"nonce": nonce}

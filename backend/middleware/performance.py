@@ -9,7 +9,6 @@ v0.8.5: Performance monitoring with slow request detection and Prometheus metric
 
 import time
 from collections.abc import Callable
-from datetime import datetime
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -101,7 +100,9 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
                     f"client={client_ip} user={user_id}"
                 )
             else:
-                logger.debug(f"Request: {method} {path} completed in {duration_ms:.2f}ms")
+                logger.debug(
+                    f"Request: {method} {path} completed in {duration_ms:.2f}ms"
+                )
 
             # Record Prometheus metrics
             if self._prometheus_available and self._histogram:
@@ -184,10 +185,14 @@ def setup_performance_middleware(app, threshold: float | None = None):
     """
     # Get threshold from settings or use default
     if threshold is None:
-        threshold = getattr(settings, "slow_request_threshold", DEFAULT_SLOW_REQUEST_THRESHOLD)
+        threshold = getattr(
+            settings, "slow_request_threshold", DEFAULT_SLOW_REQUEST_THRESHOLD
+        )
 
     app.add_middleware(PerformanceMiddleware, slow_request_threshold=threshold)
-    logger.info(f"Performance monitoring middleware enabled (threshold: {threshold * 1000:.0f}ms)")
+    logger.info(
+        f"Performance monitoring middleware enabled (threshold: {threshold * 1000:.0f}ms)"
+    )
 
 
 # Re-export canonical histogram from core.metrics to avoid duplicate registration.

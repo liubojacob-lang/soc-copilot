@@ -9,12 +9,12 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    Index,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from db.session import Base
 
@@ -32,7 +32,9 @@ class MarketplacePlaybookModel(Base):
 
     __tablename__ = "marketplace_playbooks"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
     name: Mapped[str] = mapped_column(String(200), index=True, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     version: Mapped[str] = mapped_column(String(20), default="1.0.0")
@@ -54,7 +56,10 @@ class MarketplacePlaybookModel(Base):
     documentation: Mapped[str | None] = mapped_column(Text)
 
     status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default=MarketplacePlaybookStatus.PENDING, index=True
+        String(20),
+        nullable=False,
+        default=MarketplacePlaybookStatus.PENDING,
+        index=True,
     )
 
     reviewed_by: Mapped[str | None] = mapped_column(
@@ -99,7 +104,9 @@ class MarketplaceReviewModel(Base):
 
     __tablename__ = "marketplace_reviews"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
     playbook_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("marketplace_playbooks.id", ondelete="CASCADE"),
@@ -117,5 +124,10 @@ class MarketplaceReviewModel(Base):
     )
 
     __table_args__ = (
-        Index("ix_marketplace_reviews_playbook_user", "playbook_id", "user_id", unique=True),
+        Index(
+            "ix_marketplace_reviews_playbook_user",
+            "playbook_id",
+            "user_id",
+            unique=True,
+        ),
     )

@@ -25,6 +25,7 @@ config = context.config
 
 # Allow DATABASE_URL to override the default SQLite URL in alembic.ini.
 import os
+
 if os.getenv("DATABASE_URL"):
     config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 

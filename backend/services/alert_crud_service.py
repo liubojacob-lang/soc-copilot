@@ -28,9 +28,9 @@ from schemas.alert_schema import (
     AlertResponse,
     AlertStats,
     AlertTriageRequest,
+    AlertTriageResponse,
     AlertUpdate,
     BatchStatusUpdate,
-    AlertTriageResponse,
 )
 from schemas.common import PaginatedData, PaginationParams
 from services.base import BaseService
@@ -64,11 +64,19 @@ KNOWN_ATTACK_PATTERNS: list[dict[str, Any]] = [
     {
         "label": "brute_force",
         "patterns": [
-            r"brute.?force", r"bruteforce", r"password.?spray", r"password.?guessing",
-            r"credential.?stuffing", r"auth.?failure", r"failed.?login",
-            r"multiple.?login.?attempt", r"too many.*(?:auth|login)",
-            r"SSH.*(?:brute|dictionary)", r"RDP.*(?:brute|login.?attack)",
-            r"(?:exceeded|exceed).*login", r"account.*lockout",
+            r"brute.?force",
+            r"bruteforce",
+            r"password.?spray",
+            r"password.?guessing",
+            r"credential.?stuffing",
+            r"auth.?failure",
+            r"failed.?login",
+            r"multiple.?login.?attempt",
+            r"too many.*(?:auth|login)",
+            r"SSH.*(?:brute|dictionary)",
+            r"RDP.*(?:brute|login.?attack)",
+            r"(?:exceeded|exceed).*login",
+            r"account.*lockout",
         ],
         "priority_boost": 2,
         "suggested_status": "triaged",
@@ -77,11 +85,19 @@ KNOWN_ATTACK_PATTERNS: list[dict[str, Any]] = [
     {
         "label": "lateral_movement",
         "patterns": [
-            r"lateral.?movement", r"pass.?the.?hash", r"pass.?the.?ticket",
-            r"PsExec", r"wmi.*exec", r"remote.*(?:execution|exec)",
-            r"WinRM", r"SMB.*(?:relay|lateral)", r"remote.*desktop.*(?:anomal|suspicious)",
-            r"RDP.*tunneling", r"(?:psexec|wmiexec|smbexec|atexec|dcomexec)",
-            r"WMI.*(?:exec|process)", r"schtasks.*(?:remote|create).*\\",
+            r"lateral.?movement",
+            r"pass.?the.?hash",
+            r"pass.?the.?ticket",
+            r"PsExec",
+            r"wmi.*exec",
+            r"remote.*(?:execution|exec)",
+            r"WinRM",
+            r"SMB.*(?:relay|lateral)",
+            r"remote.*desktop.*(?:anomal|suspicious)",
+            r"RDP.*tunneling",
+            r"(?:psexec|wmiexec|smbexec|atexec|dcomexec)",
+            r"WMI.*(?:exec|process)",
+            r"schtasks.*(?:remote|create).*\\",
         ],
         "priority_boost": 3,
         "suggested_status": "investigating",
@@ -90,12 +106,19 @@ KNOWN_ATTACK_PATTERNS: list[dict[str, Any]] = [
     {
         "label": "data_exfiltration",
         "patterns": [
-            r"data.?exfil", r"data.?leak", r"data.?breach",
-            r"exfiltrat", r"large.*(?:upload|transfer|outbound)",
-            r"DNS.*tunnel", r"icmp.*tunnel", r"covert.*channel",
+            r"data.?exfil",
+            r"data.?leak",
+            r"data.?breach",
+            r"exfiltrat",
+            r"large.*(?:upload|transfer|outbound)",
+            r"DNS.*tunnel",
+            r"icmp.*tunnel",
+            r"covert.*channel",
             r"(?:massive|unusual).*(?:upload|egress|outbound)",
-            r"data.*(?:stolen|theft|export)", r"(?:dataloss|data.?loss)",
-            r"sensitive.*(?:file|data).*accessed", r"classified.*(?:accessed|retrieved)",
+            r"data.*(?:stolen|theft|export)",
+            r"(?:dataloss|data.?loss)",
+            r"sensitive.*(?:file|data).*accessed",
+            r"classified.*(?:accessed|retrieved)",
             r"cloud.*storage.*(?:sync|upload).*(?:suspicious|anomal)",
         ],
         "priority_boost": 3,
@@ -105,11 +128,21 @@ KNOWN_ATTACK_PATTERNS: list[dict[str, Any]] = [
     {
         "label": "malware_c2",
         "patterns": [
-            r"malware", r"ransomware", r"trojan", r"backdoor",
-            r"command.?and.?control", r"c2.*comm", r"botnet",
-            r"beacon", r"Cobalt.?Strike", r"meterpreter",
-            r"reverse.?shell", r"bind.?shell", r"webshell",
-            r"(?:dropper|downloader|loader)", r"payload.*execut",
+            r"malware",
+            r"ransomware",
+            r"trojan",
+            r"backdoor",
+            r"command.?and.?control",
+            r"c2.*comm",
+            r"botnet",
+            r"beacon",
+            r"Cobalt.?Strike",
+            r"meterpreter",
+            r"reverse.?shell",
+            r"bind.?shell",
+            r"webshell",
+            r"(?:dropper|downloader|loader)",
+            r"payload.*execut",
             r"powershell.*(?:download|encoded|bypass)",
             r"(?:kvC|certutil).*download",
         ],
@@ -120,11 +153,19 @@ KNOWN_ATTACK_PATTERNS: list[dict[str, Any]] = [
     {
         "label": "privilege_escalation",
         "patterns": [
-            r"privilege.?escalat", r"privesc", r"(?:elevat|escalat).*privilege",
-            r"SUID", r"sudo.*exploit", r"root.*escalat",
-            r"SeImpersonate", r"SeDebugPrivilege", r"token.*(?:impersonat|manipulat)",
-            r"UAC.*bypass", r"(?:kernel|driver).*exploit",
-            r"DirtyCow", r"(?:dirty.?pipe|polkit)",
+            r"privilege.?escalat",
+            r"privesc",
+            r"(?:elevat|escalat).*privilege",
+            r"SUID",
+            r"sudo.*exploit",
+            r"root.*escalat",
+            r"SeImpersonate",
+            r"SeDebugPrivilege",
+            r"token.*(?:impersonat|manipulat)",
+            r"UAC.*bypass",
+            r"(?:kernel|driver).*exploit",
+            r"DirtyCow",
+            r"(?:dirty.?pipe|polkit)",
         ],
         "priority_boost": 3,
         "suggested_status": "investigating",
@@ -133,10 +174,17 @@ KNOWN_ATTACK_PATTERNS: list[dict[str, Any]] = [
     {
         "label": "phishing",
         "patterns": [
-            r"phish", r"spear.?phish", r"whaling",
-            r"malicious.*email", r"suspicious.*attachment", r"spoof.*email",
-            r"social.?engineering", r"(?:fake|clone).*login",
-            r"credential.*harvest", r"business.*email.*compromis", r"BEC",
+            r"phish",
+            r"spear.?phish",
+            r"whaling",
+            r"malicious.*email",
+            r"suspicious.*attachment",
+            r"spoof.*email",
+            r"social.?engineering",
+            r"(?:fake|clone).*login",
+            r"credential.*harvest",
+            r"business.*email.*compromis",
+            r"BEC",
         ],
         "priority_boost": 2,
         "suggested_status": "triaged",
@@ -145,10 +193,17 @@ KNOWN_ATTACK_PATTERNS: list[dict[str, Any]] = [
     {
         "label": "reconnaissance",
         "patterns": [
-            r"recon", r"port.?scan", r"vulnerability.?scan",
-            r"network.?scan", r"service.?enum", r"nmap", r"masscan",
-            r"directory.?(?:traversal|listing)", r"(?:path|file).*disclosure",
-            r"information.?disclosure", r"open.*port.*detected",
+            r"recon",
+            r"port.?scan",
+            r"vulnerability.?scan",
+            r"network.?scan",
+            r"service.?enum",
+            r"nmap",
+            r"masscan",
+            r"directory.?(?:traversal|listing)",
+            r"(?:path|file).*disclosure",
+            r"information.?disclosure",
+            r"open.*port.*detected",
         ],
         "priority_boost": 1,
         "suggested_status": "triaged",
@@ -157,9 +212,15 @@ KNOWN_ATTACK_PATTERNS: list[dict[str, Any]] = [
     {
         "label": "denial_of_service",
         "patterns": [
-            r"(?:denial|DoS|DDoS).*service", r"DDoS", r"(?:flood|amplification).*attack",
-            r"SYN.?flood", r"UDP.?flood", r"HTTP.?flood",
-            r"resource.?exhaustion", r"slow.?loris", r"slow.?read",
+            r"(?:denial|DoS|DDoS).*service",
+            r"DDoS",
+            r"(?:flood|amplification).*attack",
+            r"SYN.?flood",
+            r"UDP.?flood",
+            r"HTTP.?flood",
+            r"resource.?exhaustion",
+            r"slow.?loris",
+            r"slow.?read",
         ],
         "priority_boost": 2,
         "suggested_status": "triaged",
@@ -282,7 +343,9 @@ class AlertCRUDService(BaseService):
 
         kwargs["status"] = "new"
         kwargs.setdefault("tenant_id", "default")
-        kwargs.setdefault("external_event_id", f"manual-{datetime.now(UTC).timestamp():.0f}")
+        kwargs.setdefault(
+            "external_event_id", f"manual-{datetime.now(UTC).timestamp():.0f}"
+        )
 
         alert = await self.repo.create_alert(**kwargs)
 
@@ -290,12 +353,18 @@ class AlertCRUDService(BaseService):
             action="alert_created",
             target_id=str(alert.id),
             user_id=created_by,
-            extra={"title": alert.title, "severity": alert.severity, "source": alert.source},
+            extra={
+                "title": alert.title,
+                "severity": alert.severity,
+                "source": alert.source,
+            },
         )
 
         logger.info(
             "Alert created  id=%s  title=%s  severity=%s",
-            alert.id, alert.title, alert.severity,
+            alert.id,
+            alert.title,
+            alert.severity,
         )
         return self._to_response(alert)
 
@@ -379,11 +448,23 @@ class AlertCRUDService(BaseService):
 
         # Handle list-to-string conversions for fields stored as CSV / JSON
         list_fields_map = {
-            "rule_groups": ("rule_groups", lambda v: ",".join(v) if isinstance(v, list) else v),
-            "rule_mitre": ("rule_mitre", lambda v: ",".join(v) if isinstance(v, list) else v),
+            "rule_groups": (
+                "rule_groups",
+                lambda v: ",".join(v) if isinstance(v, list) else v,
+            ),
+            "rule_mitre": (
+                "rule_mitre",
+                lambda v: ",".join(v) if isinstance(v, list) else v,
+            ),
             "tags": ("tags", lambda v: json.dumps(v) if isinstance(v, list) else v),
-            "mitre_tactics": ("mitre_tactics", lambda v: json.dumps(v) if isinstance(v, list) else v),
-            "mitre_techniques": ("mitre_techniques", lambda v: json.dumps(v) if isinstance(v, list) else v),
+            "mitre_tactics": (
+                "mitre_tactics",
+                lambda v: json.dumps(v) if isinstance(v, list) else v,
+            ),
+            "mitre_techniques": (
+                "mitre_techniques",
+                lambda v: json.dumps(v) if isinstance(v, list) else v,
+            ),
             "iocs": ("iocs", lambda v: json.dumps(v) if isinstance(v, dict) else v),
         }
         for key, (target, transform) in list_fields_map.items():
@@ -408,9 +489,7 @@ class AlertCRUDService(BaseService):
     # DELETE
     # ==================================================================
 
-    async def delete_alert(
-        self, alert_id: int, deleted_by: str | None = None
-    ) -> bool:
+    async def delete_alert(self, alert_id: int, deleted_by: str | None = None) -> bool:
         """
         Delete an alert permanently.
 
@@ -469,9 +548,7 @@ class AlertCRUDService(BaseService):
     # STATISTICS
     # ==================================================================
 
-    async def get_alert_stats(
-        self, tenant_id: str | None = None
-    ) -> AlertStats:
+    async def get_alert_stats(self, tenant_id: str | None = None) -> AlertStats:
         """Return aggregate alert statistics."""
         raw = await self.repo.get_alert_stats(tenant_id=tenant_id)
         return AlertStats(**raw)
@@ -549,7 +626,10 @@ class AlertCRUDService(BaseService):
 
         logger.info(
             "Alert %d status  %s → %s  by=%s",
-            alert_id, old_status, new_status, user_id,
+            alert_id,
+            old_status,
+            new_status,
+            user_id,
         )
 
         return AlertTriageResponse(
@@ -560,7 +640,6 @@ class AlertCRUDService(BaseService):
             changed_at=now,
             resolution_note=data.resolution_note,
         )
-
 
     # ==================================================================
     # AUTO TRIAGE
@@ -595,7 +674,7 @@ class AlertCRUDService(BaseService):
                 asset_result = await self.session.execute(
                     select(AssetDB).where(
                         AssetDB.ip == alert.source_ip,
-                        AssetDB.is_active == True,  # noqa: E712
+                        AssetDB.is_active == True,
                     )
                 )
                 asset = asset_result.scalar_one_or_none()
@@ -765,7 +844,9 @@ class AlertCRUDService(BaseService):
             self.session.add(audit)
             await self.session.flush()
         except Exception:
-            logger.exception("Failed to write audit log for action=%s target=%s", action, target_id)
+            logger.exception(
+                "Failed to write audit log for action=%s target=%s", action, target_id
+            )
 
     # ==================================================================
     # BATCH UPDATE (comprehensive)  —  v0.9.0
@@ -811,7 +892,9 @@ class AlertCRUDService(BaseService):
 
                 if not update_fields:
                     failed_count += 1
-                    errors.append({"alert_id": alert_id, "error": "No fields to update"})
+                    errors.append(
+                        {"alert_id": alert_id, "error": "No fields to update"}
+                    )
                     continue
 
                 updated = await self.repo.update_alert(alert_id, **update_fields)
@@ -835,7 +918,10 @@ class AlertCRUDService(BaseService):
 
         logger.info(
             "Batch alert update: total=%d success=%d failed=%d by=%s",
-            total, success_count, failed_count, changed_by,
+            total,
+            success_count,
+            failed_count,
+            changed_by,
         )
         return {
             "total": total,

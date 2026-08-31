@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 
 from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from models.marketplace import (
     MarketplacePlaybookModel,
@@ -56,7 +55,9 @@ class MarketplaceRepository:
 
     async def get_playbook(self, playbook_id: str) -> MarketplacePlaybookModel | None:
         result = await self.db.execute(
-            select(MarketplacePlaybookModel).where(MarketplacePlaybookModel.id == playbook_id)
+            select(MarketplacePlaybookModel).where(
+                MarketplacePlaybookModel.id == playbook_id
+            )
         )
         return result.scalar_one_or_none()
 
@@ -78,7 +79,9 @@ class MarketplaceRepository:
         if status:
             filters.append(MarketplacePlaybookModel.status == status)
         else:
-            filters.append(MarketplacePlaybookModel.status == MarketplacePlaybookStatus.APPROVED)
+            filters.append(
+                MarketplacePlaybookModel.status == MarketplacePlaybookStatus.APPROVED
+            )
 
         if query:
             q = f"%{query.lower()}%"
@@ -103,7 +106,9 @@ class MarketplaceRepository:
 
         stmt = select(MarketplacePlaybookModel).where(and_(*filters))
 
-        count_result = await self.db.execute(select(func.count()).select_from(stmt.subquery()))
+        count_result = await self.db.execute(
+            select(func.count()).select_from(stmt.subquery())
+        )
         total = count_result.scalar() or 0
 
         if sort_by == "rating":
@@ -137,7 +142,9 @@ class MarketplaceRepository:
             return None
 
         playbook.status = (
-            MarketplacePlaybookStatus.APPROVED if approved else MarketplacePlaybookStatus.REJECTED
+            MarketplacePlaybookStatus.APPROVED
+            if approved
+            else MarketplacePlaybookStatus.REJECTED
         )
         playbook.reviewed_by = reviewer_id
         playbook.reviewed_at = datetime.now(UTC)
@@ -229,11 +236,17 @@ class MarketplaceRepository:
                 MarketplacePlaybookModel.category,
                 func.count(MarketplacePlaybookModel.id).label("count"),
             )
-            .where(MarketplacePlaybookModel.status == MarketplacePlaybookStatus.APPROVED)
+            .where(
+                MarketplacePlaybookModel.status == MarketplacePlaybookStatus.APPROVED
+            )
             .group_by(MarketplacePlaybookModel.category)
         )
         return [
-            {"id": row.category, "name": row.category.replace("_", " ").title(), "count": row.count}
+            {
+                "id": row.category,
+                "name": row.category.replace("_", " ").title(),
+                "count": row.count,
+            }
             for row in result.all()
         ]
 
@@ -242,7 +255,8 @@ class MarketplaceRepository:
             select(MarketplacePlaybookModel)
             .where(
                 and_(
-                    MarketplacePlaybookModel.status == MarketplacePlaybookStatus.APPROVED,
+                    MarketplacePlaybookModel.status
+                    == MarketplacePlaybookStatus.APPROVED,
                     MarketplacePlaybookModel.featured == True,
                 )
             )
@@ -254,7 +268,9 @@ class MarketplaceRepository:
     async def get_trending(self, limit: int = 5) -> list[MarketplacePlaybookModel]:
         result = await self.db.execute(
             select(MarketplacePlaybookModel)
-            .where(MarketplacePlaybookModel.status == MarketplacePlaybookStatus.APPROVED)
+            .where(
+                MarketplacePlaybookModel.status == MarketplacePlaybookStatus.APPROVED
+            )
             .order_by(desc(MarketplacePlaybookModel.download_count))
             .limit(limit)
         )
@@ -266,34 +282,48 @@ class MarketplaceRepository:
                 func.count(MarketplacePlaybookModel.id).label("total"),
                 func.sum(
                     func.case(
-                        (MarketplacePlaybookModel.status == MarketplacePlaybookStatus.PENDING, 1),
+                        (
+                            MarketplacePlaybookModel.status
+                            == MarketplacePlaybookStatus.PENDING,
+                            1,
+                        ),
                         else_=0,
                     )
                 ).label("pending"),
                 func.sum(
                     func.case(
-                        (MarketplacePlaybookModel.status == MarketplacePlaybookStatus.APPROVED, 1),
+                        (
+                            MarketplacePlaybookModel.status
+                            == MarketplacePlaybookStatus.APPROVED,
+                            1,
+                        ),
                         else_=0,
                     )
                 ).label("approved"),
                 func.sum(
                     func.case(
-                        (MarketplacePlaybookModel.status == MarketplacePlaybookStatus.REJECTED, 1),
+                        (
+                            MarketplacePlaybookModel.status
+                            == MarketplacePlaybookStatus.REJECTED,
+                            1,
+                        ),
                         else_=0,
                     )
                 ).label("rejected"),
-                func.sum(func.case((MarketplacePlaybookModel.featured == True, 1), else_=0)).label(
-                    "featured"
-                ),
-                func.sum(func.case((MarketplacePlaybookModel.verified == True, 1), else_=0)).label(
-                    "verified"
-                ),
+                func.sum(
+                    func.case((MarketplacePlaybookModel.featured == True, 1), else_=0)
+                ).label("featured"),
+                func.sum(
+                    func.case((MarketplacePlaybookModel.verified == True, 1), else_=0)
+                ).label("verified"),
                 func.sum(MarketplacePlaybookModel.download_count).label("downloads"),
             )
         )
         row = result.one()
 
-        review_count = await self.db.execute(select(func.count(MarketplaceReviewModel.id)))
+        review_count = await self.db.execute(
+            select(func.count(MarketplaceReviewModel.id))
+        )
         total_reviews = review_count.scalar() or 0
 
         return {

@@ -74,9 +74,7 @@ class TestGenerateStructuredFreeform:
         assert degraded is True
 
     @pytest.mark.asyncio
-    async def test_none_does_not_call_structured_path(
-        self, retry_service_with_mock_ai
-    ):
+    async def test_none_does_not_call_structured_path(self, retry_service_with_mock_ai):
         """Free-form path must never touch generate_structured on ai_service."""
         svc = retry_service_with_mock_ai
         svc.ai_service.generate = AsyncMock(return_value="ok")

@@ -704,9 +704,7 @@ class DAGExecutionEngine:
                 )
 
             # Calculate duration
-            duration_ms = int(
-                (datetime.now(UTC) - start_time).total_seconds() * 1000
-            )
+            duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
 
             return NodeExecutionResult(
                 node_id=node_id,

@@ -31,7 +31,9 @@ class SecurityAlert(Base):
 
     # Source identification
     tenant_id = Column(String(64), nullable=False, index=True, default="default")
-    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)  # v1.1: soft delete
+    deleted_at = Column(
+        DateTime(timezone=True), nullable=True, index=True
+    )  # v1.1: soft delete
     source = Column(
         String(50), nullable=False, index=True
     )  # wazuh, snort, osquery, etc
@@ -137,7 +139,9 @@ class SecurityAlert(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     # Event timestamp (from source system)

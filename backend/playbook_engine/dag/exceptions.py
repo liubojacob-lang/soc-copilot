@@ -59,9 +59,7 @@ class ErrorContext:
     run_id: str
     node_id: str | None = None
     step_id: str | None = None
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     trace_id: str | None = None
     input_data: dict[str, Any] | None = None
     output_data: dict[str, Any] | None = None
@@ -368,9 +366,7 @@ class ErrorHandler:
         context = context or self.create_context(node_id=node_id, step_id=step_id)
 
         # Classify based on exception type
-        if isinstance(exception, TimeoutError) or isinstance(
-            exception, asyncio.TimeoutError
-        ):
+        if isinstance(exception, TimeoutError | asyncio.TimeoutError):
             error = NodeTimeoutError(
                 node_id=node_id or "unknown",
                 step_id=step_id or "unknown",

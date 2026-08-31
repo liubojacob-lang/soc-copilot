@@ -219,16 +219,20 @@ async def internal_generate_report(
     ]
 
     if is_malicious:
-        lines.extend([
-            "1. ✅ Block the IOC at network perimeter",
-            "2. 🔍 Hunt for secondary IOCs",
-            "3. 📧 Check for related phishing emails",
-        ])
+        lines.extend(
+            [
+                "1. ✅ Block the IOC at network perimeter",
+                "2. 🔍 Hunt for secondary IOCs",
+                "3. 📧 Check for related phishing emails",
+            ]
+        )
     else:
-        lines.extend([
-            "1. 👁️ Continue monitoring",
-            "2. 📊 Review alert source configuration",
-        ])
+        lines.extend(
+            [
+                "1. 👁️ Continue monitoring",
+                "2. 📊 Review alert source configuration",
+            ]
+        )
 
     if data.note:
         lines.extend(["", "## Notes", "", data.note])

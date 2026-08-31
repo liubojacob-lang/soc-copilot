@@ -332,7 +332,5 @@ class PlaybookRunErrorResponse(BaseModel):
     success: bool = Field(False, description="Always false for error responses")
     error_code: str = Field(..., description="Error code for categorization")
     message: str = Field(..., description="Human-readable error message")
-    details: dict[str, Any] | None = Field(
-        None, description="Additional error details"
-    )
+    details: dict[str, Any] | None = Field(None, description="Additional error details")
     trace_id: str | None = Field(None, description="Request trace ID for debugging")

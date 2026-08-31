@@ -104,7 +104,7 @@ class TriggerService:
             cron = croniter(cron_expr)
 
             # Check minimum interval (5 minutes = 300 seconds)
-            now = datetime.now(UTC)
+            datetime.now(UTC)
             next1 = cron.get_next(datetime)
             next2 = cron.get_next(datetime)
             min_interval = (next2 - next1).total_seconds()

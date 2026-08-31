@@ -388,9 +388,7 @@ async def get_monitor_history(
             # Note: Database timestamps are naive (no timezone), treat as UTC
             history = [
                 {
-                    "timestamp": entry.timestamp.replace(
-                        tzinfo=UTC
-                    ).isoformat(),
+                    "timestamp": entry.timestamp.replace(tzinfo=UTC).isoformat(),
                     "resources": {
                         "cpu_percent": entry.cpu_percent,
                         "memory_percent": entry.memory_percent,

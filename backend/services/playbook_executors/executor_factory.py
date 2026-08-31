@@ -1,6 +1,5 @@
 """Factory for creating node executors."""
 
-
 from .executor_base import BaseExecutor
 
 

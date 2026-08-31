@@ -181,10 +181,7 @@ def check_resource_ownership(
         return True
 
     # Owner check
-    if resource_owner_id == current_user_id:
-        return True
-
-    return False
+    return resource_owner_id == current_user_id
 
 
 def require_resource_ownership(

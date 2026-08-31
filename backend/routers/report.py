@@ -45,11 +45,15 @@ async def generate_report(
         logger.error(f"Report generation error: {e!s}")
         raise HTTPException(status_code=500, detail="Report generation failed")
 
+
 @router.post("/api/v1/reports/{report_id}/export")
 async def export_report_pdf(
     report_id: str,
     format: str | None = Query(default="pdf", description="Export format: pdf, html"),
-    template: str | None = Query(default="incident_report", description="Template: incident_report, iso27001, gdpr, nist"),
+    template: str | None = Query(
+        default="incident_report",
+        description="Template: incident_report, iso27001, gdpr, nist",
+    ),
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ):
@@ -65,11 +69,13 @@ async def export_report_pdf(
     Format: pdf (default), html
     """
     from fastapi.responses import Response
+
     from services.report_export_service import ReportExportService
 
     try:
         # Load report data from history
         from services.history_service import HistoryService
+
         history_service = HistoryService(session)
         history_entry = await history_service.get_by_request_id(report_id)
 
@@ -98,17 +104,24 @@ async def export_report_pdf(
             return Response(
                 content=html_content,
                 media_type="text/html",
-                headers={{"Content-Disposition": f"inline; filename=report-{report_id}.html"}},
+                headers={
+                    {"Content-Disposition": f"inline; filename=report-{report_id}.html"}
+                },
             )
 
         pdf_bytes = await svc.export_pdf(report_data, template_file)
         if not pdf_bytes:
-            raise HTTPException(status_code=500, detail="PDF generation failed or WeasyPrint not installed")
+            raise HTTPException(
+                status_code=500,
+                detail="PDF generation failed or WeasyPrint not installed",
+            )
 
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={{"Content-Disposition": f"attachment; filename=report-{report_id}.pdf"}},
+            headers={
+                {"Content-Disposition": f"attachment; filename=report-{report_id}.pdf"}
+            },
         )
     except HTTPException:
         raise
@@ -143,6 +156,7 @@ async def generate_compliance_report(
     - recommendations: ["..."] (optional)
     """
     from fastapi.responses import Response
+
     from services.report_export_service import ReportExportService
 
     try:
@@ -155,7 +169,9 @@ async def generate_compliance_report(
         elif framework == "nist":
             pdf_bytes = await svc.generate_nist_report(report_data)
         else:
-            raise HTTPException(status_code=400, detail=f"Unknown framework: {{framework}}")
+            raise HTTPException(
+                status_code=400, detail="Unknown framework: {framework}"
+            )
 
         if not pdf_bytes:
             raise HTTPException(status_code=500, detail="PDF generation failed")
@@ -163,10 +179,12 @@ async def generate_compliance_report(
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={{"Content-Disposition": f"attachment; filename={{framework}}-report.pdf"}},
+            headers={
+                {"Content-Disposition": "attachment; filename={framework}-report.pdf"}
+            },
         )
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Compliance report generation failed: {{e}}")
-        raise HTTPException(status_code=500, detail=f"Compliance report failed: {{e!s}}")
+    except Exception:
+        logger.error("Compliance report generation failed: {e}")
+        raise HTTPException(status_code=500, detail="Compliance report failed: {e!s}")

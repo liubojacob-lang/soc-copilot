@@ -5,7 +5,6 @@ SOC Copilot v1.0
 功能测试和验收标准
 """
 
-
 import pytest
 
 from schemas.alert_analysis import (

@@ -12,7 +12,6 @@ from typing import Any
 from services.message_broker import (
     EventEnvelope,
     EventPriority,
-    PublishOptions,
     get_broker,
 )
 
@@ -72,9 +71,7 @@ async def ingest_playbook_result(result: dict[str, Any]) -> str | None:
         )
     )
     if msg_id:
-        logger.debug(
-            "Playbook result enqueued  run_id=%s queue_id=%s", run_id, msg_id
-        )
+        logger.debug("Playbook result enqueued  run_id=%s queue_id=%s", run_id, msg_id)
     return msg_id
 
 

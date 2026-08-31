@@ -75,9 +75,7 @@ class ConnectionMetrics(BaseModel):
     unique_users_connected: int = 0
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def increment_connection(self, user_id: str | None = None) -> None:
         """Increment total connections counter."""
@@ -144,9 +142,7 @@ class MessageMetrics(BaseModel):
     avg_broadcast_recipients: float = 0.0
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def record_message_sent(
         self, message_type: str, size_bytes: int, recipients: int = 1
@@ -215,9 +211,7 @@ class ErrorMetrics(BaseModel):
     current_error_rate: float = 0.0  # Errors per second
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def record_error(
         self,
@@ -292,9 +286,7 @@ class PerformanceMetrics(BaseModel):
     cpu_usage_percent: float = 0.0
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def record_latency(self, latency_ms: float) -> None:
         """Record a latency measurement."""
@@ -355,9 +347,7 @@ class AggregatedMetrics(BaseModel):
     health_score: float = 100.0
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def calculate_health_score(self) -> float:
         """
@@ -433,9 +423,7 @@ class MetricsSnapshot(BaseModel):
     """
 
     id: str | None = None
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     # Metrics data (serialized)
     connection: ConnectionMetrics
@@ -470,9 +458,7 @@ class MetricsReport(BaseModel):
     """
 
     report_id: str
-    generated_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    generated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     time_range: dict[str, str] = Field(default_factory=dict)
 
     # Summary statistics

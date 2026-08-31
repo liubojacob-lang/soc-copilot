@@ -7,10 +7,9 @@ from typing import Any, Generic, TypeVar
 
 from sqlalchemy import Column, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import Delete as DeleteStmt
 from sqlalchemy.sql import Select
 from sqlalchemy.sql import Update as UpdateStmt
-from sqlalchemy.sql import Delete as DeleteStmt
-from sqlalchemy.sql.elements import ColumnElement
 
 from db.session import Base
 
@@ -57,7 +56,7 @@ class BaseRepository(Generic[ModelType]):
             Query with tenant filter applied, or unchanged query
         """
         if self._has_tenant_col and tenant_id is not None:
-            tenant_col: Column = getattr(self.model, "tenant_id")
+            tenant_col: Column = self.model.tenant_id
             query = query.where(tenant_col == tenant_id)
         return query
 
@@ -256,8 +255,8 @@ class BaseRepository(Generic[ModelType]):
         If you want to scope the lookup but create with a different tenant_id,
         set tenant_id in defaults.
         """
-        filter_key = list(filters.keys())[0]
-        filter_val = list(filters.values())[0]
+        filter_key = next(iter(filters.keys()))
+        filter_val = next(iter(filters.values()))
         entity = await self.get_by_field(filter_key, filter_val, tenant_id=tenant_id)
 
         if entity is not None:

@@ -49,10 +49,7 @@ def _is_private_ip(ip_str: str) -> bool:
     except ValueError:
         return True  # Treat unparseable IPs as unsafe
 
-    for network in _PRIVATE_NETWORKS:
-        if ip in network:
-            return True
-    return False
+    return any(ip in network for network in _PRIVATE_NETWORKS)
 
 
 def is_url_safe(url: str, allowed_hosts: list[str] | None = None) -> tuple[bool, str]:
@@ -88,7 +85,7 @@ def is_url_safe(url: str, allowed_hosts: list[str] | None = None) -> tuple[bool,
     except socket.gaierror:
         return False, f"Cannot resolve hostname: {hostname}"
 
-    for family, _type, _proto, _canonname, sockaddr in addr_infos:
+    for _family, _type, _proto, _canonname, sockaddr in addr_infos:
         ip_str = sockaddr[0]
         if _is_private_ip(ip_str):
             return False, f"Resolved to private/reserved IP: {ip_str}"

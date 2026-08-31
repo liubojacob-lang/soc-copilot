@@ -1,7 +1,7 @@
 """Schemas for AI model operations."""
 
-
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -12,9 +12,12 @@ class AIModelResponse(BaseModel):
     @field_validator("created_at", "updated_at", mode="before")
     @classmethod
     def _dt_str(cls, v):
-        if v is None: return None
-        if isinstance(v, datetime): return v.isoformat()
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v.isoformat()
         return str(v)
+
     id: str
     provider: str
     display_name: str

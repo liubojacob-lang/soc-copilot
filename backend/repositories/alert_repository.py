@@ -93,7 +93,9 @@ class AlertRepository(BaseRepository[SecurityAlert]):
             sort_col = getattr(SecurityAlert, pagination.sort_by, None)
             if sort_col is not None:
                 query = query.order_by(
-                    sort_col.desc() if pagination.sort_order == "desc" else sort_col.asc()
+                    sort_col.desc()
+                    if pagination.sort_order == "desc"
+                    else sort_col.asc()
                 )
             else:
                 query = query.order_by(SecurityAlert.created_at.desc())
@@ -143,7 +145,9 @@ class AlertRepository(BaseRepository[SecurityAlert]):
         return True
 
     async def batch_update_status(
-        self, alert_ids: list[int], new_status: str,
+        self,
+        alert_ids: list[int],
+        new_status: str,
         resolved_by: str | None = None,
         resolution_note: str | None = None,
         updated_at: datetime | None = None,
@@ -176,9 +180,7 @@ class AlertRepository(BaseRepository[SecurityAlert]):
     # Statistics
     # ------------------------------------------------------------------
 
-    async def get_alert_stats(
-        self, tenant_id: str | None = None
-    ) -> dict[str, Any]:
+    async def get_alert_stats(self, tenant_id: str | None = None) -> dict[str, Any]:
         """
         Return aggregate statistics:
         - total count
@@ -196,10 +198,7 @@ class AlertRepository(BaseRepository[SecurityAlert]):
         total = (await self.session.execute(total_q)).scalar() or 0
 
         async def _grouped(column) -> dict[str, int]:
-            q = (
-                select(column, func.count(SecurityAlert.id))
-                .select_from(SecurityAlert)
-            )
+            q = select(column, func.count(SecurityAlert.id)).select_from(SecurityAlert)
             if tenant_id:
                 q = q.where(SecurityAlert.tenant_id == tenant_id)
             q = q.group_by(column)
@@ -214,10 +213,16 @@ class AlertRepository(BaseRepository[SecurityAlert]):
             q = (
                 select(func.count())
                 .select_from(SecurityAlert)
-                .where(SecurityAlert.created_at >= now - func.timedelta(seconds=hours * 3600))
+                .where(
+                    SecurityAlert.created_at
+                    >= now - func.timedelta(seconds=hours * 3600)
+                )
                 if hasattr(func, "timedelta")
                 else select(func.count()).select_from(
-                    base.where(SecurityAlert.created_at >= now.replace(hour=0, minute=0, second=0, microsecond=0))
+                    base.where(
+                        SecurityAlert.created_at
+                        >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+                    )
                 )
             )
             return (await self.session.execute(q)).scalar() or 0
@@ -225,7 +230,6 @@ class AlertRepository(BaseRepository[SecurityAlert]):
         # Simpler time-based queries using Python datetime arithmetic
         def _time_count_sync(hours: int) -> int:
             """Count alerts since a given number of hours ago."""
-            from datetime import timedelta
 
             return hours
 

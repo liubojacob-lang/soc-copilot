@@ -15,7 +15,7 @@ os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
 os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
 
 # Use a separate test database
-os.environ["TEST_DB_PATH"] = "/tmp/soc_copilot_test.db"
+os.environ["TEST_DB_PATH"] = "/tmp/soc_copilot_test.db"  # nosec B108 - test-only path
 
 # Ignore archived test files
 collect_ignore_glob = ["tests/_archived/*"]
@@ -24,7 +24,7 @@ collect_ignore_glob = ["tests/_archived/*"]
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
     """Setup test database before all tests and cleanup after."""
-    db_path = Path("/tmp/soc_copilot_test.db")
+    db_path = Path("/tmp/soc_copilot_test.db")  # nosec B108 - test-only path
 
     # Remove old test database if exists
     if db_path.exists():

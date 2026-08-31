@@ -61,9 +61,7 @@ def get_message_broker() -> MessageBroker:
             logger.info("Message broker: redis backend healthy")
             return _broker
     except Exception as exc:
-        logger.warning(
-            "Redis broker init failed (degrading to memory): %s", exc
-        )
+        logger.warning("Redis broker init failed (degrading to memory): %s", exc)
 
     logger.warning("Redis unavailable — switching to MemoryBroker fallback")
     _broker = MemoryBroker()
@@ -92,6 +90,7 @@ def inject_backend_setting(backend: str) -> None:
 
 
 # ── convenience: get_broker (async wrapper for DI scenarios) ──────────
+
 
 async def get_broker() -> MessageBroker:
     """Async convenience for FastAPI dependency injection."""

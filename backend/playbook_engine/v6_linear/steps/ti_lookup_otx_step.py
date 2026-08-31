@@ -123,7 +123,6 @@ class TILookupOTXStep(BaseStepImpl):
 
     def _perform_lookup(self, iocs: dict) -> list[dict]:
         """Perform actual OTX lookup."""
-        matches = []
         api_key = ""  # Would be loaded from config
 
         if not api_key:

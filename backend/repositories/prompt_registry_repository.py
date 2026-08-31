@@ -1,11 +1,9 @@
 """Prompt Registry repository."""
 
-from typing import Any
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.prompt_registry import PromptEnvironment, PromptRegistryModel
+from models.prompt_registry import PromptRegistryModel
 from repositories.base import BaseRepository
 
 

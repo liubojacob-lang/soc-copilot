@@ -47,7 +47,7 @@ class RedisBroker(MessageBroker):
         self._setup_streams()
 
     def _setup_streams(self) -> None:
-        all_streams = list(self.streams.values()) + [self.dlq_stream, self.retry_stream]
+        all_streams = [*list(self.streams.values()), self.dlq_stream, self.retry_stream]
         for stream in all_streams:
             try:
                 self.redis_client.xgroup_create(

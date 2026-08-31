@@ -36,7 +36,9 @@ class PlaybookEngineAdapter:
         logger.info(f"Running playbook {run.id} with engine {engine_version}")
 
         if engine_version == "v0.6":
-            return await PlaybookEngineAdapter._run_v6_linear(run, session, playbook_steps)
+            return await PlaybookEngineAdapter._run_v6_linear(
+                run, session, playbook_steps
+            )
         else:
             return await PlaybookEngineAdapter._run_v7_dag(run, session, dag_definition)
 

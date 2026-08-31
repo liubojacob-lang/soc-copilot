@@ -7,7 +7,7 @@ including Dify integration configuration.
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +15,7 @@ from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user, require_permission
-from models.user import UserModel, UserRole
+from models.user import UserModel
 
 logger = get_logger(__name__)
 

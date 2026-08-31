@@ -8,7 +8,7 @@ with structured search and Elasticsearch integration.
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, JSON, String, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.orm import relationship
 
 from db.session import Base
@@ -25,7 +25,9 @@ class SIEMLog(Base):
     # Event metadata
     timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
     source = Column(String(100), nullable=False)  # e.g., wazuh, syslog, cloudtrail
-    log_type = Column(String(50), nullable=False, default="raw")  # syslog, cef, json, raw
+    log_type = Column(
+        String(50), nullable=False, default="raw"
+    )  # syslog, cef, json, raw
 
     # Data
     raw_data = Column(Text, nullable=False)

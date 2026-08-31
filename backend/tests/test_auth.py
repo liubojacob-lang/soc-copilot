@@ -157,7 +157,9 @@ class TestAPIKeyAuthentication:
 
         if api_key:
             # Use API key to authenticate
-            protected_response = await client.get("/api/auth/me", headers={"X-API-Key": api_key})
+            protected_response = await client.get(
+                "/api/auth/me", headers={"X-API-Key": api_key}
+            )
             assert protected_response.status_code == 200
 
 
@@ -274,9 +276,9 @@ class TestPasswordManagement:
 
         # Restore TEST_PASSWORD so subsequent tests can log in as admin
         # (use direct repo call since password history prevents reusing TEST_PASSWORD)
+        from core.security import get_password_hash
         from db.session import AsyncSessionLocal
         from repositories.user_repository import UserRepository
-        from core.security import get_password_hash
 
         async with AsyncSessionLocal() as session:
             repo = UserRepository(session)

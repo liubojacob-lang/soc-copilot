@@ -4,13 +4,12 @@ Handles case lifecycle, status transitions, SLA tracking, timeline
 aggregation, and alert association.
 """
 
-import json
 from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
-from models.case import CaseModel, CaseTimelineEntry
+from models.case import CaseModel
 from repositories.case_repository import CaseRepository
 from schemas.case import (
     VALID_TRANSITIONS,
@@ -59,9 +58,7 @@ class CaseService:
             updated_at=case.updated_at,
         )
 
-    async def _to_detail(
-        self, case: CaseModel
-    ) -> CaseDetailResponse:
+    async def _to_detail(self, case: CaseModel) -> CaseDetailResponse:
         """Convert CaseModel to CaseDetailResponse with relations."""
         alerts = await self.repo.get_case_alerts(self.session, case.id)
         alert_count = await self.repo.count_alerts(self.session, case.id)
@@ -69,7 +66,7 @@ class CaseService:
 
         # Build assignee info
         assignee = None
-        if hasattr(case, 'assignee') and case.assignee is not None:
+        if hasattr(case, "assignee") and case.assignee is not None:
             a = case.assignee
             assignee = {
                 "id": a.id,
@@ -209,7 +206,7 @@ class CaseService:
             raise ValueError(f"Case not found: {case_id}")
 
         update_data = data.model_dump(exclude_unset=True)
-        if "severity" in update_data and update_data["severity"]:
+        if update_data.get("severity"):
             update_data["severity"] = (
                 update_data["severity"].value
                 if hasattr(update_data["severity"], "value")
@@ -278,9 +275,7 @@ class CaseService:
             summary += (
                 f" (resolution: {data.resolution[:100]}...)"
                 if data.resolution and len(data.resolution) > 100
-                else f" (resolution: {data.resolution})"
-                if data.resolution
-                else ""
+                else f" (resolution: {data.resolution})" if data.resolution else ""
             )
 
         if new_status == CaseStatus.closed:
@@ -304,9 +299,7 @@ class CaseService:
             from datetime import timedelta
 
             sla_due = datetime.now(UTC) + timedelta(hours=hours)
-            await self.repo.update(
-                self.session, case, sla_due_at=sla_due
-            )
+            await self.repo.update(self.session, case, sla_due_at=sla_due)
 
         logger.info(f"Case status updated: {case_id} → {new_status.value}")
 
@@ -328,9 +321,7 @@ class CaseService:
             raise ValueError(f"Case not found: {case_id}")
 
         old_assignee = case.assigned_to
-        case = await self.repo.update(
-            self.session, case, assigned_to=data.assigned_to
-        )
+        case = await self.repo.update(self.session, case, assigned_to=data.assigned_to)
 
         summary = (
             f"Assignee changed: '{old_assignee}' → '{data.assigned_to}'"
@@ -489,10 +480,16 @@ class CaseService:
                     failed_count += 1
                     error_entry = {"case_id": case_id, "error": "Case not found"}
                     errors.append(error_entry)
-                    results.append({"case_id": case_id, "success": False, "error": "Case not found"})
+                    results.append(
+                        {
+                            "case_id": case_id,
+                            "success": False,
+                            "error": "Case not found",
+                        }
+                    )
                     continue
 
-                current_status = CaseStatus(case.status) if isinstance(case.status, str) else CaseStatus(case.status)
+                current_status = CaseStatus(case.status)
                 if isinstance(status, str):
                     status_obj = CaseStatus(status)
                 else:
@@ -530,18 +527,25 @@ class CaseService:
                 )
 
                 success_count += 1
-                results.append({"case_id": case_id, "success": True, "title": case.title})
+                results.append(
+                    {"case_id": case_id, "success": True, "title": case.title}
+                )
 
             except Exception as e:
                 failed_count += 1
                 error_entry = {"case_id": case_id, "error": str(e)}
                 errors.append(error_entry)
                 results.append({"case_id": case_id, "success": False, "error": str(e)})
-                logger.warning("Batch status update failed for case %s: %s", case_id, str(e))
+                logger.warning(
+                    "Batch status update failed for case %s: %s", case_id, str(e)
+                )
 
         logger.info(
             "Batch case status: total=%d success=%d failed=%d → %s",
-            total, success_count, failed_count, status_obj.value,
+            total,
+            success_count,
+            failed_count,
+            status_obj.value,
         )
         return {
             "total": total,
@@ -580,7 +584,13 @@ class CaseService:
                     failed_count += 1
                     error_entry = {"case_id": case_id, "error": "Case not found"}
                     errors.append(error_entry)
-                    results.append({"case_id": case_id, "success": False, "error": "Case not found"})
+                    results.append(
+                        {
+                            "case_id": case_id,
+                            "success": False,
+                            "error": "Case not found",
+                        }
+                    )
                     continue
 
                 old_assignee = case.assigned_to
@@ -600,7 +610,9 @@ class CaseService:
                 )
 
                 success_count += 1
-                results.append({"case_id": case_id, "success": True, "title": case.title})
+                results.append(
+                    {"case_id": case_id, "success": True, "title": case.title}
+                )
 
             except Exception as e:
                 failed_count += 1
@@ -611,7 +623,10 @@ class CaseService:
 
         logger.info(
             "Batch case assign: total=%d success=%d failed=%d → %s",
-            total, success_count, failed_count, assigned_to,
+            total,
+            success_count,
+            failed_count,
+            assigned_to,
         )
         return {
             "total": total,

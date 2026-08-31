@@ -158,17 +158,17 @@ async def _run_nmap_scan(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await asyncio.wait_for(
-            proc.communicate(), timeout=300
-        )
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
 
         if proc.returncode != 0 and proc.returncode != 1:
             # nmap returncode 1 is normal (some hosts down)
-            logger.warning(f"nmap exited with {proc.returncode}: {stderr.decode()[:500]}")
+            logger.warning(
+                f"nmap exited with {proc.returncode}: {stderr.decode()[:500]}"
+            )
 
         return _parse_nmap_xml(stdout.decode(errors="replace"))
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.error(f"nmap scan timed out for {target}")
         return []
     except FileNotFoundError:
@@ -188,9 +188,7 @@ def _parse_nmap_xml(xml_output: str) -> list[DiscoveredHost]:
     hosts: list[DiscoveredHost] = []
 
     # Split by <host ... </host>
-    host_blocks = re.findall(
-        r"<host[^>]*>(.*?)</host>", xml_output, re.DOTALL
-    )
+    host_blocks = re.findall(r"<host[^>]*>(.*?)</host>", xml_output, re.DOTALL)
 
     for block in host_blocks:
         host = DiscoveredHost()
@@ -206,9 +204,7 @@ def _parse_nmap_xml(xml_output: str) -> list[DiscoveredHost]:
                 host.mac = addr
 
         # Extract hostnames
-        hostnames = re.findall(
-            r'<hostname\s+name="([^"]+)"\s+type="([^"]+)"', block
-        )
+        hostnames = re.findall(r'<hostname\s+name="([^"]+)"\s+type="([^"]+)"', block)
         for name, htype in hostnames:
             if htype == "PTR" or htype == "user":
                 host.hostname = name
@@ -224,7 +220,7 @@ def _parse_nmap_xml(xml_output: str) -> list[DiscoveredHost]:
         )
         host.open_ports = []
         host.services = []
-        for proto, port_id, state, svc_name, product, version in ports:
+        for _proto, port_id, state, svc_name, product, version in ports:
             if state == "open":
                 host.open_ports.append(int(port_id))
                 svc_str = svc_name
@@ -236,9 +232,7 @@ def _parse_nmap_xml(xml_output: str) -> list[DiscoveredHost]:
                     host.services.append(svc_str)
 
         # Extract OS
-        os_match = re.search(
-            r'<osmatch\s+name="([^"]+)"\s+accuracy="([^"]+)"', block
-        )
+        os_match = re.search(r'<osmatch\s+name="([^"]+)"\s+accuracy="([^"]+)"', block)
         if os_match:
             host.os = os_match.group(1)
 
@@ -461,9 +455,7 @@ class AssetDiscoveryService:
             result.hosts.extend(hosts)
             result.scanned_count += 1
 
-        result.scan_duration_ms = (
-            datetime.now() - t_start
-        ).total_seconds() * 1000
+        result.scan_duration_ms = (datetime.now() - t_start).total_seconds() * 1000
 
         # Register discovered hosts
         await self._register_hosts(result)
@@ -507,9 +499,7 @@ class AssetDiscoveryService:
             result.errors.append(f"Unknown provider: {provider}")
 
         result.scanned_count = 1
-        result.scan_duration_ms = (
-            datetime.now() - t_start
-        ).total_seconds() * 1000
+        result.scan_duration_ms = (datetime.now() - t_start).total_seconds() * 1000
 
         # Register discovered hosts
         await self._register_hosts(result)
@@ -540,9 +530,7 @@ class AssetDiscoveryService:
 
         # Cloud scans in parallel
         providers = cloud_providers or ["aws", "azure", "gcp"]
-        cloud_tasks = [
-            self.discover_cloud(provider) for provider in providers
-        ]
+        cloud_tasks = [self.discover_cloud(provider) for provider in providers]
         cloud_results = await asyncio.gather(*cloud_tasks, return_exceptions=True)
         for cr in cloud_results:
             if isinstance(cr, Exception):

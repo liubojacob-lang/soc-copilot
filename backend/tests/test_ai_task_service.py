@@ -80,7 +80,9 @@ class TestAITaskQueueService:
         assert status["status"] == AITaskStatus.COMPLETED.value
 
     @pytest.mark.asyncio
-    async def test_get_task_status_not_found(self, ai_task_service, mock_session_factory):
+    async def test_get_task_status_not_found(
+        self, ai_task_service, mock_session_factory
+    ):
         """Test getting status for non-existent task."""
         _, session = mock_session_factory
 
@@ -93,7 +95,9 @@ class TestAITaskQueueService:
         assert status is None
 
     @pytest.mark.asyncio
-    async def test_get_task_result_completed(self, ai_task_service, mock_session_factory):
+    async def test_get_task_result_completed(
+        self, ai_task_service, mock_session_factory
+    ):
         """Test getting result for completed task."""
         _, session = mock_session_factory
 
@@ -116,7 +120,9 @@ class TestAITaskQueueService:
         assert result["analysis"] == "test result"
 
     @pytest.mark.asyncio
-    async def test_get_task_result_not_completed(self, ai_task_service, mock_session_factory):
+    async def test_get_task_result_not_completed(
+        self, ai_task_service, mock_session_factory
+    ):
         """Test getting result for non-completed task."""
         _, session = mock_session_factory
 
@@ -222,9 +228,7 @@ class TestAITaskQueueService:
         session.execute = AsyncMock(side_effect=[first_result, second_result])
 
         # Mock the LLM service to return a properly-shaped tuple
-        with patch(
-            "services.ai_task_service.get_llm_retry_service"
-        ) as mock_get_llm:
+        with patch("services.ai_task_service.get_llm_retry_service") as mock_get_llm:
             mock_llm = MagicMock()
             mock_llm.generate_structured = AsyncMock(
                 return_value=("summary text", "glm-4-test", False)
@@ -265,9 +269,7 @@ class TestAITaskQueueService:
         second_result.scalar_one_or_none.return_value = task
         session.execute = AsyncMock(side_effect=[first_result, second_result])
 
-        with patch(
-            "services.ai_task_service.get_llm_retry_service"
-        ) as mock_get_llm:
+        with patch("services.ai_task_service.get_llm_retry_service") as mock_get_llm:
             mock_llm = MagicMock()
             mock_llm.generate_structured = AsyncMock(
                 return_value=("", "glm-4-test", True)  # degraded

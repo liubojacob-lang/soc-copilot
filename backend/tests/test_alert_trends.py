@@ -140,7 +140,7 @@ def test_interval_validation():
         interval = "invalid"
         if interval not in ["hour", "day", "week"]:
             raise ValueError(f"Invalid interval: {interval}")
-        assert False, "Should have raised ValueError"
+        raise AssertionError("Should have raised ValueError")
     except ValueError as e:
         print(f"  ✅ Invalid interval correctly rejected: {e}")
 

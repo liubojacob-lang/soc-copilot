@@ -125,9 +125,7 @@ async def get_alert_rule(
         raise
     except Exception as e:
         logger.error(f"Error getting alert rule: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get alert rule: {e!s}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get alert rule: {e!s}")
 
 
 @router.put("/rules/{rule_id}", response_model=AlertRuleResponse)
@@ -263,9 +261,7 @@ async def get_alert_stats(
 
     except Exception as e:
         logger.error(f"Error getting alert stats: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get alert stats: {e!s}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get alert stats: {e!s}")
 
 
 @router.post("/test/{rule_id}")
@@ -314,6 +310,4 @@ async def test_alert_rule(
         raise
     except Exception as e:
         logger.error(f"Error testing alert rule: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to test alert rule: {e!s}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to test alert rule: {e!s}")

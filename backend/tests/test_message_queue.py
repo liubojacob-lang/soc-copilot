@@ -47,7 +47,9 @@ class TestQueuedMessage:
 
     def test_create_queued_message(self):
         """Test creating a queued message"""
-        msg = QueuedMessage(type=MessageType.ALERT, data={"test": "data"}, channel="alerts")
+        msg = QueuedMessage(
+            type=MessageType.ALERT, data={"test": "data"}, channel="alerts"
+        )
 
         assert msg.type == MessageType.ALERT
         assert msg.data == {"test": "data"}
@@ -220,7 +222,9 @@ class TestMessageQueueService:
             timestamp=(datetime.now(UTC).isoformat()),
         )
 
-        service._redis.lrange = AsyncMock(return_value=[old_msg.to_json(), new_msg.to_json()])
+        service._redis.lrange = AsyncMock(
+            return_value=[old_msg.to_json(), new_msg.to_json()]
+        )
 
         stats = await service.get_stats("user123")
 
@@ -366,7 +370,6 @@ class TestMessageQueueIntegration:
 
     async def test_queue_size_limit(self, real_service):
         """Test that queue size limit is enforced"""
-        service = real_service
         max_size = 5  # Small limit for testing
 
         # Create queue with small limit

@@ -84,7 +84,7 @@ class IOCExtractStep(BaseStepImpl):
             (r"\b[a-f0-9]{40}\b", "sha1"),
             (r"\b[a-f0-9]{64}\b", "sha256"),
         ]
-        for pattern, hash_type in hash_patterns:
+        for pattern, _hash_type in hash_patterns:
             hashes = re.findall(pattern, all_text, re.IGNORECASE)
             iocs["hashes"].extend(hashes)
 

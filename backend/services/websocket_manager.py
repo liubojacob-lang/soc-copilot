@@ -230,7 +230,7 @@ class ConnectionManager:
                 logger.error(f"Failed to broadcast to channel {channel}: {e}")
                 await self.disconnect(websocket)
         if message_queue and await message_queue.is_available():
-            for user_id in self.known_users.keys():
+            for user_id in self.known_users:
                 if user_id not in delivered_users:
                     try:
                         msg_type = (
@@ -305,7 +305,7 @@ class ConnectionManager:
                 await self.disconnect(websocket)
         if message_queue and await message_queue.is_available():
             for message in messages:
-                for user_id in self.known_users.keys():
+                for user_id in self.known_users:
                     if user_id not in delivered_users:
                         try:
                             msg_type = MessageType(message.get("type", "alert"))

@@ -259,9 +259,7 @@ class AlertEvaluator:
 
                         if success:
                             notification.status = "sent"
-                            notification.sent_at = datetime.now(
-                                UTC
-                            ).isoformat()
+                            notification.sent_at = datetime.now(UTC).isoformat()
                         else:
                             notification.status = "failed"
 

@@ -18,7 +18,6 @@ from schemas.case import (
     CaseCreate,
     CaseDetailResponse,
     CaseListResponse,
-    CaseResponse,
     CaseStatsResponse,
     CaseStatusUpdate,
     CaseUpdate,
@@ -251,7 +250,12 @@ async def batch_update_case_status(
 
         # Convert results to BatchCaseResult
         batch_results = [
-            {"case_id": r["case_id"], "success": r["success"], "title": r.get("title"), "error": r.get("error")}
+            {
+                "case_id": r["case_id"],
+                "success": r["success"],
+                "title": r.get("title"),
+                "error": r.get("error"),
+            }
             for r in result["results"]
         ]
 
@@ -264,9 +268,11 @@ async def batch_update_case_status(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    except Exception:
         logger.exception("batch_update_case_status failed")
-        raise HTTPException(status_code=500, detail="Failed to batch-update case statuses")
+        raise HTTPException(
+            status_code=500, detail="Failed to batch-update case statuses"
+        )
 
 
 @router.post("/batch-assign", response_model=BatchCaseResponse)
@@ -290,7 +296,12 @@ async def batch_assign_cases(
 
         # Convert results
         batch_results = [
-            {"case_id": r["case_id"], "success": r["success"], "title": r.get("title"), "error": r.get("error")}
+            {
+                "case_id": r["case_id"],
+                "success": r["success"],
+                "title": r.get("title"),
+                "error": r.get("error"),
+            }
             for r in result["results"]
         ]
 
@@ -303,6 +314,6 @@ async def batch_assign_cases(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    except Exception:
         logger.exception("batch_assign_cases failed")
         raise HTTPException(status_code=500, detail="Failed to batch-assign cases")

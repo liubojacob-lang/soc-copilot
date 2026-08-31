@@ -10,13 +10,13 @@ incident-response playbooks to stop lateral movement or data exfiltration.
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
 from typing import Any
 
 import httpx
 
 from core.config import settings
 from core.ssrf_protection import is_url_safe
+
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
 logger = logging.getLogger(__name__)
@@ -138,7 +138,9 @@ class EDRIsolateNode(BaseNodePlugin):
     # ---- Core execute -----------------------------------------------------
 
     async def execute(self, context: NodeExecutionContext) -> dict[str, Any]:
-        agent_id: str = context.input_json.get("agent_id") or context.input_json["device_id"]
+        agent_id: str = (
+            context.input_json.get("agent_id") or context.input_json["device_id"]
+        )
         platform: str = context.input_json["platform"].lower()
         reason: str = context.input_json.get("reason", "SOC automated containment")
         dry_run: bool = context.mode == "dry_run"
@@ -239,17 +241,25 @@ class EDRIsolateNode(BaseNodePlugin):
         api_secret = context.secrets.get("EDR_API_SECRET", "")
 
         if not api_key or not api_secret:
-            raise RuntimeError("CrowdStrike credentials not configured (EDR_API_KEY / EDR_API_SECRET)")
+            raise RuntimeError(
+                "CrowdStrike credentials not configured (EDR_API_KEY / EDR_API_SECRET)"
+            )
 
         # --- SSRF sandbox enforcement ---
         host = _resolve_host(base_url)
         if host and host not in _EDR_KNOWN_HOSTS:
             allowed = None
             if settings.http_allowed_hosts:
-                allowed = [h.strip() for h in settings.http_allowed_hosts.split(",") if h.strip()]
+                allowed = [
+                    h.strip()
+                    for h in settings.http_allowed_hosts.split(",")
+                    if h.strip()
+                ]
             is_safe, reason_block = is_url_safe(base_url, allowed)
             if not is_safe:
-                raise ValueError(f"EDR base_url blocked by SSRF sandbox: {reason_block}")
+                raise ValueError(
+                    f"EDR base_url blocked by SSRF sandbox: {reason_block}"
+                )
 
         url = f"{base_url.rstrip('/')}{_CROWDSTRIKE_ISOLATE_URL}"
 
@@ -276,7 +286,9 @@ class EDRIsolateNode(BaseNodePlugin):
                 f"CrowdStrike API returned {resp.status_code}: {resp.text[:500]}"
             )
 
-        logger.info("[%s] CrowdStrike isolate accepted for device %s", context.run_id, device_id)
+        logger.info(
+            "[%s] CrowdStrike isolate accepted for device %s", context.run_id, device_id
+        )
         return resp.json()
 
     # ===================================================================
@@ -301,10 +313,16 @@ class EDRIsolateNode(BaseNodePlugin):
         if host and host not in _EDR_KNOWN_HOSTS:
             allowed = None
             if settings.http_allowed_hosts:
-                allowed = [h.strip() for h in settings.http_allowed_hosts.split(",") if h.strip()]
+                allowed = [
+                    h.strip()
+                    for h in settings.http_allowed_hosts.split(",")
+                    if h.strip()
+                ]
             is_safe, reason_block = is_url_safe(base_url, allowed)
             if not is_safe:
-                raise ValueError(f"EDR base_url blocked by SSRF sandbox: {reason_block}")
+                raise ValueError(
+                    f"EDR base_url blocked by SSRF sandbox: {reason_block}"
+                )
 
         url = f"{base_url.rstrip('/')}{_SENTINELONE_DISCONNECT_URL}"
 
@@ -330,7 +348,9 @@ class EDRIsolateNode(BaseNodePlugin):
                 f"SentinelOne API returned {resp.status_code}: {resp.text[:500]}"
             )
 
-        logger.info("[%s] SentinelOne isolate accepted for agent %s", context.run_id, agent_id)
+        logger.info(
+            "[%s] SentinelOne isolate accepted for agent %s", context.run_id, agent_id
+        )
         return resp.json()
 
     # ===================================================================
@@ -341,6 +361,10 @@ class EDRIsolateNode(BaseNodePlugin):
     def _default_base_url(platform: str) -> str:
         """Return the default SaaS endpoint if none is configured."""
         if platform == "crowdstrike":
-            return getattr(settings, "crowdstrike_base_url", "https://api.crowdstrike.com")
+            return getattr(
+                settings, "crowdstrike_base_url", "https://api.crowdstrike.com"
+            )
         else:
-            return getattr(settings, "sentinelone_base_url", "https://usea1-001.sentinelone.net")
+            return getattr(
+                settings, "sentinelone_base_url", "https://usea1-001.sentinelone.net"
+            )

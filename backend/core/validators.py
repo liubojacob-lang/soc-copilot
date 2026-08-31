@@ -22,7 +22,9 @@ def validate_username(username: str) -> str:
     - 不允许特殊字符（除了下划线）
     """
     if not username:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is required")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username is required"
+        )
 
     if len(username) < 3 or len(username) > 50:
         raise HTTPException(
@@ -47,7 +49,9 @@ def validate_password(password: str) -> str:
     - 必须包含大小写字母、数字
     """
     if not password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is required")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Password is required"
+        )
 
     if len(password) < 8:
         raise HTTPException(
@@ -74,12 +78,16 @@ def validate_email(email: str) -> str:
     验证邮箱格式
     """
     if not email:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required"
+        )
 
     # 基本邮箱格式验证
     email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     if not re.match(email_pattern, email):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email format")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email format"
+        )
 
     return email.strip().lower()
 

@@ -18,7 +18,6 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
 from core.logger import get_logger
 from repositories.playbook_definition_repository import PlaybookDefinitionRepository
 from repositories.playbook_run_repository import PlaybookRunRepository
@@ -175,7 +174,9 @@ class DAGExecutionService:
                 input_context=data.input_context,
                 mode=data.mode,
                 failure_strategy=data.failure_strategy,
-                created_by_user_id=str(run.created_by_user_id) if run.created_by_user_id else None,
+                created_by_user_id=(
+                    str(run.created_by_user_id) if run.created_by_user_id else None
+                ),
             )
             output = await scheduler.execute()
 
@@ -188,7 +189,9 @@ class DAGExecutionService:
                 updates["error_message"] = "Cancelled by user"
             await self.run_repo.update(run.id, updates)
             run.status = final_status
-            logger.info(f"[{trace_id}] Run {run.id} completed with status {final_status}")
+            logger.info(
+                f"[{trace_id}] Run {run.id} completed with status {final_status}"
+            )
 
         except Exception as e:
             error_trace = traceback.format_exc()
@@ -231,7 +234,7 @@ class DAGExecutionService:
 
         for node_id, node_def in nodes.items():
             node_type = node_def.get("type", "unknown")
-            node_name = node_def.get("name", node_id)
+            node_def.get("name", node_id)
 
             try:
                 # Check if node type is registered
@@ -262,7 +265,9 @@ class DAGExecutionService:
                 )
 
             except Exception as e:
-                logger.warning(f"[{trace_id}] [DRY_RUN] Node {node_id} mock failed: {e}")
+                logger.warning(
+                    f"[{trace_id}] [DRY_RUN] Node {node_id} mock failed: {e}"
+                )
                 mock_outputs[node_id] = {
                     "status": "success",  # Always success in dry_run
                     "node_id": node_id,

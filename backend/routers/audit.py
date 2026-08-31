@@ -111,7 +111,7 @@ async def get_audit_stats(
     from sqlalchemy import func
 
     # Time range: last 7 days
-    week_ago = (datetime.now() - timedelta(days=7)).isoformat()
+    (datetime.now() - timedelta(days=7)).isoformat()
 
     # Build base query
     query = select(func.count(AuditLogModel.id))

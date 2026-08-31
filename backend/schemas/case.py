@@ -5,7 +5,6 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # ── Enums ──────────────────────────────────────────────────────────
 
 
@@ -180,6 +179,7 @@ class CaseStatsResponse(BaseModel):
     resolved_today: int = 0
     avg_resolution_hours: float | None = None
 
+
 # ── Batch Operations ──────────────────────────────────────────────
 
 
@@ -188,7 +188,9 @@ class BatchCaseStatusUpdate(BaseModel):
 
     case_ids: list[str] = Field(..., min_length=1, max_length=200)
     status: CaseStatus = Field(..., description="Target status for all cases")
-    resolution: str | None = Field(None, description="Resolution note (for resolved/closed)")
+    resolution: str | None = Field(
+        None, description="Resolution note (for resolved/closed)"
+    )
 
 
 class BatchCaseAssign(BaseModel):
@@ -213,7 +215,9 @@ class BatchCaseResponse(BaseModel):
     total: int = Field(..., description="Total items submitted")
     success_count: int = Field(..., description="Number of successful operations")
     failed_count: int = Field(..., description="Number of failed operations")
-    results: list[BatchCaseResult] = Field(default_factory=list, description="Per-case results")
+    results: list[BatchCaseResult] = Field(
+        default_factory=list, description="Per-case results"
+    )
     errors: list[dict] = Field(
         default_factory=list,
         description="Error details for failed items [{case_id, error}]",

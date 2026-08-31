@@ -72,8 +72,8 @@ class TestGenerate:
     @pytest.mark.asyncio
     async def test_generate_passes_custom_system_prompt(self, service_with_mock_llm):
         service_with_mock_llm.llm.chat_completion = AsyncMock(return_value="ok")
-        await service_with_mock_llm.generate(
-            "prompt", system_prompt="custom system"
-        )
-        messages = service_with_mock_llm.llm.chat_completion.call_args.kwargs["messages"]
+        await service_with_mock_llm.generate("prompt", system_prompt="custom system")
+        messages = service_with_mock_llm.llm.chat_completion.call_args.kwargs[
+            "messages"
+        ]
         assert messages[0] == {"role": "system", "content": "custom system"}

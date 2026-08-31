@@ -4,17 +4,14 @@ Kubernetes and cloud security API endpoints
 """
 
 from datetime import datetime
-from uuid import uuid4
-
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.session import get_session
-
 from core.logger import get_logger
+from db.session import get_session
 from dependencies.auth import get_current_user
 from models.user import UserModel
 from services.cloud_native_service import (
@@ -391,14 +388,20 @@ async def get_cloud_native_dashboard(
 
 # ── Falco Alert Receiver ──────────────────────────────────────────────
 
+
 class FalcoAlertRequest(BaseModel):
     """Falco sidekick JSON alert."""
 
     output: str = Field(..., description="Falco alert output message")
-    priority: str = Field(..., description="Falco priority: Emergency|Alert|Critical|Error|Warning|Notice|Informational|Debug")
+    priority: str = Field(
+        ...,
+        description="Falco priority: Emergency|Alert|Critical|Error|Warning|Notice|Informational|Debug",
+    )
     rule: str = Field(..., description="Falco rule name that triggered")
     time: str = Field(..., description="ISO 8601 alert timestamp")
-    output_fields: dict = Field(default_factory=dict, description="Structured output fields")
+    output_fields: dict = Field(
+        default_factory=dict, description="Structured output fields"
+    )
     source: str = Field(default="syscall", description="Falco event source")
     tags: list[str] = Field(default_factory=list, description="Falco rule tags")
     hostname: str = Field(default="", description="Hostname where alert originated")
@@ -463,7 +466,7 @@ async def receive_falco_alert(
         user_name = alert.output_fields.get("user.name", "")
 
         # Build enriched alert
-        enriched = {
+        {
             "id": alert_id,
             "source": "falco",
             "event_type": alert.rule,
@@ -503,7 +506,7 @@ async def receive_falco_alert(
             status="received",
             falco_rule=alert.rule,
             severity=severity,
-            message=f"Alert received and queued for triage",
+            message="Alert received and queued for triage",
         )
 
     except Exception as e:
@@ -562,11 +565,16 @@ async def get_falco_stats(
 
 # ── Trivy Image Scanning ──────────────────────────────────────────────
 
+
 class TrivyScanRequest(BaseModel):
     """Trivy image scan request."""
 
-    image: str = Field(..., description="Container image name (e.g., nginx:1.21)", min_length=3)
-    force_rescan: bool = Field(default=False, description="Force re-scan even if cached result exists")
+    image: str = Field(
+        ..., description="Container image name (e.g., nginx:1.21)", min_length=3
+    )
+    force_rescan: bool = Field(
+        default=False, description="Force re-scan even if cached result exists"
+    )
 
 
 class TrivyScanResponse(BaseModel):
@@ -618,4 +626,3 @@ async def scan_with_trivy(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Scan error: {e!s}",
         )
-

@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from core.config import settings
+
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
 logger = logging.getLogger(__name__)
@@ -113,9 +114,7 @@ class ADDisableAccountNode(BaseNodePlugin):
         )
         bind_user = context.secrets.get("AD_BIND_USER", "")
         bind_pass = context.secrets.get("AD_BIND_PASSWORD", "")
-        domain = context.secrets.get(
-            "AD_DOMAIN", getattr(settings, "ad_domain", "")
-        )
+        domain = context.secrets.get("AD_DOMAIN", getattr(settings, "ad_domain", ""))
         transport = getattr(settings, "ad_transport", "ldap3").lower()
 
         if not ldap_server:
@@ -128,7 +127,9 @@ class ADDisableAccountNode(BaseNodePlugin):
             }
 
         if dry_run:
-            logger.info("[%s] DRY-RUN: would disable AD account %s", context.run_id, username)
+            logger.info(
+                "[%s] DRY-RUN: would disable AD account %s", context.run_id, username
+            )
             exists = await self._check_user_exists(
                 ldap_server, bind_user, bind_pass, username, transport, context
             )
@@ -148,7 +149,12 @@ class ADDisableAccountNode(BaseNodePlugin):
                 "user_exists": exists,
             }
 
-        logger.info("[%s] Disabling AD account: %s  (transport=%s)", context.run_id, username, transport)
+        logger.info(
+            "[%s] Disabling AD account: %s  (transport=%s)",
+            context.run_id,
+            username,
+            transport,
+        )
 
         try:
             if transport == "winrm":
@@ -254,7 +260,9 @@ class ADDisableAccountNode(BaseNodePlugin):
 
         new_uac = current_uac | ACCOUNTDISABLE
 
-        conn.modify(user_dn, {"userAccountControl": [(ldap3.MODIFY_REPLACE, [new_uac])]})
+        conn.modify(
+            user_dn, {"userAccountControl": [(ldap3.MODIFY_REPLACE, [new_uac])]}
+        )
 
         if conn.result["result"] != 0:
             err = conn.result.get("description", conn.result["message"])
@@ -282,7 +290,9 @@ class ADDisableAccountNode(BaseNodePlugin):
             )
 
         conn.unbind()
-        logger.info("[%s] AD account disabled: %s  (uac=%d)", context.run_id, user_dn, new_uac)
+        logger.info(
+            "[%s] AD account disabled: %s  (uac=%d)", context.run_id, user_dn, new_uac
+        )
 
         return {"user_dn": user_dn, "previous_uac": current_uac, "new_uac": new_uac}
 
@@ -331,7 +341,9 @@ class ADDisableAccountNode(BaseNodePlugin):
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
 
         if proc.returncode != 0:
-            err = stderr.decode("utf-8", errors="replace") or stdout.decode("utf-8", errors="replace")
+            err = stderr.decode("utf-8", errors="replace") or stdout.decode(
+                "utf-8", errors="replace"
+            )
             raise RuntimeError(f"PowerShell/WinRM failed (rc={proc.returncode}): {err}")
 
         user_dn = stdout.decode("utf-8", errors="replace").strip()
@@ -359,7 +371,10 @@ class ADDisableAccountNode(BaseNodePlugin):
                     "$r = $s.FindOne(); if ($r) { 'FOUND' } else { 'NOTFOUND' }"
                 )
                 proc = await asyncio.create_subprocess_exec(
-                    "pwsh", "-NoProfile", "-Command", ps,
+                    "pwsh",
+                    "-NoProfile",
+                    "-Command",
+                    ps,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )
@@ -370,7 +385,9 @@ class ADDisableAccountNode(BaseNodePlugin):
                     import ldap3
                 except ImportError:
                     return True
-                server = ldap3.Server(server_uri, use_ssl=server_uri.startswith("ldaps://"))
+                server = ldap3.Server(
+                    server_uri, use_ssl=server_uri.startswith("ldaps://")
+                )
                 conn = ldap3.Connection(
                     server, user=bind_dn, password=bind_password, auto_bind=True
                 )
@@ -387,13 +404,19 @@ class ADDisableAccountNode(BaseNodePlugin):
                 conn.unbind()
                 return found
         except Exception:
-            logger.warning("[%s] User existence check failed — assuming exists", context.run_id)
+            logger.warning(
+                "[%s] User existence check failed — assuming exists", context.run_id
+            )
             return True
 
     @staticmethod
     def _derive_base_dn(server_uri: str, bind_dn: str) -> str:
         if bind_dn and "DC=" in bind_dn.upper():
-            parts = [p.strip() for p in bind_dn.split(",") if p.strip().upper().startswith("DC=")]
+            parts = [
+                p.strip()
+                for p in bind_dn.split(",")
+                if p.strip().upper().startswith("DC=")
+            ]
             if parts:
                 return ",".join(parts)
 

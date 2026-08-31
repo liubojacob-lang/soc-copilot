@@ -76,9 +76,7 @@ async def block_ip(
 
 @router.get("", response_model=BlockedIPListResponse)
 async def list_blocked_ips(
-    type: str | None = Query(
-        None, description="Filter by type: ip, domain, url, hash"
-    ),
+    type: str | None = Query(None, description="Filter by type: ip, domain, url, hash"),
     is_active: bool | None = Query(None, description="Filter by active status"),
     limit: int = Query(50, ge=1, le=500, description="Maximum results"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),

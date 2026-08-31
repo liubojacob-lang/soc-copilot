@@ -7,7 +7,15 @@ team collaboration through timeline entries, comments, and SLA tracking.
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import relationship
 
 from db.session import Base
@@ -19,7 +27,9 @@ class CaseModel(Base):
     __tablename__ = "cases"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)  # v1.1: soft delete
+    deleted_at = Column(
+        DateTime(timezone=True), nullable=True, index=True
+    )  # v1.1: soft delete
     title = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
     severity = Column(
@@ -128,7 +138,9 @@ class CaseTimelineEntry(Base):
     __tablename__ = "case_timeline_entries"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)  # v1.1: soft delete
+    deleted_at = Column(
+        DateTime(timezone=True), nullable=True, index=True
+    )  # v1.1: soft delete
     case_id = Column(
         String(36),
         ForeignKey("cases.id", ondelete="CASCADE"),
@@ -160,9 +172,7 @@ class CaseTimelineEntry(Base):
     # Relationships
     case = relationship("CaseModel", back_populates="timeline_entries")
 
-    __table_args__ = (
-        Index("ix_case_timeline_case_type", "case_id", "entry_type"),
-    )
+    __table_args__ = (Index("ix_case_timeline_case_type", "case_id", "entry_type"),)
 
 
 class CaseComment(Base):
@@ -171,7 +181,9 @@ class CaseComment(Base):
     __tablename__ = "case_comments"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)  # v1.1: soft delete
+    deleted_at = Column(
+        DateTime(timezone=True), nullable=True, index=True
+    )  # v1.1: soft delete
     case_id = Column(
         String(36),
         ForeignKey("cases.id", ondelete="CASCADE"),
@@ -198,6 +210,4 @@ class CaseComment(Base):
     # Relationships
     case = relationship("CaseModel", back_populates="comments")
 
-    __table_args__ = (
-        Index("ix_case_comments_case_created", "case_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_case_comments_case_created", "case_id", "created_at"),)

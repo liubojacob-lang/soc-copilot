@@ -10,7 +10,6 @@ Endpoints:
 - GET /api/v1/websocket/filters/stats - Get filter statistics
 """
 
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -208,9 +207,7 @@ async def delete_filters(
         raise
     except Exception as e:
         logger.error(f"Error deleting filters: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to delete filters: {e!s}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to delete filters: {e!s}")
 
 
 @router.get("/stats", response_model=FilterStats)

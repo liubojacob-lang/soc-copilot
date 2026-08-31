@@ -20,11 +20,23 @@ _ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development").lower()
 from datetime import UTC, datetime
 
 # Sensitive keys to redact from log extra fields
-_SENSITIVE_EXTRA_KEYS = frozenset({
-    "password", "passwd", "secret", "token", "api_key", "apikey",
-    "access_token", "refresh_token", "private_key", "credential",
-    "authorization", "cookie", "set-cookie",
-})
+_SENSITIVE_EXTRA_KEYS = frozenset(
+    {
+        "password",
+        "passwd",
+        "secret",
+        "token",
+        "api_key",
+        "apikey",
+        "access_token",
+        "refresh_token",
+        "private_key",
+        "credential",
+        "authorization",
+        "cookie",
+        "set-cookie",
+    }
+)
 
 
 def _redact_extra(extra: dict) -> dict:
@@ -40,6 +52,7 @@ def _redact_extra(extra: dict) -> dict:
         else:
             result[k] = v
     return result
+
 
 try:
     from pythonjsonlogger.json import JsonFormatter

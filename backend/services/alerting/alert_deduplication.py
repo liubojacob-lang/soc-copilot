@@ -102,7 +102,6 @@ class AlertDeduplicator:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-
     async def find_cross_source_duplicates(
         self, alert: dict[str, Any], time_window_hours: int = 4
     ) -> list:
@@ -119,7 +118,13 @@ class AlertDeduplicator:
             List of matching alert IDs from different sources
         """
         iocs = []
-        for field in ["source_ip", "destination_ip", "domain", "hash_md5", "hash_sha256"]:
+        for field in [
+            "source_ip",
+            "destination_ip",
+            "domain",
+            "hash_md5",
+            "hash_sha256",
+        ]:
             val = alert.get(field)
             if val:
                 iocs.append((field, val))
@@ -143,14 +148,11 @@ class AlertDeduplicator:
                 conditions = [getattr(SecurityAlert, field) == value]
 
             for cond in conditions:
-                query = (
-                    select(SecurityAlert.id)
-                    .where(
-                        and_(
-                            cond,
-                            SecurityAlert.created_at >= cutoff,
-                            SecurityAlert.source != alert.get("source", ""),
-                        )
+                query = select(SecurityAlert.id).where(
+                    and_(
+                        cond,
+                        SecurityAlert.created_at >= cutoff,
+                        SecurityAlert.source != alert.get("source", ""),
                     )
                 )
                 result = await self.session.execute(query)
@@ -172,10 +174,11 @@ class AlertDeduplicator:
         Returns the group ID for tracking.
         """
         import uuid
+
         group_id = f"agg_{uuid.uuid4().hex[:12]}"
 
         # Update all related alerts with the same group ID
-        for alert_id in [primary_alert_id] + related_alert_ids:
+        for alert_id in [primary_alert_id, *related_alert_ids]:
             await self.session.execute(
                 SecurityAlert.__table__.update()
                 .where(SecurityAlert.id == alert_id)
@@ -187,6 +190,7 @@ class AlertDeduplicator:
             f"Aggregation group {group_id}: {len(related_alert_ids) + 1} alerts merged"
         )
         return group_id
+
 
 class AlertAggregator:
     """

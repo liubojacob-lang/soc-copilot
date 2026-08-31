@@ -5,9 +5,11 @@ If Langfuse is not configured or installed, a NoopTracer is used
 that has zero performance impact.
 """
 
+import asyncio
 import functools
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from core.config import settings
 from core.logger import get_logger
@@ -25,7 +27,7 @@ def _try_import_langfuse() -> bool:
     """Try to import langfuse; return True on success."""
     global _langfuse
     try:
-        from langfuse.decorators import observe
+        from langfuse.decorators import observe  # noqa: F401 (availability probe)
         from langfuse.langfuse import Langfuse
 
         _langfuse = Langfuse(
@@ -197,7 +199,7 @@ def trace_llm_call(func: Callable) -> Callable:
             )
             raise
 
-    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper  # type: ignore[name-defined]
+    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
 
 def _extract_prompt(kwargs: dict[str, Any]) -> str | None:

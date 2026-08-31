@@ -5,8 +5,8 @@ UEBA Router - User and Entity Behavior Analytics API
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
@@ -261,7 +261,6 @@ async def get_high_risk_users(
         )
 
 
-
 @router.get("/batch-build-baselines")
 async def batch_build_baselines(
     days_of_history: int = Query(default=30, ge=7, le=90),
@@ -310,7 +309,7 @@ async def get_user_baseline(
         if baseline is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No baseline found for user {user_id}"
+                detail=f"No baseline found for user {user_id}",
             )
         features = engine.feature_cache.get(user_id, {})
         return {

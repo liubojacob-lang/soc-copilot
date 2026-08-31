@@ -15,7 +15,9 @@ class BlockedIP(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
     value = Column(String(255), nullable=False, index=True)
     type = Column(String(20), nullable=False, default="ip")

@@ -1,7 +1,15 @@
 """Schemas for user operations."""
 
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer, field_validator
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_serializer,
+    field_validator,
+)
 
 from models.user import UserRole
 
@@ -54,8 +62,10 @@ class UserResponse(UserInDB):
 
     @field_serializer("created_at", "updated_at", "last_login_at", when_used="always")
     def _serialize_dt(v: object) -> str | None:
-        if v is None: return None
-        if isinstance(v, datetime): return v.isoformat()
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v.isoformat()
         return str(v)
 
 

@@ -6,6 +6,7 @@ from typing import Any
 import aiohttp
 
 from core.ssrf_protection import is_url_safe
+
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,9 @@ class HttpRequestPlugin(BaseNodePlugin):
 
         allowed_hosts = None
         if settings.http_allowed_hosts:
-            allowed_hosts = [h.strip() for h in settings.http_allowed_hosts.split(",") if h.strip()]
+            allowed_hosts = [
+                h.strip() for h in settings.http_allowed_hosts.split(",") if h.strip()
+            ]
 
         is_safe, reason = is_url_safe(url, allowed_hosts)
         if not is_safe:

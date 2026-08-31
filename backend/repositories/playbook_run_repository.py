@@ -164,9 +164,7 @@ class PlaybookRunRepository:
         await self.session.refresh(run)
         return run
 
-    async def update_by_id(
-        self, model_id: str, updates: dict[str, Any]
-    ) -> Any | None:
+    async def update_by_id(self, model_id: str, updates: dict[str, Any]) -> Any | None:
         """Update any model by ID (for steps).
 
         Args:

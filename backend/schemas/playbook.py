@@ -139,9 +139,11 @@ class PlaybookHistoryResponse(BaseModel):
     items: list[PlaybookOutputResponse]
     total: int
 
+
 # ══════════════════════════════════════════════════════════════════════════════
 # DAG Definition Schemas (S0-10: Pydantic replacement for bare dict)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class PlaybookDefinitionCreate(BaseModel):
     """Schema for creating a DAG-based playbook definition."""

@@ -1,9 +1,9 @@
 """Case repository for database operations."""
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
-from sqlalchemy import and_, func, or_, select, case as sa_case
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -31,9 +31,7 @@ class CaseRepository:
         await session.flush()
         return case
 
-    async def get_by_id(
-        self, session: AsyncSession, case_id: str
-    ) -> CaseModel | None:
+    async def get_by_id(self, session: AsyncSession, case_id: str) -> CaseModel | None:
         """Get case by ID with relations."""
         result = await session.execute(
             select(CaseModel)
@@ -50,9 +48,7 @@ class CaseRepository:
         self, session: AsyncSession, case_id: str
     ) -> CaseModel | None:
         """Get case by ID without loading relations."""
-        result = await session.execute(
-            select(CaseModel).where(CaseModel.id == case_id)
-        )
+        result = await session.execute(select(CaseModel).where(CaseModel.id == case_id))
         return result.scalar_one_or_none()
 
     async def list_cases(
@@ -185,9 +181,7 @@ class CaseRepository:
             return True
         return False
 
-    async def get_case_alerts(
-        self, session: AsyncSession, case_id: str
-    ) -> list[dict]:
+    async def get_case_alerts(self, session: AsyncSession, case_id: str) -> list[dict]:
         """Get alerts linked to a case."""
         result = await session.execute(
             select(SecurityAlert).join(
@@ -248,9 +242,7 @@ class CaseRepository:
     async def count_comments(self, session: AsyncSession, case_id: str) -> int:
         """Count comments on a case."""
         result = await session.execute(
-            select(func.count(CaseComment.id)).where(
-                CaseComment.case_id == case_id
-            )
+            select(func.count(CaseComment.id)).where(CaseComment.case_id == case_id)
         )
         return result.scalar() or 0
 
@@ -287,9 +279,7 @@ class CaseRepository:
         now = datetime.now(UTC)
 
         # Total cases
-        total_result = await session.execute(
-            select(func.count(CaseModel.id))
-        )
+        total_result = await session.execute(select(func.count(CaseModel.id)))
         total = total_result.scalar() or 0
 
         # By status

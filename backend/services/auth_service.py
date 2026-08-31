@@ -1,6 +1,6 @@
 """Authentication service — business logic for login, logout, token refresh, and password management."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -17,7 +17,7 @@ from core.security import (
     verify_password,
 )
 from core.token_blacklist import add_token_to_blacklist, get_token_blacklist
-from models.user import UserModel, UserRole
+from models.user import UserModel
 from repositories.audit_repository import AuditRepository
 from repositories.user_repository import UserRepository
 from schemas.user import ChangePasswordRequest, UserLogin

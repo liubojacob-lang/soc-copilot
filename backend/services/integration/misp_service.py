@@ -53,7 +53,9 @@ async def _rate_limit(max_rpm: int | None = None) -> None:
                 await asyncio.sleep(wait)
                 now = time.monotonic()
                 window_start = now - 60.0
-                _last_request_times = [t for t in _last_request_times if t > window_start]
+                _last_request_times = [
+                    t for t in _last_request_times if t > window_start
+                ]
 
         _last_request_times.append(now)
 
@@ -90,7 +92,9 @@ class MISPService:
         self._db_session = session
         self._base_url = (base_url or settings.misp_base_url).rstrip("/")
         self._api_key = api_key or settings.misp_api_key
-        self._verify_ssl = verify_ssl if verify_ssl is not None else settings.misp_verify_ssl
+        self._verify_ssl = (
+            verify_ssl if verify_ssl is not None else settings.misp_verify_ssl
+        )
         self._timeout = timeout or settings.misp_timeout_sec
         self._client: httpx.AsyncClient | None = None
         self._enabled = bool(self._base_url and self._api_key)
@@ -149,7 +153,11 @@ class MISPService:
             )
             row = result.scalar_one_or_none()
             if row is not None and row.response_json:
-                return json.loads(row.response_json) if isinstance(row.response_json, str) else row.response_json
+                return (
+                    json.loads(row.response_json)
+                    if isinstance(row.response_json, str)
+                    else row.response_json
+                )
         except Exception:
             logger.exception("Failed to read MISP cache for %s:%s", ioc_type, ioc_value)
 
@@ -210,11 +218,15 @@ class MISPService:
 
             await self._db_session.flush()
         except Exception:
-            logger.exception("Failed to write MISP cache for %s:%s", ioc_type, ioc_value)
+            logger.exception(
+                "Failed to write MISP cache for %s:%s", ioc_type, ioc_value
+            )
 
     # ── HTTP helpers ────────────────────────────────────────────────────
 
-    async def _get(self, endpoint: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def _get(
+        self, endpoint: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Execute a rate-limited GET request to the MISP API."""
         if not self._enabled:
             raise RuntimeError("MISP integration not configured")
@@ -356,7 +368,9 @@ class MISPService:
             raw = await self._post("/attributes/restSearch", json_data=params)
         except Exception:
             logger.exception("MISP IOC search failed")
-            return await self._degraded_result("search", "ioc_search", use_cache, cache_key)
+            return await self._degraded_result(
+                "search", "ioc_search", use_cache, cache_key
+            )
 
         result = self._parse_search_results(raw, "attributes", ioc_type or "unknown")
 
@@ -483,7 +497,9 @@ class MISPService:
         try:
             raw = await self._post("/sightings/restSearch", json_data=params)
         except Exception:
-            logger.exception("MISP sightings search failed for %s:%s", ioc_type, ioc_value)
+            logger.exception(
+                "MISP sightings search failed for %s:%s", ioc_type, ioc_value
+            )
             return {
                 "ioc_type": ioc_type,
                 "ioc_value": ioc_value,
@@ -500,15 +516,17 @@ class MISPService:
                 s_list = [s_list]
             for s in s_list if isinstance(s_list, list) else []:
                 if isinstance(s, dict):
-                    sightings.append({
-                        "id": s.get("id"),
-                        "attribute_id": s.get("attribute_id"),
-                        "event_id": s.get("event_id"),
-                        "org_id": s.get("org_id"),
-                        "date_sighting": s.get("date_sighting"),
-                        "source": s.get("source"),
-                        "type": s.get("type"),
-                    })
+                    sightings.append(
+                        {
+                            "id": s.get("id"),
+                            "attribute_id": s.get("attribute_id"),
+                            "event_id": s.get("event_id"),
+                            "org_id": s.get("org_id"),
+                            "date_sighting": s.get("date_sighting"),
+                            "source": s.get("source"),
+                            "type": s.get("type"),
+                        }
+                    )
 
         return {
             "ioc_type": ioc_type,
@@ -578,7 +596,9 @@ class MISPService:
         if isinstance(raw_response, list):
             raw_items = raw_response
         elif isinstance(raw_response, dict):
-            raw_items = raw_response.get("Attribute", raw_response.get("attributes", []))
+            raw_items = raw_response.get(
+                "Attribute", raw_response.get("attributes", [])
+            )
             if isinstance(raw_items, dict):
                 raw_items = [raw_items]
         else:
@@ -610,7 +630,11 @@ class MISPService:
             "total": len(items_list),
             "score": score,
             "tags": list(set(all_tags))[:30],
-            "verdict": "malicious" if ids_count > 0 else ("suspicious" if items_list else "unknown"),
+            "verdict": (
+                "malicious"
+                if ids_count > 0
+                else ("suspicious" if items_list else "unknown")
+            ),
             "cached": False,
         }
 
@@ -633,7 +657,9 @@ class MISPService:
         if isinstance(raw_attrs, dict):
             raw_attrs = [raw_attrs]
         for attr in raw_attrs if isinstance(raw_attrs, list) else []:
-            attributes.append(self._normalize_attribute(attr, attr.get("type", "unknown")))
+            attributes.append(
+                self._normalize_attribute(attr, attr.get("type", "unknown"))
+            )
 
         tags_list = []
         raw_tags = event_data.get("Tag", [])
@@ -649,7 +675,11 @@ class MISPService:
             "threat_level_id": event_data.get("threat_level_id"),
             "published": event_data.get("published", False),
             "analysis": event_data.get("analysis"),
-            "org": event_data.get("Org", {}).get("name") if isinstance(event_data.get("Org"), dict) else event_data.get("orgc", ""),
+            "org": (
+                event_data.get("Org", {}).get("name")
+                if isinstance(event_data.get("Org"), dict)
+                else event_data.get("orgc", "")
+            ),
             "tags": tags_list,
             "attributes": attributes,
             "attribute_count": len(attributes),

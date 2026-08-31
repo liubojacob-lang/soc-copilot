@@ -1,20 +1,16 @@
 """Authentication and authorization dependencies."""
 
 from datetime import UTC, datetime, timedelta
+from fnmatch import fnmatch
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fnmatch import fnmatch
-
-from fastapi import Request
-
 from core.config import settings
-from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, get_token_from_cookie
 from core.logger import get_logger
 from core.security import (
     decode_token,
@@ -256,8 +252,6 @@ def user_to_response(user: UserModel) -> MeResponse:
     )
 
 
-
-
 def is_public_readonly_endpoint(path: str) -> bool:
     """Check if a request path matches any public readonly endpoint pattern.
 
@@ -272,7 +266,9 @@ def is_public_readonly_endpoint(path: str) -> bool:
     """
     for pattern in settings.public_readonly_endpoints:
         if fnmatch(path, pattern):
-            logger.debug(f"Public readonly access allowed for: {path} (matched: {pattern})")
+            logger.debug(
+                f"Public readonly access allowed for: {path} (matched: {pattern})"
+            )
             return True
     return False
 
@@ -392,6 +388,7 @@ require_analyst = require_role(
 # v1.1: Fine-grained RBAC — require_permission via database-backed checks
 # ============================================================================
 
+
 async def check_permission_in_db(
     session: AsyncSession, user: UserModel, resource: str, action: str
 ) -> bool:
@@ -401,6 +398,7 @@ async def check_permission_in_db(
     string permissions (backward compat) when no DB records match.
     """
     from sqlalchemy import select as sa_select
+
     from models.rbac import Permission, Role
 
     # v1.1: Admin role is superuser - has all permissions (short-circuit)
@@ -450,13 +448,12 @@ def require_permission(resource: str, action: str):
                 detail=(
                     f"Permission denied. Required: {resource}:{action}. "
                     f"Your role: "
-                    f"{str(current_user.role.value if hasattr(current_user.role, 'value') else current_user.role)}"
+                    f"{current_user.role.value if hasattr(current_user.role, 'value') else current_user.role!s}"
                 ),
             )
         return current_user
 
     return checker
-
 
 
 async def get_api_key_user(

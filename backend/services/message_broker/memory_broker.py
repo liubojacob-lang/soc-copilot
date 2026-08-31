@@ -12,14 +12,12 @@ import time
 import uuid
 from collections import defaultdict, deque
 from datetime import UTC, datetime
-from typing import Any
 
 from .base import MessageBroker
 from .schemas import (
     BrokerMessage,
     ConsumerConfig,
     EventEnvelope,
-    EventPriority,
     PublishOptions,
 )
 
@@ -35,9 +33,7 @@ class MemoryBroker(MessageBroker):
 
     # Class-level shared state so multiple singleton refs see same queues
     _queues: dict[str, deque[tuple[str, EventEnvelope]]] = defaultdict(deque)
-    _pending: dict[
-        str, dict[str, list[str]]
-    ] = defaultdict(lambda: defaultdict(list))
+    _pending: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
 
     def __init__(self) -> None:
         self._delayed: list[tuple[float, str, EventEnvelope]] = []
@@ -102,9 +98,9 @@ class MemoryBroker(MessageBroker):
                 taken.append(q.popleft())
 
             for msg_id, envelope in taken:
-                self._pending[config.consumer_group][
-                    config.consumer_name
-                ].append(msg_id)
+                self._pending[config.consumer_group][config.consumer_name].append(
+                    msg_id
+                )
                 out.append(
                     BrokerMessage(
                         message_id=msg_id,
@@ -123,11 +119,9 @@ class MemoryBroker(MessageBroker):
     #  ack / nack
     # ──────────────────────────────────────────────────────────────────
 
-    async def ack(
-        self, stream: str, message_id: str, consumer_group: str
-    ) -> bool:
+    async def ack(self, stream: str, message_id: str, consumer_group: str) -> bool:
         try:
-            for name, ids in self._pending.get(consumer_group, {}).items():
+            for _name, ids in self._pending.get(consumer_group, {}).items():
                 if message_id in ids:
                     ids.remove(message_id)
                     return True
@@ -150,15 +144,11 @@ class MemoryBroker(MessageBroker):
 
             if envelope.retry_count > envelope.max_retries:
                 self._dlq.append((message_id, envelope, reason))
-                logger.info(
-                    "Memory DLQ enqueued msg=%s reason=%s", message_id, reason
-                )
+                logger.info("Memory DLQ enqueued msg=%s reason=%s", message_id, reason)
                 return True
 
-            delay = min(2 ** envelope.retry_count, 300)
-            asyncio.create_task(
-                self._requeue_after(message_id, envelope, delay)
-            )
+            delay = min(2**envelope.retry_count, 300)
+            asyncio.create_task(self._requeue_after(message_id, envelope, delay))
             return True
         except Exception as exc:
             logger.error("Memory nack failed: %s", exc)

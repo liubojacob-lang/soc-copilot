@@ -18,7 +18,9 @@ from services.threat_hunting_service import (
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/v1/threat-hunting", tags=["threat-hunting", "proactive"])
+router = APIRouter(
+    prefix="/api/v1/threat-hunting", tags=["threat-hunting", "proactive"]
+)
 
 
 # Request/Response Models
@@ -276,7 +278,7 @@ async def hunt_iocs(
             "statistics": {
                 "total_matches": len(findings),
                 "high_confidence": len([f for f in findings if f.confidence > 0.8]),
-                "unique_entities": len(set(f.entity_id for f in findings)),
+                "unique_entities": len({f.entity_id for f in findings}),
             },
         }
 
@@ -377,6 +379,7 @@ async def get_hunting_dashboard(
 
 # ── Sigma Rule Endpoints ──────────────────────────────────────────────
 
+
 class SigmaRuleSummary(BaseModel):
     """Lightweight Sigma rule summary for listing."""
 
@@ -429,7 +432,9 @@ class SigmaSearchResponse(BaseModel):
 
 @router.get("/sigma/rules", response_model=list[SigmaRuleSummary])
 async def get_sigma_rules(
-    category: str | None = Query(None, description="Filter by category: windows, linux, cloud, kubernetes"),
+    category: str | None = Query(
+        None, description="Filter by category: windows, linux, cloud, kubernetes"
+    ),
     current_user: UserModel = Depends(get_current_user),
 ):
     """
@@ -456,7 +461,8 @@ async def get_sigma_rules(
                 category=r.category,
                 status=r.status,
                 mitre_techniques=r.mitre_techniques,
-                description=r.description[:200] + ("..." if len(r.description) > 200 else ""),
+                description=r.description[:200]
+                + ("..." if len(r.description) > 200 else ""),
             )
             for r in rules
         ]
@@ -589,4 +595,3 @@ async def execute_sigma_search(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Sigma search failed: {e!s}",
         )
-

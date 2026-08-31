@@ -1,8 +1,6 @@
 """Schemas for audit log operations."""
 
-
-from datetime import datetime
-from pydantic import field_validator,  BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AuditLogBase(BaseModel):

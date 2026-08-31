@@ -19,6 +19,7 @@ from dependencies.auth import (
     require_admin,
     user_to_response,
 )
+from middleware.rate_limiter import rate_limit
 from models.user import UserModel
 from schemas.user import (
     ChangePasswordRequest,
@@ -28,14 +29,15 @@ from schemas.user import (
     UserLogin,
 )
 from services.auth_service import AuthService
-from middleware.rate_limiter import rate_limit
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
 
-def _body_tokens(access_token: str, refresh_token: str) -> tuple[str | None, str | None]:
+def _body_tokens(
+    access_token: str, refresh_token: str
+) -> tuple[str | None, str | None]:
     """Return body tokens only when explicitly exposed (tests/legacy clients).
 
     The default cookie flow keeps JWTs out of the response body so they never

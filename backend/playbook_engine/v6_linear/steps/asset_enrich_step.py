@@ -56,7 +56,7 @@ class AssetEnrichStep(BaseStepImpl):
 
         # Extract asset information from alert data
         hostname = alert_data.get("hostname", "")
-        ip_address = alert_data.get("dest_ip", "") or alert_data.get("src_ip", "")
+        alert_data.get("dest_ip", "") or alert_data.get("src_ip", "")
 
         # Enrich each IP
         for ip in iocs.get("ips", []):

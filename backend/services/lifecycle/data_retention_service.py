@@ -56,9 +56,7 @@ class DataRetentionService(LifecycleService):
             logger.info("Data retention disabled (DATA_RETENTION_ENABLED=false)")
             return
 
-        self._task = asyncio.create_task(
-            self._run_loop(), name="data-retention-loop"
-        )
+        self._task = asyncio.create_task(self._run_loop(), name="data-retention-loop")
         logger.info(
             "Data retention service started (interval=%sh)",
             settings.data_retention_interval_hours,
@@ -102,38 +100,61 @@ class DataRetentionService(LifecycleService):
             # Child tables first, then parents. The child call passes no time
             # column: its rows are selected via the expired parent.
             stats["playbook_run_steps"] = await self._delete_aged(
-                session, "playbook_run_steps", None,
-                settings.playbook_run_retention_days, now,
-                parent_table="playbook_runs", parent_col="started_at",
+                session,
+                "playbook_run_steps",
+                None,
+                settings.playbook_run_retention_days,
+                now,
+                parent_table="playbook_runs",
+                parent_col="started_at",
             )
             stats["playbook_runs"] = await self._delete_aged(
-                session, "playbook_runs", "started_at",
-                settings.playbook_run_retention_days, now,
+                session,
+                "playbook_runs",
+                "started_at",
+                settings.playbook_run_retention_days,
+                now,
             )
             stats["siem_logs"] = await self._delete_aged(
-                session, "siem_logs", "timestamp",
-                settings.siem_log_retention_days, now,
+                session,
+                "siem_logs",
+                "timestamp",
+                settings.siem_log_retention_days,
+                now,
             )
             stats["security_alerts"] = await self._delete_aged(
-                session, "security_alerts", "created_at",
-                settings.security_alert_retention_days, now,
+                session,
+                "security_alerts",
+                "created_at",
+                settings.security_alert_retention_days,
+                now,
             )
             stats["ioc_hits"] = await self._delete_aged(
-                session, "ioc_hits", "created_at",
-                settings.ioc_hit_retention_days, now,
+                session,
+                "ioc_hits",
+                "created_at",
+                settings.ioc_hit_retention_days,
+                now,
             )
             stats["history"] = await self._delete_aged(
-                session, "history", "created_at",
-                settings.history_retention_days, now,
+                session,
+                "history",
+                "created_at",
+                settings.history_retention_days,
+                now,
             )
             stats["correlated_events"] = await self._delete_aged(
-                session, "correlated_events", "created_at",
-                settings.correlated_event_retention_days, now,
+                session,
+                "correlated_events",
+                "created_at",
+                settings.correlated_event_retention_days,
+                now,
                 string_column=True,  # created_at is a String ISO column here
             )
             # Threat-intel rows already past their TTL (previously manual-only).
             stats["threat_intel_cache"] = await self._delete_expired_ti(
-                session, now,
+                session,
+                now,
                 max_age_days=settings.threat_intel_cache_retention_days,
             )
             # Similarity cache rows whose TTL column was never enforced.
@@ -164,15 +185,17 @@ class DataRetentionService(LifecycleService):
         String timestamp columns (correlated_events) keep isoformat, which
         sorts correctly as text.
         """
-        from core.config import settings
         from sqlalchemy import text
+
+        from core.config import settings
 
         if retention_days <= 0:
             return 0
 
         cutoff_dt = now - timedelta(days=retention_days)
         cutoff = (
-            cutoff_dt.isoformat() if string_column
+            cutoff_dt.isoformat()
+            if string_column
             else cutoff_dt.strftime("%Y-%m-%d %H:%M:%S.%f")
         )
         batch_size = settings.data_retention_batch_size
@@ -182,14 +205,14 @@ class DataRetentionService(LifecycleService):
             if parent_table:
                 child_fk = self._child_fk_for(parent_table)
                 stmt = text(
-                    f"DELETE FROM {table} WHERE id IN ("
+                    f"DELETE FROM {table} WHERE id IN ("  # nosec B608 - identifiers from internal policy constants
                     f"SELECT {table}.id FROM {table} JOIN {parent_table}"
                     f" ON {table}.{child_fk} = {parent_table}.id"
                     f" WHERE {parent_table}.{parent_col} < :cutoff LIMIT :batch)"
                 )
             else:
                 stmt = text(
-                    f"DELETE FROM {table} WHERE {time_column} < :cutoff"
+                    f"DELETE FROM {table} WHERE {time_column} < :cutoff"  # nosec B608 - identifiers from internal policy constants
                     f" AND id IN (SELECT id FROM {table} WHERE {time_column} < :cutoff LIMIT :batch)"
                 )
 
@@ -207,10 +230,13 @@ class DataRetentionService(LifecycleService):
         """Foreign-key column linking a child table to its parent."""
         return {"playbook_runs": "run_id"}.get(parent_table, f"{parent_table[:-1]}_id")
 
-    async def _delete_expired_ti(self, session, now: datetime, max_age_days: int) -> int:
+    async def _delete_expired_ti(
+        self, session, now: datetime, max_age_days: int
+    ) -> int:
         """Purge threat-intel cache rows past expires_at (and very old ones)."""
-        from core.config import settings
         from sqlalchemy import text
+
+        from core.config import settings
 
         hard_cutoff = (now - timedelta(days=max_age_days)).strftime(
             "%Y-%m-%d %H:%M:%S.%f"

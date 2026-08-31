@@ -340,9 +340,7 @@ Please provide the corrected JSON response:"""
 
         # All retries failed — return an empty string rather than raising so
         # callers (task queue) can still persist a terminal record.
-        logger.warning(
-            f"Free-form generation exhausted for {request_id}: {last_error}"
-        )
+        logger.warning(f"Free-form generation exhausted for {request_id}: {last_error}")
         return "", self.ai_service.get_model_name(), True
 
     async def _backoff(self, attempt: int) -> None:
