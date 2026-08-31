@@ -189,8 +189,15 @@ async def run_migrations():
             if result.returncode == 0:
                 logger.info("Database migrations completed")
             else:
-                logger.warning(f"Migration output: {result.stderr or result.stdout}")
+                detail = result.stderr or result.stdout
+                if settings.environment == "production":
+                    raise RuntimeError(f"Database migration failed: {detail}")
+                logger.warning(f"Migration output: {detail}")
         except Exception as e:
+            if settings.environment == "production":
+                # Fail fast: running with an unverified schema in production is worse
+                # than a crashed container (restart policy will retry after fix).
+                raise
             logger.warning(f"Migration failed (might be ok if already applied): {e}")
 
 
