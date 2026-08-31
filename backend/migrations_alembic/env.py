@@ -19,21 +19,46 @@ sys.path.insert(0, str(backend_dir))
 
 from db.session import Base
 
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
+
 # Allow DATABASE_URL to override the default SQLite URL in alembic.ini.
 import os
 if os.getenv("DATABASE_URL"):
     config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 
 # Import all models to ensure they are registered with Base
+# F1-7a: Added comprehensive model imports for tenant isolation
+import models.ai_model
+import models.ai_task
+import models.ai_user_setting
+import models.alert_note
 import models.api_key
 import models.asset
 import models.audit_log
+import models.blocked_ip
+import models.correlated_event
+import models.correlation_rule
+import models.event_similarity
 import models.history
 import models.ioc_hit
+import models.marketplace
+import models.monitor_history
+import models.playbook_approval
 import models.playbook_definition
+import models.playbook_node_attempt
+import models.playbook_node_run
 import models.playbook_output
 import models.playbook_run
+import models.prompt_registry
+import models.rbac
+import models.root_cause_analysis
+import models.secret
+import models.security_alert
+import models.security_vulnerability
 import models.threat_intel_cache
+import models.trigger
 import models.user
 
 # this is the Alembic Config object, which provides
