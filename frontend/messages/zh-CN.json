@@ -666,7 +666,8 @@
       "subtitle": "安全威胁概览与分析",
       "totalAlerts": "告警总数",
       "criticalThreats": "严重威胁",
-      "activeCampaigns": "活跃攻击活动"
+      "activeCampaigns": "活跃攻击活动",
+      "maliciousIocs": "恶意 IOC"
     }
   },
   "marketplace": {

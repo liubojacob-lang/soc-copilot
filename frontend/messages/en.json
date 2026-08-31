@@ -666,7 +666,8 @@
       "subtitle": "Security threat overview and analysis",
       "totalAlerts": "Total Alerts",
       "criticalThreats": "Critical Threats",
-      "activeCampaigns": "Active Campaigns"
+      "activeCampaigns": "Active Campaigns",
+      "maliciousIocs": "Malicious IOCs"
     }
   },
   "marketplace": {

@@ -20,6 +20,11 @@ import {
  */
 const activeRetries = new Map<string, RetryState>();
 
+// Fallback title for errors without a backend-provided one.
+// TODO(i18n): error titles should come from message catalogs once the
+// error pipeline translates at the display layer.
+const DEFAULT_REQUEST_ERROR_TITLE = "Request Failed";
+
 /**
  * Generate unique key for retry tracking
  */
@@ -180,7 +185,7 @@ async function parseErrorResponse(response: Response): Promise<AppError> {
 
     return {
       code: response.status,
-      title: body?.title || "Request Failed",
+      title: body?.title || DEFAULT_REQUEST_ERROR_TITLE,
       message: body?.message || body?.detail || `HTTP ${response.status}`,
       suggestion: body?.suggestion,
       details: {
@@ -192,7 +197,7 @@ async function parseErrorResponse(response: Response): Promise<AppError> {
   } catch {
     return {
       code: response.status,
-      title: "Request Failed",
+      title: DEFAULT_REQUEST_ERROR_TITLE,
       message: `HTTP ${response.status}`,
       details: { status: response.status, url: response.url },
     };

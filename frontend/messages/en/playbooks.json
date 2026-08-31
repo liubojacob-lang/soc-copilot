@@ -65,6 +65,7 @@
       "noApprovalsDesc": "No playbook executions awaiting approval"
     },
     "playbook": "Playbook",
+    "status": "Status",
     "queue": {
       "queued": "Queued",
       "running": "Running"
