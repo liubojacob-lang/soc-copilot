@@ -1125,7 +1125,7 @@ def upgrade() -> None:
         sa.Column("log_type", sa.String(length=50), nullable=False),
         sa.Column("raw_data", sa.Text(), nullable=False),
         sa.Column("parsed_fields", sa.JSON(), nullable=False),
-        sa.Column("alert_id", sa.String(length=36), nullable=True),
+        sa.Column("alert_id", sa.Integer(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
             ["alert_id"], ["security_alerts.id"], ondelete="SET NULL"

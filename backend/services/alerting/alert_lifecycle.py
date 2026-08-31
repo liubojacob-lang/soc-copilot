@@ -419,29 +419,34 @@ class AlertLifecycleService:
         if not start_date:
             start_date = end_date - timedelta(days=7)
 
-        # 确定时间分组格式
-        if interval == "hour":
-            # 按小时分组: YYYY-MM-DD HH:00:00
-            date_trunc = "strftime('%Y-%m-%d %H:00:00', created_at)"
-        elif interval == "day":
-            # 按天分组: YYYY-MM-DD
-            date_trunc = "date(created_at)"
-        elif interval == "week":
-            # 按周分组: YYYY-WW
-            date_trunc = "strftime('%Y-W%W', created_at)"
-        else:
+        if interval not in ("hour", "day", "week"):
             raise ValueError(
                 f"Invalid interval: {interval}. Must be 'hour', 'day', or 'week'"
             )
 
-        # 使用原生SQL进行时间序列聚合（SQLite特定）
-        # 获取每个时间段的告警统计
-        # date_trunc comes from the whitelisted interval mapping above;
-        # everything else is constant SQL, values are passed as bound params
+        # 时间分组表达式：按数据库方言选择函数，输出统一为文本供下游解析
+        # （SQLite: strftime；PostgreSQL: date_trunc + TO_CHAR）
+        if self.db.get_bind().dialect.name == "sqlite":
+            period_expr = {
+                "hour": "strftime('%Y-%m-%d %H:00:00', created_at)",
+                "day": "strftime('%Y-%m-%d', created_at)",
+                # 先回退 6 天再推进到最近的周一 => 归到所在周的周一
+                "week": "strftime('%Y-%m-%d', created_at, '-6 days', 'weekday 1')",
+            }[interval]
+        else:
+            period_expr = {
+                "hour": "TO_CHAR(date_trunc('hour', created_at), 'YYYY-MM-DD HH24:00:00')",
+                "day": "TO_CHAR(date_trunc('day', created_at), 'YYYY-MM-DD')",
+                "week": "TO_CHAR(date_trunc('week', created_at), 'YYYY-MM-DD')",
+            }[interval]
+
+        # 使用原生 SQL 进行时间序列聚合
+        # period 表达式来自上方按 interval 白名单构建的映射；
+        # 其余为常量 SQL，值通过绑定参数传入
         query = "\n".join(
             [
                 "SELECT",
-                f"    {date_trunc} as period,",
+                f"    {period_expr} as period,",
                 "    COUNT(*) as total,",
                 "    SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical,",
                 "    SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END) as high,",
@@ -463,23 +468,13 @@ class AlertLifecycleService:
 
         trends = []
         for row in result:
-            # 解析时间戳
+            # 解析时间戳：各方言输出统一为文本
+            # hour => 小时起点；day => 日期；week => 该周周一的日期
+            period = str(row.period)
             if interval == "hour":
-                timestamp = datetime.strptime(str(row.period), "%Y-%m-%d %H:00:00")
-            elif interval == "day":
-                timestamp = datetime.strptime(str(row.period), "%Y-%m-%d").replace(
-                    hour=0, minute=0, second=0
-                )
-            else:  # week
-                # 对于周，使用周的开始时间
-                parts = str(row.period).split("-W")
-                if len(parts) == 2:
-                    year, week = int(parts[0]), int(parts[1])
-                    # 计算周的开始时间（周一）
-                    timestamp = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
-                    timestamp += timedelta(weeks=week - 1, days=-timestamp.weekday())
-                else:
-                    timestamp = datetime.now(UTC)
+                timestamp = datetime.strptime(period, "%Y-%m-%d %H:%M:%S")
+            else:  # day / week
+                timestamp = datetime.strptime(period, "%Y-%m-%d")
 
             # 构建严重性统计
             by_severity = {

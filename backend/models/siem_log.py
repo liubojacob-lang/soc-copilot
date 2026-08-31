@@ -8,7 +8,7 @@ with structured search and Elasticsearch integration.
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from db.session import Base
@@ -35,7 +35,7 @@ class SIEMLog(Base):
 
     # Optional linkage to security alert
     alert_id = Column(
-        String(36),
+        Integer,
         ForeignKey("security_alerts.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
