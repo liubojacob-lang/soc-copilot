@@ -5,12 +5,12 @@ name: Security Scanning
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, "release/*"]
   pull_request:
     branches: [main]
   schedule:
     # Run security scan daily at 2 AM UTC
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * *"
 
 permissions:
   contents: read
@@ -31,7 +31,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
         working-directory: ./backend
@@ -64,8 +64,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
@@ -92,11 +92,11 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'python:3.12-slim'
-          format: 'table'
-          exit-code: '0'  # Don't fail CI, just report
+          image-ref: "python:3.12-slim"
+          format: "table"
+          exit-code: "0" # Don't fail CI, just report
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: "CRITICAL,HIGH"
 
   # ==========================================
   # Secret Detection
@@ -119,7 +119,7 @@ jobs:
       - name: Check for hardcoded passwords
         run: |
           echo "🔍 Scanning for hardcoded passwords..."
-          
+
           # Check for common password patterns
           if grep -r "password.*=.*['\"].*['\"]" --include="*.py" --include="*.js" --include="*.ts" --include="*.yml" \
             --exclude-dir=node_modules --exclude-dir=venv --exclude-dir=.next \
@@ -128,7 +128,7 @@ jobs:
           else
             echo "✅ No hardcoded passwords found"
           fi
-          
+
           # Check for default passwords
           if grep -r "changeme\|password123\|admin123\|SecureP@ssw0rd" \
             --include="*.py" --include="*.yml" --include="*.env*" \
@@ -153,7 +153,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install Bandit
         run: pip install bandit
@@ -186,24 +186,24 @@ jobs:
       - name: Validate docker-compose.yml
         run: |
           echo "🔍 Validating Docker Compose files..."
-          
+
           # Check for required environment variables
           if grep -q "DB_PASSWORD:-changeme" docker-compose.yml; then
             echo "❌ Found default DB_PASSWORD in docker-compose.yml"
             exit 1
           fi
-          
+
           if grep -q "SECRET_KEY:-your-secret" docker-compose.yml; then
             echo "❌ Found default SECRET_KEY in docker-compose.yml"
             exit 1
           fi
-          
+
           echo "✅ Docker Compose validation passed"
 
       - name: Validate .dockerignore exists
         run: |
           echo "🔍 Checking .dockerignore files..."
-          
+
           for file in .dockerignore backend/.dockerignore frontend/.dockerignore; do
             if [ ! -f "$file" ]; then
               echo "❌ Missing $file"
@@ -225,8 +225,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
@@ -241,12 +241,12 @@ jobs:
       - name: Check for dangerous patterns
         run: |
           echo "🔍 Scanning frontend for security issues..."
-          
+
           # Check for dangerouslySetInnerHTML usage
           if grep -r "dangerouslySetInnerHTML" frontend/app frontend/components --include="*.tsx" --include="*.ts"; then
             echo "⚠️  Found dangerouslySetInnerHTML - review for XSS risks"
           fi
-          
+
           # Check for localStorage token storage
           if grep -r "localStorage.*token\|localStorage.*access_token" frontend --include="*.tsx" --include="*.ts"; then
             echo "⚠️  Found localStorage token storage - consider HttpOnly cookies"

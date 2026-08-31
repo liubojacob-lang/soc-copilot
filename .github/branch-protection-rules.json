@@ -1,0 +1,104 @@
+{
+  "branch_protection_rules": {
+    "main": {
+      "description": "生产分支 - 仅通过PR合并，禁止直接推送",
+      "enforce_admins": true,
+      "required_pull_request_reviews": {
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": true,
+        "required_approving_review_count": 1,
+        "require_last_push_approval": false
+      },
+      "required_status_checks": {
+        "strict": true,
+        "contexts": [
+          "backend-lint",
+          "frontend-lint",
+          "backend-tests",
+          "frontend-tests",
+          "security-scan"
+        ]
+      },
+      "restrictions": null,
+      "required_linear_history": true,
+      "allow_force_pushes": false,
+      "allow_deletions": false,
+      "block_creations": false,
+      "required_conversation_resolution": true
+    },
+    "develop": {
+      "description": "开发集成分支 - 仅通过PR合并，禁止直接推送",
+      "enforce_admins": false,
+      "required_pull_request_reviews": {
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": false,
+        "required_approving_review_count": 1,
+        "require_last_push_approval": false
+      },
+      "required_status_checks": {
+        "strict": false,
+        "contexts": ["backend-lint", "frontend-lint"]
+      },
+      "restrictions": null,
+      "required_linear_history": false,
+      "allow_force_pushes": false,
+      "allow_deletions": false,
+      "block_creations": false,
+      "required_conversation_resolution": true
+    }
+  },
+  "branch_types": {
+    "main": {
+      "naming": "main",
+      "created_from": "-",
+      "merge_to": "-",
+      "protection": "禁止直接推送、必须PR、至少1人审批、CI必须通过",
+      "lifecycle": "永久"
+    },
+    "develop": {
+      "naming": "develop",
+      "created_from": "main",
+      "merge_to": "-",
+      "protection": "禁止直接推送、必须PR",
+      "lifecycle": "永久"
+    },
+    "feature": {
+      "naming": "feature/FR-xxx-简短描述",
+      "created_from": "develop",
+      "merge_to": "develop",
+      "protection": "无",
+      "lifecycle": "合并后删除"
+    },
+    "fix": {
+      "naming": "fix/FR-xxx-简短描述",
+      "created_from": "develop或main",
+      "merge_to": "来源分支",
+      "protection": "无",
+      "lifecycle": "合并后删除"
+    },
+    "release": {
+      "naming": "release/vX.Y.Z",
+      "created_from": "develop",
+      "merge_to": "main+develop",
+      "protection": "仅项目负责人可创建",
+      "lifecycle": "发布后删除"
+    },
+    "hotfix": {
+      "naming": "hotfix/vX.Y.Z-简短描述",
+      "created_from": "main",
+      "merge_to": "main+develop",
+      "protection": "仅项目负责人可创建",
+      "lifecycle": "合并后删除"
+    }
+  },
+  "merge_strategy": {
+    "main": "squash merge (保持主分支历史整洁)",
+    "develop": "merge commit (保留完整开发历史)",
+    "feature_to_develop": "squash merge (一个功能一个提交)",
+    "fix_to_develop": "squash merge (一个修复一个提交)",
+    "release_to_main": "merge commit (保留发布历史)",
+    "release_to_develop": "merge commit (回溯发布变更)",
+    "hotfix_to_main": "merge commit (保留紧急修复历史)",
+    "hotfix_to_develop": "merge commit (回溯紧急修复变更)"
+  }
+}

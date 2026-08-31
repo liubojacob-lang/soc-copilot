@@ -1,0 +1,313 @@
+name: Release Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., 0.10.0)"
+        required: true
+        type: string
+      dry_run:
+        description: "Dry run (skip push and deploy)"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: soc-copilot-backend
+  FRONTEND_IMAGE_NAME: soc-copilot-frontend
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  # ─── 步骤1: 版本验证 ───────────────────────────────────────
+  validate-version:
+    name: Validate Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            # On merge to main, read version from pyproject.toml
+            VERSION=$(grep '^version = ' backend/pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          else
+            echo "❌ Unexpected trigger"
+            exit 1
+          fi
+
+          # Validate SemVer format
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Invalid version format: $VERSION (expected MAJOR.MINOR.PATCH)"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📋 Release version: v$VERSION"
+
+      - name: Check version consistency
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PY_VER=$(grep '^version = ' backend/pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          PKG_VER=$(grep '"version"' frontend/package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+
+          echo "📋 Version check:"
+          echo "  Expected: $VERSION"
+          echo "  pyproject.toml: $PY_VER"
+          echo "  package.json: $PKG_VER"
+
+          if [[ "$PY_VER" != "$VERSION" ]]; then
+            echo "⚠️ pyproject.toml version ($PY_VER) does not match expected ($VERSION)"
+          fi
+          if [[ "$PKG_VER" != "$VERSION" ]]; then
+            echo "⚠️ package.json version ($PKG_VER) does not match expected ($VERSION)"
+          fi
+
+  # ─── 步骤2: CI全量验证 ─────────────────────────────────────
+  release-ci:
+    name: Release CI Check
+    runs-on: ubuntu-latest
+    needs: validate-version
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-directory: frontend
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black isort mypy
+          pip install -r backend/requirements.txt
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Backend lint
+        run: |
+          ruff check backend/
+          black --check backend/
+          isort --check-only backend/
+
+      - name: Frontend lint
+        run: cd frontend && npm run lint
+
+      - name: Backend tests
+        run: |
+          cd backend
+          pip install -r requirements-test.txt
+          pytest --tb=short -q
+
+      - name: Frontend build
+        run: cd frontend && npm run build
+
+  # ─── 步骤3: 生成CHANGELOG ──────────────────────────────────
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: [validate-version, release-ci]
+    outputs:
+      changelog: ${{ steps.changelog.outputs.content }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          chmod +x scripts/generate-changelog.sh
+          CHANGELOG_CONTENT=$(./scripts/generate-changelog.sh "$VERSION" --ci)
+
+          # Save to file for multiline output
+          echo "$CHANGELOG_CONTENT" > /tmp/changelog.txt
+          echo "content<<EOF" >> "$GITHUB_OUTPUT"
+          cat /tmp/changelog.txt >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+  # ─── 步骤4: 创建Git Tag ────────────────────────────────────
+  create-tag:
+    name: Create Git Tag
+    runs-on: ubuntu-latest
+    needs: [validate-version, release-ci]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ needs.validate-version.outputs.tag }}"
+          # Check if tag already exists
+          if git tag -l "$TAG" | grep -q "$TAG"; then
+            echo "⚠️ Tag $TAG already exists, skipping"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+            echo "✅ Tag $TAG created and pushed"
+          fi
+
+  # ─── 步骤5: 构建Docker镜像 ─────────────────────────────────
+  build-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [validate-version, release-ci]
+    strategy:
+      matrix:
+        include:
+          - target: backend
+            dockerfile: backend/Dockerfile
+            image: soc-copilot-backend
+          - target: frontend
+            dockerfile: frontend/Dockerfile
+            image: soc-copilot-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-version.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-version.outputs.version }}
+            type=raw,value=latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: ${{ inputs.dry_run != true }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.validate-version.outputs.version }}
+
+  # ─── 步骤6: 安全扫描 ──────────────────────────────────────
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [validate-version, build-images]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/soc-copilot-backend:${{ needs.validate-version.outputs.version }}
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
+
+      - name: Upload Trivy scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
+
+  # ─── 步骤7: 创建GitHub Release ──────────────────────────────
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-version, generate-changelog, build-images, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate-version.outputs.tag }}
+          name: Release ${{ needs.validate-version.outputs.tag }}
+          body: ${{ needs.generate-changelog.outputs.changelog }}
+          draft: false
+          prerelease: ${{ contains(needs.validate-version.outputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── 步骤8: 发布后处理 ──────────────────────────────────────
+  post-release:
+    name: Post Release
+    runs-on: ubuntu-latest
+    needs: [validate-version, create-release]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge main back to develop
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main develop
+          git checkout develop
+          git merge origin/main --no-edit
+          git push origin develop
+          echo "✅ main merged back to develop"
+
+      - name: Clean up release branch
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          BRANCH="release/v${VERSION}"
+          # Delete remote release branch if exists
+          git push origin --delete "$BRANCH" 2>/dev/null || echo "Branch $BRANCH not found on remote (may already be deleted)"
+          echo "✅ Release branch cleanup done"
+
+      - name: Release summary
+        run: |
+          echo "## 🚀 Release Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Item | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Version | ${{ needs.validate-version.outputs.tag }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Commit | ${{ github.sha }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Actor | ${{ github.actor }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Timestamp | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> "$GITHUB_STEP_SUMMARY"

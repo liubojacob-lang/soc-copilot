@@ -1,5 +1,6 @@
 # Pre-commit hooks configuration
 # Install: pip install pre-commit && pre-commit install
+# 分支命名验证相关配置详见 .github/branch-protection-rules.json
 repos:
   # Backend Python hooks
   - repo: https://github.com/psf/black
@@ -61,3 +62,15 @@ repos:
       - id: check-merge-conflict
       - id: detect-private-key
       - id: mixed-line-ending
+
+  # Branch naming validation (FR-001)
+  - repo: local
+    hooks:
+      - id: validate-branch-name
+        name: Validate branch name
+        entry: ./scripts/validate-branch-name.sh
+        language: script
+        pass_filenames: false
+        always_run: false
+        stages: [pre-push]
+        description: Validates current branch name follows naming convention (FR-001)

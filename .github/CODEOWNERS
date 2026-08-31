@@ -1,12 +1,100 @@
+# SOC Copilot CODEOWNERS
+# 定义代码所有者规则，控制PR审查人自动分配
+# 规则优先级：后面的规则优先级更高（更具体的路径覆盖更一般的路径）
+# 关联需求：FR-002（代码审查流程管理）
+
+# =============================================================================
+# 默认所有者 - 所有未匹配的文件
+# =============================================================================
 * @levent
 
-/frontend/ @levent
+# =============================================================================
+# 安全相关文件 - 需要安全审计员 + 后端开发审查
+# =============================================================================
+
+# 核心安全模块
+/backend/app/core/security.py @levent
+/backend/app/core/security_validators.py @levent
+/backend/app/core/csrf.py @levent
+/backend/app/core/ssrf_protection.py @levent
+/backend/app/core/token_blacklist.py @levent
+/backend/app/core/sensitive_data.py @levent
+/backend/app/core/cookie_auth.py @levent
+/backend/app/core/prompt_sanitizer.py @levent
+
+# 安全相关模型
+/backend/app/models/secret.py @levent
+/backend/app/models/api_key.py @levent
+/backend/app/models/security_alert.py @levent
+/backend/app/models/security_vulnerability.py @levent
+/backend/app/models/rbac.py @levent
+/backend/app/models/audit_log.py @levent
+/backend/app/models/user.py @levent
+
+# 安全相关依赖
+/backend/app/dependencies/auth.py @levent
+/backend/app/dependencies/authorization.py @levent
+/backend/app/dependencies/rbac.py @levent
+/backend/app/dependencies/audit.py @levent
+
+# 安全相关中间件
+/backend/app/middleware/security_headers.py @levent
+/backend/app/middleware/csrf_middleware.py @levent
+/backend/app/middleware/authorization_middleware.py @levent
+/backend/app/middleware/audit_middleware.py @levent
+
+# 安全相关路由
+/backend/app/routers/auth.py @levent
+/backend/app/routers/secrets.py @levent
+/backend/app/routers/security_alerts.py @levent
+/backend/app/routers/security_vulnerabilities.py @levent
+/backend/app/routers/api_keys.py @levent
+
+# 安全相关仓库
+/backend/app/repositories/secret_repository.py @levent
+/backend/app/repositories/api_key_repository.py @levent
+
+# 安全配置文件
+/backend/app/core/config.py @levent
+/.pre-commit-config-security.yaml @levent
+/.gitleaks.toml @levent
+
+# =============================================================================
+# 数据库迁移 - 需要后端开发 + DevOps审查
+# =============================================================================
+/backend/app/migrations_alembic/ @levent
+/backend/app/migrations/ @levent
+/backend/alembic.ini @levent
+
+# =============================================================================
+# 后端代码 - 后端开发审查
+# =============================================================================
 /backend/ @levent
 
+# =============================================================================
+# 前端代码 - 前端开发审查
+# =============================================================================
+/frontend/ @levent
+
+# =============================================================================
+# DevOps/基础设施 - DevOps工程师审查
+# =============================================================================
 /.github/ @levent
+/k8s/ @levent
+/nginx/ @levent
 /docker-compose*.yml @levent
 /Dockerfile* @levent
 /Makefile @levent
+/backend/Dockerfile @levent
+/backend/docker-compose*.yml @levent
+/backend/prometheus.yml @levent
+/backend/promtail-config.yml @levent
 
+# =============================================================================
+# 文档 - 所有人可审查
+# =============================================================================
 /docs/ @levent
 /AGENTS.md @levent
+/DEVELOPMENT_GUIDE.md @levent
+/DEVELOPMENT_GUIDE.zh-CN.md @levent
+/CODE_WIKI.md @levent
