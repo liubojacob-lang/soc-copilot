@@ -8,9 +8,9 @@ services:
     image: postgres:15-alpine
     container_name: soc-copilot-postgres-prod
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
       - ./backups:/backups
@@ -34,13 +34,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: soc-copilot-redis-prod
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     volumes:
       - redis_prod_data:/data
     ports:
       - "127.0.0.1:6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,14 +52,22 @@ services:
     image: ${DOCKERHUB_USERNAME}/soc-copilot-backend:latest
     container_name: soc-copilot-backend-prod
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY}
-      - ENVIRONMENT=production
-      - DIFY_API_URL=${DIFY_API_URL}
-      - DIFY_API_KEY=${DIFY_API_KEY}
-      - LOG_LEVEL=INFO
-      - WORKERS=4
+      - "DATABASE_URL=postgresql+asyncpg://${DB_USER:?DB_USER is required}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:?DB_NAME is required}"
+      - "DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD is required}"
+      - "REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
+      - "REDIS_ENABLED=true"
+      - "REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
+      - "SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}"
+      - "JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}"
+      - "BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD is required}"
+      - "SECRET_ENCRYPTION_KEY=${SECRET_ENCRYPTION_KEY:?SECRET_ENCRYPTION_KEY is required}"
+      - "HTTP_ALLOWED_HOSTS=${HTTP_ALLOWED_HOSTS:?HTTP_ALLOWED_HOSTS is required}"
+      - "CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS is required}"
+      - "ENVIRONMENT=production"
+      - "DIFY_API_URL=${DIFY_API_URL}"
+      - "DIFY_API_KEY=${DIFY_API_KEY}"
+      - "LOG_LEVEL=INFO"
+      - "WORKERS=4"
     depends_on:
       postgres:
         condition: service_healthy
@@ -113,7 +121,7 @@ services:
     # Note: container_name removed to support replicas (unique names auto-generated)
     command: python workers/alert_worker.py
     environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - "REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
       - WORKER_ID=${WORKER_ID:-1}
       - FEISHU_WEBHOOK_URL=${FEISHU_WEBHOOK_URL}
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
