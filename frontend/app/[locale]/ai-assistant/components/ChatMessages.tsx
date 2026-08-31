@@ -1,6 +1,7 @@
 /** Chat messages display component */
 
 import { useRef, useEffect } from "react";
+import { useFormatter } from "next-intl";
 import { Brain, Copy, Check } from "lucide-react";
 import type { Message } from "../types";
 
@@ -23,6 +24,7 @@ export function ChatMessages({
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const format = useFormatter();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -66,7 +68,7 @@ export function ChatMessages({
               className={`text-xs mt-1.5 flex items-center gap-2 ${message.role === "user" ? "justify-end" : ""}`}
             >
               <span className="text-gray-400 dark:text-gray-500">
-                {message.timestamp.toLocaleTimeString()}
+                {format.dateTime(message.timestamp, { timeStyle: "medium" })}
               </span>
               {message.content && (
                 <button

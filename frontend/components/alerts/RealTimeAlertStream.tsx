@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { loadAuthState } from "@/lib/auth";
 import { getWazuhWebSocketClient, WazuhWebSocketClient } from "@/lib/wazuhWebSocket";
 import { AlertData, SeverityLevel } from "@/types/wazuh";
@@ -55,6 +55,7 @@ export function WazuhAlertStream({
   onAlertClick,
 }: AlertStreamProps) {
   const t = useTranslations("wazuh.stream");
+  const format = useFormatter();
   const tCommon = useTranslations("common");
 
   // State
@@ -500,6 +501,7 @@ interface AlertItemProps {
 }
 
 const AlertItem = memo(function AlertItem({ alert, onClick }: AlertItemProps) {
+  const format = useFormatter();
   return (
     <div
       onClick={onClick}
@@ -524,7 +526,11 @@ const AlertItem = memo(function AlertItem({ alert, onClick }: AlertItemProps) {
           </div>
 
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-            {new Date(alert.timestamp).toLocaleString()} • {alert.agent.name} ({alert.agent.ip})
+            {format.dateTime(new Date(alert.timestamp), {
+              dateStyle: "medium",
+              timeStyle: "medium",
+            })}{" "}
+            • {alert.agent.name} ({alert.agent.ip})
           </p>
 
           {alert.full_log && (

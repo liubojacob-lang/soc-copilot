@@ -1,132 +1,133 @@
 /**
- * Authentication Store
- * Reactive layer on top of lib/auth.ts.
- * lib/auth.ts is the single source of truth for token storage.
+ * Authentication Store — Zustand + persist (v1.0 migration)
+ * Migrated from useSyncExternalStore to Zustand for consistent state management.
+ * lib/auth.ts remains the single source of truth for token storage.
  *
- * NOTE: usePermission hook is the only consumer of this store.
- * If zustand is added later, this can be converted to a Zustand store.
+ * Key changes from legacy implementation:
+ * - useSyncExternalStore → Zustand create() + persist middleware
+ * - login/logout/hydrate now use store.setState() directly
+ * - Selectors use standard Zustand pattern (s => s.user)
+ * - Clearer separation: store state vs lib/auth.js token persistence
  */
 
-import { useSyncExternalStore } from "react";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import {
   login as authLogin,
   logout as authLogout,
   loadAuthState,
-  saveAuthState,
   refreshAccessToken as authRefresh,
   getCurrentUser,
   type User,
-  type AuthState,
 } from "@/lib/auth";
 
 export type { User } from "@/lib/auth";
 
-interface StoreState {
+// ── State interface ──
+interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 }
 
-type Listener = () => void;
-
-let state: StoreState = {
-  user: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
-};
-
-const listeners = new Set<Listener>();
-
-function setState(patch: Partial<StoreState>) {
-  state = { ...state, ...patch };
-  listeners.forEach((l) => l());
+interface AuthActions {
+  login: (username: string, password: string) => Promise<void>;
+  logoutAction: () => Promise<void>;
+  refreshToken: () => Promise<void>;
+  fetchUser: () => Promise<void>;
+  hydrateFromStorage: () => void;
+  clearError: () => void;
 }
 
-function subscribe(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
+type AuthStore = AuthState & AuthActions;
 
-function getSnapshot(): StoreState {
-  return state;
-}
-
-/** Initialize from lib/auth.ts persisted state (call once at app mount) */
-export function hydrateAuthStore(): void {
-  const auth = loadAuthState();
-  if (auth?.isAuthenticated && auth.user) {
-    setState({ user: auth.user, isAuthenticated: true });
-  }
-}
-
-export async function login(username: string, password: string): Promise<void> {
-  setState({ isLoading: true, error: null });
-  try {
-    const authState: AuthState = await authLogin(username, password);
-    setState({
-      user: authState.user,
-      isAuthenticated: authState.isAuthenticated,
+// ── Store ──
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set, get) => ({
+      // -- State --
+      user: null,
+      isAuthenticated: false,
       isLoading: false,
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Login failed";
-    setState({ user: null, isAuthenticated: false, isLoading: false, error: message });
-    throw error;
-  }
-}
+      error: null,
 
-export async function logoutAction(): Promise<void> {
-  authLogout();
-  setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
-  if (typeof window !== "undefined") {
-    window.location.href = "/login";
-  }
-}
+      // -- Actions --
 
-export async function refreshToken(): Promise<void> {
-  if (!state.isAuthenticated) return;
-  try {
-    const storedRefresh = localStorage.getItem("refresh_token");
-    if (!storedRefresh) throw new Error("No refresh token");
-    const authState = await authRefresh(storedRefresh);
-    if (authState.isAuthenticated) {
-      saveAuthState(authState);
-      setState({ user: authState.user, isAuthenticated: true });
-    } else {
-      await logoutAction();
+      /** Initialize from lib/auth.ts persisted state (call once at app mount) */
+      hydrateFromStorage: () => {
+        const auth = loadAuthState();
+        if (auth?.isAuthenticated && auth.user) {
+          set({ user: auth.user, isAuthenticated: true });
+        }
+      },
+
+      login: async (username: string, password: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const authState = await authLogin(username, password);
+          set({
+            user: authState.user,
+            isAuthenticated: authState.isAuthenticated,
+            isLoading: false,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Login failed";
+          set({ user: null, isAuthenticated: false, isLoading: false, error: message });
+          throw error;
+        }
+      },
+
+      logoutAction: async () => {
+        authLogout();
+        set({ user: null, isAuthenticated: false, isLoading: false, error: null });
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+      },
+
+      refreshToken: async () => {
+        const { isAuthenticated, logoutAction: doLogout } = get();
+        if (!isAuthenticated) return;
+        try {
+          const authState = await authRefresh();
+          if (authState.isAuthenticated) {
+            set({ user: authState.user, isAuthenticated: true });
+          } else {
+            await doLogout();
+          }
+        } catch {
+          await doLogout();
+        }
+      },
+
+      fetchUser: async () => {
+        const { isAuthenticated, logoutAction: doLogout } = get();
+        if (!isAuthenticated) return;
+        try {
+          const user = await getCurrentUser();
+          set({ user });
+        } catch {
+          await doLogout();
+        }
+      },
+
+      clearError: () => set({ error: null }),
+    }),
+    {
+      name: "auth-storage",
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
-  } catch {
-    await logoutAction();
-  }
-}
+  )
+);
 
-export async function fetchUser(): Promise<void> {
-  if (!state.isAuthenticated) return;
-  try {
-    const user = await getCurrentUser();
-    setState({ user });
-  } catch {
-    await logoutAction();
-  }
-}
-
-export function clearError(): void {
-  setState({ error: null });
-}
-
-/**
- * useAuthStore hook — React useSyncExternalStore compatible.
- * Replaces the previous Zustand-based implementation.
- */
-export function useAuthStore(): StoreState {
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-}
-
-export const selectUser = (s: StoreState) => s.user;
-export const selectIsAuthenticated = (s: StoreState) => s.isAuthenticated;
-export const selectIsAdmin = (s: StoreState) => s.user?.role === "admin";
-export const selectCanWrite = (s: StoreState) =>
+// ── Selectors ──
+export const selectUser = (s: AuthState) => s.user;
+export const selectIsAuthenticated = (s: AuthState) => s.isAuthenticated;
+export const selectIsAdmin = (s: AuthState) => s.user?.role === "admin";
+export const selectCanWrite = (s: AuthState) =>
   s.user?.role === "admin" || s.user?.role === "analyst";
-export const selectPermissions = (s: StoreState) => s.user?.permissions ?? [];
+export const selectPermissions = (s: AuthState) => s.user?.permissions ?? [];

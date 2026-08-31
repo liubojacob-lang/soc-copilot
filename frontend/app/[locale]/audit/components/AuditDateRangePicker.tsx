@@ -1,5 +1,7 @@
 /** Date range picker component with presets */
 
+import { useFormatter } from "next-intl";
+
 import { datePresets, formatDateForInput } from "../utils";
 import type { AuditFilters } from "../types";
 
@@ -11,6 +13,7 @@ interface AuditDateRangePickerProps {
 
 export function AuditDateRangePicker({ filters, onChange, onClear }: AuditDateRangePickerProps) {
   const { dateFrom, dateTo } = filters;
+  const format = useFormatter();
 
   const applyDatePreset = (preset: (typeof datePresets)[0]) => {
     const range = preset.getRange();
@@ -43,13 +46,13 @@ export function AuditDateRangePicker({ filters, onChange, onClear }: AuditDateRa
     if (dateFrom && dateTo) {
       const fromDate = new Date(dateFrom);
       const toDate = new Date(dateTo);
-      return `Custom: ${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()}`;
+      return `Custom: ${format.dateTime(fromDate, { dateStyle: "medium" })} - ${format.dateTime(toDate, { dateStyle: "medium" })}`;
     }
     if (dateFrom) {
-      return `From ${new Date(dateFrom).toLocaleDateString()}`;
+      return `From ${format.dateTime(new Date(dateFrom), { dateStyle: "medium" })}`;
     }
     if (dateTo) {
-      return `To ${new Date(dateTo).toLocaleDateString()}`;
+      return `To ${format.dateTime(new Date(dateTo), { dateStyle: "medium" })}`;
     }
     return null;
   };

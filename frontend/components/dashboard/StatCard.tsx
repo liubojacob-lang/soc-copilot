@@ -1,96 +1,161 @@
 "use client";
 
-import { ReactNode } from "react";
+/**
+ * StatCard - Reusable KPI metric card for dashboards
+ */
+
+import React, { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { Card } from "@/components/common/Card";
-import { Heading, Caption, Text } from "@/components/ui/Typography";
 
-/**
- * Trend 方向类型
- */
-type TrendDirection = "up" | "down" | "neutral";
-
-/**
- * StatCard 组件属性
- * KPI 大数字卡片，用于仪表盘展示关键指标
- */
 interface StatCardProps {
-  /** 指标名称 */
   title: string;
-  /** 数值 */
   value: string | number;
-  /** 环比变化文字，如 "+12%" */
-  trend?: string;
-  /** 趋势方向 */
-  trendDirection?: TrendDirection;
-  /** 图标 */
-  icon?: ReactNode;
-  /** 副标题 */
   subtitle?: string;
-  /** 自定义类名 */
+  icon?: ReactNode;
+  /** Numeric trend (renders "↑/↓ n%") or a plain status string (renders as-is). */
+  trend?:
+    | {
+        value: number;
+        isPositive: boolean;
+        label?: string;
+      }
+    | string;
+  /** Legacy prop accepted for backward compatibility (no longer rendered). */
+  trendDirection?: "up" | "down" | "neutral";
+  variant?: "default" | "blue" | "red" | "green" | "amber" | "purple";
   className?: string;
+  loading?: boolean;
 }
 
-/**
- * KPI 统计卡片
- *
- * 顶部指标名称（12px 辅助色）
- * 中部大字号数据（32px / 600 字重）
- * 底部环比变化（绿色/红色小字 + 箭头图标）
- */
-function StatCard({
+function isNumericTrend(
+  trend: NonNullable<StatCardProps["trend"]>
+): trend is { value: number; isPositive: boolean; label?: string } {
+  return typeof trend !== "string";
+}
+
+const variantStyles: Record<
+  string,
+  { bg: string; iconBg: string; iconColor: string; trendGood: string; trendBad: string }
+> = {
+  default: {
+    bg: "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+    iconBg: "bg-gray-100 dark:bg-gray-700",
+    iconColor: "text-gray-600 dark:text-gray-300",
+    trendGood: "text-green-600",
+    trendBad: "text-red-600",
+  },
+  blue: {
+    bg: "bg-white dark:bg-gray-800 border-blue-100 dark:border-blue-900/30",
+    iconBg: "bg-blue-50 dark:bg-blue-900/20",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    trendGood: "text-green-600",
+    trendBad: "text-red-600",
+  },
+  red: {
+    bg: "bg-white dark:bg-gray-800 border-red-100 dark:border-red-900/30",
+    iconBg: "bg-red-50 dark:bg-red-900/20",
+    iconColor: "text-red-600 dark:text-red-400",
+    trendGood: "text-green-600",
+    trendBad: "text-red-600",
+  },
+  green: {
+    bg: "bg-white dark:bg-gray-800 border-green-100 dark:border-green-900/30",
+    iconBg: "bg-green-50 dark:bg-green-900/20",
+    iconColor: "text-green-600 dark:text-green-400",
+    trendGood: "text-green-600",
+    trendBad: "text-red-600",
+  },
+  amber: {
+    bg: "bg-white dark:bg-gray-800 border-amber-100 dark:border-amber-900/30",
+    iconBg: "bg-amber-50 dark:bg-amber-900/20",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    trendGood: "text-green-600",
+    trendBad: "text-red-600",
+  },
+  purple: {
+    bg: "bg-white dark:bg-gray-800 border-purple-100 dark:border-purple-900/30",
+    iconBg: "bg-purple-50 dark:bg-purple-900/20",
+    iconColor: "text-purple-600 dark:text-purple-400",
+    trendGood: "text-green-600",
+    trendBad: "text-red-600",
+  },
+};
+
+const StatCard = React.memo(function StatCard({
   title,
   value,
-  trend,
-  trendDirection = "neutral",
-  icon,
   subtitle,
+  icon,
+  trend,
+  variant = "default",
   className,
+  loading = false,
 }: StatCardProps) {
-  const trendColorClasses: Record<TrendDirection, string> = {
-    up: "text-success-600 dark:text-success-400",
-    down: "text-danger-600 dark:text-danger-400",
-    neutral: "text-text-tertiary dark:text-slate-400",
-  };
+  const styles = variantStyles[variant] || variantStyles.default;
 
-  const trendArrow: Record<TrendDirection, string> = {
-    up: "↑",
-    down: "↓",
-    neutral: "−",
-  };
+  if (loading) {
+    return (
+      <div className={cn("rounded-xl border p-5 shadow-sm animate-pulse", styles.bg, className)}>
+        <div className="flex items-start justify-between mb-3">
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+          <div className="w-9 h-9 rounded-lg bg-gray-200 dark:bg-gray-700" />
+        </div>
+        <div className="h-7 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-2" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24" />
+      </div>
+    );
+  }
 
   return (
-    <Card
-      variant="default"
-      padding="lg"
-      className={cn("flex items-start justify-between", className)}
+    <div
+      className={cn(
+        "rounded-xl border p-5 shadow-sm transition-shadow hover:shadow-md",
+        styles.bg,
+        className
+      )}
     >
-      <div className="flex-1 min-w-0">
-        <Caption color="tertiary">{title}</Caption>
-        <Heading level="display" color="primary" className="mt-1 font-semibold">
-          {value}
-        </Heading>
-        {subtitle && (
-          <Text color="tertiary" className="mt-1 text-sm">
-            {subtitle}
-          </Text>
-        )}
-        {trend && (
-          <div className="mt-2 flex items-center gap-1.5">
-            <span className={cn("text-sm font-medium", trendColorClasses[trendDirection])}>
-              {trendArrow[trendDirection]} {trend}
-            </span>
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          {title}
+        </h3>
+        {icon && (
+          <div
+            className={cn(
+              "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+              styles.iconBg
+            )}
+          >
+            <span className={cn("w-5 h-5", styles.iconColor)}>{icon}</span>
           </div>
         )}
       </div>
-      {icon && (
-        <div className="p-3 rounded-lg bg-surface-hover dark:bg-slate-700 text-text-secondary dark:text-slate-300 shrink-0 ml-4">
-          {icon}
-        </div>
-      )}
-    </Card>
+
+      <div className="flex items-baseline gap-2 mb-1">
+        <span className="text-2xl font-bold text-gray-900 dark:text-white">{value}</span>
+        {trend && isNumericTrend(trend) && (
+          <span
+            className={cn(
+              "text-xs font-semibold flex items-center gap-0.5",
+              trend.isPositive ? styles.trendGood : styles.trendBad
+            )}
+          >
+            {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
+            {trend.label && (
+              <span className="text-gray-400 dark:text-gray-500 font-normal ml-0.5">
+                {trend.label}
+              </span>
+            )}
+          </span>
+        )}
+        {trend && typeof trend === "string" && (
+          <span className="text-xs font-medium text-gray-400 dark:text-gray-500">{trend}</span>
+        )}
+      </div>
+
+      {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500">{subtitle}</p>}
+    </div>
   );
-}
+});
 
 export { StatCard };
-export type { StatCardProps, TrendDirection };
+export type { StatCardProps };

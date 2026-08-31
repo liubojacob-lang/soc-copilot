@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormatter } from "next-intl";
 import { useState, useRef, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Send, Bot, User, Sparkles, AlertCircle, Loader2 } from "lucide-react";
@@ -25,6 +26,7 @@ What would you like to do?`,
 };
 
 export default function AIAssistant() {
+  const format = useFormatter();
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -195,7 +197,7 @@ export default function AIAssistant() {
                   message.role === "user" ? "text-blue-200" : "text-gray-500 dark:text-gray-400"
                 }`}
               >
-                {mounted ? message.timestamp.toLocaleTimeString() : ""}
+                {mounted ? format.dateTime(message.timestamp, { timeStyle: "medium" }) : ""}
               </div>
             </div>
           </div>

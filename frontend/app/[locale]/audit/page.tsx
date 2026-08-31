@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { loadAuthState, logout, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import { AuditPageContainer } from "./components/AuditPageContainer";
 import { useEffect, useState } from "react";
 
@@ -42,7 +42,7 @@ export default function AuditLogsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation title="Audit Logs" />
+        <PageHeader title="Audit Logs" />
         <div className="p-6">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
@@ -67,7 +67,7 @@ export default function AuditLogsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title="Audit Logs" />
+      <PageHeader title="Audit Logs" />
       <AuditPageContainer />
     </div>
   );

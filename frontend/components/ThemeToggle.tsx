@@ -5,7 +5,9 @@ import { Sun, Moon } from "lucide-react";
 import { useThemeStore } from "@/stores/themeStore";
 
 export function ThemeToggle() {
-  const { resolvedTheme, toggleTheme } = useThemeStore();
+  const theme = useThemeStore((state) => state.theme);
+  const getResolvedTheme = useThemeStore((state) => state.getResolvedTheme);
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -24,6 +26,8 @@ export function ThemeToggle() {
       </button>
     );
   }
+
+  const resolvedTheme = getResolvedTheme();
 
   return (
     <button

@@ -21,7 +21,7 @@ export const queryClient = new QueryClient({
 
       // Retry failed queries 3 times with exponential backoff
       retry: 3,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
 
       // Don't refetch on window focus (better UX for data-heavy apps)
       refetchOnWindowFocus: false,
@@ -36,9 +36,9 @@ export const queryClient = new QueryClient({
       networkMode: "offlineFirst",
     },
     mutations: {
-      // Retry failed mutations 2 times
-      retry: 2,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      // Never auto-retry mutations: a retried delete/status-change fires the
+      // destructive action twice. Callers opt into retries explicitly.
+      retry: 0,
     },
   },
 });
@@ -82,6 +82,11 @@ export const queryKeys = {
   },
 
   // Users
+  // Cases
+  cases: {
+    all: ["cases"] as const,
+    detail: (id: string) => [...queryKeys.cases.all, "detail", id] as const,
+  },
   users: {
     all: ["users"] as const,
     lists: () => [...queryKeys.users.all, "list"] as const,

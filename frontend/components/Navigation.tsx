@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import { loadAuthState, logout, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Menu, X, ChevronDown, ShieldCheck } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeToggle } from "./ThemeToggle";
 import { useTranslations } from "next-intl";
 
 interface NavigationProps {
@@ -26,12 +27,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-export default function Navigation({
-  title = "SOC Copilot",
-  subtitle,
-  apiStatus,
-  actions,
-}: NavigationProps) {
+export default function Navigation({ title, subtitle, apiStatus, actions }: NavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("navigation");
@@ -78,7 +74,7 @@ export default function Navigation({
       case "admin":
         return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300";
       case "analyst":
-        return "bg-soc-100 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300";
+        return "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300";
       case "auditor":
         return "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300";
       default:
@@ -89,6 +85,9 @@ export default function Navigation({
   const mainNavItems: NavItem[] = useMemo(
     () => [
       { label: t("home"), path: "/" },
+      { label: t("monitor"), path: "/monitor" },
+      { label: t("cases"), path: "/cases" },
+      { label: t("alerts"), path: "/alerts" },
       { label: t("runs"), path: "/playbooks" },
       { label: t("definitions"), path: "/playbooks/definitions" },
     ],
@@ -100,6 +99,8 @@ export default function Navigation({
       label: t("analytics"),
       items: [
         { label: t("aiCopilot"), path: "/ai-assistant" },
+        { label: t("threatIntel"), path: "/threat-intel" },
+        { label: t("correlation"), path: "/correlation" },
         { label: t("ueba"), path: "/ueba" },
         { label: t("threatHunting"), path: "/threat-hunting" },
       ],
@@ -113,7 +114,7 @@ export default function Navigation({
       items: [
         { label: t("marketplace"), path: "/marketplace" },
         { label: t("cloudNative"), path: "/cloud-native" },
-        { label: t("alerts"), path: "/alerts" },
+        { label: t("assets"), path: "/assets" },
         { label: t("triggers"), path: "/triggers" },
       ],
     }),
@@ -181,7 +182,7 @@ export default function Navigation({
         <button
           className={`flex items-center gap-1 px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
             isActive
-              ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+              ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
               : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
           }`}
         >
@@ -210,9 +211,12 @@ export default function Navigation({
                 }}
                 className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-200 ${
                   isLinkActive(item.path)
-                    ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                    ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"
                 }`}
+                aria-current={
+                  adminItems.some((adminItem) => isLinkActive(adminItem.path)) ? "page" : undefined
+                }
               >
                 {item.label}
               </button>
@@ -230,20 +234,26 @@ export default function Navigation({
           <div className="flex items-center space-x-4">
             <button
               onClick={() => router.push("/")}
-              className="flex items-center gap-2.5 text-soc-600 hover:text-soc-700 dark:text-soc-400 dark:hover:text-soc-300 font-bold text-base whitespace-nowrap transition-colors"
+              className="flex items-center gap-2.5 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-bold text-base whitespace-nowrap transition-colors"
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-soc-500 to-soc-700 flex items-center justify-center shadow-lg shadow-soc-500/25">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25">
                 <ShieldCheck className="w-4.5 h-4.5 text-white" />
               </div>
               <span className="hidden sm:inline tracking-tight">SOC Copilot</span>
             </button>
-            <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
-            <div className="hidden md:block">
-              <h1 className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[10rem] lg:max-w-[15rem]">
-                {title}
-              </h1>
-              {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>}
-            </div>
+            {title && (
+              <>
+                <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+                <div className="hidden md:block">
+                  <h1 className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[10rem] lg:max-w-[15rem]">
+                    {title}
+                  </h1>
+                  {subtitle && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="hidden lg:flex items-center justify-between flex-1">
@@ -277,9 +287,10 @@ export default function Navigation({
                       onClick={() => router.push(link.path)}
                       className={`px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
                         isLinkActive(link.path)
-                          ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                          ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                           : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                       }`}
+                      aria-current={isLinkActive(link.path) ? "page" : undefined}
                     >
                       {link.label}
                     </button>
@@ -307,9 +318,14 @@ export default function Navigation({
                       <button
                         className={`flex items-center gap-1 px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
                           adminItems.some((item) => isLinkActive(item.path))
-                            ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                            ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                             : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                         }`}
+                        aria-current={
+                          adminItems.some((adminItem) => isLinkActive(adminItem.path))
+                            ? "page"
+                            : undefined
+                        }
                       >
                         {tCommon("admin")}
                         <ChevronDown
@@ -340,9 +356,14 @@ export default function Navigation({
                               }}
                               className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-200 ${
                                 isLinkActive(item.path)
-                                  ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                                  ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"
                               }`}
+                              aria-current={
+                                adminItems.some((adminItem) => isLinkActive(adminItem.path))
+                                  ? "page"
+                                  : undefined
+                              }
                             >
                               {item.label}
                             </button>
@@ -358,6 +379,7 @@ export default function Navigation({
             <div className="flex items-center space-x-2">
               {actions}
 
+              <ThemeToggle />
               <LanguageSwitcher />
 
               <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-0.5"></div>
@@ -424,9 +446,10 @@ export default function Navigation({
                   }}
                   className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 ${
                     isLinkActive(link.path)
-                      ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                      ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                   }`}
+                  aria-current={isLinkActive(link.path) ? "page" : undefined}
                 >
                   {link.label}
                 </button>
@@ -444,9 +467,14 @@ export default function Navigation({
                   }}
                   className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 pl-8 ${
                     isLinkActive(item.path)
-                      ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                      ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                   }`}
+                  aria-current={
+                    adminItems.some((adminItem) => isLinkActive(adminItem.path))
+                      ? "page"
+                      : undefined
+                  }
                 >
                   {item.label}
                 </button>
@@ -464,9 +492,14 @@ export default function Navigation({
                   }}
                   className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 pl-8 ${
                     isLinkActive(item.path)
-                      ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                      ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                   }`}
+                  aria-current={
+                    adminItems.some((adminItem) => isLinkActive(adminItem.path))
+                      ? "page"
+                      : undefined
+                  }
                 >
                   {item.label}
                 </button>
@@ -486,9 +519,14 @@ export default function Navigation({
                       }}
                       className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 pl-8 ${
                         isLinkActive(item.path)
-                          ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
+                          ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                           : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                       }`}
+                      aria-current={
+                        adminItems.some((adminItem) => isLinkActive(adminItem.path))
+                          ? "page"
+                          : undefined
+                      }
                     >
                       {item.label}
                     </button>
@@ -502,6 +540,7 @@ export default function Navigation({
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Language
                 </span>
+                <ThemeToggle />
                 <LanguageSwitcher />
               </div>
 

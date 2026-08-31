@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { loadAuthState, authFetchJSON } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 
 interface Definition {
   id: string;
@@ -118,7 +118,7 @@ export default function NewCronTriggerPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={tNewCron("title")} subtitle={tNewCron("subtitle")} />
+      <PageHeader title={tNewCron("title")} subtitle={tNewCron("subtitle")} />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error Message */}

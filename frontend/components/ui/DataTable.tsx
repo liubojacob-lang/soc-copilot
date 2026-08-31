@@ -298,11 +298,13 @@ export function DataTable<T>({
 
   const tableContent = (
     <div className={cn("w-full overflow-x-auto", className)}>
-      <table className="w-full border-collapse">
+      <table role="table" className="w-full border-collapse">
         <thead>
-          <tr className="border-b border-border-subtle dark:border-slate-700">
+          <tr role="row" className="border-b border-border-subtle dark:border-slate-700">
             {columns.map((col) => (
               <th
+                role="columnheader"
+                scope="col"
                 key={col.key}
                 className={cn(
                   "h-12 px-4 py-3 text-left whitespace-nowrap text-body font-semibold text-text-tertiary select-none",
@@ -320,6 +322,7 @@ export function DataTable<T>({
             const key = rowKey ? rowKey(row, rowIdx) : `row-${rowIdx}`;
             return (
               <tr
+                role="row"
                 key={key}
                 className={cn(
                   "h-[52px] transition-colors duration-150 hover:bg-surface-hover dark:hover:bg-slate-800/60",

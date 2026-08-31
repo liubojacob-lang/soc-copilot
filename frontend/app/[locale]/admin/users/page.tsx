@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import Navigation from "@/components/Navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations } from "next-intl";
+import { PageHeader } from "@/components/common/PageHeader";
+import { ConfirmDialog } from "@/components/common";
 import { useUsers, generatePassword, type User, type PaginationInfo } from "./hooks/useUsers";
 import { useUserModals } from "./hooks/useUserModals";
 import {
@@ -26,12 +27,12 @@ import {
 } from "lucide-react";
 
 export default function UsersPage() {
+  const format = useFormatter();
   const router = useRouter();
   const t = useTranslations("users");
   const tCommon = useTranslations("common");
 
-  const { users, loading, error, pagination, filters, fetchUsers, deleteUser, handleFilterChange } =
-    useUsers();
+  const { users, loading, error, pagination, filters, fetchUsers, handleFilterChange } = useUsers();
 
   const {
     showCreateModal,
@@ -129,7 +130,7 @@ export default function UsersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -305,11 +306,9 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {user.last_login_at ? (
-                          new Date(user.last_login_at).toLocaleDateString() +
-                          " " +
-                          new Date(user.last_login_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
+                          format.dateTime(new Date(user.last_login_at), {
+                            dateStyle: "medium",
+                            timeStyle: "short",
                           })
                         ) : (
                           <span className="text-gray-400">Never</span>
@@ -654,47 +653,21 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && selectedUser && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full">
-              <div className="p-6">
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
-                  {t("deleteUserTitle")}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-center">{t("confirmDelete")}</p>
-                <div className="flex gap-2 mt-6">
-                  <button
-                    onClick={handleDeleteUser}
-                    disabled={deleting}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {deleting ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Trash2 className="w-4 h-4" />
-                        {t("delete")}
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setSelectedUser(null);
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    {t("cancel")}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          open={showDeleteModal && !!selectedUser}
+          title={t("deleteUserTitle")}
+          description={t("confirmDelete")}
+          confirmText={t("delete")}
+          cancelText={t("cancel")}
+          variant="danger"
+          loading={deleting}
+          onConfirm={handleDeleteUser}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setSelectedUser(null);
+          }}
+        />
 
         {/* Reset Password Modal */}
         {showResetModal && selectedUser && (

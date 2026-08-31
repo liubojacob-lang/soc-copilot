@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import { useFormatter } from "next-intl";
 import {
   Clock,
   Activity,
@@ -93,6 +94,7 @@ export const TimelineView = React.memo(function TimelineView({
   events,
   showEmpty = true,
 }: TimelineViewProps) {
+  const format = useFormatter();
   if (!events || events.length === 0) {
     return showEmpty ? (
       <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
@@ -159,7 +161,7 @@ export const TimelineView = React.memo(function TimelineView({
                       </p>
                     </div>
                     <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                      {formatRelativeTime(event.timestamp)}
+                      {formatRelativeTime(event.timestamp, format)}
                     </span>
                   </div>
 
@@ -192,6 +194,7 @@ export const TimelineView = React.memo(function TimelineView({
 
 // 简化版：仅显示最近事件
 export function RecentTimeline({ events, limit = 5 }: TimelineViewProps & { limit?: number }) {
+  const format = useFormatter();
   if (!events || events.length === 0) {
     return null;
   }
@@ -225,7 +228,7 @@ export function RecentTimeline({ events, limit = 5 }: TimelineViewProps & { limi
                     {config.label}
                   </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {formatRelativeTime(event.timestamp)}
+                    {formatRelativeTime(event.timestamp, format)}
                   </span>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
@@ -241,7 +244,7 @@ export function RecentTimeline({ events, limit = 5 }: TimelineViewProps & { limi
 }
 
 // Helper Functions
-function formatRelativeTime(timestamp: string): string {
+function formatRelativeTime(timestamp: string, format: ReturnType<typeof useFormatter>): string {
   const now = new Date();
   const then = new Date(timestamp);
   const diffMs = now.getTime() - then.getTime();
@@ -253,7 +256,7 @@ function formatRelativeTime(timestamp: string): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  return then.toLocaleDateString();
+  return format.dateTime(then, { dateStyle: "medium" });
 }
 
 function formatValue(value: unknown): string {

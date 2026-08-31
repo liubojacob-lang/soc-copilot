@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
-import { api } from "@/lib/api";
+import { apiClient as api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
+import { LoadingState } from "@/components/common/LoadingState";
 import { Store, Star, Download, Search, CheckCircle, TrendingUp, Award } from "lucide-react";
 
 interface MarketplacePlaybook {
@@ -113,7 +114,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4">
@@ -241,23 +242,12 @@ export default function MarketplacePage() {
               </h2>
             </div>
             <div className="p-4">
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto"></div>
-                  <p className="text-gray-500 mt-2">{t("loading")}</p>
-                </div>
-              ) : filteredPlaybooks.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Store className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>{t("noPlaybooks")}</p>
-                  <button
-                    onClick={loadData}
-                    className="mt-2 text-amber-600 hover:text-amber-700 text-sm"
-                  >
-                    {t("refresh")}
-                  </button>
-                </div>
-              ) : (
+              <LoadingState
+                isLoading={loading}
+                empty={!loading && filteredPlaybooks.length === 0}
+                emptyMessage={t("noPlaybooks")}
+                skeletonType="card"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredPlaybooks.map((playbook) => (
                     <div
@@ -325,7 +315,7 @@ export default function MarketplacePage() {
                     </div>
                   ))}
                 </div>
-              )}
+              </LoadingState>
             </div>
           </div>
         </div>

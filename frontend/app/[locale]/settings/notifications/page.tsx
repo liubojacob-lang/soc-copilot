@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { loadAuthState, authFetchJSON, isAdmin } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import {
   Bell,
   MessageSquare,
@@ -139,7 +139,7 @@ export default function NotificationSettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation title={t("title")} subtitle={t("subtitle")} />
+        <PageHeader title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
@@ -151,7 +151,7 @@ export default function NotificationSettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {error && (

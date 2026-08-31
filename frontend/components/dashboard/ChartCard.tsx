@@ -7,7 +7,7 @@
  * 使用 Card/InfoCard 作为容器基础，确保视觉一致性
  */
 
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/common/Card";
 import { Heading, Caption } from "@/components/ui/Typography";
@@ -32,7 +32,13 @@ interface ChartCardProps {
  * 标题在顶部左对齐，使用 Typography 组件
  * 图表内边距 16px（p-4）
  */
-function ChartCard({ title, subtitle, action, children, className }: ChartCardProps) {
+const ChartCard = React.memo(function ChartCard({
+  title,
+  subtitle,
+  action,
+  children,
+  className,
+}: ChartCardProps) {
   return (
     <Card variant="default" padding="none" className={cn("rounded-xl", className)}>
       {(title || subtitle || action) && (
@@ -55,7 +61,7 @@ function ChartCard({ title, subtitle, action, children, className }: ChartCardPr
       <div className="p-4">{children}</div>
     </Card>
   );
-}
+});
 
 export { ChartCard };
 export type { ChartCardProps };

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
-import Navigation from "@/components/Navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations, useLocale } from "next-intl";
+import { PageHeader } from "@/components/common/PageHeader";
 import { SkeletonTable } from "@/components/common/LoadingState";
 import { loadAuthState, authFetch } from "@/lib/auth";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -41,6 +41,7 @@ export default function PlaybookDefinitionsPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("playbooks");
+  const format = useFormatter();
   const tCommon = useTranslations("common");
 
   const [mounted, setMounted] = useState(false);
@@ -135,7 +136,7 @@ export default function PlaybookDefinitionsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("definitions.title")} subtitle={t("definitions.subtitle")} />
+      <PageHeader title={t("definitions.title")} subtitle={t("definitions.subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -148,7 +149,7 @@ export default function PlaybookDefinitionsPage() {
               <p className="text-gray-500 dark:text-gray-400 mt-1">{t("definitions.subtitle")}</p>
             </div>
             <button
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 transition-colors shadow-sm"
               onClick={() => router.push(`/${locale}/playbooks/create`)}
             >
               <Plus className="w-4 h-4" />
@@ -171,7 +172,7 @@ export default function PlaybookDefinitionsPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
               {refreshing ? tCommon("loading") : tCommon("refresh")}
@@ -205,7 +206,7 @@ export default function PlaybookDefinitionsPage() {
             </p>
             <button
               onClick={() => router.push(`/${locale}/playbooks/create`)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
               {t("definitions.createNew")}
@@ -241,7 +242,7 @@ export default function PlaybookDefinitionsPage() {
                   {filteredDefinitions.map((def) => (
                     <tr
                       key={def.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      className="hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-700/50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="font-medium text-gray-900 dark:text-white">{def.name}</div>
@@ -266,12 +267,12 @@ export default function PlaybookDefinitionsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {new Date(def.updated_at).toLocaleDateString()}
+                        {format.dateTime(new Date(def.updated_at), { dateStyle: "medium" })}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
                             title={tCommon("viewDetails")}
                             onClick={() =>
                               router.push(`/${locale}/playbooks/definitions/${def.id}`)
@@ -280,7 +281,7 @@ export default function PlaybookDefinitionsPage() {
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
                             title={tCommon("edit")}
                             onClick={() =>
                               router.push(`/${locale}/playbooks/definitions/${def.id}/edit`)
@@ -289,7 +290,7 @@ export default function PlaybookDefinitionsPage() {
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
                             title={tCommon("delete")}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -313,7 +314,7 @@ export default function PlaybookDefinitionsPage() {
                     <button
                       onClick={() => handlePageChange(pagination.currentPage - 1)}
                       disabled={pagination.currentPage === 1}
-                      className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -323,7 +324,7 @@ export default function PlaybookDefinitionsPage() {
                     <button
                       onClick={() => handlePageChange(pagination.currentPage + 1)}
                       disabled={pagination.currentPage === totalPages}
-                      className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>

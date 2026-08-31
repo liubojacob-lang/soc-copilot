@@ -19,7 +19,7 @@ export function SkipToContent() {
     <a
       href="#main-content"
       onClick={handleSkip}
-      className="fixed left-4 top-4 z-[9999] -translate-y-20 bg-soc-600 text-white px-6 py-3 rounded-lg font-medium shadow-lg transition-transform duration-200 hover:bg-soc-700 focus:translate-y-0 focus:outline-none focus:ring-4 focus:ring-soc-300"
+      className="fixed left-4 top-4 z-[9999] -translate-y-20 bg-primary-600 text-white px-6 py-3 rounded-lg font-medium shadow-lg transition-transform duration-200 hover:bg-primary-700 focus:translate-y-0 focus:outline-none focus:ring-4 focus:ring-primary-300"
     >
       {t("skipToContent") || "Skip to main content"}
     </a>

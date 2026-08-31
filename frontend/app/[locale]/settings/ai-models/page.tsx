@@ -1,12 +1,13 @@
 "use client";
 
+import { useFormatter } from "next-intl";
 /**
  * AI Models Management Page
  * AI 模型管理 - 查看和管理可用的 AI 模型
  */
 
 import { useEffect, useState } from "react";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import { authFetchJSON } from "@/lib/auth";
 import {
   Brain,
@@ -57,6 +58,7 @@ interface TestResult {
 }
 
 export default function AIModelsPage() {
+  const format = useFormatter();
   const [models, setModels] = useState<AIModel[]>([]);
   const [defaultModelId, setDefaultModelId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -196,7 +198,7 @@ export default function AIModelsPage() {
 
   return (
     <>
-      <Navigation title="AI Models" />
+      <PageHeader title="AI Models" />
       <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -290,7 +292,7 @@ export default function AIModelsPage() {
                   <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
                     <div className="text-gray-600 dark:text-gray-400 text-xs">Max Tokens</div>
                     <div className="font-semibold text-gray-900 dark:text-white">
-                      {model.max_tokens?.toLocaleString() || "N/A"}
+                      {model.max_tokens != null ? format.number(model.max_tokens) : "N/A"}
                     </div>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
@@ -385,7 +387,13 @@ export default function AIModelsPage() {
                   <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
                     <span className="flex items-center space-x-1">
                       <Clock className="w-3 h-3" />
-                      <span>Last used: {new Date(model.last_used).toLocaleString()}</span>
+                      <span>
+                        Last used:{" "}
+                        {format.dateTime(new Date(model.last_used), {
+                          dateStyle: "medium",
+                          timeStyle: "medium",
+                        })}
+                      </span>
                     </span>
                   </div>
                 </div>

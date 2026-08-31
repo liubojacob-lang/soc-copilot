@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { AlertTriangle, Link2, Clock, User, Server } from "lucide-react";
 
 interface CorrelatedEvent {
@@ -32,6 +32,7 @@ export const CorrelationPanel = React.memo(function CorrelationPanel({
   alertId,
 }: CorrelationPanelProps) {
   const t = useTranslations("correlation");
+  const format = useFormatter();
   const [incidents, setIncidents] = useState<CorrelatedEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIncident, setSelectedIncident] = useState<CorrelatedEvent | null>(null);
@@ -145,8 +146,8 @@ export const CorrelationPanel = React.memo(function CorrelationPanel({
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               <span>
-                {new Date(incident.first_seen).toLocaleTimeString()} -{" "}
-                {new Date(incident.last_seen).toLocaleTimeString()}
+                {format.dateTime(new Date(incident.first_seen), { timeStyle: "medium" })} -{" "}
+                {format.dateTime(new Date(incident.last_seen), { timeStyle: "medium" })}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -206,6 +207,7 @@ interface IncidentDetailModalProps {
 }
 
 function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModalProps) {
+  const format = useFormatter();
   const t = useTranslations("triggers");
   const [status, setStatus] = useState(incident.status);
   const [assignedTo, setAssignedTo] = useState(incident.assigned_to || "");
@@ -268,11 +270,21 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
             </div>
             <div>
               <span className="font-medium">First Seen:</span>
-              <span className="ml-2">{new Date(incident.first_seen).toLocaleString()}</span>
+              <span className="ml-2">
+                {format.dateTime(new Date(incident.first_seen), {
+                  dateStyle: "medium",
+                  timeStyle: "medium",
+                })}
+              </span>
             </div>
             <div>
               <span className="font-medium">Last Seen:</span>
-              <span className="ml-2">{new Date(incident.last_seen).toLocaleString()}</span>
+              <span className="ml-2">
+                {format.dateTime(new Date(incident.last_seen), {
+                  dateStyle: "medium",
+                  timeStyle: "medium",
+                })}
+              </span>
             </div>
           </div>
 

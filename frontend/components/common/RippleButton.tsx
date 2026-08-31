@@ -50,7 +50,7 @@ export function RippleButton({
   // 变体样式
   const variantClasses = {
     primary:
-      "bg-gradient-to-r from-soc-500 to-soc-600 text-white shadow-lg shadow-soc-500/25 hover:shadow-xl hover:shadow-soc-500/35",
+      "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/35",
     secondary:
       "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700",
     ghost: "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
@@ -78,7 +78,7 @@ export function RippleButton({
         relative overflow-hidden
         font-semibold rounded-xl
         transition-all duration-300
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-soc-500 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-soc-500
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500
         active:scale-95
         disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100
         ${variantClasses[variant]}

@@ -36,7 +36,6 @@ export {
   type ReportGenerationRequest,
   type ReportGenerationResponse,
   type TimelineRequest,
-  type TimelineEvent,
   type SuspiciousEvent,
   type TimelineResponse,
   type ThreatIntelItem,
@@ -157,3 +156,73 @@ export {
 
 // Legacy API objects (backward compatibility)
 export { api, api_v7, api_triggers, api_v74, api_v73, api_ai_models } from "./legacy";
+
+// Security Alerts (v1)
+export {
+  listSecurityAlerts,
+  getSecurityAlert,
+  updateSecurityAlert,
+  deleteSecurityAlert,
+  getAlertStats,
+  getAlertLifecycle,
+  addAlertNote,
+  type AlertSeverity,
+  type AlertStatus,
+  type SecurityAlertItem,
+  type AlertNoteItem,
+  type TimelineEvent,
+  type SecurityAlertListResponse,
+  type SecurityAlertUpdatePayload,
+  type SecurityAlertStats,
+  type AlertListFilters,
+} from "./security-alerts";
+
+// Cases (v1)
+export {
+  listCases,
+  getCase,
+  createCase,
+  updateCase,
+  deleteCase,
+  transitionCaseStatus,
+  getCaseAlerts,
+  linkAlertToCase,
+  unlinkAlertFromCase,
+  getCaseComments,
+  addCaseComment,
+  getCaseTimeline,
+  mapCaseSeverity,
+  CASE_STATUS_OPTIONS,
+  CASE_SEVERITY_OPTIONS,
+  STATUS_TRANSITIONS,
+  type CaseSeverity,
+  type CaseStatus,
+  type SecurityCase,
+  type CaseListResponse,
+  type CaseFilters,
+  type CaseCreatePayload,
+  type CaseUpdatePayload,
+  type CaseStatusTransition,
+  type CaseComment,
+  type CaseCommentCreate,
+  type CaseAlert,
+  type CaseTimelineEvent,
+} from "./cases";
+
+// Dashboard
+export {
+  getDashboardStats,
+  toAlertTrendPoints,
+  toSeverityBuckets,
+  toAssetRiskItems,
+  type DashboardStats,
+  type SeverityDistribution,
+  type StatusDistribution,
+  type TrendPoint,
+  type TrendPointBySeverity,
+  type TopSource,
+  type TopRiskyAsset,
+  type AlertTrendPoint,
+  type SeverityBucket,
+  type AssetRiskItem,
+} from "./dashboard";

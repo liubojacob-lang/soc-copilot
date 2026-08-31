@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import Breadcrumbs from "@/components/common/Breadcrumbs";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ChartCard } from "@/components/dashboard/ChartCard";
@@ -248,7 +248,7 @@ export default function SystemDashboardPage() {
   if (loading && !dashboard) {
     return (
       <div className="min-h-screen bg-surface-page dark:bg-slate-900">
-        <Navigation title={t("title")} />
+        <PageHeader title={t("title")} />
         <main className="p-6 lg:p-12">
           <div className="flex items-center justify-center min-h-[50vh]">
             <RefreshCw className="w-8 h-8 animate-spin text-text-tertiary" />
@@ -261,7 +261,7 @@ export default function SystemDashboardPage() {
   if (error && !dashboard) {
     return (
       <div className="min-h-screen bg-surface-page dark:bg-slate-900">
-        <Navigation title={t("title")} />
+        <PageHeader title={t("title")} />
         <main className="p-6 lg:p-12">
           <EmptyState
             icon="alert"
@@ -289,7 +289,7 @@ export default function SystemDashboardPage() {
 
   return (
     <div className="min-h-screen bg-surface-page dark:bg-slate-900">
-      <Navigation title={t("title")} />
+      <PageHeader title={t("title")} />
       <main className="p-6 lg:p-12 space-y-8">
         <Breadcrumbs />
 

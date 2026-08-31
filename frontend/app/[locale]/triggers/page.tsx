@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations, useLocale } from "next-intl";
 import { loadAuthState, authFetchJSON } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
-import { SkeletonTable } from "@/components/common/Skeleton";
+import { PageHeader } from "@/components/common/PageHeader";
+import { LoadingState } from "@/components/common/LoadingState";
+import { ConfirmDialog } from "@/components/common";
+import { useToast } from "@/components/Toast";
 
 interface Trigger {
   id: string;
@@ -28,14 +30,18 @@ interface Definition {
 
 export default function TriggersPage() {
   const t = useTranslations("triggers");
+  const format = useFormatter();
   const tPage = useTranslations("triggersPage");
   const tCommon = useTranslations("common");
+  const { showToast } = useToast();
   const locale = useLocale();
   const router = useRouter();
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [definitions, setDefinitions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Trigger | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [filterType, setFilterType] = useState<string>("all");
   const [copiedSecret, setCopiedSecret] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
@@ -75,15 +81,19 @@ export default function TriggersPage() {
   };
 
   const handleDeleteTrigger = async (id: string) => {
-    if (!confirm(t("modal.deleteConfirm"))) {
-      return;
-    }
+    setDeleting(true);
+    setError("");
 
     try {
       await authFetchJSON(`/api/triggers/${id}`, { method: "DELETE" });
+      setDeleteTarget(null);
       await fetchTriggers();
+      showToast(t("deleteSuccess"), "success");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("errors.deleteFailed"));
+      showToast(err instanceof Error ? err.message : t("errors.deleteFailed"), "error");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -94,8 +104,10 @@ export default function TriggersPage() {
         body: JSON.stringify({ is_active: !isActive }),
       });
       await fetchTriggers();
+      showToast(t("toggleSuccess"), "success");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("errors.toggleFailed"));
+      showToast(err instanceof Error ? err.message : t("errors.toggleFailed"), "error");
     }
   };
 
@@ -145,24 +157,9 @@ export default function TriggersPage() {
 
   const filteredTriggers = triggers.filter((t) => filterType === "all" || t.type === filterType);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation title={t("title")} subtitle={t("subtitle")} />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div className="p-6">
-              <SkeletonTable rows={5} columns={7} />
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error Message */}
@@ -246,15 +243,17 @@ export default function TriggersPage() {
 
         {/* Triggers List */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          {filteredTriggers.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-gray-500 dark:text-gray-400">
-                {filterType === "all"
-                  ? tPage("noTriggers")
-                  : tPage("noTriggersType", { type: filterType })}
-              </p>
-            </div>
-          ) : (
+          <LoadingState
+            isLoading={loading}
+            empty={!loading && filteredTriggers.length === 0}
+            emptyMessage={
+              filterType === "all"
+                ? tPage("noTriggers")
+                : tPage("noTriggersType", { type: filterType })
+            }
+            skeletonType="table"
+            skeletonProps={{ rows: 5, columns: 7 }}
+          >
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
@@ -333,7 +332,10 @@ export default function TriggersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {trigger.last_triggered_at
-                          ? new Date(trigger.last_triggered_at).toLocaleString()
+                          ? format.dateTime(new Date(trigger.last_triggered_at), {
+                              dateStyle: "medium",
+                              timeStyle: "medium",
+                            })
                           : tPage("never")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -357,7 +359,7 @@ export default function TriggersPage() {
                           {trigger.is_active ? tPage("disable") : tPage("enable")}
                         </button>
                         <button
-                          onClick={() => handleDeleteTrigger(trigger.id)}
+                          onClick={() => setDeleteTarget(trigger)}
                           className="text-red-600 hover:text-red-900"
                         >
                           {t("delete")}
@@ -368,7 +370,7 @@ export default function TriggersPage() {
                 </tbody>
               </table>
             </div>
-          )}
+          </LoadingState>
         </div>
 
         {/* Info Box */}
@@ -387,6 +389,21 @@ export default function TriggersPage() {
           </ul>
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={t("delete")}
+        description={t("modal.deleteConfirm")}
+        confirmText={t("delete")}
+        cancelText={tCommon("cancel")}
+        variant="danger"
+        loading={deleting}
+        onConfirm={() => {
+          if (deleteTarget) handleDeleteTrigger(deleteTarget.id);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

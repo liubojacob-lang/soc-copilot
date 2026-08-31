@@ -10,15 +10,20 @@ export interface AssetCreate {
   name: string;
   asset_type: string;
   ip_address?: string;
+  /** Field name used by the backend model/API (`assets.ip`). */
+  ip?: string;
   hostname?: string;
   mac_address?: string;
   os?: string;
   owner?: string;
   department?: string;
+  /** Field name used by the backend model/API (`assets.business`). */
+  business?: string;
   location?: string;
   criticality: Criticality;
   tags?: string[];
   notes?: string;
+  is_active?: boolean;
 }
 
 export interface AssetUpdate extends Partial<AssetCreate> {}
@@ -28,15 +33,20 @@ export interface AssetResponse {
   name: string;
   asset_type: string;
   ip_address?: string;
+  /** Backend model field (`assets.ip`). */
+  ip?: string;
   hostname?: string;
   mac_address?: string;
   os?: string;
   owner?: string;
   department?: string;
+  /** Backend model field (`assets.business`). */
+  business?: string;
   location?: string;
   criticality: Criticality;
   tags: string[];
   notes?: string;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
   last_seen_at?: string;

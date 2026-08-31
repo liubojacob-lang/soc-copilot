@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function BackToTop() {
   const [isVisible, setIsVisible] = useState(false);
+  const throttleRef = useRef<number | null>(null);
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -15,11 +16,22 @@ export default function BackToTop() {
       }
     };
 
-    window.addEventListener("scroll", toggleVisibility);
+    const throttledToggle = () => {
+      if (!throttleRef.current) {
+        throttleRef.current = requestAnimationFrame(() => {
+          toggleVisibility();
+          throttleRef.current = null;
+        });
+      }
+    };
+    window.addEventListener("scroll", throttledToggle);
 
     // Clean up the event listener
     return () => {
-      window.removeEventListener("scroll", toggleVisibility);
+      window.removeEventListener("scroll", throttledToggle);
+      if (throttleRef.current) {
+        cancelAnimationFrame(throttleRef.current);
+      }
     };
   }, []);
 

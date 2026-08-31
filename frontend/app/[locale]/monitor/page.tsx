@@ -1,95 +1,79 @@
 "use client";
 
-import { useMonitor } from "@/hooks/useMonitor";
+/**
+ * SOC Operations Dashboard
+ *
+ * Layout:
+ * [Real-time metrics row: 4 cols]
+ * [Alert trends chart (2/3 width) | Severity pie (1/3 width)]
+ * [MITRE ATT&CK heatmap (full width)]
+ * [Asset risk Top 10 (1/2 width) | IOC stats (1/2 width)]
+ */
+
+import { useState, useEffect } from "react";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations } from "next-intl";
 import dynamicImport from "next/dynamic";
-import Navigation from "@/components/Navigation";
+import { loadAuthState, isAnalystOrAdmin } from "@/lib/auth";
+import { PageHeader } from "@/components/common/PageHeader";
 import {
+  ShieldCheck,
+  AlertTriangle,
+  Briefcase,
+  Clock,
+  Activity,
+  RefreshCw,
   Maximize2,
   Minimize2,
-  RefreshCw,
-  Activity,
-  Database,
-  HardDrive,
-  Cpu,
-  ListTodo,
-  Wifi,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { AlertTrendsChart } from "@/components/dashboard/AlertTrendsChart";
+import { SeverityPieChart } from "@/components/dashboard/SeverityPieChart";
+import { AssetRiskTable } from "@/components/dashboard/AssetRiskTable";
+import { useDashboardStats } from "@/hooks/useDashboard";
+import { toAlertTrendPoints, toSeverityBuckets, toAssetRiskItems } from "@/lib/api/dashboard";
 
-const ResourceChart = dynamicImport(
+// Dynamic imports for heavy chart components
+const MITREHeatmap = dynamicImport(
   () =>
-    import("@/components/monitor/ResourceChart").then((mod) => ({ default: mod.ResourceChart })),
+    import("@/components/monitor/MITREHeatmap").then((mod) => ({
+      default: mod.MITREHeatmap,
+    })),
   {
     ssr: false,
-    loading: () => <div className="h-64 animate-pulse bg-gray-100 dark:bg-slate-800 rounded-xl" />,
+    loading: () => <div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl" />,
   }
 );
-import { useRouter } from "next/navigation";
-import { loadAuthState } from "@/lib/auth";
-import { useTranslations } from "next-intl";
 
-interface ServiceStatus {
-  status: string;
-  latency_ms: number | null;
-  message: string | null;
-  pending_count: number | null;
-}
+const IOCStats = dynamicImport(
+  () =>
+    import("@/components/monitor/IOCStats").then((mod) => ({
+      default: mod.IOCStats,
+    })),
+  {
+    ssr: false,
+    loading: () => <div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl" />,
+  }
+);
 
-interface ResourceMetrics {
-  cpu_percent: number;
-  memory_percent: number;
-  memory_used_gb: number;
-  memory_total_gb: number;
-  disk_percent: number;
-  disk_used_gb: number;
-  disk_total_gb: number;
-  error: string | null;
-}
-
-interface MonitorData {
-  timestamp: string;
-  services: {
-    database: ServiceStatus;
-    redis: ServiceStatus;
-    ai: ServiceStatus;
-    queue: ServiceStatus;
-  };
-  resources: ResourceMetrics;
-  activities: Array<{
-    type: string;
-    id: string;
-    name: string;
-    status: string;
-    timestamp: string | null;
-  }>;
-  metrics: {
-    requests_per_minute: number;
-    error_rate: number;
-    avg_response_time_ms: number;
-  };
-}
-
-const serviceIcons = {
-  database: Database,
-  redis: HardDrive,
-  ai: Cpu,
-  queue: ListTodo,
-};
-
-const serviceKeys = ["database", "redis", "ai", "queue"] as const;
-
-export default function MonitorPage() {
+export default function DashboardPage() {
   const router = useRouter();
-  const t = useTranslations("monitor");
-  const { data, history, connected, error, reconnect, connectionType, fetchHistory } = useMonitor();
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const t = useTranslations();
+  const format = useFormatter();
   const [mounted, setMounted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [trendsPeriod, setTrendsPeriod] = useState<"7d" | "30d">("7d");
 
-  // Wait for client-side mount to avoid hydration mismatch
+  // Time-based greeting
+  const [greeting, setGreeting] = useState("");
+
   useEffect(() => {
-    // Mark as mounted on client-side only
     setMounted(true);
-    // Set isFullscreen initial state on client only to avoid SSR mismatch
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting(t("dashboard.greeting.morning"));
+    else if (hour < 18) setGreeting(t("dashboard.greeting.afternoon"));
+    else setGreeting(t("dashboard.greeting.evening"));
+
     try {
       setIsFullscreen(typeof document !== "undefined" && !!document.fullscreenElement);
     } catch {
@@ -97,32 +81,26 @@ export default function MonitorPage() {
     }
   }, []);
 
-  // Check admin access (TEMPORARILY DISABLED for SSE testing)
-  // useEffect(() => {
-  //   const auth = loadAuthState();
-  //   if (!auth?.user || auth.user.role !== 'admin') {
-  //     router.push('/');
-  //   }
-  // }, [router]);
+  // Auth check
+  useEffect(() => {
+    const auth = loadAuthState();
+    if (!auth?.user || !isAnalystOrAdmin(auth.user)) {
+      router.push("/");
+    }
+  }, [router]);
 
-  // Sync fullscreen state with browser
+  // Fullscreen sync
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   const toggleFullscreen = () => {
-    // Ensure document is available (client-side only)
     if (typeof window === "undefined" || !document) return;
-
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
       setIsFullscreen(true);
@@ -132,90 +110,69 @@ export default function MonitorPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ok":
-        return "bg-green-500";
-      case "error":
-        return "bg-red-500";
-      case "degraded":
-        return "bg-yellow-500";
-      case "disabled":
-        return "bg-gray-400";
-      case "initializing":
-        return "bg-blue-400 animate-pulse";
-      default:
-        return "bg-gray-400";
-    }
-  };
+  // ── Data Hook (single real endpoint; adapters shape it per chart) ──
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "ok":
-        return t("status.ok");
-      case "error":
-        return t("status.error");
-      case "degraded":
-        return t("status.degraded");
-      case "disabled":
-        return t("status.disabled");
-      case "initializing":
-        return t("status.initializing");
-      default:
-        return status;
-    }
-  };
+  const summaryLoading = statsLoading;
+  const trendsLoading = statsLoading;
+  const severityLoading = statsLoading;
+  const assetLoading = statsLoading;
+  const iocLoading = statsLoading;
+  const mitreLoading = statsLoading;
 
-  const getServiceName = (key: string) => {
-    switch (key) {
-      case "database":
-        return t("services.database");
-      case "redis":
-        return t("services.redis");
-      case "ai":
-        return t("services.ai");
-      case "queue":
-        return t("services.queue");
-      default:
-        return key;
-    }
-  };
+  // ── Transform data for existing components ──────────
+  const trendsData = stats ? { points: toAlertTrendPoints(stats) } : undefined;
+  const severityData = stats
+    ? { buckets: toSeverityBuckets(stats), total: stats.alerts_total }
+    : undefined;
+  const assetData = stats ? { assets: toAssetRiskItems(stats) } : undefined;
+  const mitreChartData: {
+    tactic: string;
+    tactic_id: string;
+    techniques: { technique: string; technique_id: string; count: number }[];
+  }[] = [];
+  const iocStatsData = stats
+    ? {
+        total: stats.ioc_hits_today,
+        malicious: 0,
+        suspicious: 0,
+        benign: 0,
+        unknown: 0,
+      }
+    : { total: 0, malicious: 0, suspicious: 0, benign: 0, unknown: 0 };
 
-  // Don't render interactive elements until mounted to prevent hydration mismatch
+  // Summary adapter for the metric cards (fields mirror the legacy shape).
+  const summary = stats
+    ? {
+        total_alerts: stats.alerts_total,
+        unresolved_alerts: stats.alerts_unresolved,
+        active_cases: stats.cases_open,
+        mttr_hours: stats.mttr_minutes !== null ? stats.mttr_minutes / 60 : 0,
+      }
+    : undefined;
+
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-        <Navigation
-          title={t("title")}
-          subtitle={t("subtitle")}
+        <PageHeader
+          title={t("dashboard.title")}
+          subtitle={t("dashboard.overview")}
           apiStatus="checking"
-          actions={<div className="flex items-center gap-2" />}
         />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="space-y-6">
-            <section>
-              <h2 className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-4">
-                {t("services.title")}
-              </h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm animate-pulse"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-gray-200 dark:bg-slate-700">
-                        <div className="w-5 h-5 rounded" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-20 mb-2" />
-                        <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-16" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border p-5 shadow-sm animate-pulse bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700"
+                >
+                  <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-20 mb-3" />
+                  <div className="h-7 bg-gray-200 dark:bg-slate-700 rounded w-16 mb-2" />
+                  <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-24" />
+                </div>
+              ))}
+            </div>
           </div>
         </main>
       </div>
@@ -224,49 +181,22 @@ export default function MonitorPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-      {/* Unified Navigation with Monitor Actions */}
-      <Navigation
-        title={t("title")}
-        subtitle={t("subtitle")}
-        apiStatus={connected ? "healthy" : "error"}
+      <PageHeader
+        title={t("dashboard.title")}
+        subtitle={`${greeting}, ${loadAuthState()?.user?.username || t("dashboard.fallbackUser")}`}
+        apiStatus="healthy"
         actions={
           <div className="flex items-center gap-2">
-            {/* Connection Status Badge */}
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-700">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  connected ? "bg-green-500 animate-pulse" : "bg-red-500"
-                }`}
-              />
-              <span className="text-[10px] text-gray-600 dark:text-slate-400">
-                {connected ? t("live") : t("offline")}
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] text-green-700 dark:text-green-300 font-medium">
+                {t("monitor.live")}
               </span>
-              {connectionType === "sse" && (
-                <span title={t("sseConnected")}>
-                  <Wifi className="w-3 h-3 text-blue-500" />
-                </span>
-              )}
-              {connectionType === "polling" && (
-                <span title={t("pollingMode")}>
-                  <RefreshCw className="w-3 h-3 text-amber-500 animate-spin-slow" />
-                </span>
-              )}
             </div>
-
-            {/* Reconnect Button */}
-            <button
-              onClick={reconnect}
-              className="p-1 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors"
-              title={t("actions.refresh")}
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-
-            {/* Fullscreen Toggle */}
             <button
               onClick={toggleFullscreen}
-              className="p-1 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors"
-              title={isFullscreen ? t("actions.exitFullscreen") : t("actions.fullscreen")}
+              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+              title={isFullscreen ? t("monitor.exitFullscreen") : t("monitor.fullscreen")}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -274,231 +204,103 @@ export default function MonitorPage() {
         }
       />
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-800 dark:text-red-200">
-              {t("errors.connectionFailed")}: {error}
-            </p>
-          </div>
-        )}
-
-        {data && (
-          <div className="space-y-6">
-            {/* Service Cards */}
-            <section>
-              <h2 className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-4">
-                {t("services.title")}
-              </h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.entries(data.services).map(([key, service]) => {
-                  const Icon = serviceIcons[key as keyof typeof serviceIcons] || Activity;
-                  return (
-                    <div
-                      key={key}
-                      className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                          <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-900 dark:text-slate-100">
-                            {getServiceName(key)}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span
-                              className={`w-2 h-2 rounded-full ${getStatusColor(service.status)}`}
-                            />
-                            <span className="text-xs text-gray-600 dark:text-slate-400">
-                              {getStatusText(service.status)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      {service.latency_ms !== null && (
-                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-gray-500 dark:text-slate-500">
-                              {t("latency")}
-                            </span>
-                            <span className="font-mono text-gray-700 dark:text-slate-300">
-                              {service.latency_ms.toFixed(0)}ms
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* Charts and Activities */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <ResourceChart
-                  currentResources={data.resources}
-                  history={history}
-                  translations={{
-                    title: t("chart.title"),
-                    cpu: t("chart.cpu"),
-                    memory: t("chart.memory"),
-                  }}
-                  onTimeRangeChange={fetchHistory}
-                />
-              </div>
-              <div>
-                {/* Activities */}
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm">
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-4">
-                    {t("activities.title")}
-                  </h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {data.activities.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500 dark:text-slate-500">
-                        {t("activities.empty")}
-                      </div>
-                    ) : (
-                      data.activities.map((activity) => (
-                        <div
-                          key={activity.id}
-                          className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Activity className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-900 dark:text-slate-100">
-                              {activity.name}
-                            </span>
-                          </div>
-                          <span className="text-xs text-gray-500 dark:text-slate-500 capitalize">
-                            {activity.status}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
+        <div className="space-y-6">
+          {/* ── Row 1: Real-time Metrics ───────────────── */}
+          <section>
+            <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+              {t("dashboard.realTimeMetrics")}
+            </h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title={t("dashboard.totalAlerts")}
+                value={summaryLoading ? "—" : format.number(summary?.total_alerts ?? 0)}
+                subtitle={t("dashboard.last24h")}
+                icon={<AlertTriangle className="w-5 h-5" />}
+                variant="blue"
+                loading={summaryLoading}
+              />
+              <StatCard
+                title={t("dashboard.unresolvedAlerts")}
+                value={summaryLoading ? "—" : format.number(summary?.unresolved_alerts ?? 0)}
+                subtitle={t("dashboard.needsAction")}
+                icon={<AlertTriangle className="w-5 h-5" />}
+                variant="red"
+                loading={summaryLoading}
+              />
+              <StatCard
+                title={t("dashboard.activeCases")}
+                value={summaryLoading ? "—" : format.number(summary?.active_cases ?? 0)}
+                subtitle={t("dashboard.openCases")}
+                icon={<Briefcase className="w-5 h-5" />}
+                variant="purple"
+                loading={summaryLoading}
+              />
+              <StatCard
+                title={t("dashboard.mttr")}
+                value={summaryLoading ? "—" : `${(summary?.mttr_hours ?? 0).toFixed(1)}h`}
+                subtitle={t("dashboard.meanTimeToResolve")}
+                icon={<Clock className="w-5 h-5" />}
+                variant="green"
+                loading={summaryLoading}
+              />
             </div>
+          </section>
 
-            {/* Resource Details */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t("resources.cpu")}
-                </h3>
-                <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-slate-100">
-                    {data.resources.cpu_percent.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="mt-2 h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 transition-all duration-300"
-                    style={{ width: `${data.resources.cpu_percent}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t("resources.memory")}
-                </h3>
-                <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-slate-100">
-                    {data.resources.memory_percent.toFixed(1)}%
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-slate-500 mb-1">
-                    ({data.resources.memory_used_gb.toFixed(1)} /{" "}
-                    {data.resources.memory_total_gb.toFixed(1)} GB)
-                  </span>
-                </div>
-                <div className="mt-2 h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500 transition-all duration-300"
-                    style={{ width: `${data.resources.memory_percent}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t("resources.disk")}
-                </h3>
-                <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-slate-100">
-                    {data.resources.disk_percent.toFixed(1)}%
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-slate-500 mb-1">
-                    ({data.resources.disk_used_gb.toFixed(1)} /{" "}
-                    {data.resources.disk_total_gb.toFixed(1)} GB)
-                  </span>
-                </div>
-                <div className="mt-2 h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-purple-500 transition-all duration-300"
-                    style={{ width: `${data.resources.disk_percent}%` }}
-                  />
-                </div>
-              </div>
-            </section>
-          </div>
-        )}
-
-        {!data && !error && (
-          <div className="space-y-6">
-            {/* Service Cards Skeleton */}
-            <section>
-              <h2 className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-4">
-                {t("services.title")}
-              </h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm animate-pulse"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-gray-200 dark:bg-slate-700">
-                        <div className="w-5 h-5 rounded" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-20 mb-2" />
-                        <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-16" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Charts and Activities Skeleton */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm h-64 animate-pulse" />
-              </div>
-              <div>
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm h-64 animate-pulse" />
-              </div>
+          {/* ── Row 2: Trends + Severity ──────────────── */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <AlertTrendsChart
+                data={trendsData?.points ?? []}
+                isLoading={trendsLoading}
+                currentPeriod={trendsPeriod}
+                onPeriodChange={setTrendsPeriod}
+              />
             </div>
+            <div>
+              <SeverityPieChart
+                data={severityData?.buckets ?? []}
+                total={severityData?.total}
+                isLoading={severityLoading}
+              />
+            </div>
+          </section>
 
-            {/* Resource Details Skeleton */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 animate-pulse"
-                >
-                  <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-24 mb-3" />
-                  <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-16 mb-2" />
-                  <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded w-full" />
-                </div>
-              ))}
-            </section>
-          </div>
-        )}
+          {/* ── Row 3: MITRE Heatmap ──────────────────── */}
+          <section>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-500" />
+                {t("dashboard.mitreAttack")}
+              </h3>
+              {mitreLoading ? (
+                <div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-700 rounded" />
+              ) : (
+                <MITREHeatmap data={mitreChartData} />
+              )}
+            </div>
+          </section>
+
+          {/* ── Row 4: Asset Risk + IOC Stats ──────────── */}
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AssetRiskTable
+              data={assetData?.assets ?? []}
+              isLoading={assetLoading}
+              title={t("dashboard.assetRiskTop10")}
+            />
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-green-500" />
+                {t("dashboard.iocStats")}
+              </h3>
+              {iocLoading ? (
+                <div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-700 rounded" />
+              ) : (
+                <IOCStats stats={iocStatsData} />
+              )}
+            </div>
+          </section>
+        </div>
       </main>
     </div>
   );

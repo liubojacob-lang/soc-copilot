@@ -1,6 +1,6 @@
 "use client";
 
-import { type HTMLAttributes, forwardRef } from "react";
+import React, { type HTMLAttributes, forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 type Severity = "critical" | "high" | "medium" | "low" | "info" | "neutral";
@@ -18,19 +18,23 @@ const severityStyles: Record<Severity, string> = {
   neutral: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 
-export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ severity = "neutral", className, children, ...props }, ref) => (
-    <span
-      ref={ref}
-      className={cn(
-        "inline-flex items-center rounded-sm px-2 py-1 text-small font-medium",
-        severityStyles[severity],
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </span>
+const Badge = React.memo(
+  forwardRef<HTMLSpanElement, BadgeProps>(
+    ({ severity = "neutral", className, children, ...props }, ref) => (
+      <span
+        ref={ref}
+        className={cn(
+          "inline-flex items-center rounded-sm px-2 py-1 text-small font-medium",
+          severityStyles[severity],
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </span>
+    )
   )
 );
 Badge.displayName = "Badge";
+
+export { Badge };

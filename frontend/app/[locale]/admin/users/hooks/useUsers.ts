@@ -1,7 +1,7 @@
 /** Admin users page types and hooks */
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { loadAuthState, isAdmin, authFetchJSON, authFetch } from "@/lib/auth";
 
 export interface User {
@@ -80,8 +80,7 @@ export function useUsers() {
   );
 
   const deleteUser = useCallback(async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-
+    // 删除确认由 UI 层 ConfirmDialog 负责，此处为纯数据操作
     const response = await authFetch(`/api/users/${userId}`, {
       method: "DELETE",
     });

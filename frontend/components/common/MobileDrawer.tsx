@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import { loadAuthState, logout, isAdmin } from "@/lib/auth";
 import { useTranslations } from "next-intl";
 import { X, Shield, LogOut, ChevronRight } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -28,6 +29,11 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
   const [mounted, setMounted] = useState(false);
+
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap
+  useFocusTrap(isOpen, onClose, drawerRef);
 
   useEffect(() => {
     setMounted(true);
@@ -107,18 +113,6 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     onClose();
   }, [router, onClose]);
 
-  // Close on escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
   // Prevent body scroll when drawer is open
   useEffect(() => {
     if (isOpen) {
@@ -157,6 +151,11 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
 
       {/* Drawer */}
       <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="导航菜单"
+        tabIndex={-1}
         className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white dark:bg-gray-800 z-[201] transform transition-transform duration-300 ease-out shadow-xl ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -170,7 +169,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
           <button
             onClick={onClose}
             className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-            aria-label="Close menu"
+            aria-label="关闭菜单"
           >
             <X className="w-5 h-5" />
           </button>

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
-import Navigation from "@/components/Navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations, useLocale } from "next-intl";
+import { PageHeader } from "@/components/common/PageHeader";
 import { SkeletonTable } from "@/components/common/LoadingState";
 import { loadAuthState, authFetch } from "@/lib/auth";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -45,6 +45,7 @@ export default function PlaybookApprovalsPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("playbooks");
+  const format = useFormatter();
   const tCommon = useTranslations("common");
 
   const [mounted, setMounted] = useState(false);
@@ -203,7 +204,7 @@ export default function PlaybookApprovalsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation
+      <PageHeader
         title={t("approvals.title") || "Approvals"}
         subtitle={t("approvals.subtitle") || "Manage playbook approval requests"}
       />
@@ -345,9 +346,9 @@ export default function PlaybookApprovalsPage() {
                         {approval.requested_by || "-"}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {new Date(approval.created_at).toLocaleDateString()}
+                        {format.dateTime(new Date(approval.created_at), { dateStyle: "medium" })}
                         <div className="text-xs text-gray-400">
-                          {new Date(approval.created_at).toLocaleTimeString()}
+                          {format.dateTime(new Date(approval.created_at), { timeStyle: "medium" })}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">

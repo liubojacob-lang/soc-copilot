@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { authFetch } from "@/lib/auth";
 import { useAuditLogsQuery } from "../hooks/useAuditLogsQuery";
 import { AuditStats } from "./AuditStats";
 import { AuditFilters } from "./AuditFilters";
 import { VirtualAuditTable } from "./VirtualAuditTable";
+import { getMethodClass, getStatusCodeClass } from "../utils";
 import { AuditPagination } from "./AuditPagination";
 
 export function AuditPageContainer() {
+  const format = useFormatter();
   const t = useTranslations("auditPage");
 
   // Filter states
@@ -178,9 +180,68 @@ export function AuditPageContainer() {
         </div>
       </div>
 
-      {/* Virtual Audit Table */}
-      <div className="mb-6">
+      {/* Desktop: Virtual Audit Table */}
+      <div className="hidden sm:block mb-6">
         <VirtualAuditTable logs={logs} height={600} rowHeight={64} />
+      </div>
+
+      {/* Mobile: card list (audit 移动端适配) */}
+      <div className="sm:hidden mb-6 space-y-3">
+        {logs.length === 0 && !loading ? (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            {t("empty") ?? "No audit logs"}
+          </div>
+        ) : (
+          logs.map((log) => (
+            <div
+              key={log.id}
+              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-2 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <code className="text-xs font-semibold bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-white truncate">
+                  {log.action}
+                </code>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    className={`px-2 py-1 text-xs font-semibold rounded ${getMethodClass(log.method)}`}
+                  >
+                    {log.method}
+                  </span>
+                  <span
+                    className={`px-2 py-1 text-xs font-semibold rounded ${getStatusCodeClass(log.status_code)}`}
+                  >
+                    {log.status_code}
+                  </span>
+                </div>
+              </div>
+              <p
+                className="text-xs font-mono text-gray-600 dark:text-gray-400 truncate"
+                title={log.path}
+              >
+                {log.path}
+              </p>
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+                <span className="truncate">
+                  {log.username || <span className="italic">System</span>}
+                </span>
+                <span className="shrink-0">
+                  {format.dateTime(new Date(log.created_at), {
+                    dateStyle: "medium",
+                    timeStyle: "medium",
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                <span className="truncate">
+                  {log.target_type ? `${log.target_type}:${log.target_id}` : "—"}
+                </span>
+                <span className="shrink-0">
+                  {log.duration_ms !== null ? `${log.duration_ms}ms` : ""}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Pagination */}

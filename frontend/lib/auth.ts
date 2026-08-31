@@ -8,6 +8,8 @@
 // So we don't include /api prefix in the path
 const API_BASE = "";
 
+import { setCSRFToken, clearCSRFToken } from "./csrf";
+
 // Storage keys (for localStorage fallback)
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
@@ -101,14 +103,18 @@ export interface AuthState {
 }
 
 /**
- * Login with username and password
- * P3-10: Enhanced with Cookie support
+ * Login with username and password.
+ *
+ * Cookie flow: the backend sets HttpOnly access/refresh cookies and returns
+ * the raw CSRF token in the body. Tokens are NEVER persisted to
+ * JavaScript-readable storage (XSS would otherwise grant a 7-day takeover);
+ * only the non-sensitive user object is kept for UI state.
  */
 export async function login(username: string, password: string): Promise<AuthState> {
   const response = await fetch(`/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include", // P3-10: Include cookies
+    credentials: "include", // HttpOnly cookies are set by this response
     body: JSON.stringify({ username, password }),
   });
 
@@ -119,60 +125,55 @@ export async function login(username: string, password: string): Promise<AuthSta
 
   const data = await response.json();
 
-  // P3-10: Detect storage strategy
-  const strategy = detectStorageStrategy();
+  // Keep the raw CSRF token for state-changing requests (double-submit).
+  if (data.csrf_token) {
+    setCSRFToken(data.csrf_token);
+  }
 
   const authState: AuthState = {
     isAuthenticated: true,
     user: data.user,
-    tokens: {
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-    },
-    storageStrategy: strategy,
+    tokens: null,
+    storageStrategy: "cookie",
   };
 
-  // P3-10: Always save to localStorage as backup
-  // Even when using HttpOnly cookies, we need localStorage for client-side auth checks
-  // because HttpOnly cookies cannot be read by JavaScript
   saveAuthState(authState);
 
   return authState;
 }
 
 /**
- * Refresh access token
- * P3-10: Enhanced with Cookie support
+ * Refresh the session via the refresh_token HttpOnly cookie.
+ * The backend falls back to the cookie when no body token is provided.
  */
-export async function refreshAccessToken(refreshToken: string): Promise<AuthState> {
+export async function refreshAccessToken(_refreshToken?: string | null): Promise<AuthState> {
   const response = await fetch(`/api/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include", // P3-10: Include cookies
-    body: JSON.stringify({ refresh_token: refreshToken }),
+    credentials: "include",
+    body: JSON.stringify({}),
   });
 
   if (!response.ok) {
-    // Clear tokens on failure
+    // Session unrecoverable: clear client-side state and CSRF token.
     logout();
-    return { isAuthenticated: false, user: null, tokens: null, storageStrategy: "localStorage" };
+    return { isAuthenticated: false, user: null, tokens: null, storageStrategy: "cookie" };
   }
 
   const data = await response.json();
-  const strategy = detectStorageStrategy();
+
+  if (data.csrf_token) {
+    setCSRFToken(data.csrf_token);
+  }
 
   const authState: AuthState = {
     isAuthenticated: true,
-    user: data.user,
-    tokens: {
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-    },
-    storageStrategy: strategy,
+    user: data.user ?? loadStoredUser(),
+    tokens: null,
+    storageStrategy: "cookie",
   };
 
-  // Save to localStorage if using hybrid/localStorage strategy
-  if (strategy !== "cookie") {
+  if (authState.user) {
     saveAuthState(authState);
   }
 
@@ -180,18 +181,17 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthStat
 }
 
 /**
- * Logout (client-side only - discard tokens)
- * P3-10: Enhanced to clear both cookies and localStorage
+ * Logout (client-side + server-side cookie clearing)
  */
 export function logout(): void {
   if (typeof window !== "undefined") {
-    // Clear localStorage (for hybrid/localStorage mode)
+    // Clear local UI state (user hint + CSRF raw token)
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    clearCSRFToken();
 
-    // P3-10: Note: HttpOnly cookies are cleared by the backend
-    // Call backend logout endpoint to clear HttpOnly cookies
+    // HttpOnly cookies are cleared by the backend logout endpoint
     fetch("/api/auth/logout", {
       method: "POST",
       credentials: "include",
@@ -201,22 +201,28 @@ export function logout(): void {
   }
 }
 
+function loadStoredUser(): User | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const userStr = localStorage.getItem(USER_KEY);
+    return userStr ? (JSON.parse(userStr) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Save auth state to localStorage
- * P3-10: ALWAYS save to localStorage as backup for client-side auth checks.
- * Even when using HttpOnly cookies, we need localStorage because:
- * 1. HttpOnly cookies cannot be read by JavaScript
- * 2. Client-side routing needs immediate auth state for protected routes
- * 3. The tokens in localStorage serve as a backup reference (actual API calls use cookies)
+ * Save auth state to localStorage.
+ *
+ * ONLY the non-sensitive user object is persisted — it exists purely as a UI
+ * hint (navigation, role-gated menus). Tokens live exclusively in HttpOnly
+ * cookies, which JavaScript cannot read, so an XSS cannot steal a session.
  */
 export function saveAuthState(authState: AuthState): void {
   if (typeof window !== "undefined") {
-    // Always save to localStorage regardless of storage strategy
-    // This is critical because HttpOnly cookies cannot be read by JavaScript
-    if (authState.tokens) {
-      localStorage.setItem(ACCESS_TOKEN_KEY, authState.tokens.access_token);
-      localStorage.setItem(REFRESH_TOKEN_KEY, authState.tokens.refresh_token);
-    }
+    // Defensive cleanup: remove any tokens left by the previous storage scheme.
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     if (authState.user) {
       localStorage.setItem(USER_KEY, JSON.stringify(authState.user));
     }
@@ -224,57 +230,26 @@ export function saveAuthState(authState: AuthState): void {
 }
 
 /**
- * Load auth state from localStorage or Cookies
- * P3-10: Enhanced with Cookie support
+ * Load auth state for UI purposes.
+ *
+ * The user object is the client-side hint that a session existed; the real
+ * authority is the HttpOnly cookie validated on every request. An expired
+ * session surfaces as 401 → refresh → redirect (handled in the API clients).
  */
 export function loadAuthState(): AuthState | null {
   if (typeof window === "undefined") return null;
 
-  const strategy = detectStorageStrategy();
-
-  // P3-10: Try localStorage first (primary source for client-side auth)
-  // Even when using HttpOnly cookies, we need localStorage for immediate auth checks
-  // because HttpOnly cookies cannot be read by JavaScript
-  const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-  const userStr = localStorage.getItem(USER_KEY);
-
-  if (accessToken && userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      return {
-        isAuthenticated: true,
-        user,
-        tokens: {
-          access_token: accessToken,
-          refresh_token: localStorage.getItem(REFRESH_TOKEN_KEY) || "",
-        },
-        storageStrategy: strategy,
-      };
-    } catch {
-      return null;
-    }
+  const user = loadStoredUser();
+  if (!user) {
+    return null;
   }
 
-  // P3-10: If no localStorage, try to detect cookies
-  // Note: HttpOnly cookies cannot be accessed by JS, so this only works for non-HttpOnly cookies
-  if (strategy === "cookie" || strategy === "hybrid") {
-    const cookieToken = getCookie(COOKIE_ACCESS_TOKEN_NAME);
-    if (cookieToken) {
-      // Verify user from server (cookies don't contain user info)
-      // For now, return a minimal auth state
-      return {
-        isAuthenticated: true,
-        user: null, // Will be loaded separately
-        tokens: {
-          access_token: cookieToken,
-          refresh_token: getCookie(COOKIE_REFRESH_TOKEN_NAME) || "",
-        },
-        storageStrategy: strategy,
-      };
-    }
-  }
-
-  return null;
+  return {
+    isAuthenticated: true,
+    user,
+    tokens: null,
+    storageStrategy: "cookie",
+  };
 }
 
 /**
@@ -360,7 +335,7 @@ export function canRunPlaybook(user: User | null): boolean {
 /**
  * Handle 401 response - clear tokens and redirect to login
  */
-function handleUnauthorized(): void {
+export function handleUnauthorized(): void {
   logout();
   // Only redirect if in browser and not already on login page
   if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
@@ -382,7 +357,6 @@ export async function authFetch(
   maxRetries = 1
 ): Promise<Response> {
   let accessToken = getAccessToken();
-  let refreshToken = getRefreshToken();
 
   // If no tokens, try without auth (for public endpoints)
   if (!accessToken) {
@@ -406,10 +380,11 @@ export async function authFetch(
 
   let response = await makeRequest(accessToken);
 
-  // If access token expired, try to refresh
-  if (response.status === 401 && refreshToken && maxRetries > 0) {
-    const authState = await refreshAccessToken(refreshToken);
-    if (authState.isAuthenticated && authState.tokens) {
+  // If access token expired, try to refresh (cookie-based; the backend falls
+  // back to the refresh_token HttpOnly cookie when no body token is sent).
+  if (response.status === 401 && maxRetries > 0) {
+    const authState = await refreshAccessToken(getRefreshToken());
+    if (authState.isAuthenticated) {
       saveAuthState(authState);
       return authFetch(url, options, maxRetries - 1);
     }

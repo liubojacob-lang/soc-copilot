@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Heading, Text } from "@/components/ui/Typography";
 
@@ -32,7 +32,13 @@ interface InfoCardProps {
  * 纯白/纯灰背景，内边距 24px
  * 支持标题区、内容区、底部操作区
  */
-function InfoCard({ title, children, footer, className, variant = "white" }: InfoCardProps) {
+const InfoCard = React.memo(function InfoCard({
+  title,
+  children,
+  footer,
+  className,
+  variant = "white",
+}: InfoCardProps) {
   const bgClasses: Record<InfoCardVariant, string> = {
     white: "bg-surface-card dark:bg-slate-800",
     gray: "bg-surface-hover dark:bg-slate-700",
@@ -61,7 +67,7 @@ function InfoCard({ title, children, footer, className, variant = "white" }: Inf
       )}
     </div>
   );
-}
+});
 
 export { InfoCard };
 export type { InfoCardProps, InfoCardVariant };

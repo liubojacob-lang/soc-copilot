@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 interface LoadingSpinnerProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   color?: "soc" | "success" | "warning" | "danger" | "gray" | "white";
@@ -16,7 +18,7 @@ const sizeClasses = {
 };
 
 const colorClasses = {
-  soc: "text-soc-500",
+  soc: "text-primary-500",
   success: "text-success-500",
   warning: "text-warning-500",
   danger: "text-danger-500",
@@ -24,7 +26,7 @@ const colorClasses = {
   white: "text-white",
 };
 
-export function LoadingSpinner({
+const LoadingSpinner = React.memo(function LoadingSpinner({
   size = "md",
   color = "soc",
   className = "",
@@ -62,7 +64,7 @@ export function LoadingSpinner({
       {!label && <span className="sr-only">加载中...</span>}
     </div>
   );
-}
+});
 
 // 全屏加载遮罩
 interface FullScreenLoaderProps {
@@ -70,7 +72,10 @@ interface FullScreenLoaderProps {
   className?: string;
 }
 
-export function FullScreenLoader({ message = "加载中...", className = "" }: FullScreenLoaderProps) {
+const FullScreenLoader = React.memo(function FullScreenLoader({
+  message = "加载中...",
+  className = "",
+}: FullScreenLoaderProps) {
   return (
     <div
       className={`
@@ -88,7 +93,7 @@ export function FullScreenLoader({ message = "加载中...", className = "" }: F
       {message && <p className="mt-4 text-gray-600 dark:text-gray-400 text-sm">{message}</p>}
     </div>
   );
-}
+});
 
 // 骨架屏加载
 interface SkeletonLoaderProps {
@@ -96,7 +101,10 @@ interface SkeletonLoaderProps {
   className?: string;
 }
 
-export function SkeletonLoader({ count = 3, className = "" }: SkeletonLoaderProps) {
+const SkeletonLoader = React.memo(function SkeletonLoader({
+  count = 3,
+  className = "",
+}: SkeletonLoaderProps) {
   return (
     <div className={`space-y-3 ${className}`}>
       {Array.from({ length: count }).map((_, i) => (
@@ -114,4 +122,6 @@ export function SkeletonLoader({ count = 3, className = "" }: SkeletonLoaderProp
       ))}
     </div>
   );
-}
+});
+
+export { LoadingSpinner, FullScreenLoader, SkeletonLoader };

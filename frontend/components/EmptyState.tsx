@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { FileText, AlertTriangle, Search, Inbox } from "lucide-react";
 import { Heading, Text } from "@/components/ui/Typography";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,7 @@ const ICONS = {
   inbox: Inbox,
 };
 
-export function EmptyState({
+const EmptyState = React.memo(function EmptyState({
   icon = "inbox",
   title,
   description,
@@ -62,4 +62,6 @@ export function EmptyState({
       {action && <div className="mt-2">{action}</div>}
     </div>
   );
-}
+});
+
+export { EmptyState };

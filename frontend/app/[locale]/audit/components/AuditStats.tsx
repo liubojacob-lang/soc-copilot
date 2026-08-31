@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { TrendingUp, TrendingDown, Activity, AlertTriangle } from "lucide-react";
 
 interface AuditStatsProps {
@@ -15,6 +15,7 @@ interface AuditStatsProps {
 export function AuditStats({ stats, loading }: AuditStatsProps) {
   const t = useTranslations("auditPage");
 
+  const format = useFormatter();
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -41,7 +42,7 @@ export function AuditStats({ stats, loading }: AuditStatsProps) {
   const statCards = [
     {
       title: t("stats.totalRequests"),
-      value: total_requests.toLocaleString(),
+      value: format.dateTime(total_requests, { dateStyle: "medium", timeStyle: "medium" }),
       icon: Activity,
       iconColor: "text-blue-500",
       bgColor: "bg-blue-50 dark:bg-blue-900/20",
@@ -49,7 +50,7 @@ export function AuditStats({ stats, loading }: AuditStatsProps) {
     },
     {
       title: t("stats.last24h"),
-      value: last_24h_requests.toLocaleString(),
+      value: format.dateTime(last_24h_requests, { dateStyle: "medium", timeStyle: "medium" }),
       icon: TrendingUp,
       iconColor: "text-green-500",
       bgColor: "bg-green-50 dark:bg-green-900/20",
@@ -58,7 +59,7 @@ export function AuditStats({ stats, loading }: AuditStatsProps) {
     },
     {
       title: t("stats.failedRequests"),
-      value: failed_requests.toLocaleString(),
+      value: format.dateTime(failed_requests, { dateStyle: "medium", timeStyle: "medium" }),
       icon: AlertTriangle,
       iconColor: "text-red-500",
       bgColor: "bg-red-50 dark:bg-red-900/20",

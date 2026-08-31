@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Search, X, FileText, AlertTriangle, Play, Users, Settings, Link } from "lucide-react";
+import { isAdmin, loadAuthState } from "@/lib/auth";
 
 interface SearchResult {
   type: string;
@@ -18,9 +19,11 @@ export function GlobalSearch() {
   const t = useTranslations("nav");
   const tCommon = useTranslations("common");
 
-  // Use useMemo to create NAV_ITEMS with translations
-  const NAV_ITEMS: SearchResult[] = useMemo(
-    () => [
+  // Use useMemo to create NAV_ITEMS with translations.
+  // Admin-only destinations are filtered out for non-admin users — the
+  // search must not leak pages the main navigation hides.
+  const NAV_ITEMS: SearchResult[] = useMemo(() => {
+    const base: SearchResult[] = [
       { type: "page", title: t("home"), url: "/", icon: <FileText className="w-4 h-4" /> },
       {
         type: "page",
@@ -39,16 +42,16 @@ export function GlobalSearch() {
       { type: "page", title: t("audit"), url: "/audit", icon: <FileText className="w-4 h-4" /> },
       {
         type: "page",
-        title: t("reports"),
-        url: "/reports",
-        icon: <FileText className="w-4 h-4" />,
-      },
-      {
-        type: "page",
         title: t("ai"),
         url: "/ai-assistant",
         icon: <FileText className="w-4 h-4" />,
       },
+    ];
+    if (!isAdmin(loadAuthState()?.user ?? null)) {
+      return base;
+    }
+    return [
+      ...base,
       {
         type: "page",
         title: t("users") || "Users",
@@ -61,9 +64,8 @@ export function GlobalSearch() {
         url: "/settings",
         icon: <Settings className="w-4 h-4" />,
       },
-    ],
-    [t, tCommon]
-  );
+    ];
+  }, [t, tCommon]);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);

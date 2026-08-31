@@ -52,7 +52,7 @@ const dotSize = {
   lg: "w-2.5 h-2.5",
 };
 
-export function AlertStatusBadge({ status, size = "md", showLabel = true }: AlertStatusBadgeProps) {
+function AlertStatusBadge_({ status, size = "md", showLabel = true }: AlertStatusBadgeProps) {
   const t = useTranslations("status");
   const config = statusConfig[status] || statusConfig.new;
   const sizeClass = sizeStyles[size];
@@ -116,12 +116,7 @@ const severityConfig = {
   },
 };
 
-export function SeverityBadge({
-  severity,
-  size = "md",
-  showScore = false,
-  score,
-}: SeverityBadgeProps) {
+function SeverityBadge_({ severity, size = "md", showScore = false, score }: SeverityBadgeProps) {
   const t = useTranslations("severity");
   const config = severityConfig[severity] || severityConfig.info;
   const sizeClass = sizeStyles[size];
@@ -168,13 +163,7 @@ interface AlertCardProps {
   actions?: React.ReactNode;
 }
 
-export function AlertCard({
-  alert,
-  onClick,
-  size = "md",
-  showActions = false,
-  actions,
-}: AlertCardProps) {
+function AlertCard_({ alert, onClick, size = "md", showActions = false, actions }: AlertCardProps) {
   const tTime = useTranslations("time");
 
   const timeSince = (timestamp: string) => {
@@ -244,3 +233,10 @@ export function AlertCard({
     </div>
   );
 }
+
+// React.memo wrappers for performance optimization (F2-9)
+const AlertStatusBadge = React.memo(AlertStatusBadge_);
+const SeverityBadge = React.memo(SeverityBadge_);
+const AlertCard = React.memo(AlertCard_);
+
+export { AlertStatusBadge, SeverityBadge, AlertCard };

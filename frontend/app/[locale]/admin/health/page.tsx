@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { loadAuthState, isAdmin, authFetchJSON } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import { CheckCircle, XCircle, RefreshCw, Database, HardDrive, Cpu, Settings } from "lucide-react";
 
 interface DatabaseHealth {
@@ -125,7 +125,7 @@ export default function AdminHealthPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation
+      <PageHeader
         title={t("systemHealth", { default: "System Health" })}
         subtitle={t("subtitle", { default: "Runtime status and infrastructure health" })}
       />

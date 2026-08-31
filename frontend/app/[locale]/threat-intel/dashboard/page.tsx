@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { RefreshCw, Download, Calendar, Filter } from "lucide-react";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import { Skeleton, SkeletonCard } from "@/components/common/Skeleton";
 import { AlertWebSocket } from "@/components/AlertWebSocket";
 import { useToast } from "@/components/Toast";
@@ -406,9 +406,9 @@ export default function ThreatIntelDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <AlertWebSocket />
-      <Navigation
-        title="Threat Intelligence Dashboard"
-        subtitle="Security threat overview and analysis"
+      <PageHeader
+        title={t("threatIntel.dashboard.title")}
+        subtitle={t("threatIntel.dashboard.subtitle")}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -487,7 +487,7 @@ export default function ThreatIntelDashboardPage() {
           ) : (
             <>
               <KPICard
-                label="Total Alerts"
+                label={t("threatIntel.dashboard.totalAlerts")}
                 value={
                   severityData.critical +
                   severityData.high +
@@ -500,7 +500,7 @@ export default function ThreatIntelDashboardPage() {
                 color="blue"
               />
               <KPICard
-                label="Critical Threats"
+                label={t("threatIntel.dashboard.criticalThreats")}
                 value={severityData.critical}
                 change="+5%"
                 trend="up"
@@ -514,7 +514,7 @@ export default function ThreatIntelDashboardPage() {
                 color="orange"
               />
               <KPICard
-                label="Active Campaigns"
+                label={t("threatIntel.dashboard.activeCampaigns")}
                 value={topSources.length}
                 change="+2"
                 trend="up"

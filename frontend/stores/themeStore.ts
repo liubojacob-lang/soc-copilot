@@ -12,7 +12,7 @@ interface ThemeState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
-  resolvedTheme: "light" | "dark";
+  getResolvedTheme: () => "light" | "dark";
 }
 
 const STORAGE_KEY = "theme-storage";
@@ -46,13 +46,13 @@ export const useThemeStore = create<ThemeState>()(
       },
 
       toggleTheme: () => {
-        const current = get().resolvedTheme;
+        const current = get().getResolvedTheme();
         const next = current === "light" ? "dark" : "light";
         set({ theme: next });
         applyThemeClass(next);
       },
 
-      get resolvedTheme(): "light" | "dark" {
+      getResolvedTheme: () => {
         return getResolvedTheme(get().theme);
       },
     }),

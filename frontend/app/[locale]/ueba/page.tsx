@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations, useLocale } from "next-intl";
 import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import { Users, AlertTriangle, TrendingUp, Shield, Activity } from "lucide-react";
 
 interface UEBADashboard {
@@ -45,6 +45,7 @@ export default function UEBAPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("uebaPage");
+  const format = useFormatter();
   const tCommon = useTranslations("common");
   const tRiskFactors = useTranslations("uebaPage.riskFactors");
   const tRiskLevel = useTranslations("uebaPage.riskLevel");
@@ -90,7 +91,7 @@ export default function UEBAPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4">
@@ -279,7 +280,10 @@ export default function UEBAPage() {
                           {anomaly.type === "off_hours_login" ? t("offHoursLogin") : anomaly.type}
                         </p>
                         <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                          {new Date(anomaly.detected_at).toLocaleString()}
+                          {format.dateTime(new Date(anomaly.detected_at), {
+                            dateStyle: "medium",
+                            timeStyle: "medium",
+                          })}
                         </p>
                       </div>
                     ))}

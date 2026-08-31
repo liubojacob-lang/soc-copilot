@@ -218,17 +218,17 @@ export interface ImpactAnalysis {
 export type Criticality = "low" | "medium" | "high" | "critical";
 
 export async function analyzeAlert(data: AlertAnalysisRequest): Promise<AlertAnalysisResponse> {
-  return client.post<AlertAnalysisResponse>("/api/analyze-alert", data, 120000);
+  return client.post<AlertAnalysisResponse>("/api/v1/analyze-alert", data, 120000);
 }
 
 export async function generateReport(
   data: ReportGenerationRequest
 ): Promise<ReportGenerationResponse> {
-  return client.post<ReportGenerationResponse>("/api/generate-report", data, 120000);
+  return client.post<ReportGenerationResponse>("/api/v1/generate-report", data, 120000);
 }
 
 export async function buildTimeline(data: TimelineRequest): Promise<TimelineResponse> {
-  return client.post<TimelineResponse>("/api/build-timeline", data, 120000);
+  return client.post<TimelineResponse>("/api/v1/build-timeline", data, 120000);
 }
 
 export async function generatePlaybookQueries(
@@ -239,7 +239,7 @@ export async function generatePlaybookQueries(
   timeRanges: string[] = ["last_24h"]
 ): Promise<GeneratePlaybookQueriesResponse> {
   return client.post<GeneratePlaybookQueriesResponse>(
-    "/api/playbook/queries",
+    "/api/v1/playbook/queries",
     {
       module,
       history_id: historyId,
@@ -257,7 +257,7 @@ export async function generateRemediationActions(
   includeVerificationSteps: boolean = true
 ): Promise<GenerateRemediationActionsResponse> {
   return client.post<GenerateRemediationActionsResponse>(
-    "/api/playbook/actions",
+    "/api/v1/playbook/actions",
     {
       history_id: historyId,
       policy,

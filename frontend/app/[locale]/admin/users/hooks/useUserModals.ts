@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { authFetch } from "@/lib/auth";
+import { useToast } from "@/components/Toast";
 import { generatePassword, type User } from "./useUsers";
 
 interface FormErrors {
@@ -16,6 +18,9 @@ interface SuccessData {
 }
 
 export function useUserModals(fetchUsers: (page?: number) => Promise<void>, currentPage: number) {
+  const t = useTranslations("users");
+  const { showToast } = useToast();
+
   // Modal visibility
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -127,30 +132,40 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
           setShowEditModal(false);
           setSelectedUser(null);
           fetchUsers(currentPage);
+          showToast(t("updateSuccess"), "success");
+        } else {
+          showToast(t("updateFailed"), "error");
         }
       } catch {
-        // Error handled by UI state
+        showToast(t("updateFailed"), "error");
       } finally {
         setSaving(false);
       }
     },
-    [selectedUser, email, role, isActive, fetchUsers, currentPage]
+    [selectedUser, email, role, isActive, fetchUsers, currentPage, showToast, t]
   );
 
   const handleDeleteUser = useCallback(async () => {
     if (!selectedUser) return;
     setDeleting(true);
     try {
-      await authFetch(`/api/users/${selectedUser.id}`, {
+      const response = await authFetch(`/api/users/${selectedUser.id}`, {
         method: "DELETE",
       });
-      setShowDeleteModal(false);
-      setSelectedUser(null);
-      fetchUsers(currentPage);
+      if (response.ok) {
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+        fetchUsers(currentPage);
+        showToast(t("deleteSuccess"), "success");
+      } else {
+        showToast(t("deleteFailed"), "error");
+      }
+    } catch {
+      showToast(t("deleteFailed"), "error");
     } finally {
       setDeleting(false);
     }
-  }, [selectedUser, fetchUsers, currentPage]);
+  }, [selectedUser, fetchUsers, currentPage, showToast, t]);
 
   const handleResetPassword = useCallback(
     async (e: React.FormEvent) => {

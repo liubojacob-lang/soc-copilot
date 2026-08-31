@@ -9,10 +9,10 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   output: "standalone",
+  // Type errors now fail the build. Keep this off: it previously masked a
+  // runtime crash (/cases), a broken endpoint and two build-breaking imports.
   typescript: {
-    // Temporarily ignore type errors during Docker build so services can start.
-    // TODO: Re-enable after aligning frontend types with backend schemas.
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     formats: ["image/avif", "image/webp"],
@@ -49,25 +49,26 @@ const nextConfig = {
             },
           ]
         : []),
-      {
-        key: "Content-Security-Policy",
-        value: [
-          "default-src 'self'",
-          // Next.js inlines bootstrap scripts in the HTML (no nonce in
-          // standalone output), so pure 'self' blocks hydration. Allow
-          // inline scripts; tighten to nonce-based CSP as a follow-up.
-          process.env.NODE_ENV === "production"
-            ? "script-src 'self' 'unsafe-inline'"
-            : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-          "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: https:",
-          "font-src 'self' data:",
-          "connect-src 'self' ws://localhost:* wss:",
-          "frame-ancestors 'none'",
-          "base-uri 'self'",
-          "form-action 'self'",
-        ].join("; "),
-      },
+      ...(process.env.NODE_ENV !== "production"
+        ? [
+            {
+              key: "Content-Security-Policy",
+              // Development only: HMR needs 'unsafe-eval'. In production the
+              // nonce-based CSP is issued per request by middleware.ts.
+              value: [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+                "style-src 'self' 'unsafe-inline'",
+                "img-src 'self' data: blob: https:",
+                "font-src 'self' data:",
+                "connect-src 'self' ws://localhost:* wss:",
+                "frame-ancestors 'none'",
+                "base-uri 'self'",
+                "form-action 'self'",
+              ].join("; "),
+            },
+          ]
+        : []),
     ];
 
     return [

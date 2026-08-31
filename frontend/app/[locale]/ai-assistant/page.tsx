@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { api, api_ai_models, type AIModel, type TestModelResponse } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import { useChatHistory, type ChatConversation } from "@/hooks/useChatHistory";
 import { ChatHistorySidebar } from "@/components/ChatHistorySidebar";
 import { ChatHeader, ChatInput, ChatMessages, QuickActions } from "./components";
@@ -294,7 +294,7 @@ ${t("welcome.prompt")}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         {errorMessage && (

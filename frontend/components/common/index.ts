@@ -3,6 +3,10 @@
 // 无障碍组件
 export { SkipToContent } from "./SkipToContent";
 
+// 确认弹窗组件
+export { ConfirmDialog } from "./ConfirmDialog";
+export type { ConfirmDialogProps } from "./ConfirmDialog";
+
 // 按钮组件
 export { Button, buttonVariants } from "./Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button";
@@ -11,7 +15,7 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button";
 export { Card, cardVariants } from "./Card";
 export type { CardProps, CardVariant, CardPadding } from "./Card";
 export { StatCard } from "@/components/dashboard/StatCard";
-export type { StatCardProps, TrendDirection } from "@/components/dashboard/StatCard";
+export type { StatCardProps } from "@/components/dashboard/StatCard";
 
 // 表单输入组件
 export { Input, Textarea, Select, Checkbox, Switch, inputVariants } from "./Input";

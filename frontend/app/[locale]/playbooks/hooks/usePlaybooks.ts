@@ -1,7 +1,7 @@
 /** Custom hook for managing playbook runs and definitions */
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { api } from "@/lib/api";
 import { loadAuthState, authFetch } from "@/lib/auth";

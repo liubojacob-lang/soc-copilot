@@ -97,6 +97,12 @@ export class WazuhWebSocketClient {
 
   /**
    * Connect to WebSocket server
+   *
+   * Auth: token (if available) is passed via the Sec-WebSocket-Protocol
+   * header, never via the URL (query params leak into logs/history).
+   * Without a token the cookie-authenticated session is used — the browser
+   * attaches same-site cookies to the handshake and the backend falls back
+   * to the access_token cookie.
    */
   connect(token?: string): void {
     if (this.state.connecting || this.state.connected) {
@@ -107,21 +113,16 @@ export class WazuhWebSocketClient {
       this.config.token = token;
     }
 
-    if (!this.config.token) {
-      const error = new Error("Authentication token required");
-      this.notifyError(error);
-      return;
-    }
-
     this.state.connecting = true;
     this.isManualClose = false;
 
     try {
       const wsUrl = new URL(this.config.url);
-      wsUrl.searchParams.set("token", this.config.token);
       wsUrl.searchParams.set("channels", "wazuh");
 
-      this.ws = new WebSocket(wsUrl.toString());
+      this.ws = this.config.token
+        ? new WebSocket(wsUrl.toString(), `access_token.${this.config.token}`)
+        : new WebSocket(wsUrl.toString());
 
       this.ws.onopen = this.handleOpen.bind(this);
       this.ws.onmessage = this.handleMessage.bind(this);

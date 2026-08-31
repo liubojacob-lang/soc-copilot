@@ -12,11 +12,6 @@ export function formatDateForInput(date: Date): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-/** Format date for display */
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString();
-}
-
 /** Get CSS class for status code */
 export function getStatusCodeClass(statusCode: number): string {
   if (statusCode >= 200 && statusCode < 300) return "text-green-600 bg-green-100";

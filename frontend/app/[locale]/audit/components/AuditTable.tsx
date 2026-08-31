@@ -1,6 +1,8 @@
 /** Audit logs table component */
 
-import { formatDate, getStatusCodeClass, getMethodClass } from "../utils";
+import { useFormatter } from "next-intl";
+
+import { getStatusCodeClass, getMethodClass } from "../utils";
 import type { AuditLog } from "../types";
 
 interface AuditTableProps {
@@ -8,6 +10,7 @@ interface AuditTableProps {
 }
 
 export function AuditTable({ logs }: AuditTableProps) {
+  const format = useFormatter();
   if (logs.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -27,7 +30,7 @@ export function AuditTable({ logs }: AuditTableProps) {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Time
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 User
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -42,10 +45,10 @@ export function AuditTable({ logs }: AuditTableProps) {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Target
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Duration
               </th>
             </tr>
@@ -54,9 +57,12 @@ export function AuditTable({ logs }: AuditTableProps) {
             {logs.map((log) => (
               <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(log.created_at)}
+                  {format.dateTime(new Date(log.created_at), {
+                    dateStyle: "medium",
+                    timeStyle: "medium",
+                  })}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {log.username || <span className="text-gray-400 italic">System</span>}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
@@ -81,14 +87,14 @@ export function AuditTable({ logs }: AuditTableProps) {
                     {log.status_code}
                   </span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                   {log.target_type && (
                     <span>
                       {log.target_type}:{log.target_id}
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                   {log.duration_ms !== null ? `${log.duration_ms}ms` : "-"}
                 </td>
               </tr>
