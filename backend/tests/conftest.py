@@ -3,14 +3,39 @@ Test fixtures and configuration
 """
 
 import os
+import secrets
 
+from cryptography.fernet import Fernet
+
+
+def _complex_password(prefix: str) -> str:
+    """Runtime-generated password satisfying the production strength policy."""
+    return f"{prefix}-{secrets.token_urlsafe(12)}!9"
+
+
+# Test credentials are generated at runtime — no credential material in source.
 # Set environment variables BEFORE any other imports
 # This must be done at module level before any imports from the project
 os.environ["ENVIRONMENT"] = "test"
-os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
-os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
-os.environ["SECRET_KEY"] = "test-secret-key-min-32-characters-long-for-testing-purposes"
-os.environ["DB_PASSWORD"] = "test-db-password-min-32-characters"
+TEST_PASSWORD = os.environ.get("TEST_PASSWORD") or _complex_password("Tp")
+TEST_NEW_PASSWORD = _complex_password("Np")
+TEST_ALT_PASSWORD = _complex_password("Ap")
+TEST_WRONG_PASSWORD = _complex_password("Wp")
+TEST_MISMATCH_PASSWORD = _complex_password("Mp")
+TEST_DUMMY_REFRESH_TOKEN = secrets.token_urlsafe(32)
+os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = TEST_PASSWORD
+os.environ["TEST_PASSWORD"] = TEST_PASSWORD
+os.environ["TEST_NEW_PASSWORD"] = TEST_NEW_PASSWORD
+os.environ["TEST_ALT_PASSWORD"] = TEST_ALT_PASSWORD
+os.environ["TEST_WRONG_PASSWORD"] = TEST_WRONG_PASSWORD
+os.environ["TEST_MISMATCH_PASSWORD"] = TEST_MISMATCH_PASSWORD
+os.environ["TEST_DUMMY_REFRESH_TOKEN"] = TEST_DUMMY_REFRESH_TOKEN
+os.environ["JWT_SECRET"] = os.environ.get("JWT_SECRET") or secrets.token_urlsafe(48)
+os.environ["SECRET_KEY"] = os.environ.get("SECRET_KEY") or secrets.token_urlsafe(48)
+os.environ["DB_PASSWORD"] = os.environ.get("DB_PASSWORD") or secrets.token_urlsafe(24)
+os.environ["SECRET_ENCRYPTION_KEY"] = (
+    os.environ.get("SECRET_ENCRYPTION_KEY") or Fernet.generate_key().decode()
+)
 # Test fixtures read tokens from the login response body (308 redirects can
 # drop cookies in httpx), so the cookie-only production flow is bypassed.
 os.environ["EXPOSE_TOKENS_IN_BODY"] = "true"
@@ -29,19 +54,12 @@ try:
 except ImportError:  # pragma: no cover - environment-specific
     app = None  # type: ignore[assignment]
 
-# Test password constant
-TEST_PASSWORD = "admin123!TestPass"
+# Test credentials are defined at the top of this module (runtime-generated).
 
 
 def pytest_configure(config):
     """Configure pytest with environment variables."""
     os.environ["ENVIRONMENT"] = "test"
-    os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
-    os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
-    os.environ["SECRET_KEY"] = (
-        "test-secret-key-min-32-characters-long-for-testing-purposes"
-    )
-    os.environ["DB_PASSWORD"] = "test-db-password-min-32-characters"
     os.environ["EXPOSE_TOKENS_IN_BODY"] = "true"
 
 

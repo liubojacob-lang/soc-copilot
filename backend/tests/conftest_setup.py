@@ -1,17 +1,16 @@
 """
-Test setup - must be imported before any other imports.
-Sets environment variables for testing.
+Test credential constants for auth tests.
+
+All values are generated at runtime by tests/conftest.py (which pytest loads
+before any test module) and shared via the environment, so no credential
+material lives in source control.
 """
 
 import os
 
-# Set test environment variables BEFORE any imports
-os.environ["ENVIRONMENT"] = "test"
-os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
-os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
-os.environ["SECRET_ENCRYPTION_KEY"] = (
-    "dGVzdC1lbmNyeXB0aW9uLWtleS1mb3ItdGVzdGluZw=="  # Fernet-compatible
-)
-
-# Test password constant
-TEST_PASSWORD = "admin123!TestPass"
+TEST_PASSWORD = os.environ["TEST_PASSWORD"]
+TEST_NEW_PASSWORD = os.environ["TEST_NEW_PASSWORD"]
+TEST_ALT_PASSWORD = os.environ["TEST_ALT_PASSWORD"]
+TEST_WRONG_PASSWORD = os.environ["TEST_WRONG_PASSWORD"]
+TEST_MISMATCH_PASSWORD = os.environ["TEST_MISMATCH_PASSWORD"]
+TEST_DUMMY_REFRESH_TOKEN = os.environ["TEST_DUMMY_REFRESH_TOKEN"]

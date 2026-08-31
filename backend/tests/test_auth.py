@@ -3,7 +3,14 @@
 import pytest
 
 # Import test setup
-from tests.conftest_setup import TEST_PASSWORD
+from tests.conftest_setup import (
+    TEST_ALT_PASSWORD,
+    TEST_DUMMY_REFRESH_TOKEN,
+    TEST_MISMATCH_PASSWORD,
+    TEST_NEW_PASSWORD,
+    TEST_PASSWORD,
+    TEST_WRONG_PASSWORD,
+)
 
 
 class TestAuthentication:
@@ -90,7 +97,7 @@ class TestAuthentication:
 
         # Try to refresh - requires refresh_token in body
         refresh_response = await auth_client.post(
-            "/api/auth/refresh", json={"refresh_token": "test_refresh_token"}
+            "/api/auth/refresh", json={"refresh_token": TEST_DUMMY_REFRESH_TOKEN}
         )
         # Using a dummy token, expect unauthorized or validation error
         assert refresh_response.status_code in [
@@ -245,8 +252,8 @@ class TestPasswordManagement:
             "/api/auth/change-password",
             json={
                 "current_password": TEST_PASSWORD,
-                "new_password": "NewPassword123!",
-                "confirm_password": "NewPassword123!",
+                "new_password": TEST_NEW_PASSWORD,
+                "confirm_password": TEST_NEW_PASSWORD,
             },
         )
         assert response.status_code == 200
@@ -256,7 +263,7 @@ class TestPasswordManagement:
         # its session is invalidated.
         relogin = await auth_client.post(
             "/api/auth/login",
-            json={"username": "admin", "password": "NewPassword123!"},
+            json={"username": "admin", "password": TEST_NEW_PASSWORD},
         )
         assert relogin.status_code == 200, relogin.text
         fresh_token = relogin.json()["access_token"]
@@ -267,9 +274,9 @@ class TestPasswordManagement:
             "/api/auth/change-password",
             headers={"Authorization": f"Bearer {fresh_token}"},
             json={
-                "current_password": "NewPassword123!",
-                "new_password": "AnotherPass456!",
-                "confirm_password": "AnotherPass456!",
+                "current_password": TEST_NEW_PASSWORD,
+                "new_password": TEST_ALT_PASSWORD,
+                "confirm_password": TEST_ALT_PASSWORD,
             },
         )
         assert response.status_code == 200
@@ -293,9 +300,9 @@ class TestPasswordManagement:
         response = await auth_client.post(
             "/api/auth/change-password",
             json={
-                "current_password": "WrongPassword123!",
-                "new_password": "NewPassword123!",
-                "confirm_password": "NewPassword123!",
+                "current_password": TEST_WRONG_PASSWORD,
+                "new_password": TEST_NEW_PASSWORD,
+                "confirm_password": TEST_NEW_PASSWORD,
             },
         )
         assert response.status_code == 400  # Bad request - wrong current password
@@ -307,8 +314,8 @@ class TestPasswordManagement:
             "/api/auth/change-password",
             json={
                 "current_password": TEST_PASSWORD,
-                "new_password": "NewPassword123!",
-                "confirm_password": "DifferentPassword123!",
+                "new_password": TEST_NEW_PASSWORD,
+                "confirm_password": TEST_MISMATCH_PASSWORD,
             },
         )
         assert response.status_code == 400  # Bad request - password mismatch
