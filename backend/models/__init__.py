@@ -28,6 +28,15 @@ from models.threat_intel_cache import ThreatIntelCacheModel
 from models.marketplace import MarketplacePlaybookModel, MarketplaceReviewModel
 from models.trigger import TriggerInvocationModel
 from models.user import UserModel, UserRole
+from models.ueba_baseline import UEBABaselineModel
+from models.blocked_ip import BlockedIP
+from models.siem_log import SIEMLog
+from models.case import (
+    CaseComment,
+    CaseModel,
+    CaseTimelineEntry,
+)
+from models.on_call_schedule import OnCallSchedule
 
 __all__ = [
     "AIModelCapability",
@@ -68,4 +77,11 @@ __all__ = [
     "TriggerInvocationModel",
     "UserModel",
     "UserRole",
+    "BlockedIP",
+    "CaseAlertAssociation",
+    "CaseComment",
+    "CaseModel",
+    "CaseTimelineEntry",
+    "SIEMLog",
+    "OnCallSchedule",
 ]

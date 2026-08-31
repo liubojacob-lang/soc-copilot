@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["timeline"])
 
 
-@router.post("/api/build-timeline", response_model=TimelineResponse)
+@router.post("/api/v1/build-timeline", response_model=TimelineResponse)
 async def build_timeline(
     request: TimelineRequest,
     session: AsyncSession = Depends(get_session),
@@ -43,7 +43,7 @@ async def build_timeline(
         raise HTTPException(status_code=500, detail="Timeline build failed")
 
 
-@router.get("/api/timeline/health")
+@router.get("/api/v1/timeline/health")
 async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy", "service": "soc-copilot"}

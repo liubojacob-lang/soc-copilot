@@ -1,0 +1,37 @@
+{
+  "id": "sigma-cloud-001",
+  "title": "AWS CloudTrail Logging Disabled",
+  "description": "Detects when CloudTrail logging is disabled (StopLogging, DeleteTrail, UpdateTrail), a common defense evasion technique.",
+  "status": "stable",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "cloud",
+  "tags": [
+    "attack.defense_evasion",
+    "attack.t1562.008"
+  ],
+  "mitre_techniques": [
+    "T1562.008"
+  ],
+  "logsource": {
+    "product": "aws",
+    "service": "cloudtrail"
+  },
+  "detection": {
+    "selection": {
+      "eventSource": "cloudtrail.amazonaws.com",
+      "eventName": [
+        "StopLogging",
+        "DeleteTrail",
+        "UpdateTrail"
+      ]
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Planned maintenance"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1562/008/"
+  ]
+}

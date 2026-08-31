@@ -22,7 +22,7 @@ from schemas.marketplace import (
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/marketplace", tags=["marketplace", "community"])
+router = APIRouter(prefix="/api/v1/marketplace", tags=["marketplace", "community"])
 
 
 def get_marketplace_repo(db: AsyncSession = Depends(get_session)) -> MarketplaceRepository:

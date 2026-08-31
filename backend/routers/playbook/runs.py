@@ -64,7 +64,7 @@ async def create_playbook_run(
     await audit_repo.create(
         action="playbook:run",
         method="POST",
-        path="/api/playbook/run",
+        path="/api/v1/playbook/run",
         status_code=200,
         user_id=current_user.id,
         target_type="playbook_run",
@@ -262,7 +262,7 @@ async def resume_playbook_run(
         await audit_repo.create(
             action="playbook:resume",
             method="POST",
-            path=f"/api/playbook/runs/{run_id}/resume",
+            path=f"/api/v1/playbook/runs/{run_id}/resume",
             status_code=200,
             user_id=current_user.id,
             target_type="playbook_run",
@@ -295,7 +295,7 @@ async def list_available_playbooks(
         Dictionary of available playbooks with metadata
 
     Note:
-        This endpoint is accessible without authentication if allow_public_readonly is enabled
+        This endpoint is accessible without authentication if its path is in public_readonly_endpoints
     """
     service = PlaybookRunService(session)
     return await service.get_available_playbooks()

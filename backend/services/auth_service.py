@@ -92,7 +92,7 @@ class AuthService(BaseService):
                 lockout_until = datetime.now() + timedelta(
                     minutes=LOCKOUT_DURATION_MINUTES
                 )
-                user.locked_until = lockout_until.isoformat()
+                user.locked_until = lockout_until
 
                 await self._audit_login_failed(
                     user_id=user.id,
@@ -299,6 +299,14 @@ class AuthService(BaseService):
 
         hashed = get_password_hash(data.new_password)
         await self.user_repo.update_password(user.id, hashed)
+
+        # S0-19: Invalidate permission cache after password change
+        # Ensures any cached permissions from before the password change
+        # are cleared so the next request goes through fresh auth
+        from dependencies.auth import invalidate_user_permission_cache
+
+        invalidate_user_permission_cache(user.id)
+
         await self.commit()
 
     async def unlock_user(self, admin_id: str, username: str) -> UserModel:

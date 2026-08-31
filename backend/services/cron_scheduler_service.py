@@ -49,14 +49,28 @@ class CronSchedulerService:
         logger.info("Cron scheduler stopped")
 
     async def _scheduler_loop(self) -> None:
-        """Main scheduler loop that checks for due cron triggers."""
+        """Main scheduler loop that checks for due cron triggers and escalations."""
         logger.info("Cron scheduler loop started")
+
+        _last_escalation_check = 0  # unix timestamp
 
         while self._running:
             try:
                 await self._check_and_execute_triggers()
             except Exception as e:
-                logger.error(f"Error in cron scheduler loop: {e}")
+                logger.error(f"Error in cron scheduler loop (triggers): {e}")
+
+            # v1.1: Notification escalation check (every 5 minutes)
+            try:
+                now_ts = asyncio.get_event_loop().time()
+                from services.notification.escalation_service import (
+                    ESCALATION_CHECK_INTERVAL_SECONDS,
+                )
+                if now_ts - _last_escalation_check >= ESCALATION_CHECK_INTERVAL_SECONDS:
+                    await self._check_escalations()
+                    _last_escalation_check = now_ts
+            except Exception as e:
+                logger.error(f"Error in escalation check: {e}")
 
             # Wait before next check
             await asyncio.sleep(self._check_interval)
@@ -138,6 +152,21 @@ class CronSchedulerService:
                     f"Cron scheduler check: executed={executed_count}, "
                     f"skipped={skipped_count}, total={len(triggers)}"
                 )
+
+    async def _check_escalations(self) -> None:
+        """v1.1: Check for unacknowledged alerts and escalate to on-call personnel."""
+        from services.notification.escalation_service import get_escalation_service
+
+        try:
+            svc = get_escalation_service()
+            summary = await svc.check_and_escalate()
+            if summary.get("escalated", 0) > 0:
+                logger.info(
+                    f"Escalation check: {summary['escalated']} alerts escalated, "
+                    f"{summary.get('errors', 0)} errors"
+                )
+        except Exception as e:
+            logger.error(f"Escalation check failed: {e}")
 
     async def _remove_from_pending(self, trigger_id: str) -> None:
         """Remove trigger from pending set after a delay."""

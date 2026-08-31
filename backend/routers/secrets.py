@@ -14,7 +14,7 @@ from services.security.secret_service import get_secret_service
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/secrets", tags=["secrets"])
+router = APIRouter(prefix="/api/v1/secrets", tags=["secrets"])
 
 
 # ============ Schemas ============

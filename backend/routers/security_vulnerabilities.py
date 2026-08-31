@@ -26,7 +26,7 @@ from services.security.security_vulnerability_service import (
 logger = get_logger(__name__)
 
 router = APIRouter(
-    prefix="/api/security/vulnerabilities",
+    prefix="/api/v1/security/vulnerabilities",
     tags=["security-vulnerabilities"],
     responses={404: {"description": "Not found"}},
 )

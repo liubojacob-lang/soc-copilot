@@ -19,7 +19,7 @@ from repositories.prompt_registry_repository import PromptRegistryRepository
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/prompt-registry", tags=["Prompt Registry"])
+router = APIRouter(prefix="/api/v1/prompt-registry", tags=["Prompt Registry"])
 
 
 # ---------------------------------------------------------------------------

@@ -20,8 +20,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.logger import get_logger
 from models.api_key import APIKeyModel
+from utils.client_ip import get_client_ip
 
 logger = get_logger(__name__)
+
+# Atomic fixed-window counter: EXPIRE must only be set when the counter is
+# created (first request in a window). Setting it on every request keeps
+# refreshing the TTL, so a continuously-hit key never resets and active
+# clients get permanently rate-limited.
+_RATE_LIMIT_INCR_SCRIPT = """
+local current = redis.call('INCR', KEYS[1])
+if current == 1 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return current
+"""
 
 # Check if Redis is available
 try:
@@ -239,13 +252,14 @@ class AsyncRateLimiter:
         Uses Redis pipeline for atomic operations.
         """
         try:
-            # Use async pipeline for atomic operations
-            async with self._redis_client.pipeline(transaction=True) as pipe:
-                pipe.incr(key)
-                pipe.expire(key, window_seconds)
-                results = await pipe.execute()
-
-            current_count = results[0]
+            # INCR + conditional EXPIRE must be atomic (Lua) so the window
+            # start is fixed; a pipeline of INCR+EXPIRE would reset the
+            # TTL on every request and never release the counter.
+            current_count = int(
+                await self._redis_client.eval(
+                    _RATE_LIMIT_INCR_SCRIPT, 1, key, window_seconds
+                )
+            )
             remaining = max(0, max_requests - current_count)
 
             if current_count > max_requests:
@@ -413,6 +427,10 @@ async def check_api_key_rate_limit(
     Returns:
         Tuple of (allowed, info_dict)
     """
+    # v1.0: Skip in test environment (same policy as @rate_limit decorator)
+    if settings.environment == "test":
+        return True, {"limit": 1000, "remaining": 999, "reset": 60}
+
     limiter = get_rate_limiter()
 
     # Check if API key has custom rate limit
@@ -464,8 +482,8 @@ def rate_limit(max_requests: int = 10, window_seconds: int = 60):
             if not request:
                 return await func(*args, **kwargs)
 
-            # Get identifier (IP address or API key)
-            identifier = request.client.host if request.client else "unknown"
+            # Get identifier (real client IP behind proxy, or API key)
+            identifier = get_client_ip(request) if request.client else "unknown"
 
             # Check rate limit
             limiter = get_rate_limiter()

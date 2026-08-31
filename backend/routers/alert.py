@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["alert"])
 
 
-@router.post("/api/analyze-alert", response_model=AlertAnalysisResponse)
+@router.post("/api/v1/analyze-alert", response_model=AlertAnalysisResponse)
 @rate_limit(max_requests=10, window_seconds=60)
 async def analyze_alert(
     request: AlertAnalysisRequest,

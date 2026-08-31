@@ -1,12 +1,16 @@
 """
 Base Repository
-Provides common CRUD operations for all repositories
+Provides common CRUD operations for all repositories with tenant isolation.
 """
 
 from typing import Any, Generic, TypeVar
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import Column, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import Select
+from sqlalchemy.sql import Update as UpdateStmt
+from sqlalchemy.sql import Delete as DeleteStmt
+from sqlalchemy.sql.elements import ColumnElement
 
 from db.session import Base
 
@@ -16,30 +20,67 @@ ModelType = TypeVar("ModelType", bound=Base)
 
 class BaseRepository(Generic[ModelType]):
     """
-    Base repository with common CRUD operations
+    Base repository with common CRUD operations and tenant isolation.
 
     Provides:
-    - Standard CRUD operations
-    - Query builders
+    - Standard CRUD operations (get, list, create, update, delete)
+    - Query builders with tenant filter support
     - Pagination support
-    - Caching integration
+    - Bulk operations with tenant scoping
+
+    Tenant isolation:
+    - If the model has a 'tenant_id' column and a tenant_id is provided,
+      all read/update/delete operations are automatically scoped.
+    - Operations without a tenant_id operate across all tenants (admin mode).
     """
 
     def __init__(self, session: AsyncSession, model: type[ModelType]):
         self.session = session
         self.model = model
+        # Cache whether this model has a tenant_id column
+        self._has_tenant_col = hasattr(self.model, "tenant_id")
 
-    async def get(self, id: str) -> ModelType | None:
-        """Get entity by ID"""
-        result = await self.session.execute(
-            select(self.model).where(self.model.id == id)
-        )
+    # ── Tenant filter helper ───────────────────────────────────────
+
+    def _apply_tenant_filter(
+        self,
+        query: Select | UpdateStmt | DeleteStmt,
+        tenant_id: str | None,
+    ) -> Select | UpdateStmt | DeleteStmt:
+        """Apply tenant_id filter to query if the model supports it.
+
+        Args:
+            query: SQLAlchemy query (select/update/delete)
+            tenant_id: Tenant identifier; if None, no filter is applied (admin mode)
+
+        Returns:
+            Query with tenant filter applied, or unchanged query
+        """
+        if self._has_tenant_col and tenant_id is not None:
+            tenant_col: Column = getattr(self.model, "tenant_id")
+            query = query.where(tenant_col == tenant_id)
+        return query
+
+    # ── CRUD (tenant-aware) ────────────────────────────────────────
+
+    async def get(self, id: str, tenant_id: str | None = None) -> ModelType | None:
+        """Get entity by ID, optionally scoped to tenant."""
+        query = select(self.model).where(self.model.id == id)
+        query = self._apply_tenant_filter(query, tenant_id)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_field(self, field_name: str, value: Any) -> ModelType | None:
-        """Get entity by field value"""
+    async def get_by_field(
+        self,
+        field_name: str,
+        value: Any,
+        tenant_id: str | None = None,
+    ) -> ModelType | None:
+        """Get entity by field value, optionally scoped to tenant."""
         field = getattr(self.model, field_name)
-        result = await self.session.execute(select(self.model).where(field == value))
+        query = select(self.model).where(field == value)
+        query = self._apply_tenant_filter(query, tenant_id)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def list(
@@ -49,15 +90,20 @@ class BaseRepository(Generic[ModelType]):
         offset: int = 0,
         order_by: str | None = None,
         ascending: bool = True,
+        tenant_id: str | None = None,
     ) -> list[ModelType]:
-        """List entities with filters, pagination, and ordering"""
+        """List entities with filters, pagination, ordering, and tenant scoping."""
         query = select(self.model)
 
-        # Apply filters
+        # Tenant filter
+        query = self._apply_tenant_filter(query, tenant_id)
+
+        # Apply field filters
         if filters:
             for field_name, value in filters.items():
-                field = getattr(self.model, field_name)
-                query = query.where(field == value)
+                if value is not None:
+                    field = getattr(self.model, field_name)
+                    query = query.where(field == value)
 
         # Apply ordering
         if order_by:
@@ -73,30 +119,57 @@ class BaseRepository(Generic[ModelType]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def count(self, filters: dict[str, Any] | None = None) -> int:
-        """Count entities with filters"""
+    async def count(
+        self,
+        filters: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
+    ) -> int:
+        """Count entities with filters, optionally scoped to tenant."""
         query = select(func.count(self.model.id))
+        query = self._apply_tenant_filter(query, tenant_id)
 
-        # Apply filters
+        # Apply field filters
         if filters:
             for field_name, value in filters.items():
-                field = getattr(self.model, field_name)
-                query = query.where(field == value)
+                if value is not None:
+                    field = getattr(self.model, field_name)
+                    query = query.where(field == value)
 
         result = await self.session.execute(query)
         return result.scalar() or 0
 
     async def create(self, **kwargs) -> ModelType:
-        """Create new entity"""
+        """Create new entity.
+
+        Note: tenant_id must be provided in kwargs if the model supports it.
+        """
         entity = self.model(**kwargs)
         self.session.add(entity)
         await self.session.flush()
         await self.session.refresh(entity)
         return entity
 
-    async def update(self, id: str, **kwargs) -> ModelType | None:
-        """Update entity by ID"""
-        entity = await self.get(id)
+    async def update(
+        self,
+        id: str,
+        tenant_id: str | None = None,
+        **kwargs,
+    ) -> ModelType | None:
+        """Update entity by ID, optionally scoped to tenant.
+
+        Args:
+            id: Entity primary key
+            tenant_id: If provided, only updates if entity belongs to this tenant
+            **kwargs: Fields to update
+
+        Returns:
+            Updated entity or None if not found
+        """
+        query = select(self.model).where(self.model.id == id)
+        query = self._apply_tenant_filter(query, tenant_id)
+        result = await self.session.execute(query)
+        entity = result.scalar_one_or_none()
+
         if entity is None:
             return None
 
@@ -108,9 +181,13 @@ class BaseRepository(Generic[ModelType]):
         await self.session.refresh(entity)
         return entity
 
-    async def delete(self, id: str) -> bool:
-        """Delete entity by ID"""
-        entity = await self.get(id)
+    async def delete(self, id: str, tenant_id: str | None = None) -> bool:
+        """Delete entity by ID, optionally scoped to tenant."""
+        query = select(self.model).where(self.model.id == id)
+        query = self._apply_tenant_filter(query, tenant_id)
+        result = await self.session.execute(query)
+        entity = result.scalar_one_or_none()
+
         if entity is None:
             return False
 
@@ -118,15 +195,21 @@ class BaseRepository(Generic[ModelType]):
         await self.session.flush()
         return True
 
-    async def bulk_update(self, filters: dict[str, Any], **kwargs) -> int:
-        """Bulk update entities matching filters"""
-        # Build update statement
+    async def bulk_update(
+        self,
+        filters: dict[str, Any],
+        tenant_id: str | None = None,
+        **kwargs,
+    ) -> int:
+        """Bulk update entities matching filters, scoped to tenant."""
         stmt = update(self.model)
+        stmt = self._apply_tenant_filter(stmt, tenant_id)
 
-        # Apply filters
+        # Apply field filters
         for field_name, value in filters.items():
-            field = getattr(self.model, field_name)
-            stmt = stmt.where(field == value)
+            if value is not None:
+                field = getattr(self.model, field_name)
+                stmt = stmt.where(field == value)
 
         # Set values
         stmt = stmt.values(**kwargs)
@@ -135,34 +218,47 @@ class BaseRepository(Generic[ModelType]):
         await self.session.flush()
         return result.rowcount
 
-    async def bulk_delete(self, filters: dict[str, Any]) -> int:
-        """Bulk delete entities matching filters"""
-        # Build delete statement
+    async def bulk_delete(
+        self,
+        filters: dict[str, Any],
+        tenant_id: str | None = None,
+    ) -> int:
+        """Bulk delete entities matching filters, scoped to tenant."""
         stmt = delete(self.model)
+        stmt = self._apply_tenant_filter(stmt, tenant_id)
 
-        # Apply filters
+        # Apply field filters
         for field_name, value in filters.items():
-            field = getattr(self.model, field_name)
-            stmt = stmt.where(field == value)
+            if value is not None:
+                field = getattr(self.model, field_name)
+                stmt = stmt.where(field == value)
 
         result = await self.session.execute(stmt)
         await self.session.flush()
         return result.rowcount
 
-    async def exists(self, id: str) -> bool:
-        """Check if entity exists"""
-        result = await self.session.execute(
-            select(func.count(self.model.id)).where(self.model.id == id)
-        )
+    async def exists(self, id: str, tenant_id: str | None = None) -> bool:
+        """Check if entity exists, optionally scoped to tenant."""
+        query = select(func.count(self.model.id)).where(self.model.id == id)
+        query = self._apply_tenant_filter(query, tenant_id)
+        result = await self.session.execute(query)
         return (result.scalar() or 0) > 0
 
     async def get_or_create(
-        self, filters: dict[str, Any], defaults: dict[str, Any] | None = None
+        self,
+        filters: dict[str, Any],
+        defaults: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
     ) -> tuple[ModelType, bool]:
-        """Get entity or create if not exists"""
-        entity = await self.get_by_field(
-            list(filters.keys())[0], list(filters.values())[0]
-        )
+        """Get entity or create if not exists, optionally scoped to tenant.
+
+        Note: When creating, tenant_id from filters is preserved automatically.
+        If you want to scope the lookup but create with a different tenant_id,
+        set tenant_id in defaults.
+        """
+        filter_key = list(filters.keys())[0]
+        filter_val = list(filters.values())[0]
+        entity = await self.get_by_field(filter_key, filter_val, tenant_id=tenant_id)
 
         if entity is not None:
             return entity, False

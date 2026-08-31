@@ -117,7 +117,7 @@ class MessageFilterEngine:
                 if rule.matches(message_data):
                     matched_rules.append(rule.id or rule.name)
                     # Update last triggered time
-                    rule.last_triggered_at = datetime.now(UTC).isoformat()
+                    rule.last_triggered_at = datetime.now(UTC)
 
             # Make decision
             should_send = filter_set.should_send_message(message_data)

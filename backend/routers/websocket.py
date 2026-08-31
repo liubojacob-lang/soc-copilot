@@ -28,7 +28,7 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, HTTPException
 
 from core.logger import get_logger
 from core.security import decode_token
@@ -149,9 +149,17 @@ async def alerts_websocket(
             token = proto[len("access_token.") :]
             break
 
-    # Fallback: also accept token via query parameter for backward compatibility
+    # v1.0: Removed query parameter token fallback (security: query params leak in logs)
+    # Token must be provided via Sec-WebSocket-Protocol header.
+
+    # Cookie fallback: browsers attach same-site cookies to the WS handshake,
+    # so cookie-authenticated clients (no JS-readable token) still connect.
     if not token:
-        token = websocket.query_params.get("token")
+        from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, get_token_from_cookie
+
+        token = get_token_from_cookie(
+            websocket.headers.get("cookie"), COOKIE_ACCESS_TOKEN_NAME
+        )
 
     # Authenticate
     if not token:

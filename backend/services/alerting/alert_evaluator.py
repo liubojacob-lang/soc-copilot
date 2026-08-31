@@ -182,7 +182,7 @@ class AlertEvaluator:
                 if hasattr(rule, key):
                     setattr(rule, key, value)
 
-            rule.updated_at = datetime.now(UTC).isoformat()
+            rule.updated_at = datetime.now(UTC)
             logger.info(f"Updated alert rule: {rule.name} ({rule_id})")
             return True
 

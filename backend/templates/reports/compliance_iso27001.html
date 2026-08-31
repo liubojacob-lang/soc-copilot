@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ISO 27001 Compliance Report — {{ title or "Incident" }}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; font-size:11pt; line-height:1.6; color:#333; margin:40px; }
+  .header { border-bottom:3px solid #1a1a2e; padding-bottom:20px; margin-bottom:30px; }
+  .header h1 { font-size:22pt; color:#1a1a2e; }
+  .meta { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; font-size:9pt; color:#666; }
+  .meta .lbl { font-weight:bold; }
+  h2 { font-size:15pt; color:#1a1a2e; border-bottom:1px solid #ddd; padding-bottom:5px; margin:28px 0 14px 0; }
+  h3 { font-size:13pt; margin:18px 0 8px 0; color:#2c3e50; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:7px 10px; font-size:10pt; }
+  th { background:#f0f4f8; font-weight:bold; }
+  .control-row { }
+  .control-applicable { background:#fff3cd; }
+  .status-compliant { color:#28a745; font-weight:bold; }
+  .status-noncompliant { color:#dc3545; font-weight:bold; }
+  .status-review { color:#ffc107; font-weight:bold; }
+  .box { padding:12px; border-radius:4px; margin:10px 0; }
+  .box-info { background:#e8f4fd; border-left:4px solid #17a2b8; }
+  .box-warning { background:#fff3cd; border-left:4px solid #ffc107; }
+  .box-critical { background:#fce4e4; border-left:4px solid #dc3545; }
+  .footer { margin-top:40px; padding-top:15px; border-top:1px solid #ddd; font-size:9pt; color:#999; text-align:center; }
+  .confidential { background:#dc3545; color:#fff; padding:4px 12px; font-size:8pt; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="confidential">CONFIDENTIAL — ISO 27001 COMPLIANCE DOCUMENT</div>
+
+<div class="header">
+  <h1>ISO 27001:2022 — Incident Compliance Report</h1>
+  <div class="meta">
+    <div><span class="lbl">Report ID:</span> {{ report_id or "N/A" }}</div>
+    <div><span class="lbl">Generated:</span> {{ generated_at }}</div>
+    <div><span class="lbl">Incident ID:</span> {{ incident_id or "N/A" }}</div>
+    <div><span class="lbl">Severity:</span> {{ severity or "N/A" }}</div>
+    <div><span class="lbl">Incident Type:</span> {{ incident_type or "N/A" }}</div>
+    <div><span class="lbl">Status:</span> {{ status or "N/A" }}</div>
+  </div>
+</div>
+
+<!-- 1. Incident Summary -->
+<h2>1. Incident Summary</h2>
+<p>{{ summary or description or "No summary provided." }}</p>
+
+<div class="box box-info">
+  <strong>ISO 27001 Context:</strong> This report documents the incident against applicable ISO/IEC 27001:2022 Annex A controls, demonstrating the organization's commitment to information security management.
+</div>
+
+<!-- 2. Event Overview -->
+<h2>2. Event Overview</h2>
+<h3>2.1 Description</h3>
+<p>{{ description or "See executive summary." }}</p>
+
+<h3>2.2 Timeline</h3>
+{% if timeline %}
+{% for evt in timeline %}
+<div style="margin-bottom:8px; padding-left:16px; border-left:2px solid #1a1a2e;">
+  <strong>{{ evt.time or evt.timestamp }}</strong> — {{ evt.description or evt.event }}
+</div>
+{% endfor %}
+{% else %}
+<p>No timeline recorded.</p>
+{% endif %}
+
+<!-- 3. Impact Analysis -->
+<h2>3. Impact Analysis</h2>
+<h3>3.1 Confidentiality Impact</h3>
+<p>{{ confidentiality_impact or "Under assessment." }}</p>
+
+<h3>3.2 Integrity Impact</h3>
+<p>{{ integrity_impact or "Under assessment." }}</p>
+
+<h3>3.3 Availability Impact</h3>
+<p>{{ availability_impact or "Under assessment." }}</p>
+
+<!-- 4. ISO 27001 Control Mapping -->
+<h2>4. ISO/IEC 27001:2022 Annex A Control Mapping</h2>
+<p>The following table maps this incident to applicable ISO 27001 Annex A controls:</p>
+
+<table>
+  <tr>
+    <th>Control ID</th>
+    <th>Control Name</th>
+    <th>Description</th>
+    <th>Applicable</th>
+    <th>Evidence / Notes</th>
+  </tr>
+  {% for ctrl in iso_controls %}
+  <tr class="{% if ctrl.applicable %}control-applicable{% endif %}">
+    <td><strong>{{ ctrl.control_id }}</strong></td>
+    <td>{{ ctrl.control_name }}</td>
+    <td>{{ ctrl.description }}</td>
+    <td>{% if ctrl.applicable %}✅ Yes{% else %}❌ No{% endif %}</td>
+    <td>{{ ctrl.evidence or "" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<!-- Additional controls -->
+<h3>4.1 Additional Controls Reviewed</h3>
+<table>
+  <tr>
+    <th>Control ID</th>
+    <th>Control Name</th>
+    <th>Review Status</th>
+    <th>Notes</th>
+  </tr>
+  <tr>
+    <td>A.5.1</td><td>Policies for Information Security</td>
+    <td>Reviewed</td>
+    <td>Incident response policy invoked</td>
+  </tr>
+  <tr>
+    <td>A.7.2</td><td>During Employment</td>
+    <td>{% if incident_type and 'insider' in incident_type|lower %}Under Review{% else %}N/A{% endif %}</td>
+    <td>{% if incident_type and 'insider' in incident_type|lower %}Insider threat assessment triggered{% endif %}</td>
+  </tr>
+  <tr>
+    <td>A.12.6</td><td>Technical Vulnerability Management</td>
+    <td>Reviewed</td>
+    <td>Vulnerability scan initiated post-incident</td>
+  </tr>
+  <tr>
+    <td>A.17.1</td><td>Information Security Continuity</td>
+    <td>Under Review</td>
+    <td>Business continuity assessment in progress</td>
+  </tr>
+</table>
+
+<!-- 5. IOC Analysis -->
+<h2>5. Indicators of Compromise</h2>
+{% if iocs %}
+<table>
+  <tr><th>Type</th><th>Value</th><th>Severity</th><th>Source</th></tr>
+  {% for ioc in iocs %}
+  <tr>
+    <td>{{ ioc.type or "N/A" }}</td>
+    <td><code>{{ ioc.value or "N/A" }}</code></td>
+    <td>{{ ioc.severity or "N/A" }}</td>
+    <td>{{ ioc.source or "N/A" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No IOCs identified.</p>
+{% endif %}
+
+<!-- 6. Response Measures -->
+<h2>6. Response Measures</h2>
+<h3>6.1 Containment (A.16.1.5)</h3>
+<p>{{ containment or "Standard containment procedures followed." }}</p>
+
+<h3>6.2 Eradication</h3>
+<p>{{ eradication or "Root cause analysis complete; eradication steps taken." }}</p>
+
+<h3>6.3 Recovery</h3>
+<p>{{ recovery or "Systems restored to normal operation." }}</p>
+
+{% if response_measures %}
+<h3>6.4 Detailed Actions</h3>
+<ul>
+{% for action in response_measures %}
+  <li>{{ action.description or action }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<!-- 7. Lessons Learned -->
+<h2>7. Lessons Learned (A.16.1.6)</h2>
+<p>{{ lessons_learned or "Post-incident review pending." }}</p>
+
+<h3>7.1 Preventive Actions</h3>
+{% if recommendations %}
+<ul>
+{% for rec in recommendations %}
+  <li>{{ rec }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<ul>
+  <li>Update incident response procedures per ISO 27001 A.16.1.1</li>
+  <li>Enhance logging and monitoring per A.12.4</li>
+  <li>Review access controls per A.9.2</li>
+  <li>Conduct security awareness training per A.7.2.2</li>
+</ul>
+{% endif %}
+
+<!-- 8. Compliance Declaration -->
+<h2>8. Compliance Declaration</h2>
+<div class="box box-info">
+  <p>This report has been prepared in accordance with ISO/IEC 27001:2022 requirements for incident management and documentation. The documented controls and evidence demonstrate the organization's commitment to maintaining an effective Information Security Management System (ISMS).</p>
+</div>
+
+<table>
+  <tr><th>Role</th><th>Name</th><th>Date</th></tr>
+  <tr><td>Prepared by:</td><td>_________________</td><td>_________________</td></tr>
+  <tr><td>Reviewed by:</td><td>_________________</td><td>_________________</td></tr>
+  <tr><td>Approved by:</td><td>_________________</td><td>_________________</td></tr>
+</table>
+
+<div class="footer">
+  <p>SOC Copilot — ISO 27001:2022 Compliance Report</p>
+  <p>Generated: {{ generated_at }} | Version: {{ version }}</p>
+  <p>This document is part of the organization's ISMS and is subject to document control procedures.</p>
+</div>
+</body>
+</html>

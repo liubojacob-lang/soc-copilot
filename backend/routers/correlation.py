@@ -1,4 +1,4 @@
-"""Event correlation API endpoints."""
+"""Event correlation API endpoints (S0-8/9: Service layer refactored)."""
 
 from datetime import UTC, datetime
 
@@ -10,8 +10,6 @@ from core.logger import get_logger
 from core.metrics import observe_correlation_rule_hit
 from db.session import get_session
 from dependencies.auth import get_current_user
-from models.correlated_event import CorrelatedEvent
-from models.correlation_rule import CorrelationRule
 from models.user import UserModel
 from services.correlation import CorrelationRuleDSL, RuleEngine
 from services.event_bus import get_event_bus
@@ -21,10 +19,11 @@ from services.event_correlation_service import (
 
 logger = get_logger(__name__)
 
-router = APIRouter(tags=["correlation"], prefix="/api/correlation")
+router = APIRouter(tags=["correlation"], prefix="/api/v1/correlation")
 
 
-# Request/Response Schemas
+# ── Request/Response Schemas ────────────────────────────────────────────────
+
 class CorrelationRequest(BaseModel):
     """Request to correlate events."""
 
@@ -93,7 +92,16 @@ class RuleEngineEvaluateResponse(BaseModel):
     execution_logs: list[dict]
 
 
-# Endpoints
+# ── Helper to instantiate the service ───────────────────────────────────────
+
+def _svc(db: AsyncSession) -> EventCorrelationService:
+    return EventCorrelationService(db)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Correlation Endpoints
+# ══════════════════════════════════════════════════════════════════════════════
+
 @router.post("/correlate", response_model=list[CorrelatedEventResponse])
 async def correlate_events(
     http_request: Request,
@@ -108,12 +116,12 @@ async def correlate_events(
     into higher-level security incidents using correlation rules.
     """
     try:
-        service = EventCorrelationService(db)
-        correlated_events = await service.correlate_events(
+        svc = _svc(db)
+        correlated_events = await svc.correlate_events(
             events=request.events, rule_ids=request.rule_ids
         )
 
-        # Update rule statistics
+        # Update rule statistics (delegated to service for rule lookup)
         tenant_id = http_request.headers.get("x-tenant-id", "default")
         for event in correlated_events:
             rule = await db.get(CorrelationRule, event.rule_id)
@@ -167,6 +175,10 @@ async def evaluate_rule_engine(
     )
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Incident Endpoints (S0-8/9: refactored to use Service layer)
+# ══════════════════════════════════════════════════════════════════════════════
+
 @router.get("/incidents", response_model=list[CorrelatedEventResponse])
 async def list_correlated_events(
     status: str | None = Query(None, description="Filter by status"),
@@ -177,30 +189,15 @@ async def list_correlated_events(
     db: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ):
-    """
-    List correlated incidents.
-
-    Supports filtering by status, severity, and attack type.
-    """
-    from sqlalchemy import desc, select
-
-    query = select(CorrelatedEvent).order_by(desc(CorrelatedEvent.first_seen))
-
-    # Apply filters
-    if status:
-        query = query.where(CorrelatedEvent.status == status)
-    if severity:
-        query = query.where(CorrelatedEvent.severity == severity)
-    if attack_type:
-        query = query.where(CorrelatedEvent.attack_type == attack_type)
-
-    # Pagination
-    query = query.offset(offset).limit(limit)
-
-    result = await db.execute(query)
-    incidents = result.scalars().all()
-
-    return incidents
+    """List correlated incidents with filtering and pagination."""
+    svc = _svc(db)
+    return await svc.list_incidents(
+        status=status,
+        severity=severity,
+        attack_type=attack_type,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/incidents/{incident_id}", response_model=CorrelatedEventResponse)
@@ -210,15 +207,10 @@ async def get_correlated_event(
     current_user: UserModel = Depends(get_current_user),
 ):
     """Get details of a specific correlated incident."""
-    from sqlalchemy import select
-
-    query = select(CorrelatedEvent).where(CorrelatedEvent.id == incident_id)
-    result = await db.execute(query)
-    incident = result.scalar_one_or_none()
-
+    svc = _svc(db)
+    incident = await svc.get_incident(incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
-
     return incident
 
 
@@ -235,34 +227,24 @@ async def update_incident_status(
 
     Valid statuses: open, investigating, resolved, false_positive, closed
     """
-    from sqlalchemy import select
+    svc = _svc(db)
 
-    query = select(CorrelatedEvent).where(CorrelatedEvent.id == incident_id)
-    result = await db.execute(query)
-    incident = result.scalar_one_or_none()
-
-    if not incident:
-        raise HTTPException(status_code=404, detail="Incident not found")
-
-    # Validate status
-    valid_statuses = ["open", "investigating", "resolved", "false_positive", "closed"]
+    # Validate status before calling service
+    valid_statuses = {"open", "investigating", "resolved", "false_positive", "closed"}
     if status not in valid_statuses:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}",
+            detail=f"Invalid status. Must be one of: {', '.join(sorted(valid_statuses))}",
         )
 
-    # Update
-    incident.status = status
-    if assigned_to:
-        incident.assigned_to = assigned_to
+    incident = await svc.update_incident(
+        incident_id=incident_id,
+        status=status,
+        assigned_to=assigned_to,
+    )
 
-    if status in ["resolved", "false_positive", "closed"]:
-        incident.resolved_at = datetime.now(UTC).isoformat()
-
-    incident.updated_at = datetime.now(UTC).isoformat()
-
-    await db.commit()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
 
     return {
         "success": True,
@@ -273,7 +255,10 @@ async def update_incident_status(
     }
 
 
-# Correlation Rules CRUD
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule CRUD Endpoints (S0-8/9: refactored to use Service layer)
+# ══════════════════════════════════════════════════════════════════════════════
+
 @router.get("/rules")
 async def list_correlation_rules(
     enabled_only: bool = Query(False, description="Only show enabled rules"),
@@ -281,35 +266,10 @@ async def list_correlation_rules(
     current_user: UserModel = Depends(get_current_user),
 ):
     """List all correlation rules."""
-    from sqlalchemy import select
-
-    query = select(CorrelationRule).order_by(CorrelationRule.priority.desc())
-
-    if enabled_only:
-        query = query.where(CorrelationRule.enabled == True)
-
-    result = await db.execute(query)
-    rules = result.scalars().all()
-
+    svc = _svc(db)
+    rules = await svc.list_rules(enabled_only=enabled_only)
     return {
-        "rules": [
-            {
-                "id": rule.id,
-                "name": rule.name,
-                "description": rule.description,
-                "enabled": rule.enabled,
-                "is_builtin": rule.is_builtin,
-                "time_window_seconds": rule.time_window_seconds,
-                "entity_types": rule.entity_types,
-                "min_similarity": rule.min_similarity,
-                "action": rule.action,
-                "priority": rule.priority,
-                "total_correlations": rule.total_correlations,
-                "last_triggered": rule.last_triggered,
-                "created_at": rule.created_at,
-            }
-            for rule in rules
-        ],
+        "rules": [svc.serialize_rule(r) for r in rules],
         "count": len(rules),
     }
 
@@ -322,25 +282,10 @@ async def create_correlation_rule(
 ):
     """Create a new correlation rule."""
     try:
-        new_rule = CorrelationRule(
-            name=rule.name,
-            description=rule.description,
-            time_window_seconds=rule.time_window_seconds,
-            entity_types=rule.entity_types or {"ip_address": True, "username": True},
-            min_similarity=rule.min_similarity,
-            conditions=rule.conditions,
-            action=rule.action,
-            action_params=rule.action_params,
-            priority=rule.priority,
-            group_by_field=rule.group_by_field,
-        )
-
-        db.add(new_rule)
-        await db.commit()
-        await db.refresh(new_rule)
+        svc = _svc(db)
+        new_rule = await svc.create_rule(rule.model_dump())
 
         logger.info(f"Created correlation rule: {new_rule.id}")
-
         return {
             "success": True,
             "rule_id": new_rule.id,
@@ -351,7 +296,6 @@ async def create_correlation_rule(
                 "priority": new_rule.priority,
             },
         }
-
     except Exception as e:
         logger.error(f"Error creating rule: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -365,28 +309,19 @@ async def update_correlation_rule(
     current_user: UserModel = Depends(get_current_user),
 ):
     """Update an existing correlation rule."""
-    from sqlalchemy import select
+    svc = _svc(db)
 
-    query = select(CorrelationRule).where(CorrelationRule.id == rule_id)
-    result = await db.execute(query)
-    rule = result.scalar_one_or_none()
-
-    if not rule:
-        raise HTTPException(status_code=404, detail="Rule not found")
-
-    # Don't allow updating builtin rules
-    if rule.is_builtin:
+    try:
+        updated_rule = await svc.update_rule(
+            rule_id, updates.model_dump(exclude_unset=True)
+        )
+    except PermissionError:
         raise HTTPException(status_code=403, detail="Cannot update built-in rules")
 
-    # Apply updates
-    update_data = updates.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(rule, field, value)
+    if not updated_rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
 
-    rule.updated_at = datetime.now(UTC).isoformat()
-
-    await db.commit()
-
+    update_data = updates.model_dump(exclude_unset=True)
     return {
         "success": True,
         "rule_id": rule_id,
@@ -401,24 +336,17 @@ async def delete_correlation_rule(
     current_user: UserModel = Depends(get_current_user),
 ):
     """Delete a correlation rule."""
-    from sqlalchemy import select
+    svc = _svc(db)
 
-    query = select(CorrelationRule).where(CorrelationRule.id == rule_id)
-    result = await db.execute(query)
-    rule = result.scalar_one_or_none()
-
-    if not rule:
-        raise HTTPException(status_code=404, detail="Rule not found")
-
-    # Don't allow deleting builtin rules
-    if rule.is_builtin:
+    try:
+        deleted = await svc.delete_rule(rule_id)
+    except PermissionError:
         raise HTTPException(status_code=403, detail="Cannot delete built-in rules")
 
-    await db.delete(rule)
-    await db.commit()
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Rule not found")
 
     logger.info(f"Deleted correlation rule: {rule_id}")
-
     return {"success": True, "message": f"Rule {rule_id} deleted"}
 
 
@@ -429,81 +357,33 @@ async def toggle_correlation_rule(
     current_user: UserModel = Depends(get_current_user),
 ):
     """Enable or disable a correlation rule."""
-    from sqlalchemy import select
+    svc = _svc(db)
+    result = await svc.toggle_rule(rule_id)
 
-    query = select(CorrelationRule).where(CorrelationRule.id == rule_id)
-    result = await db.execute(query)
-    rule = result.scalar_one_or_none()
-
-    if not rule:
+    if not result:
         raise HTTPException(status_code=404, detail="Rule not found")
 
-    rule.enabled = not rule.enabled
-    rule.updated_at = datetime.now(UTC).isoformat()
-
-    await db.commit()
-
-    logger.info(f"Toggled rule {rule_id} to {rule.enabled}")
-
-    return {"success": True, "rule_id": rule_id, "enabled": rule.enabled}
+    logger.info(f"Toggled rule {rule_id} to {result['enabled']}")
+    return {"success": True, "rule_id": rule_id, "enabled": result["enabled"]}
 
 
-# Statistics
+# ══════════════════════════════════════════════════════════════════════════════
+# Statistics (S0-8/9: refactored to use Service layer)
+# ══════════════════════════════════════════════════════════════════════════════
+
 @router.get("/stats")
 async def get_correlation_stats(
-    db: AsyncSession = Depends(get_session), current_user: UserModel = Depends(get_current_user)
+    db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Get correlation statistics."""
-    from sqlalchemy import func, select
+    svc = _svc(db)
+    return await svc.get_stats()
 
-    # Total incidents
-    total_incidents = await db.execute(select(func.count(CorrelatedEvent.id)))
-    total_count = total_incidents.scalar() or 0
 
-    # Incidents by status
-    status_counts = await db.execute(
-        select(CorrelatedEvent.status, func.count(CorrelatedEvent.id)).group_by(
-            CorrelatedEvent.status
-        )
-    )
-    by_status = {status: count for status, count in status_counts.all()}
-
-    # Incidents by severity
-    severity_counts = await db.execute(
-        select(CorrelatedEvent.severity, func.count(CorrelatedEvent.id)).group_by(
-            CorrelatedEvent.severity
-        )
-    )
-    by_severity = {severity: count for severity, count in severity_counts.all()}
-
-    # Total rules
-    total_rules = await db.execute(select(func.count(CorrelationRule.id)))
-    rules_count = total_rules.scalar() or 0
-
-    # Active rules
-    active_rules = await db.execute(
-        select(func.count(CorrelationRule.id)).where(CorrelationRule.enabled == True)
-    )
-    active_count = active_rules.scalar() or 0
-
-    # Total correlations performed
-    total_correlations = await db.execute(select(func.sum(CorrelationRule.total_correlations)))
-    correlations_count = total_correlations.scalar() or 0
-
-    return {
-        "incidents": {
-            "total": total_count,
-            "by_status": by_status,
-            "by_severity": by_severity,
-        },
-        "rules": {
-            "total": rules_count,
-            "active": active_count,
-            "total_correlations_performed": correlations_count,
-        },
-        "generated_at": datetime.now(UTC).isoformat(),
-    }
-
+# ══════════════════════════════════════════════════════════════════════════════
+# Rule Testing
+# ══════════════════════════════════════════════════════════════════════════════
 
 @router.post("/test")
 async def test_correlation_rule(
@@ -517,18 +397,16 @@ async def test_correlation_rule(
 
     Does not persist results. Useful for rule development.
     """
-    from sqlalchemy import select
-
-    query = select(CorrelationRule).where(CorrelationRule.id == rule_id)
-    result = await db.execute(query)
-    rule = result.scalar_one_or_none()
+    svc = _svc(db)
+    rule = await svc.get_rule(rule_id)
 
     if not rule:
         raise HTTPException(status_code=404, detail="Rule not found")
 
     try:
-        service = EventCorrelationService(db)
-        correlated_events = await service.correlate_events(events=test_events, rule_ids=[rule_id])
+        correlated_events = await svc.correlate_events(
+            events=test_events, rule_ids=[rule_id]
+        )
 
         return {
             "success": True,

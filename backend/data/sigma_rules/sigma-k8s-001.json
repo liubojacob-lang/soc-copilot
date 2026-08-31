@@ -1,0 +1,36 @@
+{
+  "id": "sigma-k8s-001",
+  "title": "Kubernetes Anonymous API Access",
+  "description": "Detects anonymous (system:anonymous) API access to Kubernetes cluster that is not to /healthz endpoint.",
+  "status": "stable",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "kubernetes",
+  "tags": [
+    "attack.valid_accounts",
+    "attack.t1078.004"
+  ],
+  "mitre_techniques": [
+    "T1078.004"
+  ],
+  "logsource": {
+    "product": "kubernetes",
+    "service": "audit"
+  },
+  "detection": {
+    "selection": {
+      "user.username": "system:anonymous",
+      "responseStatus.code": ">200"
+    },
+    "filter_allowed": {
+      "requestURI|startswith": "/healthz"
+    },
+    "condition": "selection and not filter_allowed"
+  },
+  "false_positives": [
+    "Health check probes that do not require authentication"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1078/004/"
+  ]
+}

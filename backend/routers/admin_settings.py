@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_permission
 from models.user import UserModel, UserRole
 
 logger = get_logger(__name__)
@@ -59,7 +59,7 @@ def _update_env_file(key: str, value: str | None) -> None:
         raise
 
 
-router = APIRouter(prefix="/api/admin/settings", tags=["admin", "settings"])
+router = APIRouter(prefix="/api/v1/admin/settings", tags=["admin", "settings"])
 
 
 class SettingsUpdateRequest(BaseModel):
@@ -83,24 +83,19 @@ class TimeoutConfigResponse(BaseModel):
 
 @router.get("", response_model=SettingsResponse)
 async def get_settings(
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
 ) -> SettingsResponse:
     """Get current system settings.
 
-    Requires: admin role
+    Requires: admin:write permission
     """
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=403, detail="Only administrators can view settings"
-        )
-
     return SettingsResponse()
 
 
 @router.post("")
 async def update_settings(
     request: SettingsUpdateRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
     db: AsyncSession = Depends(get_session),
 ):
     """Update system settings.
@@ -108,12 +103,8 @@ async def update_settings(
     This updates the in-memory settings. For persistence, these should be
     saved to environment variables or a settings file.
 
-    Requires: admin role
+    Requires: admin:write permission
     """
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=403, detail="Only administrators can update settings"
-        )
 
     try:
         # Update settings in-memory and persist to .env file

@@ -1,0 +1,34 @@
+{
+  "id": "sigma-k8s-003",
+  "title": "Kubernetes Privileged Container Created",
+  "description": "Detects creation of privileged containers (securityContext.privileged=true) that can escape container isolation.",
+  "status": "stable",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "kubernetes",
+  "tags": [
+    "attack.execution",
+    "attack.t1610"
+  ],
+  "mitre_techniques": [
+    "T1610"
+  ],
+  "logsource": {
+    "product": "kubernetes",
+    "service": "audit"
+  },
+  "detection": {
+    "selection": {
+      "verb": "create",
+      "objectRef.resource": "pods",
+      "requestObject.spec.containers.securityContext.privileged": "true"
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "System containers that require privileged mode"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1610/"
+  ]
+}

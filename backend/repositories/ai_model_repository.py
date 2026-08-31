@@ -80,7 +80,7 @@ class AIModelRepository:
             return False
 
         model.is_default = True
-        model.updated_at = datetime.now().isoformat()
+        model.updated_at = datetime.now()
         self.session.add(model)
         await self.session.flush()
         return True
@@ -140,7 +140,7 @@ class AIModelRepository:
         if config is not None:
             model.config = config
 
-        model.updated_at = datetime.now().isoformat()
+        model.updated_at = datetime.now()
         self.session.add(model)
         await self.session.flush()
         await self.session.refresh(model)
@@ -176,7 +176,7 @@ class AIUserSettingRepository:
         """Set user's default model."""
         settings = await self.get_or_create(user_id)
         settings.default_model_id = model_id
-        settings.updated_at = datetime.now().isoformat()
+        settings.updated_at = datetime.now()
         self.session.add(settings)
         await self.session.flush()
         await self.session.refresh(settings)

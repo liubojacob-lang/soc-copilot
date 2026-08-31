@@ -13,7 +13,7 @@ asyncpg==0.30.0
 numpy>=1.22.5,<2.0
 redis==7.2.1
 tenacity==8.2.3
-requests==2.31.0
+requests>=2.32.3
 
 # v0.6.2 additions
 # P0-4: removed passlib (unmaintained, incompatible with bcrypt>=4.0).
@@ -43,7 +43,7 @@ backoff==2.2.1  # Exponential backoff for retry logic
 
 # v1.0.0: Wazuh Integration + P0-5: now the sole JWT library (auth + Wazuh)
 pyjwt==2.11.0  # JWT encode/decode for app auth and Wazuh API
-cryptography==41.0.7  # Fernet encryption for secrets
+cryptography>=42.0.0  # Fernet encryption for secrets
 
 opentelemetry-api==1.36.0
 opentelemetry-sdk==1.36.0
@@ -51,3 +51,12 @@ opentelemetry-exporter-otlp-proto-grpc==1.36.0
 opentelemetry-instrumentation-fastapi==0.57b0
 opentelemetry-instrumentation-redis==0.57b0
 opentelemetry-instrumentation-logging==0.57b0
+
+# Phase 3: UEBA Enhancements (F3-4)
+python-nmap==0.7.1  # NMAP integration for asset discovery
+
+# Phase 3: Report Export (F3-6, F3-7)
+Jinja2==3.1.4  # HTML template rendering
+WeasyPrint==63.1  # PDF generation from HTML (optional - requires system libs)
+# WeasyPrint system deps (macOS): brew install pango gdk-pixbuf libffi
+# WeasyPrint system deps (Linux): apt install libpango-1.0-0 libgdk-pixbuf2.0-0 libffi-dev

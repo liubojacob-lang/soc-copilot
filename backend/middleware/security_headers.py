@@ -1,5 +1,9 @@
 """Security headers middleware for HTTP responses."""
 
+
+import secrets
+
+from core.config import settings
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
@@ -58,6 +62,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        # Generate a unique CSP nonce for this request (nonce-based CSP)
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
+
         response = await call_next(request)
 
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -76,10 +84,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 or path == "/redoc"
                 or path.startswith("/redoc/")
             ):
+                # Docs/Swagger UI: keep unsafe-inline (required by Swagger UI)
                 response.headers["Content-Security-Policy"] = (
                     "default-src 'self'; "
-                    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-                    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+                    f"script-src 'self' 'unsafe-inline' 'nonce-{nonce}' https://cdn.jsdelivr.net; "
+                    f"style-src 'self' 'unsafe-inline' 'nonce-{nonce}' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
                     "img-src 'self' data: blob: https:; "
                     "font-src 'self' data: https://fonts.gstatic.com; "
                     "connect-src 'self' ws: wss: https:; "
@@ -89,7 +98,34 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                     "object-src 'none'; "
                 )
             else:
-                response.headers["Content-Security-Policy"] = self.csp_policy
+                # Nonce-based CSP: production gets strict nonce-only, dev keeps unsafe-inline fallback
+                is_prod = settings.environment == "production"
+                if is_prod:
+                    response.headers["Content-Security-Policy"] = (
+                        "default-src 'self'; "
+                        f"script-src 'self' 'nonce-{nonce}'; "
+                        f"style-src 'self' 'nonce-{nonce}'; "
+                        "img-src 'self' data: blob: https:; "
+                        "font-src 'self' data:; "
+                        "connect-src 'self' ws: wss: https:; "
+                        "frame-ancestors 'none'; "
+                        "base-uri 'self'; "
+                        "form-action 'self'; "
+                        "object-src 'none'; "
+                    )
+                else:
+                    response.headers["Content-Security-Policy"] = (
+                        "default-src 'self'; "
+                        f"script-src 'self' 'unsafe-inline' 'nonce-{nonce}'; "
+                        f"style-src 'self' 'unsafe-inline' 'nonce-{nonce}'; "
+                        "img-src 'self' data: blob: https:; "
+                        "font-src 'self' data:; "
+                        "connect-src 'self' ws: wss: https:; "
+                        "frame-ancestors 'none'; "
+                        "base-uri 'self'; "
+                        "form-action 'self'; "
+                        "object-src 'none'; "
+                    )
 
         if self.enable_hsts and request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = (
@@ -116,6 +152,10 @@ class APISecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        # Generate a unique CSP nonce for this request (nonce-based CSP)
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
+
         response = await call_next(request)
 
         response.headers["X-Content-Type-Options"] = "nosniff"

@@ -19,7 +19,7 @@ from schemas.api_key import (
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/api-keys", tags=["API Keys"])
+router = APIRouter(prefix="/api/v1/api-keys", tags=["API Keys"])
 
 
 @router.get("", response_model=dict[str, list[APIKeyResponse] | int])
@@ -83,7 +83,7 @@ async def create_api_key(
     await audit_repo.create(
         action="api_key:create",
         method="POST",
-        path="/api/api-keys",
+        path="/api/v1/api-keys",
         status_code=201,
         user_id=current_user.id,
         target_type="api_key",
@@ -157,7 +157,7 @@ async def update_api_key(
     await audit_repo.create(
         action="api_key:update",
         method="PATCH",
-        path=f"/api/api-keys/{api_key_id}",
+        path=f"/api/v1/api-keys/{api_key_id}",
         status_code=200,
         user_id=current_user.id,
         target_type="api_key",
@@ -220,7 +220,7 @@ async def delete_api_key(
     await audit_repo.create(
         action="api_key:delete",
         method="DELETE",
-        path=f"/api/api-keys/{api_key_id}",
+        path=f"/api/v1/api-keys/{api_key_id}",
         status_code=200,
         user_id=current_user.id,
         target_type="api_key",

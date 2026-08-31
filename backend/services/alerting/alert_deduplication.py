@@ -103,6 +103,91 @@ class AlertDeduplicator:
         return result.scalar_one_or_none()
 
 
+    async def find_cross_source_duplicates(
+        self, alert: dict[str, Any], time_window_hours: int = 4
+    ) -> list:
+        """
+        v1.0: Cross-source alert aggregation.
+        Find alerts from different sources that match the same IOC
+        (IP/domain/hash) within a time window, suggesting the same incident.
+
+        Args:
+            alert: New alert data
+            time_window_hours: Look-back window for matching
+
+        Returns:
+            List of matching alert IDs from different sources
+        """
+        iocs = []
+        for field in ["source_ip", "destination_ip", "domain", "hash_md5", "hash_sha256"]:
+            val = alert.get(field)
+            if val:
+                iocs.append((field, val))
+
+        if not iocs:
+            return []
+
+        cutoff = datetime.now(UTC) - timedelta(hours=time_window_hours)
+        matches = set()
+
+        for field, value in iocs:
+            conditions = []
+            if field in ("source_ip", "destination_ip"):
+                conditions = [
+                    SecurityAlert.source_ip == value,
+                    SecurityAlert.destination_ip == value,
+                ]
+            elif field == "domain":
+                conditions = [SecurityAlert.domain_name == value]
+            elif field in ("hash_md5", "hash_sha256"):
+                conditions = [getattr(SecurityAlert, field) == value]
+
+            for cond in conditions:
+                query = (
+                    select(SecurityAlert.id)
+                    .where(
+                        and_(
+                            cond,
+                            SecurityAlert.created_at >= cutoff,
+                            SecurityAlert.source != alert.get("source", ""),
+                        )
+                    )
+                )
+                result = await self.session.execute(query)
+                for row in result.scalars().all():
+                    matches.add(row)
+
+        logger.info(
+            f"Cross-source dedup: {len(matches)} alerts match same IOCs "
+            f"(sources differ from '{alert.get('source', '')}', "
+            f"window={time_window_hours}h)"
+        )
+        return list(matches)
+
+    async def create_aggregation_group(
+        self, primary_alert_id: str, related_alert_ids: list[str]
+    ) -> str:
+        """
+        Create an aggregation group linking related alerts across sources.
+        Returns the group ID for tracking.
+        """
+        import uuid
+        group_id = f"agg_{uuid.uuid4().hex[:12]}"
+
+        # Update all related alerts with the same group ID
+        for alert_id in [primary_alert_id] + related_alert_ids:
+            await self.session.execute(
+                SecurityAlert.__table__.update()
+                .where(SecurityAlert.id == alert_id)
+                .values(aggregation_group_id=group_id)
+            )
+
+        await self.session.commit()
+        logger.info(
+            f"Aggregation group {group_id}: {len(related_alert_ids) + 1} alerts merged"
+        )
+        return group_id
+
 class AlertAggregator:
     """
     Alert aggregator to group similar alerts and reduce noise.

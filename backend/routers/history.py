@@ -5,12 +5,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from db.session import AsyncSession, get_session
-from dependencies import get_current_user
+from dependencies import get_current_user, require_admin
 from models.user import UserModel
 from schemas.history import HistoryListResponse, HistoryResponse
 from services.history_service import HistoryService
 
-router = APIRouter(prefix="/api/history", tags=["history"])
+router = APIRouter(prefix="/api/v1/history", tags=["history"])
 
 
 @router.get("", response_model=HistoryListResponse)
@@ -68,7 +68,7 @@ async def get_history(
 async def delete_history(
     history_id: str,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_admin),
 ) -> None:
     """Delete a specific history record by ID.
 
@@ -91,7 +91,7 @@ async def delete_history(
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_all_history(
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_admin),
 ) -> None:
     """Delete all history records.
 

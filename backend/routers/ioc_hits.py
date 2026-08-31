@@ -15,7 +15,7 @@ from schemas.ioc_hit import (
 )
 from services.ioc_hits_service import IOCHitsService
 
-router = APIRouter(prefix="/api/ioc-hits", tags=["ioc_hits"])
+router = APIRouter(prefix="/api/v1/ioc-hits", tags=["ioc_hits"])
 logger = get_logger(__name__)
 
 

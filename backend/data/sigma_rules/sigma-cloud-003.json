@@ -1,0 +1,37 @@
+{
+  "id": "sigma-cloud-003",
+  "title": "AWS Security Group Open to World",
+  "description": "Detects security group rule modifications allowing inbound/outbound access from 0.0.0.0/0.",
+  "status": "stable",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "cloud",
+  "tags": [
+    "attack.defense_evasion",
+    "attack.t1562.007"
+  ],
+  "mitre_techniques": [
+    "T1562.007"
+  ],
+  "logsource": {
+    "product": "aws",
+    "service": "cloudtrail"
+  },
+  "detection": {
+    "selection": {
+      "eventSource": "ec2.amazonaws.com",
+      "eventName": [
+        "AuthorizeSecurityGroupIngress",
+        "AuthorizeSecurityGroupEgress"
+      ],
+      "requestParameters.cidrIp": "0.0.0.0/0"
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Intentional public-facing service configuration"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1562/007/"
+  ]
+}

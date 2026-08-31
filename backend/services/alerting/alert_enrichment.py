@@ -86,14 +86,15 @@ class ThreatIntelEnricher:
                 )
                 result["tags"].extend(abuse_data.get("reports", []))
 
-        # Check OTX AlienVault (always available)
-        otx_data = await self._check_otx_ip(ip)
-        if otx_data:
-            result["reputation"] = (
-                "malicious" if otx_data.get("reputation", 0) > 0 else "clean"
-            )
-            result["scores"]["otx"] = otx_data.get("reputation", 0)
-            result["tags"].extend(otx_data.get("pulse_info", {}).get("pulses", []))
+        # Check OTX AlienVault (external network call, honours allow_external_ti)
+        if self.sources.get("otx"):
+            otx_data = await self._check_otx_ip(ip)
+            if otx_data:
+                result["reputation"] = (
+                    "malicious" if otx_data.get("reputation", 0) > 0 else "clean"
+                )
+                result["scores"]["otx"] = otx_data.get("reputation", 0)
+                result["tags"].extend(otx_data.get("pulse_info", {}).get("pulses", []))
 
         return result
 

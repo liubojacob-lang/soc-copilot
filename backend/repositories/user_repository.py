@@ -5,14 +5,18 @@ from datetime import UTC, datetime
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.user import UserModel, UserRole
+from models.user import UserModel as _UserModel, UserRole
+from repositories.base import BaseRepository
+
+# Re-export with alias for BaseRepository generic
+UserModel = _UserModel
 
 
-class UserRepository:
-    """Repository for user CRUD operations."""
+class UserRepository(BaseRepository[UserModel]):
+    """Repository for user CRUD operations. Inherits standard CRUD from BaseRepository."""
 
     def __init__(self, session: AsyncSession):
-        self.session = session
+        super().__init__(session, UserModel)
 
     async def create(
         self,
@@ -115,7 +119,7 @@ class UserRepository:
         if is_active is not None:
             user.is_active = is_active
 
-        user.updated_at = datetime.now(UTC).isoformat()
+        user.updated_at = datetime.now(UTC)
 
         self.session.add(user)
         await self.session.flush()
@@ -126,7 +130,7 @@ class UserRepository:
         """Update user's last login timestamp."""
         user = await self.get_by_id(user_id)
         if user:
-            user.last_login_at = datetime.now(UTC).isoformat()
+            user.last_login_at = datetime.now(UTC)
             self.session.add(user)
             await self.session.flush()
 
@@ -147,7 +151,7 @@ class UserRepository:
                 0,
                 {
                     "hashed_password": user.hashed_password,
-                    "changed_at": datetime.now(UTC).isoformat(),
+                    "changed_at": datetime.now(UTC).isoformat(),  # JSON-safe (datetime not serializable)
                 },
             )
             # Retain only the last 5 entries
@@ -155,7 +159,12 @@ class UserRepository:
 
         user.hashed_password = hashed_password
         user.must_change_password = False
-        user.password_changed_at = datetime.now(UTC).isoformat()
+        user.password_changed_at = datetime.now(UTC)
+        # S0-19: Update updated_at to invalidate existing JWT tokens
+        # Token invalidation check (is_token_invalidated_by_user_update)
+        # compares token iat with user.updated_at — without this update,
+        # existing tokens would remain valid after password change
+        user.updated_at = datetime.now(UTC)
         self.session.add(user)
         await self.session.flush()
         return True
@@ -166,7 +175,7 @@ class UserRepository:
         if not user:
             return False
         user.is_active = False
-        user.updated_at = datetime.now(UTC).isoformat()
+        user.updated_at = datetime.now(UTC)
         self.session.add(user)
         await self.session.flush()
         return True

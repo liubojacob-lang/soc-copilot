@@ -341,3 +341,167 @@ class PlaybookService:
             "urls": [],
             "hashes": [],
         }
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # DAG Definition Execution (S0-8/9: extracted from routers/playbook/definitions.py)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    async def list_definitions(
+        self, is_active: bool | None = None, page: int = 1, page_size: int = 20
+    ) -> dict[str, object]:
+        """List DAG playbook definitions with pagination."""
+        from sqlalchemy import func
+
+        from models.playbook_definition import PlaybookDefinitionModel
+
+        base_stmt = select(PlaybookDefinitionModel)
+        if is_active is not None:
+            base_stmt = base_stmt.where(PlaybookDefinitionModel.is_active == is_active)
+
+        count_stmt = select(func.count()).select_from(base_stmt.subquery())
+        count_result = await self.session.execute(count_stmt)
+        total = count_result.scalar() or 0
+
+        stmt = base_stmt.order_by(PlaybookDefinitionModel.created_at.desc())
+        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+
+        result = await self.session.execute(stmt)
+        definitions = result.scalars().all()
+
+        return {
+            "definitions": [
+                {
+                    "id": d.id,
+                    "name": d.name,
+                    "description": d.description,
+                    "version": d.version,
+                    "is_active": d.is_active,
+                    "created_at": d.created_at.isoformat(),
+                    "updated_at": d.updated_at.isoformat(),
+                }
+                for d in definitions
+            ],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
+        }
+
+    async def create_definition(
+        self, name: str, description: str | None, version: str, definition_json: dict, created_by: str
+    ) -> dict[str, object]:
+        """Create a new DAG playbook definition."""
+        import uuid
+
+        from models.playbook_definition import PlaybookDefinitionModel
+
+        definition = PlaybookDefinitionModel(
+            id=str(uuid.uuid4()),
+            name=name,
+            description=description,
+            version=version,
+            definition_json=definition_json,
+            created_by=created_by,
+            is_active=True,
+        )
+        self.session.add(definition)
+        await self.session.commit()
+        return {
+            "id": definition.id,
+            "name": definition.name,
+            "description": definition.description,
+            "version": definition.version,
+            "is_active": definition.is_active,
+            "created_at": definition.created_at.isoformat(),
+        }
+
+    async def get_definition(self, definition_id: str) -> dict[str, object] | None:
+        """Get a DAG playbook definition by ID."""
+        from models.playbook_definition import PlaybookDefinitionModel
+
+        stmt = select(PlaybookDefinitionModel).where(
+            PlaybookDefinitionModel.id == definition_id
+        )
+        result = await self.session.execute(stmt)
+        definition = result.scalar_one_or_none()
+
+        if not definition:
+            return None
+
+        return {
+            "id": definition.id,
+            "name": definition.name,
+            "description": definition.description,
+            "version": definition.version,
+            "definition_json": definition.definition_json,
+            "is_active": definition.is_active,
+            "created_at": definition.created_at.isoformat(),
+            "updated_at": definition.updated_at.isoformat(),
+        }
+
+    async def execute_dag_definition(
+        self,
+        definition_id: str,
+        input_json: dict[str, object],
+        mode: str,
+        created_by_user_id: str,
+    ) -> dict[str, object]:
+        """Execute a DAG-based playbook definition.
+
+        Orchestrates definition lookup, run creation, DAG parsing, execution,
+        and result compilation.
+        """
+        import uuid
+
+        from models.playbook_definition import PlaybookDefinitionModel
+        from playbook_engine.dag import DAGBuilder, DAGExecutionEngine
+        from repositories.playbook_run_repository import PlaybookRunRepository
+
+        # Get definition
+        stmt = select(PlaybookDefinitionModel).where(
+            PlaybookDefinitionModel.id == definition_id
+        )
+        result = await self.session.execute(stmt)
+        definition = result.scalar_one_or_none()
+
+        if not definition:
+            raise ValueError(f"Definition not found: {definition_id}")
+        if not definition.is_active:
+            raise ValueError("Definition is not active")
+
+        # Create run record
+        run_repo = PlaybookRunRepository(self.session)
+        run_id = str(uuid.uuid4())
+
+        await run_repo.create(
+            playbook_name=definition.name,
+            playbook_version=definition.version,
+            mode=mode,
+            status="running",
+            created_by_user_id=created_by_user_id,
+            input_json=input_json or {},
+            output_json={},
+            execution_mode="dag",
+            definition_id=definition.id,
+            trigger_source="manual",
+        )
+        await self.session.flush()
+
+        # Parse and execute DAG
+        dag_definition = DAGBuilder.from_json(definition.definition_json)
+        engine = DAGExecutionEngine(self.session)
+
+        result_data = await engine.execute_dag(
+            definition=dag_definition,
+            run_id=run_id,
+            input_json=input_json or {},
+            mode=mode,
+            created_by_user_id=created_by_user_id,
+        )
+
+        return {
+            "run_id": run_id,
+            "status": result_data["status"],
+            "failed_nodes": result_data.get("failed_nodes", []),
+            "skipped_nodes": result_data.get("skipped_nodes", []),
+        }

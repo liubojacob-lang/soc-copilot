@@ -2,6 +2,7 @@
 
 import hashlib
 import secrets
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
@@ -60,6 +61,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     Security: Includes 'iat' (issued at) claim for token invalidation detection.
     When user data changes (role, password), compare iat with user.updated_at
     to detect if token was issued before the change.
+    Includes 'jti' — a unique identity per token, so revocation/blacklist
+    applies to the exact token. Without jti, two logins within the same
+    second produce identical JWT strings and blacklisting one blacklists all.
     """
     to_encode = data.copy()
     now = datetime.now(UTC)
@@ -71,6 +75,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         {
             "exp": expire,
             "iat": now,  # Issued at - for invalidation detection
+            "jti": str(uuid.uuid4()),
             "type": "access",
         }
     )
@@ -81,7 +86,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 def create_refresh_token(data: dict) -> str:
     """Create a JWT refresh token.
 
-    Security: Includes 'iat' (issued at) claim for token invalidation detection.
+    Security: Includes 'iat' (issued at) claim for token invalidation detection
+    and a unique 'jti' (see create_access_token).
     """
     to_encode = data.copy()
     now = datetime.now(UTC)
@@ -90,6 +96,7 @@ def create_refresh_token(data: dict) -> str:
         {
             "exp": expire,
             "iat": now,  # Issued at - for invalidation detection
+            "jti": str(uuid.uuid4()),
             "type": "refresh",
         }
     )
@@ -171,7 +178,20 @@ def is_token_invalidated_by_user_update(
         return False  # If we can't parse, allow token (fallback behavior)
 
     # Token is invalid if issued before user update
-    is_invalidated = token_issued < user_updated
+    # v1.0: Normalize timezone awareness for safe comparison (DB DateTime(timezone=True))
+    _user_updated = user_updated
+    if isinstance(_user_updated, datetime) and _user_updated.tzinfo is None:
+        _user_updated = _user_updated.replace(tzinfo=UTC)
+    if isinstance(_user_updated, str):
+        _user_updated = datetime.fromisoformat(_user_updated)
+        if _user_updated.tzinfo is None:
+            _user_updated = _user_updated.replace(tzinfo=UTC)
+    # v1.0: Compare at second precision - JWT iat is second-precision while
+    # DB updated_at has microseconds. Truncating avoids false rejection of
+    # tokens issued in the same second as a user update, while still
+    # invalidating tokens issued BEFORE the update.
+    _user_updated = _user_updated.replace(microsecond=0)
+    is_invalidated = token_issued < _user_updated
 
     if is_invalidated:
         logger.info(

@@ -36,7 +36,9 @@ from core.lifecycle import (
 )
 
 from .ai_task_processor_service import AITaskProcessorService
+from .alert_pipeline_service import AlertPipelineService
 from .cron_scheduler_service import CronSchedulerServiceWrapper
+from .data_retention_service import DataRetentionService
 from .database_service import DatabaseService
 from .queue_manager_service import QueueManagerService
 from .rate_limiter_service import RateLimiterService
@@ -59,6 +61,8 @@ __all__ = [
     "QueueManagerService",
     "CronSchedulerServiceWrapper",
     "AITaskProcessorService",
+    "AlertPipelineService",
+    "DataRetentionService",
     "RateLimiterService",
     "WebSocketMonitoringService",
     "AlertEvaluatorService",

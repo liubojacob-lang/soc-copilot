@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
-from sqlalchemy import JSON, Boolean, Index, String
+from sqlalchemy import JSON, Boolean, DateTime, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db.session import Base
@@ -35,21 +35,21 @@ class UserModel(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
-        String(255),
+        DateTime(timezone=True),
         index=True,
         nullable=False,
-        default=lambda: datetime.now(UTC).isoformat(),
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        String(255), nullable=False, default=lambda: datetime.now(UTC).isoformat()
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
-    last_login_at: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Password security fields
-    password_changed_at: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     failed_login_attempts: Mapped[int] = mapped_column(default=0, nullable=False)
-    locked_until: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     password_history: Mapped[dict] = mapped_column(JSON, nullable=False, default=lambda: [])
 
     # Composite indexes for common queries

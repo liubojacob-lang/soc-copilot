@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import invalidate_user_permission_cache, require_admin
+from dependencies.auth import invalidate_user_permission_cache, require_permission
 from models.user import UserModel, UserRole
 from schemas.user import (
     PasswordResetRequest,
@@ -17,7 +17,7 @@ from services.user_service import UserService
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/users", tags=["Users"])
+router = APIRouter(prefix="/api/v1/users", tags=["Users"])
 
 
 def get_user_service(session: AsyncSession = Depends(get_session)) -> UserService:
@@ -32,7 +32,7 @@ async def list_users(
     role: UserRole = None,
     is_active: bool = None,
     search: str = None,
-    current_user: UserModel = Depends(require_admin),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
     user_service: UserService = Depends(get_user_service),
 ):
     """List all users (admin only)."""
@@ -57,7 +57,7 @@ async def list_users(
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_data: UserCreate,
-    current_user: UserModel = Depends(require_admin),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
     user_service: UserService = Depends(get_user_service),
 ):
     """Create a new user (admin only)."""
@@ -74,7 +74,7 @@ async def create_user(
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: str,
-    current_user: UserModel = Depends(require_admin),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
     user_service: UserService = Depends(get_user_service),
 ):
     """Get user by ID (admin only)."""
@@ -89,7 +89,7 @@ async def get_user(
 async def update_user(
     user_id: str,
     user_data: UserUpdate,
-    current_user: UserModel = Depends(require_admin),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
     user_service: UserService = Depends(get_user_service),
 ):
     """Update user (admin only)."""
@@ -112,7 +112,7 @@ async def update_user(
 async def reset_user_password(
     user_id: str,
     request: PasswordResetRequest,
-    current_user: UserModel = Depends(require_admin),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
     user_service: UserService = Depends(get_user_service),
 ):
     """Reset user password (admin only)."""
@@ -127,7 +127,7 @@ async def reset_user_password(
 @router.delete("/{user_id}")
 async def delete_user(
     user_id: str,
-    current_user: UserModel = Depends(require_admin),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
     user_service: UserService = Depends(get_user_service),
 ):
     """Disable (soft delete) a user (admin only)."""

@@ -18,7 +18,7 @@ from schemas.blocked_ip import (
     BlockIPRequest,
 )
 
-router = APIRouter(prefix="/api/blocked-ips", tags=["blocked-ips"])
+router = APIRouter(prefix="/api/v1/blocked-ips", tags=["blocked-ips"])
 logger = get_logger(__name__)
 
 

@@ -10,6 +10,7 @@ import pytest
 
 # Set environment variables BEFORE any other imports
 os.environ["ENVIRONMENT"] = "test"
+os.environ["EXPOSE_TOKENS_IN_BODY"] = "true"
 os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin123!TestPass"
 os.environ["JWT_SECRET"] = "test-jwt-secret-min-32-characters-long-for-testing"
 

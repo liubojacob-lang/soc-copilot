@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GDPR Compliance Report — {{ title or "Personal Data Breach" }}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; font-size:11pt; line-height:1.6; color:#333; margin:40px; }
+  .header { border-bottom:3px solid #0056b3; padding-bottom:20px; margin-bottom:30px; }
+  .header h1 { font-size:22pt; color:#0056b3; }
+  .meta { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; font-size:9pt; color:#666; }
+  .meta .lbl { font-weight:bold; }
+  h2 { font-size:15pt; color:#0056b3; border-bottom:1px solid #ddd; padding-bottom:5px; margin:28px 0 14px 0; }
+  h3 { font-size:13pt; margin:18px 0 8px 0; color:#003d80; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:7px 10px; font-size:10pt; }
+  th { background:#e6f0ff; font-weight:bold; }
+  .gdpr-callout { background:#fff3cd; border-left:4px solid #f0ad4e; padding:12px; margin:10px 0; border-radius:4px; }
+  .gdpr-critical { background:#fce4e4; border-left:4px solid #dc3545; padding:12px; margin:10px 0; border-radius:4px; }
+  .gdpr-info { background:#e8f4fd; border-left:4px solid #0056b3; padding:12px; margin:10px 0; border-radius:4px; }
+  .breach-timeline { border:1px solid #f0ad4e; border-radius:4px; overflow:hidden; }
+  .breach-timeline th { background:#f0ad4e; color:#fff; }
+  .deadline { color:#dc3545; font-weight:bold; }
+  ul { padding-left:20px; }
+  li { margin-bottom:4px; }
+  .footer { margin-top:40px; padding-top:15px; border-top:1px solid #ddd; font-size:9pt; color:#999; text-align:center; }
+  .confidential { background:#dc3545; color:#fff; padding:4px 12px; font-size:8pt; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="confidential">CONFIDENTIAL — GDPR DATA BREACH DOCUMENTATION</div>
+
+<div class="header">
+  <h1>GDPR Data Breach Compliance Report</h1>
+  <div class="meta">
+    <div><span class="lbl">Report ID:</span> {{ report_id or "N/A" }}</div>
+    <div><span class="lbl">Generated:</span> {{ generated_at }}</div>
+    <div><span class="lbl">Incident ID:</span> {{ incident_id or "N/A" }}</div>
+    <div><span class="lbl">Breach Detected:</span> {{ breach_detected_at or "N/A" }}</div>
+    <div><span class="lbl">Severity:</span> {{ severity or "N/A" }}</div>
+    <div><span class="lbl">Data Types:</span> {{ data_categories or "Under investigation" }}</div>
+  </div>
+</div>
+
+<!-- 72-hour warning -->
+<div class="gdpr-critical">
+  <strong>⚠️ ART. 33 OBLIGATION:</strong> Under GDPR Article 33, the supervisory authority must be notified within <strong>72 hours</strong> of becoming aware of a personal data breach. Time of awareness: {{ breach_detected_at or generated_at }}.
+</div>
+
+<!-- 1. Breach Summary -->
+<h2>1. Breach Summary</h2>
+<p>{{ summary or description or "No summary provided." }}</p>
+
+<div class="gdpr-info">
+  <strong>Key Considerations:</strong>
+  <ul>
+    <li>Does the breach involve personal data? — {{ "Yes" if data_categories else "To be determined" }}</li>
+    <li>Is there risk to rights and freedoms? — {{ "High" if severity in ('high', 'critical') else "To be assessed" }}</li>
+    <li>Have data subjects been notified? — {{ "Pending" if not notification_status else notification_status }}</li>
+  </ul>
+</div>
+
+<!-- 2. Data Categories Affected -->
+<h2>2. Nature of the Personal Data Breach</h2>
+
+<h3>2.1 Categories of Data</h3>
+<table>
+  <tr><th>Data Category</th><th>Description</th><th>Records Affected</th><th>Risk Level</th></tr>
+  <tr>
+    <td>Personal Identifiers</td>
+    <td>Names, IDs, contact info</td>
+    <td>{{ affected_records or "TBD" }}</td>
+    <td>Medium</td>
+  </tr>
+  <tr>
+    <td>Special Categories (Art. 9)</td>
+    <td>Health, biometric, political, etc.</td>
+    <td>{% if data_categories and 'special' in data_categories|lower %}{{ affected_records or "TBD" }}{% else %}N/A{% endif %}</td>
+    <td>{% if data_categories and 'special' in data_categories|lower %}High{% else %}N/A{% endif %}</td>
+  </tr>
+  <tr>
+    <td>Financial Data</td>
+    <td>Payment, banking information</td>
+    <td>{% if data_categories and 'financial' in data_categories|lower %}{{ affected_records or "TBD" }}{% else %}N/A{% endif %}</td>
+    <td>{% if data_categories and 'financial' in data_categories|lower %}High{% else %}N/A{% endif %}</td>
+  </tr>
+  <tr>
+    <td>Credentials</td>
+    <td>Passwords, tokens</td>
+    <td>{% if data_categories and 'credential' in data_categories|lower %}{{ affected_records or "TBD" }}{% else %}N/A{% endif %}</td>
+    <td>{% if data_categories and 'credential' in data_categories|lower %}Critical{% else %}N/A{% endif %}</td>
+  </tr>
+</table>
+
+<h3>2.2 Number of Data Subjects Affected</h3>
+<p>{{ affected_subjects or "To be determined" }}</p>
+
+<!-- 3. Breach Timeline -->
+<h2>3. Breach Timeline & 72-Hour Notification Tracking</h2>
+<table class="breach-timeline">
+  <tr><th>Event</th><th>Timestamp</th><th>Status</th></tr>
+  <tr><td>Breach Detected</td><td>{{ breach_detected_at or "N/A" }}</td><td>✅ Recorded</td></tr>
+  <tr><td>DPO Notified</td><td>{{ dpo_notified_at or "Pending" }}</td><td>{{ "✅ Complete" if dpo_notified_at else "⚠️ Pending" }}</td></tr>
+  <tr><td>Internal Investigation Started</td><td>{{ investigation_started_at or "Pending" }}</td><td>{{ "✅ Complete" if investigation_started_at else "⚠️ Pending" }}</td></tr>
+  <tr><td class="deadline">72-Hour Deadline</td><td>{{ notification_deadline or "TBD (72h from awareness)" }}</td><td>⏳ Counting</td></tr>
+  <tr><td>Supervisory Authority Notified</td><td>{{ authority_notified_at or "Pending" }}</td><td>{{ "✅ Complete" if authority_notified_at else "⚠️ Pending" }}</td></tr>
+  <tr><td>Data Subjects Notified</td><td>{{ subjects_notified_at or "Pending" }}</td><td>{{ "✅ Complete" if subjects_notified_at else "⚠️ Pending" }}</td></tr>
+</table>
+
+<!-- 4. GDPR Article Mapping -->
+<h2>4. GDPR Article Compliance Mapping</h2>
+<table>
+  <tr><th>Article</th><th>Title</th><th>Description</th><th>Applicable</th><th>Action Required</th></tr>
+  {% for article in gdpr_articles %}
+  <tr style="{% if article.applicable %}background:#fff3cd;{% endif %}">
+    <td><strong>{{ article.article }}</strong></td>
+    <td>{{ article.title }}</td>
+    <td>{{ article.description }}</td>
+    <td>{% if article.applicable %}✅ Yes{% else %}❌ No{% endif %}</td>
+    <td>{{ article.action_required }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<!-- 5. Response Measures -->
+<h2>5. Measures Taken (Art. 33(3)(d))</h2>
+
+<h3>5.1 Immediate Containment</h3>
+<p>{{ containment or "Standard containment initiated." }}</p>
+
+<h3>5.2 Mitigation of Adverse Effects</h3>
+<p>{{ mitigation or "Under assessment." }}</p>
+
+{% if response_measures %}
+<h3>5.3 Detailed Actions</h3>
+<ul>
+{% for action in response_measures %}
+  <li>{{ action.description or action }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<!-- 6. DPO Assessment -->
+<h2>6. Data Protection Officer Assessment</h2>
+<table>
+  <tr><th>Assessment Criteria</th><th>Finding</th><th>Recommendation</th></tr>
+  <tr>
+    <td>Risk to Rights & Freedoms</td>
+    <td>{% if severity in ('high', 'critical') %}High Risk{% else %}Medium/Low Risk{% endif %}</td>
+    <td>{% if severity in ('high', 'critical') %}Immediate notification required{% else %}Document and monitor{% endif %}</td>
+  </tr>
+  <tr>
+    <td>Data Minimization Compliance</td>
+    <td>Under Review</td>
+    <td>Audit data collection policies</td>
+  </tr>
+  <tr>
+    <td>Technical Measures Adequacy</td>
+    <td>Under Review</td>
+    <td>Enhance encryption and access controls</td>
+  </tr>
+  <tr>
+    <td>DPIA Required</td>
+    <td>{% if severity in ('high', 'critical') %}Yes{% else %}No{% endif %}</td>
+    <td>{% if severity in ('high', 'critical') %}Initiate Data Protection Impact Assessment{% endif %}</td>
+  </tr>
+</table>
+
+<!-- 7. IOCs -->
+<h2>7. Indicators of Compromise</h2>
+{% if iocs %}
+<table>
+  <tr><th>Type</th><th>Value</th><th>Severity</th></tr>
+  {% for ioc in iocs %}
+  <tr><td>{{ ioc.type }}</td><td><code>{{ ioc.value }}</code></td><td>{{ ioc.severity }}</td></tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No IOCs identified relevant to personal data.</p>
+{% endif %}
+
+<!-- 8. Remediation -->
+<h2>8. Remediation Plan</h2>
+{% if recommendations %}
+<ul>
+{% for rec in recommendations %}
+  <li>{{ rec }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<ul>
+  <li>Conduct full Data Protection Impact Assessment (DPIA)</li>
+  <li>Review and enhance data encryption at rest and in transit</li>
+  <li>Update data breach response procedures</li>
+  <li>Provide GDPR refresher training to all staff</li>
+  <li>Implement enhanced logging for personal data access</li>
+</ul>
+{% endif %}
+
+<!-- 9. Declaration -->
+<h2>9. Declaration</h2>
+<div class="gdpr-info">
+  <p>This report documents the organization's response to a personal data breach in accordance with Regulation (EU) 2016/679 (GDPR). All required notifications shall be made within the statutory timeframe.</p>
+</div>
+
+<table>
+  <tr><th>Role</th><th>Name</th><th>Signature</th><th>Date</th></tr>
+  <tr><td>DPO</td><td>_________________</td><td>_________________</td><td>_________________</td></tr>
+  <tr><td>CISO</td><td>_________________</td><td>_________________</td><td>_________________</td></tr>
+  <tr><td>Legal Counsel</td><td>_________________</td><td>_________________</td><td>_________________</td></tr>
+</table>
+
+<div class="footer">
+  <p>SOC Copilot — GDPR (EU 2016/679) Data Breach Compliance Report</p>
+  <p>Generated: {{ generated_at }} | Version: {{ version }}</p>
+  <p>This document constitutes a record of processing activities under Art. 30 GDPR.</p>
+</div>
+</body>
+</html>

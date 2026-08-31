@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Boolean, Float, Index, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db.session import Base
@@ -97,13 +97,13 @@ class CorrelationRule(Base):
 
     # Metadata
     created_at: Mapped[datetime] = mapped_column(
-        String(50), default=lambda: datetime.now(UTC).isoformat()
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
     updated_at: Mapped[datetime] = mapped_column(
-        String(50),
-        default=lambda: datetime.now(UTC).isoformat(),
-        onupdate=lambda: datetime.now(UTC).isoformat(),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     created_by: Mapped[str] = mapped_column(

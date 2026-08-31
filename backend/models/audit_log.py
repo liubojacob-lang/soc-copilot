@@ -1,9 +1,9 @@
 """Audit log model for tracking all operations."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
-from sqlalchemy import JSON, ForeignKey, Integer, String
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db.session import Base
@@ -38,8 +38,8 @@ class AuditLogModel(Base):
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     extra_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=lambda: {})
     created_at: Mapped[datetime] = mapped_column(
-        String(255),
+        DateTime(timezone=True),
         index=True,
         nullable=False,
-        default=lambda: datetime.now().isoformat(),
+        default=lambda: datetime.now(UTC),
     )

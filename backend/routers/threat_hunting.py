@@ -18,7 +18,7 @@ from services.threat_hunting_service import (
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/threat-hunting", tags=["threat-hunting", "proactive"])
+router = APIRouter(prefix="/api/v1/threat-hunting", tags=["threat-hunting", "proactive"])
 
 
 # Request/Response Models
@@ -373,3 +373,220 @@ async def get_hunting_dashboard(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get dashboard: {e!s}",
         )
+
+
+# ── Sigma Rule Endpoints ──────────────────────────────────────────────
+
+class SigmaRuleSummary(BaseModel):
+    """Lightweight Sigma rule summary for listing."""
+
+    id: str
+    title: str
+    level: str
+    category: str
+    status: str
+    mitre_techniques: list[str]
+    description: str
+
+
+class SigmaRuleDetail(BaseModel):
+    """Full Sigma rule detail including generated SQL."""
+
+    id: str
+    title: str
+    description: str
+    status: str
+    level: str
+    author: str
+    category: str
+    tags: list[str]
+    mitre_techniques: list[str]
+    logsource: dict
+    false_positives: list[str]
+    references: list[str]
+    generated_sql: str
+
+
+class SigmaSearchRequest(BaseModel):
+    """Request to execute a Sigma rule search."""
+
+    rule_id: str = Field(..., description="Sigma rule ID to execute")
+    hours: int = Field(default=24, ge=1, le=168, description="Lookback window in hours")
+
+
+class SigmaSearchResponse(BaseModel):
+    """Response from a Sigma rule search execution."""
+
+    rule_id: str
+    rule_title: str
+    rule_level: str
+    sql_query: str
+    searched_hours: int
+    total_matches: int
+    matches: list[dict]
+    timestamp: str
+
+
+@router.get("/sigma/rules", response_model=list[SigmaRuleSummary])
+async def get_sigma_rules(
+    category: str | None = Query(None, description="Filter by category: windows, linux, cloud, kubernetes"),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get all available Sigma detection rules.
+
+    Optionally filter by category. Rules are loaded from
+    the built-in rule library (backend/data/sigma_rules/).
+    """
+    from services.threat_hunting.sigma_engine import get_sigma_engine
+
+    try:
+        engine = get_sigma_engine()
+
+        if category:
+            rules = engine.get_rules_by_category(category)
+        else:
+            rules = engine.get_all_rules()
+
+        return [
+            SigmaRuleSummary(
+                id=r.id,
+                title=r.title,
+                level=r.level,
+                category=r.category,
+                status=r.status,
+                mitre_techniques=r.mitre_techniques,
+                description=r.description[:200] + ("..." if len(r.description) > 200 else ""),
+            )
+            for r in rules
+        ]
+
+    except Exception as e:
+        logger.error(f"Error getting Sigma rules: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get Sigma rules: {e!s}",
+        )
+
+
+@router.get("/sigma/rules/categories")
+async def get_sigma_categories(
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Get available Sigma rule categories."""
+    from services.threat_hunting.sigma_engine import get_sigma_engine
+
+    try:
+        engine = get_sigma_engine()
+        categories = engine.get_categories()
+
+        return {
+            "categories": categories,
+            "total_rules": len(engine.get_all_rules()),
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting Sigma categories: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get categories: {e!s}",
+        )
+
+
+@router.get("/sigma/rules/{rule_id}", response_model=SigmaRuleDetail)
+async def get_sigma_rule_detail(
+    rule_id: str,
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get detailed Sigma rule information including generated SQL.
+
+    Returns the full rule definition with the automatically-generated
+    SQL WHERE clause for hunting execution.
+    """
+    from services.threat_hunting.sigma_engine import get_sigma_engine
+
+    try:
+        engine = get_sigma_engine()
+        rule = engine.get_rule(rule_id)
+
+        if not rule:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Sigma rule not found: {rule_id}",
+            )
+
+        return SigmaRuleDetail(
+            id=rule.id,
+            title=rule.title,
+            description=rule.description,
+            status=rule.status,
+            level=rule.level,
+            author=rule.author,
+            category=rule.category,
+            tags=rule.tags,
+            mitre_techniques=rule.mitre_techniques,
+            logsource=rule.logsource,
+            false_positives=rule.false_positives,
+            references=rule.references,
+            generated_sql=rule.generated_sql,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting Sigma rule detail: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get rule detail: {e!s}",
+        )
+
+
+@router.post("/sigma/search", response_model=SigmaSearchResponse)
+async def execute_sigma_search(
+    request: SigmaSearchRequest,
+    db: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Execute a Sigma rule search against data sources.
+
+    Converts the Sigma rule to SQL and searches the relevant
+    database table. Returns matching events and metadata.
+    """
+    from services.threat_hunting.sigma_engine import get_sigma_engine
+
+    try:
+        engine = get_sigma_engine()
+        result = await engine.search_by_rule(
+            rule_id=request.rule_id,
+            session=db,
+            hours=request.hours,
+        )
+
+        if "error" in result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=result["error"],
+            )
+
+        return SigmaSearchResponse(
+            rule_id=result["rule_id"],
+            rule_title=result["rule_title"],
+            rule_level=result["rule_level"],
+            sql_query=result["sql_query"],
+            searched_hours=result["searched_hours"],
+            total_matches=result["total_matches"],
+            matches=result["matches"],
+            timestamp=result["timestamp"],
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error executing Sigma search: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Sigma search failed: {e!s}",
+        )
+

@@ -16,6 +16,7 @@ class AssetDB(Base):
     __tablename__ = "assets"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)  # v1.1: soft delete
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     hostname = Column(String, unique=True, nullable=True, index=True)

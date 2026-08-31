@@ -183,14 +183,12 @@ def get_csrf_token_from_cookie(request: Request) -> str | None:
     return request.cookies.get(CSRF_TOKEN_COOKIE)
 
 
-def validate_csrf_token(request: Request) -> bool:
+async def validate_csrf_token(request: Request) -> bool:
     """Validate CSRF token from cookie against header.
 
-    The client must send the CSRF token in both:
-    1. A cookie (csrf_token)
-    2. A header (X-CSRF-Token)
-
-    This double-submit pattern protects against CSRF attacks.
+    Delegates to core/csrf.py for hash-based validation (double-submit with hashed cookie).
+    The client sends: plaintext token in X-CSRF-Token header + sha256(token) in csrf_token cookie.
+    This is the production security standard - plaintext cookie comparison is deprecated.
 
     Args:
         request: FastAPI request object
@@ -198,18 +196,20 @@ def validate_csrf_token(request: Request) -> bool:
     Returns:
         True if valid, False otherwise
     """
-    # Get CSRF token from cookie
-    cookie_token = get_csrf_token_from_cookie(request)
-    if not cookie_token:
-        return False
+    from core.csrf import validate_csrf as _validate_csrf
 
-    # Get CSRF token from header
     header_token = request.headers.get("X-CSRF-Token")
     if not header_token:
         return False
 
-    # Compare tokens (constant-time comparison)
-    return secrets.compare_digest(cookie_token, header_token)
+    # core.validate_csrf(request) returns None on success and raises
+    # HTTPException on failure — normalize to a boolean so the middleware can
+    # return a clean 403 instead of an unhandled 500.
+    try:
+        await _validate_csrf(request)
+        return True
+    except HTTPException:
+        return False
 
 
 def require_csrf_validation(request: Request) -> None:

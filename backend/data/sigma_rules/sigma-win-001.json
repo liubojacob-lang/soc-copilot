@@ -1,0 +1,44 @@
+{
+  "id": "sigma-win-001",
+  "title": "Suspicious PowerShell Encoded Command",
+  "description": "Detects execution of encoded PowerShell commands (base64, -enc, -EncodedCommand), commonly used for obfuscation and evading command-line logging.",
+  "status": "stable",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "windows",
+  "tags": [
+    "attack.execution",
+    "attack.t1059.001"
+  ],
+  "mitre_techniques": [
+    "T1059.001"
+  ],
+  "logsource": {
+    "product": "windows",
+    "service": "powershell"
+  },
+  "detection": {
+    "selection_encoded": {
+      "EventID": 4104,
+      "ScriptBlockText|contains": [
+        "FromBase64String",
+        "-enc ",
+        "-EncodedCommand"
+      ]
+    },
+    "selection_params": {
+      "CommandLine|contains": [
+        "-enc ",
+        "-EncodedCommand ",
+        "FromBase64String"
+      ]
+    },
+    "condition": "selection_encoded or selection_params"
+  },
+  "false_positives": [
+    "Legitimate administrative scripts using encoded commands"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1059/001/"
+  ]
+}

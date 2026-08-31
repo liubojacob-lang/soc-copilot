@@ -1,4 +1,29 @@
-"""统一响应格式和错误处理机制。"""
+"""
+统一响应格式和错误处理机制。
+
+.. deprecated::
+    本模块中的 ``APIException`` 已于 2026-08-11 废弃。
+    请使用 ``core.exceptions.APIException`` + ``core.enums.error_codes.ErrorCode`` 替代。
+
+    旧用法（已废弃）::
+        from core.response import APIException
+        raise APIException(code="INVALID_REQUEST", message="...", status_code=400)
+
+    新用法::
+        from core.exceptions import BadRequestException
+        from core.enums.error_codes import ValidationError
+        raise BadRequestException(ValidationError.INVALID_INPUT, details={"field": "..."})
+
+    CI 保护规则：禁止新代码引入 ``from core.response import APIException``。
+    如需 CI lint，请在 ``.pre-commit-config.yaml`` 中添加:
+        - id: no-legacy-api-exception
+          name: Block old APIException import
+          entry: "from core.response import APIException"
+          language: pygrep
+          types: [python]
+          exclude: '^core/response\\.py$'
+          fail_found: true
+"""
 
 from typing import Any, Generic, TypeVar
 
@@ -50,22 +75,29 @@ class PaginatedResponse(BaseModel, Generic[T]):
     total_pages: int = Field(..., description="总页数")
 
 
-class APIException(Exception):
-    """API异常类。"""
+# ============================================================================
+# DEPRECATED: APIException (2026-08-11)
+#
+# 此类已废弃，统一使用 ``core.exceptions.APIException``。
+# 保留注释版本以便历史参考。迁移完成后可以安全删除。
+# ============================================================================
 
-    def __init__(
-        self,
-        code: str,
-        message: str,
-        status_code: int = 400,
-        details: dict[str, Any] | None = None,
-    ):
-        """初始化API异常。"""
-        self.code = code
-        self.message = message
-        self.status_code = status_code
-        self.details = details
-        super().__init__(message)
+# class APIException(Exception):
+#     """API异常类。[DEPRECATED] 请使用 core.exceptions.APIException"""
+#
+#     def __init__(
+#         self,
+#         code: str,
+#         message: str,
+#         status_code: int = 400,
+#         details: dict[str, Any] | None = None,
+#     ):
+#         """初始化API异常。"""
+#         self.code = code
+#         self.message = message
+#         self.status_code = status_code
+#         self.details = details
+#         super().__init__(message)
 
 
 # 常用错误码

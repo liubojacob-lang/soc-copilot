@@ -35,14 +35,13 @@ class ContextInjectFilter(logging.Filter):
 
 
 def setup_json_logging(level: str | None = None) -> None:
-    """Configure root logger to JSON format with context fields."""
+    """Configure root logger to JSON format with context fields.
+
+    v1.0: Delegates to core/logger.py for unified logging configuration.
+    The standalone JsonLogFormatter/ContextInjectFilter are kept for backward
+    compatibility but core/logger.py is the canonical implementation.
+    """
+    from core.logger import setup_logger as _setup_logger
+
     log_level = (level or os.getenv("LOG_LEVEL") or "INFO").upper()
-
-    root = logging.getLogger()
-    root.setLevel(log_level)
-
-    handler = logging.StreamHandler()
-    handler.setFormatter(JsonLogFormatter())
-    handler.addFilter(ContextInjectFilter())
-
-    root.handlers = [handler]
+    _setup_logger(log_level)

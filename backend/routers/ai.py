@@ -23,7 +23,7 @@ from services.ai_service_enhanced import (
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/ai", tags=["ai", "copilot"])
+router = APIRouter(prefix="/api/v1/ai", tags=["ai", "copilot"])
 
 
 # Request/Response Models

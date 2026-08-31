@@ -16,6 +16,7 @@ class ThreatIntelCacheDB(Base):
     __tablename__ = "threat_intel_cache"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)  # v1.1: soft delete
     created_at = Column(DateTime, default=lambda: datetime.now(UTC), index=True)
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     provider = Column(String, nullable=False, index=True)  # e.g., "otx"

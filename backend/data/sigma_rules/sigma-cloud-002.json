@@ -1,0 +1,33 @@
+{
+  "id": "sigma-cloud-002",
+  "title": "AWS Root Account Activity",
+  "description": "Detects any API activity from the AWS root account, which should never be used for daily operations.",
+  "status": "stable",
+  "level": "critical",
+  "author": "SOC Copilot",
+  "category": "cloud",
+  "tags": [
+    "attack.valid_accounts",
+    "attack.t1078.004"
+  ],
+  "mitre_techniques": [
+    "T1078.004"
+  ],
+  "logsource": {
+    "product": "aws",
+    "service": "cloudtrail"
+  },
+  "detection": {
+    "selection": {
+      "userIdentity.type": "Root",
+      "userIdentity.invokedBy": ""
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Legitimate emergency root access"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1078/004/"
+  ]
+}

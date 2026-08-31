@@ -1,0 +1,36 @@
+{
+  "id": "sigma-cloud-005",
+  "title": "Azure Privileged Role Assignment",
+  "description": "Detects assignment of privileged Azure AD roles such as Global Administrator.",
+  "status": "stable",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "cloud",
+  "tags": [
+    "attack.persistence",
+    "attack.t1098.003"
+  ],
+  "mitre_techniques": [
+    "T1098.003"
+  ],
+  "logsource": {
+    "product": "azure",
+    "service": "signin"
+  },
+  "detection": {
+    "selection": {
+      "OperationName": "Add member to role",
+      "TargetResources|contains": [
+        "Global Administrator",
+        "Company Administrator"
+      ]
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Legitimate role assignments"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1098/003/"
+  ]
+}

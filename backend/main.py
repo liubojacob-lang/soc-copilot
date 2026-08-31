@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
+from starlette.responses import RedirectResponse, Response
 
 from core.config import settings
 from core.logger import get_logger
@@ -31,6 +31,7 @@ from middleware import (
     setup_exception_handlers,
     setup_trace_logging,
 )
+from routers.playbook import internal as playbook_internal
 from middleware.csrf_middleware import setup_csrf_middleware
 from middleware.performance import PerformanceMiddleware
 from middleware.security_headers import SecurityHeadersMiddleware
@@ -78,6 +79,9 @@ from routers import (
     websocket_filters,
     alert_stream,
     alerts_to_loki,
+    cases,
+    dashboard,
+    siem,
 )
 from routers import websocket as ws_router
 
@@ -197,14 +201,16 @@ def register_lifecycle_services():
     Services are registered in order of priority:
     1. CRITICAL: Database
     2. ESSENTIAL: Queue Manager, Cron Scheduler, Rate Limiter
-    3. NORMAL: AI Task Processor, WebSocket Monitoring, Alert Evaluator
+    3. NORMAL: AI Task Processor, Alert Pipeline, WebSocket Monitoring, Alert Evaluator
     4. OPTIONAL: Audit Archive
     """
     from services.lifecycle import (
         AITaskProcessorService,
         AlertEvaluatorService,
+        AlertPipelineService,
         AuditArchiveService,
         CronSchedulerServiceWrapper,
+        DataRetentionService,
         DatabaseService,
         QueueManagerService,
         RateLimiterService,
@@ -224,12 +230,15 @@ def register_lifecycle_services():
 
     # NORMAL priority
     manager.register(AITaskProcessorService())
+    manager.register(AlertPipelineService())
     manager.register(WebSocketMonitoringService())
     manager.register(AlertEvaluatorService())
 
     # OPTIONAL priority
     if settings.audit_log_cleanup_enabled:
         manager.register(AuditArchiveService())
+    if settings.data_retention_enabled:
+        manager.register(DataRetentionService())
 
     return manager
 
@@ -410,6 +419,21 @@ app.add_middleware(
     expose_headers=["Content-Length", "Content-Range"],
 )
 
+# v1.0: Runtime assertion - reject allow_credentials=True with wildcard origins
+if "*" in _cors_origins:
+    # In development, warn but allow. In production, this is already blocked above.
+    if settings.environment != "production":
+        logger.warning(
+            "CORS: allow_credentials=True with wildcard origins in development. "
+            "This is insecure - do not use in production. "
+            "Set explicit CORS_ORIGINS instead."
+        )
+    else:
+        raise RuntimeError(
+            "CORS: allow_credentials=True requires explicit origins, not wildcard. "
+            "Set CORS_ORIGINS to comma-separated explicit URLs."
+        )
+
 # Add credentials header for localhost origins
 app.add_middleware(AddCredentialsMiddleware)
 
@@ -448,6 +472,24 @@ app.add_middleware(ResourceAuthorizationMiddleware)
 # Setup global exception handlers
 setup_exception_handlers(app)
 
+
+# ============================================================================
+# v1.1: API version redirect - /api/* (non-/api/v1/*) → 301 /api/v1/*
+# ============================================================================
+
+@app.middleware("http")
+async def api_version_redirect(request: Request, call_next):
+    """Redirect legacy /api/* paths to /api/v1/* (308 Permanent Redirect - preserves method).
+
+    Only catches paths starting with /api/ that do NOT start with /api/v1/.
+    """
+    path = request.url.path
+    if path.startswith("/api/") and not path.startswith("/api/v1/"):
+        new_path = path.replace("/api/", "/api/v1/", 1)
+        redirect_url = str(request.url.replace(path=new_path))
+        return RedirectResponse(url=redirect_url, status_code=308)  # 308 preserves POST method
+    return await call_next(request)
+
 # Setup CSRF protection (must be before exception handlers in request chain)
 setup_csrf_middleware(
     app,
@@ -479,6 +521,7 @@ app.include_router(ioc_hits.router)
 app.include_router(threat_intel.router)
 app.include_router(playbook.router)
 app.include_router(playbook_definitions.router)
+app.include_router(playbook_internal.router)
 app.include_router(webhooks.router)
 app.include_router(triggers.router)
 app.include_router(secrets.router)  # v0.7.4: Secrets management
@@ -509,6 +552,9 @@ app.include_router(
 )  # v0.9.2: Security vulnerability management
 app.include_router(alert_stream.router)  # v0.9.0: Wazuh alert stream management
 app.include_router(alerts_to_loki.router)  # v0.9.0: Send alerts to Loki
+app.include_router(cases.router)  # v0.10.0: Case management
+app.include_router(dashboard.router)  # v0.10.0: Operational dashboard
+app.include_router(siem.router)  # v1.1: SIEM log storage and search
 
 
 # Global OPTIONS handler for CORS preflight
@@ -526,9 +572,10 @@ async def options_handler(path: str, request: Request):
     # Security: Validate origin against whitelist
     if origin:
         # Check if origin is in allowed list
-        allowed_origins = (
-            settings.cors_origins if hasattr(settings, "cors_origins") else []
-        )
+        # cors_origins is a comma-separated string; split before matching or
+        # `origin in allowed_origins` degrades into substring matching
+        raw_origins = getattr(settings, "cors_origins", "") or ""
+        allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
         # Handle wildcard and specific origins
         is_allowed = "*" in allowed_origins or origin in allowed_origins
 
@@ -567,13 +614,13 @@ async def options_handler(path: str, request: Request):
 @app.get("/")
 async def root() -> dict[str, str]:
     """Root endpoint."""
-    return {"message": "SOC Copilot API v0.7", "auth": "enabled"}
+    return {"message": "SOC Copilot API v1.1", "auth": "enabled"}
 
 
-@app.get("/api/health")
+@app.get("/api/v1/health")
 async def health() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "ok", "version": "0.8.0", "auth": "enabled"}
+    return {"status": "ok", "version": "1.1.0", "auth": "enabled"}
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ from schemas.audit import AuditLogListResponse, AuditLogResponse
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/audit-logs", tags=["Audit Logs"])
+router = APIRouter(prefix="/api/v1/audit-logs", tags=["Audit Logs"])
 
 
 @router.get("", response_model=AuditLogListResponse)
@@ -207,7 +207,7 @@ async def cleanup_old_logs(
     await audit_repo.create(
         action="audit:cleanup",
         method="POST",
-        path="/api/audit-logs/cleanup",
+        path="/api/v1/audit-logs/cleanup",
         status_code=200,
         user_id=current_user.id,
         extra_json={"days": days, "deleted_count": deleted},

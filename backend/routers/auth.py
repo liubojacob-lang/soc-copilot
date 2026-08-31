@@ -1,14 +1,21 @@
 """Authentication API endpoints."""
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.cookie_auth import clear_auth_cookies, set_auth_cookies
+from core.config import settings
+from core.cookie_auth import (
+    COOKIE_REFRESH_TOKEN_NAME,
+    clear_auth_cookies,
+    get_token_from_cookie,
+    set_auth_cookies,
+)
 from core.csrf import generate_csrf_token, set_csrf_cookie
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import (
     get_current_user,
+    get_current_user_optional,
     require_admin,
     user_to_response,
 )
@@ -25,7 +32,18 @@ from middleware.rate_limiter import rate_limit
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
+
+
+def _body_tokens(access_token: str, refresh_token: str) -> tuple[str | None, str | None]:
+    """Return body tokens only when explicitly exposed (tests/legacy clients).
+
+    The default cookie flow keeps JWTs out of the response body so they never
+    touch JavaScript-readable storage.
+    """
+    if settings.expose_tokens_in_body:
+        return access_token, refresh_token
+    return None, None
 
 
 def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthService:
@@ -97,11 +115,10 @@ async def login(
     csrf_token = generate_csrf_token()
     set_csrf_cookie(response, csrf_token)
 
-    # Return tokens in response body for backward compatibility
-    # (but prefer cookies in production)
+    body_access, body_refresh = _body_tokens(access_token, refresh_token)
     return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
+        access_token=body_access,
+        refresh_token=body_refresh,
         user=user_to_response(user),
         must_change_password=user.must_change_password,
         csrf_token=csrf_token,  # Include CSRF token for frontend use
@@ -111,35 +128,66 @@ async def login(
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
     refresh_data: TokenRefresh,
+    request: Request,
     response: Response,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    """Refresh access token using refresh token.
+    """Refresh access token using the refresh token.
 
     Implements token rotation: old refresh token is blacklisted
     after new tokens are issued to prevent replay attacks.
+
+    The refresh token comes from the request body (legacy clients) or, when
+    absent, from the HttpOnly refresh_token cookie (cookie flow).
     """
+    refresh_token_value = refresh_data.refresh_token
+    if not refresh_token_value:
+        cookie_token = get_token_from_cookie(
+            request.headers.get("cookie"), COOKIE_REFRESH_TOKEN_NAME
+        )
+        if not cookie_token:
+            raise HTTPException(
+                status_code=401,
+                detail="No refresh token provided (body or cookie)",
+            )
+        refresh_token_value = cookie_token
+
     user, access_token, new_refresh_token = await auth_service.refresh_tokens(
-        refresh_data.refresh_token
+        refresh_token_value
     )
 
     # Update httpOnly cookies with new tokens
     set_auth_cookies(response, access_token, new_refresh_token)
 
+    body_access, body_refresh = _body_tokens(access_token, new_refresh_token)
     return TokenResponse(
-        access_token=access_token,
-        refresh_token=new_refresh_token,
+        access_token=body_access,
+        refresh_token=body_refresh,
         user=user_to_response(user),
     )
+
+
+@router.get("/csrf-token")
+async def issue_csrf_token(response: Response):
+    """Issue a fresh CSRF token (double-submit pair).
+
+    Sets the hashed csrf_token cookie and returns the raw token, which the
+    client must send in the X-CSRF-Token header on state-changing requests.
+    """
+    csrf_token = generate_csrf_token()
+    set_csrf_cookie(response, csrf_token)
+    return {"csrf_token": csrf_token}
 
 
 @router.post("/logout")
 async def logout(
     request: Request,
     response: Response,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel | None = Depends(get_current_user_optional),
     auth_service: AuthService = Depends(get_auth_service),
 ):
+    # v1.0: Idempotent logout - return 200 even if token already blacklisted/expired.
+    # The auth dependency is optional; cookies are always cleared.
     """Logout user, blacklist tokens, and clear httpOnly cookies."""
     from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, COOKIE_REFRESH_TOKEN_NAME
     from core.cookie_auth import get_token_from_cookie as _get_cookie
@@ -156,7 +204,7 @@ async def logout(
         bearer_token = auth_header[7:]
 
     await auth_service.logout(
-        user_id=current_user.id,
+        user_id=current_user.id if current_user else None,
         access_token=access_token,
         refresh_token=refresh_token,
         bearer_token=bearer_token,

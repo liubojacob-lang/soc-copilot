@@ -25,6 +25,14 @@ class Settings(BaseSettings):
 
     # v0.4: Threat Intelligence Settings
     otx_api_key: str = ""
+
+    # v1.0: VirusTotal + MISP Integration
+    virustotal_api_key: str = ""
+    virustotal_rate_limit_rpm: int = 4  # 4 req/min for free tier
+    misp_base_url: str = ""
+    misp_api_key: str = ""
+    misp_verify_ssl: bool = True
+    misp_timeout_sec: int = 30
     abuseipdb_api_key: str = ""  # AbuseIPDB API key for IP reputation checks
     allow_external_ti: bool = False  # Default: DISABLED for compliance
     ti_cache_ttl_hours: int = 168  # Default: 7 days
@@ -37,6 +45,26 @@ class Settings(BaseSettings):
     ti_allow_url_with_private_host: bool = (
         False  # Whether URLs with private IP hosts are allowed
     )
+
+    # v1.2: Alert pipeline (auto enrichment -> correlation -> AI triage)
+    alert_pipeline_enabled: bool = True
+    alert_pipeline_interval_seconds: int = 15
+    alert_pipeline_batch_size: int = 50
+    alert_pipeline_ai_min_severity: str = "high"  # AI triage cost control
+    alert_pipeline_correlation_window_minutes: int = 60
+    alert_pipeline_correlation_max_events: int = 500
+
+    # v1.2: Data retention (0 = keep forever for that table)
+    data_retention_enabled: bool = True
+    data_retention_interval_hours: int = 6
+    data_retention_batch_size: int = 5000
+    security_alert_retention_days: int = 90
+    siem_log_retention_days: int = 30
+    playbook_run_retention_days: int = 90
+    ioc_hit_retention_days: int = 180
+    history_retention_days: int = 180
+    correlated_event_retention_days: int = 180
+    threat_intel_cache_retention_days: int = 30  # expired rows purge window
 
     # Environment: production 时将校验敏感默认值
     environment: str = "development"  # development | production
@@ -52,7 +80,11 @@ class Settings(BaseSettings):
     jwt_secret_previous: str = ""  # P1-17: Previous JWT secret for rotation过渡期
     jwt_expire_minutes: int = 720  # 12 hours
     jwt_refresh_expire_minutes: int = 10080  # 7 days
-    allow_public_readonly: bool = False  # Allow unauthenticated read-only access
+    # S0-20: Replaced allow_public_readonly bool with endpoint whitelist
+    # for defense-in-depth (default deny). Only endpoints explicitly listed
+    # are accessible without authentication.
+    public_readonly_endpoints: list[str] = []
+    expose_tokens_in_body: bool = False  # v1.0: Expose access/refresh tokens in login response body (security risk)
 
     # v0.6.2: Bootstrap Admin Settings
     bootstrap_admin_username: str = "admin"
@@ -86,6 +118,9 @@ class Settings(BaseSettings):
     # v0.8.2: Redis settings for distributed deployments
     redis_url: str = ""  # Redis connection URL (e.g., redis://localhost:6379/0)
     redis_enabled: bool = False  # Enable Redis for token blacklist and idempotency
+
+    # v1.1: Message queue backend selection
+    queue_backend: str = "redis"  # redis | kafka | memory (auto-degrades if Redis unreachable)
 
     # v0.8.3: DAG Concurrency Settings
     dag_concurrency_default: int = 5  # Default concurrent nodes per DAG execution

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies import get_current_user
+from dependencies.auth import get_current_user, require_analyst_or_admin
 from models.user import UserModel
 from schemas.alert_lifecycle import (
     AlertAssignment,
@@ -57,7 +57,7 @@ async def update_alert_status(
     alert_id: str,
     status: AlertStatus,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """更新告警状态"""
     await ensure_security_alerts_schema(db)
@@ -75,7 +75,7 @@ async def assign_alert(
     alert_id: str,
     assignment: AlertAssignment,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """分配告警"""
     await ensure_security_alerts_schema(db)
@@ -93,7 +93,7 @@ async def resolve_alert(
     alert_id: str,
     resolution: AlertResolution,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """解决告警"""
     await ensure_security_alerts_schema(db)
@@ -111,7 +111,7 @@ async def escalate_alert(
     alert_id: str,
     escalation: AlertEscalationCreate,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """升级告警"""
     await ensure_security_alerts_schema(db)
@@ -129,7 +129,7 @@ async def add_alert_note(
     alert_id: str,
     note: AlertNoteCreate,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """添加告警备注"""
     await ensure_security_alerts_schema(db)
@@ -198,7 +198,7 @@ async def get_threat_intel_statistics(
 async def batch_update_alerts(
     batch: AlertBatchUpdate,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """批量更新告警"""
     await ensure_security_alerts_schema(db)

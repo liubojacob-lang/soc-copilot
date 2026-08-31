@@ -1,0 +1,41 @@
+{
+  "id": "sigma-linux-003",
+  "title": "Privilege Escalation via SUID Binary",
+  "description": "Detects execution of SUID binaries (passwd, sudo, su) by non-root users, potentially for privilege escalation.",
+  "status": "stable",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "linux",
+  "tags": [
+    "attack.privilege_escalation",
+    "attack.t1548.001"
+  ],
+  "mitre_techniques": [
+    "T1548.001"
+  ],
+  "logsource": {
+    "product": "linux",
+    "service": "audit"
+  },
+  "detection": {
+    "selection_execve": {
+      "syscall": 59,
+      "uid": ">0",
+      "key": "execve"
+    },
+    "selection_path": {
+      "path|contains": [
+        "/usr/bin/passwd",
+        "/usr/bin/sudo",
+        "/bin/su"
+      ]
+    },
+    "condition": "selection_execve and selection_path"
+  },
+  "false_positives": [
+    "Normal user operations with SUID binaries"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1548/001/"
+  ]
+}

@@ -163,7 +163,7 @@ async def readiness() -> dict:
     return {"status": "ready"}
 
 
-@router.get("/api/health")
+@router.get("/api/v1/health")
 async def health_detailed() -> HealthStatus:
     """Detailed health check with all components.
 
@@ -254,3 +254,22 @@ async def metrics() -> Response:
         content=metrics_text,
         media_type="text/plain; version=0.0.4; charset=utf-8",
     )
+
+
+# --- CSP Nonce endpoint (for nonce-based CSP frontend integration) ---
+
+from typing import Union
+
+from fastapi import Request
+
+
+@router.get("/api/v1/csp-nonce")
+async def get_csp_nonce(request: Request) -> dict:
+    """Return the CSP nonce for the current request.
+
+    Use this endpoint when AJAX/lazy-loaded scripts need to know
+    the current nonce to inject into dynamically created <script> tags.
+    For SSR pages, access request.state.csp_nonce directly in templates.
+    """
+    nonce: Union[str, None] = getattr(request.state, "csp_nonce", None)
+    return {"nonce": nonce}

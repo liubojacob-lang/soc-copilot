@@ -1,0 +1,33 @@
+{
+  "id": "sigma-k8s-004",
+  "title": "Kubernetes Secret Enumeration",
+  "description": "Detects mass listing (verb=list) of Kubernetes secrets, which may indicate credential theft attempts.",
+  "status": "experimental",
+  "level": "medium",
+  "author": "SOC Copilot",
+  "category": "kubernetes",
+  "tags": [
+    "attack.credential_access",
+    "attack.t1552.007"
+  ],
+  "mitre_techniques": [
+    "T1552.007"
+  ],
+  "logsource": {
+    "product": "kubernetes",
+    "service": "audit"
+  },
+  "detection": {
+    "selection": {
+      "verb": "list",
+      "objectRef.resource": "secrets"
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Cluster operators managing secrets"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1552/007/"
+  ]
+}

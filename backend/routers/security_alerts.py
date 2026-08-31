@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import ValidationError
 from sqlalchemy import and_, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -113,7 +114,33 @@ async def ingest_alert(
         )
 
         session.add(new_alert)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            # Two concurrent ingests of the same (source, event_id) race past
+            # the SELECT above; the unique index catches the loser here.
+            # Roll back and report a duplicate instead of a 500.
+            await session.rollback()
+            raced = await session.execute(
+                select(SecurityAlert).where(
+                    and_(
+                        SecurityAlert.source == alert_data.source,
+                        SecurityAlert.external_event_id == alert_data.event_id,
+                    )
+                )
+            )
+            winner = raced.scalar_one_or_none()
+            if winner is None:
+                raise
+            logger.info(
+                f"Duplicate alert (race resolved): source={alert_data.source}, "
+                f"event_id={alert_data.event_id}"
+            )
+            return {
+                "status": "duplicate",
+                "message": "Alert already exists",
+                "alert_id": winner.id,
+            }
         await session.refresh(new_alert)
 
         logger.info(

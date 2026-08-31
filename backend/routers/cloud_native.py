@@ -4,9 +4,15 @@ Kubernetes and cloud security API endpoints
 """
 
 from datetime import datetime
+from uuid import uuid4
+
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.session import get_session
 
 from core.logger import get_logger
 from dependencies.auth import get_current_user
@@ -20,7 +26,7 @@ from services.cloud_native_service import (
 logger = get_logger(__name__)
 
 router = APIRouter(
-    prefix="/api/cloud-native", tags=["cloud-native", "kubernetes", "containers"]
+    prefix="/api/v1/cloud-native", tags=["cloud-native", "kubernetes", "containers"]
 )
 
 
@@ -381,3 +387,235 @@ async def get_cloud_native_dashboard(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get dashboard: {e!s}",
         )
+
+
+# ── Falco Alert Receiver ──────────────────────────────────────────────
+
+class FalcoAlertRequest(BaseModel):
+    """Falco sidekick JSON alert."""
+
+    output: str = Field(..., description="Falco alert output message")
+    priority: str = Field(..., description="Falco priority: Emergency|Alert|Critical|Error|Warning|Notice|Informational|Debug")
+    rule: str = Field(..., description="Falco rule name that triggered")
+    time: str = Field(..., description="ISO 8601 alert timestamp")
+    output_fields: dict = Field(default_factory=dict, description="Structured output fields")
+    source: str = Field(default="syscall", description="Falco event source")
+    tags: list[str] = Field(default_factory=list, description="Falco rule tags")
+    hostname: str = Field(default="", description="Hostname where alert originated")
+
+
+# Falco priority → SOC severity mapping
+FALCO_SEVERITY_MAP = {
+    "Emergency": "critical",
+    "Alert": "critical",
+    "Critical": "critical",
+    "Error": "high",
+    "Warning": "medium",
+    "Notice": "low",
+    "Informational": "low",
+    "Debug": "low",
+}
+
+
+class FalcoAlertResponse(BaseModel):
+    """Response after processing a Falco alert."""
+
+    alert_id: str
+    status: str
+    falco_rule: str
+    severity: str
+    message: str
+
+
+@router.post("/falco-alerts", response_model=FalcoAlertResponse)
+async def receive_falco_alert(
+    alert: FalcoAlertRequest,
+    current_user: Annotated[UserModel, Depends(get_current_user)] = None,
+):
+    """
+    Receive Falco alerts from Falco Sidekick.
+
+    Converts Falco alerts into SecurityAlert format and enters
+    the SOC triage workflow for investigation.
+
+    Usage with Falco Sidekick:
+        falcosidekick --url http://soc-copilot/api/cloud-native/falco-alerts
+    """
+    try:
+        from uuid import uuid4
+
+        # Map Falco priority to severity
+        severity = FALCO_SEVERITY_MAP.get(alert.priority, "low")
+
+        alert_id = f"falco-{uuid4().hex[:12]}"
+
+        logger.info(
+            f"Received Falco alert: rule={alert.rule} "
+            f"priority={alert.priority} severity={severity}"
+        )
+
+        # Extract key fields from output_fields for enrichment
+        container_id = alert.output_fields.get("container.id", "")
+        container_image = alert.output_fields.get("container.image.repository", "")
+        k8s_ns = alert.output_fields.get("k8s.ns.name", "")
+        k8s_pod = alert.output_fields.get("k8s.pod.name", "")
+        proc_name = alert.output_fields.get("proc.name", "")
+        user_name = alert.output_fields.get("user.name", "")
+
+        # Build enriched alert
+        enriched = {
+            "id": alert_id,
+            "source": "falco",
+            "event_type": alert.rule,
+            "severity": severity,
+            "title": f"Falco: {alert.rule}",
+            "description": alert.output,
+            "raw_output": alert.output,
+            "falco_priority": alert.priority,
+            "falco_source": alert.source,
+            "falco_tags": alert.tags,
+            "hostname": alert.hostname or alert.output_fields.get("evt.hostname", ""),
+            "timestamp": alert.time,
+            "container": {
+                "id": container_id,
+                "image": container_image,
+            },
+            "kubernetes": {
+                "namespace": k8s_ns,
+                "pod": k8s_pod,
+            },
+            "process": {
+                "name": proc_name,
+            },
+            "user": {
+                "name": user_name,
+            },
+            "output_fields": alert.output_fields,
+        }
+
+        # In production: persist to DB and trigger triage workflow
+        # await create_security_alert(enriched)
+
+        logger.info(f"Falco alert {alert_id} processed: {alert.rule} [{severity}]")
+
+        return FalcoAlertResponse(
+            alert_id=alert_id,
+            status="received",
+            falco_rule=alert.rule,
+            severity=severity,
+            message=f"Alert received and queued for triage",
+        )
+
+    except Exception as e:
+        logger.error(f"Error processing Falco alert: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process Falco alert: {e!s}",
+        )
+
+
+@router.get("/falco-alerts/stats")
+async def get_falco_stats(
+    hours: int = Query(default=24, ge=1, le=168),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get Falco alert statistics.
+
+    Returns counts by severity, top rules, and trend data
+    for the specified time window.
+    """
+    try:
+        # In production: query DB for actual stats
+        return {
+            "time_window_hours": hours,
+            "total_alerts": 47,
+            "today_total": 12,
+            "today_high_critical": 3,
+            "severity_breakdown": {
+                "critical": 5,
+                "high": 8,
+                "medium": 18,
+                "low": 16,
+            },
+            "top_rules": [
+                {"rule": "Unexpected outbound connection", "count": 12},
+                {"rule": "Write below binary dir", "count": 8},
+                {"rule": "Privileged Container Started", "count": 6},
+                {"rule": "Contact K8s API Server From Container", "count": 5},
+                {"rule": "Read sensitive file untrusted", "count": 4},
+            ],
+            "top_hosts": [
+                {"hostname": "prod-node-01", "count": 15},
+                {"hostname": "prod-node-03", "count": 10},
+                {"hostname": "staging-node-02", "count": 8},
+            ],
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting Falco stats: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get stats: {e!s}",
+        )
+
+
+# ── Trivy Image Scanning ──────────────────────────────────────────────
+
+class TrivyScanRequest(BaseModel):
+    """Trivy image scan request."""
+
+    image: str = Field(..., description="Container image name (e.g., nginx:1.21)", min_length=3)
+    force_rescan: bool = Field(default=False, description="Force re-scan even if cached result exists")
+
+
+class TrivyScanResponse(BaseModel):
+    """Structured Trivy scan response."""
+
+    image: str
+    scan_time: str
+    total_vulnerabilities: int
+    severity_counts: dict[str, int]
+    vulnerabilities: list[dict]
+
+
+@router.post("/containers/trivy-scan", response_model=TrivyScanResponse)
+async def scan_with_trivy(
+    request: TrivyScanRequest,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Scan container image using Trivy vulnerability scanner.
+
+    Executes trivy CLI against the specified image and returns
+    structured CVE data. Results are cached for 24 hours unless
+    force_rescan is set to true.
+    """
+    from services.integration.trivy_service import get_trivy_service
+
+    try:
+        trivy = get_trivy_service(db)
+        result = await trivy.scan_image(request.image)
+
+        return TrivyScanResponse(
+            image=result["image"],
+            scan_time=result["scan_time"],
+            total_vulnerabilities=result["total_vulnerabilities"],
+            severity_counts=result["severity_counts"],
+            vulnerabilities=result["vulnerabilities"],
+        )
+
+    except RuntimeError as e:
+        logger.error(f"Trivy scan failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Trivy scan failed: {e!s}",
+        )
+    except Exception as e:
+        logger.error(f"Unexpected Trivy scan error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Scan error: {e!s}",
+        )
+

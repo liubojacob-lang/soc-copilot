@@ -10,7 +10,7 @@ v0.8.5: Audit log archiving and cleanup service.
 import asyncio
 import gzip
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from sqlalchemy import delete, func, select
@@ -71,8 +71,8 @@ class AuditArchiveService:
             Dict with archive statistics
         """
         days = days or self.retention_days
-        cutoff_date = datetime.now() - timedelta(days=days)
-        cutoff_str = cutoff_date.isoformat()
+        cutoff = datetime.now(UTC) - timedelta(days=days)
+        cutoff_str = cutoff.isoformat()
 
         stats = {
             "archived_count": 0,
@@ -92,7 +92,7 @@ class AuditArchiveService:
                         func.date(AuditLogModel.created_at).label("log_date"),
                         func.count(AuditLogModel.id).label("count"),
                     )
-                    .where(AuditLogModel.created_at < cutoff_str)
+                    .where(AuditLogModel.created_at < cutoff)
                     .group_by(func.date(AuditLogModel.created_at))
                     .order_by(func.date(AuditLogModel.created_at))
                 )
@@ -302,8 +302,8 @@ class AuditArchiveService:
         async with self.session_factory() as session:
             result = await session.execute(
                 select(AuditLogModel)
-                .where(AuditLogModel.created_at >= start_date.isoformat())
-                .where(AuditLogModel.created_at <= end_date.isoformat())
+                .where(AuditLogModel.created_at >= start_date)
+                .where(AuditLogModel.created_at <= end_date)
                 .order_by(AuditLogModel.created_at)
             )
             logs = result.scalars().all()

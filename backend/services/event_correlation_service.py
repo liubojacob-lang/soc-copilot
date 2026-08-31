@@ -5,13 +5,18 @@ Groups related security events into incidents using:
 - Time-based correlation (within N minutes)
 - Similarity-based correlation (message, category, severity)
 - Rule-based correlation (custom conditions)
+
+Provides CRUD operations for:
+- Correlated incidents (list, get, update)
+- Correlation rules (CRUD + toggle)
+- Statistics dashboard data
 """
 
 from collections import defaultdict
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -517,7 +522,7 @@ class EventCorrelationService:
             last_seen=last_seen,
             status="open",
             risk_score=risk_score,
-            created_at=datetime.now(UTC).isoformat(),
+            created_at=datetime.now(UTC),
         )
 
         return correlated
@@ -557,6 +562,213 @@ class EventCorrelationService:
         final_score = min(weighted_score * event_multiplier, 100.0)
 
         return round(final_score, 1)
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # Incident CRUD (S0-8/9: extracted from routers/correlation.py)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    async def list_incidents(
+        self,
+        status: str | None = None,
+        severity: str | None = None,
+        attack_type: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[CorrelatedEvent]:
+        """List correlated incidents with optional filtering and pagination."""
+        query = select(CorrelatedEvent).order_by(desc(CorrelatedEvent.first_seen))
+        if status:
+            query = query.where(CorrelatedEvent.status == status)
+        if severity:
+            query = query.where(CorrelatedEvent.severity == severity)
+        if attack_type:
+            query = query.where(CorrelatedEvent.attack_type == attack_type)
+        query = query.offset(offset).limit(limit)
+
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
+    async def get_incident(self, incident_id: str) -> CorrelatedEvent | None:
+        """Get a single correlated incident by its ID."""
+        query = select(CorrelatedEvent).where(CorrelatedEvent.id == incident_id)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def update_incident(
+        self,
+        incident_id: str,
+        status: str | None = None,
+        assigned_to: str | None = None,
+    ) -> CorrelatedEvent | None:
+        """Update incident status and/or assignment. Commits to DB."""
+        incident = await self.get_incident(incident_id)
+        if not incident:
+            return None
+
+        valid_statuses = {"open", "investigating", "resolved", "false_positive", "closed"}
+        if status is not None:
+            if status not in valid_statuses:
+                raise ValueError(
+                    f"Invalid status. Must be one of: {', '.join(sorted(valid_statuses))}"
+                )
+            incident.status = status
+            if status in {"resolved", "false_positive", "closed"}:
+                incident.resolved_at = datetime.now(UTC)
+
+        if assigned_to:
+            incident.assigned_to = assigned_to
+
+        incident.updated_at = datetime.now(UTC)
+        await self.db.commit()
+        return incident
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # Rule CRUD (S0-8/9: extracted from routers/correlation.py)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    async def list_rules(self, enabled_only: bool = False) -> list[CorrelationRule]:
+        """List all correlation rules, ordered by priority descending."""
+        query = select(CorrelationRule).order_by(CorrelationRule.priority.desc())
+        if enabled_only:
+            query = query.where(CorrelationRule.enabled == True)
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
+    async def get_rule(self, rule_id: str) -> CorrelationRule | None:
+        """Get a single correlation rule by its ID."""
+        query = select(CorrelationRule).where(CorrelationRule.id == rule_id)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def create_rule(self, rule_data: dict[str, Any]) -> CorrelationRule:
+        """Create a new correlation rule from a dict of fields."""
+        new_rule = CorrelationRule(
+            name=rule_data["name"],
+            description=rule_data.get("description"),
+            time_window_seconds=rule_data.get("time_window_seconds", 300),
+            entity_types=rule_data.get("entity_types") or {"ip_address": True, "username": True},
+            min_similarity=rule_data.get("min_similarity", 0.7),
+            conditions=rule_data.get("conditions"),
+            action=rule_data.get("action", "aggregate"),
+            action_params=rule_data.get("action_params"),
+            priority=rule_data.get("priority", 50),
+            group_by_field=rule_data.get("group_by_field"),
+        )
+        self.db.add(new_rule)
+        await self.db.commit()
+        await self.db.refresh(new_rule)
+        logger.info(f"Created correlation rule: {new_rule.id}")
+        return new_rule
+
+    async def update_rule(
+        self, rule_id: str, updates: dict[str, Any]
+    ) -> CorrelationRule | None:
+        """Partially update a correlation rule. Refuses built-in rules."""
+        rule = await self.get_rule(rule_id)
+        if not rule:
+            return None
+        if rule.is_builtin:
+            raise PermissionError("Cannot update built-in rules")
+
+        for field, value in updates.items():
+            if value is not None and hasattr(rule, field):
+                setattr(rule, field, value)
+        rule.updated_at = datetime.now(UTC)
+        await self.db.commit()
+        return rule
+
+    async def delete_rule(self, rule_id: str) -> bool:
+        """Delete a correlation rule. Refuses built-in rules. Returns True if deleted."""
+        rule = await self.get_rule(rule_id)
+        if not rule:
+            return False
+        if rule.is_builtin:
+            raise PermissionError("Cannot delete built-in rules")
+
+        await self.db.delete(rule)
+        await self.db.commit()
+        logger.info(f"Deleted correlation rule: {rule_id}")
+        return True
+
+    async def toggle_rule(self, rule_id: str) -> dict[str, Any] | None:
+        """Toggle a rule's enabled status. Returns {rule_id, enabled} or None."""
+        rule = await self.get_rule(rule_id)
+        if not rule:
+            return None
+        rule.enabled = not rule.enabled
+        rule.updated_at = datetime.now(UTC)
+        await self.db.commit()
+        logger.info(f"Toggled rule {rule_id} to {rule.enabled}")
+        return {"rule_id": rule_id, "enabled": rule.enabled}
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # Statistics (S0-8/9: extracted from routers/correlation.py)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    async def get_stats(self) -> dict[str, Any]:
+        """Get aggregated correlation statistics for the dashboard."""
+        total_incidents = await self.db.execute(select(func.count(CorrelatedEvent.id)))
+        total_count = total_incidents.scalar() or 0
+
+        status_counts = await self.db.execute(
+            select(CorrelatedEvent.status, func.count(CorrelatedEvent.id)).group_by(
+                CorrelatedEvent.status
+            )
+        )
+        by_status = {status: count for status, count in status_counts.all()}
+
+        severity_counts = await self.db.execute(
+            select(CorrelatedEvent.severity, func.count(CorrelatedEvent.id)).group_by(
+                CorrelatedEvent.severity
+            )
+        )
+        by_severity = {severity: count for severity, count in severity_counts.all()}
+
+        total_rules = await self.db.execute(select(func.count(CorrelationRule.id)))
+        rules_count = total_rules.scalar() or 0
+
+        active_rules = await self.db.execute(
+            select(func.count(CorrelationRule.id)).where(CorrelationRule.enabled == True)
+        )
+        active_count = active_rules.scalar() or 0
+
+        total_correlations = await self.db.execute(
+            select(func.sum(CorrelationRule.total_correlations))
+        )
+        correlations_count = total_correlations.scalar() or 0
+
+        return {
+            "incidents": {
+                "total": total_count,
+                "by_status": by_status,
+                "by_severity": by_severity,
+            },
+            "rules": {
+                "total": rules_count,
+                "active": active_count,
+                "total_correlations_performed": correlations_count,
+            },
+            "generated_at": datetime.now(UTC).isoformat(),
+        }
+
+    @staticmethod
+    def serialize_rule(rule: CorrelationRule) -> dict[str, Any]:
+        """Serialize a CorrelationRule model to an API-safe dict."""
+        return {
+            "id": rule.id,
+            "name": rule.name,
+            "description": rule.description,
+            "enabled": rule.enabled,
+            "is_builtin": rule.is_builtin,
+            "time_window_seconds": rule.time_window_seconds,
+            "entity_types": rule.entity_types,
+            "min_similarity": rule.min_similarity,
+            "action": rule.action,
+            "priority": rule.priority,
+            "total_correlations": rule.total_correlations,
+            "last_triggered": rule.last_triggered,
+            "created_at": rule.created_at,
+        }
 
     def _extract_common_entities(
         self, events: list[dict[str, Any]]

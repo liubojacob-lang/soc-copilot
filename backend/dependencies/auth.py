@@ -9,6 +9,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from fnmatch import fnmatch
+
+from fastapi import Request
+
+from core.config import settings
 from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, get_token_from_cookie
 from core.logger import get_logger
 from core.security import (
@@ -251,13 +256,45 @@ def user_to_response(user: UserModel) -> MeResponse:
     )
 
 
+
+
+def is_public_readonly_endpoint(path: str) -> bool:
+    """Check if a request path matches any public readonly endpoint pattern.
+
+    S0-20: Uses fnmatch-style glob patterns for flexible matching.
+    Default whitelist is empty (deny-all) for maximum security.
+
+    Args:
+        path: The request path to check (e.g., "/api/health")
+
+    Returns:
+        True if the path is in the public readonly whitelist
+    """
+    for pattern in settings.public_readonly_endpoints:
+        if fnmatch(path, pattern):
+            logger.debug(f"Public readonly access allowed for: {path} (matched: {pattern})")
+            return True
+    return False
+
+
 async def get_current_user_optional(
+    request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
     authorization: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
     x_api_key: Annotated[str | None, Header()] = None,
     cookie: Annotated[str | None, Header(alias="cookie")] = None,
 ) -> UserModel | None:
-    """Get current user from JWT (Bearer or cookie) or API key (optional, returns None if not authenticated)."""
+    """Get current user from JWT (Bearer or cookie) or API key (optional, returns None if not authenticated).
+
+    S0-20: Public readonly endpoints are accessible without authentication
+    if their path matches the configured whitelist.
+    """
+    # S0-20: Check if path is in public readonly whitelist
+    if is_public_readonly_endpoint(request.url.path):
+        # For public endpoints, return None (no user) — the endpoint
+        # handler decides whether to allow unauthenticated access
+        return None
+
     # Try API Key first
     if x_api_key:
         result = await get_user_by_api_key(session, x_api_key)
@@ -266,26 +303,29 @@ async def get_current_user_optional(
             await update_api_key_last_used(session, api_key)
             return user
 
-    # Try JWT from Bearer header
-    token = None
-
-    if authorization:
-        token = authorization.credentials
-
-    # Also try JWT from cookie
-    if not token and cookie:
+    # Collect auth token candidates: Bearer header first, then the
+    # access_token cookie. Placeholder values sent by the frontend when it
+    # holds no token ("undefined"/"null") must not shadow a valid cookie.
+    candidates: list[str] = []
+    if authorization and authorization.credentials:
+        bearer = authorization.credentials
+        if bearer not in ("undefined", "null", ""):
+            candidates.append(bearer)
+    if cookie:
         from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, get_token_from_cookie
 
-        token = get_token_from_cookie(cookie, COOKIE_ACCESS_TOKEN_NAME)
+        cookie_token = get_token_from_cookie(cookie, COOKIE_ACCESS_TOKEN_NAME)
+        if cookie_token:
+            candidates.append(cookie_token)
 
-    if token:
-        # Check if token is blacklisted (Redis-backed for distributed deployments)
-        from core.token_blacklist import get_token_blacklist
+    # Check if any candidate token authenticates
+    from core.token_blacklist import get_token_blacklist
 
-        blacklist = get_token_blacklist()
+    blacklist = get_token_blacklist()
+    for token in candidates:
         if await blacklist.is_blacklisted(token):
             logger.warning("Blacklisted token used for authentication")
-            return None
+            continue
 
         payload = decode_token(token)
         if payload and payload.get("type") == "access":
@@ -347,6 +387,76 @@ require_auditor_or_admin = require_role(UserRole.ADMIN, UserRole.AUDITOR)
 require_analyst = require_role(
     UserRole.ANALYST
 )  # Includes admin implicitly by logic above
+
+# ============================================================================
+# v1.1: Fine-grained RBAC — require_permission via database-backed checks
+# ============================================================================
+
+async def check_permission_in_db(
+    session: AsyncSession, user: UserModel, resource: str, action: str
+) -> bool:
+    """Check if a user has a specific permission via database RBAC tables.
+
+    Queries the role_permissions join table. Falls back to role-based
+    string permissions (backward compat) when no DB records match.
+    """
+    from sqlalchemy import select as sa_select
+    from models.rbac import Permission, Role
+
+    # v1.1: Admin role is superuser - has all permissions (short-circuit)
+    _role_val = user.role.value if hasattr(user.role, "value") else user.role
+    if _role_val == "admin":
+        return True
+
+    # Check DB-based permissions (join through role_permissions)
+    result = await session.execute(
+        sa_select(Permission)
+        .join(Role.permissions)
+        .where(Role.name == str(_role_val))
+        .where(Permission.resource == resource)
+        .where(Permission.action == action)
+    )
+    if result.scalars().first():
+        return True
+
+    # Fallback: role-based string permissions (backward compatibility)
+    perms = get_user_permissions(user)
+    perm_str = f"{resource}:{action}"
+    return perm_str in perms
+
+
+async def has_permission(user: UserModel, resource: str, action: str) -> bool:
+    """Check if a user has a specific permission (convenience helper)."""
+    from db.session import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as session:
+        return await check_permission_in_db(session, user, resource, action)
+
+
+def require_permission(resource: str, action: str):
+    """Dependency factory to require a specific resource:action permission.
+
+    Usage:
+        Depends(require_permission("admin", "write"))
+    """
+
+    async def checker(
+        current_user: Annotated[UserModel, Depends(get_current_user)],
+        session: Annotated[AsyncSession, Depends(get_session)],
+    ) -> UserModel:
+        if not await check_permission_in_db(session, current_user, resource, action):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"Permission denied. Required: {resource}:{action}. "
+                    f"Your role: "
+                    f"{str(current_user.role.value if hasattr(current_user.role, 'value') else current_user.role)}"
+                ),
+            )
+        return current_user
+
+    return checker
+
 
 
 async def get_api_key_user(

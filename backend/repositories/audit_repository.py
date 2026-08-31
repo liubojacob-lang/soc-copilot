@@ -1,12 +1,24 @@
 """Repository for audit log operations."""
 
 import builtins
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.audit_log import AuditLogModel
+
+
+def _parse_date(value: str | datetime) -> datetime:
+    """Coerce a date filter (ISO string or datetime) to a datetime object.
+
+    created_at is a DateTime column; comparing it against a raw string only
+    works by accident on SQLite and fails outright on PostgreSQL.
+    """
+    if isinstance(value, datetime):
+        return value
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 class AuditRepository:
@@ -115,9 +127,9 @@ class AuditRepository:
                     pass  # Invalid status code, ignore filter
 
         if date_from:
-            conditions.append(AuditLogModel.created_at >= date_from)
+            conditions.append(AuditLogModel.created_at >= _parse_date(date_from))
         if date_to:
-            conditions.append(AuditLogModel.created_at <= date_to)
+            conditions.append(AuditLogModel.created_at <= _parse_date(date_to))
 
         if conditions:
             query = query.where(and_(*conditions))
@@ -171,7 +183,7 @@ class AuditRepository:
 
     async def delete_old_logs(self, days: int = 90) -> int:
         """Delete audit logs older than specified days. Returns count deleted."""
-        cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        cutoff = datetime.now(UTC) - timedelta(days=days)
         result = await self.session.execute(
             select(AuditLogModel.id).where(AuditLogModel.created_at < cutoff)
         )

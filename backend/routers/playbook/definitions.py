@@ -1,4 +1,4 @@
-"""DAG-based playbook definition endpoints.
+"""DAG-based playbook definition endpoints (S0-10: Pydantic schemas + S0-8/9: Service layer).
 
 This module contains endpoints for:
 - Listing and creating playbook definitions
@@ -18,6 +18,7 @@ from db.session import get_session
 from dependencies.auth import get_current_user
 from models.user import UserModel, UserRole
 from repositories.audit_repository import AuditRepository
+from schemas.playbook import DAGExecutionRequest, PlaybookDefinitionCreate
 
 logger = get_logger(__name__)
 
@@ -32,119 +33,50 @@ async def list_playbook_definitions(
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ) -> dict[str, object]:
-    """List all DAG-based playbook definitions.
+    """List all DAG-based playbook definitions."""
+    from services.playbook.playbook_service import PlaybookService
 
-    Args:
-        is_active: Optional filter by active status
-        page: Page number (1-indexed)
-        page_size: Items per page
-        session: Database session
-        current_user: Authenticated user
-
-    Returns:
-        Paginated list of playbook definitions
-    """
-    from sqlalchemy import func
-
-    from models.playbook_definition import PlaybookDefinitionModel
-
-    # Build base query with filter
-    base_stmt = select(PlaybookDefinitionModel)
-    if is_active is not None:
-        base_stmt = base_stmt.where(PlaybookDefinitionModel.is_active == is_active)
-
-    # Get total count efficiently using COUNT
-    count_stmt = select(func.count()).select_from(base_stmt.subquery())
-    count_result = await session.execute(count_stmt)
-    total = count_result.scalar() or 0
-
-    # Get paginated results
-    stmt = base_stmt.order_by(PlaybookDefinitionModel.created_at.desc())
-    stmt = stmt.offset((page - 1) * page_size).limit(page_size)
-
-    result = await session.execute(stmt)
-    definitions = result.scalars().all()
-
-    return {
-        "definitions": [
-            {
-                "id": d.id,
-                "name": d.name,
-                "description": d.description,
-                "version": d.version,
-                "is_active": d.is_active,
-                "created_at": d.created_at.isoformat(),
-                "updated_at": d.updated_at.isoformat(),
-            }
-            for d in definitions
-        ],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-        "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
-    }
+    svc = PlaybookService(session)
+    return await svc.list_definitions(
+        is_active=is_active,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.post("/definitions")
 async def create_playbook_definition(
-    request: dict,
-    name: str = Query(..., description="Playbook definition name"),
-    description: str | None = Query(None, description="Playbook description"),
-    version: str = Query("1.0.0", description="Definition version"),
+    body: PlaybookDefinitionCreate,
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ) -> dict[str, object]:
-    """Create a new DAG-based playbook definition.
+    """Create a new DAG-based playbook definition."""
+    from services.playbook.playbook_service import PlaybookService
 
-    Args:
-        request: Request body containing definition_json
-        name: Playbook name
-        description: Optional description
-        version: Definition version
-        session: Database session
-        current_user: Authenticated user
+    svc = PlaybookService(session)
 
-    Returns:
-        Created definition details
-    """
-    from models.playbook_definition import PlaybookDefinitionModel
-
-    definition_json = request.get("definition_json", {})
-
-    definition = PlaybookDefinitionModel(
-        id=str(uuid.uuid4()),
-        name=name,
-        description=description,
-        version=version,
-        definition_json=definition_json,
+    definition = await svc.create_definition(
+        name=body.name,
+        description=body.description,
+        version=body.version,
+        definition_json=body.definition_json,
         created_by=current_user.id,
-        is_active=True,
     )
-
-    session.add(definition)
-    await session.commit()
 
     # Create audit log
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="playbook:definition_created",
         method="POST",
-        path="/api/playbook/definitions",
+        path="/api/v1/playbook/definitions",
         status_code=200,
         user_id=current_user.id,
         target_type="playbook_definition",
-        target_id=definition.id,
+        target_id=definition["id"],
     )
     await session.commit()
 
-    return {
-        "id": definition.id,
-        "name": definition.name,
-        "description": definition.description,
-        "version": definition.version,
-        "is_active": definition.is_active,
-        "created_at": definition.created_at.isoformat(),
-    }
+    return definition
 
 
 @router.get("/definitions/{definition_id}")
@@ -153,146 +85,67 @@ async def get_playbook_definition(
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ) -> dict[str, object]:
-    """Get a DAG-based playbook definition by ID.
+    """Get a DAG-based playbook definition by ID."""
+    from services.playbook.playbook_service import PlaybookService
 
-    Args:
-        definition_id: Definition ID
-        session: Database session
-        current_user: Authenticated user
-
-    Returns:
-        Definition details with nodes and edges
-    """
-    from models.playbook_definition import PlaybookDefinitionModel
-
-    stmt = select(PlaybookDefinitionModel).where(
-        PlaybookDefinitionModel.id == definition_id
-    )
-    result = await session.execute(stmt)
-    definition = result.scalar_one_or_none()
+    svc = PlaybookService(session)
+    definition = await svc.get_definition(definition_id)
 
     if not definition:
         raise HTTPException(
             status_code=404, detail=f"Definition not found: {definition_id}"
         )
 
-    return {
-        "id": definition.id,
-        "name": definition.name,
-        "description": definition.description,
-        "version": definition.version,
-        "definition_json": definition.definition_json,
-        "is_active": definition.is_active,
-        "created_at": definition.created_at.isoformat(),
-        "updated_at": definition.updated_at.isoformat(),
-    }
+    return definition
 
 
 @router.post("/definitions/{definition_id}/run")
 async def execute_dag_definition(
     definition_id: str,
-    request: dict,
-    mode: str = Query("dry_run", description="Execution mode: dry_run or apply"),
+    body: DAGExecutionRequest,
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ) -> dict[str, object]:
-    """Execute a DAG-based playbook definition.
-
-    Args:
-        definition_id: Definition ID to execute
-        request: Request body containing input_json
-        mode: Execution mode (dry_run or apply)
-        session: Database session
-        current_user: Authenticated user
-
-    Returns:
-        Execution result with run_id and status
-
-    Raises:
-        HTTPException: If mode is apply and user is not admin
-    """
+    """Execute a DAG-based playbook definition."""
     # Check apply mode permission
-    if mode == "apply" and current_user.role != UserRole.ADMIN:
+    if body.mode == "apply" and current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=403,
             detail="Playbook apply mode requires admin role",
         )
 
-    from models.playbook_definition import PlaybookDefinitionModel
-    from playbook_engine.dag import DAGBuilder, DAGExecutionEngine
-    from repositories.playbook_run_repository import PlaybookRunRepository
+    from services.playbook.playbook_service import PlaybookService
 
-    input_json = request.get("input_json", {})
+    svc = PlaybookService(session)
 
-    # Get definition
-    stmt = select(PlaybookDefinitionModel).where(
-        PlaybookDefinitionModel.id == definition_id
-    )
-    result = await session.execute(stmt)
-    definition = result.scalar_one_or_none()
-
-    if not definition:
-        raise HTTPException(
-            status_code=404, detail=f"Definition not found: {definition_id}"
+    try:
+        result = await svc.execute_dag_definition(
+            definition_id=definition_id,
+            input_json=body.input_json,
+            mode=body.mode,
+            created_by_user_id=current_user.id,
         )
-
-    if not definition.is_active:
-        raise HTTPException(status_code=400, detail="Definition is not active")
-
-    # Create run record
-    run_repo = PlaybookRunRepository(session)
-    run_id = str(uuid.uuid4())
-
-    await run_repo.create(
-        playbook_name=definition.name,
-        playbook_version=definition.version,
-        mode=mode,
-        status="running",
-        created_by_user_id=current_user.id,
-        input_json=input_json or {},
-        output_json={},
-        execution_mode="dag",
-        definition_id=definition.id,
-        trigger_source="manual",
-    )
-
-    await session.flush()
-
-    # Parse and execute DAG
-    dag_definition = DAGBuilder.from_json(definition.definition_json)
-    engine = DAGExecutionEngine(session)
-
-    result_data = await engine.execute_dag(
-        definition=dag_definition,
-        run_id=run_id,
-        input_json=input_json or {},
-        mode=mode,
-        created_by_user_id=current_user.id,
-    )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Create audit log
     audit_repo = AuditRepository(session)
     await audit_repo.create(
         action="playbook:dag_executed",
         method="POST",
-        path=f"/api/playbook/definitions/{definition_id}/run",
+        path=f"/api/v1/playbook/definitions/{definition_id}/run",
         status_code=200,
         user_id=current_user.id,
         target_type="playbook_run",
-        target_id=run_id,
+        target_id=result["run_id"],
         extra_json={
             "definition_id": definition_id,
-            "mode": mode,
+            "mode": body.mode,
         },
     )
     await session.commit()
 
-    return {
-        "run_id": run_id,
-        "status": result_data["status"],
-        "failed_nodes": result_data.get("failed_nodes", []),
-        "skipped_nodes": result_data.get("skipped_nodes", []),
-    }
+    return result
 
 
 @router.get("/runs/{run_id}/nodes")
@@ -301,16 +154,7 @@ async def get_playbook_run_nodes(
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ) -> dict[str, object]:
-    """Get node execution details for a DAG run.
-
-    Args:
-        run_id: Run ID
-        session: Database session
-        current_user: Authenticated user
-
-    Returns:
-        Node execution details
-    """
+    """Get node execution details for a DAG run."""
     from models.playbook_node_run import PlaybookNodeRunModel
     from repositories.playbook_run_repository import PlaybookRunRepository
 

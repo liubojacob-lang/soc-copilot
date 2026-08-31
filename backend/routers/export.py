@@ -436,22 +436,22 @@ async def export_alerts(
     """
     from sqlalchemy import select
 
-    from models.history import HistoryModel
+    from models.security_alert import SecurityAlert
 
     # Build query
-    query = select(HistoryModel)
+    query = select(SecurityAlert).where(SecurityAlert.deleted_at.is_(None))
 
     # Apply filters
     if severity:
-        query = query.where(HistoryModel.severity == severity)
+        query = query.where(SecurityAlert.severity == severity)
     if status:
-        query = query.where(HistoryModel.status == status)
+        query = query.where(SecurityAlert.status == status)
     if date_from:
-        query = query.where(HistoryModel.created_at >= date_from)
+        query = query.where(SecurityAlert.created_at >= date_from)
     if date_to:
-        query = query.where(HistoryModel.created_at <= date_to)
+        query = query.where(SecurityAlert.created_at <= date_to)
 
-    query = query.order_by(HistoryModel.created_at.desc()).limit(limit)
+    query = query.order_by(SecurityAlert.created_at.desc()).limit(limit)
 
     result = await session.execute(query)
     alerts = list(result.scalars().all())
@@ -462,11 +462,11 @@ async def export_alerts(
         data.append(
             {
                 "id": alert.id,
-                "alert_id": alert.alert_id,
+                "source": alert.source,
                 "title": alert.title,
                 "severity": alert.severity,
                 "status": alert.status,
-                "source": alert.source,
+                "source_ip": alert.source_ip,
                 "assigned_to": alert.assigned_to,
                 "created_at": alert.created_at,
                 "updated_at": alert.updated_at,
@@ -476,11 +476,11 @@ async def export_alerts(
     # Define columns
     columns = [
         "id",
-        "alert_id",
+        "source",
         "title",
         "severity",
         "status",
-        "source",
+        "source_ip",
         "assigned_to",
         "created_at",
         "updated_at",

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title or "Incident Report" }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #333;
+            margin: 40px;
+        }
+        .header {
+            border-bottom: 3px solid #1a1a2e;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 24pt; color: #1a1a2e; }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 15px;
+            font-size: 10pt;
+            color: #666;
+        }
+        .meta-grid .label { font-weight: bold; }
+        .severity-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 10pt;
+            color: #fff;
+            background-color: {{ severity|severity_color }};
+        }
+        h2 {
+            font-size: 16pt;
+            color: #1a1a2e;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 6px;
+            margin: 30px 0 15px 0;
+        }
+        h3 { font-size: 14pt; margin: 20px 0 10px 0; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+            font-size: 10pt;
+        }
+        th { background-color: #f5f5f5; font-weight: bold; }
+        .timeline-item { margin-bottom: 12px; padding-left: 20px; border-left: 2px solid #1a1a2e; }
+        .timeline-time { font-weight: bold; color: #1a1a2e; font-size: 10pt; }
+        .ioc-list { background: #fff3cd; padding: 15px; border-radius: 4px; margin: 10px 0; }
+        .action-list { background: #d4edda; padding: 15px; border-radius: 4px; margin: 10px 0; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 4px; }
+        .footer {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-size: 9pt;
+            color: #999;
+            text-align: center;
+        }
+        .confidential {
+            background: #dc3545;
+            color: #fff;
+            padding: 4px 12px;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="confidential">CONFIDENTIAL — FOR AUTHORIZED PERSONNEL ONLY</div>
+
+    <div class="header">
+        <h1>{{ title or "Security Incident Report" }}</h1>
+        <div class="meta-grid">
+            <div><span class="label">Report ID:</span> {{ report_id or "N/A" }}</div>
+            <div><span class="label">Generated:</span> {{ generated_at }}</div>
+            <div><span class="label">Severity:</span> <span class="severity-badge">{{ severity or "N/A" }}</span></div>
+            <div><span class="label">Status:</span> {{ status or "N/A" }}</div>
+            <div><span class="label">Incident Type:</span> {{ incident_type or "N/A" }}</div>
+            <div><span class="label">Version:</span> {{ version }}</div>
+        </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <h2>1. Executive Summary</h2>
+    <p>{{ summary or "No summary provided." }}</p>
+    <p>The incident was classified as <strong>{{ severity or "N/A" }}</strong> severity with <strong>{{ status or "open" }}</strong> status.</p>
+
+    <!-- Event Overview -->
+    <h2>2. Event Overview</h2>
+    <h3>2.1 Description</h3>
+    <p>{{ description or "No description provided." }}</p>
+
+    {% if alert_data %}
+    <h3>2.2 Alert Details</h3>
+    <table>
+        <tr><th>Field</th><th>Value</th></tr>
+        {% for key, value in alert_data.items() %}
+        <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <!-- Impact Analysis -->
+    <h2>3. Impact Analysis</h2>
+    {% if affected_assets %}
+    <h3>3.1 Affected Assets</h3>
+    <table>
+        <tr><th>Asset</th><th>IP</th><th>Criticality</th><th>Status</th></tr>
+        {% for asset in affected_assets %}
+        <tr>
+            <td>{{ asset.hostname or asset.name or "N/A" }}</td>
+            <td>{{ asset.ip or "N/A" }}</td>
+            <td>{{ asset.criticality or "N/A" }}</td>
+            <td>{{ asset.status or "N/A" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No specific assets identified as affected.</p>
+    {% endif %}
+
+    {% if affected_users %}
+    <h3>3.2 Affected Users</h3>
+    <table>
+        <tr><th>User</th><th>Role</th><th>Impact</th></tr>
+        {% for user in affected_users %}
+        <tr><td>{{ user.name or user.id }}</td><td>{{ user.role or "N/A" }}</td><td>{{ user.impact or "N/A" }}</td></tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <!-- Timeline -->
+    <h2>4. Incident Timeline</h2>
+    {% if timeline %}
+    {% for event in timeline %}
+    <div class="timeline-item">
+        <div class="timeline-time">{{ event.time or event.timestamp or "N/A" }}</div>
+        <div>{{ event.description or event.event or "N/A" }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>No timeline events recorded.</p>
+    {% endif %}
+
+    <!-- IOCs -->
+    <h2>5. Indicators of Compromise (IOCs)</h2>
+    {% if iocs %}
+    <div class="ioc-list">
+        <table>
+            <tr><th>Type</th><th>Value</th><th>Severity</th></tr>
+            {% for ioc in iocs %}
+            <tr>
+                <td>{{ ioc.type or "N/A" }}</td>
+                <td>{{ ioc.value or "N/A" }}</td>
+                <td>{{ ioc.severity or "N/A" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% else %}
+    <p>No IOCs identified.</p>
+    {% endif %}
+
+    <!-- Response Measures -->
+    <h2>6. Response Measures</h2>
+    {% if response_measures %}
+    <div class="action-list">
+        <ul>
+        {% for action in response_measures %}
+            <li><strong>{{ action.type or "Action" }}:</strong> {{ action.description or action }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <h3>6.1 Containment</h3>
+    <p>{{ containment or "Standard containment procedures initiated." }}</p>
+
+    <h3>6.2 Eradication</h3>
+    <p>{{ eradication or "Root cause analysis in progress." }}</p>
+
+    <h3>6.3 Recovery</h3>
+    <p>{{ recovery or "Recovery procedures pending." }}</p>
+
+    <!-- Compliance Mapping -->
+    {% if compliance_map %}
+    <h2>7. Compliance Mapping</h2>
+    <table>
+        <tr><th>Framework</th><th>Control</th><th>Status</th></tr>
+        {% for item in compliance_map %}
+        <tr>
+            <td>{{ item.framework or "N/A" }}</td>
+            <td>{{ item.control or "N/A" }}</td>
+            <td>{{ item.status or "N/A" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <!-- Lessons Learned -->
+    <h2>8. Lessons Learned</h2>
+    <p>{{ lessons_learned or "Post-incident review pending." }}</p>
+
+    <!-- Recommendations -->
+    <h2>9. Recommendations</h2>
+    {% if recommendations %}
+    <ul>
+    {% for rec in recommendations %}
+        <li>{{ rec }}</li>
+    {% endfor %}
+    </ul>
+    {% else %}
+    <ul>
+        <li>Conduct a post-incident review within 7 days</li>
+        <li>Update incident response playbooks based on findings</li>
+        <li>Review and enhance monitoring rules</li>
+        <li>Verify all IOCs are blocked across infrastructure</li>
+    </ul>
+    {% endif %}
+
+    <div class="footer">
+        <p>SOC Copilot — Automated Incident Report</p>
+        <p>Generated: {{ generated_at }} | Version: {{ version }}</p>
+        <p>This document is confidential and intended for authorized security personnel only.</p>
+    </div>
+</body>
+</html>

@@ -17,6 +17,9 @@ class PlaybookRunModel(Base):
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )  # v1.1: soft delete
     playbook_name: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     playbook_version: Mapped[str] = mapped_column(String(20), nullable=False)
     mode: Mapped[str] = mapped_column(String(20), nullable=False)  # dry_run / apply
