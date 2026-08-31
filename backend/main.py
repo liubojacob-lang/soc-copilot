@@ -185,7 +185,18 @@ async def run_migrations():
                     cwd=str(Path(__file__).parent),
                 )
 
-            result = await asyncio.to_thread(run_migrations_sync)
+            try:
+                from services.migration_lock import migration_process_lock
+            except ImportError:  # pragma: no cover - Windows dev only
+                migration_process_lock = None
+
+            def run_migrations_locked():
+                if migration_process_lock is None:
+                    return run_migrations_sync()
+                with migration_process_lock():
+                    return run_migrations_sync()
+
+            result = await asyncio.to_thread(run_migrations_locked)
             if result.returncode == 0:
                 logger.info("Database migrations completed")
             else:

@@ -115,3 +115,6 @@ grafana-*.json
 # Local agent tool artifacts
 .mimosa/
 .cospec/
+
+# Runtime migration lock
+.alembic.lock
