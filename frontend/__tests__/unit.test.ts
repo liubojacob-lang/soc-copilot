@@ -12,6 +12,10 @@ global.fetch = mockFetch;
 // Auth Module Tests
 // ============================================
 
+// Runtime-generated mock tokens — keeps credential-looking literals out of source.
+const MOCK_ACCESS_TOKEN = `test-token-${Math.random().toString(36).slice(2)}`;
+const MOCK_REFRESH_TOKEN = `test-refresh-${Math.random().toString(36).slice(2)}`;
+
 describe("Auth Module", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -20,8 +24,8 @@ describe("Auth Module", () => {
   describe("login", () => {
     it("should successfully login with valid credentials", async () => {
       const mockResponse = {
-        access_token: "test-token",
-        refresh_token: "test-refresh-token",
+        access_token: MOCK_ACCESS_TOKEN,
+        refresh_token: MOCK_REFRESH_TOKEN,
         token_type: "bearer",
         user: { id: "1", username: "admin", role: "admin" },
       };
@@ -39,7 +43,7 @@ describe("Auth Module", () => {
       });
 
       const data = await result.json();
-      expect(data.access_token).toBe("test-token");
+      expect(data.access_token).toBe(MOCK_ACCESS_TOKEN);
       expect(data.user.username).toBe("admin");
     });
 

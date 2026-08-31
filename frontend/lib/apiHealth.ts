@@ -8,16 +8,14 @@ export type ApiHealthStatus = "unknown" | "degraded" | "healthy";
 
 let currentHealthStatus: ApiHealthStatus = "unknown";
 
-// API基础URL配置
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
 /**
  * 执行API健康检查
  * @returns Promise<void>
  */
 export async function checkApiHealth(): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE}/api/health`, {
+    // 同源路径：dev 由 next.config rewrite 转发，prod 由 nginx 转发
+    const response = await fetch("/api/v1/health", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       // 5秒超时

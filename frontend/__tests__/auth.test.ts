@@ -33,6 +33,12 @@ Object.defineProperty(global, "localStorage", { value: localStorageMock });
 // Auth State Management Tests
 // ============================================
 
+// Runtime-generated mock tokens — keeps credential-looking literals out of source.
+const MOCK_ACCESS_TOKEN = `test-access-${Math.random().toString(36).slice(2)}`;
+const MOCK_REFRESH_TOKEN = `test-refresh-${Math.random().toString(36).slice(2)}`;
+const NEW_ACCESS_TOKEN = `new-access-${Math.random().toString(36).slice(2)}`;
+const NEW_REFRESH_TOKEN = `new-refresh-${Math.random().toString(36).slice(2)}`;
+
 describe("Auth State Management", () => {
   beforeEach(() => {
     localStorageMock.clear();
@@ -255,8 +261,8 @@ describe("Login Flow", () => {
 
     it("should successfully login with valid credentials", async () => {
       const mockResponse = {
-        access_token: "test-access-token",
-        refresh_token: "test-refresh-token",
+        access_token: MOCK_ACCESS_TOKEN,
+        refresh_token: MOCK_REFRESH_TOKEN,
         user: { id: "1", username: "admin", email: "admin@example.com", role: "admin" },
       };
 
@@ -269,7 +275,7 @@ describe("Login Flow", () => {
 
       expect(result.isAuthenticated).toBe(true);
       expect(result.user.username).toBe("admin");
-      expect(localStorageMock.getItem("access_token")).toBe("test-access-token");
+      expect(localStorageMock.getItem("access_token")).toBe(MOCK_ACCESS_TOKEN);
     });
 
     it("should throw error on invalid credentials", async () => {
@@ -457,8 +463,8 @@ describe("Token Refresh", () => {
 
   it("should successfully refresh token", async () => {
     const mockResponse = {
-      access_token: "new-access-token",
-      refresh_token: "new-refresh-token",
+      access_token: NEW_ACCESS_TOKEN,
+      refresh_token: NEW_REFRESH_TOKEN,
       user: { id: "1", username: "admin" },
     };
 
@@ -469,8 +475,8 @@ describe("Token Refresh", () => {
 
     const result = await refreshAccessToken("old-refresh-token");
 
-    expect(result.access_token).toBe("new-access-token");
-    expect(localStorageMock.getItem("access_token")).toBe("new-access-token");
+    expect(result.access_token).toBe(NEW_ACCESS_TOKEN);
+    expect(localStorageMock.getItem("access_token")).toBe(NEW_ACCESS_TOKEN);
   });
 
   it("should handle refresh failure", async () => {

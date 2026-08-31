@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import RedirectResponse, Response
+from starlette.responses import Response
 
 from core.config import settings
 from core.logger import get_logger
@@ -491,23 +491,25 @@ setup_exception_handlers(app)
 
 
 # ============================================================================
-# v1.1: API version redirect - /api/* (non-/api/v1/*) → 301 /api/v1/*
+# v1.1: legacy /api/* alias → /api/v1/* (rewritten in-place, no redirect)
 # ============================================================================
 
 
 @app.middleware("http")
-async def api_version_redirect(request: Request, call_next):
-    """Redirect legacy /api/* paths to /api/v1/* (308 Permanent Redirect - preserves method).
+async def api_version_alias(request: Request, call_next):
+    """Alias legacy /api/* paths onto /api/v1/* by rewriting the path in place.
 
-    Only catches paths starting with /api/ that do NOT start with /api/v1/.
+    The whole frontend client uses legacy /api/* paths. A 308 redirect here
+    would bounce browsers to an absolute URL built from the Host header —
+    cross-origin in dev, where CSP connect-src 'self' blocks it (and even in
+    prod it costs an extra roundtrip). Rewriting scope["path"] routes the
+    request to the v1 endpoint with zero client-visible changes.
     """
     path = request.url.path
     if path.startswith("/api/") and not path.startswith("/api/v1/"):
         new_path = path.replace("/api/", "/api/v1/", 1)
-        redirect_url = str(request.url.replace(path=new_path))
-        return RedirectResponse(
-            url=redirect_url, status_code=308
-        )  # 308 preserves POST method
+        request.scope["path"] = new_path
+        request.scope["raw_path"] = new_path.encode()
     return await call_next(request)
 
 

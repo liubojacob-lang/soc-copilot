@@ -264,7 +264,9 @@
     "deleteSuccess": "用户删除成功",
     "deleteFailed": "删除用户失败",
     "updateSuccess": "用户更新成功",
-    "updateFailed": "更新用户失败"
+    "updateFailed": "更新用户失败",
+    "passwordRequired": "密码必填",
+    "passwordTooShort": "密码长度至少 8 个字符"
   },
   "admin": {
     "title": "管理面板",

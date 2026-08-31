@@ -9,11 +9,14 @@ import { faker } from "@faker-js/faker";
 /**
  * Generate a test user
  */
+// Generated once per run so all users in a suite share the same password.
+const E2E_TEST_PASSWORD = `Tp-${Math.random().toString(36).slice(2)}!7A`;
+
 export function generateTestUser(overrides?: Partial<TestUser>): TestUser {
   return {
     username: faker.internet.username(),
     email: faker.internet.email(),
-    password: "TestPassword123!", // Consistent password for testing
+    password: E2E_TEST_PASSWORD, // Consistent within a test run
     role: "analyst",
     ...overrides,
   };

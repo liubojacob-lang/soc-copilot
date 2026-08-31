@@ -104,10 +104,12 @@ export const cacheUtils = {
    */
   async prefetchCommonQueries() {
     // Prefetch audit stats (commonly used)
+    // NOTE: canonical /api/v1/ paths — the legacy /api/* paths 308-redirect
+    // to an absolute backend URL, which CSP connect-src 'self' blocks.
     await queryClient.prefetchQuery({
       queryKey: queryKeys.audit.stats(),
       queryFn: async () => {
-        const response = await fetch("/api/audit-logs/stats/summary");
+        const response = await fetch("/api/v1/audit-logs/stats/summary");
         if (!response.ok) throw new Error("Failed to fetch audit stats");
         return response.json();
       },
@@ -117,7 +119,7 @@ export const cacheUtils = {
     await queryClient.prefetchQuery({
       queryKey: ["user", "profile"],
       queryFn: async () => {
-        const response = await fetch("/api/users/me");
+        const response = await fetch("/api/v1/users/me");
         if (!response.ok) throw new Error("Failed to fetch user profile");
         return response.json();
       },

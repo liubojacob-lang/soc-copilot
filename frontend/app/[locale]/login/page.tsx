@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import { locales } from "@/i18n/routing";
 import { login, saveAuthState } from "@/lib/auth";
 
 export default function LoginPage() {
@@ -13,24 +14,30 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [redirectPath, setRedirectPath] = useState(`/${locale}`);
+  // The i18n router auto-prefixes the locale — a leading "/${locale}" here
+  // would double up into /en/en (404).
+  const [redirectPath, setRedirectPath] = useState("/");
 
   // Get redirect path from session storage (validate against open redirect)
   useEffect(() => {
     const storedRedirect = sessionStorage.getItem("redirect_after_login");
-    if (storedRedirect) {
+    if (storedRedirect && storedRedirect.startsWith("/")) {
       // Only allow relative paths starting with / to prevent open redirect attacks
       try {
         const url = new URL(storedRedirect, window.location.origin);
-        if (url.origin === window.location.origin && storedRedirect.startsWith("/")) {
-          setRedirectPath(storedRedirect);
+        if (url.origin === window.location.origin) {
+          // Strip a locale prefix if present; the i18n router re-adds it
+          const segments = storedRedirect.split("/");
+          const localeAt = locales.includes(segments[1] as (typeof locales)[number]) ? 1 : -1;
+          if (localeAt !== -1) segments.splice(1, 1);
+          setRedirectPath(segments.join("/") || "/");
         }
       } catch {
         // Invalid URL, ignore
       }
       sessionStorage.removeItem("redirect_after_login");
     }
-  }, [locale]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -225,15 +225,13 @@ class AsyncRateLimiter:
                     "redis_unavailable": True,
                 }
             if is_sensitive:
-                logger.error(
-                    f"Redis unavailable for sensitive endpoint {endpoint}, fail-closed"
+                # Production fail-closed is handled above; outside production
+                # fall back to the in-memory store so local development
+                # (no Redis) can still authenticate.
+                logger.warning(
+                    f"Redis unavailable for sensitive endpoint {endpoint} "
+                    "outside production — using in-memory rate limit fallback"
                 )
-                return False, {
-                    "limit": max_requests,
-                    "remaining": 0,
-                    "reset": window_seconds,
-                    "redis_unavailable": True,
-                }
             # Fallback to in-memory for non-sensitive endpoints (development only)
             return self._check_in_memory(
                 key, max_requests, window_seconds, window_start

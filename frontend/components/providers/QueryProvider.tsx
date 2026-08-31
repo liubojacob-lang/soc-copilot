@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState, useEffect } from "react";
 import { queryClient } from "@/lib/queryClient";
 import { cacheUtils } from "@/lib/queryClient";
+import { getAccessToken, usingHttpOnlyCookies } from "@/lib/auth";
 
 interface QueryProviderProps {
   children: React.ReactNode;
@@ -18,6 +19,9 @@ export function QueryProvider({ children, enableDevtools = false }: QueryProvide
   useEffect(() => {
     const prefetchData = async () => {
       try {
+        // Skip prefetching while logged out — both queries would 401
+        // (e.g. on the login page) and pollute the console with errors.
+        if (!getAccessToken() && !usingHttpOnlyCookies()) return;
         await cacheUtils.prefetchCommonQueries();
       } catch (error) {
         console.warn("Failed to prefetch common queries:", error);

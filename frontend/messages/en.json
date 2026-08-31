@@ -264,7 +264,9 @@
     "deleteSuccess": "User deleted successfully",
     "deleteFailed": "Failed to delete user",
     "updateSuccess": "User updated successfully",
-    "updateFailed": "Failed to update user"
+    "updateFailed": "Failed to update user",
+    "passwordRequired": "Password is required",
+    "passwordTooShort": "Password must be at least 8 characters"
   },
   "admin": {
     "title": "Admin Panel",

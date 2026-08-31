@@ -78,9 +78,9 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
         errors.email = "Please enter a valid email address";
       }
       if (!generatedPassword) {
-        errors.password = "Password is required";
+        errors.password = t("passwordRequired");
       } else if (generatedPassword.length < 8) {
-        errors.password = "Password must be at least 8 characters";
+        errors.password = t("passwordTooShort");
       }
       if (Object.keys(errors).length > 0) {
         setFormErrors(errors);
