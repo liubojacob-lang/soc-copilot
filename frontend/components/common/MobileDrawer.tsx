@@ -26,7 +26,6 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("navigation");
-  const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
   const [mounted, setMounted] = useState(false);
 
@@ -50,27 +49,27 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   // Navigation groups
   const navGroups: NavGroup[] = [
     {
-      label: tNav("dashboard"),
+      label: t("dashboard"),
       items: [
-        { label: tNav("home"), path: "/" },
-        { label: tNav("runs"), path: "/playbooks" },
-        { label: tNav("definitions"), path: "/playbooks/definitions" },
+        { label: t("home"), path: "/" },
+        { label: t("runs"), path: "/playbooks" },
+        { label: t("definitions"), path: "/playbooks/definitions" },
         { label: t("approvals"), path: "/playbooks/approvals" },
       ],
     },
     {
-      label: tNav("analysis"),
+      label: t("analytics"),
       items: [
-        { label: tNav("ai"), path: "/ai-assistant" },
-        { label: tNav("ueba"), path: "/ueba" },
-        { label: tNav("threatHunting"), path: "/threat-hunting" },
+        { label: t("aiCopilot"), path: "/ai-assistant" },
+        { label: t("ueba"), path: "/ueba" },
+        { label: t("threatHunting"), path: "/threat-hunting" },
       ],
     },
     {
-      label: tNav("ecosystem"),
+      label: t("ecosystem"),
       items: [
-        { label: tNav("marketplace"), path: "/marketplace" },
-        { label: tNav("cloudNative"), path: "/cloud-native" },
+        { label: t("marketplace"), path: "/marketplace" },
+        { label: t("cloudNative"), path: "/cloud-native" },
         { label: t("triggers"), path: "/triggers" },
       ],
     },
@@ -154,7 +153,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
         ref={drawerRef}
         role="dialog"
         aria-modal="true"
-        aria-label="导航菜单"
+        aria-label={tCommon("mainMenu")}
         tabIndex={-1}
         className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white dark:bg-gray-800 z-[201] transform transition-transform duration-300 ease-out shadow-xl ${
           isOpen ? "translate-x-0" : "-translate-x-full"
@@ -169,7 +168,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
           <button
             onClick={onClose}
             className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-            aria-label="关闭菜单"
+            aria-label={tCommon("closeMenu")}
           >
             <X className="w-5 h-5" />
           </button>

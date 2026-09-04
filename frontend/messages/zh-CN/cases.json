@@ -37,6 +37,7 @@
     "delete": "删除案例",
     "resolutionNote": "解决说明",
     "created_msg": "案例创建成功",
+    "cases": "案例",
     "cases_lower": "案例",
     "statusNew": "新建",
     "statusInvestigating": "调查中",

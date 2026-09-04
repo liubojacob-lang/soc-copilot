@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { api, AssetResponse, Criticality } from "@/lib/api";
 import { SkeletonTable } from "@/components/common/LoadingState";
 import { Modal } from "@/components/common/Modal";
+import { PageHeader } from "@/components/common/PageHeader";
 import { useTranslations } from "next-intl";
 
 export default function AssetsPage() {
@@ -104,169 +105,173 @@ export default function AssetsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <div className="space-x-2">
-          <button
-            onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            + {t("addAsset")}
-          </button>
-          <button
-            onClick={() => setShowImport(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            {t("importJson")}
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <PageHeader
+        title={t("title")}
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
+            >
+              + {t("addAsset")}
+            </button>
+            <button
+              onClick={() => setShowImport(true)}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors"
+            >
+              {t("importJson")}
+            </button>
+          </div>
+        }
+      />
 
-      <form onSubmit={handleSearch} className="mb-6 flex gap-2 flex-wrap">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t("searchPlaceholder")}
-          className="flex-1 min-w-[200px] px-4 py-2 border rounded"
-        />
-        <select
-          value={criticalityFilter}
-          onChange={(e) => setCriticalityFilter(e.target.value)}
-          className="px-3 py-2 border rounded"
-        >
-          <option value="all">{t("allCriticality")}</option>
-          <option value="critical">{tCommon("critical")}</option>
-          <option value="high">{tCommon("high")}</option>
-          <option value="medium">{tCommon("medium")}</option>
-          <option value="low">{tCommon("low")}</option>
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border rounded"
-        >
-          <option value="all">{t("allStatus")}</option>
-          <option value="active">{tCommon("active")}</option>
-          <option value="inactive">{tCommon("inactive")}</option>
-        </select>
-        <button
-          type="submit"
-          className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-        >
-          {tCommon("search")}
-        </button>
-      </form>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <form onSubmit={handleSearch} className="mb-6 flex gap-2 flex-wrap">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("searchPlaceholder")}
+            className="flex-1 min-w-[200px] px-4 py-2 border rounded"
+          />
+          <select
+            value={criticalityFilter}
+            onChange={(e) => setCriticalityFilter(e.target.value)}
+            className="px-3 py-2 border rounded"
+          >
+            <option value="all">{t("allCriticality")}</option>
+            <option value="critical">{tCommon("critical")}</option>
+            <option value="high">{tCommon("high")}</option>
+            <option value="medium">{tCommon("medium")}</option>
+            <option value="low">{tCommon("low")}</option>
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border rounded"
+          >
+            <option value="all">{t("allStatus")}</option>
+            <option value="active">{tCommon("active")}</option>
+            <option value="inactive">{tCommon("inactive")}</option>
+          </select>
+          <button
+            type="submit"
+            className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+          >
+            {tCommon("search")}
+          </button>
+        </form>
 
-      {loading ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <SkeletonTable rows={8} columns={6} />
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left border">{t("hostname")}</th>
-                <th className="px-4 py-2 text-left border">{t("ipAddress")}</th>
-                <th className="px-4 py-2 text-left border">{t("owner")}</th>
-                <th className="px-4 py-2 text-left border">{t("businessUnit")}</th>
-                <th className="px-4 py-2 text-left border">{t("criticality")}</th>
-                <th className="px-4 py-2 text-left border">{tCommon("actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assets.length === 0 ? (
+        {loading ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <SkeletonTable rows={8} columns={6} />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white border">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                    {t("noAssetsFound")}
-                  </td>
+                  <th className="px-4 py-2 text-left border">{t("hostname")}</th>
+                  <th className="px-4 py-2 text-left border">{t("ipAddress")}</th>
+                  <th className="px-4 py-2 text-left border">{t("owner")}</th>
+                  <th className="px-4 py-2 text-left border">{t("businessUnit")}</th>
+                  <th className="px-4 py-2 text-left border">{t("criticality")}</th>
+                  <th className="px-4 py-2 text-left border">{tCommon("actions")}</th>
                 </tr>
-              ) : (
-                filteredAssets.map((asset) => (
-                  <tr key={asset.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border">{asset.hostname || "-"}</td>
-                    <td className="px-4 py-2 border">{asset.ip || "-"}</td>
-                    <td className="px-4 py-2 border">{asset.owner || "-"}</td>
-                    <td className="px-4 py-2 border">{asset.business || "-"}</td>
-                    <td className="px-4 py-2 border">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${getCriticalityColor(asset.criticality)}`}
-                      >
-                        {asset.criticality}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 border">
-                      <button
-                        onClick={() => handleEdit(asset)}
-                        className="text-blue-600 hover:text-blue-800 mr-2"
-                      >
-                        {tCommon("edit")}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(asset.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        {tCommon("delete")}
-                      </button>
+              </thead>
+              <tbody>
+                {assets.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                      {t("noAssetsFound")}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+                ) : (
+                  filteredAssets.map((asset) => (
+                    <tr key={asset.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 border">{asset.hostname || "-"}</td>
+                      <td className="px-4 py-2 border">{asset.ip || "-"}</td>
+                      <td className="px-4 py-2 border">{asset.owner || "-"}</td>
+                      <td className="px-4 py-2 border">{asset.business || "-"}</td>
+                      <td className="px-4 py-2 border">
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${getCriticalityColor(asset.criticality)}`}
+                        >
+                          {asset.criticality}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 border">
+                        <button
+                          onClick={() => handleEdit(asset)}
+                          className="text-blue-600 hover:text-blue-800 mr-2"
+                        >
+                          {tCommon("edit")}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(asset.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          {tCommon("delete")}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-      {/* Import Modal */}
-      {showImport && (
-        <Modal
-          open
-          onClose={() => setShowImport(false)}
-          title={t("importTitle")}
-          size="xl"
-          footer={
-            <>
-              <button
-                onClick={() => setShowImport(false)}
-                className="px-4 py-2 border rounded hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-              >
-                {tCommon("cancel")}
-              </button>
-              <button
-                onClick={handleImport}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                {tCommon("import")}
-              </button>
-            </>
-          }
-        >
-          <textarea
-            value={importJson}
-            onChange={(e) => setImportJson(e.target.value)}
-            placeholder={t("importPlaceholder")}
-            className="w-full h-64 px-3 py-2 border rounded font-mono text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        {/* Import Modal */}
+        {showImport && (
+          <Modal
+            open
+            onClose={() => setShowImport(false)}
+            title={t("importTitle")}
+            size="xl"
+            footer={
+              <>
+                <button
+                  onClick={() => setShowImport(false)}
+                  className="px-4 py-2 border rounded hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  {tCommon("cancel")}
+                </button>
+                <button
+                  onClick={handleImport}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  {tCommon("import")}
+                </button>
+              </>
+            }
+          >
+            <textarea
+              value={importJson}
+              onChange={(e) => setImportJson(e.target.value)}
+              placeholder={t("importPlaceholder")}
+              className="w-full h-64 px-3 py-2 border rounded font-mono text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </Modal>
+        )}
+
+        {/* Asset Form Modal */}
+        {showForm && (
+          <AssetForm
+            asset={editingAsset}
+            onClose={() => {
+              setShowForm(false);
+              setEditingAsset(null);
+            }}
+            onSave={() => {
+              setShowForm(false);
+              setEditingAsset(null);
+              loadAssets();
+            }}
           />
-        </Modal>
-      )}
-
-      {/* Asset Form Modal */}
-      {showForm && (
-        <AssetForm
-          asset={editingAsset}
-          onClose={() => {
-            setShowForm(false);
-            setEditingAsset(null);
-          }}
-          onSave={() => {
-            setShowForm(false);
-            setEditingAsset(null);
-            loadAssets();
-          }}
-        />
-      )}
+        )}
+      </main>
     </div>
   );
 }

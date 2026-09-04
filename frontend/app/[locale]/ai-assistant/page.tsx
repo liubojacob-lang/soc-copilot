@@ -86,7 +86,7 @@ ${t("welcome.prompt")}`;
     setMounted(true);
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     void loadAIStatus();

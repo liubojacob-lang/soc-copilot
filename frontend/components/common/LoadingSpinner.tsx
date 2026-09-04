@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 
 interface LoadingSpinnerProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
@@ -32,6 +33,7 @@ const LoadingSpinner = React.memo(function LoadingSpinner({
   className = "",
   label,
 }: LoadingSpinnerProps) {
+  const t = useTranslations("common");
   return (
     <div
       className={`inline-flex items-center gap-2 ${className}`}
@@ -61,7 +63,7 @@ const LoadingSpinner = React.memo(function LoadingSpinner({
         />
       </svg>
       {label && <span className={`text-sm ${colorClasses[color]}`}>{label}</span>}
-      {!label && <span className="sr-only">加载中...</span>}
+      {!label && <span className="sr-only">{t("loading")}</span>}
     </div>
   );
 });
@@ -73,9 +75,11 @@ interface FullScreenLoaderProps {
 }
 
 const FullScreenLoader = React.memo(function FullScreenLoader({
-  message = "加载中...",
+  message,
   className = "",
 }: FullScreenLoaderProps) {
+  const t = useTranslations("common");
+  const messageText = message ?? t("loading");
   return (
     <div
       className={`
@@ -90,7 +94,9 @@ const FullScreenLoader = React.memo(function FullScreenLoader({
       aria-live="assertive"
     >
       <LoadingSpinner size="xl" color="soc" />
-      {message && <p className="mt-4 text-gray-600 dark:text-gray-400 text-sm">{message}</p>}
+      {messageText && (
+        <p className="mt-4 text-gray-600 dark:text-gray-400 text-sm">{messageText}</p>
+      )}
     </div>
   );
 });

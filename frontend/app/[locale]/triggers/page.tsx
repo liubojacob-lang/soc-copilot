@@ -50,11 +50,11 @@ export default function TriggersPage() {
   useEffect(() => {
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     fetchTriggers();
-  }, [router, locale]);
+  }, [router]);
 
   const fetchTriggers = async () => {
     try {
@@ -159,53 +159,48 @@ export default function TriggersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push(`/${locale}/triggers/webhook/new`)}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              + {t("webhookTrigger")}
+            </button>
+            <button
+              onClick={() => router.push(`/${locale}/triggers/cron/new`)}
+              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+            >
+              + {t("cronTrigger")}
+            </button>
+          </div>
+        }
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           </div>
         )}
 
         {/* Test Result */}
         {testResult && (
           <div
-            className={`mb-4 p-4 rounded-md ${testResult.success ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}
+            className={`p-4 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"}`}
           >
-            <p className={`text-sm ${testResult.success ? "text-green-600" : "text-red-600"}`}>
+            <p
+              className={`text-sm ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+            >
               {testResult.success ? "✓ " : "✗ "}
               {testResult.message}
             </p>
           </div>
         )}
-
-        {/* Page Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {tPage("pageHeader")}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {tPage("pageDescription")}
-            </p>
-          </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => router.push(`/${locale}/triggers/webhook/new`)}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            >
-              + {t("webhookTrigger")}
-            </button>
-            <button
-              onClick={() => router.push(`/${locale}/triggers/cron/new`)}
-              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
-            >
-              + {t("cronTrigger")}
-            </button>
-          </div>
-        </div>
 
         {/* Filters */}
         <div className="mb-4 flex space-x-2">

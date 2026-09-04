@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { LoadingState } from "@/components/common/LoadingState";
+import { PageHeader } from "@/components/common/PageHeader";
 import { cn } from "@/lib/utils";
 import { apiClient as api } from "@/lib/api";
 
@@ -83,16 +84,12 @@ export default function ThreatIntelPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="px-4 sm:px-0 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t("description")}</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <PageHeader title={t("title")} subtitle={t("description")} />
 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Search Bar */}
-        <div className="px-4 sm:px-0 mb-6">
+        <div>
           <div className="bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-800 rounded-2xl p-4">
             <div className="flex flex-col sm:flex-row gap-3">
               {/* IOC type selector */}
@@ -242,7 +239,7 @@ export default function ThreatIntelPage() {
             )}
           </LoadingState>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

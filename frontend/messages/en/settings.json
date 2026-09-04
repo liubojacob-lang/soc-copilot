@@ -40,7 +40,8 @@
       "deleteConfirm": "Delete this API key?",
       "createdSuccess": "API key created",
       "deletedSuccess": "API key deleted"
-    }
+    },
+    "description": "Manage Dify integration, notifications, AI models and API keys"
   },
   "settingsApiKeys": {
     "title": "API Keys",

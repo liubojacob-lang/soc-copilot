@@ -78,19 +78,18 @@ export class WazuhWebSocketClient {
     if (!this.config.url) {
       // Use NEXT_PUBLIC_WS_URL if available, otherwise derive from API_URL
       const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
+      const wsPath = process.env.NEXT_PUBLIC_WS_ALERTS_PATH || "/ws/alerts";
       if (wsUrl) {
-        this.config.url = wsUrl;
+        this.config.url = wsUrl.includes("/ws/") ? wsUrl : `${wsUrl.replace(/\/$/, "")}${wsPath}`;
       } else if (typeof window !== "undefined") {
         // Browser: derive same-origin WebSocket URL from current location.
-        // Avoids embedding container-internal host (http://backend:8000) into
-        // the client bundle, which browsers cannot resolve.
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        this.config.url = `${protocol}//${window.location.host}`;
+        this.config.url = `${protocol}//${window.location.host}${wsPath}`;
       } else {
         // Server-side fallback (SSR): use internal API URL.
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const wsProtocolUrl = apiUrl.replace("http://", "ws://").replace("https://", "wss://");
-        this.config.url = wsProtocolUrl;
+        this.config.url = `${wsProtocolUrl.replace(/\/$/, "")}${wsPath}`;
       }
     }
   }

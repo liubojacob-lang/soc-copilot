@@ -27,7 +27,7 @@ function getResolvedTheme(theme: Theme): "light" | "dark" {
   return theme;
 }
 
-function applyThemeClass(theme: Theme) {
+export function applyThemeClass(theme: Theme) {
   if (typeof document === "undefined") return;
   const resolved = getResolvedTheme(theme);
   const root = document.documentElement;

@@ -8,7 +8,15 @@
     "url": "URL",
     "hash": "File Hash",
     "pulse": "OTX Pulse",
-    "threatLevel": "Threat Level"
+    "threatLevel": "Threat Level",
+    "description": "Query indicators of compromise across threat intelligence sources",
+    "searchPlaceholder": "Search IP, domain, URL or file hash...",
+    "searching": "Searching...",
+    "search": "Search",
+    "sources": "Sources",
+    "noResults": "No results found",
+    "resultsFound": "results found",
+    "lastSeen": "Last seen"
   },
   "iocHunt": {
     "title": "IOC Hunt",

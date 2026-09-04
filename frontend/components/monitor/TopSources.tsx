@@ -18,6 +18,7 @@ import {
 } from "recharts";
 import { Globe, Server, ChevronDown, ChevronUp, ExternalLink, Ban, Loader2 } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { apiClient } from "@/lib/api/client";
 
 interface ThreatSource {
   type: "ip" | "domain";
@@ -296,24 +297,13 @@ function BlockIPButton({ value, type, alertId, onSuccess }: BlockIPButtonProps) 
 
     setLoading(true);
     try {
-      const response = await fetch("/api/blocked-ips", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          value,
-          type,
-          reason: `Blocked from threat intelligence dashboard`,
-          alert_id: alertId,
-          expires_in_hours: 168, // 7 days
-        }),
+      await apiClient.post("/api/v1/blocked-ips", {
+        value,
+        type,
+        reason: `Blocked from threat intelligence dashboard`,
+        alert_id: alertId,
+        expires_in_hours: 168, // 7 days
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to block");
-      }
 
       showToast(
         `Blocked Successfully: ${type.toUpperCase()} ${value} has been blocked for 7 days.`,

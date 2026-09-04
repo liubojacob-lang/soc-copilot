@@ -20,7 +20,10 @@ interface ConversationItemProps {
   formatTimeAgo: (dateStr: string) => string;
   getInitial: (title: string) => string;
   getColor: (id: string) => string;
-  t: (key: string) => string;
+  // i18n-namespace: aiAssistant.history
+  t: (
+    key: "renamePlaceholder" | "saveRename" | "cancelRename" | "messages" | "rename" | "delete"
+  ) => string;
 }
 
 export const ConversationItem = React.memo(function ConversationItem({

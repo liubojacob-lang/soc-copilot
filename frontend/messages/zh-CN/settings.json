@@ -40,7 +40,8 @@
       "deletedSuccess": "API 密钥已删除"
     },
     "apiKeyPlaceholder": "sk-...",
-    "noExpiration": "留空表示永不过期"
+    "noExpiration": "留空表示永不过期",
+    "description": "管理 Dify 集成、通知、AI 模型与 API 密钥"
   },
   "settingsApiKeys": {
     "aboutApiKeys": "关于 API 密钥",

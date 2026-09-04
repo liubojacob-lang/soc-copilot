@@ -3,7 +3,28 @@
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { loadAuthState, logout, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Menu, X, ChevronDown, ShieldCheck } from "lucide-react";
+import { useLocale } from "next-intl";
+import {
+  Menu,
+  X,
+  ChevronDown,
+  ShieldCheck,
+  Bot,
+  Globe,
+  Network,
+  Fingerprint,
+  Crosshair,
+  Store,
+  Cloud,
+  Server,
+  Zap,
+  LayoutDashboard,
+  Settings,
+  Cpu,
+  KeyRound,
+  ScrollText,
+  Users,
+} from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeToggle } from "./ThemeToggle";
 import { useTranslations } from "next-intl";
@@ -30,6 +51,7 @@ interface NavGroup {
 export default function Navigation({ title, subtitle, apiStatus, actions }: NavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const locale = useLocale();
   const t = useTranslations("navigation");
   const tCommon = useTranslations("common");
   const [mounted, setMounted] = useState(false);
@@ -45,6 +67,14 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
   }, []);
 
   const user = authState?.user;
+
+  // English labels are much wider than Chinese ones and would overflow the
+  // fixed max-w-7xl container, so English gets tighter padding/tracking. Both
+  // locales share the same 13px nav font so switching languages doesn't jump.
+  const compactNav = locale !== "zh-CN";
+  const navTriggerClass = compactNav
+    ? "px-1.5 xl:px-2 py-1.5 xl:py-2 text-xs xl:text-[13px] tracking-tight rounded-xl whitespace-nowrap shrink-0 transition-all duration-200"
+    : "px-2 xl:px-3 py-1.5 xl:py-2 text-xs xl:text-[13px] rounded-xl whitespace-nowrap shrink-0 transition-all duration-200";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -98,11 +128,27 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
     () => ({
       label: t("analytics"),
       items: [
-        { label: t("aiCopilot"), path: "/ai-assistant" },
-        { label: t("threatIntel"), path: "/threat-intel" },
-        { label: t("correlation"), path: "/correlation" },
-        { label: t("ueba"), path: "/ueba" },
-        { label: t("threatHunting"), path: "/threat-hunting" },
+        {
+          label: t("aiCopilot"),
+          path: "/ai-assistant",
+          icon: <Bot className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("threatIntel"),
+          path: "/threat-intel",
+          icon: <Globe className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("correlation"),
+          path: "/correlation",
+          icon: <Network className="h-4 w-4 shrink-0" />,
+        },
+        { label: t("ueba"), path: "/ueba", icon: <Fingerprint className="h-4 w-4 shrink-0" /> },
+        {
+          label: t("threatHunting"),
+          path: "/threat-hunting",
+          icon: <Crosshair className="h-4 w-4 shrink-0" />,
+        },
       ],
     }),
     [t]
@@ -112,10 +158,18 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
     () => ({
       label: t("ecosystem"),
       items: [
-        { label: t("marketplace"), path: "/marketplace" },
-        { label: t("cloudNative"), path: "/cloud-native" },
-        { label: t("assets"), path: "/assets" },
-        { label: t("triggers"), path: "/triggers" },
+        {
+          label: t("marketplace"),
+          path: "/marketplace",
+          icon: <Store className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("cloudNative"),
+          path: "/cloud-native",
+          icon: <Cloud className="h-4 w-4 shrink-0" />,
+        },
+        { label: t("assets"), path: "/assets", icon: <Server className="h-4 w-4 shrink-0" /> },
+        { label: t("triggers"), path: "/triggers", icon: <Zap className="h-4 w-4 shrink-0" /> },
       ],
     }),
     [t]
@@ -125,16 +179,40 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
     () => [
       ...(isAdmin(user ?? null)
         ? [
-            { label: t("dashboard"), path: "/admin/dashboard" },
-            { label: t("settings"), path: "/settings" },
+            {
+              label: t("dashboard"),
+              path: "/admin/dashboard",
+              icon: <LayoutDashboard className="h-4 w-4 shrink-0" />,
+            },
+            {
+              label: t("settings"),
+              path: "/settings",
+              icon: <Settings className="h-4 w-4 shrink-0" />,
+            },
           ]
         : []),
-      { label: t("aiModels"), path: "/settings/ai-models" },
-      { label: t("apiKeys"), path: "/settings/api-keys" },
+      {
+        label: t("aiModels"),
+        path: "/settings/ai-models",
+        icon: <Cpu className="h-4 w-4 shrink-0" />,
+      },
+      {
+        label: t("apiKeys"),
+        path: "/settings/api-keys",
+        icon: <KeyRound className="h-4 w-4 shrink-0" />,
+      },
       ...(isAdmin(user ?? null) || isAnalystOrAdmin(user ?? null)
-        ? [{ label: t("audit"), path: "/audit" }]
+        ? [{ label: t("audit"), path: "/audit", icon: <ScrollText className="h-4 w-4 shrink-0" /> }]
         : []),
-      ...(isAdmin(user ?? null) ? [{ label: t("users"), path: "/admin/users" }] : []),
+      ...(isAdmin(user ?? null)
+        ? [
+            {
+              label: t("users"),
+              path: "/admin/users",
+              icon: <Users className="h-4 w-4 shrink-0" />,
+            },
+          ]
+        : []),
     ],
     [t, user]
   );
@@ -174,13 +252,13 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
 
     return (
       <div
-        className="relative"
+        className="relative shrink-0"
         ref={isHovered ? dropdownRef : undefined}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         <button
-          className={`flex items-center gap-1 px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
+          className={`flex items-center gap-1 ${navTriggerClass} ${
             isActive
               ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
               : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -194,7 +272,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
 
         {isHovered && (
           <div
-            className={`absolute ${alignRight ? "right-0" : "left-0"} top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-1 z-50 animate-fade-in overflow-hidden`}
+            className={`absolute ${alignRight ? "right-0" : "left-0"} top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-1.5 px-1.5 z-50 animate-fade-in overflow-hidden`}
             onMouseEnter={() => {
               if (dropdownTimeoutRef.current) {
                 clearTimeout(dropdownTimeoutRef.current);
@@ -209,7 +287,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
                   router.push(item.path);
                   setHoveredDropdown(null);
                 }}
-                className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-200 ${
+                className={`flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-[13px] rounded-xl transition-all duration-200 ${
                   isLinkActive(item.path)
                     ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"
@@ -218,6 +296,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
                   adminItems.some((adminItem) => isLinkActive(adminItem.path)) ? "page" : undefined
                 }
               >
+                {item.icon}
                 {item.label}
               </button>
             ))}
@@ -231,39 +310,41 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
     <nav className="sticky top-0 z-50 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl shadow-sm border-b border-gray-200/70 dark:border-gray-700/70">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 xl:space-x-4 shrink-0">
             <button
               onClick={() => router.push("/")}
-              className="flex items-center gap-2.5 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-bold text-base whitespace-nowrap transition-colors"
+              className="flex items-center gap-2.5 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-bold text-base whitespace-nowrap transition-colors shrink-0"
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25 shrink-0">
                 <ShieldCheck className="w-4.5 h-4.5 text-white" />
               </div>
               <span className="hidden sm:inline tracking-tight">SOC Copilot</span>
             </button>
             {title && (
               <>
-                <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
-                <div className="hidden md:block">
-                  <h1 className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[10rem] lg:max-w-[15rem]">
+                <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700 shrink-0"></div>
+                <div className="hidden md:block shrink-0">
+                  <h1 className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[8rem] xl:max-w-[15rem]">
                     {title}
                   </h1>
                   {subtitle && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[8rem] xl:max-w-[15rem]">
+                      {subtitle}
+                    </p>
                   )}
                 </div>
               </>
             )}
           </div>
 
-          <div className="hidden lg:flex items-center justify-between flex-1">
-            <div className="flex items-center space-x-1.5 ml-6">
+          <div className="hidden xl:flex items-center justify-between flex-1 min-w-0 ml-3 xl:ml-6">
+            <div className="flex items-center space-x-1 xl:space-x-1.5 min-w-0">
               {user && (
                 <>
                   {apiStatus && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full mr-2 bg-gray-75 dark:bg-gray-700/50">
+                    <div className="flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-full mr-1 xl:mr-2 bg-gray-75 dark:bg-gray-700/50 shrink-0">
                       <span
-                        className={`w-2.5 h-2.5 rounded-full ${
+                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${
                           apiStatus === "healthy"
                             ? "bg-success-500 animate-pulse-soft"
                             : apiStatus === "checking"
@@ -271,7 +352,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
                               : "bg-danger-500"
                         }`}
                       />
-                      <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 hidden xl:inline">
+                      <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 hidden 2xl:inline whitespace-nowrap">
                         {apiStatus === "healthy"
                           ? "API OK"
                           : apiStatus === "checking"
@@ -285,7 +366,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
                     <button
                       key={link.path}
                       onClick={() => router.push(link.path)}
-                      className={`px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
+                      className={`${navTriggerClass} ${
                         isLinkActive(link.path)
                           ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                           : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -301,7 +382,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
 
                   {adminItems.length > 0 && (
                     <div
-                      className="relative"
+                      className="relative shrink-0"
                       ref={hoveredDropdown === "adminGroup" ? dropdownRef : undefined}
                       onMouseEnter={() => {
                         if (dropdownTimeoutRef.current) {
@@ -316,7 +397,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
                       }}
                     >
                       <button
-                        className={`flex items-center gap-1 px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
+                        className={`flex items-center gap-1 ${navTriggerClass} ${
                           adminItems.some((item) => isLinkActive(item.path))
                             ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                             : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -335,7 +416,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
 
                       {hoveredDropdown === "adminGroup" && (
                         <div
-                          className="absolute right-0 top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-1 z-50 animate-fade-in overflow-hidden"
+                          className="absolute right-0 top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-1.5 px-1.5 z-50 animate-fade-in overflow-hidden"
                           onMouseEnter={() => {
                             if (dropdownTimeoutRef.current) {
                               clearTimeout(dropdownTimeoutRef.current);
@@ -354,7 +435,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
                                 router.push(item.path);
                                 setHoveredDropdown(null);
                               }}
-                              className={`w-full text-left px-3 py-1.5 text-sm transition-all duration-200 ${
+                              className={`flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-[13px] rounded-xl transition-all duration-200 ${
                                 isLinkActive(item.path)
                                   ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-semibold"
                                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"
@@ -365,6 +446,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
                                   : undefined
                               }
                             >
+                              {item.icon}
                               {item.label}
                             </button>
                           ))}
@@ -376,29 +458,29 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
               )}
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 xl:space-x-2 shrink-0 ml-auto pl-2">
               {actions}
 
-              <ThemeToggle />
               <LanguageSwitcher />
+              <ThemeToggle />
 
-              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-0.5"></div>
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-0.5 shrink-0"></div>
 
               {user && (
                 <>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-75 dark:bg-gray-700/50">
+                  <div className="flex items-center gap-1.5 xl:gap-2 px-2.5 xl:px-3 py-1.5 rounded-xl bg-gray-75 dark:bg-gray-700/50 shrink-0">
                     <span
-                      className={`px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${getRoleBadgeClass(user.role)}`}
+                      className={`px-2 xl:px-2.5 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-semibold shrink-0 ${getRoleBadgeClass(user.role)}`}
                     >
                       {user.role}
                     </span>
-                    <span className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[5rem] xl:max-w-[8rem]">
+                    <span className="text-xs xl:text-sm text-gray-600 dark:text-gray-300 truncate max-w-[4rem] xl:max-w-[8rem]">
                       {user.username}
                     </span>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="px-3 py-2 text-sm text-danger-600 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-xl transition-all duration-300"
+                    className="px-2.5 xl:px-3 py-1.5 xl:py-2 text-xs xl:text-sm text-danger-600 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-xl transition-all duration-200 whitespace-nowrap shrink-0"
                   >
                     {t("logout")}
                   </button>
@@ -407,7 +489,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
             </div>
           </div>
 
-          <div className="lg:hidden flex items-center space-x-2">
+          <div className="xl:hidden flex items-center space-x-2">
             {user && (
               <>
                 {apiStatus && (
@@ -435,7 +517,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
         </div>
 
         {mobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-200 dark:border-gray-700 animate-fade-in-up">
+          <div className="xl:hidden py-4 border-t border-gray-200 dark:border-gray-700 animate-fade-in-up">
             <div className="space-y-1">
               {mainNavItems.map((link) => (
                 <button
@@ -538,10 +620,12 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
             <div className="border-t border-gray-200 dark:border-gray-700 mt-5 pt-5 space-y-4 px-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Language
+                  {t("language")}
                 </span>
-                <ThemeToggle />
-                <LanguageSwitcher />
+                <div className="flex items-center gap-2">
+                  <LanguageSwitcher />
+                  <ThemeToggle />
+                </div>
               </div>
 
               {user && (

@@ -19,7 +19,7 @@ const inputVariants = cva(
     variants: {
       variant: {
         default:
-          "border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+          "border-border-default dark:border-gray-600 focus:ring-2 focus:ring-accent-500 focus:border-transparent",
         error:
           "border-danger-500 dark:border-danger-500 focus:ring-2 focus:ring-danger-500 focus:border-transparent",
         success:
@@ -258,8 +258,8 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             ref={ref}
             id={checkboxId}
             className={cn(
-              "mt-0.5 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 dark:text-primary-500",
-              "focus:ring-primary-500 dark:focus:ring-primary-500",
+              "mt-0.5 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-accent-600 dark:text-accent-500",
+              "focus:ring-accent-500 dark:focus:ring-accent-500",
               "disabled:opacity-50 disabled:cursor-not-allowed",
               className
             )}
@@ -301,7 +301,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
           <div
             className={cn(
               "h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-700",
-              "peer-checked:bg-primary-600 dark:peer-checked:bg-primary-500",
+              "peer-checked:bg-accent-600 dark:peer-checked:bg-accent-500",
               "peer-disabled:opacity-50 peer-disabled:cursor-not-allowed",
               "transition-colors duration-200 ease-in-out",
               className

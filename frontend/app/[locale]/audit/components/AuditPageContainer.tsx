@@ -92,7 +92,7 @@ export function AuditPageContainer() {
       if (filterUserId) params.append("user_id", filterUserId);
       if (filterIpAddress) params.append("ip_address", filterIpAddress);
 
-      const response = await authFetch(`/api/audit/export?${params.toString()}`);
+      const response = await authFetch(`/api/v1/export/audit-logs?format=csv&${params.toString()}`);
 
       if (response.ok) {
         const blob = await response.blob();
@@ -131,13 +131,7 @@ export function AuditPageContainer() {
   }
 
   return (
-    <div className="p-6">
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">{t("description")}</p>
-      </div>
-
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Statistics Cards */}
       <AuditStats stats={stats} loading={loading} />
 

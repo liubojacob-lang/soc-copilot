@@ -175,7 +175,7 @@ export function ChatHistorySidebar({
                     >
                       <div className="font-medium max-w-[200px] truncate">{conv.title}</div>
                       <div className="text-gray-400 text-[10px] mt-0.5">
-                        {formatTimeAgo(conv.updatedAt)} · {conv.messages.length}条
+                        {formatTimeAgo(conv.updatedAt)} · {conv.messages.length} {t("messages")}
                       </div>
                     </div>
                     <div

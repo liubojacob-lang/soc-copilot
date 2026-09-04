@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { AlertTriangle, Link2, Clock, User, Server } from "lucide-react";
+import { apiClient } from "@/lib/api/client";
 
 interface CorrelatedEvent {
   id: string;
@@ -44,9 +45,8 @@ export const CorrelationPanel = React.memo(function CorrelationPanel({
   const fetchRelatedIncidents = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/correlation/incidents?limit=10`);
-      const data = await response.json();
-      setIncidents(data);
+      const data = await apiClient.get<CorrelatedEvent[]>("/api/v1/correlation/incidents?limit=10");
+      setIncidents(data || []);
     } catch (error) {
       console.error("Failed to fetch correlated incidents:", error);
     } finally {
@@ -208,7 +208,7 @@ interface IncidentDetailModalProps {
 
 function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModalProps) {
   const format = useFormatter();
-  const t = useTranslations("triggers");
+  const t = useTranslations("correlation");
   const [status, setStatus] = useState(incident.status);
   const [assignedTo, setAssignedTo] = useState(incident.assigned_to || "");
   const [updating, setUpdating] = useState(false);
@@ -219,14 +219,9 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
       const params = new URLSearchParams({ status });
       if (assignedTo) params.append("assigned_to", assignedTo);
 
-      const response = await fetch(`/api/correlation/incidents/${incident.id}/status?${params}`, {
-        method: "PUT",
-      });
-
-      if (response.ok) {
-        onUpdate();
-        onClose();
-      }
+      await apiClient.put(`/api/v1/correlation/incidents/${incident.id}/status?${params}`);
+      onUpdate();
+      onClose();
     } catch (error) {
       console.error("Failed to update incident:", error);
     } finally {

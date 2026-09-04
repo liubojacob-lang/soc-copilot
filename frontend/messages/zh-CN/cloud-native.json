@@ -30,6 +30,8 @@
     "connected": "已连接",
     "notConfigured": "未配置",
     "recentVulnerabilities": "最近漏洞",
-    "supportedCloudProviders": "支持的云提供商"
+    "supportedCloudProviders": "支持的云提供商",
+    "severity": "严重程度",
+    "description": "描述"
   }
 }

@@ -151,7 +151,17 @@
     "viewDetails": "查看详情",
     "webhook": "Webhook",
     "webhooks": "Webhooks",
-    "skipToContent": "跳转到主要内容"
+    "skipToContent": "跳转到主要内容",
+    "updated": "更新时间",
+    "mainMenu": "导航菜单",
+    "closeMenu": "关闭菜单",
+    "secrets": "密钥管理",
+    "notifications": "通知",
+    "closeNotification": "关闭通知",
+    "backToTop": "返回顶部",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "pageAria": "第 {page} 页"
   },
   "navigation": {
     "home": "首页",

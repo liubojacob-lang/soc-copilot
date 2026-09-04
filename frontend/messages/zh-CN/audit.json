@@ -38,6 +38,60 @@
     "errors": {
       "failedToLoad": "加载审计日志失败",
       "failedToLoadStats": "加载统计数据失败"
+    },
+    "title": "审计日志",
+    "description": "记录并审查所有 API 访问与操作",
+    "empty": "暂无审计日志",
+    "error": {
+      "title": "审计日志加载失败",
+      "retry": "重试"
+    },
+    "export": {
+      "failed": "导出 CSV 失败",
+      "error": "导出审计日志失败"
+    },
+    "logs": {
+      "title": "审计日志",
+      "count": "{count} 条记录"
+    },
+    "actions": {
+      "refresh": "刷新",
+      "export": "导出 CSV"
+    },
+    "filters": {
+      "title": "筛选条件",
+      "reset": "重置",
+      "action": "操作类型",
+      "allActions": "全部操作",
+      "statusCode": "状态码",
+      "allStatuses": "全部状态",
+      "dateFrom": "开始日期",
+      "dateTo": "结束日期",
+      "path": "请求路径",
+      "pathPlaceholder": "/api/v1/alerts",
+      "userId": "用户 ID",
+      "userIdPlaceholder": "如 user-123",
+      "ipAddress": "IP 地址",
+      "ipAddressPlaceholder": "如 192.168.1.1"
+    },
+    "stats": {
+      "totalRequests": "总请求数",
+      "last24h": "最近 24 小时",
+      "failedRequests": "失败请求",
+      "trendUp": "呈上升趋势",
+      "trendDown": "呈下降趋势",
+      "rateHigh": "错误率较高",
+      "rateModerate": "错误率中等",
+      "rateLow": "错误率较低"
+    },
+    "pagination": {
+      "range": "显示 <strong>{from}</strong> 到 <strong>{to}</strong> 共 <strong>{total}</strong> 条记录",
+      "first": "首页",
+      "prev": "上一页",
+      "next": "下一页",
+      "last": "末页",
+      "perPagePrefix": "每页",
+      "perPageSuffix": "条"
     }
   },
   "adminAudit": {

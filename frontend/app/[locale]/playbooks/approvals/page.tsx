@@ -86,7 +86,7 @@ export default function PlaybookApprovalsPage() {
           total: data.total || 0,
         });
       } else if (response.status === 401) {
-        router.push(`/${locale}/login`);
+        router.push("/login");
         return;
       } else {
         setError(`Failed to load approvals: ${response.statusText}`);
@@ -161,11 +161,11 @@ export default function PlaybookApprovalsPage() {
     setMounted(true);
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     loadApprovals(1);
-  }, [router, locale, statusFilter]);
+  }, [router, statusFilter]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts(
@@ -209,21 +209,9 @@ export default function PlaybookApprovalsPage() {
         subtitle={t("approvals.subtitle") || "Manage playbook approval requests"}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {t("approvals.title") || "Approval Requests"}
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">
-                {t("approvals.subtitle") || "Review and manage playbook approval requests"}
-              </p>
-            </div>
-          </div>
-
-          {/* Filters */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

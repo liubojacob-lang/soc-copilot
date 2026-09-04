@@ -1,4 +1,5 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
+import { apiClient, ApiError } from "./api/client";
 
 /**
  * Global QueryClient configuration with optimized caching strategies
@@ -6,11 +7,49 @@ import { QueryClient } from "@tanstack/react-query";
  * Features:
  * - Stale time: 30 seconds (data considered fresh for 30s)
  * - Cache time: 5 minutes (data kept in cache for 5min)
- * - Retry: 3 attempts with exponential backoff
+ * - Smart retry: skip 4xx client errors, max 2 attempts for server/network errors
  * - Refetch on window focus: disabled for better UX
- * - Garbage collection: 10 minutes
+ * - Garbage collection: 5 minutes
  */
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // Ignore AbortError (e.g. cancelled queries on unmount or navigation)
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
+      // 401 errors are handled by auth redirection/refresh
+      if (error instanceof ApiError && error.status === 401) {
+        return;
+      }
+      if (process.env.NODE_ENV !== "production") {
+        const queryKeyStr = Array.isArray(query.queryKey)
+          ? query.queryKey
+              .map((k) => (typeof k === "object" ? JSON.stringify(k) : String(k)))
+              .join("/")
+          : String(query.queryKey);
+
+        console.warn(`[React Query] Query failed: [${queryKeyStr}]`, {
+          message: error instanceof Error ? error.message : String(error),
+          status: error instanceof ApiError ? error.status : undefined,
+          data: error instanceof ApiError ? error.data : undefined,
+        });
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) => {
+      if (process.env.NODE_ENV !== "production") {
+        const mutationKeyStr = mutation.options.mutationKey
+          ? String(mutation.options.mutationKey)
+          : "unnamed";
+        console.warn(`[React Query] Mutation failed: [${mutationKeyStr}]`, {
+          message: error instanceof Error ? error.message : String(error),
+          status: error instanceof ApiError ? error.status : undefined,
+        });
+      }
+    },
+  }),
   defaultOptions: {
     queries: {
       // Data is considered fresh for 30 seconds
@@ -19,8 +58,13 @@ export const queryClient = new QueryClient({
       // Data is kept in cache for 5 minutes after it becomes stale
       gcTime: 5 * 60 * 1000, // 5 minutes
 
-      // Retry failed queries 3 times with exponential backoff
-      retry: 3,
+      // Smart retry: do not retry 4xx errors (client errors), retry network/5xx max 2 times
+      retry: (failureCount, error) => {
+        if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+          return false;
+        }
+        return failureCount < 2;
+      },
       retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
 
       // Don't refetch on window focus (better UX for data-heavy apps)
@@ -104,14 +148,10 @@ export const cacheUtils = {
    */
   async prefetchCommonQueries() {
     // Prefetch audit stats (commonly used)
-    // NOTE: canonical /api/v1/ paths — the legacy /api/* paths 308-redirect
-    // to an absolute backend URL, which CSP connect-src 'self' blocks.
     await queryClient.prefetchQuery({
       queryKey: queryKeys.audit.stats(),
       queryFn: async () => {
-        const response = await fetch("/api/v1/audit-logs/stats/summary");
-        if (!response.ok) throw new Error("Failed to fetch audit stats");
-        return response.json();
+        return apiClient.get("/api/v1/audit-logs/stats/summary");
       },
     });
 
@@ -119,9 +159,7 @@ export const cacheUtils = {
     await queryClient.prefetchQuery({
       queryKey: ["user", "profile"],
       queryFn: async () => {
-        const response = await fetch("/api/v1/users/me");
-        if (!response.ok) throw new Error("Failed to fetch user profile");
-        return response.json();
+        return apiClient.get("/api/v1/auth/me");
       },
     });
   },

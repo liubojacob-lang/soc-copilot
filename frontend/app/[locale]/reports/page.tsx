@@ -56,9 +56,9 @@ export default function ReportsPage() {
   useEffect(() => {
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
     }
-  }, [router, locale]);
+  }, [router]);
 
   const generateReports = async () => {
     if (!alertId.trim()) {

@@ -73,7 +73,14 @@
       "loadFailed": "Failed to load triggers"
     },
     "deleteSuccess": "Trigger deleted successfully",
-    "toggleSuccess": "Trigger status updated"
+    "toggleSuccess": "Trigger status updated",
+    "webhookTrigger": "Webhook Trigger",
+    "cronTrigger": "Cron Trigger",
+    "status": "Status",
+    "lastTriggered": "Last Triggered",
+    "active": "Active",
+    "inactive": "Inactive",
+    "delete": "Delete"
   },
   "triggersPage": {
     "pageHeader": "Trigger Management",

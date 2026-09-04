@@ -59,15 +59,15 @@ export default function NotificationSettingsPage() {
   useEffect(() => {
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     if (!isAdmin(authState.user)) {
-      router.push(`/${locale}`);
+      router.push("/");
       return;
     }
     fetchData();
-  }, [router, locale]);
+  }, [router]);
 
   const fetchData = async () => {
     try {

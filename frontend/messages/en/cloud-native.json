@@ -30,6 +30,8 @@
     "connected": "Connected",
     "notConfigured": "Not Configured",
     "recentVulnerabilities": "Recent Vulnerabilities",
-    "supportedCloudProviders": "Supported Cloud Providers"
+    "supportedCloudProviders": "Supported Cloud Providers",
+    "severity": "Severity",
+    "description": "Description"
   }
 }

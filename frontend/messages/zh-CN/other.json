@@ -69,5 +69,26 @@
       "noAlerts": "暂无告警",
       "notConnected": "未连接到流"
     }
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "close": "关闭",
+    "footer": "按 <kbd>?</kbd> 随时打开此帮助",
+    "categories": {
+      "general": "通用",
+      "home": "首页",
+      "other": "其他"
+    },
+    "items": {
+      "refreshPage": "刷新当前页面",
+      "focusSearch": "聚焦搜索框",
+      "closeDialog": "关闭弹窗/取消操作",
+      "showHelp": "显示快捷键帮助",
+      "openSearch": "打开全局搜索",
+      "tabAlerts": "切换到告警分析标签",
+      "tabTimeline": "切换到时间线标签",
+      "tabReports": "切换到报告标签",
+      "tabAssets": "切换到资产标签"
+    }
   }
 }

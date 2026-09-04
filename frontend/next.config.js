@@ -1,3 +1,4 @@
+const path = require("path");
 const createNextIntlPlugin = require("next-intl/plugin");
 const { withSentryConfig } = require("@sentry/nextjs");
 
@@ -9,6 +10,12 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   output: "standalone",
+  // Pin the Turbopack workspace root to the monorepo root (next is hoisted
+  // there). Without it, Next infers the root from stray lockfiles — e.g.
+  // ~/package-lock.json — and watches the entire home directory, pinning CPUs.
+  turbopack: {
+    root: path.join(__dirname, ".."),
+  },
   // Type errors now fail the build. Keep this off: it previously masked a
   // runtime crash (/cases), a broken endpoint and two build-breaking imports.
   typescript: {
@@ -21,7 +28,9 @@ const nextConfig = {
     minimumCacheTTL: 60,
   },
   experimental: {
-    optimizeCss: true,
+    // Critters runs a heavy CSS pipeline per compile; in dev this spawns
+    // node workers on every cold start and can exhaust memory. Prod only.
+    optimizeCss: process.env.NODE_ENV === "production",
     optimizePackageImports: ["lucide-react", "recharts", "reactflow"],
   },
   compiler: {
@@ -31,7 +40,7 @@ const nextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/:path*`,
+        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/:path*`,
       },
     ];
   },

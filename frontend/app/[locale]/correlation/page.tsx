@@ -95,11 +95,11 @@ export default function CorrelationPage() {
   useEffect(() => {
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     fetchData();
-  }, [router, locale]);
+  }, [router]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -363,7 +363,7 @@ export default function CorrelationPage() {
               {totalPages > 1 && (
                 <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t("page")} {page} {t("of")} {totalPages}
+                    {t("pageOf", { page, totalPages })}
                   </p>
                   <div className="flex gap-2">
                     <button

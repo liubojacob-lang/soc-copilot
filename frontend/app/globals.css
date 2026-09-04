@@ -402,8 +402,8 @@ body {
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white shadow-sm;
-    @apply hover:bg-primary-700;
+    @apply bg-accent-600 text-white shadow-sm;
+    @apply hover:bg-accent-700;
     @apply active:scale-[0.98] active:shadow-none;
   }
 
@@ -412,7 +412,7 @@ body {
     @apply bg-white dark:bg-slate-900 text-slate-900 dark:text-white;
     @apply px-4 py-2.5 text-sm;
     @apply sm:px-4 sm:py-2;
-    @apply focus:ring-2 focus:ring-primary-600 focus:border-transparent focus:outline-none;
+    @apply focus:ring-2 focus:ring-accent-600 focus:border-transparent focus:outline-none;
     @apply touch-manipulation transition-all duration-200;
   }
 

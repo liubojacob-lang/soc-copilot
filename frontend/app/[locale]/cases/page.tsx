@@ -37,6 +37,7 @@ import { DataTable, type ColumnDef, type TableSeverity } from "@/components/ui/D
 import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { useToast } from "@/components/Toast";
+import { PageHeader } from "@/components/common/PageHeader";
 import { useCases, useCreateCase } from "@/hooks/useCases";
 import { mapCaseSeverity, type SecurityCase, type CaseFilters } from "@/lib/api/cases";
 import type { CaseSeverity } from "@/lib/api/cases";
@@ -543,34 +544,19 @@ export default function CasesPage() {
   // ── Render ─────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Briefcase className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {t("cases.title")}
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {total > 0 ? `${total} ${t("cases.cases").toLowerCase()}` : t("cases.subtitle")}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 text-sm font-medium flex items-center gap-2 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">{t("cases.createCase")}</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={t("cases.title")}
+        subtitle={total > 0 ? `${total} ${t("cases.cases").toLowerCase()}` : t("cases.subtitle")}
+        actions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">{t("cases.createCase")}</span>
+          </button>
+        }
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

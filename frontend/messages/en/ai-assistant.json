@@ -41,14 +41,38 @@
       "loadModelsFailed": "Failed to load AI models",
       "setDefaultFailed": "Failed to set default model",
       "copyFailed": "Copy failed",
-      "serviceFailed": "Service error: {message}"
+      "serviceFailed": "Service error: {message}",
+      "imageNotSupported": "This model does not support image input"
     },
     "history": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "past7Days": "Past 7 days",
+      "older": "Older",
+      "rename": "Rename",
+      "saveRename": "Save",
+      "renamePlaceholder": "Enter conversation name...",
       "justNow": "Just now",
       "minutesAgo": "{count} minutes ago",
       "hoursAgo": "{count} hours ago",
       "daysAgo": "{count} days ago",
-      "title": "Chat History"
+      "title": "Chat History",
+      "newChat": "New chat",
+      "messages": "messages",
+      "showMore": "Show more",
+      "expandHistory": "Expand history",
+      "collapse": "Collapse",
+      "search": "Search conversations",
+      "emptyTitle": "No conversations yet",
+      "emptyHint": "Start a new conversation to get started",
+      "shortcuts": {
+        "new": "New chat",
+        "close": "Close"
+      },
+      "deleteConfirm": "Delete this conversation?",
+      "deleteWarning": "This action cannot be undone. Messages will be permanently removed.",
+      "cancelRename": "Cancel",
+      "delete": "Delete"
     },
     "sidebar": {
       "capabilities": "Capabilities",

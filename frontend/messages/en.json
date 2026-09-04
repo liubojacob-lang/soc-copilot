@@ -150,7 +150,7 @@
     "usage": "Usage",
     "used": "Used",
     "usedSpace": "Used Space",
-    "version": "Version",
+    "version": "version",
     "language": {
       "switch": "Switch language",
       "zhCN": "中文",
@@ -158,7 +158,17 @@
     },
     "noData": "No data found",
     "errorDescription": "Something went wrong. Please try again later.",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to main content",
+    "updated": "Updated",
+    "mainMenu": "Main menu",
+    "closeMenu": "Close menu",
+    "secrets": "Secrets",
+    "notifications": "Notifications",
+    "closeNotification": "Close notification",
+    "backToTop": "Back to top",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "pageAria": "Page {page}"
   },
   "nav": {
     "home": "Home",
@@ -207,6 +217,12 @@
       "goPlaybooks": "Playbook Runs",
       "goApprovals": "Pending Approvals",
       "sources": "Top Alert Sources"
+    },
+    "tabs": {
+      "alertAnalyzer": "Alert Analyzer",
+      "timelineBuilder": "Timeline Builder",
+      "reportWriter": "Report Writer",
+      "assets": "Assets"
     }
   },
   "login": {
@@ -320,7 +336,8 @@
     "latency": "Latency",
     "noFeatures": "No feature flags returned.",
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "subtitle": "System administration and configuration"
   },
   "adminDashboard": {
     "title": "System Dashboard",
@@ -338,7 +355,41 @@
     "lowAlerts": "Low Alerts",
     "autoRefresh": "Auto-refresh",
     "error": "Failed to load",
-    "lastUpdated": "Last updated"
+    "lastUpdated": "Last updated",
+    "modelName": "Model",
+    "provider": "Provider",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "requests": "Requests",
+    "lastUsed": "Last Used",
+    "cpuUsage": "CPU Usage",
+    "realTime": "Real-time",
+    "memoryUsage": "Memory",
+    "available": "available",
+    "diskUsage": "Disk",
+    "free": "free",
+    "total": "total",
+    "database": "Database",
+    "redis": "Redis",
+    "uptime": "Uptime",
+    "serviceStatus": "Service Status",
+    "serviceStatusSubtitle": "Database & Redis health",
+    "latency": "Latency",
+    "connections": "connections",
+    "clients": "clients",
+    "resourceBreakdown": "Resource Breakdown",
+    "resourceBreakdownSubtitle": "Current utilization",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "disk": "Disk",
+    "poolConnections": "DB Pool",
+    "aiModels": "AI Models",
+    "aiModelsSubtitle": "Configured AI providers",
+    "noAiModels": "No AI models configured",
+    "noAiModelsDesc": "Add models in settings",
+    "features": "Features",
+    "featuresSubtitle": "Enabled system features"
   },
   "adminSettings": {
     "title": "System Settings",
@@ -415,7 +466,8 @@
       "deleteConfirm": "Delete this API key?",
       "createdSuccess": "API key created",
       "deletedSuccess": "API key deleted"
-    }
+    },
+    "description": "Manage Dify integration, notifications, AI models and API keys"
   },
   "errors": {
     "accessDenied": "Access Denied",
@@ -591,7 +643,8 @@
       "noNotes": "No notes yet",
       "addNotePlaceholder": "Add a note..."
     },
-    "importAlerts": "Import Alerts"
+    "importAlerts": "Import Alerts",
+    "info": "Info"
   },
   "reports": {
     "title": "Reports",
@@ -670,7 +723,15 @@
       "criticalThreats": "Critical Threats",
       "activeCampaigns": "Active Campaigns",
       "maliciousIocs": "Malicious IOCs"
-    }
+    },
+    "description": "Query indicators of compromise across threat intelligence sources",
+    "searchPlaceholder": "Search IP, domain, URL or file hash...",
+    "searching": "Searching...",
+    "search": "Search",
+    "sources": "Sources",
+    "noResults": "No results found",
+    "resultsFound": "results found",
+    "lastSeen": "Last seen"
   },
   "marketplace": {
     "title": "Marketplace",
@@ -827,7 +888,14 @@
       "loadFailed": "Failed to load triggers"
     },
     "deleteSuccess": "Trigger deleted successfully",
-    "toggleSuccess": "Trigger status updated"
+    "toggleSuccess": "Trigger status updated",
+    "webhookTrigger": "Webhook Trigger",
+    "cronTrigger": "Cron Trigger",
+    "status": "Status",
+    "lastTriggered": "Last Triggered",
+    "active": "Active",
+    "inactive": "Inactive",
+    "delete": "Delete"
   },
   "settingsApiKeys": {
     "title": "API Keys",
@@ -1165,7 +1233,8 @@
     "high": "High",
     "medium": "Medium",
     "low": "Low",
-    "info": "Info"
+    "info": "Info",
+    "neutral": "Neutral"
   },
   "sidebar": {
     "capabilities": "Capabilities",
@@ -1311,14 +1380,38 @@
       "loadModelsFailed": "Failed to load AI models",
       "setDefaultFailed": "Failed to set default model",
       "copyFailed": "Copy failed",
-      "serviceFailed": "Service error: {message}"
+      "serviceFailed": "Service error: {message}",
+      "imageNotSupported": "This model does not support image input"
     },
     "history": {
       "justNow": "Just now",
       "minutesAgo": "{count} minutes ago",
       "hoursAgo": "{count} hours ago",
       "daysAgo": "{count} days ago",
-      "title": "Chat History"
+      "title": "Chat History",
+      "newChat": "New chat",
+      "messages": "messages",
+      "showMore": "Show more",
+      "expandHistory": "Expand history",
+      "collapse": "Collapse",
+      "search": "Search conversations",
+      "emptyTitle": "No conversations yet",
+      "emptyHint": "Start a new conversation to get started",
+      "shortcuts": {
+        "new": "New chat",
+        "close": "Close"
+      },
+      "deleteConfirm": "Delete this conversation?",
+      "deleteWarning": "This action cannot be undone. Messages will be permanently removed.",
+      "cancelRename": "Cancel",
+      "delete": "Delete",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "past7Days": "Past 7 days",
+      "older": "Older",
+      "rename": "Rename",
+      "saveRename": "Save",
+      "renamePlaceholder": "Enter conversation name..."
     },
     "sidebar": {
       "capabilities": "Capabilities",
@@ -1393,7 +1486,8 @@
       "webhook": "Webhook"
     },
     "subtitle": "Manage webhook and cron triggers",
-    "title": "Trigger Management"
+    "title": "Trigger Management",
+    "noTriggersType": "No {type} triggers found"
   },
   "cloudNative": {
     "subtitle": "Cloud environment security monitoring",
@@ -1447,14 +1541,45 @@
     "falcoNotConfigured": "Falco not configured",
     "falcoSetupHint": "Configure Falco Sidekick to forward alerts to SOC Copilot for automatic triage.",
     "falcoSetupTitle": "Falco Sidekick Setup",
-    "falcoSetupDesc": "Forward Falco runtime security alerts to SOC Copilot:"
+    "falcoSetupDesc": "Forward Falco runtime security alerts to SOC Copilot:",
+    "severity": "Severity",
+    "description": "Description"
   },
   "correlation": {
     "createRule": "Create Rule",
     "noRules": "No Correlation Rules",
     "rules": "Rules",
     "subtitle": "Configure and manage correlation rules",
-    "title": "Correlation Analysis"
+    "title": "Correlation Analysis",
+    "incidents": "Incidents",
+    "refresh": "Refresh",
+    "totalIncidents": "Total Incidents",
+    "openIncidents": "Open Incidents",
+    "resolvedIncidents": "Resolved Incidents",
+    "totalCorrelations": "Total Correlations",
+    "searchIncidents": "Search incidents...",
+    "allSeverity": "All Severity",
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "noIncidents": "No incidents found",
+    "incident": "Incident",
+    "severity": "Severity",
+    "status": "Status",
+    "events": "Events",
+    "confidence": "Confidence",
+    "created": "Created",
+    "pageOf": "Page {page} of {totalPages}",
+    "rule": "Rule",
+    "priority": "Priority",
+    "timeWindow": "Time Window",
+    "correlations": "Correlations",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "relatedIncidents": "Related Incidents",
+    "updatingIncident": "Updating...",
+    "updateIncident": "Update"
   },
   "navigation": {
     "home": "Home",
@@ -1486,29 +1611,30 @@
     "correlation": "Correlation",
     "monitor": "Monitor",
     "reports": "Reports",
-    "threatIntel": "Threat Intelligence"
+    "threatIntel": "Threat Intelligence",
+    "language": "Language"
   },
   "runs": "Runs",
   "analytics": "Analytics",
   "aiCopilot": "AI Copilot",
   "dashboard": {
-    "title": "SOC Operations Dashboard",
-    "overview": "Overview",
+    "title": "Operations Dashboard",
+    "overview": "Real-time SOC monitoring and metrics",
     "realTimeMetrics": "Real-time Metrics",
     "totalAlerts": "Total Alerts",
     "unresolved": "Unresolved Alerts",
     "unresolvedSub": "Awaiting triage or response",
-    "unresolvedAlerts": "Unresolved Alerts",
+    "unresolvedAlerts": "Unresolved",
     "criticalHigh": "Critical & High",
     "criticalHighSub": "Critical or high severity alerts",
-    "openCases": "Open Cases",
+    "openCases": "Currently open",
     "openCasesSub": "{overdue} overdue",
     "iocToday": "IOCs Today",
     "iocTodaySub": "{runs} playbook runs today",
-    "needsAction": "Needs Action",
+    "needsAction": "Needs action",
     "activeCases": "Active Cases",
-    "last24h": "Last 24h",
-    "meanTimeToResolve": "Mean Time to Resolve",
+    "last24h": "Last 24 hours",
+    "meanTimeToResolve": "Mean time to resolve",
     "mttr": "MTTR",
     "minutes": "min",
     "days": "days",
@@ -1523,8 +1649,8 @@
     "assetRiskTop10": "Asset Risk Top 10",
     "riskScore": "Risk Score",
     "noAssets": "No asset data",
-    "iocStats": "IOC Statistics",
-    "mitreAttack": "MITRE ATT&CK",
+    "iocStats": "IOC Hit Statistics",
+    "mitreAttack": "MITRE ATT&CK Heatmap",
     "quickLinks": "Quick Links",
     "goAlerts": "View Alerts",
     "goCases": "View Cases",
@@ -1535,9 +1661,34 @@
       "morning": "Good morning",
       "afternoon": "Good afternoon",
       "evening": "Good evening"
-    }
+    },
+    "severityDistribution": "Severity Distribution",
+    "noData": "No data available"
   },
-  "aiModels": "AI Models",
+  "aiModels": {
+    "title": "AI Models",
+    "subtitle": "Manage and configure AI models for SOC Copilot",
+    "refresh": "Refresh Models",
+    "default": "Default",
+    "active": "Active",
+    "inactive": "Inactive",
+    "capabilities": "Capabilities",
+    "noCapabilities": "No capabilities listed",
+    "maxTokens": "Max Tokens",
+    "costPer1k": "Cost/1K",
+    "requests": "Requests",
+    "testConnection": "Test Connection",
+    "testing": "Testing...",
+    "connectionSuccess": "Connection successful",
+    "responseTime": "Response time:",
+    "testFailed": "Test failed",
+    "setDefault": "Set Default",
+    "setting": "Setting...",
+    "lastUsed": "Last used:",
+    "emptyTitle": "No AI Models Configured",
+    "emptyDescription": "Configure AI models in your settings to enable AI-powered features.",
+    "setDefaultFailed": "Failed to set default model"
+  },
   "apiKeys": "API Keys",
   "audit": {
     "actions": {
@@ -1678,6 +1829,60 @@
     "errors": {
       "failedToLoad": "Failed to load audit logs",
       "failedToLoadStats": "Failed to load stats"
+    },
+    "title": "Audit Logs",
+    "description": "Track and review all API access and operation records",
+    "empty": "No audit logs",
+    "error": {
+      "title": "Failed to load audit logs",
+      "retry": "Retry"
+    },
+    "export": {
+      "failed": "CSV export failed",
+      "error": "Failed to export audit logs"
+    },
+    "logs": {
+      "title": "Audit Log Entries",
+      "count": "{count} entries"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "export": "Export CSV"
+    },
+    "filters": {
+      "title": "Filters",
+      "reset": "Reset",
+      "action": "Action",
+      "allActions": "All actions",
+      "statusCode": "Status Code",
+      "allStatuses": "All statuses",
+      "dateFrom": "From",
+      "dateTo": "To",
+      "path": "Request Path",
+      "pathPlaceholder": "/api/v1/alerts",
+      "userId": "User ID",
+      "userIdPlaceholder": "e.g. user-123",
+      "ipAddress": "IP Address",
+      "ipAddressPlaceholder": "e.g. 192.168.1.1"
+    },
+    "stats": {
+      "totalRequests": "Total Requests",
+      "last24h": "Last 24 Hours",
+      "failedRequests": "Failed Requests",
+      "trendUp": "trending up",
+      "trendDown": "trending down",
+      "rateHigh": "high error rate",
+      "rateModerate": "moderate error rate",
+      "rateLow": "low error rate"
+    },
+    "pagination": {
+      "range": "Showing <strong>{from}</strong>–<strong>{to}</strong> of <strong>{total}</strong> records",
+      "first": "First page",
+      "prev": "Previous page",
+      "next": "Next page",
+      "last": "Last page",
+      "perPagePrefix": "Per page:",
+      "perPageSuffix": ""
     }
   },
   "alertAnalyzer": {
@@ -1822,6 +2027,78 @@
   },
   "cases": {
     "notFoundTitle": "Case Not Found",
-    "notFoundDescription": "The requested case could not be loaded."
+    "notFoundDescription": "The requested case could not be loaded.",
+    "title": "Cases",
+    "subtitle": "Security case management and investigation tracking",
+    "emptyTitle": "No cases found",
+    "emptyDescription": "Create your first case to start tracking security investigations.",
+    "createCase": "Create Case",
+    "createTitle": "New Security Case",
+    "searchPlaceholder": "Search by title, description or case ID...",
+    "status": "Status",
+    "severity": "Severity",
+    "assigned": "Assigned",
+    "sla": "SLA",
+    "created": "Created",
+    "updated": "Updated",
+    "actions": "Actions",
+    "details": "Case Details",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the incident or investigation...",
+    "titlePlaceholder": "Enter case title...",
+    "transitionStatus": "Transition Status",
+    "newStatus": "New Status",
+    "reason": "Reason",
+    "reasonPlaceholder": "Why are you changing the status?",
+    "confirmTransition": "Confirm",
+    "linkAlert": "Link Alert",
+    "alertId": "Alert ID",
+    "link": "Link",
+    "unlink": "Unlink",
+    "linkedAlerts": "Linked Alerts",
+    "noAlerts": "No alerts linked to this case.",
+    "comments": "Comments",
+    "commentPlaceholder": "Add a comment...",
+    "noComments": "No comments yet.",
+    "timeline": "Activity Timeline",
+    "noEvents": "No activity recorded yet.",
+    "delete": "Delete Case",
+    "resolutionNote": "Resolution Note",
+    "created_msg": "Case created successfully",
+    "cases_lower": "cases",
+    "statusNew": "New",
+    "statusInvestigating": "Investigating",
+    "statusContained": "Contained",
+    "statusRemediated": "Remediated",
+    "statusClosed": "Closed",
+    "statusFalsePositive": "False Positive",
+    "severityCritical": "Critical",
+    "severityHigh": "High",
+    "severityMedium": "Medium",
+    "severityLow": "Low",
+    "slaOverdue": "SLA OVERDUE",
+    "slaUrgent": "SLA: ",
+    "cases": "cases"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "close": "Close",
+    "footer": "Press <kbd>?</kbd> anytime to open this help",
+    "categories": {
+      "general": "General",
+      "home": "Home",
+      "other": "Other"
+    },
+    "items": {
+      "refreshPage": "Refresh current page",
+      "focusSearch": "Focus search box",
+      "closeDialog": "Close dialog / cancel",
+      "showHelp": "Show shortcut help",
+      "openSearch": "Open global search",
+      "tabAlerts": "Switch to alerts tab",
+      "tabTimeline": "Switch to timeline tab",
+      "tabReports": "Switch to reports tab",
+      "tabAssets": "Switch to assets tab"
+    }
   }
 }

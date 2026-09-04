@@ -37,6 +37,7 @@
     "delete": "Delete Case",
     "resolutionNote": "Resolution Note",
     "created_msg": "Case created successfully",
+    "cases": "cases",
     "cases_lower": "cases",
     "statusNew": "New",
     "statusInvestigating": "Investigating",

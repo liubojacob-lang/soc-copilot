@@ -8,12 +8,12 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { apiClient } from "@/lib/api/client";
 import { PageHeader } from "@/components/common/PageHeader";
-import Breadcrumbs from "@/components/common/Breadcrumbs";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { DataTable, ColumnDef } from "@/components/ui/DataTable";
-import { Heading, Text, Caption } from "@/components/ui/Typography";
+import { Text, Caption } from "@/components/ui/Typography";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusTimeline } from "@/components/dashboard/StatusTimeline";
@@ -110,17 +110,7 @@ export default function SystemDashboardPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/system/dashboard", {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get<SystemDashboard>("/api/v1/system/dashboard");
       setDashboard(data);
     } catch (err) {
       console.error("Failed to fetch dashboard:", err);
@@ -170,7 +160,7 @@ export default function SystemDashboardPage() {
     () => [
       {
         key: "name",
-        header: t("modelName", { default: "Model" }),
+        header: t("modelName"),
         cell: (row) => (
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-warning-600" />
@@ -181,25 +171,23 @@ export default function SystemDashboardPage() {
       },
       {
         key: "provider",
-        header: t("provider", { default: "Provider" }),
+        header: t("provider"),
         cell: (row) => <Caption color="tertiary">{row.provider}</Caption>,
         width: "20%",
       },
       {
         key: "status",
-        header: t("status", { default: "Status" }),
+        header: t("status"),
         cell: (row) => (
           <Badge severity={row.is_active ? "low" : "neutral"}>
-            {row.is_active
-              ? t("active", { default: "Active" })
-              : t("inactive", { default: "Inactive" })}
+            {row.is_active ? t("active") : t("inactive")}
           </Badge>
         ),
         width: "15%",
       },
       {
         key: "requests",
-        header: t("requests", { default: "Requests" }),
+        header: t("requests"),
         cell: (row) => (
           <span className="font-mono text-sm text-text-primary dark:text-white">
             {row.total_requests.toLocaleString()}
@@ -209,7 +197,7 @@ export default function SystemDashboardPage() {
       },
       {
         key: "last_used",
-        header: t("lastUsed", { default: "Last Used" }),
+        header: t("lastUsed"),
         cell: (row) => (
           <Caption color="tertiary">
             {row.last_used ? new Date(row.last_used).toLocaleString() : "--"}
@@ -247,11 +235,11 @@ export default function SystemDashboardPage() {
 
   if (loading && !dashboard) {
     return (
-      <div className="min-h-screen bg-surface-page dark:bg-slate-900">
-        <PageHeader title={t("title")} />
-        <main className="p-6 lg:p-12">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <PageHeader title={t("title")} subtitle={t("subtitle")} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[50vh]">
-            <RefreshCw className="w-8 h-8 animate-spin text-text-tertiary" />
+            <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
           </div>
         </main>
       </div>
@@ -260,17 +248,17 @@ export default function SystemDashboardPage() {
 
   if (error && !dashboard) {
     return (
-      <div className="min-h-screen bg-surface-page dark:bg-slate-900">
-        <PageHeader title={t("title")} />
-        <main className="p-6 lg:p-12">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <PageHeader title={t("title")} subtitle={t("subtitle")} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <EmptyState
             icon="alert"
-            title={t("error", { default: "Failed to load dashboard" })}
+            title={t("error")}
             description={error}
             action={
               <button
                 onClick={fetchDashboard}
-                className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
                 {tCommon("retry")}
               </button>
@@ -288,31 +276,21 @@ export default function SystemDashboardPage() {
   const diskTrend = dashboard.system.disk.percent_used > 80 ? "up" : "neutral";
 
   return (
-    <div className="min-h-screen bg-surface-page dark:bg-slate-900">
-      <PageHeader title={t("title")} />
-      <main className="p-6 lg:p-12 space-y-8">
-        <Breadcrumbs />
-
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <Heading level={1} color="primary">
-              {t("title")}
-            </Heading>
-            <Text color="tertiary" className="mt-1">
-              {t("subtitle")}
-            </Text>
-          </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <Caption color="tertiary">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        actions={
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-mono">
               v{dashboard.version} • {dashboard.environment}
-            </Caption>
+            </span>
             <div className="flex items-center gap-2">
-              <Caption color="tertiary">{t("autoRefresh", { default: "Auto-refresh" })}</Caption>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{t("autoRefresh")}</span>
               <button
                 onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                  autoRefresh ? "bg-primary-600" : "bg-slate-300 dark:bg-slate-600"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  autoRefresh ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600"
                 }`}
                 role="switch"
                 aria-checked={autoRefresh}
@@ -327,42 +305,44 @@ export default function SystemDashboardPage() {
             <button
               onClick={fetchDashboard}
               disabled={loading}
-              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+              className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
               <span>{tCommon("refresh")}</span>
             </button>
           </div>
-        </div>
+        }
+      />
 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* KPI Cards - 4 cards in first row, 2 cards in second row = 6 total */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard
-            title={t("cpuUsage", { default: "CPU Usage" })}
+            title={t("cpuUsage")}
             value={`${dashboard.system.cpu_percent.toFixed(1)}%`}
             trend={dashboard.system.cpu_percent > 80 ? "High" : "Normal"}
             trendDirection={cpuTrend}
             icon={<Cpu className="w-6 h-6 text-primary-600" />}
-            subtitle={t("realTime", { default: "Real-time" })}
+            subtitle={t("realTime")}
           />
           <StatCard
-            title={t("memoryUsage", { default: "Memory" })}
+            title={t("memoryUsage")}
             value={`${dashboard.system.memory.percent_used.toFixed(1)}%`}
             trend={`${dashboard.system.memory.used_gb.toFixed(1)} / ${dashboard.system.memory.total_gb.toFixed(1)} GB`}
             trendDirection={memoryTrend}
             icon={<MemoryStick className="w-6 h-6 text-primary-600" />}
-            subtitle={`${dashboard.system.memory.available_gb.toFixed(1)} GB ${t("available", { default: "available" })}`}
+            subtitle={`${dashboard.system.memory.available_gb.toFixed(1)} GB ${t("available")}`}
           />
           <StatCard
-            title={t("diskUsage", { default: "Disk" })}
+            title={t("diskUsage")}
             value={`${dashboard.system.disk.percent_used.toFixed(1)}%`}
-            trend={`${dashboard.system.disk.free_gb.toFixed(1)} GB ${t("free", { default: "free" })}`}
+            trend={`${dashboard.system.disk.free_gb.toFixed(1)} GB ${t("free")}`}
             trendDirection={diskTrend}
             icon={<HardDrive className="w-6 h-6 text-primary-600" />}
-            subtitle={`${dashboard.system.disk.total_gb.toFixed(1)} GB ${t("total", { default: "total" })}`}
+            subtitle={`${dashboard.system.disk.total_gb.toFixed(1)} GB ${t("total")}`}
           />
           <StatCard
-            title={t("database", { default: "Database" })}
+            title={t("database")}
             value={`${dashboard.database.latency_ms.toFixed(1)} ms`}
             trend={dashboard.database.status.toUpperCase()}
             trendDirection={dashboard.database.status === "ok" ? "neutral" : "up"}
@@ -370,7 +350,7 @@ export default function SystemDashboardPage() {
             subtitle={dashboard.database.version ? `v${dashboard.database.version}` : undefined}
           />
           <StatCard
-            title={t("redis", { default: "Redis" })}
+            title={t("redis")}
             value={
               dashboard.redis.latency_ms ? `${dashboard.redis.latency_ms.toFixed(1)} ms` : "--"
             }
@@ -380,7 +360,7 @@ export default function SystemDashboardPage() {
             subtitle={dashboard.redis.version ? `v${dashboard.redis.version}` : undefined}
           />
           <StatCard
-            title={t("uptime", { default: "Uptime" })}
+            title={t("uptime")}
             value={formatUptime(dashboard.system.uptime_seconds)}
             trend={dashboard.system.platform}
             trendDirection="neutral"
@@ -392,25 +372,21 @@ export default function SystemDashboardPage() {
         {/* Service Status + Resource Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Service Status ChartCard */}
-          <ChartCard
-            title={t("serviceStatus", { default: "Service Status" })}
-            subtitle={t("serviceStatusSubtitle", { default: "Database & Redis health" })}
-          >
+          <ChartCard title={t("serviceStatus")} subtitle={t("serviceStatusSubtitle")}>
             <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-surface-hover dark:bg-slate-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary-100 dark:bg-primary-800 rounded-md">
-                    <Database className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <Database className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <Text color="primary" className="font-medium dark:text-white">
-                      {t("database", { default: "Database" })}
+                      {t("database")}
                     </Text>
                     <Caption color="tertiary">
-                      {t("latency", { default: "Latency" })}:{" "}
-                      {dashboard.database.latency_ms.toFixed(2)} ms
+                      {t("latency")}: {dashboard.database.latency_ms.toFixed(2)} ms
                       {dashboard.database.active_connections !== undefined &&
-                        ` • ${dashboard.database.active_connections} ${t("connections", { default: "connections" })}`}
+                        ` • ${dashboard.database.active_connections} ${t("connections")}`}
                     </Caption>
                   </div>
                 </div>
@@ -422,10 +398,10 @@ export default function SystemDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-surface-hover dark:bg-slate-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary-100 dark:bg-primary-800 rounded-md">
-                    <Server className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <Server className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <Text color="primary" className="font-medium dark:text-white">
@@ -433,10 +409,10 @@ export default function SystemDashboardPage() {
                     </Text>
                     <Caption color="tertiary">
                       {dashboard.redis.latency_ms
-                        ? `${t("latency", { default: "Latency" })}: ${dashboard.redis.latency_ms.toFixed(2)} ms`
-                        : t("status", { default: "Status" })}
+                        ? `${t("latency")}: ${dashboard.redis.latency_ms.toFixed(2)} ms`
+                        : t("status")}
                       {dashboard.redis.connected_clients !== undefined &&
-                        ` • ${dashboard.redis.connected_clients} ${t("clients", { default: "clients" })}`}
+                        ` • ${dashboard.redis.connected_clients} ${t("clients")}`}
                     </Caption>
                   </div>
                 </div>
@@ -453,20 +429,17 @@ export default function SystemDashboardPage() {
           </ChartCard>
 
           {/* Resource Breakdown ChartCard */}
-          <ChartCard
-            title={t("resourceBreakdown", { default: "Resource Breakdown" })}
-            subtitle={t("resourceBreakdownSubtitle", { default: "Current utilization" })}
-          >
+          <ChartCard title={t("resourceBreakdown")} subtitle={t("resourceBreakdownSubtitle")}>
             <div className="space-y-6">
               {/* CPU Bar */}
               <div>
                 <div className="flex justify-between mb-2">
                   <Text color="secondary" className="text-sm dark:text-slate-300">
-                    {t("cpu", { default: "CPU" })}
+                    {t("cpu")}
                   </Text>
                   <Caption color="tertiary">{dashboard.system.cpu_percent.toFixed(1)}%</Caption>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${
                       dashboard.system.cpu_percent > 80
@@ -484,14 +457,14 @@ export default function SystemDashboardPage() {
               <div>
                 <div className="flex justify-between mb-2">
                   <Text color="secondary" className="text-sm dark:text-slate-300">
-                    {t("memory", { default: "Memory" })}
+                    {t("memory")}
                   </Text>
                   <Caption color="tertiary">
                     {dashboard.system.memory.used_gb.toFixed(1)} /{" "}
                     {dashboard.system.memory.total_gb.toFixed(1)} GB
                   </Caption>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${
                       dashboard.system.memory.percent_used > 80
@@ -509,14 +482,14 @@ export default function SystemDashboardPage() {
               <div>
                 <div className="flex justify-between mb-2">
                   <Text color="secondary" className="text-sm dark:text-slate-300">
-                    {t("disk", { default: "Disk" })}
+                    {t("disk")}
                   </Text>
                   <Caption color="tertiary">
                     {dashboard.system.disk.used_gb.toFixed(1)} /{" "}
                     {dashboard.system.disk.total_gb.toFixed(1)} GB
                   </Caption>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${
                       dashboard.system.disk.percent_used > 80
@@ -535,13 +508,13 @@ export default function SystemDashboardPage() {
                 <div>
                   <div className="flex justify-between mb-2">
                     <Text color="secondary" className="text-sm dark:text-slate-300">
-                      {t("poolConnections", { default: "DB Pool" })}
+                      {t("poolConnections")}
                     </Text>
                     <Caption color="tertiary">
                       {dashboard.database.pool.checked_out} / {dashboard.database.pool.size} active
                     </Caption>
                   </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
                       className="h-2 rounded-full bg-info-500 transition-all duration-500"
                       style={{
@@ -560,10 +533,7 @@ export default function SystemDashboardPage() {
         </div>
 
         {/* AI Models Table */}
-        <ChartCard
-          title={t("aiModels", { default: "AI Models" })}
-          subtitle={t("aiModelsSubtitle", { default: "Configured AI providers" })}
-        >
+        <ChartCard title={t("aiModels")} subtitle={t("aiModelsSubtitle")}>
           <DataTable
             data={dashboard.ai_models}
             columns={aiModelColumns}
@@ -571,22 +541,19 @@ export default function SystemDashboardPage() {
             showRowBorder={true}
             emptyState={{
               icon: <Zap className="w-12 h-12" />,
-              title: t("noAiModels", { default: "No AI models configured" }),
-              description: t("noAiModelsDesc", { default: "Add models in settings" }),
+              title: t("noAiModels"),
+              description: t("noAiModelsDesc"),
             }}
           />
         </ChartCard>
 
         {/* Features Grid */}
-        <ChartCard
-          title={t("features", { default: "Features" })}
-          subtitle={t("featuresSubtitle", { default: "Enabled system features" })}
-        >
+        <ChartCard title={t("features")} subtitle={t("featuresSubtitle")}>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {Object.entries(dashboard.features).map(([key, value]) => (
               <div
                 key={key}
-                className="flex items-center gap-3 p-3 bg-surface-hover dark:bg-slate-800 rounded-lg"
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 rounded-lg"
               >
                 {value ? (
                   <CheckCircle className="w-5 h-5 text-success-500 shrink-0" />
@@ -602,8 +569,7 @@ export default function SystemDashboardPage() {
         </ChartCard>
 
         <Caption color="tertiary" className="text-center block">
-          {t("lastUpdated", { default: "Last updated" })}:{" "}
-          {new Date(dashboard.timestamp).toLocaleString()}
+          {t("lastUpdated")}: {new Date(dashboard.timestamp).toLocaleString()}
         </Caption>
       </main>
     </div>

@@ -91,8 +91,46 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new ApiError(response.status, error || "Request failed");
+        let errorMessage = `Request failed with status ${response.status}`;
+        let errorData: unknown = undefined;
+        try {
+          const text = await response.text();
+          if (text) {
+            try {
+              const parsed = JSON.parse(text);
+              errorData = parsed;
+              if (typeof parsed === "string") {
+                errorMessage = parsed;
+              } else if (parsed && typeof parsed === "object") {
+                const msg =
+                  (parsed as Record<string, any>).detail ||
+                  (parsed as Record<string, any>).message ||
+                  (parsed as Record<string, any>).error ||
+                  (parsed as Record<string, any>).title;
+                if (typeof msg === "string" && msg.trim()) {
+                  errorMessage = msg;
+                } else if (Array.isArray((parsed as Record<string, any>).detail)) {
+                  errorMessage = (parsed as Record<string, any>).detail
+                    .map((d: any) =>
+                      typeof d === "object" ? d.msg || JSON.stringify(d) : String(d)
+                    )
+                    .join("; ");
+                } else {
+                  errorMessage = text;
+                }
+              }
+            } catch {
+              errorMessage = text;
+            }
+          }
+        } catch {
+          // ignore stream read error
+        }
+        throw new ApiError(response.status, errorMessage, errorData);
+      }
+
+      if (response.status === 204) {
+        return undefined as unknown as T;
       }
 
       return response.json();
@@ -164,12 +202,17 @@ export interface APIResponse<T> {
 }
 
 export class ApiError extends Error {
+  public data?: unknown;
+
   constructor(
     public status: number,
-    message: string
+    message: string,
+    data?: unknown
   ) {
     super(message);
     this.name = "ApiError";
+    this.data = data;
+    Object.setPrototypeOf(this, ApiError.prototype);
   }
 }
 

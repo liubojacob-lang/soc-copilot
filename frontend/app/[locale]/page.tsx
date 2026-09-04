@@ -20,7 +20,6 @@ import {
   ClipboardCheck,
   Crosshair,
   Flame,
-  ShieldCheck,
   Timer,
 } from "lucide-react";
 
@@ -28,16 +27,15 @@ import { useDashboardStats } from "@/hooks/useDashboard";
 import type { SeverityDistribution } from "@/lib/api/dashboard";
 import { loadAuthState } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
-import Breadcrumbs from "@/components/common/Breadcrumbs";
 import { Card, LoadingSpinner, SkeletonCard } from "@/components/common";
 import { StatCard } from "@/components/dashboard/StatCard";
 
-const SEVERITY_ORDER: { key: keyof SeverityDistribution; label: string; color: string }[] = [
-  { key: "critical", label: "Critical", color: "bg-red-500" },
-  { key: "high", label: "High", color: "bg-orange-500" },
-  { key: "medium", label: "Medium", color: "bg-amber-400" },
-  { key: "low", label: "Low", color: "bg-emerald-500" },
-  { key: "info", label: "Info", color: "bg-slate-400" },
+const SEVERITY_ORDER: { key: keyof SeverityDistribution; color: string }[] = [
+  { key: "critical", color: "bg-red-500" },
+  { key: "high", color: "bg-orange-500" },
+  { key: "medium", color: "bg-amber-400" },
+  { key: "low", color: "bg-emerald-500" },
+  { key: "info", color: "bg-slate-400" },
 ];
 
 export default function HomePage() {
@@ -45,6 +43,7 @@ export default function HomePage() {
   const locale = useLocale();
   const t = useTranslations("home");
   const tStats = useTranslations("stats");
+  const tAlerts = useTranslations("alerts");
   const [apiStatus, setApiStatus] = useState<"checking" | "healthy" | "unhealthy">("checking");
   const [mounted, setMounted] = useState(false);
 
@@ -53,7 +52,7 @@ export default function HomePage() {
   useEffect(() => {
     setMounted(true);
     if (!loadAuthState()?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     // The dashboard query doubles as the API health probe.
@@ -64,7 +63,7 @@ export default function HomePage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-surface-page dark:bg-slate-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="flex items-center justify-center min-h-screen">
           <LoadingSpinner size="xl" color="soc" label={t("loading")} />
         </div>
@@ -78,31 +77,14 @@ export default function HomePage() {
   const trendMax = stats ? Math.max(1, ...stats.alerts_trend.map((p) => p.count)) : 1;
 
   return (
-    <div className="min-h-screen bg-surface-page dark:bg-slate-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <PageHeader
-        title={t("title")}
+        title={t("securityOperations")}
         subtitle={t("subtitle")}
-        apiStatus={
-          apiStatus === "unhealthy" ? "error" : (apiStatus as "checking" | "healthy" | undefined)
-        }
+        apiStatus={apiStatus === "unhealthy" ? "error" : apiStatus}
       />
-
       <main>
-        <div className="mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-7xl">
-          <Breadcrumbs className="mb-6" />
-
-          <div className="mb-6 flex items-center gap-3">
-            <div className="p-2.5 bg-primary-100 dark:bg-primary-800 rounded-lg shadow-sm">
-              <ShieldCheck className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {t("securityOperations")}
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t("subtitle")}</p>
-            </div>
-          </div>
-
+        <div className="mx-auto px-4 py-4 sm:px-6 lg:px-8 max-w-7xl">
           {/* ── Real-time stat cards ─────────────────────────── */}
           <div className="grid grid-cols-1 gap-6 mb-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
@@ -205,11 +187,11 @@ export default function HomePage() {
                 <SkeletonCard />
               ) : stats ? (
                 <ul className="space-y-2.5">
-                  {SEVERITY_ORDER.map(({ key, label, color }) => (
+                  {SEVERITY_ORDER.map(({ key, color }) => (
                     <li key={key} className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                         <span className={`w-2.5 h-2.5 rounded-full ${color}`} />
-                        {label}
+                        {tAlerts(key)}
                       </span>
                       <span className="font-semibold text-gray-900 dark:text-white tabular-nums">
                         {stats.alerts_by_severity[key]}

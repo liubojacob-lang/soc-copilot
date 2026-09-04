@@ -151,7 +151,17 @@
     "used": "Used",
     "usedSpace": "Used Space",
     "version": "version",
-    "skipToContent": "Skip to main content"
+    "skipToContent": "Skip to main content",
+    "updated": "Updated",
+    "mainMenu": "Main menu",
+    "closeMenu": "Close menu",
+    "secrets": "Secrets",
+    "notifications": "Notifications",
+    "closeNotification": "Close notification",
+    "backToTop": "Back to top",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "pageAria": "Page {page}"
   },
   "navigation": {
     "home": "Home",

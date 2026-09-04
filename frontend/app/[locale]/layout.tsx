@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import { NextIntlClientProvider, hasLocale } from "next-intl";
+import { hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
@@ -10,6 +10,8 @@ import { PageErrorBoundary } from "@/components/common/ErrorBoundary";
 import { ClientLayout } from "@/components/ClientLayout";
 import { WebVitals } from "@/components/WebVitals";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
+import { I18nClientProvider } from "@/components/providers/I18nClientProvider";
+import { ThemeClassSync } from "@/components/ThemeClassSync";
 import { locales } from "@/i18n/routing";
 import { buildAlternates, getMetadataBase } from "@/lib/seo";
 import "../globals.css";
@@ -100,18 +102,29 @@ export default async function LocaleLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="antialiased min-h-screen">
-        <NextIntlClientProvider messages={messages}>
+        {/* The theme script must exist in the SSR HTML before first paint, but a
+            <script> element rendered by React errors on client re-renders
+            (locale switches) because scripts are never executed there. Emitting
+            it as raw HTML inside a host element keeps it invisible to React:
+            SSR still outputs a real script, and client updates never touch it. */}
+        <div
+          hidden
+          dangerouslySetInnerHTML={{
+            __html: `<script id="theme-init"${nonce ? ` nonce="${nonce}"` : ""}>${THEME_INIT_SCRIPT}</script>`,
+          }}
+        />
+        <I18nClientProvider messages={messages} locale={locale}>
           <ResponsiveProvider>
             <PageErrorBoundary>
               <ClientLayout>{children}</ClientLayout>
             </PageErrorBoundary>
             <BackToTop />
             <KeyboardShortcutsHelp />
+            <ThemeClassSync />
           </ResponsiveProvider>
-        </NextIntlClientProvider>
+        </I18nClientProvider>
         <WebVitals />
       </body>
     </html>

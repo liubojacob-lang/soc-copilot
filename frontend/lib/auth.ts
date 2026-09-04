@@ -80,9 +80,13 @@ function getCookie(name: string): string | null {
  */
 export function usingHttpOnlyCookies(): boolean {
   const strategy = detectStorageStrategy();
-  if (strategy === "cookie") {
-    // Check if access token cookie exists
-    return !!getCookie(COOKIE_ACCESS_TOKEN_NAME);
+  if (strategy === "cookie" || strategy === "hybrid") {
+    // HttpOnly cookies cannot be read via document.cookie.
+    // Check if a session exists via stored user or csrf_token cookie.
+    return (
+      !!loadStoredUser() ||
+      (typeof document !== "undefined" && document.cookie.includes("csrf_token"))
+    );
   }
   return false;
 }
@@ -347,6 +351,13 @@ export function handleUnauthorized(): void {
   }
 }
 
+const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const AUTH_EXEMPT_FRAGMENTS = ["/api/auth/login", "/api/auth/refresh", "/api/auth/logout"];
+
+function isAuthPath(path: string): boolean {
+  return AUTH_EXEMPT_FRAGMENTS.some((fragment) => path.includes(fragment));
+}
+
 /**
  * Fetch wrapper that automatically adds auth token and handles refresh
  * P3-10: Enhanced with Cookie support and CSRF protection
@@ -356,42 +367,34 @@ export async function authFetch(
   options: RequestInit = {},
   maxRetries = 1
 ): Promise<Response> {
-  let accessToken = getAccessToken();
+  const { addCSRFToken, ensureCSRFToken } = await import("./csrf");
+  const method = (options.method || "GET").toUpperCase();
 
-  // If no tokens, try without auth (for public endpoints)
-  if (!accessToken) {
-    return fetch(url, {
-      ...options,
-      credentials: "include", // P3-10: Include cookies
-    });
+  // Ensure CSRF token exists for state-changing methods
+  if (CSRF_METHODS.has(method) && !isAuthPath(url)) {
+    await ensureCSRFToken();
   }
 
-  const makeRequest = async (token: string): Promise<Response> => {
-    return fetch(url, {
-      ...options,
-      credentials: "include", // P3-10: Include cookies
-      headers: {
-        ...options.headers,
-        // P3-10: Only add Authorization header if not using cookies
-        ...(getCookie(COOKIE_ACCESS_TOKEN_NAME) ? {} : { Authorization: `Bearer ${token}` }),
-      },
-    });
+  const optionsWithCSRF = addCSRFToken(options);
+  const accessToken = getAccessToken();
+  const headers = {
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    ...(optionsWithCSRF.headers as Record<string, string> | undefined),
   };
 
-  let response = await makeRequest(accessToken);
+  const response = await fetch(url, {
+    ...optionsWithCSRF,
+    credentials: "include", // Always include cookies
+    headers,
+  });
 
-  // If access token expired, try to refresh (cookie-based; the backend falls
-  // back to the refresh_token HttpOnly cookie when no body token is sent).
-  if (response.status === 401 && maxRetries > 0) {
+  // If session expired, try to refresh via refresh_token cookie/localStorage
+  if (response.status === 401 && !isAuthPath(url) && maxRetries > 0) {
     const authState = await refreshAccessToken(getRefreshToken());
     if (authState.isAuthenticated) {
       saveAuthState(authState);
       return authFetch(url, options, maxRetries - 1);
     }
-    // Refresh failed, handle unauthorized
-    handleUnauthorized();
-  } else if (response.status === 401) {
-    // No refresh token or max retries exceeded
     handleUnauthorized();
   }
 
@@ -406,23 +409,28 @@ export async function authFetchJSON<T = unknown>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
-  // Use url as-is since it already includes /api prefix
-  const fullUrl = url.startsWith("http") ? url : url;
-
-  // P3-10: Import CSRF protection
-  const { csrfFetch } = await import("./csrf");
-
-  const response = await csrfFetch(fullUrl, {
+  const response = await authFetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...options.headers,
+      ...(options.headers as Record<string, string> | undefined),
     },
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || "Request failed");
+    let errorDetail = `Request failed (${response.status})`;
+    try {
+      const errorJson = await response.json();
+      errorDetail = errorJson.detail || errorJson.message || errorDetail;
+    } catch {
+      try {
+        const text = await response.text();
+        if (text) errorDetail = text;
+      } catch {
+        /* ignore */
+      }
+    }
+    throw new Error(errorDetail);
   }
 
   return response.json();
@@ -444,7 +452,10 @@ export function getAuthSecurityInfo() {
 
   return {
     storageStrategy: strategy,
-    usingHttpOnlyCookies: usingCookies && getCookie(COOKIE_ACCESS_TOKEN_NAME),
+    usingHttpOnlyCookies:
+      usingCookies &&
+      (!!loadStoredUser() ||
+        (typeof document !== "undefined" && document.cookie.includes("csrf_token"))),
     usingLocalStorage: strategy === "localStorage" || !!localStorage.getItem(ACCESS_TOKEN_KEY),
     cookieAccessible: typeof document !== "undefined" && navigator.cookieEnabled,
     localStorageAccessible: (() => {

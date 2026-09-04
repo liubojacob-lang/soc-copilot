@@ -38,6 +38,7 @@ import ImportAlertModal from "./components/ImportAlertModal";
 import { loadAuthState } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
+import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type ColumnDef, type TableSeverity } from "@/components/ui/DataTable";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useToast } from "@/components/Toast";
@@ -99,6 +100,7 @@ function formatTime(ts: string | null, format: ReturnType<typeof useFormatter>):
   if (!ts) return "-";
   try {
     const d = new Date(ts);
+    if (isNaN(d.getTime())) return "-";
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -179,14 +181,14 @@ function FilterDropdown({ label, options, selected, onChange }: FilterDropdownPr
         className={cn(
           "flex items-center gap-2 px-3 py-2 text-sm rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 border transition-colors",
           selected.length > 0
-            ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
+            ? "border-accent-300 bg-accent-50 text-accent-700 dark:border-accent-600 dark:bg-accent-900/20 dark:text-accent-300"
             : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
         )}
       >
         <Filter className="w-3.5 h-3.5" />
         <span>{label}</span>
         {selected.length > 0 && (
-          <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-200 dark:bg-blue-800 rounded-full">
+          <span className="ml-1 px-1.5 py-0.5 text-xs bg-accent-200 dark:bg-accent-800 rounded-full">
             {selected.length}
           </span>
         )}
@@ -204,7 +206,7 @@ function FilterDropdown({ label, options, selected, onChange }: FilterDropdownPr
                 type="checkbox"
                 checked={selected.includes(opt.value)}
                 onChange={() => toggle(opt.value)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
               />
               <span className="text-gray-700 dark:text-gray-300">{opt.label}</span>
             </label>
@@ -265,9 +267,9 @@ export default function AlertsPage() {
     setMounted(true);
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
     }
-  }, [router, locale]);
+  }, [router]);
 
   // ── Filter State ────────────────────────────────────
   const [search, setSearch] = useState("");
@@ -395,8 +397,6 @@ export default function AlertsPage() {
   // Reset page on filter change
   useEffect(() => setPage(1), [debouncedSearch, statusFilter, severityFilter, sourceFilter]);
 
-  if (!mounted) return null;
-
   // ── Columns ──────────────────────────────────────────
 
   const columns: ColumnDef<SecurityAlertItem>[] = useMemo(
@@ -408,7 +408,7 @@ export default function AlertsPage() {
             type="checkbox"
             checked={sortedAlerts.length > 0 && selectedIds.size === sortedAlerts.length}
             onChange={toggleSelectAll}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
           />
         ),
         cell: (row) => (
@@ -416,7 +416,7 @@ export default function AlertsPage() {
             type="checkbox"
             checked={selectedIds.has(row.id)}
             onChange={() => toggleSelect(row.id)}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
           />
         ),
         width: "40px",
@@ -429,7 +429,7 @@ export default function AlertsPage() {
           <div className="min-w-0">
             <button
               onClick={() => router.push(`/${locale}/alerts/${row.id}`)}
-              className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 truncate block max-w-[320px] text-left transition-colors"
+              className="text-sm font-medium text-gray-900 dark:text-white hover:text-accent-600 dark:hover:text-accent-400 truncate block max-w-[320px] text-left transition-colors"
             >
               {row.title}
             </button>
@@ -538,7 +538,7 @@ export default function AlertsPage() {
           <div className="flex items-center gap-1 justify-end">
             <button
               onClick={() => router.push(`/${locale}/alerts/${row.id}`)}
-              className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 transition-colors"
+              className="p-1.5 text-gray-400 hover:text-accent-600 dark:hover:text-accent-400 rounded hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 transition-colors"
               title={tCommon("view")}
             >
               <Eye className="w-4 h-4" />
@@ -570,6 +570,8 @@ export default function AlertsPage() {
     ]
   );
 
+  if (!mounted) return null;
+
   // ── Mobile Card Render ────────────────────────────────
 
   const renderMobileCard = (alert: SecurityAlertItem) => (
@@ -578,7 +580,7 @@ export default function AlertsPage() {
       className={cn(
         "bg-white dark:bg-gray-800 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 border p-4 transition-colors",
         selectedIds.has(alert.id)
-          ? "border-blue-500 ring-1 ring-blue-500"
+          ? "border-accent-500 ring-1 ring-accent-500"
           : "border-gray-200 dark:border-gray-700"
       )}
     >
@@ -587,12 +589,12 @@ export default function AlertsPage() {
           type="checkbox"
           checked={selectedIds.has(alert.id)}
           onChange={() => toggleSelect(alert.id)}
-          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          className="mt-1 rounded border-gray-300 text-accent-600 focus:ring-accent-500"
         />
         <div className="flex-1 min-w-0">
           <button
             onClick={() => router.push(`/${locale}/alerts/${alert.id}`)}
-            className="text-sm font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-left line-clamp-2"
+            className="text-sm font-semibold text-gray-900 dark:text-white hover:text-accent-600 dark:hover:text-accent-400 text-left line-clamp-2"
           >
             {alert.title}
           </button>
@@ -647,7 +649,7 @@ export default function AlertsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("list.searchPlaceholder")}
-            className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
+            className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
           />
           {search && (
             <button
@@ -697,7 +699,7 @@ export default function AlertsPage() {
         {/* Import Alerts Button */}
         <button
           onClick={() => setShowImportModal(true)}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 transition-colors shadow-sm"
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-accent-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-accent-700 active:bg-accent-700 transition-colors shadow-sm"
           title={t("importAlerts")}
         >
           <Upload className="w-4 h-4" />
@@ -706,7 +708,7 @@ export default function AlertsPage() {
 
         <button
           onClick={() => refetch()}
-          className="p-2.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 transition-colors"
+          className="p-2.5 text-gray-400 hover:text-accent-600 dark:hover:text-accent-400 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 transition-colors"
           title={tCommon("refresh")}
         >
           <RefreshCw className="w-4 h-4" />
@@ -720,7 +722,7 @@ export default function AlertsPage() {
           <Filter className="w-3.5 h-3.5" />
           Filters
           {(statusFilter.length > 0 || severityFilter.length > 0) && (
-            <span className="px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full">
+            <span className="px-1.5 py-0.5 text-xs bg-accent-100 dark:bg-accent-900/30 text-accent-600 rounded-full">
               {statusFilter.length + severityFilter.length}
             </span>
           )}
@@ -752,7 +754,7 @@ export default function AlertsPage() {
                 className={cn(
                   "px-2.5 py-1 text-xs rounded-full border transition-colors",
                   statusFilter.includes(opt.value)
-                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
+                    ? "border-accent-500 bg-accent-50 text-accent-700 dark:border-accent-400 dark:bg-accent-900/30 dark:text-accent-300"
                     : "border-gray-200 text-gray-500 dark:border-gray-600 dark:text-gray-400"
                 )}
               >
@@ -782,7 +784,7 @@ export default function AlertsPage() {
                 className={cn(
                   "px-2.5 py-1 text-xs rounded-full border transition-colors",
                   severityFilter.includes(opt.value)
-                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
+                    ? "border-accent-500 bg-accent-50 text-accent-700 dark:border-accent-400 dark:bg-accent-900/30 dark:text-accent-300"
                     : "border-gray-200 text-gray-500 dark:border-gray-600 dark:text-gray-400"
                 )}
               >
@@ -795,8 +797,8 @@ export default function AlertsPage() {
 
       {/* Batch Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4 flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+        <div className="bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800 rounded-lg p-3 mb-4 flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-accent-700 dark:text-accent-300">
             {selectedIds.size} selected
           </span>
           <div className="flex items-center gap-2">
@@ -887,22 +889,7 @@ export default function AlertsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {total > 0 ? `${total} alerts` : t("subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader title={t("title")} subtitle={total > 0 ? `${total} alerts` : t("subtitle")} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

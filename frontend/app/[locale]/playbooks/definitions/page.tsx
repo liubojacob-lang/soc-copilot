@@ -74,7 +74,7 @@ export default function PlaybookDefinitionsPage() {
           total: data.total || 0,
         });
       } else if (response.status === 401) {
-        router.push(`/${locale}/login`);
+        router.push("/login");
         return;
       } else {
         setError(`Failed to load definitions: ${response.statusText}`);
@@ -101,11 +101,11 @@ export default function PlaybookDefinitionsPage() {
     setMounted(true);
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     loadDefinitions(1);
-  }, [router, locale]);
+  }, [router]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts(
@@ -136,28 +136,23 @@ export default function PlaybookDefinitionsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <PageHeader title={t("definitions.title")} subtitle={t("definitions.subtitle")} />
+      <PageHeader
+        title={t("definitions.title")}
+        subtitle={t("definitions.subtitle")}
+        actions={
+          <button
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors shadow-sm"
+            onClick={() => router.push(`/${locale}/playbooks/create`)}
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t("definitions.createNew")}</span>
+          </button>
+        }
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {t("definitions.title")}
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">{t("definitions.subtitle")}</p>
-            </div>
-            <button
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 transition-colors shadow-sm"
-              onClick={() => router.push(`/${locale}/playbooks/create`)}
-            >
-              <Plus className="w-4 h-4" />
-              {t("definitions.createNew")}
-            </button>
-          </div>
-
-          {/* Filters */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

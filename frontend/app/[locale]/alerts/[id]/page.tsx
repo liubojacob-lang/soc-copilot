@@ -61,7 +61,9 @@ import type { AlertSeverity, AlertStatus, AlertNoteItem, SecurityAlertItem } fro
 function formatDateTime(ts: string | null | undefined, format: Formatter): string {
   if (!ts) return "-";
   try {
-    return format.dateTime(new Date(ts), { dateStyle: "medium", timeStyle: "medium" });
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return "-";
+    return format.dateTime(d, { dateStyle: "medium", timeStyle: "medium" });
   } catch {
     return "-";
   }
@@ -378,9 +380,9 @@ export default function AlertDetailPage() {
     setMounted(true);
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
     }
-  }, [router, locale]);
+  }, [router]);
 
   // Data fetching
   const { data: alert, isLoading, error, refetch } = useAlertDetail(alertId);

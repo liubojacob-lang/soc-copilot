@@ -33,10 +33,12 @@ export interface ConversationGroup {
   conversations: ChatConversation[];
 }
 
-/** Group conversations into today / yesterday / past 7 days / older buckets. */
+/** Group conversations into today / yesterday / past 7 days / older buckets.
+ * i18n-namespace: aiAssistant.history
+ */
 export function useGroupedConversations(
   conversations: ChatConversation[],
-  t: (key: string) => string,
+  t: (key: "today" | "yesterday" | "past7Days" | "older") => string,
   mounted: boolean
 ): ConversationGroup[] {
   return useMemo(() => {

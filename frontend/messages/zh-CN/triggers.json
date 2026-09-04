@@ -73,7 +73,14 @@
       "loadFailed": "加载触发器失败"
     },
     "deleteSuccess": "触发器删除成功",
-    "toggleSuccess": "触发器状态已更新"
+    "toggleSuccess": "触发器状态已更新",
+    "webhookTrigger": "Webhook 触发器",
+    "cronTrigger": "Cron 触发器",
+    "status": "状态",
+    "lastTriggered": "最近触发",
+    "active": "已启用",
+    "inactive": "已停用",
+    "delete": "删除"
   },
   "triggersPage": {
     "title": "触发器管理",

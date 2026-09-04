@@ -67,29 +67,6 @@ export function QueryProvider({ children, enableDevtools = false }: QueryProvide
     };
   }, [enableDevtools]);
 
-  // Setup global error handler
-  useEffect(() => {
-    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
-      // Check for query errors via the query state
-      if (event.query?.state?.status === "error") {
-        const query = event.query;
-        const error = query.state.error;
-
-        // Log query errors for monitoring
-        console.error("Query error:", {
-          queryKey: query.queryKey,
-          error: error instanceof Error ? error.message : "Unknown error",
-          timestamp: new Date().toISOString(),
-        });
-
-        // You could send this to your error tracking service here
-        // Example: Sentry.captureException(error, { extra: { queryKey: query.queryKey } });
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       {children}

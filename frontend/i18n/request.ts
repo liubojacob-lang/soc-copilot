@@ -33,5 +33,14 @@ export default getRequestConfig(async ({ requestLocale }) => {
   return {
     locale: requested,
     messages: await loadAllMessages(requested),
+    onError(error) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(`[i18n warning] ${error.message}`);
+      }
+    },
+    getMessageFallback({ error, key, namespace }) {
+      const nestedKey = namespace ? `${namespace}.${key}` : key;
+      return key.split(".").pop() || nestedKey;
+    },
   };
 });

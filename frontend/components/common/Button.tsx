@@ -12,11 +12,11 @@ interface Ripple {
 }
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "relative inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800",
+        primary: "bg-accent-600 text-white hover:bg-accent-700 active:bg-accent-800",
         secondary: "bg-surface-hover text-text-primary hover:bg-surface-active",
         ghost: "bg-transparent text-text-primary hover:bg-surface-hover",
         danger: "bg-danger-600 text-white hover:bg-danger-700 active:bg-danger-800",

@@ -130,25 +130,25 @@ export default function UsersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {pagination.total} {pagination.total === 1 ? "user" : "users"}
-            </p>
-          </div>
+      <PageHeader
+        title={t("title")}
+        subtitle={
+          pagination.total > 0
+            ? `${pagination.total} ${pagination.total === 1 ? "user" : "users"}`
+            : t("subtitle")
+        }
+        actions={
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700 text-sm font-medium transition-colors shadow-sm"
           >
             <UserPlus className="w-4 h-4" />
-            {t("createUser")}
+            <span>{t("createUser")}</span>
           </button>
-        </div>
+        }
+      />
 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {error && (
           <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -526,7 +526,7 @@ export default function UsersPage() {
                     {creating ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        {t("common.loading")}
+                        {tCommon("loading")}
                       </>
                     ) : (
                       <>
@@ -628,7 +628,7 @@ export default function UsersPage() {
                     {saving ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        {t("common.loading")}
+                        {tCommon("loading")}
                       </>
                     ) : (
                       <>
@@ -742,7 +742,7 @@ export default function UsersPage() {
                     {resetting ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        {t("common.loading")}
+                        {tCommon("loading")}
                       </>
                     ) : (
                       <>
