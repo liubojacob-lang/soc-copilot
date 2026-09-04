@@ -356,10 +356,17 @@ async def lifespan(app_instance: FastAPI):
     ws_manager = get_manager()
     await ws_manager.start_pubsub()
 
+    # Start DynamicConfig multi-instance Redis Pub/Sub reload bridge
+    from core.dynamic_config import get_dynamic_config
+
+    dynamic_config = get_dynamic_config()
+    await dynamic_config.start_pubsub()
+
     yield
 
     # Shutdown
     logger.info("Shutting down SOC Copilot API")
+    await dynamic_config.stop_pubsub()
     await ws_manager.stop_pubsub()
     if cleanup_task:
         cleanup_task.cancel()

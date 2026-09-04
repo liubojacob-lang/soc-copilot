@@ -7,7 +7,9 @@ including Dify integration configuration.
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, Depends
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -147,3 +149,81 @@ async def get_timeout_config(
         timeline_ms=settings.api_timeout_timeline_ms,
         dag_run_ms=settings.api_timeout_dag_run_ms,
     )
+
+
+class DynamicConfigItem(BaseModel):
+    """Dynamic configuration item definition."""
+
+    key: str
+    current_value: Any
+    default_value: Any = None
+    is_overridden: bool
+    type: str
+    description: str = ""
+
+
+class DynamicConfigSetRequest(BaseModel):
+    """Request model to update dynamic configuration parameter."""
+
+    value: Any
+
+
+@router.get("/dynamic", response_model=list[DynamicConfigItem])
+async def list_dynamic_settings(
+    current_user: UserModel = Depends(require_permission("admin", "read")),
+) -> list[DynamicConfigItem]:
+    """List all dynamic configuration settings with override status and defaults."""
+    from core.dynamic_config import get_dynamic_config
+
+    dyn = get_dynamic_config()
+    items = await dyn.get_all()
+    return [DynamicConfigItem(**item) for item in items]
+
+
+@router.get("/dynamic/{key}")
+async def get_dynamic_setting(
+    key: str,
+    current_user: UserModel = Depends(require_permission("admin", "read")),
+):
+    """Get a specific dynamic configuration setting value."""
+    from core.dynamic_config import get_dynamic_config
+
+    dyn = get_dynamic_config()
+    val = await dyn.get(key)
+    return {"key": key, "value": val}
+
+
+@router.put("/dynamic/{key}")
+async def set_dynamic_setting(
+    key: str,
+    body: DynamicConfigSetRequest,
+    current_user: UserModel = Depends(require_permission("admin", "write")),
+):
+    """Override a dynamic configuration setting and broadcast hot-reload across all pods."""
+    from core.dynamic_config import get_dynamic_config
+
+    dyn = get_dynamic_config()
+    success = await dyn.set(key, body.value)
+    if not success:
+        raise HTTPException(
+            status_code=500, detail="Failed to persist dynamic config override"
+        )
+    return {"success": True, "key": key, "value": body.value}
+
+
+@router.delete("/dynamic/{key}")
+async def reset_dynamic_setting(
+    key: str,
+    current_user: UserModel = Depends(require_permission("admin", "write")),
+):
+    """Reset a dynamic configuration setting back to default and broadcast."""
+    from core.dynamic_config import get_dynamic_config
+
+    dyn = get_dynamic_config()
+    success = await dyn.delete(key)
+    if not success:
+        raise HTTPException(
+            status_code=500, detail="Failed to reset dynamic config override"
+        )
+    return {"success": True, "key": key, "message": "Reset to default"}
+
