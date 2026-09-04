@@ -336,7 +336,7 @@
             <div class="flex flex-row lg:flex-col items-center lg:items-end gap-3 shrink-0">
               <div class="text-right">
                 <div class="text-xs text-slate-500 dark:text-slate-400">综合健康评级</div>
-                <div class="text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">80 <span class="text-sm text-slate-400">/ 100</span></div>
+                <div id="overview-health-score" class="text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">100 <span class="text-sm text-slate-400">/ 100</span></div>
               </div>
               <button onclick="switchTab('architecture')" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-cyan-500/20 transition-all flex items-center space-x-2">
                 <span>进入交互式拓扑图</span>
@@ -389,8 +389,8 @@
               <span>测试文件</span>
               <span>🧪</span>
             </div>
-            <div class="text-2xl font-black text-slate-900 dark:text-white font-mono">58</div>
-            <div class="text-[11px] text-blue-600 dark:text-blue-400 mt-1">400 项测试全部通过 (+67项)</div>
+            <div id="stat-tests-count" class="text-2xl font-black text-slate-900 dark:text-white font-mono">61</div>
+            <div id="stat-tests-desc" class="text-[11px] text-blue-600 dark:text-blue-400 mt-1">413 项后端 + 107 项前端全通过</div>
           </div>
 
           <div class="p-4 rounded-xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border hover:border-amber-500/40 transition-all shadow-sm">
@@ -1409,6 +1409,14 @@
 
     // Render Health Dimensions
     function renderHealthDimensions() {
+      const overviewScore = document.getElementById('overview-health-score');
+      if (overviewScore && projectData.health && projectData.health.overall) {
+        overviewScore.innerHTML = `${projectData.health.overall} <span class="text-sm text-slate-400">/ 100</span>`;
+      }
+      const testCountEl = document.getElementById('stat-tests-count');
+      if (testCountEl && projectData.stats && projectData.stats.testFilesCount) {
+        testCountEl.textContent = projectData.stats.testFilesCount;
+      }
       const list = document.getElementById('health-dimension-list');
       list.innerHTML = projectData.health.dimensions.map(dim => `
         <div class="space-y-1 p-2.5 rounded-lg bg-slate-50 dark:bg-cyber-900/40 border border-slate-200 dark:border-cyber-border/60">
