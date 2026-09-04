@@ -150,6 +150,12 @@ async def create_bootstrap_admin():
 
 async def run_migrations():
     """Run Alembic database migrations on startup."""
+    if not getattr(settings, "auto_run_migrations", True):
+        logger.info(
+            "Automatic database migrations on startup disabled via AUTO_RUN_MIGRATIONS=false; skipping"
+        )
+        return
+
     from pathlib import Path
 
     from alembic.config import Config
@@ -383,7 +389,7 @@ class SetUserStateMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         """Set current user in request.state for audit and authorization middleware."""
-        # Try to get user from Authorization header only
+        # Try to get user from Authorization header or Cookie
         # API key lookup is done in the auth dependency to avoid DB calls in middleware
         auth_header = request.headers.get("authorization")
         user_id = None
@@ -393,10 +399,24 @@ class SetUserStateMiddleware(BaseHTTPMiddleware):
             from core.security import decode_token
 
             token = auth_header.split(" ")[1]
-            payload = decode_token(token)
-            if payload:
-                user_id = payload.get("sub")
-                user_role = payload.get("role")
+            if token not in ("undefined", "null", ""):
+                payload = decode_token(token)
+                if payload:
+                    user_id = payload.get("sub")
+                    user_role = payload.get("role")
+
+        if not user_id and request.headers.get("cookie"):
+            from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, get_token_from_cookie
+            from core.security import decode_token
+
+            cookie_token = get_token_from_cookie(
+                request.headers.get("cookie"), COOKIE_ACCESS_TOKEN_NAME
+            )
+            if cookie_token:
+                payload = decode_token(cookie_token)
+                if payload:
+                    user_id = payload.get("sub")
+                    user_role = payload.get("role")
 
         request.state.user_id = user_id
         request.state.user_role = user_role
@@ -566,6 +586,7 @@ from routers import alerts_lifecycle  # v0.9.0: Alert lifecycle management
 
 app.include_router(alerts_lifecycle.router)  # v0.9.0: Alert lifecycle management
 app.include_router(ws_router.router)  # v0.8.5: WebSocket real-time alerts
+app.include_router(ws_router.router, prefix="/api/v1")  # v0.8.5: WebSocket real-time alerts & monitoring under /api/v1
 app.include_router(websocket_filters.router)  # v0.9.0: WebSocket filter management
 app.include_router(monitoring_alerts.router)  # v0.9.1: Monitoring alert rules
 app.include_router(export.router)  # v0.8.5: Data export functionality

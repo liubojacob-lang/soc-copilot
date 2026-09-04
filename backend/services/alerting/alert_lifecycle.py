@@ -12,6 +12,7 @@ from core.logger import get_logger
 from schemas.alert_lifecycle import (
     AlertAssignee,
     AlertAssignment,
+    AlertEscalation,
     AlertEscalationCreate,
     AlertLifecycleResponse,
     AlertNote,
@@ -83,6 +84,15 @@ class AlertLifecycleService:
             for note in note_models
         ]
 
+        escalated_info = None
+        if getattr(alert, "escalated_to", None) or getattr(alert, "escalated_at", None):
+            escalated_info = AlertEscalation(
+                escalated_to=alert.escalated_to or "Unassigned",
+                escalated_by=alert.assigned_to or "system",
+                reason=getattr(alert, "escalation_reason", None) or "Escalated for higher-level investigation",
+                escalated_at=alert.escalated_at or alert.updated_at or alert.created_at,
+            )
+
         return AlertLifecycleResponse(
             alert_id=str(alert.id),
             status=self._normalize_status(alert.status),
@@ -96,7 +106,7 @@ class AlertLifecycleService:
                 if alert.assigned_to
                 else None
             ),
-            escalated=None,  # TODO: 从关联表获取
+            escalated=escalated_info,
             notes=notes,  # 从数据库加载备注
             created_at=alert.created_at,
             updated_at=alert.updated_at,

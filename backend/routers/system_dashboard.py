@@ -455,5 +455,44 @@ async def get_feature_flags(
     }
 
 
+class ReplayDLQRequest(BaseModel):
+    target_stream: str = "events:medium"
+    limit: int = 100
+
+
+@router.get("/queue/stats", summary="Get Redis Streams queue and DLQ stats")
+async def get_queue_dashboard_stats(
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Get Redis Streams queue statistics, consumer lag and DLQ status."""
+    from services.message_broker import get_message_broker
+
+    broker = get_message_broker()
+    stats = broker.get_queue_stats()
+    health = broker.health_check()
+    return {
+        "status": "ok" if health.get("streams", True) else "degraded",
+        "health": health,
+        "queues": stats,
+    }
+
+
+@router.post("/queue/dlq/replay", summary="Replay dead-letter queue (DLQ) messages")
+async def replay_dlq_messages(
+    request: ReplayDLQRequest,
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Replay messages from DLQ (events:dlq) back to active processing stream."""
+    from services.message_broker import get_message_broker
+
+    broker = get_message_broker()
+    replayed = await broker.replay_dlq("events:dlq", request.target_stream, limit=request.limit)
+    return {
+        "status": "success",
+        "replayed_count": replayed,
+        "target_stream": request.target_stream,
+    }
+
+
 # Track startup time
 _startup_time = time.time()

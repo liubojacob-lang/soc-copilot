@@ -4,6 +4,7 @@ Automatically enrich security alerts with threat intelligence data
 """
 
 import asyncio
+import os
 from datetime import UTC, datetime
 from typing import Any
 
@@ -23,8 +24,8 @@ class ThreatIntelEnricher:
     def __init__(self):
         self.client = None
         self.sources = {
-            "virustotal": False,  # Requires API key
-            "abuseipdb": False,  # Requires API key
+            "virustotal": bool(os.getenv("VIRUSTOTAL_API_KEY")),
+            "abuseipdb": bool(os.getenv("ABUSEIPDB_API_KEY")),
             "otx": True,  # OTX is free
         }
 
@@ -116,8 +117,31 @@ class ThreatIntelEnricher:
         return None
 
     async def _check_abuseipdb(self, ip: str) -> dict | None:
-        """Check IP against AbuseIPDB (requires API key)"""
-        # TODO: Add when API key is available
+        """Check IP against AbuseIPDB (requires API key)."""
+        api_key = os.getenv("ABUSEIPDB_API_KEY")
+        if not api_key:
+            return None
+
+        try:
+            url = "https://api.abuseipdb.com/api/v2/check"
+            headers = {
+                "Key": api_key,
+                "Accept": "application/json",
+            }
+            params = {"ipAddress": ip, "maxAgeInDays": "90"}
+            response = await self.client.get(url, headers=headers, params=params)
+            if response.status_code == 200:
+                data = response.json().get("data", {})
+                return {
+                    "abuse_confidence_score": data.get("abuseConfidenceScore", 0),
+                    "is_whitelisted": data.get("isWhitelisted", False),
+                    "country_code": data.get("countryCode"),
+                    "usage_type": data.get("usageType"),
+                    "total_reports": data.get("totalReports", 0),
+                }
+        except Exception as e:
+            logger.warning(f"AbuseIPDB IP lookup failed for {ip}: {e}")
+
         return None
 
     async def _get_mitre_info(self, mitre_csv: str) -> dict[str, Any]:

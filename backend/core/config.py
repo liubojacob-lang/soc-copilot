@@ -111,6 +111,7 @@ class Settings(BaseSettings):
     api_timeout_dag_run_ms: int = 300000  # 5 minutes for DAG playbook execution
 
     # v0.8.1: Database connection pool settings
+    auto_run_migrations: bool = True  # Run Alembic migrations on startup; set to False in multi-replica deployments
     db_pool_size: int = 20  # Default connection pool size (increased from 10)
     db_max_overflow: int = 40  # Maximum overflow connections (increased from 20)
     db_pool_timeout: int = 30  # Pool timeout in seconds
@@ -141,12 +142,7 @@ class Settings(BaseSettings):
         True  # Enable performance monitoring middleware
     )
 
-    # P1-24: Langfuse LLM Tracing Settings (optional)
-    langfuse_public_key: str = ""  # Langfuse public key (optional)
-    langfuse_secret_key: str = ""  # Langfuse secret key (optional)
-    langfuse_host: str = "https://cloud.langfuse.com"  # Langfuse API host
-
-    # v1.0.0: Wazuh SIEM Integration Settings
+    # v0.8.6: Wazuh SIEM Integration Settings
     wazuh_enabled: bool = False  # Enable Wazuh integration
     wazuh_required: bool = False  # Fail startup if Wazuh initialization fails
     wazuh_api_url: str = (
@@ -163,6 +159,11 @@ class Settings(BaseSettings):
     wazuh_poll_interval: int = 30  # Seconds between polling cycles
     wazuh_batch_size: int = 100  # Maximum events to fetch per poll
     wazuh_lookback_minutes: int = 5  # Minutes to look back on startup
+
+    # P1-24: Langfuse LLM Tracing Settings (optional)
+    langfuse_public_key: str = ""  # Langfuse public key (optional)
+    langfuse_secret_key: str = ""  # Langfuse secret key (optional)
+    langfuse_host: str = "https://cloud.langfuse.com"  # Langfuse API host
 
     @property
     def enforce_strict_checks(self) -> bool:
@@ -201,6 +202,17 @@ class Settings(BaseSettings):
                     "⚠️  SECURITY WARNING: JWT secret is not configured or too weak. "
                     "Set JWT_SECRET environment variable with at least 32 random characters."
                 )
+
+            insecure_patterns = [
+                "changeme", "change-this", "password", "default", "example",
+                "your-jwt-secret", "your-secret-key", "replace-me"
+            ]
+            if any(p in v.lower() for p in insecure_patterns):
+                if strict_mode:
+                    raise ValueError(
+                        "Insecure default pattern detected in JWT_SECRET for production. "
+                        "Set a secure, randomly generated JWT_SECRET."
+                    )
         # Development: auto-generate if not set
         elif not v:
             import logging
@@ -239,6 +251,16 @@ class Settings(BaseSettings):
                     "⚠️  SECURITY WARNING: Bootstrap admin password is not configured or too weak. "
                     "Set BOOTSTRAP_ADMIN_PASSWORD environment variable with at least 12 characters."
                 )
+
+            insecure_passwords = [
+                "admin", "password", "123456", "changeme", "default", "soc_copilot"
+            ]
+            if any(p in v.lower() for p in insecure_passwords):
+                if strict_mode:
+                    raise ValueError(
+                        "Insecure default password pattern detected in BOOTSTRAP_ADMIN_PASSWORD for production. "
+                        "Choose a strong random password."
+                    )
         # Development: auto-generate if not set
         elif not v:
             import logging

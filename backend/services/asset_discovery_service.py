@@ -7,6 +7,7 @@ Provides:
 """
 
 import asyncio
+import ipaddress
 import json
 import re
 import subprocess
@@ -124,6 +125,71 @@ def _find_nmap() -> str | None:
     return None
 
 
+def _validate_scan_target(target: str) -> str:
+    """Validate scan target to prevent argument injection and malformed input.
+
+    Accepts:
+    - IPv4/IPv6 address (e.g., "192.168.1.1", "::1")
+    - IPv4/IPv6 CIDR range (e.g., "192.168.1.0/24")
+    - Valid standard hostname/FQDN (e.g., "localhost", "server1.corp.internal")
+    Rejects flags, semicolons, backticks, or any non-whitelisted characters.
+    """
+    cleaned = target.strip()
+    if not cleaned or cleaned.startswith("-"):
+        raise ValueError(f"Invalid target (cannot be empty or start with '-'): {target}")
+
+    # 1. Try IP network or IP address
+    try:
+        ipaddress.ip_network(cleaned, strict=False)
+        return cleaned
+    except ValueError:
+        pass
+
+    # 2. Try strict hostname regex
+    hostname_regex = re.compile(
+        r"^[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$"
+    )
+    if hostname_regex.match(cleaned) and len(cleaned) <= 253:
+        return cleaned
+
+    raise ValueError(f"Target is not a valid IP, CIDR, or hostname: {target}")
+
+
+def _validate_scan_ports(ports: str | None) -> str | None:
+    """Validate port specification string.
+
+    Accepts:
+    - Single port: "80"
+    - Port list: "80,443,8080"
+    - Port range: "1-1024"
+    - Mixed: "22,80-90,443"
+    All port numbers must be between 1 and 65535.
+    """
+    if not ports:
+        return None
+
+    cleaned = ports.strip()
+    if not cleaned or cleaned.startswith("-"):
+        raise ValueError(f"Invalid ports spec: {ports}")
+
+    pattern = re.compile(r"^(\d{1,5}(?:-\d{1,5})?)(?:,\d{1,5}(?:-\d{1,5})?)*$")
+    if not pattern.match(cleaned):
+        raise ValueError(f"Ports spec contains invalid characters or format: {ports}")
+
+    for part in cleaned.split(","):
+        if "-" in part:
+            start_str, end_str = part.split("-", 1)
+            start, end = int(start_str), int(end_str)
+            if not (1 <= start <= 65535 and 1 <= end <= 65535 and start <= end):
+                raise ValueError(f"Port range out of bounds (1-65535): {part}")
+        else:
+            p = int(part)
+            if not (1 <= p <= 65535):
+                raise ValueError(f"Port out of bounds (1-65535): {p}")
+
+    return cleaned
+
+
 async def _run_nmap_scan(
     target: str,
     ports: str | None = None,
@@ -144,12 +210,19 @@ async def _run_nmap_scan(
         logger.warning("nmap not found on system — skipping NMAP scan")
         return []
 
+    try:
+        valid_target = _validate_scan_target(target)
+        valid_ports = _validate_scan_ports(ports)
+    except ValueError as e:
+        logger.error(f"Nmap parameter validation error for target '{target}': {e}")
+        return []
+
     cmd = [nmap_path, "-sV", "-O", "--osscan-guess", "-oX", "-"]
     if fast_mode:
         cmd.extend(["-T4", "-F"])
-    if ports:
-        cmd.extend(["-p", ports])
-    cmd.append(target)
+    if valid_ports:
+        cmd.extend(["-p", valid_ports])
+    cmd.append(valid_target)
 
     try:
         logger.info(f"Running nmap: {' '.join(cmd)}")
