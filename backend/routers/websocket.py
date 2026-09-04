@@ -149,11 +149,13 @@ async def alerts_websocket(
     # Extract token from Sec-WebSocket-Protocol header
     # Client sends: new WebSocket(url, "access_token.<jwt>")
     token = None
+    chosen_subprotocol = None
     protocol_header = websocket.headers.get("sec-websocket-protocol", "")
     for proto in protocol_header.split(","):
         proto = proto.strip()
         if proto.startswith("access_token."):
             token = proto[len("access_token.") :]
+            chosen_subprotocol = proto
             break
 
     # v1.0: Removed query parameter token fallback (security: query params leak in logs)
@@ -200,7 +202,12 @@ async def alerts_websocket(
 
     # Connect with message queue for offline messages
     await manager.connect(
-        websocket, user_id, user_role, subscribed_channels, message_queue
+        websocket,
+        user_id,
+        user_role,
+        subscribed_channels,
+        message_queue,
+        subprotocol=chosen_subprotocol,
     )
 
     try:

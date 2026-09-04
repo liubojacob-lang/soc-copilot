@@ -214,6 +214,7 @@ async def ingest_alert(
         raise HTTPException(status_code=500, detail=f"Failed to ingest alert: {e!s}")
 
 
+@router.get("", response_model=SecurityAlertListResponse)
 @router.get("/", response_model=SecurityAlertListResponse)
 async def list_alerts(
     source: str | None = Query(None, description="Filter by source"),
@@ -288,87 +289,6 @@ async def list_alerts(
     except Exception as e:
         logger.error(f"Error listing alerts: {e!s}")
         raise HTTPException(status_code=500, detail=f"Failed to list alerts: {e!s}")
-
-
-@router.get("/{alert_id}", response_model=SecurityAlertResponse)
-async def get_alert(
-    alert_id: int,
-    session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
-) -> SecurityAlertResponse:
-    """Get detailed information about a specific alert."""
-    try:
-        await ensure_security_alerts_schema(session)
-        query = select(SecurityAlert).where(SecurityAlert.id == alert_id)
-        result = await session.execute(query)
-        alert = result.scalar_one_or_none()
-
-        if not alert:
-            raise HTTPException(status_code=404, detail=f"Alert {alert_id} not found")
-
-        return alert
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting alert {alert_id}: {e!s}")
-        raise HTTPException(status_code=500, detail=f"Failed to get alert: {e!s}")
-
-
-@router.patch("/{alert_id}", response_model=SecurityAlertResponse)
-async def update_alert(
-    alert_id: int,
-    update_data: SecurityAlertUpdate,
-    session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
-) -> SecurityAlertResponse:
-    """
-    Update alert status and metadata.
-
-    Allows updating:
-    - Status (open, investigating, closed, false_positive)
-    - Assigned user
-    - Resolution notes
-
-    When closing an alert, closed_at is automatically set.
-    """
-    try:
-        await ensure_security_alerts_schema(session)
-        query = select(SecurityAlert).where(SecurityAlert.id == alert_id)
-        result = await session.execute(query)
-        alert = result.scalar_one_or_none()
-
-        if not alert:
-            raise HTTPException(status_code=404, detail=f"Alert {alert_id} not found")
-
-        # Update fields
-        if update_data.status:
-            alert.status = update_data.status.lower()
-            # Set closed_at if status is closed or false_positive
-            if alert.status in ["closed", "false_positive"] and not alert.closed_at:
-                alert.closed_at = datetime.now(UTC)
-
-        if update_data.assigned_to:
-            alert.assigned_to = update_data.assigned_to
-
-        if update_data.resolution:
-            alert.resolution = update_data.resolution
-
-        await session.commit()
-        await session.refresh(alert)
-
-        logger.info(f"Alert {alert_id} updated: status={alert.status}")
-
-        invalidate_cache("alert_stats")
-
-        return alert
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error updating alert {alert_id}: {e!s}")
-        await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update alert: {e!s}")
 
 
 @router.get("/stats/summary", response_model=SecurityAlertStats)
@@ -451,6 +371,87 @@ async def get_alert_statistics(
     except Exception as e:
         logger.error(f"Error getting alert statistics: {e!s}")
         raise HTTPException(status_code=500, detail=f"Failed to get statistics: {e!s}")
+
+
+@router.get("/{alert_id}", response_model=SecurityAlertResponse)
+async def get_alert(
+    alert_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
+) -> SecurityAlertResponse:
+    """Get detailed information about a specific alert."""
+    try:
+        await ensure_security_alerts_schema(session)
+        query = select(SecurityAlert).where(SecurityAlert.id == alert_id)
+        result = await session.execute(query)
+        alert = result.scalar_one_or_none()
+
+        if not alert:
+            raise HTTPException(status_code=404, detail=f"Alert {alert_id} not found")
+
+        return alert
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting alert {alert_id}: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get alert: {e!s}")
+
+
+@router.patch("/{alert_id}", response_model=SecurityAlertResponse)
+async def update_alert(
+    alert_id: int,
+    update_data: SecurityAlertUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
+) -> SecurityAlertResponse:
+    """
+    Update alert status and metadata.
+
+    Allows updating:
+    - Status (open, investigating, closed, false_positive)
+    - Assigned user
+    - Resolution notes
+
+    When closing an alert, closed_at is automatically set.
+    """
+    try:
+        await ensure_security_alerts_schema(session)
+        query = select(SecurityAlert).where(SecurityAlert.id == alert_id)
+        result = await session.execute(query)
+        alert = result.scalar_one_or_none()
+
+        if not alert:
+            raise HTTPException(status_code=404, detail=f"Alert {alert_id} not found")
+
+        # Update fields
+        if update_data.status:
+            alert.status = update_data.status.lower()
+            # Set closed_at if status is closed or false_positive
+            if alert.status in ["closed", "false_positive"] and not alert.closed_at:
+                alert.closed_at = datetime.now(UTC)
+
+        if update_data.assigned_to:
+            alert.assigned_to = update_data.assigned_to
+
+        if update_data.resolution:
+            alert.resolution = update_data.resolution
+
+        await session.commit()
+        await session.refresh(alert)
+
+        logger.info(f"Alert {alert_id} updated: status={alert.status}")
+
+        invalidate_cache("alert_stats")
+
+        return alert
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating alert {alert_id}: {e!s}")
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update alert: {e!s}")
 
 
 @router.delete("/{alert_id}", response_model=dict)

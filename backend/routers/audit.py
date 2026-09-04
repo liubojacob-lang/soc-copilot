@@ -106,12 +106,9 @@ async def get_audit_stats(
     session: AsyncSession = Depends(get_session),
 ):
     """Get audit log statistics summary."""
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
     from sqlalchemy import func
-
-    # Time range: last 7 days
-    (datetime.now() - timedelta(days=7)).isoformat()
 
     # Build base query
     query = select(func.count(AuditLogModel.id))
@@ -128,7 +125,7 @@ async def get_audit_stats(
     failed = failed_result.scalar_one() or 0
 
     # Last 24 hours
-    day_ago = (datetime.now() - timedelta(days=1)).isoformat()
+    day_ago = datetime.now(UTC) - timedelta(days=1)
     query_day = query.where(AuditLogModel.created_at >= day_ago)
     day_result = await session.execute(query_day)
     last_24h = day_result.scalar_one() or 0

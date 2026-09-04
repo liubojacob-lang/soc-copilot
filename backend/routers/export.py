@@ -22,7 +22,7 @@ from repositories.audit_repository import AuditRepository
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/export", tags=["Export"])
+router = APIRouter(prefix="/api/v1/export", tags=["Export"])
 
 
 # Export format enum

@@ -16,11 +16,13 @@ from dependencies.auth import get_current_user
 from models.ai_task import AITaskStatus, AITaskType
 from services.ai_task_service import get_ai_task_service
 
-router = APIRouter(prefix="/ai-tasks", tags=["AI Tasks"])
+router = APIRouter(prefix="/api/v1/ai-tasks", tags=["AI Tasks"])
 
 
 class SubmitAITaskRequest(BaseModel):
     """Request model for submitting an AI task."""
+
+    model_config = {"protected_namespaces": ()}
 
     task_type: str = Field(..., description="Type of AI task")
     prompt: str = Field(..., description="Prompt for the AI")
