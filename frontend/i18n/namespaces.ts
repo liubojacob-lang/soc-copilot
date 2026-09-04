@@ -1,7 +1,7 @@
 export const CORE_NAMESPACES = ["core"] as const;
 
 export const ROUTE_NAMESPACES: Record<string, string[]> = {
-  "/": ["home", "dashboard"],
+  "/": ["home", "dashboard", "alerts", "stats"],
   "/login": ["login"],
   "/alerts": ["alerts"],
   "/cases": ["cases"],
@@ -13,12 +13,12 @@ export const ROUTE_NAMESPACES: Record<string, string[]> = {
   "/threat-intel": ["threat-intel"],
   "/threat-intel/dashboard": ["threat-intel"],
   "/ai-assistant": ["ai-assistant"],
-  "/audit": ["audit"],
+  "/audit": ["audit", "adminAudit"],
   "/admin": ["admin"],
   "/admin/dashboard": ["admin"],
   "/admin/users": ["admin", "users"],
   "/admin/settings": ["admin", "settings"],
-  "/admin/audit": ["admin", "audit"],
+  "/admin/audit": ["admin", "audit", "adminAudit"],
   "/admin/secrets": ["admin"],
   "/admin/health": ["admin"],
   "/settings": ["settings"],

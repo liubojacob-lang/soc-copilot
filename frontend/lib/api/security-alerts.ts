@@ -11,6 +11,7 @@
  */
 
 import { apiClient, type APIResponse } from "./client";
+import type { SecurityAlert, SecurityAlertUpdate } from "@/types/api";
 
 // ── Types ────────────────────────────────────────────────
 
@@ -18,28 +19,9 @@ export type AlertSeverity = "critical" | "high" | "medium" | "low" | "info";
 
 export type AlertStatus = "new" | "investigating" | "resolved" | "false_positive" | "escalated";
 
-export interface SecurityAlertItem {
-  id: number;
-  source: string;
-  external_event_id: string;
-  event_type: string;
+export interface SecurityAlertItem extends Omit<SecurityAlert, "severity" | "status"> {
   severity: AlertSeverity;
-  title: string;
-  description: string | null;
-  source_ip: string | null;
-  destination_ip: string | null;
-  protocol: string | null;
-  agent_name: string | null;
-  agent_id: string | null;
-  agent_ip: string | null;
-  rule_id: string | null;
-  rule_level: number | null;
-  rule_groups: string | null;
-  rule_mitre: string | null;
   status: AlertStatus;
-  assigned_to: string | null;
-  created_at: string;
-  event_timestamp: string | null;
   threat_score?: number | null;
   iocs?: Array<{ type: string; value: string; reputation?: string; confidence?: number }>;
   mitre_tactics?: Array<{ tactic: string; techniques: string[] }>;
@@ -128,7 +110,7 @@ export async function listSecurityAlerts(
   if (filters.page_size) params.set("page_size", String(filters.page_size));
   const query = params.toString();
   return apiClient.get<SecurityAlertListResponse>(
-    `/api/v1/security-alerts/${query ? `?${query}` : ""}`
+    `/api/v1/security-alerts${query ? `?${query}` : ""}`
   );
 }
 

@@ -3,22 +3,28 @@
   "version": "0.9.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/sync-i18n.mjs",
     "dev": "next dev -H localhost -p 3003",
+    "prebuild": "node scripts/sync-i18n.mjs && node scripts/check-i18n-keys.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc --noEmit && prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "lint": "tsc --noEmit && node scripts/check-i18n-keys.mjs && prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint:fix": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "i18n:sync": "node scripts/sync-i18n.mjs",
     "i18n:check": "tsx scripts/check-i18n-v2.ts",
+    "i18n:check:keys": "node scripts/check-i18n-keys.mjs",
+    "i18n:test": "tsx scripts/test-i18n.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "codegen:api": "python3 ../scripts/export_openapi.py && openapi-typescript ../openapi.json -o types/api.generated.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.40.0",
@@ -55,9 +61,11 @@
     "eslint": "^10.0.2",
     "eslint-config-next": "16.1.6",
     "jsdom": "^28.1.0",
+    "openapi-typescript": "^7.13.0",
     "postcss": "^8.5.9",
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.23.13",
     "typescript": "^5",
     "vitest": "^4.0.18"
   }

@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 
 export default function AuditLogsPage() {
   const router = useRouter();
-  const t = useTranslations("audit");
+  const t = useTranslations("adminAudit");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -67,7 +67,7 @@ export default function AuditLogsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <PageHeader title="Audit Logs" />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
       <AuditPageContainer />
     </div>
   );
