@@ -189,8 +189,15 @@
 </head>
 <body class="bg-slate-50 dark:bg-cyber-900 text-slate-800 dark:text-slate-200 font-sans min-h-screen flex flex-col antialiased transition-colors duration-200 selection:bg-cyan-500 selection:text-white">
 
+  <!-- Floating Back to Top Button -->
+  <button id="back-to-top" onclick="scrollToTop()" title="回到顶部 (快捷键: T)" class="fixed bottom-5 right-5 z-40 px-3 py-2 rounded-xl bg-white/95 dark:bg-cyber-800/95 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-cyber-border shadow-xl backdrop-blur-md opacity-0 pointer-events-none translate-y-2 transition-all duration-300 hover:border-cyan-500/60 hover:text-cyan-600 dark:hover:text-cyan-400 hover:scale-105 flex items-center space-x-1.5 text-xs font-medium cursor-pointer select-none">
+    <span class="text-sm font-bold leading-none">▲</span>
+    <span class="hidden sm:inline">回到顶部</span>
+    <kbd class="hidden sm:inline-block px-1 py-0.2 bg-slate-100 dark:bg-cyber-900 text-slate-400 rounded text-[9px] font-mono border border-slate-200 dark:border-cyber-border">T</kbd>
+  </button>
+
   <!-- Global Floating Toast Container -->
-  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+  <div id="toast-container" class="fixed bottom-16 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Top Header Bar -->
   <header class="h-16 border-b border-slate-200 dark:border-cyber-border bg-white/80 dark:bg-cyber-800/80 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center justify-between">
@@ -1152,7 +1159,14 @@
               <button class="px-2 py-1 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white api-btn" onclick="filterApiMethod('PATCH')">PATCH (11)</button>
               <button class="px-2 py-1 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white api-btn" onclick="filterApiMethod('PUT')">PUT (7)</button>
             </div>
-            <input type="text" id="api-search" placeholder="输入路径、模块或描述搜索..." oninput="searchApis()" class="w-64 px-3 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 shadow-sm"/>
+            <div class="relative flex items-center">
+              <input type="text" id="api-search" placeholder="输入路径、模块或描述搜索..." oninput="searchApis()" class="w-64 pl-3 pr-7 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 shadow-sm"/>
+              <button id="api-search-clear" onclick="clearApiSearch()" title="清空搜索词" class="hidden absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold cursor-pointer">✕</button>
+            </div>
+            <button onclick="resetApiFilters()" title="重置全部筛选条件" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-xs text-slate-600 dark:text-slate-300 hover:border-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400 shadow-sm flex items-center space-x-1 transition cursor-pointer">
+              <span>🔄</span>
+              <span class="hidden sm:inline">重置</span>
+            </button>
           </div>
         </div>
 
@@ -1433,6 +1447,7 @@
       renderCodeMap();
       setupKeyboardShortcuts();
       setupTopologyEvents();
+      initBackToTop();
       switchTab('overview');
     });
 
@@ -1630,15 +1645,15 @@
           <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-cyber-border/60 text-[11px] font-mono">
             <div class="flex items-start justify-between text-slate-500 dark:text-slate-400">
               <span class="shrink-0">数据表:</span>
-              <span class="text-right text-emerald-600 dark:text-emerald-400 truncate max-w-[180px]">${m.dbTables.length ? m.dbTables.join(', ') : '⚪ 无独占表'}</span>
+              <span class="text-right text-emerald-600 dark:text-emerald-400 truncate max-w-[180px] cursor-pointer hover:underline" onclick="copyToClipboard('${m.dbTables.join(', ')}', '关联数据表')" title="点击复制数据表名">${m.dbTables.length ? m.dbTables.join(', ') : '⚪ 无独占表'}</span>
             </div>
             <div class="flex items-start justify-between text-slate-500 dark:text-slate-400">
-              <span class="shrink-0">队列/缓存:</span>
-              <span class="text-right text-amber-600 dark:text-amber-300 truncate max-w-[180px]">${m.redis || '⚪ 待确认'}</span>
+              <span class="shrink-0">核心路由:</span>
+              <span class="text-right text-cyan-600 dark:text-cyan-400 truncate max-w-[180px] cursor-pointer hover:underline" onclick="copyToClipboard('${m.files && m.files.router ? m.files.router.split(',')[0].trim() : ''}', '路由文件路径')" title="点击复制路由文件路径">${m.files && m.files.router ? m.files.router.split(',')[0].trim().replace('backend/', '') : '内置核心'}</span>
             </div>
             <div class="flex items-start justify-between text-slate-500 dark:text-slate-400">
-              <span class="shrink-0">依赖:</span>
-              <span class="text-right text-indigo-600 dark:text-indigo-300 truncate max-w-[180px]">${m.dependencies.join(', ') || '底座无外部依赖'}</span>
+              <span class="shrink-0">队列/依赖:</span>
+              <span class="text-right text-indigo-600 dark:text-indigo-300 truncate max-w-[180px]">${m.dependencies.join(', ') || m.redis || '底座无外部依赖'}</span>
             </div>
           </div>
         </div>
@@ -1829,8 +1844,44 @@
     }
 
     function searchApis() {
-      currentApiQuery = document.getElementById('api-search').value;
+      const input = document.getElementById('api-search');
+      currentApiQuery = input ? input.value : '';
+      const clearBtn = document.getElementById('api-search-clear');
+      if (clearBtn) {
+        if (currentApiQuery) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }
       renderApis(1);
+    }
+
+    function clearApiSearch() {
+      const input = document.getElementById('api-search');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+      const clearBtn = document.getElementById('api-search-clear');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      currentApiQuery = '';
+      renderApis(1);
+    }
+
+    function resetApiFilters() {
+      currentApiMethod = 'ALL';
+      currentApiQuery = '';
+      const input = document.getElementById('api-search');
+      if (input) input.value = '';
+      const clearBtn = document.getElementById('api-search-clear');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      document.querySelectorAll('#api-method-filters button').forEach(btn => {
+        if (btn.innerText.startsWith('全部')) {
+          btn.className = 'px-2 py-1 rounded bg-cyan-600 text-white api-btn';
+        } else {
+          btn.className = 'px-2 py-1 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white api-btn';
+        }
+      });
+      renderApis(1);
+      showToast('已重置所有接口筛选条件');
     }
 
     // Render Database Tables
@@ -2066,21 +2117,39 @@
     function renderCodeMap() {
       const container = document.getElementById('codemap-container');
       container.innerHTML = projectData.codeMap.map(c => `
-        <div class="p-5 rounded-xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border space-y-3 shadow-sm">
-          <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-            <span class="text-cyan-600 dark:text-cyan-400">⚡</span>
-            <span>${c.feature}</span>
-          </h4>
+        <div class="p-5 rounded-xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border space-y-3 shadow-sm hover:border-cyan-500/40 transition">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+              <span class="text-cyan-600 dark:text-cyan-400">⚡</span>
+              <span>${c.feature}</span>
+            </h4>
+            <span class="text-[11px] text-slate-400 dark:text-slate-500 font-sans">点击节点快速复制路径</span>
+          </div>
           <div class="flex flex-wrap items-center gap-2 text-xs font-mono">
-            <span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700" title="页面">${c.page}</span>
+            <span onclick="copyToClipboard('${c.page}', '页面路径')" class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-cyber-900/80 hover:bg-slate-200 dark:hover:bg-cyber-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-cyber-border cursor-pointer transition select-all group flex items-center space-x-1" title="点击复制页面路径">
+              <span>📄 ${c.page}</span>
+              <span class="opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 transition">📋</span>
+            </span>
             <span class="text-cyan-600 dark:text-cyan-500 font-bold">➔</span>
-            <span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700" title="组件">${c.component}</span>
+            <span onclick="copyToClipboard('${c.component}', '组件路径')" class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-cyber-900/80 hover:bg-slate-200 dark:hover:bg-cyber-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-cyber-border cursor-pointer transition select-all group flex items-center space-x-1" title="点击复制组件路径">
+              <span>🧩 ${c.component}</span>
+              <span class="opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 transition">📋</span>
+            </span>
             <span class="text-cyan-600 dark:text-cyan-500 font-bold">➔</span>
-            <span class="px-2 py-1 rounded bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/40" title="接口">${c.apiRoute}</span>
+            <span onclick="copyToClipboard('${c.apiRoute}', 'API路由')" class="px-2.5 py-1 rounded-md bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 dark:hover:bg-cyan-900/80 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/40 cursor-pointer transition select-all group flex items-center space-x-1" title="点击复制 API 路由">
+              <span>🔌 ${c.apiRoute}</span>
+              <span class="opacity-0 group-hover:opacity-100 text-[10px] text-cyan-500 transition">📋</span>
+            </span>
             <span class="text-cyan-600 dark:text-cyan-500 font-bold">➔</span>
-            <span class="px-2 py-1 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/40" title="服务">${c.service}</span>
+            <span onclick="copyToClipboard('${c.service}', '服务层')" class="px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/40 cursor-pointer transition select-all group flex items-center space-x-1" title="点击复制服务层">
+              <span>⚙️ ${c.service}</span>
+              <span class="opacity-0 group-hover:opacity-100 text-[10px] text-indigo-400 transition">📋</span>
+            </span>
             <span class="text-cyan-600 dark:text-cyan-500 font-bold">➔</span>
-            <span class="px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/40" title="数据表">📦 ${c.table}</span>
+            <span onclick="copyToClipboard('${c.table}', '数据表')" class="px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/40 cursor-pointer transition select-all group flex items-center space-x-1" title="点击复制数据表">
+              <span>📦 ${c.table}</span>
+              <span class="opacity-0 group-hover:opacity-100 text-[10px] text-emerald-500 transition">📋</span>
+            </span>
           </div>
         </div>
       `).join('');
@@ -2878,6 +2947,30 @@
       switchTab(tab);
     }
 
+    // Floating Back to Top Logic
+    function scrollToTop() {
+      const main = document.getElementById('main-content');
+      if (main) {
+        main.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function initBackToTop() {
+      const main = document.getElementById('main-content');
+      const btn = document.getElementById('back-to-top');
+      if (!main || !btn) return;
+
+      main.addEventListener('scroll', () => {
+        if (main.scrollTop > 300) {
+          btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+          btn.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+        } else {
+          btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+          btn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+        }
+      });
+    }
+
     // Keyboard Shortcuts
     function setupKeyboardShortcuts() {
       window.addEventListener('keydown', (e) => {
@@ -2889,6 +2982,11 @@
         } else if (e.key === 'Escape') {
           closeSearchModal();
           closeTopoDrawer();
+        } else if ((e.key === 't' || e.key === 'T') && !e.metaKey && !e.ctrlKey) {
+          if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            scrollToTop();
+          }
         }
       });
     }
