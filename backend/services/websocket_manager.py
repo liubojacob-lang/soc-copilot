@@ -13,6 +13,7 @@ Features:
 import asyncio
 import json
 import time
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
@@ -45,6 +46,7 @@ class ConnectionManager:
     - Connection lifecycle management
     - Channel-based subscriptions
     - Message broadcasting with optional compression
+    - Multi-instance cross-pod Redis Pub/Sub broadcast bridge
     - Offline message queuing
     - Performance monitoring integration
     """
@@ -63,6 +65,12 @@ class ConnectionManager:
         self._lock = asyncio.Lock()
         self._user_ttl_seconds = 86400  # 24 hours
 
+        # Multi-node Redis Pub/Sub broadcast bridging
+        self._instance_id = str(uuid.uuid4())
+        self._pubsub_task: asyncio.Task | None = None
+        self._pubsub_channel = "ws:broadcast"
+        self._redis_client: Any | None = None
+
     async def connect(
         self,
         websocket: WebSocket,
@@ -70,10 +78,11 @@ class ConnectionManager:
         user_role: str,
         channels: set[str] | None = None,
         message_queue: MessageQueueService | None = None,
+        subprotocol: str | None = None,
     ):
         """Accept a new WebSocket connection and send queued messages."""
         connection_id = f"{user_id}_{int(time.time() * 1000)}"
-        await websocket.accept()
+        await websocket.accept(subprotocol=subprotocol)
 
         async with self._lock:
             self.active_connections[websocket] = {
@@ -208,16 +217,80 @@ class ConnectionManager:
                 pass
             await self.disconnect(websocket, reason="send_error")
 
-    async def broadcast_to_channel(
+    async def start_pubsub(self, redis_client: Any | None = None):
+        """Start Redis Pub/Sub listener for multi-instance broadcast bridging."""
+        if redis_client is not None:
+            self._redis_client = redis_client
+        else:
+            try:
+                from core.redis_client import get_redis_client
+
+                self._redis_client = await get_redis_client()
+            except Exception as e:
+                logger.warning(f"Could not connect to Redis for WebSocket Pub/Sub: {e}")
+                self._redis_client = None
+
+        if self._redis_client is None:
+            logger.info("Operating in standalone single-instance WebSocket mode")
+            return
+
+        if self._pubsub_task is None or self._pubsub_task.done():
+            self._pubsub_task = asyncio.create_task(self._pubsub_listener())
+            logger.info(
+                f"Started Redis Pub/Sub WebSocket bridge (instance={self._instance_id})"
+            )
+
+    async def stop_pubsub(self):
+        """Stop Redis Pub/Sub listener."""
+        if self._pubsub_task and not self._pubsub_task.done():
+            self._pubsub_task.cancel()
+            try:
+                await self._pubsub_task
+            except asyncio.CancelledError:
+                pass
+            self._pubsub_task = None
+            logger.info("Stopped Redis Pub/Sub WebSocket bridge")
+
+    async def _pubsub_listener(self):
+        """Listen for broadcast messages published by peer instances."""
+        pubsub = None
+        try:
+            pubsub = self._redis_client.pubsub()
+            await pubsub.subscribe(self._pubsub_channel)
+            async for raw_msg in pubsub.listen():
+                if not isinstance(raw_msg, dict) or raw_msg.get("type") != "message":
+                    continue
+                try:
+                    payload = json.loads(raw_msg.get("data", "{}"))
+                    if payload.get("sender_id") == self._instance_id:
+                        # Skip own broadcast to prevent duplicate echoing
+                        continue
+                    target_channel = payload.get("channel")
+                    msg_dict = payload.get("message")
+                    if target_channel and msg_dict:
+                        await self._deliver_local(target_channel, msg_dict)
+                except Exception as e:
+                    logger.warning(f"Failed to process Redis Pub/Sub broadcast payload: {e}")
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"Redis Pub/Sub listener encountered error: {e}")
+        finally:
+            if pubsub:
+                try:
+                    await pubsub.unsubscribe(self._pubsub_channel)
+                    await pubsub.aclose()
+                except Exception:
+                    pass
+
+    async def _deliver_local(
         self,
         channel: str,
-        message: WebSocketMessage,
-        message_queue: MessageQueueService | None = None,
-    ):
-        """Broadcast a message to all clients subscribed to a channel."""
+        message_dict: dict[str, Any],
+    ) -> set[str]:
+        """Deliver message to all locally connected websockets on this pod."""
         if channel not in self.channel_subscriptions:
-            return
-        message_dict = message.model_dump()
+            return set()
         connections = list(self.channel_subscriptions[channel])
         delivered_users = set()
         for websocket in connections:
@@ -227,8 +300,40 @@ class ConnectionManager:
                 if user_id:
                     delivered_users.add(user_id)
             except Exception as e:
-                logger.error(f"Failed to broadcast to channel {channel}: {e}")
+                logger.error(f"Failed to deliver local message to channel {channel}: {e}")
                 await self.disconnect(websocket)
+        return delivered_users
+
+    async def broadcast_to_channel(
+        self,
+        channel: str,
+        message: WebSocketMessage,
+        message_queue: MessageQueueService | None = None,
+        publish_to_redis: bool = True,
+    ):
+        """Broadcast a message to all clients subscribed to a channel across all cluster nodes."""
+        if channel not in self.channel_subscriptions:
+            return
+        message_dict = message.model_dump()
+
+        # 1. Deliver to local clients connected to this instance
+        delivered_users = await self._deliver_local(channel, message_dict)
+
+        # 2. Publish to peer instances via Redis Pub/Sub
+        if publish_to_redis and self._redis_client is not None:
+            try:
+                payload = json.dumps(
+                    {
+                        "sender_id": self._instance_id,
+                        "channel": channel,
+                        "message": message_dict,
+                    }
+                )
+                await self._redis_client.publish(self._pubsub_channel, payload)
+            except Exception as e:
+                logger.warning(f"Failed to publish WebSocket message to Redis Pub/Sub: {e}")
+
+        # 3. Queue for known offline users
         if message_queue and await message_queue.is_available():
             for user_id in self.known_users:
                 if user_id not in delivered_users:

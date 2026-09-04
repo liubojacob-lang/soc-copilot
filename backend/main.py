@@ -352,10 +352,15 @@ async def lifespan(app_instance: FastAPI):
     cleanup_task = asyncio.create_task(websocket_cleanup_task())
     logger.info("Started WebSocket user cleanup background task")
 
+    # Start WebSocket multi-instance Redis Pub/Sub broadcast bridge
+    ws_manager = get_manager()
+    await ws_manager.start_pubsub()
+
     yield
 
     # Shutdown
     logger.info("Shutting down SOC Copilot API")
+    await ws_manager.stop_pubsub()
     if cleanup_task:
         cleanup_task.cancel()
         try:

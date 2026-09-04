@@ -1,7 +1,9 @@
 "use client";
 
 import { ReactNode, useMemo, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, Inbox } from "lucide-react";
+import { FixedSizeList } from "react-window";
 import { cn } from "@/lib/utils";
 import { Badge } from "./Badge";
 import { Text, Heading } from "./Typography";
@@ -54,6 +56,12 @@ export interface DataTableProps<T> {
   showPagination?: boolean;
   /** 是否显示行分隔线 */
   showRowBorder?: boolean;
+  /** 是否开启虚拟滚动列表渲染 (海量数据场景) */
+  virtualized?: boolean;
+  /** 虚拟列表可视窗口高度 (px) */
+  virtualHeight?: number;
+  /** 虚拟行固定高度 (px) */
+  rowHeight?: number;
 }
 
 // ============================================================
@@ -95,7 +103,8 @@ interface DataTableEmptyProps {
   description?: string;
 }
 
-function DataTableEmpty({ icon, title = "暂无数据", description }: DataTableEmptyProps) {
+function DataTableEmpty({ icon, title, description }: DataTableEmptyProps) {
+  const t = useTranslations("common");
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
       {icon ? (
@@ -106,7 +115,7 @@ function DataTableEmpty({ icon, title = "暂无数据", description }: DataTable
         </div>
       )}
       <Heading level={3} color="secondary" className="mb-1">
-        {title}
+        {title ?? t("noData")}
       </Heading>
       {description && (
         <Text color="tertiary" className="max-w-sm">
@@ -129,6 +138,7 @@ interface PaginationProps {
 }
 
 function Pagination({ page, pageSize, total, onChange }: PaginationProps) {
+  const t = useTranslations("common");
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize]);
   const pageItems = useMemo(() => generatePageItems(page, totalPages), [page, totalPages]);
 
@@ -155,7 +165,7 @@ function Pagination({ page, pageSize, total, onChange }: PaginationProps) {
     <div className="flex items-center justify-center gap-1 py-3">
       <button
         type="button"
-        aria-label="上一页"
+        aria-label={t("prevPage")}
         onClick={handlePrev}
         disabled={page <= 1}
         className={cn(
@@ -174,7 +184,7 @@ function Pagination({ page, pageSize, total, onChange }: PaginationProps) {
           <button
             key={`${item}-${idx}`}
             type="button"
-            aria-label={isEllipsis ? undefined : `第 ${item} 页`}
+            aria-label={isEllipsis ? undefined : t("pageAria", { page: item })}
             aria-current={isCurrent ? "page" : undefined}
             disabled={isEllipsis}
             onClick={() => handlePageClick(item)}
@@ -193,7 +203,7 @@ function Pagination({ page, pageSize, total, onChange }: PaginationProps) {
 
       <button
         type="button"
-        aria-label="下一页"
+        aria-label={t("nextPage")}
         onClick={handleNext}
         disabled={page >= totalPages}
         className={cn(
@@ -261,13 +271,14 @@ export interface SeverityBadgeCellProps {
 }
 
 export function SeverityBadgeCell({ severity, label, className }: SeverityBadgeCellProps) {
+  const t = useTranslations("severity");
   const severityLabelMap: Record<TableSeverity, string> = {
-    critical: "严重",
-    high: "高危",
-    medium: "中危",
-    low: "低危",
-    info: "信息",
-    neutral: "一般",
+    critical: t("critical"),
+    high: t("high"),
+    medium: t("medium"),
+    low: t("low"),
+    info: t("info"),
+    neutral: t("neutral"),
   };
   return (
     <Badge severity={severity} className={className}>
@@ -290,11 +301,15 @@ export function DataTable<T>({
   className,
   onPageChange,
   rowKey,
-  showPagination = true,
+  showPagination,
   showRowBorder = true,
+  virtualized = false,
+  virtualHeight = 400,
+  rowHeight = 52,
 }: DataTableProps<T>) {
   const effectiveTotal = total ?? data.length;
   const isEmpty = data.length === 0;
+  const shouldShowPagination = showPagination ?? !virtualized;
 
   const tableContent = (
     <div className={cn("w-full overflow-x-auto", className)}>
@@ -349,6 +364,88 @@ export function DataTable<T>({
     </div>
   );
 
+  const virtualizedListHeight = Math.min(
+    virtualHeight,
+    Math.max(rowHeight, data.length * rowHeight)
+  );
+
+  const virtualizedContent = (
+    <div
+      role="table"
+      className={cn(
+        "w-full border border-border-subtle dark:border-slate-700 rounded-md overflow-hidden",
+        className
+      )}
+    >
+      {/* Header row */}
+      <div
+        role="row"
+        className="flex items-center border-b border-border-subtle dark:border-slate-700 bg-surface-secondary dark:bg-slate-800/60"
+      >
+        {columns.map((col) => (
+          <div
+            role="columnheader"
+            key={col.key}
+            className={cn(
+              "h-12 px-4 py-3 flex items-center text-left whitespace-nowrap text-body font-semibold text-text-tertiary select-none",
+              alignToClass(col.align)
+            )}
+            style={{
+              width: col.width || `${100 / columns.length}%`,
+              flexShrink: col.width ? 0 : 1,
+              flexGrow: col.width ? 0 : 1,
+            }}
+          >
+            {col.header}
+          </div>
+        ))}
+      </div>
+
+      {/* Virtualized Body */}
+      <FixedSizeList
+        height={virtualizedListHeight}
+        itemCount={data.length}
+        itemSize={rowHeight}
+        width="100%"
+      >
+        {({ index, style }) => {
+          const row = data[index];
+          const key = rowKey ? rowKey(row, index) : `row-${index}`;
+          return (
+            <div
+              role="row"
+              key={key}
+              style={style}
+              className={cn(
+                "flex items-center transition-colors duration-150 hover:bg-surface-hover dark:hover:bg-slate-800/60",
+                showRowBorder && "border-b border-border-subtle dark:border-slate-700/60"
+              )}
+            >
+              {columns.map((col) => (
+                <div
+                  role="cell"
+                  key={col.key}
+                  className={cn(
+                    "px-4 py-2 align-middle text-body text-text-primary overflow-hidden text-ellipsis",
+                    alignToClass(col.align),
+                    col.className
+                  )}
+                  style={{
+                    width: col.width || `${100 / columns.length}%`,
+                    flexShrink: col.width ? 0 : 1,
+                    flexGrow: col.width ? 0 : 1,
+                  }}
+                >
+                  {col.cell(row, index)}
+                </div>
+              ))}
+            </div>
+          );
+        }}
+      </FixedSizeList>
+    </div>
+  );
+
   return (
     <div className="w-full">
       {isEmpty ? (
@@ -359,8 +456,8 @@ export function DataTable<T>({
         />
       ) : (
         <>
-          {tableContent}
-          {showPagination && effectiveTotal > 0 && (
+          {virtualized ? virtualizedContent : tableContent}
+          {shouldShowPagination && effectiveTotal > 0 && (
             <>
               <div className="border-t border-border-subtle dark:border-slate-700" />
               <Pagination
@@ -375,6 +472,10 @@ export function DataTable<T>({
       )}
     </div>
   );
+}
+
+export function VirtualDataTable<T>(props: DataTableProps<T>) {
+  return <DataTable {...props} virtualized={true} />;
 }
 
 export default DataTable;
