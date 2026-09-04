@@ -1277,15 +1277,29 @@
   </div>
 
   <!-- Global Search Modal -->
-  <div id="search-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-24 px-4">
-    <div class="w-full max-w-2xl bg-white dark:bg-cyber-800 border border-slate-200 dark:border-cyber-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh]">
+  <div id="search-modal" onclick="handleSearchBackdropClick(event)" class="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-24 px-4 cursor-pointer">
+    <div onclick="event.stopPropagation()" class="w-full max-w-2xl bg-white dark:bg-cyber-800 border border-slate-200 dark:border-cyber-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] cursor-default">
       <div class="p-4 border-b border-slate-200 dark:border-cyber-border flex items-center space-x-3">
-        <span>🔍</span>
+        <span class="text-slate-400 text-base">🔍</span>
         <input type="text" id="global-search-input" placeholder="输入搜索关键词（如 alert, playbook, token, redis, postgres）..." oninput="handleGlobalSearch()" class="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder-slate-400"/>
-        <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-cyber-900 text-slate-500 dark:text-slate-400 rounded text-xs font-mono border border-slate-200 dark:border-cyber-border">ESC 退出</kbd>
+        <!-- Clickable Close Button -->
+        <button type="button" onclick="closeSearchModal()" title="关闭搜索 (ESC)" class="flex items-center space-x-1.5 px-2.5 py-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-cyber-700/80 rounded-lg text-xs transition-colors border border-transparent hover:border-slate-200 dark:hover:border-cyber-border cursor-pointer">
+          <span class="font-bold text-xs">✕</span>
+          <span class="hidden sm:inline text-xs">关闭</span>
+          <kbd class="hidden sm:inline-block px-1.5 py-0.5 bg-slate-100 dark:bg-cyber-900 text-slate-500 dark:text-slate-400 rounded text-[10px] font-mono border border-slate-200 dark:border-cyber-border ml-1">ESC</kbd>
+        </button>
       </div>
       <div id="global-search-results" class="flex-1 overflow-y-auto p-4 space-y-2 text-xs">
         <div class="text-slate-400 text-center py-8">输入关键字以快速索引架构全局元素</div>
+      </div>
+      <!-- Modal Footer -->
+      <div class="px-4 py-2.5 border-t border-slate-200 dark:border-cyber-border bg-slate-50/80 dark:bg-cyber-900/50 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+        <div class="flex items-center space-x-2">
+          <span>💡 提示：按 ESC、点击右上角 ✕ 或点击背景遮罩均可退出</span>
+        </div>
+        <button type="button" onclick="closeSearchModal()" class="px-3 py-1 rounded-md text-xs font-medium bg-slate-200/80 dark:bg-cyber-700/80 hover:bg-slate-300 dark:hover:bg-cyber-600 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer">
+          关闭
+        </button>
       </div>
     </div>
   </div>
@@ -2458,15 +2472,26 @@
     // Global Search Modal
     function openSearchModal() {
       const modal = document.getElementById('search-modal');
-      modal.classList.remove('hidden');
+      if (modal) modal.classList.remove('hidden');
       const input = document.getElementById('global-search-input');
-      input.value = '';
-      input.focus();
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
       handleGlobalSearch();
     }
 
     function closeSearchModal() {
-      document.getElementById('search-modal').classList.add('hidden');
+      const modal = document.getElementById('search-modal');
+      if (modal) modal.classList.add('hidden');
+      const input = document.getElementById('global-search-input');
+      if (input) input.blur();
+    }
+
+    function handleSearchBackdropClick(e) {
+      if (e.target.id === 'search-modal') {
+        closeSearchModal();
+      }
     }
 
     function handleGlobalSearch() {
