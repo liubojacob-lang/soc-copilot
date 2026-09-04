@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import and_, desc, func, or_, select
+from sqlalchemy import and_, case, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.marketplace import (
@@ -280,43 +280,58 @@ class MarketplaceRepository:
         result = await self.db.execute(
             select(
                 func.count(MarketplacePlaybookModel.id).label("total"),
-                func.sum(
-                    func.case(
-                        (
-                            MarketplacePlaybookModel.status
-                            == MarketplacePlaybookStatus.PENDING,
-                            1,
-                        ),
-                        else_=0,
-                    )
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                MarketplacePlaybookModel.status
+                                == MarketplacePlaybookStatus.PENDING,
+                                1,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
                 ).label("pending"),
-                func.sum(
-                    func.case(
-                        (
-                            MarketplacePlaybookModel.status
-                            == MarketplacePlaybookStatus.APPROVED,
-                            1,
-                        ),
-                        else_=0,
-                    )
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                MarketplacePlaybookModel.status
+                                == MarketplacePlaybookStatus.APPROVED,
+                                1,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
                 ).label("approved"),
-                func.sum(
-                    func.case(
-                        (
-                            MarketplacePlaybookModel.status
-                            == MarketplacePlaybookStatus.REJECTED,
-                            1,
-                        ),
-                        else_=0,
-                    )
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                MarketplacePlaybookModel.status
+                                == MarketplacePlaybookStatus.REJECTED,
+                                1,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
                 ).label("rejected"),
-                func.sum(
-                    func.case((MarketplacePlaybookModel.featured == True, 1), else_=0)
+                func.coalesce(
+                    func.sum(
+                        case((MarketplacePlaybookModel.featured == True, 1), else_=0)
+                    ),
+                    0,
                 ).label("featured"),
-                func.sum(
-                    func.case((MarketplacePlaybookModel.verified == True, 1), else_=0)
+                func.coalesce(
+                    func.sum(
+                        case((MarketplacePlaybookModel.verified == True, 1), else_=0)
+                    ),
+                    0,
                 ).label("verified"),
-                func.sum(MarketplacePlaybookModel.download_count).label("downloads"),
+                func.coalesce(func.sum(MarketplacePlaybookModel.download_count), 0).label("downloads"),
             )
         )
         row = result.one()

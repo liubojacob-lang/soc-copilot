@@ -153,3 +153,16 @@ def test_queue_broker_stats():
     stats = broker.get_queue_stats()
     assert isinstance(stats, dict)
     assert "dlq" in stats
+
+
+# 7. Distributed Cron Lock Tests
+@pytest.mark.asyncio
+async def test_cron_scheduler_distributed_lock():
+    from services.cron_scheduler_service import CronSchedulerService
+
+    # Create scheduler without active DB
+    scheduler = CronSchedulerService(session_factory=lambda: None)
+    
+    # Test acquiring lock (with fallback or redis)
+    has_lock = await scheduler._acquire_distributed_lock("test_key_1", ttl_seconds=10)
+    assert isinstance(has_lock, bool)

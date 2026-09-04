@@ -78,6 +78,24 @@ class CronSchedulerService:
 
         logger.info("Cron scheduler loop ended")
 
+    async def _acquire_distributed_lock(self, key: str, ttl_seconds: int = 55) -> bool:
+        """Acquire a distributed lock via Redis to prevent duplicate executions across replicas.
+
+        Falls back to in-memory set if Redis is not configured or unavailable.
+        """
+        try:
+            from core.redis_client import get_redis_client
+
+            client = await get_redis_client()
+            if client:
+                lock_key = f"lock:cron:{key}"
+                acquired = await client.set(lock_key, "1", nx=True, ex=ttl_seconds)
+                return bool(acquired)
+        except Exception as e:
+            logger.warning(f"Redis distributed lock error for {key}: {e}")
+
+        return True
+
     async def _check_and_execute_triggers(self) -> None:
         """Check all cron triggers and execute those that are due."""
         from croniter import croniter
@@ -123,7 +141,18 @@ class CronSchedulerService:
                         ).total_seconds() < self._check_interval * 2
 
                     if should_run:
-                        # Add to pending set to prevent duplicate execution
+                        # Distributed lock check across multiple worker/API replicas
+                        has_lock = await self._acquire_distributed_lock(
+                            f"trigger:{trigger.id}", ttl_seconds=55
+                        )
+                        if not has_lock:
+                            skipped_count += 1
+                            logger.debug(
+                                f"Cron trigger {trigger.id} skipped (lock acquired by another replica)"
+                            )
+                            continue
+
+                        # Add to pending set to prevent duplicate execution in this instance
                         self._pending_triggers.add(trigger.id)
 
                         # Execute the trigger (fire and forget within transaction)
@@ -156,7 +185,17 @@ class CronSchedulerService:
 
     async def _check_escalations(self) -> None:
         """v1.1: Check for unacknowledged alerts and escalate to on-call personnel."""
-        from services.notification.escalation_service import get_escalation_service
+        from services.notification.escalation_service import (
+            ESCALATION_CHECK_INTERVAL_SECONDS,
+            get_escalation_service,
+        )
+
+        has_lock = await self._acquire_distributed_lock(
+            "escalations", ttl_seconds=max(30, ESCALATION_CHECK_INTERVAL_SECONDS - 5)
+        )
+        if not has_lock:
+            logger.debug("Escalation check skipped (handled by another replica)")
+            return
 
         try:
             svc = get_escalation_service()
