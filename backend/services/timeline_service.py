@@ -191,7 +191,11 @@ For suspicious events, include:
             # Match by hostname
             hostnames = []
             for event in result.timeline:
-                for key, value in event.get("key_fields", {}).items():
+                key_fields = (
+                    getattr(event, "key_fields", None)
+                    or (event.get("key_fields", {}) if isinstance(event, dict) else {})
+                )
+                for key, value in key_fields.items():
                     if "host" in key.lower() and isinstance(value, str):
                         hostnames.append(value)
 
@@ -396,18 +400,30 @@ For suspicious events, include:
         ]
 
         for event in result.timeline:
+            ts = getattr(event, "timestamp", None) or (
+                event.get("timestamp") if isinstance(event, dict) else "Unknown"
+            )
+            ev_type = getattr(event, "type", None) or (
+                event.get("type") if isinstance(event, dict) else "Unknown"
+            )
+            desc = getattr(event, "description", None) or (
+                event.get("description") if isinstance(event, dict) else "No description"
+            )
+            key_fields = getattr(event, "key_fields", None) or (
+                event.get("key_fields") if isinstance(event, dict) else {}
+            )
             lines.extend(
                 [
-                    f"### {event.get('timestamp', 'Unknown')} - {event.get('type', 'Unknown')}",
+                    f"### {ts} - {ev_type}",
                     "",
-                    event.get("description", "No description"),
+                    desc,
                     "",
                 ]
             )
 
-            if event.get("key_fields"):
+            if key_fields:
                 lines.append("**Key Fields:**")
-                for key, value in event["key_fields"].items():
+                for key, value in key_fields.items():
                     lines.append(f"- `{key}`: {value}")
                 lines.append("")
 
@@ -421,13 +437,25 @@ For suspicious events, include:
         )
 
         for i, event in enumerate(result.suspicious_top5, 1):
+            ts = getattr(event, "timestamp", None) or (
+                event.get("timestamp") if isinstance(event, dict) else "Unknown"
+            )
+            sev = getattr(event, "severity", None) or (
+                event.get("severity") if isinstance(event, dict) else "N/A"
+            )
+            desc = getattr(event, "description", None) or (
+                event.get("description") if isinstance(event, dict) else "No description"
+            )
+            reasoning = getattr(event, "reasoning", None) or (
+                event.get("reasoning") if isinstance(event, dict) else "N/A"
+            )
             lines.extend(
                 [
-                    f"### {i}. {event.get('timestamp', 'Unknown')} [{event.get('severity', 'N/A').upper()}]",
+                    f"### {i}. {ts} [{str(sev).upper()}]",
                     "",
-                    event.get("description", "No description"),
+                    desc,
                     "",
-                    f"**Reasoning:** {event.get('reasoning', 'N/A')}",
+                    f"**Reasoning:** {reasoning}",
                     "",
                 ]
             )

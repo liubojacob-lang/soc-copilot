@@ -70,7 +70,7 @@ class AuditArchiveService:
         Returns:
             Dict with archive statistics
         """
-        days = days or self.retention_days
+        days = days if days is not None else self.retention_days
         cutoff = datetime.now(UTC) - timedelta(days=days)
         cutoff_str = cutoff.isoformat()
 
@@ -169,6 +169,11 @@ class AuditArchiveService:
                 break
 
             for log in logs:
+                created_at_val = (
+                    log.created_at.isoformat()
+                    if hasattr(log.created_at, "isoformat")
+                    else str(log.created_at)
+                )
                 all_logs.append(
                     {
                         "id": log.id,
@@ -183,7 +188,7 @@ class AuditArchiveService:
                         "user_agent": log.user_agent,
                         "duration_ms": log.duration_ms,
                         "extra_json": log.extra_json,
-                        "created_at": log.created_at,
+                        "created_at": created_at_val,
                     }
                 )
 
@@ -207,6 +212,7 @@ class AuditArchiveService:
                 },
                 f,
                 indent=2,
+                default=str,
             )
 
         # Delete archived logs from database
@@ -228,7 +234,9 @@ class AuditArchiveService:
         Returns:
             Dict with cleanup statistics
         """
-        retention_days = retention_days or self.archive_retention_days
+        retention_days = (
+            retention_days if retention_days is not None else self.archive_retention_days
+        )
         cutoff_date = datetime.now() - timedelta(days=retention_days)
 
         stats = {
@@ -309,6 +317,11 @@ class AuditArchiveService:
             logs = result.scalars().all()
 
             for log in logs:
+                created_at_val = (
+                    log.created_at.isoformat()
+                    if hasattr(log.created_at, "isoformat")
+                    else str(log.created_at)
+                )
                 all_logs.append(
                     {
                         "id": log.id,
@@ -323,7 +336,7 @@ class AuditArchiveService:
                         "user_agent": log.user_agent,
                         "duration_ms": log.duration_ms,
                         "extra_json": log.extra_json,
-                        "created_at": log.created_at,
+                        "created_at": created_at_val,
                         "source": "database",
                     }
                 )
@@ -348,7 +361,7 @@ class AuditArchiveService:
                     logger.warning(f"Failed to read archive {archive_file}: {e}")
 
         # Sort by created_at
-        all_logs.sort(key=lambda x: x.get("created_at", ""))
+        all_logs.sort(key=lambda x: str(x.get("created_at", "")))
 
         # Write export file
         if format == "json":
@@ -365,6 +378,7 @@ class AuditArchiveService:
                     },
                     f,
                     indent=2,
+                    default=str,
                 )
         elif format == "csv":
             import csv
