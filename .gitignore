@@ -64,6 +64,7 @@ server*.err
 # Test coverage
 htmlcov/
 frontend/coverage/
+frontend/test-results/
 .coverage
 .coverage.*
 coverage.xml
@@ -115,6 +116,8 @@ grafana-*.json
 # Local agent tool artifacts
 .mimosa/
 .cospec/
+.serena/
+openapi.json
 
 # Runtime migration lock
 .alembic.lock

@@ -77,3 +77,19 @@ class TestGenerate:
             "messages"
         ]
         assert messages[0] == {"role": "system", "content": "custom system"}
+
+    @pytest.mark.asyncio
+    async def test_analyze_alert_with_rag_activates_fallback_on_failure(self, service_with_mock_llm):
+        service_with_mock_llm.llm.chat_completion = AsyncMock(side_effect=RuntimeError("API Quota exceeded"))
+        alert = {
+            "title": "Port scan reconnaissance activity",
+            "description": "Nmap scan from 192.168.1.50",
+            "severity": "high",
+            "source_ip": "192.168.1.50",
+            "alert_type": "reconnaissance"
+        }
+        res = await service_with_mock_llm.analyze_alert_with_rag(alert)
+        assert "[Degraded Mode]" in res.summary
+        assert res.confidence == 0.6
+        assert len(res.recommendations) > 0
+        assert "T1046 - Network Service Discovery" in res.attack_techniques

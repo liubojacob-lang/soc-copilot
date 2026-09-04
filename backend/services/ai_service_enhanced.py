@@ -18,6 +18,7 @@ from core.prompt_sanitizer import (
 )
 from services.ai_providers import LLMFactory, LLMProvider
 from services.ai_utils import clean_json_content
+from utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenException
 
 logger = get_logger(__name__)
 
@@ -63,6 +64,11 @@ class EnhancedAIService:
         self.provider = getattr(settings, "ai_provider", "zhipu").lower()
         self.llm: LLMProvider | None = None
         self._initialized = False
+        self.circuit_breaker = CircuitBreaker(
+            name="llm_provider",
+            failure_threshold=5,
+            recovery_timeout=30.0,
+        )
 
         # Initialize LLM provider
         self._init_llm()
@@ -107,7 +113,8 @@ class EnhancedAIService:
         if not self.llm:
             raise ValueError("AI service not initialized")
 
-        content = await self.llm.chat_completion(
+        content = await self.circuit_breaker.call(
+            self.llm.chat_completion,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt},
@@ -141,7 +148,8 @@ Respond with JSON that matches the schema above:"""
         content = None
         for attempt in range(self.max_retries + 1):
             try:
-                content = await self.llm.chat_completion(
+                content = await self.circuit_breaker.call(
+                    self.llm.chat_completion,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": full_prompt},
@@ -251,13 +259,45 @@ Respond in JSON format with these fields:
             )
 
         except Exception as e:
-            logger.error(f"Error analyzing alert: {e}")
-            return AIAnalysisResult(
-                summary="Analysis failed",
-                root_cause=str(e),
-                recommendations=["Please review the alert manually"],
-                confidence=0.0,
+            logger.warning(
+                f"LLM analysis unavailable or circuit open ({e}), activating rule-based fallback"
             )
+            return self._rule_based_fallback_analysis(alert_data, reason=str(e))
+
+    def _rule_based_fallback_analysis(
+        self, alert_data: dict[str, Any], reason: str = ""
+    ) -> AIAnalysisResult:
+        """Rule-based heuristic fallback analysis when LLM service is unavailable or circuit is open."""
+        title = alert_data.get("title", "Security Alert")
+        description = alert_data.get("description", "")
+        severity = alert_data.get("severity", "medium").lower()
+        src_ip = alert_data.get("source_ip") or "unknown"
+        alert_type = alert_data.get("alert_type") or "unknown"
+
+        recommendations = [
+            f"Inspect network traffic and connections associated with source {src_ip}.",
+            "Check endpoint detection and response (EDR) telemetry for process anomalies.",
+            "Re-trigger AI deep analysis once LLM upstream service recovers.",
+        ]
+        techniques = []
+        low_context = f"{title} {description}".lower()
+        if "scan" in low_context or "recon" in low_context:
+            techniques.append("T1046 - Network Service Discovery")
+        if "brute" in low_context or "login" in low_context or "auth" in low_context:
+            techniques.append("T1110 - Brute Force")
+        if "malware" in low_context or "trojan" in low_context or "virus" in low_context:
+            techniques.append("T1204 - User Execution")
+        if "privilege" in low_context or "escalat" in low_context:
+            techniques.append("T1068 - Exploitation for Privilege Escalation")
+
+        return AIAnalysisResult(
+            summary=f"[Degraded Mode] Analyzed '{title}' using heuristic rules. External AI engine is currently degraded.",
+            root_cause=f"Heuristic signature evaluation for {alert_type}: {reason or 'LLM service fast-fail/circuit open'}.",
+            recommendations=recommendations,
+            confidence=0.6,
+            severity_assessment=severity,
+            attack_techniques=techniques,
+        )
 
     async def natural_language_query(
         self, query: str, user_context: dict[str, Any] | None = None
