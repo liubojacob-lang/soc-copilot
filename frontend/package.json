@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "predev": "node scripts/sync-i18n.mjs",
-    "dev": "next dev -H localhost -p 3003",
+    "dev": "NODE_OPTIONS='--max-old-space-size=4096' next dev --webpack -H localhost -p 3003",
+    "dev:turbo": "next dev --turbopack -H localhost -p 3003",
+    "clean": "rm -rf .next coverage playwright-report test-results",
     "prebuild": "node scripts/sync-i18n.mjs && node scripts/check-i18n-keys.mjs",
     "build": "next build",
     "start": "next start",

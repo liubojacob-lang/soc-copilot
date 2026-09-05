@@ -36,6 +36,28 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },
+  // Optimize webpack file watcher to prevent CPU spikes / overheating
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        aggregateTimeout: 300,
+        poll: false,
+        ignored: [
+          "**/node_modules/**",
+          "**/.next/**",
+          "**/backend/**",
+          "**/coverage/**",
+          "**/playwright-report/**",
+          "**/test-results/**",
+          "**/.git/**",
+          "**/docs/**",
+          "**/__pycache__/**",
+          "**/.pytest_cache/**",
+        ],
+      };
+    }
+    return config;
+  },
   async rewrites() {
     return [
       {
