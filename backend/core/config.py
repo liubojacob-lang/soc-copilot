@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     zhipu_model: str = "glm-4"  # Zhipu model to use
     openai_api_key: str = ""
     nvidia_api_key: str = ""
-    nvidia_model: str = "meta/llama-3.1-405b-instruct"  # NVIDIA model to use
+    nvidia_model: str = "meta/llama-3.2-11b-vision-instruct"  # NVIDIA model to use
     moonshot_api_key: str = ""
     moonshot_model: str = "moonshot-v1-8k"  # Moonshot AI model to use
     openrouter_api_key: str = ""

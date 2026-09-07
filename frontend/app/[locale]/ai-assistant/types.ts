@@ -5,6 +5,8 @@ export interface Message {
   content: string;
   timestamp: Date;
   isStreaming?: boolean;
+  routedModel?: string;
+  routeReason?: string;
 }
 
 export interface AIStatus {
@@ -19,6 +21,8 @@ export interface AIChatResponse {
   message: string;
   response: string;
   conversation_id?: string | null;
+  routed_model?: string | null;
+  route_reason?: string | null;
 }
 
 export interface QuickAction {

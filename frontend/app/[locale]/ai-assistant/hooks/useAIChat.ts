@@ -23,7 +23,7 @@ interface UseAIChatResult {
     conv: ChatConversation,
     models: Array<{ id: string; display_name: string }>
   ) => void;
-  clearChat: (welcomeMessage: string) => void;
+  clearChat: (welcomeMessage?: string) => void;
 }
 
 export function useAIChat({
@@ -121,6 +121,9 @@ export function useAIChat({
           return;
         }
 
+        const routedModel = chatResponse?.routed_model ?? undefined;
+        const routeReason = chatResponse?.route_reason ?? undefined;
+
         setThinking(false);
         setIsStreaming(true);
         setMessages((prev) => [
@@ -130,6 +133,8 @@ export function useAIChat({
             content: "",
             timestamp: new Date(),
             isStreaming: true,
+            routedModel,
+            routeReason,
           },
         ]);
 
@@ -148,6 +153,8 @@ export function useAIChat({
             if (lastMessage?.isStreaming) {
               lastMessage.content = fullResponse;
               lastMessage.isStreaming = false;
+              if (routedModel) lastMessage.routedModel = routedModel;
+              if (routeReason) lastMessage.routeReason = routeReason;
             }
             return newMessages;
           });
@@ -210,15 +217,19 @@ export function useAIChat({
   );
 
   const clearChat = useCallback(
-    (welcomeMessage: string) => {
+    (welcomeMessage?: string) => {
       clearTypingTimers();
-      setMessages([
-        {
-          role: "assistant",
-          content: welcomeMessage,
-          timestamp: new Date(),
-        },
-      ]);
+      if (welcomeMessage) {
+        setMessages([
+          {
+            role: "assistant",
+            content: welcomeMessage,
+            timestamp: new Date(),
+          },
+        ]);
+      } else {
+        setMessages([]);
+      }
       setIsStreaming(false);
       setStreamingMessage("");
       setThinking(false);

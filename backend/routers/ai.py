@@ -109,6 +109,8 @@ class ChatResponse(BaseModel):
     message: str
     response: str
     conversation_id: str | None = None
+    routed_model: str | None = None
+    route_reason: str | None = None
 
     model_config = ConfigDict(protected_namespaces=())
 
@@ -292,9 +294,10 @@ async def chat(
         # Get model to use
         model_id = request.model_id
         model_provider = None
+        route_reason = None
 
-        if model_id:
-            # User specified a model - verify it exists and is enabled
+        if model_id and model_id.lower() != "auto":
+            # User manually specified a model - verify it exists and is enabled
             from repositories.ai_model_repository import AIModelRepository
 
             model_repo = AIModelRepository(db)
@@ -309,31 +312,40 @@ async def chat(
                 f"Using requested model: {model_id} (provider: {model_provider})"
             )
         else:
-            # Use user's default model
-            from repositories.ai_model_repository import (
-                AIModelRepository,
-                AIUserSettingRepository,
-            )
-
-            setting_repo = AIUserSettingRepository(db)
-            model_repo = AIModelRepository(db)
-
-            # Get user's preferred model
-            user_settings = await setting_repo.get_by_user_id(str(current_user.id))
-            user_model_id = user_settings.default_model_id if user_settings else None
-
-            if user_model_id:
-                model = await model_repo.get_by_id(user_model_id)
-                if model and model.enabled:
-                    model_id = user_model_id
-                    model_provider = model.provider
-                    logger.info(f"Using user's default model: {model_id}")
-
-            # If no user default, fall back to service default
+            # Model is "auto" or not specified: check user default setting first if not explicit 'auto'
             if not model_id:
-                model_id = None
-                model_provider = None
-                logger.info(f"Using service default provider: {ai_service.provider}")
+                from repositories.ai_model_repository import (
+                    AIModelRepository,
+                    AIUserSettingRepository,
+                )
+
+                setting_repo = AIUserSettingRepository(db)
+                model_repo = AIModelRepository(db)
+
+                # Get user's preferred model
+                user_settings = await setting_repo.get_by_user_id(str(current_user.id))
+                user_model_id = user_settings.default_model_id if user_settings else None
+
+                if user_model_id and user_model_id.lower() != "auto":
+                    model = await model_repo.get_by_id(user_model_id)
+                    if model and model.enabled:
+                        model_id = user_model_id
+                        model_provider = model.provider
+                        logger.info(f"Using user's default model: {model_id}")
+
+            # If still 'auto' or None, invoke intelligent auto-routing
+            if not model_id or model_id.lower() == "auto":
+                history_for_router = [
+                    {"role": msg.role, "content": msg.content}
+                    for msg in (request.conversation_history or [])
+                ]
+                model_id, model_provider, route_reason = ai_service.resolve_auto_model(
+                    message=request.message,
+                    conversation_history=history_for_router,
+                )
+                logger.info(
+                    f"[Auto-Route] Dynamically routed to: {model_id} ({model_provider}) - {route_reason}"
+                )
 
         # Convert ChatMessage to dict format
         history = None
@@ -359,6 +371,8 @@ async def chat(
             message=request.message,
             response=full_response,
             conversation_id=conversation_id,
+            routed_model=model_id,
+            route_reason=route_reason,
         )
 
     except HTTPException:

@@ -318,6 +318,16 @@ async def lifespan(app_instance: FastAPI):
     # Create bootstrap admin
     await create_bootstrap_admin()
 
+    # Ensure default AI models exist
+    try:
+        from init_ai_models import seed_ai_models
+
+        async with AsyncSessionLocal() as session:
+            await seed_ai_models(session)
+        logger.info("AI models initialized/verified")
+    except Exception as e:
+        logger.warning(f"Failed to auto-seed AI models on startup: {e}")
+
     # Load node plugins
     from pathlib import Path
 
@@ -595,8 +605,10 @@ app.include_router(
     notifications.router
 )  # v0.9.x: Notification channels and queue status
 from routers import alerts_lifecycle  # v0.9.0: Alert lifecycle management
+from routers import alert_import  # v0.9.2: CEF/Syslog/JSON/CSV alert import
 
 app.include_router(alerts_lifecycle.router)  # v0.9.0: Alert lifecycle management
+app.include_router(alert_import.router)  # v0.9.2: Alert import (frontend ImportAlertModal)
 app.include_router(ws_router.router)  # v0.8.5: WebSocket real-time alerts
 app.include_router(ws_router.router, prefix="/api/v1")  # v0.8.5: WebSocket real-time alerts & monitoring under /api/v1
 app.include_router(websocket_filters.router)  # v0.9.0: WebSocket filter management

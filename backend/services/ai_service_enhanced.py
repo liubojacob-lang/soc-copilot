@@ -418,6 +418,118 @@ Provide your recommendations:"""
             logger.error(f"Error recommending playbooks: {e}")
             return []
 
+    def resolve_auto_model(
+        self,
+        message: str,
+        conversation_history: list[dict[str, str]] | None = None,
+    ) -> tuple[str, str, str]:
+        """
+        Intelligently determine the best model & provider based on user prompt & configured keys.
+
+        Returns:
+            tuple of (model_id, provider, reason)
+        """
+        from core.config import settings
+
+        def is_valid_key(val: str) -> bool:
+            if not val or not isinstance(val, str):
+                return False
+            v = val.strip().lower()
+            return bool(
+                v
+                and not v.startswith("your-")
+                and not v.startswith("sk-placeholder")
+                and "example" not in v
+                and len(v) > 8
+            )
+
+        nvidia_key = is_valid_key(getattr(settings, "nvidia_api_key", ""))
+        zhipu_key = is_valid_key(getattr(settings, "zhipu_api_key", ""))
+        anthropic_key = is_valid_key(getattr(settings, "anthropic_api_key", ""))
+        openai_key = is_valid_key(getattr(settings, "openai_api_key", ""))
+
+        msg_lower = (message or "").lower()
+        msg_len = len(message or "")
+
+        # 1. 深度安全推演 / APT / 溯源 / 复杂攻防 / 根因研判 / 报告编制
+        deep_reasoning_keywords = [
+            "apt", "攻击链", "溯源", "推演", "根因", "rca", "应急响应", "处置报告",
+            "取证", "playbook", "剧本设计", "深入分析", "att&ck", "mitre", "横向移动",
+            "提权", "勒索", "挖矿", "cve-"
+        ]
+        is_deep_reasoning = any(k in msg_lower for k in deep_reasoning_keywords)
+
+        # 2. 长文本日志 / 代码审查 / SQL注入 / 脚本反混淆 / 大报文
+        code_log_keywords = [
+            "```", "select ", "union select", "eval(", "powershell", "base64",
+            "syslog", "traceback", "stack trace", "exception:", "error:", "audit_log",
+            "pcap", "payload", "cmd.exe", "bash -c"
+        ]
+        is_code_or_log = (msg_len > 1000) or any(k in msg_lower for k in code_log_keywords)
+
+        # 决策路由
+        if is_code_or_log:
+            if zhipu_key:
+                return (
+                    "glm-4.7-flash",
+                    "zhipu",
+                    "长文本/代码日志场景：路由至 200K 超长上下文与 MoE 代码增强模型 (GLM-4.7-Flash)"
+                )
+            elif nvidia_key:
+                return (
+                    "meta/llama-3.2-11b-vision-instruct",
+                    "nvidia",
+                    "长文本/日志分析场景：路由至 Llama 3.2 11B Vision"
+                )
+
+        if is_deep_reasoning:
+            if anthropic_key:
+                return (
+                    "claude-3-5-sonnet-20241022",
+                    "anthropic",
+                    "高危研判与深度推演：路由至顶级安全推理模型 Claude 3.5 Sonnet"
+                )
+            elif nvidia_key:
+                return (
+                    "nvidia/nemotron-3.5-lightning-30b-a3b",
+                    "nvidia",
+                    "高危研判与深度推演：路由至 NVIDIA 官方思维链推理模型 (Nemotron 3.5 Lightning)"
+                )
+            elif zhipu_key:
+                return (
+                    "glm-4-plus",
+                    "zhipu",
+                    "高危研判与深度推演：路由至智谱 GLM-4 Plus 旗舰模型"
+                )
+
+        # 3. 日常交互 / 快速查 IP / 端口 / 常规问答
+        if nvidia_key:
+            return (
+                "meta/llama-3.2-11b-vision-instruct",
+                "nvidia",
+                "日常研判与实时交互：路由至毫秒级响应模型 (Llama 3.2 11B Vision)"
+            )
+        elif zhipu_key:
+            return (
+                "glm-4.7-flash",
+                "zhipu",
+                "日常研判与快速问答：路由至智谱高速模型 (GLM-4.7-Flash)"
+            )
+        elif openai_key:
+            return (
+                "gpt-4o-mini",
+                "openai",
+                "日常问答：路由至 GPT-4o Mini"
+            )
+
+        # 默认回退
+        default_provider = getattr(settings, "ai_provider", "nvidia").lower()
+        if default_provider == "nvidia":
+            return ("meta/llama-3.2-11b-vision-instruct", "nvidia", "系统默认 NVIDIA 路由")
+        elif default_provider == "zhipu":
+            return ("glm-4", "zhipu", "系统默认智谱路由")
+        return ("glm-4", "zhipu", "兜底默认路由")
+
     async def chat(
         self,
         message: str,
@@ -437,6 +549,13 @@ Provide your recommendations:"""
         Returns:
             Complete response string
         """
+        # Resolve 'auto' if specified or empty
+        if not model_id or model_id.lower() == "auto":
+            model_id, model_provider, reason = self.resolve_auto_model(
+                message, conversation_history
+            )
+            logger.info(f"[Auto-Route] Selected {model_id} ({model_provider}): {reason}")
+
         # Use specified model/provider if provided
         llm = self.llm
         if model_id and model_provider:
@@ -479,7 +598,120 @@ Be concise, professional, and helpful."""
 
         except Exception as e:
             logger.error(f"Error in chat: {e}")
-            return f"I'm sorry, I encountered an error: {e!s}"
+            logger.warning(
+                "Upstream LLM chat unavailable, activating rule-based chat fallback"
+            )
+            return self._rule_based_chat_fallback(message, reason=str(e))
+
+    def _rule_based_chat_fallback(self, message: str, reason: str = "") -> str:
+        """Heuristic rule-based fallback response for chat when upstream LLM is unavailable."""
+        import re
+
+        msg_lower = message.lower()
+
+        # Determine intent & context
+        is_greeting = any(g in msg_lower for g in ["你好", "hello", "hi", "您好", "介绍", "你是谁"])
+        is_playbook = any(p in msg_lower for p in ["剧本", "playbook", "响应", "处置", "应急", "流程", "推荐"])
+        is_alert = any(a in msg_lower for a in ["告警", "alert", "日志", "log", "分析", "研判", "waf", "攻击", "powershell", "webshell"])
+        is_cve = any(c in msg_lower for c in ["cve", "漏洞", "vulnerability", "rce", "sql注入", "xss", "反序列化"])
+        is_report = any(r in msg_lower for r in ["报告", "report", "总结", "复盘", "生成"])
+
+        # Extract potential IOCs (IPs, CVEs)
+        ip_matches = re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", message)
+        cve_matches = re.findall(r"(?i)cve-\d{4}-\d{4,7}", message)
+
+        notice = (
+            "> 💡 **服务降级通知**：检测到当前大模型上游接口暂时不可用（原因：`API密钥未生效或网络连通受限`）。\n"
+            "> 系统已自动切换至**内置启发式安全运营专家规则引擎（Degraded Local Mode）**为您提供即时解答。\n\n"
+        )
+
+        if is_greeting:
+            body = (
+                "### 👋 您好！我是 SOC Copilot 智能安全副驾驶\n\n"
+                "我专注于协助 SOC 分析师进行高效安全运营。虽然外部大模型当前处于离线/降级模式，但我仍可通过内置安全规则引擎为您提供以下核心服务：\n"
+                "- 🛡️ **告警研判与日志特征分析**：直接粘贴日志或 WAF/EDR 告警，自动提取 IOC 与 ATT&CK 技战术映射\n"
+                "- 📋 **应急响应剧本推荐**：提供勒索病毒、挖矿木马、暴力破解等高频事件的标准止血处置流程\n"
+                "- 🔍 **威胁排查与处置命令生成**：快速生成 iptables、netsh 阻断命令及排查命令\n"
+                "- 📑 **安全复盘报告生成**：整理排查要素一键生成 Markdown 格式调查报告\n\n"
+                "请随时粘贴告警日志或描述您遇到的安全问题！"
+            )
+        elif is_playbook:
+            body = (
+                "### 📋 应急响应剧本推荐与处置流程\n\n"
+                "根据您描述的安全事件，推荐执行以下标准 SOAR 应对流程：\n\n"
+                "1. **第一阶段：紧急止血（遏制 Containment）**\n"
+                "   - 隔离受害主机或限制其出网流量（防止横向移动及 C2 通信）\n"
+                "   - 提取攻击源 IP 并在边界防火墙或 WAF 下发紧急黑名单封禁策略\n"
+                "2. **第二阶段：取证排查（根因分析 Eradication）**\n"
+                "   - 导出系统日志及网络连接快照（`netstat -ano` / `ss -tulnp`）\n"
+                "   - 获取恶意样本或脚本哈希（MD5 / SHA256）并提交静态沙箱分析\n"
+                "3. **第三阶段：根除加固（恢复 Recovery）**\n"
+                "   - 清除自启动项、后门账号与恶意定时任务（crontab / Task Scheduler）\n"
+                "   - 修补系统或应用程序漏洞，强制重置受影响主机凭证\n"
+            )
+        elif is_alert or is_cve:
+            target_obj = message[:60].replace("\n", " ") + ("..." if len(message) > 60 else "")
+            lines = [
+                f"### 🛡️ 安全告警 / 威胁分析报告\n\n",
+                f"**分析对象**：`{target_obj}`\n\n",
+                "#### 1. 威胁研判与特征提取\n",
+            ]
+            if ip_matches:
+                lines.append(f"- **识别到的涉案 IP**：{', '.join(f'`{ip}`' for ip in set(ip_matches))}\n")
+            if cve_matches:
+                lines.append(f"- **关联 CVE 漏洞**：{', '.join(f'`{c.upper()}`' for c in set(cve_matches))}\n")
+
+            techniques = []
+            if any(k in msg_lower for k in ["scan", "扫描", "探测", "nmap"]):
+                techniques.append("T1046 - 网络服务发现 (Network Service Discovery)")
+            if any(k in msg_lower for k in ["sql", "injection", "注入"]):
+                techniques.append("T1190 - 利用面向互联网的应用程序 (Exploit Public-Facing Application)")
+            if any(k in msg_lower for k in ["brute", "暴破", "密码", "login"]):
+                techniques.append("T1110 - 暴力破解凭证 (Brute Force)")
+            if any(k in msg_lower for k in ["powershell", "cmd", "bash", "shell", "exec"]):
+                techniques.append("T1059 - 命令与脚本执行 (Command and Scripting Interpreter)")
+            if any(k in msg_lower for k in ["ransom", "勒索", "加密", "encrypt"]):
+                techniques.append("T1486 - 针对性数据加密 (Data Encrypted for Impact)")
+
+            if techniques:
+                lines.append("- **MITRE ATT&CK 战术技术映射**：\n" + "\n".join(f"  - {t}" for t in techniques) + "\n\n")
+            else:
+                lines.append("- **初步定性**：检测到可疑网络活动，建议重点核对通信端口与载荷参数。\n\n")
+
+            lines.append(
+                "#### 2. 建议应急处置措施\n"
+                "1. **网络阻断**：在防火墙或安全组上阻断可疑源 IP 的所有访问请求。\n"
+                "2. **资产排查**：检查目标主机的活动进程列表及定时任务。\n"
+                "3. **凭证审查**：排查是否有异常提权或高频失败登录记录。\n"
+                "4. **情报检索**：在威胁情报平台（VT / AbuseIPDB）中交叉验证上述指标的声誉。\n"
+            )
+            body = "".join(lines)
+        elif is_report:
+            body = (
+                "### 📑 安全事件排查总结报告模板\n\n"
+                "| 字段 | 内容 |\n"
+                "| :--- | :--- |\n"
+                "| **事件概述** | 系统监测到异常安全事件，已完成初步处置与排查 |\n"
+                "| **威胁等级** | 高危 (High) |\n"
+                "| **涉及资产** | 受影响业务主机 / 内网服务器 |\n"
+                "| **处置状态** | 风险已阻断，正处于根除与加固阶段 |\n\n"
+                "#### 排查过程概要\n"
+                "1. 接收到安全监控告警，触发安全运营自动化处置流程。\n"
+                "2. 完成关键网络 IOC 阻断，切断潜在数据回传链路。\n"
+                "3. 进行了系统级异常项清查，加固访问控制策略。\n"
+            )
+        else:
+            body = (
+                "### 💡 安全运营专家建议\n\n"
+                f"针对您提出的问题：**“{message}”**\n\n"
+                "在日常 SOC 运营与事件响应中，建议遵循以下标准实践：\n"
+                "1. **上下文关联**：结合资产关键度与历史日志排查，避免孤立看待单个告警指标。\n"
+                "2. **分级处置**：高危告警第一时间阻断外部网络通信，中低危告警进入排查工单。\n"
+                "3. **自动化闭环**：通过配置 SOAR 剧本减少重复人工操作，提升 MTTR（平均响应时间）。\n\n"
+                "若需深入研判，请直接粘贴详细日志片段、IP 或攻击命令。"
+            )
+
+        return notice + body
 
     async def generate_investigation_report(
         self, alert_id: str, investigation_data: dict[str, Any]
