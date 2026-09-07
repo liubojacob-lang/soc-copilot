@@ -168,7 +168,8 @@
     "backToTop": "返回顶部",
     "prevPage": "上一页",
     "nextPage": "下一页",
-    "pageAria": "第 {page} 页"
+    "pageAria": "第 {page} 页",
+    "offlineBanner": "网络已断开，连接恢复后操作将自动继续。"
   },
   "nav": {
     "home": "首页",

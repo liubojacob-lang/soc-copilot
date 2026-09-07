@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useFormatter, useTranslations, useLocale } from "next-intl";
 import { loadAuthState, authFetchJSON, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
+import { ErrorDisplay } from "@/components/common/ErrorDisplay";
 import {
   Link,
   Search,
@@ -85,6 +86,7 @@ export default function CorrelationPage() {
   const [rules, setRules] = useState<CorrelationRule[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<Error | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"incidents" | "rules">("incidents");
   const [search, setSearch] = useState("");
@@ -109,14 +111,16 @@ export default function CorrelationPage() {
           `/api/correlation/incidents?page=${page}&page_size=20`
         ).catch(() => ({ items: [], total: 0 })),
         authFetchJSON<CorrelationRule[]>("/api/correlation/rules").catch(() => []),
-        authFetchJSON<Stats>("/api/correlation/stats").catch(() => null),
+        authFetchJSON<Stats>("/api/correlation/stats"),
       ]);
       setIncidents(incidentsData.items || incidentsData);
       setRules(rulesData);
       setStats(statsData);
       setTotalPages(Math.ceil((incidentsData.total || 0) / 20));
+      setLoadError(null);
     } catch (err) {
       console.error("Failed to fetch correlation data:", err);
+      setLoadError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);
     }
@@ -161,6 +165,11 @@ export default function CorrelationPage() {
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {loadError && (
+          <div className="mb-4">
+            <ErrorDisplay error={loadError} onRetry={fetchData} compact />
+          </div>
+        )}
         <div className="flex justify-between items-center mb-6">
           <TabList>
             <TabButton

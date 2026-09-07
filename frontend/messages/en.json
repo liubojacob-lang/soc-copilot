@@ -168,7 +168,8 @@
     "backToTop": "Back to top",
     "prevPage": "Previous page",
     "nextPage": "Next page",
-    "pageAria": "Page {page}"
+    "pageAria": "Page {page}",
+    "offlineBanner": "You are offline. Actions will resume when the connection is restored."
   },
   "nav": {
     "home": "Home",

@@ -6,6 +6,7 @@ import { useFormatter, useTranslations, useLocale } from "next-intl";
 import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
+import { ErrorDisplay } from "@/components/common/ErrorDisplay";
 import { Users, AlertTriangle, TrendingUp, Shield, Activity } from "lucide-react";
 
 interface UEBADashboard {
@@ -51,6 +52,7 @@ export default function UEBAPage() {
   const tRiskLevel = useTranslations("uebaPage.riskLevel");
   const [mounted, setMounted] = useState(false);
   const [dashboard, setDashboard] = useState<UEBADashboard | null>(null);
+  const [loadError, setLoadError] = useState<Error | null>(null);
   const [highRiskUsers, setHighRiskUsers] = useState<UEBARiskUser[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,8 +66,10 @@ export default function UEBAPage() {
     try {
       const response = await api.get("/api/ueba/dashboard");
       setDashboard(response as UEBADashboard);
+      setLoadError(null);
     } catch (e) {
       console.error("Failed to load dashboard:", e);
+      setLoadError(e instanceof Error ? e : new Error(String(e)));
     }
   };
 
@@ -94,6 +98,8 @@ export default function UEBAPage() {
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {loadError && <ErrorDisplay error={loadError} onRetry={loadDashboard} compact />}
+
         {/* Stats Cards */}
         {dashboard && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

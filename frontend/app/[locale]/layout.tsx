@@ -5,6 +5,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 
 import BackToTop from "@/components/BackToTop";
+import { OfflineBanner } from "@/components/common/OfflineBanner";
 import { ResponsiveProvider } from "@/components/common/ResponsiveLayout";
 import { PageErrorBoundary } from "@/components/common/ErrorBoundary";
 import { ClientLayout } from "@/components/ClientLayout";
@@ -118,6 +119,7 @@ export default async function LocaleLayout({
         <I18nClientProvider messages={messages} locale={locale}>
           <ResponsiveProvider>
             <PageErrorBoundary>
+              <OfflineBanner />
               <ClientLayout>{children}</ClientLayout>
             </PageErrorBoundary>
             <BackToTop />

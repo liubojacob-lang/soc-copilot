@@ -6,6 +6,7 @@ import { useFormatter, useTranslations, useLocale } from "next-intl";
 import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
+import { ErrorDisplay } from "@/components/common/ErrorDisplay";
 import { useToast } from "@/components/Toast";
 import {
   Target,
@@ -133,6 +134,7 @@ export default function ThreatHuntingPage() {
   const [dashboard, setDashboard] = useState<ThreatDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<Error | null>(null);
 
   /* ── Sigma state ── */
   const [sigmaRules, setSigmaRules] = useState<SigmaRuleSummary[]>([]);
@@ -150,6 +152,7 @@ export default function ThreatHuntingPage() {
   }, []);
 
   const loadData = async () => {
+    setLoadError(null);
     try {
       const [hypRes, resultRes, dashRes] = await Promise.all([
         api.get("/api/threat-hunting/hypotheses"),
@@ -161,6 +164,7 @@ export default function ThreatHuntingPage() {
       setDashboard(dashRes as ThreatDashboard);
     } catch (e) {
       console.error("Failed to load threat hunting data:", e);
+      setLoadError(e instanceof Error ? e : new Error(String(e)));
     }
 
     // Load Sigma data
@@ -254,6 +258,8 @@ export default function ThreatHuntingPage() {
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {loadError && <ErrorDisplay error={loadError} onRetry={loadData} compact />}
+
         {/* Stats */}
         {dashboard && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
