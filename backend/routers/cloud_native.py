@@ -91,6 +91,12 @@ async def scan_container_image(
         return {
             "image": f"{request.image}:{request.tag}",
             "scan_time": datetime.now().isoformat(),
+            # Demo data: no scanner backend is wired behind this endpoint;
+            # use /containers/trivy-scan for real vulnerability results
+            "simulated": True,
+            "notice": (
+                "Demo data — configure Trivy/Clair integration for real scans"
+            ),
             "total_vulnerabilities": len(vulnerabilities),
             "severity_breakdown": {
                 "critical": len(
@@ -148,6 +154,9 @@ async def scan_kubernetes_cluster(
             "cluster": request.cluster_name,
             "namespace": request.namespace,
             "scan_time": datetime.now().isoformat(),
+            # Demo data: no kubeconfig/cluster connection behind this endpoint
+            "simulated": True,
+            "notice": "Demo data — cluster connection not configured",
             "total_findings": len(findings),
             "severity_breakdown": {
                 "critical": len(
@@ -217,6 +226,9 @@ async def get_kubernetes_resources(
         return {
             "resource_type": resource_type,
             "namespace": namespace,
+            # Demo data: no kubeconfig/cluster connection behind this endpoint
+            "simulated": True,
+            "notice": "Demo data — cluster connection not configured",
             "count": len(resources),
             "resources": [
                 {
@@ -288,6 +300,9 @@ async def get_cloud_security_events(
         return {
             "provider": provider,
             "time_range_hours": hours,
+            # Demo data: no cloud API credentials behind this endpoint
+            "simulated": True,
+            "notice": "Demo data — configure cloud provider credentials for real events",
             "total_events": len(events),
             "events": [
                 {

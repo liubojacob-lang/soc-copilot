@@ -261,35 +261,93 @@ class SigmaEngine:
     async def search_by_rule(
         self, rule_id: str, session: AsyncSession, hours: int = 24
     ) -> dict:
-        """Execute a Sigma rule search against the database."""
+        """Search ingested alerts for events matching a Sigma rule.
+
+        Real retrieval goes through AlertRepository (parameterized full-text
+        search over ingested alerts). The rule's generated SQL is kept in the
+        response for transparency only — it is not executed against a
+        per-product log table that this single-store backend does not have.
+        """
         rule = self.get_rule(rule_id)
         if not rule:
             return {"error": f"Rule not found: {rule_id}", "matches": []}
 
-        where_clause = rule.generated_sql or self.rule_to_sql(rule.to_dict())
-        table = self._resolve_table(rule.logsource, rule.category)
+        from datetime import timedelta
 
-        sql_query = (
-            f"SELECT * FROM {table} "  # nosec B608 - values escaped, table from internal mapping
-            f"WHERE timestamp > datetime('now', '-{hours} hours') "
-            f"AND ({where_clause}) "
-            f"ORDER BY timestamp DESC LIMIT 100"
+        from repositories.alert_repository import AlertRepository
+        from schemas.common import PaginationParams
+
+        since = datetime.now() - timedelta(hours=hours)
+        repo = AlertRepository(session)
+        page = PaginationParams(page=1, page_size=50)
+
+        merged: dict[Any, Any] = {}
+        alerts_scanned = 0
+        for keyword in self._rule_keywords(rule):
+            alerts, total = await repo.list_alerts(
+                search=keyword, created_from=since, pagination=page
+            )
+            alerts_scanned = max(alerts_scanned, total)
+            for alert in alerts:
+                merged[alert.id] = alert
+
+        ordered = sorted(
+            merged.values(),
+            key=lambda a: a.created_at or datetime.min,
+            reverse=True,
+        )[:100]
+        matches = [
+            {
+                "id": str(alert.id),
+                "timestamp": (
+                    alert.created_at.isoformat() if alert.created_at else None
+                ),
+                "hostname": alert.agent_name,
+                "title": alert.title,
+                "severity": alert.severity,
+                "source_ip": alert.source_ip,
+                "destination_ip": alert.destination_ip,
+                "description": alert.description,
+            }
+            for alert in ordered
+        ]
+
+        logger.info(
+            "Sigma search for rule %s: %d real alert match(es) "
+            "(%d alerts scanned)",
+            rule_id,
+            len(matches),
+            alerts_scanned,
         )
-
-        logger.info(f"Sigma search for rule {rule_id}: {sql_query[:200]}...")
-
-        matches = self._generate_mock_matches(rule, hours)
 
         return {
             "rule_id": rule_id,
             "rule_title": rule.title,
             "rule_level": rule.level,
-            "sql_query": sql_query,
+            "sql_query": rule.generated_sql
+            or self.rule_to_sql(rule.to_dict()),
             "searched_hours": hours,
             "total_matches": len(matches),
+            "alerts_scanned": alerts_scanned,
             "matches": matches,
             "timestamp": datetime.now().isoformat(),
         }
+
+    @staticmethod
+    def _rule_keywords(rule: SigmaRule) -> list[str]:
+        """Extract search keywords from a rule title and MITRE techniques."""
+        stopwords = {
+            "the", "a", "an", "of", "via", "and", "or", "in", "on", "with",
+            "for", "to", "from", "by", "suspicious", "potential", "possible",
+            "detected", "activity", "attack",
+        }
+        keywords = [
+            w
+            for w in rule.title.lower().split()
+            if len(w) > 3 and w not in stopwords
+        ]
+        techniques = [t for t in rule.mitre_techniques if t]
+        return (techniques + keywords)[:8] or [rule.title.lower()]
 
     def _resolve_table(self, logsource: dict, category: str) -> str:
         product = logsource.get("product", "").lower()

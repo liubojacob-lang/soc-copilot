@@ -197,6 +197,12 @@ export default function CloudNativePage() {
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Demo data notice: K8s/cloud insights come from sample data until
+            cluster/cloud integrations are configured; Trivy & Falco are real */}
+        <div className="rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+          {t("demoNotice")}
+        </div>
+
         {/* Stats */}
         {dashboard && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

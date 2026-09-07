@@ -5,19 +5,15 @@ and Threat Hunting API router endpoints.
 
 from __future__ import annotations
 
-import unittest.mock as mock
 from datetime import datetime
 
 import pytest
 from httpx import AsyncClient
 
 from services.threat_hunting.sigma_engine import (
-    SigmaEngine,
-    SigmaRule,
     get_sigma_engine,
 )
 from services.threat_hunting_service import (
-    HuntHypothesis,
     HuntResult,
     HuntStatus,
     ThreatHuntingEngine,
@@ -25,7 +21,6 @@ from services.threat_hunting_service import (
     get_threat_hunting_engine,
     initialize_threat_hunting,
 )
-
 
 # ─────────────────────────────────────────────────────────────
 # 1. ThreatHuntingEngine Unit Tests
@@ -64,15 +59,59 @@ async def test_threat_hunting_engine_create_custom_hypothesis():
 
 @pytest.mark.asyncio
 async def test_threat_hunting_engine_execute_hunt_success():
+    """Hunt execution searches real ingested alerts (no simulated findings)."""
+    from sqlalchemy.exc import IntegrityError
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    from db.session import DATABASE_URL, AsyncSessionLocal, Base
+    from repositories.alert_repository import AlertRepository
+
     engine = ThreatHuntingEngine()
-    result = await engine.execute_hunt("hunt_001", time_range_hours=12)
+
+    # Ensure the test database has the schema (direct-session tests do not
+    # boot the ASGI app that normally runs migrations)
+    ddl_engine = create_async_engine(DATABASE_URL)
+    try:
+        async with ddl_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    finally:
+        await ddl_engine.dispose()
+
+    async def _seed(alert_id: str, **fields):
+        async with AsyncSessionLocal() as session:
+            try:
+                await AlertRepository(session).create_alert(
+                    source="hunt-test", external_event_id=alert_id, **fields
+                )
+                await session.commit()
+            except IntegrityError:
+                # Seeded by a previous run — unique (source, external_event_id)
+                await session.rollback()
+
+    # Seed an alert that matches the hunt_001 (lateral movement) keywords
+    await _seed(
+        "hunt-001-seed",
+        event_type="sysmon",
+        severity="high",
+        title="Suspicious SMB lateral movement detected",
+        description="Host connected to multiple peers over SMB",
+    )
+
+    async with AsyncSessionLocal() as session:
+        result = await engine.execute_hunt(
+            "hunt_001", time_range_hours=12, db=session
+        )
 
     assert result.hunt_id.startswith("hunt_exec_")
     assert result.status == HuntStatus.COMPLETED
     assert result.completed_at is not None
-    assert result.total_entities_scanned > 0
-    assert len(result.findings) >= 1
+    # entities_scanned is the real alert count in the window (>= our seed)
+    assert result.total_entities_scanned >= 1
     assert result.statistics["findings_count"] == len(result.findings)
+    assert any(
+        f.entity_type == "alert" and "SMB" in (f.description or "")
+        for f in result.findings
+    )
 
 
 @pytest.mark.asyncio
@@ -84,18 +123,60 @@ async def test_threat_hunting_engine_execute_hunt_not_found():
 
 @pytest.mark.asyncio
 async def test_threat_hunting_engine_ioc_hunt():
+    """IOC hunt reports only IOCs with real evidence in ingested alerts."""
+    from sqlalchemy.exc import IntegrityError
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    from db.session import DATABASE_URL, AsyncSessionLocal, Base
+    from repositories.alert_repository import AlertRepository
+
     engine = ThreatHuntingEngine()
     iocs = [
         {"type": "ip", "value": "185.220.101.5", "description": "Tor exit node"},
-        {"type": "domain", "value": "malware-c2-domain.com", "description": "Known Cobalt Strike C2"},
+        {
+            "type": "domain",
+            "value": "malware-c2-domain.com",
+            "description": "Known Cobalt Strike C2",
+        },
     ]
 
-    findings = await engine.ioc_hunt(iocs, time_range_days=7)
-    assert len(findings) >= 1
+    ddl_engine = create_async_engine(DATABASE_URL)
+    try:
+        async with ddl_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    finally:
+        await ddl_engine.dispose()
+
+    async def _seed(alert_id: str, **fields):
+        async with AsyncSessionLocal() as session:
+            try:
+                await AlertRepository(session).create_alert(
+                    source="hunt-test", external_event_id=alert_id, **fields
+                )
+                await session.commit()
+            except IntegrityError:
+                await session.rollback()
+
+    await _seed(
+        "hunt-ioc-seed",
+        event_type="firewall",
+        severity="high",
+        title="Connection to known Tor exit node",
+        description="Outbound connection to Tor exit",
+        source_ip="10.0.0.8",
+        destination_ip="185.220.101.5",
+    )
+
+    async with AsyncSessionLocal() as session:
+        findings = await engine.ioc_hunt(iocs, time_range_days=7, db=session)
+
     ip_finding = next((f for f in findings if f.entity_id == "185.220.101.5"), None)
     assert ip_finding is not None
     assert ip_finding.confidence >= 0.8
+    assert ip_finding.evidence["match_count"] >= 1
     assert "Block IP" in ip_finding.recommended_actions
+    # No evidence for the C2 domain in the test data — honest empty result
+    assert all(f.entity_id != "malware-c2-domain.com" for f in findings)
 
 
 @pytest.mark.asyncio

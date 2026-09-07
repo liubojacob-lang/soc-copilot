@@ -2,6 +2,7 @@
   "cloudNative": {
     "subtitle": "Cloud environment security monitoring",
     "title": "Cloud-Native Security",
+    "demoNotice": "Demo data notice: Kubernetes and cloud provider insights below are sample data until cluster/cloud integrations are configured. Container image scans (Trivy) and Falco alerts use real data.",
     "aws": "AWS",
     "azure": "Azure",
     "gcp": "GCP",

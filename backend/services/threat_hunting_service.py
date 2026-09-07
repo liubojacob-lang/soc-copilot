@@ -1,15 +1,20 @@
 """
 Threat Hunting Service - Proactive Threat Discovery
-Enables hypothesis-driven hunting and automated threat detection
+Enables hypothesis-driven hunting and automated threat detection.
+
+Hunt execution queries the ingested security alerts (security_alerts table)
+with parameterized SQLAlchemy filters; findings are derived from real alert
+data — no simulated results are produced in apply paths.
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
 from core.logger import get_logger
 from db.session import AsyncSession
+from models.security_alert import SecurityAlert
 
 logger = get_logger(__name__)
 
@@ -268,98 +273,144 @@ class ThreatHuntingEngine:
         )
 
         self.active_hunts[hunt_id] = result
+        started_at = datetime.now()
 
         try:
             logger.info(f"Starting hunt {hunt_id}: {hypothesis.name}")
 
-            # Simulate hunt execution
-            # In production, execute actual query against data sources
-            findings = await self._execute_hunt_query(
+            # Real execution: search ingested alerts matching the hypothesis
+            findings, entities_scanned = await self._execute_hunt_query(
                 hypothesis=hypothesis, time_range_hours=time_range_hours, db=db
             )
 
             result.findings = findings
-            result.total_entities_scanned = 1000  # Simulated
+            result.total_entities_scanned = entities_scanned
             result.status = HuntStatus.COMPLETED
             result.completed_at = datetime.now()
+            elapsed = max((datetime.now() - started_at).total_seconds(), 0.001)
             result.statistics = {
                 "entities_scanned": result.total_entities_scanned,
                 "findings_count": len(findings),
                 "high_severity": len([f for f in findings if f.severity == "high"]),
-                "execution_time_seconds": 120,
+                "execution_time_seconds": round(elapsed, 3),
+                "time_range_hours": time_range_hours,
             }
 
             logger.info(f"Completed hunt {hunt_id} with {len(findings)} findings")
 
         except Exception as e:
-            logger.error(f"Hunt {hunt_id} failed: {e}")
+            logger.exception(f"Hunt {hunt_id} failed")
             result.status = HuntStatus.FAILED
             result.completed_at = datetime.now()
             result.statistics = {"error": str(e)}
 
         return result
 
+    # Keyword sets per built-in hypothesis. All matching goes through
+    # AlertRepository.list_alerts (bound-parameter search); the keywords are
+    # compile-time constants and never user-controlled text.
+    _HUNT_PATTERNS: dict[str, dict[str, list[str]]] = {
+        "hunt_001": {  # Lateral movement (SMB / psexec / remote execution)
+            "text": ["lateral", "smb", "psexec", "winrm", "wmic"],
+        },
+        "hunt_002": {  # Obfuscated PowerShell
+            "text": ["powershell", "encodedcommand", "frombase64"],
+        },
+        "hunt_003": {  # Persistence via scheduled tasks
+            "text": ["scheduled task", "schtasks", "persistence"],
+        },
+        "hunt_004": {  # DNS exfiltration
+            "text": ["dns"],
+        },
+        "hunt_005": {  # Kerberoasting
+            "text": ["kerberoasting", "kerberos"],
+        },
+    }
+
     async def _execute_hunt_query(
         self, hypothesis: HuntHypothesis, time_range_hours: int, db: AsyncSession
-    ) -> list[HuntFinding]:
-        """Execute hunt query and return findings."""
+    ) -> tuple[list[HuntFinding], int]:
+        """Search ingested security alerts matching the hypothesis keywords.
+
+        Delegates to AlertRepository.list_alerts (parameterized search across
+        title/description/IP/agent fields with a time window and real count).
+        Returns (findings, entities_scanned) where entities_scanned is the
+        largest real total reported across the keyword searches.
+        """
+        from repositories.alert_repository import AlertRepository
+        from schemas.common import PaginationParams
+
+        since = datetime.now(UTC).replace(tzinfo=None) - timedelta(
+            hours=time_range_hours
+        )
+        keyword_groups = self._HUNT_PATTERNS.get(hypothesis.id, {})
+        keywords = [k for group in keyword_groups.values() for k in group]
+
+        if not keywords:
+            logger.warning(
+                "No search keywords for hypothesis %s; returning no findings",
+                hypothesis.id,
+            )
+            return [], 0
+
+        repo = AlertRepository(db)
+        merged: dict[Any, SecurityAlert] = {}
+        entities_scanned = 0
+
+        for keyword in keywords:
+            alerts, total = await repo.list_alerts(
+                search=keyword,
+                created_from=since,
+                pagination=PaginationParams(
+                    page=1, page_size=50, sort_by="created_at", sort_order="desc"
+                ),
+            )
+            entities_scanned = max(entities_scanned, total)
+            for alert in alerts:
+                merged[alert.id] = alert
+
+        rows = sorted(
+            merged.values(),
+            key=lambda a: a.created_at or datetime.now(UTC).replace(tzinfo=None),
+            reverse=True,
+        )[:100]
+
         findings = []
-
-        # In production, execute actual SQL query
-        # For now, simulate findings based on hypothesis
-
-        if hypothesis.id == "hunt_001":
-            # Lateral movement simulation
+        for idx, alert in enumerate(rows, start=1):
             findings.append(
                 HuntFinding(
-                    id=f"finding_{len(findings) + 1}",
+                    id="finding_" + str(idx),
                     hunt_id=hypothesis.id,
-                    entity_type="host",
-                    entity_id="workstation-001",
-                    description="Unusual SMB connections to 15 different hosts",
-                    confidence=0.85,
-                    severity="high",
+                    entity_type="alert",
+                    entity_id=str(alert.id),
+                    description=alert.title,
+                    confidence=0.9,
+                    severity=alert.severity or hypothesis.severity,
                     evidence={
-                        "connection_count": 150,
-                        "unique_targets": 15,
-                        "src_ip": "10.0.1.50",
-                        "dst_ips": ["10.0.1.51", "10.0.1.52"],
+                        "alert_id": str(alert.id),
+                        "source": alert.source,
+                        "event_type": alert.event_type,
+                        "source_ip": alert.source_ip,
+                        "destination_ip": alert.destination_ip,
+                        "agent_name": alert.agent_name,
+                        "rule_id": alert.rule_id,
+                        "rule_mitre": alert.rule_mitre,
+                        "event_timestamp": (
+                            alert.event_timestamp.isoformat()
+                            if alert.event_timestamp
+                            else None
+                        ),
                     },
                     recommended_actions=[
-                        "Isolate host",
-                        "Check for malware",
-                        "Investigate user activity",
+                        "Review the alert details",
+                        "Correlate with related alerts",
+                        "Escalate to incident response if confirmed",
                     ],
                     found_at=datetime.now(),
                 )
             )
 
-        elif hypothesis.id == "hunt_002":
-            # PowerShell obfuscation simulation
-            findings.append(
-                HuntFinding(
-                    id=f"finding_{len(findings) + 1}",
-                    hunt_id=hypothesis.id,
-                    entity_type="process",
-                    entity_id="process_12345",
-                    description="Obfuscated PowerShell command detected",
-                    confidence=0.92,
-                    severity="critical",
-                    evidence={
-                        "command_line": "powershell -enc UwB0AGEAcgB0AC0AUwBsAGUAZQBwACAALQBzACAAMQAw",
-                        "user": "admin",
-                        "parent_process": "outlook.exe",
-                    },
-                    recommended_actions=[
-                        "Block execution",
-                        "Quarantine file",
-                        "Check email attachments",
-                    ],
-                    found_at=datetime.now(),
-                )
-            )
-
-        return findings
+        return findings, entities_scanned
 
     async def ioc_hunt(
         self,
@@ -370,48 +421,91 @@ class ThreatHuntingEngine:
         """
         Hunt for Indicators of Compromise (IOCs).
 
-        Args:
-            iocs: List of IOCs (type, value, description)
-            time_range_days: Days to look back
-            db: Database session
-
-        Returns:
-            List of matches
+        Searches the ingested security alerts via AlertRepository: exact
+        matches on the source/destination IP columns plus the repository's
+        parameterized full-text search over title/description/IP/agent/log
+        fields. Only real matches produce findings; unmatched IOCs return
+        nothing.
         """
-        findings = []
+        if db is None:
+            raise ValueError("A database session is required for IOC hunting")
+
+        from repositories.alert_repository import AlertRepository
+        from schemas.common import PaginationParams
+
+        since = datetime.now(UTC).replace(tzinfo=None) - timedelta(
+            days=time_range_days
+        )
+        findings: list[HuntFinding] = []
+        repo = AlertRepository(db)
+        page = PaginationParams(
+            page=1, page_size=50, sort_by="created_at", sort_order="desc"
+        )
 
         for ioc in iocs:
             ioc_type = ioc.get("type")
-            ioc_value = ioc.get("value")
+            ioc_value = (ioc.get("value") or "").strip()
+            if not ioc_value:
+                continue
 
-            logger.info(f"Hunting for IOC: {ioc_type}={ioc_value}")
+            logger.info("Hunting for IOC: %s=%s", ioc_type, ioc_value)
 
-            # In production, search across all data sources
-            # For now, simulate matches
-
-            if ioc_type == "ip":
-                findings.append(
-                    HuntFinding(
-                        id=f"ioc_finding_{len(findings) + 1}",
-                        hunt_id="ioc_hunt",
-                        entity_type="ip",
-                        entity_id=ioc_value,
-                        description=f"Malicious IP {ioc_value} found in network logs",
-                        confidence=0.95,
-                        severity="high",
-                        evidence={
-                            "first_seen": "2024-01-15T10:30:00",
-                            "last_seen": "2024-01-15T14:45:00",
-                            "connection_count": 25,
-                        },
-                        recommended_actions=[
-                            "Block IP",
-                            "Check affected hosts",
-                            "Review firewall rules",
-                        ],
-                        found_at=datetime.now(),
-                    )
+            merged: dict[Any, SecurityAlert] = {}
+            for field in ("source_ip", "destination_ip"):
+                exact, _total = await repo.list_alerts(
+                    filters={field: ioc_value}, created_from=since, pagination=page
                 )
+                for alert in exact:
+                    merged[alert.id] = alert
+
+            text_hits, _total = await repo.list_alerts(
+                search=ioc_value, created_from=since, pagination=page
+            )
+            for alert in text_hits:
+                merged[alert.id] = alert
+
+            if not merged:
+                # No evidence of this IOC in ingested data — report nothing
+                continue
+
+            rows = sorted(
+                merged.values(),
+                key=lambda a: a.created_at or datetime.now(UTC).replace(tzinfo=None),
+                reverse=True,
+            )[:50]
+            timestamps = [a.created_at for a in rows if a.created_at is not None]
+            findings.append(
+                HuntFinding(
+                    id="ioc_finding_" + str(len(findings) + 1),
+                    hunt_id="ioc_hunt",
+                    entity_type=ioc_type or "ioc",
+                    entity_id=ioc_value,
+                    description="IOC observed in "
+                    + str(len(rows))
+                    + " ingested alert(s)",
+                    confidence=0.95,
+                    severity="high",
+                    evidence={
+                        "match_count": len(rows),
+                        "first_seen": (
+                            min(timestamps).isoformat() if timestamps else None
+                        ),
+                        "last_seen": (
+                            max(timestamps).isoformat() if timestamps else None
+                        ),
+                        "sample_alert_ids": [str(a.id) for a in rows[:5]],
+                        "sample_agents": list(
+                            {a.agent_name for a in rows if a.agent_name}
+                        )[:5],
+                    },
+                    recommended_actions=[
+                        "Block IP",
+                        "Check affected hosts",
+                        "Review firewall rules",
+                    ],
+                    found_at=datetime.now(),
+                )
+            )
 
         return findings
 

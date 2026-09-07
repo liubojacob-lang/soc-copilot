@@ -2,6 +2,7 @@
   "cloudNative": {
     "title": "云原生安全",
     "subtitle": "云环境安全监控和管理",
+    "demoNotice": "演示数据提示：在配置集群/云集成之前，以下 Kubernetes 与云提供商数据为示例数据。容器镜像扫描（Trivy）与 Falco 告警为真实数据。",
     "aws": "AWS",
     "azure": "Azure",
     "gcp": "GCP",
