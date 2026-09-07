@@ -80,7 +80,9 @@ export default function ReportsPage() {
     setGeneratedReports(null);
 
     try {
-      const alertData = await authFetchJSON<Record<string, unknown>>(`/api/alerts/${alertId}`);
+      const alertData = await authFetchJSON<Record<string, unknown>>(
+        `/api/security-alerts/${alertId}`
+      );
 
       const response = await authFetchJSON<Record<string, unknown>>("/api/generate-report", {
         method: "POST",

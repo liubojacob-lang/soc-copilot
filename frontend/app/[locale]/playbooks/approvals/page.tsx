@@ -75,7 +75,7 @@ export default function PlaybookApprovalsPage() {
         params.append("status", statusFilter);
       }
 
-      const response = await authFetch(`/api/approvals?${params.toString()}`);
+      const response = await authFetch(`/api/playbook/approvals?${params.toString()}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -112,7 +112,7 @@ export default function PlaybookApprovalsPage() {
   const handleApprove = async (approvalId: string) => {
     setActionLoading(approvalId);
     try {
-      const response = await authFetch(`/api/approvals/${approvalId}/approve`, {
+      const response = await authFetch(`/api/playbook/approvals/${approvalId}/approve`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,7 +136,7 @@ export default function PlaybookApprovalsPage() {
   const handleReject = async (approvalId: string) => {
     setActionLoading(approvalId);
     try {
-      const response = await authFetch(`/api/approvals/${approvalId}/reject`, {
+      const response = await authFetch(`/api/playbook/approvals/${approvalId}/reject`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
