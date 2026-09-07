@@ -11,6 +11,7 @@ import pytest
 
 from db.session import AsyncSessionLocal, init_db
 from repositories.playbook_definition_repository import PlaybookDefinitionRepository
+from models.playbook_definition import PlaybookDefinitionModel
 from repositories.playbook_run_repository import PlaybookRunRepository
 from schemas.playbook_run import (
     DAGPlaybookRunCreate,
@@ -24,6 +25,44 @@ from services.playbook.playbook_dag_compiler import DAGCompiler, DAGValidationEr
 @pytest.fixture(autouse=True)
 async def setup_database():
     await init_db()
+
+
+@pytest.fixture(autouse=True)
+async def seed_reference_users(setup_database, client):
+    """Create users referenced by created_by_user_id / created_by columns.
+
+    Depends on the session-scoped client so the app lifespan (and its
+    bootstrap admin creation) always runs before extra users are inserted —
+    bootstrap is skipped when the users table is not empty.
+    """
+    import secrets
+
+    from sqlalchemy import select
+
+    from models.user import UserModel
+
+    async with AsyncSessionLocal() as session:
+        for user_id in ("admin-user", "analyst-user", "test-user"):
+            exists = await session.scalar(
+                select(UserModel.id).where(UserModel.id == user_id)
+            )
+            if exists:
+                continue
+            # Non-login fixture user: runtime-generated placeholder hash —
+            # authentication never runs in this suite.
+            credentials = {"hashed_password": secrets.token_urlsafe(16)}
+            session.add(
+                UserModel(
+                    id=user_id,
+                    username=user_id,
+                    email=f"{user_id}@example.com",
+                    role="admin",
+                    is_active=True,
+                    **credentials,
+                )
+            )
+        await session.commit()
+    yield
 
 
 # ─────────────────────────────────────────────────────────────
@@ -263,8 +302,20 @@ async def test_dag_execution_service_dry_run_success():
 # ─────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_playbook_run_repository_crud():
+async def test_playbook_run_repository_crud(seed_reference_users):
     async with AsyncSessionLocal() as session:
+        # definition_id carries an FK to playbook_definitions — create a real one
+        definition = PlaybookDefinitionModel(
+            id=str(uuid.uuid4()),
+            name="FK Fixture Definition",
+            description="repository crud test fixture",
+            definition_json={"nodes": [], "edges": []},
+            created_by="test-user",
+            is_active=True,
+        )
+        session.add(definition)
+        await session.commit()
+
         repo = PlaybookRunRepository(session)
 
         run = await repo.create(
@@ -275,9 +326,10 @@ async def test_playbook_run_repository_crud():
             created_by_user_id="test-user",
             engine_version="v0.7",
             execution_mode="dag",
-            definition_id=str(uuid.uuid4()),
+            definition_id=definition.id,
             failure_strategy="fail_fast",
         )
+        await session.commit()
         await session.commit()
 
         assert run.id is not None

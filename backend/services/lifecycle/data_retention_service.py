@@ -149,7 +149,6 @@ class DataRetentionService(LifecycleService):
                 "created_at",
                 settings.correlated_event_retention_days,
                 now,
-                string_column=True,  # created_at is a String ISO column here
             )
             # Threat-intel rows already past their TTL (previously manual-only).
             stats["threat_intel_cache"] = await self._delete_expired_ti(

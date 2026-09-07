@@ -41,6 +41,7 @@ if IS_TEST_ENV and IS_SQLITE:
 if IS_SQLITE or (IS_TEST_ENV):
     # SQLite: No connection pool parameters (not supported)
     # Use NullPool for SQLite to avoid connection issues
+    from sqlalchemy import event
     from sqlalchemy.pool import NullPool
 
     if IS_TEST_ENV:
@@ -57,6 +58,17 @@ if IS_SQLITE or (IS_TEST_ENV):
         connect_args={"check_same_thread": False},
         poolclass=NullPool,  # SQLite works best with NullPool
     )
+
+    @event.listens_for(engine.sync_engine, "connect")
+    def _enable_sqlite_fk(dbapi_connection, _connection_record):
+        """Enforce FK constraints (incl. ON DELETE CASCADE) on SQLite.
+
+        SQLite disables foreign key enforcement per-connection by default,
+        which silently turned retention deletes into orphan rows in dev.
+        """
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 elif IS_POSTGRESQL:
     # PostgreSQL: Use connection pool settings
     # Convert sync URL to async if needed

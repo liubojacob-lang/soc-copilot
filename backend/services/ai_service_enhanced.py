@@ -461,7 +461,7 @@ Provide your recommendations:"""
 
         # 2. 长文本日志 / 代码审查 / SQL注入 / 脚本反混淆 / 大报文
         code_log_keywords = [
-            "```", "select ", "union select", "eval(", "powershell", "base64",
+            "```", "select ", "union select", "eval", "powershell", "base64",
             "syslog", "traceback", "stack trace", "exception:", "error:", "audit_log",
             "pcap", "payload", "cmd.exe", "bash -c"
         ]

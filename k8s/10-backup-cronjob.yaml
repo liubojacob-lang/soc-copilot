@@ -1,0 +1,53 @@
+# 每日数据库备份 CronJob（PostgreSQL 生产栈）
+# 需要先在 namespace 中配置 DB_USER/DB_NAME（可复用 00-config.yaml 的同名键）。
+# 备份写入 backup-pvc（PVC 需预先创建），建议另行同步到对象存储/异地。
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+  namespace: soc-copilot
+spec:
+  schedule: "30 2 * * *" # 每日 02:30
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-dump
+              image: postgres:15-alpine
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: soc-copilot-secrets
+                      key: DB_PASSWORD
+                - name: DB_USER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: soc-copilot-config
+                      key: DB_USER
+                - name: DB_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: soc-copilot-config
+                      key: DB_NAME
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  STAMP=$(date +%Y%m%d-%H%M%S)
+                  pg_dump -h postgres -U "$DB_USER" "$DB_NAME" | gzip > "/backups/backup-$STAMP.sql.gz"
+                  echo "backup written: backup-$STAMP.sql.gz"
+                  find /backups -name 'backup-*.sql.gz' -mtime +30 -delete
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: backup-pvc

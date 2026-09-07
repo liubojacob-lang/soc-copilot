@@ -183,6 +183,10 @@ class CaseService:
         )
 
         # Enrich with counts
+        # NOTE: two point queries per case (bounded by page_size, FK-indexed).
+        # A grouped bulk-count variant was attempted but is deferred (see
+        # FUTURE_BACKLOG.md DB017) after the repository edit was blocked by
+        # a scanner false positive.
         responses = []
         for case in items:
             resp = self._to_response(case)

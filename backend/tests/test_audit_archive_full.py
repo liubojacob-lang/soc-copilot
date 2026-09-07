@@ -28,6 +28,43 @@ async def setup_database():
     await init_db()
 
 
+@pytest.fixture(autouse=True)
+async def seed_reference_users(setup_database, client):
+    """Create the user rows audit_logs.user_id references.
+
+    Depends on the session-scoped client so the app lifespan (and its
+    bootstrap admin creation) always runs before extra users are inserted.
+    """
+    import secrets
+
+    from sqlalchemy import select
+
+    from models.user import UserModel
+
+    async with AsyncSessionLocal() as session:
+        for user_id in ("analyst-1", "test-user-1", "test-user-2"):
+            exists = await session.scalar(
+                select(UserModel.id).where(UserModel.id == user_id)
+            )
+            if exists:
+                continue
+            # Non-login fixture user: runtime-generated placeholder hash —
+            # authentication never runs in this suite.
+            credentials = {"hashed_password": secrets.token_urlsafe(16)}
+            session.add(
+                UserModel(
+                    id=user_id,
+                    username=user_id,
+                    email=f"{user_id}@example.com",
+                    role="analyst",
+                    is_active=True,
+                    **credentials,
+                )
+            )
+        await session.commit()
+    yield
+
+
 # ─────────────────────────────────────────────────────────────
 # 1. AuditArchiveService Unit Tests
 # ─────────────────────────────────────────────────────────────

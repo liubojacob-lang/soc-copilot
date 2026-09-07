@@ -372,7 +372,7 @@ class EventCorrelationService:
         # For large sets, use sampling to avoid O(n²)
         import random
 
-        sampled_indices = random.sample(
+        sampled_indices = random.SystemRandom().sample(
             range(len(messages)), min(SAMPLE_SIZE, len(messages))
         )
         sampled_messages = [messages[i] for i in sampled_indices]

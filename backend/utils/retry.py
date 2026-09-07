@@ -68,7 +68,7 @@ def with_retry(
 
                     # Add jitter to prevent thundering herd
                     if jitter:
-                        delay += random.uniform(0, delay * 0.5)
+                        delay += random.SystemRandom().uniform(0, delay * 0.5)
 
                     logger.warning(
                         f"Retry {attempt + 1}/{max_retries} for {func.__name__}: {type(e).__name__}: {e}. "
@@ -128,7 +128,7 @@ def with_sync_retry(
 
                     delay = min(base_delay * (2**attempt), max_delay)
                     if jitter:
-                        delay += random.uniform(0, delay * 0.5)
+                        delay += random.SystemRandom().uniform(0, delay * 0.5)
 
                     logger.warning(
                         f"Retry {attempt + 1}/{max_retries} for {func.__name__}: {e}. "

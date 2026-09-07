@@ -157,6 +157,18 @@ db-reset:
 	@echo "🔄 Resetting database..."
 	cd backend && source ../venv/bin/activate && alembic downgrade base && alembic upgrade head
 
+# 数据库备份/恢复（SQLite 开发库与 PostgreSQL 容器均支持）
+db-backup:
+	@echo "💾 Backing up database..."
+	@./Scripts/backup.sh
+
+db-restore:
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make db-restore FILE=backups/<ts>/app.db (或 postgres.sql.gz)"; exit 1; \
+	fi
+	@echo "♻️  Restoring database from $(FILE)..."
+	@./Scripts/backup.sh restore $(FILE)
+
 # Dev Environment Setup (FR-004)
 setup-dev:
 	@echo "🛠️  Running full development environment setup..."

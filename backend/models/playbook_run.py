@@ -27,7 +27,10 @@ class PlaybookRunModel(Base):
         String(20), index=True, nullable=False
     )  # pending / running / success / failed / partial
     created_by_user_id: Mapped[str | None] = mapped_column(
-        String(36), index=True, nullable=True
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
     )
     input_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=lambda: {})
     output_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=lambda: {})
@@ -59,7 +62,9 @@ class PlaybookRunModel(Base):
         String(100), unique=True, index=True
     )
     parent_run_id: Mapped[str | None] = mapped_column(
-        String(36), index=True
+        String(36),
+        ForeignKey("playbook_runs.id", ondelete="CASCADE"),
+        index=True,
     )  # For nested/sub-flow runs
     trigger_source: Mapped[str] = mapped_column(
         String(50), default="manual", index=True

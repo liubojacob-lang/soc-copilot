@@ -8,7 +8,6 @@ Test WebSocket connection, authentication, and basic functionality.
 import asyncio
 import websockets
 import json
-import os
 from datetime import datetime
 
 # Configuration
@@ -144,7 +143,7 @@ async def test_alert_reception():
             message = await asyncio.wait_for(websocket.recv(), timeout=10.0)
             data = json.loads(message)
 
-            print(f"✅ Received WebSocket message:")
+            print("✅ Received WebSocket message:")
             print(f"   Type: {data.get('type')}")
             print(f"   Channel: {data.get('channel')}")
             if data.get('type') == 'alert':
@@ -219,7 +218,7 @@ async def test_multiple_clients():
 
     await asyncio.gather(*tasks)
 
-    print(f"\n📊 Results:")
+    print("\n📊 Results:")
     print(f"   Clients connected: {clients_connected}/{client_count}")
     print(f"   Clients received alert: {clients_received}/{client_count}")
 

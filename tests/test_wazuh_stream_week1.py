@@ -9,7 +9,6 @@ import asyncio
 import json
 import time
 from datetime import datetime
-from typing import Dict, Any
 import requests
 import websockets
 from websockets.exceptions import ConnectionClosedError
@@ -86,7 +85,7 @@ def test_start_stream_service(token: str) -> bool:
 
     if response.status_code == 200:
         data = response.json()
-        print_success(f"流服务启动成功")
+        print_success("流服务启动成功")
         print_info(f"  运行状态: {data.get('running')}")
         if data.get('stats'):
             stats = data['stats']
@@ -109,7 +108,7 @@ def test_stream_status(token: str) -> bool:
 
     if response.status_code == 200:
         data = response.json()
-        print_success(f"状态查询成功")
+        print_success("状态查询成功")
         print_info(f"  运行中: {data.get('running')}")
         if data.get('config'):
             config = data['config']
@@ -133,16 +132,16 @@ def test_stream_stats(token: str) -> bool:
 
     if response.status_code == 200:
         data = response.json()
-        print_success(f"统计信息获取成功")
+        print_success("统计信息获取成功")
         print_info(f"  总告警数: {data.get('total_alerts', 0)}")
 
         if data.get('alerts_by_severity'):
-            print_info(f"  按严重级别分布:")
+            print_info("  按严重级别分布:")
             for severity, count in data['alerts_by_severity'].items():
                 print_info(f"    {severity}: {count}")
 
         if data.get('top_agents'):
-            print_info(f"  Top Agent:")
+            print_info("  Top Agent:")
             for agent in data['top_agents'][:3]:
                 print_info(f"    {agent['name']}: {agent['count']} 告警")
 
@@ -263,7 +262,7 @@ def test_history_api(token: str) -> bool:
         print_success(f"获取历史告警成功: {len(alerts)} 条")
 
         if alerts:
-            print_info(f"  最新告警:")
+            print_info("  最新告警:")
             for alert in alerts[:3]:
                 print_info(f"    - {alert.get('title', 'N/A')} ({alert.get('severity', 'N/A')})")
 
@@ -316,11 +315,11 @@ def test_websocket_stats(token: str) -> bool:
 
     if response.status_code == 200:
         stats = response.json()
-        print_success(f"获取 WebSocket 统计成功")
+        print_success("获取 WebSocket 统计成功")
         print_info(f"  活跃连接数: {stats.get('active_connections', 0)}")
 
         if stats.get('channels'):
-            print_info(f"  频道订阅:")
+            print_info("  频道订阅:")
             for channel, count in stats['channels'].items():
                 print_info(f"    {channel}: {count} 订阅")
 

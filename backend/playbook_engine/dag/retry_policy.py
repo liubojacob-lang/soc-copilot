@@ -44,7 +44,7 @@ class RetryPolicy:
 
         # Add jitter to prevent thundering herd
         if self.jitter_enabled:
-            jitter = random.uniform(0, delay * 0.1)  # Up to 10% jitter
+            jitter = random.SystemRandom().uniform(0, delay * 0.1)  # Up to 10% jitter
             delay += jitter
 
         return delay

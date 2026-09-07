@@ -30,6 +30,42 @@ if os.getenv("DATABASE_URL"):
 
 # Import all models to ensure they are registered with Base
 # F1-7a: Added comprehensive model imports for tenant isolation
+# 2026-09-07: restored — the import block below was accidentally deleted in
+# d42c1e4, leaving target_metadata empty so `alembic revision --autogenerate`
+# would emit DROP TABLE for the entire schema.
+import models.ai_model  # noqa: F401
+import models.ai_task  # noqa: F401
+import models.ai_user_setting  # noqa: F401
+import models.alert_note  # noqa: F401
+import models.api_key  # noqa: F401
+import models.asset  # noqa: F401
+import models.audit_log  # noqa: F401
+import models.blocked_ip  # noqa: F401
+import models.case  # noqa: F401
+import models.correlated_event  # noqa: F401
+import models.correlation_rule  # noqa: F401
+import models.event_similarity  # noqa: F401
+import models.history  # noqa: F401
+import models.ioc_hit  # noqa: F401
+import models.marketplace  # noqa: F401
+import models.monitor_history  # noqa: F401
+import models.on_call_schedule  # noqa: F401
+import models.playbook_approval  # noqa: F401
+import models.playbook_definition  # noqa: F401
+import models.playbook_node_attempt  # noqa: F401
+import models.playbook_node_run  # noqa: F401
+import models.playbook_output  # noqa: F401
+import models.playbook_run  # noqa: F401
+import models.prompt_registry  # noqa: F401
+import models.rbac  # noqa: F401
+import models.root_cause_analysis  # noqa: F401
+import models.secret  # noqa: F401
+import models.security_alert  # noqa: F401
+import models.security_vulnerability  # noqa: F401
+import models.siem_log  # noqa: F401
+import models.threat_intel_cache  # noqa: F401
+import models.trigger  # noqa: F401
+import models.user  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

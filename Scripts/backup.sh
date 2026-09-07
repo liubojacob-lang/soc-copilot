@@ -51,6 +51,42 @@ if [ "$1" == "dry-run" ]; then
     log_warning "Dry-run mode: no actual backups will be created"
 fi
 
+# 恢复模式: Scripts/backup.sh restore <sqlite.db | postgres.sql.gz>
+if [ "${1:-}" == "restore" ]; then
+    RESTORE_FILE="${2:-}"
+    [ -f "$RESTORE_FILE" ] || { log_error "Restore file not found: $RESTORE_FILE"; exit 1; }
+    PG_CONTAINER=$(docker ps --filter "name=soc-copilot-postgres" --format "{{.Names}}" | head -1)
+    case "$RESTORE_FILE" in
+        *.sql.gz)
+            [ -n "$PG_CONTAINER" ] || { log_error "PostgreSQL container not running"; exit 1; }
+            log_warning "This OVERWRITES database ${DB_NAME:-soc_copilot}. Ctrl+C to abort."
+            read -r -p "Continue? [y/N] " confirm
+            [ "$confirm" == "y" ] || exit 0
+            gunzip -c "$RESTORE_FILE" | docker exec -i "$PG_CONTAINER" \
+                psql -U "${DB_USER:-soc_copilot}" -d "${DB_NAME:-soc_copilot}"
+            log_success "Restore completed"
+            ;;
+        *.db)
+            TARGET_DB="${DB_FILE:-$PROJECT_DIR/backend/data/app.db}"
+            log_warning "This OVERWRITES $TARGET_DB. Ctrl+C to abort."
+            read -r -p "Continue? [y/N] " confirm
+            [ "$confirm" == "y" ] || exit 0
+            mkdir -p "$(dirname "$TARGET_DB")"
+            if command -v sqlite3 >/dev/null 2>&1; then
+                sqlite3 "$TARGET_DB" ".restore '$RESTORE_FILE'"
+            else
+                cp "$RESTORE_FILE" "$TARGET_DB"
+            fi
+            log_success "Restore completed"
+            ;;
+        *)
+            log_error "Unsupported restore file type: $RESTORE_FILE (expected .db or .sql.gz)"
+            exit 1
+            ;;
+    esac
+    exit 0
+fi
+
 # 创建备份目录
 log_info "Creating backup directory: $BACKUP_PATH"
 if [ "$DRY_RUN" = false ]; then
@@ -60,14 +96,38 @@ fi
 log_info "🔄 Starting SOC Copilot backup at $(date)"
 echo "======================================="
 
-# 1. PostgreSQL 备份
+# 1. SQLite 数据库（开发环境默认后端）
+# db/session.py 的 DATA_DIR 是项目根 data/ —— 与其保持一致
+log_info "📦 Backing up SQLite database (if present)..."
+
+SQLITE_DB=""
+[ -f "$PROJECT_DIR/data/app.db" ] && SQLITE_DB="$PROJECT_DIR/data/app.db"
+[ -z "$SQLITE_DB" ] && [ -f "$PROJECT_DIR/backend/data/app.db" ] && SQLITE_DB="$PROJECT_DIR/backend/data/app.db"
+
+if [ -n "$SQLITE_DB" ]; then
+    if [ "$DRY_RUN" = false ]; then
+        if command -v sqlite3 >/dev/null 2>&1; then
+            sqlite3 "$SQLITE_DB" ".backup '$BACKUP_PATH/app.db'"
+        else
+            cp "$SQLITE_DB" "$BACKUP_PATH/app.db"
+        fi
+        SQLITE_SIZE=$(du -h "$BACKUP_PATH/app.db" | cut -f1)
+        log_success "  SQLite backup completed: $SQLITE_SIZE"
+    else
+        log_info "  [DRY-RUN] Would backup SQLite database"
+    fi
+else
+    log_info "  No SQLite database found, skipping..."
+fi
+
+# 1b. PostgreSQL 备份
 log_info "📦 Backing up PostgreSQL..."
 
 if docker ps | grep -q "soc-copilot-postgres"; then
-    PG_CONTAINER=$(docker ps --filter "name=soc-copilot-postgres" --format "{{.Names}}")
+    PG_CONTAINER=$(docker ps --filter "name=soc-copilot-postgres" --format "{{.Names}}" | head -1)
 
     if [ "$DRY_RUN" = false ]; then
-        docker exec "$PG_CONTAINER" pg_dump -U postgres soc_copilot | \
+        docker exec "$PG_CONTAINER" pg_dump -U "${DB_USER:-soc_copilot}" "${DB_NAME:-soc_copilot}" | \
             gzip > "$BACKUP_PATH/postgres.sql.gz"
 
         PG_SIZE=$(du -h "$BACKUP_PATH/postgres.sql.gz" | cut -f1)
@@ -133,8 +193,8 @@ fi
 log_info "📦 Backing up database migrations..."
 
 if [ "$DRY_RUN" = false ]; then
-    if [ -d "$PROJECT_DIR/backend/alembic" ]; then
-        cp -r "$PROJECT_DIR/backend/alembic" "$BACKUP_PATH/alembic"
+    if [ -d "$PROJECT_DIR/backend/migrations_alembic" ]; then
+        cp -r "$PROJECT_DIR/backend/migrations_alembic" "$BACKUP_PATH/migrations_alembic"
         log_success "  Migrations backup completed"
     fi
 else

@@ -1533,7 +1533,7 @@ async def seed(session) -> dict:
             ai_summary=spec["summary"], ai_remediation=spec["remediation"],
             risk_score=spec["risk"], affected_assets=spec["assets"],
             affected_users=spec["users"], business_impact=spec["impact"],
-            created_at=ago(hours=spec["first_h"]).isoformat(),
+            created_at=ago(hours=spec["first_h"]),
         ))
         new_ces += 1
     counts["correlated_events"] = new_ces
