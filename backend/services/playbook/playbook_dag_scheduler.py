@@ -95,24 +95,30 @@ class DAGScheduler:
             _running_schedulers.pop(self.run_id, None)
 
     async def _load_secrets(self) -> dict[str, str]:
-        """加载密钥供节点使用（如 {{secret.xxx}}）。密钥未配置或解密失败时返回空 dict。"""
+        """加载密钥供节点使用（如 {{secret.xxx}}）。密钥未配置或解密失败时返回空 dict。
+
+        使用独立的临时 session：并发节点会同时调用本方法，而 AsyncSession
+        不允许并发使用（scheduler 的共享 session 留给 run 状态更新）。
+        """
         if self._secrets_cache is not None:
             return self._secrets_cache
         out: dict[str, str] = {}
         try:
+            from db.session import AsyncSessionLocal
             from repositories.secret_repository import SecretRepository
             from services.secret_service import get_secret_service
 
             svc = get_secret_service()
-            repo = SecretRepository(self.session)
-            items = await repo.list_all(limit=500, offset=0)
-            for s in items:
-                try:
-                    out[s.name] = svc.decrypt(s.encrypted_value)
-                except Exception as e:
-                    logger.warning(
-                        f"[{self.run_id}] Failed to decrypt secret {s.name}: {e}"
-                    )
+            async with AsyncSessionLocal() as session:
+                repo = SecretRepository(session)
+                items = await repo.list_all(limit=500, offset=0)
+                for s in items:
+                    try:
+                        out[s.name] = svc.decrypt(s.encrypted_value)
+                    except Exception as e:
+                        logger.warning(
+                            f"[{self.run_id}] Failed to decrypt secret {s.name}: {e}"
+                        )
         except ValueError as e:
             logger.debug(f"[{self.run_id}] Secrets not available: {e}")
         except Exception as e:

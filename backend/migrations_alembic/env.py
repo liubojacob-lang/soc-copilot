@@ -1,17 +1,16 @@
 """Alembic environment configuration for async SQLAlchemy."""
 
 import asyncio
-from logging.config import fileConfig
-
-from sqlalchemy import pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
-
-from alembic import context
 
 # Import your Base and models
 import sys
+from logging.config import fileConfig
 from pathlib import Path
+
+from alembic import context
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Add backend directory to path
 backend_dir = Path(__file__).parent.parent
@@ -31,36 +30,6 @@ if os.getenv("DATABASE_URL"):
 
 # Import all models to ensure they are registered with Base
 # F1-7a: Added comprehensive model imports for tenant isolation
-import models.ai_model
-import models.ai_task
-import models.ai_user_setting
-import models.alert_note
-import models.api_key
-import models.asset
-import models.audit_log
-import models.blocked_ip
-import models.correlated_event
-import models.correlation_rule
-import models.event_similarity
-import models.history
-import models.ioc_hit
-import models.marketplace
-import models.monitor_history
-import models.playbook_approval
-import models.playbook_definition
-import models.playbook_node_attempt
-import models.playbook_node_run
-import models.playbook_output
-import models.playbook_run
-import models.prompt_registry
-import models.rbac
-import models.root_cause_analysis
-import models.secret
-import models.security_alert
-import models.security_vulnerability
-import models.threat_intel_cache
-import models.trigger
-import models.user
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

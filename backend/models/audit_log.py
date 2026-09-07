@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db.session import Base
@@ -13,6 +13,22 @@ class AuditLogModel(Base):
     """Model for audit logging."""
 
     __tablename__ = "audit_logs"
+    __table_args__ = (
+        Index(
+            "idx_audit_log_user_action",
+            "user_id",
+            "action",
+            "created_at",
+            unique=False,
+        ),
+        Index(
+            "idx_audit_log_resource",
+            "target_type",
+            "target_id",
+            "created_at",
+            unique=False,
+        ),
+    )
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
