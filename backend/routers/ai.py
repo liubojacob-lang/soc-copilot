@@ -5,7 +5,7 @@ AI Service Router - API endpoints for SOC Copilot AI features
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +13,7 @@ from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
+from middleware.rate_limiter import rate_limit
 from models.user import UserModel
 from observability.llm_tracing import observe_endpoint
 from services.ai_service_enhanced import (
@@ -85,10 +86,15 @@ class PlaybookRecommendationResponse(BaseModel):
 
 
 class ChatMessage(BaseModel):
-    """Chat message."""
+    """Chat message.
 
-    role: str = Field(..., pattern="^(user|assistant|system)$")
-    content: str
+    Role is restricted to user|assistant: the server owns the system
+    prompt, so client-supplied "system" entries would be an injection
+    vector into the model context.
+    """
+
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str = Field(..., max_length=20_000)
 
     model_config = ConfigDict(protected_namespaces=())
 
@@ -96,7 +102,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     """Request for chat."""
 
-    message: str
+    message: str = Field(..., min_length=1, max_length=20_000)
     model_id: str | None = None
     conversation_history: list[ChatMessage] | None = None
 
@@ -280,19 +286,29 @@ async def recommend_playbooks(
 
 @router.post("/chat")
 @observe_endpoint("ai_chat")
+@rate_limit(max_requests=30, window_seconds=60)
 async def chat(
-    request: ChatRequest,
+    payload: ChatRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     """
     Chat with SOC Copilot AI assistant.
+
+    Rate limited per client IP (30/min): the endpoint triggers real LLM
+    calls, so unbounded request volume translates directly into provider
+    cost.
     """
     try:
         ai_service = get_enhanced_ai_service()
 
+        # Bound client-supplied context: last 20 turns is plenty for the
+        # routing layer and the service (which consumes the last 10).
+        recent_history = (payload.conversation_history or [])[-20:]
+
         # Get model to use
-        model_id = request.model_id
+        model_id = payload.model_id
         model_provider = None
         route_reason = None
 
@@ -337,28 +353,29 @@ async def chat(
             if not model_id or model_id.lower() == "auto":
                 history_for_router = [
                     {"role": msg.role, "content": msg.content}
-                    for msg in (request.conversation_history or [])
+                    for msg in recent_history
                 ]
                 model_id, model_provider, route_reason = ai_service.resolve_auto_model(
-                    message=request.message,
+                    message=payload.message,
                     conversation_history=history_for_router,
                 )
                 logger.info(
                     f"[Auto-Route] Dynamically routed to: {model_id} ({model_provider}) - {route_reason}"
                 )
 
-        # Convert ChatMessage to dict format
+        # Convert ChatMessage to dict format (bounded to the last 20 turns;
+        # the service itself only consumes the most recent 10)
         history = None
-        if request.conversation_history:
+        if recent_history:
             history = [
                 {"role": msg.role, "content": msg.content}
-                for msg in request.conversation_history
+                for msg in recent_history
             ]
 
         # Get complete response directly
-        logger.info(f"Processing chat request: {request.message[:50]}...")
+        logger.info(f"Processing chat request: {payload.message[:50]}...")
         full_response = await ai_service.chat(
-            message=request.message,
+            message=payload.message,
             conversation_history=history,
             model_id=model_id,
             model_provider=model_provider,
@@ -368,7 +385,7 @@ async def chat(
         conversation_id = str(uuid.uuid4())
 
         return ChatResponse(
-            message=request.message,
+            message=payload.message,
             response=full_response,
             conversation_id=conversation_id,
             routed_model=model_id,
