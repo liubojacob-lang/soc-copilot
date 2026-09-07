@@ -143,8 +143,11 @@ class CaseService:
             summary=f"Case created with status '{data.status.value}' and severity '{data.severity.value}'",
             performed_by=user_id,
         )
+        await self.session.commit()
 
         logger.info(f"Case created: {case.id} - {case.title}")
+        # Re-fetch with relations eagerly loaded; _to_detail reads them
+        case = await self.repo.get_by_id(self.session, case.id)
         return await self._to_detail(case)
 
     async def get_by_id(self, case_id: str) -> CaseDetailResponse | None:
@@ -230,8 +233,11 @@ class CaseService:
                 summary=f"Case updated: {'; '.join(changes)}",
                 performed_by=user_id,
             )
+        await self.session.commit()
 
         logger.info(f"Case updated: {case_id}")
+        # Re-fetch with relations eagerly loaded; _to_detail reads them
+        case = await self.repo.get_by_id(self.session, case_id)
         return await self._to_detail(case)
 
     async def delete(self, case_id: str) -> None:
@@ -240,6 +246,7 @@ class CaseService:
         if not case:
             raise ValueError(f"Case not found: {case_id}")
         await self.repo.delete(self.session, case)
+        await self.session.commit()
         logger.info(f"Case deleted: {case_id}")
 
     # ── Status Management ──────────────────────────────────────────
@@ -290,6 +297,7 @@ class CaseService:
             summary=summary,
             performed_by=user_id,
         )
+        await self.session.commit()
 
         # Reset SLA for investigating
         if new_status == CaseStatus.investigating and not case.sla_due_at:
@@ -335,6 +343,7 @@ class CaseService:
             summary=summary,
             performed_by=user_id,
         )
+        await self.session.commit()
 
         logger.info(f"Case assigned: {case_id} → {data.assigned_to}")
         case = await self.repo.get_by_id(self.session, case_id)
@@ -368,6 +377,7 @@ class CaseService:
                 summary=f"Linked {linked} alert(s) to case (IDs: {data.alert_ids})",
                 performed_by=user_id,
             )
+        await self.session.commit()
 
         logger.info(f"Linked {linked} alerts to case {case_id}")
         case = await self.repo.get_by_id(self.session, case_id)
@@ -394,6 +404,7 @@ class CaseService:
                 summary=f"Unlinked alert #{alert_id} from case",
                 performed_by=user_id,
             )
+        await self.session.commit()
 
         logger.info(f"Unlinked alert {alert_id} from case {case_id}")
         case = await self.repo.get_by_id(self.session, case_id)
@@ -428,6 +439,7 @@ class CaseService:
             summary=f"Comment added by {username}",
             performed_by=user_id,
         )
+        await self.session.commit()
 
         logger.info(f"Comment added to case {case_id}")
         return CommentResponse(
@@ -525,6 +537,7 @@ class CaseService:
                     summary=f"Batch status change: '{current_status.value}' → '{status_obj.value}'",
                     performed_by=user_id,
                 )
+                await self.session.commit()
 
                 success_count += 1
                 results.append(
@@ -532,6 +545,7 @@ class CaseService:
                 )
 
             except Exception as e:
+                await self.session.rollback()
                 failed_count += 1
                 error_entry = {"case_id": case_id, "error": str(e)}
                 errors.append(error_entry)
@@ -608,6 +622,7 @@ class CaseService:
                     summary=summary,
                     performed_by=user_id,
                 )
+                await self.session.commit()
 
                 success_count += 1
                 results.append(
@@ -615,6 +630,7 @@ class CaseService:
                 )
 
             except Exception as e:
+                await self.session.rollback()
                 failed_count += 1
                 error_entry = {"case_id": case_id, "error": str(e)}
                 errors.append(error_entry)
