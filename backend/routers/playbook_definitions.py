@@ -65,8 +65,12 @@ async def create_definition(
     # Validate and compile DAG
     try:
         compiled = await DAGCompiler.validate_and_compile(data.dag)
-    except DAGValidationError:
-        raise HTTPException(status_code=400, detail="Invalid playbook definition")
+    except DAGValidationError as e:
+        logger.warning(f"DAG validation failed for playbook definition: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"剧本 DAG 验证失败: {e}",
+        )
 
     definition = await repo.create(
         name=data.name,
@@ -76,6 +80,7 @@ async def create_definition(
         created_by_user_id=current_user.id,
         is_active=data.is_active,
     )
+    await db.commit()
 
     return PlaybookDefinitionResponse(
         id=definition.id,
@@ -87,6 +92,7 @@ async def create_definition(
         created_at=definition.created_at,
         updated_at=definition.updated_at,
         is_active=definition.is_active,
+        status=getattr(definition, "status", "published" if definition.is_active else "draft"),
         node_count=compiled["node_count"],
         edge_count=compiled["edge_count"],
     )
@@ -120,6 +126,7 @@ async def list_definitions(
                 created_at=item.created_at,
                 updated_at=item.updated_at,
                 is_active=item.is_active,
+                status=getattr(item, "status", "published" if item.is_active else "draft"),
                 node_count=len(item.definition_json.get("nodes", [])),
                 edge_count=len(item.definition_json.get("edges", [])),
             )
@@ -174,6 +181,7 @@ async def get_definition(
         created_at=definition.created_at,
         updated_at=definition.updated_at,
         is_active=definition.is_active,
+        status=getattr(definition, "status", "published" if definition.is_active else "draft"),
         node_count=len(definition.definition_json.get("nodes", [])),
         edge_count=len(definition.definition_json.get("edges", [])),
     )
@@ -196,8 +204,12 @@ async def update_definition(
     if data.dag:
         try:
             await DAGCompiler.validate_and_compile(data.dag)
-        except DAGValidationError:
-            raise HTTPException(status_code=400, detail="Invalid playbook definition")
+        except DAGValidationError as e:
+            logger.warning(f"DAG validation failed during update: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"剧本 DAG 验证失败: {e}",
+            )
 
     update_data = data.model_dump(exclude_unset=True)
     definition = await repo.update(
@@ -209,6 +221,8 @@ async def update_definition(
     if not definition:
         raise HTTPException(status_code=404, detail="Definition not found")
 
+    await db.commit()
+
     return PlaybookDefinitionResponse(
         id=definition.id,
         name=definition.name,
@@ -219,6 +233,7 @@ async def update_definition(
         created_at=definition.created_at,
         updated_at=definition.updated_at,
         is_active=definition.is_active,
+        status=getattr(definition, "status", "published" if definition.is_active else "draft"),
         node_count=len(definition.definition_json.get("nodes", [])),
         edge_count=len(definition.definition_json.get("edges", [])),
     )
@@ -243,6 +258,8 @@ async def delete_definition(
         raise HTTPException(
             status_code=404, detail="Definition not found or has associated runs"
         )
+
+    await db.commit()
 
 
 # ============ DAG Playbook Execution ============
@@ -357,6 +374,8 @@ async def get_dag_run_nodes(
 
     return [
         DAGNodeRunResponse(
+            id=nr.id,
+            run_id=nr.run_id,
             node_id=nr.node_id,
             node_name=nr.node_name,
             node_type=nr.node_type,
@@ -365,8 +384,9 @@ async def get_dag_run_nodes(
             finished_at=nr.finished_at,
             attempt_count=nr.attempt_count,
             last_error=nr.last_error,
-            output_json=nr.output_json,
-            input_json=nr.input_json,
+            output_json=nr.output_json or {},
+            input_json=nr.input_json or {},
+            created_at=nr.created_at,
         )
         for nr in node_runs
     ]

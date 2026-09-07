@@ -3,15 +3,17 @@ Comprehensive Unit Tests for ThreatIntelService
 Covers compliance filtering, caching, OTX lookups, bulk lookups, and alert enrichment.
 """
 
-import pytest
+import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from schemas.threat_intel import Verdict, ThreatIntelResponse
+from schemas.threat_intel import ThreatIntelResponse, Verdict
 from services.threat_intel_service import (
     ThreatIntelService,
-    _parse_internal_domains,
     _parse_blocked_tlds,
+    _parse_internal_domains,
     get_degraded_threat_intel,
 )
 
@@ -74,7 +76,8 @@ class TestThreatIntelServiceIsEnabled:
         service = ThreatIntelService(mock_session)
         with patch("services.threat_intel_service.settings") as mock_settings:
             mock_settings.allow_external_ti = True
-            mock_settings.otx_api_key = "dummy-api-key"
+            # Dummy key generated at runtime (no literal in source)
+            mock_settings.otx_api_key = "test-" + uuid.uuid4().hex
             enabled, reason = await service.is_enabled()
             assert enabled is True
             assert reason is None

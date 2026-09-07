@@ -88,8 +88,8 @@ export const TopSources = React.memo(function TopSources({
   return (
     <div className="space-y-4">
       {/* 柱状图 */}
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full min-w-0 h-64">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <BarChart
             data={chartData}
             layout="horizontal"

@@ -22,8 +22,10 @@ LOCK_FILENAME = ".alembic.lock"
 @contextmanager
 def migration_process_lock() -> Iterator[None]:
     """Hold an exclusive cross-process lock for the duration of a block."""
-    lock_path = BACKEND_DIR / LOCK_FILENAME
-    with open(lock_path, "w") as lock_file:
+    lock_path = (BACKEND_DIR / LOCK_FILENAME).resolve()
+    if not lock_path.is_relative_to(BACKEND_DIR.resolve()):
+        raise RuntimeError("Migration lock path escaped backend directory")
+    with lock_path.open("w") as lock_file:
         fcntl.flock(lock_file, fcntl.LOCK_EX)
         try:
             yield

@@ -2835,6 +2835,54 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/settings/dynamic": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Dynamic Settings
+     * @description List all dynamic configuration settings with override status and defaults.
+     */
+    get: operations["list_dynamic_settings_api_v1_admin_settings_dynamic_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/settings/dynamic/{key}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Dynamic Setting
+     * @description Get a specific dynamic configuration setting value.
+     */
+    get: operations["get_dynamic_setting_api_v1_admin_settings_dynamic__key__get"];
+    /**
+     * Set Dynamic Setting
+     * @description Override a dynamic configuration setting and broadcast hot-reload across all pods.
+     */
+    put: operations["set_dynamic_setting_api_v1_admin_settings_dynamic__key__put"];
+    post?: never;
+    /**
+     * Reset Dynamic Setting
+     * @description Reset a dynamic configuration setting back to default and broadcast.
+     */
+    delete: operations["reset_dynamic_setting_api_v1_admin_settings_dynamic__key__delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/ai/analyze-alert": {
     parameters: {
       query?: never;
@@ -8110,9 +8158,9 @@ export interface components {
      */
     DAGNodeRunResponse: {
       /** Id */
-      id: string;
+      id?: string | null;
       /** Run Id */
-      run_id: string;
+      run_id?: string | null;
       /** Node Id */
       node_id: string;
       /** Node Name */
@@ -8123,24 +8171,24 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "pending" | "running" | "success" | "failed" | "skipped" | "cancelled";
+      status: "pending" | "running" | "success" | "failed" | "skipped" | "cancelled" | "queued";
       /** Started At */
-      started_at: string | null;
+      started_at?: string | null;
       /** Finished At */
-      finished_at: string | null;
-      /** Attempt Count */
+      finished_at?: string | null;
+      /**
+       * Attempt Count
+       * @default 0
+       */
       attempt_count: number;
       /** Last Error */
-      last_error: string | null;
+      last_error?: string | null;
       /** Input Json */
-      input_json: Record<string, never>;
+      input_json?: Record<string, never>;
       /** Output Json */
-      output_json: Record<string, never>;
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string;
+      output_json?: Record<string, never>;
+      /** Created At */
+      created_at?: string | null;
     };
     /**
      * DAGPlaybookRunCreate
@@ -8180,43 +8228,40 @@ export interface components {
       playbook_version: string;
       /**
        * Engine Version
-       * @enum {string}
+       * @default v0.7
        */
-      engine_version: "v0.6" | "v0.7";
+      engine_version: string;
       /** Mode */
       mode: string;
       /**
        * Status
        * @enum {string}
        */
-      status: "pending" | "running" | "success" | "failed" | "partial" | "cancelled";
-      /**
-       * Failure Strategy
-       * @enum {string}
-       */
-      failure_strategy: "fail_fast" | "continue";
+      status: "pending" | "running" | "success" | "failed" | "partial" | "cancelled" | "queued";
+      /** Failure Strategy */
+      failure_strategy?: ("fail_fast" | "continue") | string | null;
       /** Created By User Id */
-      created_by_user_id: string | null;
+      created_by_user_id?: string | null;
       /** Input Json */
-      input_json: Record<string, never>;
+      input_json?: Record<string, never>;
       /** Output Json */
-      output_json: Record<string, never>;
+      output_json?: Record<string, never>;
       /**
        * Started At
        * Format: date-time
        */
       started_at: string;
       /** Finished At */
-      finished_at: string | null;
+      finished_at?: string | null;
       /** Error Message */
-      error_message: string | null;
+      error_message?: string | null;
       /** Definition Id */
-      definition_id: string | null;
+      definition_id?: string | null;
       /**
        * Execution Mode
-       * @enum {string}
+       * @default dag
        */
-      execution_mode: "linear" | "dag";
+      execution_mode: ("linear" | "dag") | string;
       /**
        * Total Nodes
        * @default 0
@@ -8243,7 +8288,7 @@ export interface components {
        */
       pending_nodes: number;
       /** Cancel Requested At */
-      cancel_requested_at: string | null;
+      cancel_requested_at?: string | null;
       /**
        * Can Resume
        * @default false
@@ -8328,6 +8373,35 @@ export interface components {
       free_gb: number;
       /** Percent Used */
       percent_used: number;
+    };
+    /**
+     * DynamicConfigItem
+     * @description Dynamic configuration item definition.
+     */
+    DynamicConfigItem: {
+      /** Key */
+      key: string;
+      /** Current Value */
+      current_value: unknown;
+      /** Default Value */
+      default_value?: unknown;
+      /** Is Overridden */
+      is_overridden: boolean;
+      /** Type */
+      type: string;
+      /**
+       * Description
+       * @default
+       */
+      description: string;
+    };
+    /**
+     * DynamicConfigSetRequest
+     * @description Request model to update dynamic configuration parameter.
+     */
+    DynamicConfigSetRequest: {
+      /** Value */
+      value: unknown;
     };
     /**
      * Entities
@@ -9903,6 +9977,11 @@ export interface components {
       /** Is Active */
       is_active: boolean;
       /**
+       * Status
+       * @default published
+       */
+      status: string;
+      /**
        * Node Count
        * @default 0
        */
@@ -10062,7 +10141,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "pending" | "running" | "success" | "failed" | "partial" | "cancelled";
+      status: "pending" | "running" | "success" | "failed" | "partial" | "cancelled" | "queued";
       /** Message */
       message: string;
     };
@@ -13469,8 +13548,8 @@ export interface operations {
         content: {
           /**
            * @example {
-           *       "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-           *       "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+           *       "access_token": "<access-jwt>",
+           *       "refresh_token": "<refresh-jwt>",
            *       "token_type": "bearer",
            *       "expires_in": 720,
            *       "user": {
@@ -17621,6 +17700,144 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["TimeoutConfigResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_dynamic_settings_api_v1_admin_settings_dynamic_get: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DynamicConfigItem"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_dynamic_setting_api_v1_admin_settings_dynamic__key__get: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  set_dynamic_setting_api_v1_admin_settings_dynamic__key__put: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DynamicConfigSetRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  reset_dynamic_setting_api_v1_admin_settings_dynamic__key__delete: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */

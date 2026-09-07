@@ -129,13 +129,13 @@ export function AlertTrendsChart({
         )}
       </div>
 
-      <div className="h-[300px]">
+      <div className="w-full min-w-0 h-[300px]">
         {chartData.length === 0 ? (
           <div className="flex items-center justify-center h-full text-sm text-gray-400">
             {t("common.noData")}
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={300} minWidth={0}>
             <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
               <defs>
                 {(["critical", "high", "medium", "low"] as const).map((key, idx) => (

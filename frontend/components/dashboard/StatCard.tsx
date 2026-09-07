@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * StatCard - Reusable KPI metric card for dashboards
+ * StatCard - Modern KPI metric card for SOC dashboards
  */
 
 import React, { type ReactNode } from "react";
@@ -35,49 +35,43 @@ function isNumericTrend(
 
 const variantStyles: Record<
   string,
-  { bg: string; iconBg: string; iconColor: string; trendGood: string; trendBad: string }
+  { iconBg: string; iconColor: string; trendGood: string; trendBad: string; accentBorder?: string }
 > = {
   default: {
-    bg: "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
-    iconBg: "bg-gray-100 dark:bg-gray-700",
-    iconColor: "text-gray-600 dark:text-gray-300",
-    trendGood: "text-green-600",
-    trendBad: "text-red-600",
+    iconBg: "bg-surface-ground border border-border-subtle",
+    iconColor: "text-text-secondary",
+    trendGood: "text-success-600 dark:text-success-400",
+    trendBad: "text-danger-600 dark:text-danger-400",
   },
   blue: {
-    bg: "bg-white dark:bg-gray-800 border-blue-100 dark:border-blue-900/30",
-    iconBg: "bg-blue-50 dark:bg-blue-900/20",
-    iconColor: "text-blue-600 dark:text-blue-400",
-    trendGood: "text-green-600",
-    trendBad: "text-red-600",
+    iconBg: "bg-accent-500/10 border border-accent-500/20",
+    iconColor: "text-accent-600 dark:text-accent-400",
+    trendGood: "text-success-600 dark:text-success-400",
+    trendBad: "text-danger-600 dark:text-danger-400",
   },
   red: {
-    bg: "bg-white dark:bg-gray-800 border-red-100 dark:border-red-900/30",
-    iconBg: "bg-red-50 dark:bg-red-900/20",
-    iconColor: "text-red-600 dark:text-red-400",
-    trendGood: "text-green-600",
-    trendBad: "text-red-600",
+    iconBg: "bg-danger-500/10 border border-danger-500/20",
+    iconColor: "text-danger-600 dark:text-danger-400",
+    trendGood: "text-success-600 dark:text-success-400",
+    trendBad: "text-danger-600 dark:text-danger-400",
   },
   green: {
-    bg: "bg-white dark:bg-gray-800 border-green-100 dark:border-green-900/30",
-    iconBg: "bg-green-50 dark:bg-green-900/20",
-    iconColor: "text-green-600 dark:text-green-400",
-    trendGood: "text-green-600",
-    trendBad: "text-red-600",
+    iconBg: "bg-success-500/10 border border-success-500/20",
+    iconColor: "text-success-600 dark:text-success-400",
+    trendGood: "text-success-600 dark:text-success-400",
+    trendBad: "text-danger-600 dark:text-danger-400",
   },
   amber: {
-    bg: "bg-white dark:bg-gray-800 border-amber-100 dark:border-amber-900/30",
-    iconBg: "bg-amber-50 dark:bg-amber-900/20",
-    iconColor: "text-amber-600 dark:text-amber-400",
-    trendGood: "text-green-600",
-    trendBad: "text-red-600",
+    iconBg: "bg-warning-500/10 border border-warning-500/20",
+    iconColor: "text-warning-600 dark:text-warning-400",
+    trendGood: "text-success-600 dark:text-success-400",
+    trendBad: "text-danger-600 dark:text-danger-400",
   },
   purple: {
-    bg: "bg-white dark:bg-gray-800 border-purple-100 dark:border-purple-900/30",
-    iconBg: "bg-purple-50 dark:bg-purple-900/20",
+    iconBg: "bg-purple-500/10 border border-purple-500/20",
     iconColor: "text-purple-600 dark:text-purple-400",
-    trendGood: "text-green-600",
-    trendBad: "text-red-600",
+    trendGood: "text-success-600 dark:text-success-400",
+    trendBad: "text-danger-600 dark:text-danger-400",
   },
 };
 
@@ -95,13 +89,18 @@ const StatCard = React.memo(function StatCard({
 
   if (loading) {
     return (
-      <div className={cn("rounded-xl border p-5 shadow-sm animate-pulse", styles.bg, className)}>
+      <div
+        className={cn(
+          "rounded-xl border border-border-subtle bg-surface-card p-5 shadow-subtle animate-pulse",
+          className
+        )}
+      >
         <div className="flex items-start justify-between mb-3">
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20" />
-          <div className="w-9 h-9 rounded-lg bg-gray-200 dark:bg-gray-700" />
+          <div className="h-3.5 bg-surface-ground rounded w-24" />
+          <div className="w-9 h-9 rounded-lg bg-surface-ground" />
         </div>
-        <div className="h-7 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-2" />
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24" />
+        <div className="h-8 bg-surface-ground rounded w-16 mb-2" />
+        <div className="h-3 bg-surface-ground rounded w-28" />
       </div>
     );
   }
@@ -109,50 +108,51 @@ const StatCard = React.memo(function StatCard({
   return (
     <div
       className={cn(
-        "rounded-xl border p-5 shadow-sm transition-shadow hover:shadow-md",
-        styles.bg,
+        "rounded-xl border border-border-subtle bg-surface-card p-5 shadow-subtle transition-all duration-200 hover:border-border-default hover:shadow-elevated",
         className
       )}
     >
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+      <div className="flex items-start justify-between mb-3">
+        <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
           {title}
         </h3>
         {icon && (
           <div
             className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+              "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105",
               styles.iconBg
             )}
           >
-            <span className={cn("w-5 h-5", styles.iconColor)}>{icon}</span>
+            <span className={cn("w-4.5 h-4.5 flex items-center justify-center", styles.iconColor)}>
+              {icon}
+            </span>
           </div>
         )}
       </div>
 
-      <div className="flex items-baseline gap-2 mb-1">
-        <span className="text-2xl font-bold text-gray-900 dark:text-white">{value}</span>
+      <div className="flex items-baseline gap-2 mb-1.5">
+        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-text-primary tabular-nums">
+          {value}
+        </span>
         {trend && isNumericTrend(trend) && (
           <span
             className={cn(
-              "text-xs font-semibold flex items-center gap-0.5",
+              "text-xs font-semibold flex items-center gap-0.5 tabular-nums",
               trend.isPositive ? styles.trendGood : styles.trendBad
             )}
           >
             {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
             {trend.label && (
-              <span className="text-gray-400 dark:text-gray-500 font-normal ml-0.5">
-                {trend.label}
-              </span>
+              <span className="text-text-muted font-normal ml-0.5">{trend.label}</span>
             )}
           </span>
         )}
         {trend && typeof trend === "string" && (
-          <span className="text-xs font-medium text-gray-400 dark:text-gray-500">{trend}</span>
+          <span className="text-xs font-medium text-text-muted">{trend}</span>
         )}
       </div>
 
-      {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500">{subtitle}</p>}
+      {subtitle && <p className="text-xs text-text-muted truncate leading-relaxed">{subtitle}</p>}
     </div>
   );
 });

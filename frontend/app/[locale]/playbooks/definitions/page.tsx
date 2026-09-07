@@ -67,11 +67,24 @@ export default function PlaybookDefinitionsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setDefinitions(data.definitions || []);
+        const rawItems = (data.definitions || data.items || []) as Record<string, unknown>[];
+        const normalized: PlaybookDefinition[] = rawItems.map((d) => ({
+          id: String(d.id),
+          name: String(d.name || ""),
+          description: (d.description as string) || null,
+          version: typeof d.version === "number" ? d.version : 1,
+          status:
+            (d.status as "draft" | "published" | "archived") ||
+            (d.is_active ? "published" : "draft"),
+          created_at: String(d.created_at || ""),
+          updated_at: String(d.updated_at || ""),
+          created_by: String(d.created_by || d.created_by_user_id || ""),
+        }));
+        setDefinitions(normalized);
         setPagination({
           currentPage: page,
           pageSize: pagination.pageSize,
-          total: data.total || 0,
+          total: (data.total as number) || normalized.length,
         });
       } else if (response.status === 401) {
         router.push("/login");
@@ -142,7 +155,7 @@ export default function PlaybookDefinitionsPage() {
         actions={
           <button
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors shadow-sm"
-            onClick={() => router.push(`/${locale}/playbooks/create`)}
+            onClick={() => router.push("/playbooks/create")}
           >
             <Plus className="w-4 h-4" />
             <span>{t("definitions.createNew")}</span>
@@ -200,7 +213,7 @@ export default function PlaybookDefinitionsPage() {
               {t("definitions.createFirst")}
             </p>
             <button
-              onClick={() => router.push(`/${locale}/playbooks/create`)}
+              onClick={() => router.push("/playbooks/create")}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -208,60 +221,54 @@ export default function PlaybookDefinitionsPage() {
             </button>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase text-gray-500 dark:text-gray-400">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t("definitions.name") || "Name"}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t("definitions.description") || "Description"}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t("definitions.version") || "Version"}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t("definitions.status") || "Status"}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t("definitions.updated") || "Updated"}
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t("definitions.actions") || "Actions"}
-                    </th>
+                    <th className="px-6 py-3">{t("definitions.name")}</th>
+                    <th className="px-6 py-3">{t("definitions.version")}</th>
+                    <th className="px-6 py-3">{t("definitions.status")}</th>
+                    <th className="px-6 py-3">{t("definitions.updated")}</th>
+                    <th className="px-6 py-3 text-right">{t("definitions.actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredDefinitions.map((def) => (
                     <tr
                       key={def.id}
-                      className="hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-700/50 transition-colors"
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                     >
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900 dark:text-white">{def.name}</div>
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                        <div className="flex items-center gap-3">
+                          <BookOpen className="w-5 h-5 text-gray-400" />
+                          <div>
+                            <div className="font-semibold">{def.name}</div>
+                            {def.description && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {def.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
-                        {def.description || "-"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 font-mono">
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono">
                         v{def.version}
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             def.status === "published"
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
                               : def.status === "draft"
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
+                                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
                           }`}
                         >
                           {def.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                         {format.dateTime(new Date(def.updated_at), { dateStyle: "medium" })}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -269,18 +276,14 @@ export default function PlaybookDefinitionsPage() {
                           <button
                             className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
                             title={tCommon("viewDetails")}
-                            onClick={() =>
-                              router.push(`/${locale}/playbooks/definitions/${def.id}`)
-                            }
+                            onClick={() => router.push(`/playbooks/definitions/${def.id}`)}
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
                             title={tCommon("edit")}
-                            onClick={() =>
-                              router.push(`/${locale}/playbooks/definitions/${def.id}/edit`)
-                            }
+                            onClick={() => router.push(`/playbooks/definitions/${def.id}/edit`)}
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>

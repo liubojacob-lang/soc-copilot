@@ -170,8 +170,8 @@ export function ResourceChart({
 
   return (
     <ChartCard title={t.title} action={timeRangeAction}>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full min-w-0 h-64">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <AreaChart data={chartData}>
             <CartesianGrid {...themeGrid} />
             <XAxis dataKey="time" {...themeAxis} tickMargin={8} />

@@ -82,8 +82,8 @@ def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthServic
             "content": {
                 "application/json": {
                     "example": {
-                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "access_token": "<access-jwt>",
+                        "refresh_token": "<refresh-jwt>",
                         "token_type": "bearer",
                         "expires_in": 720,
                         "user": {

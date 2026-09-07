@@ -249,7 +249,7 @@ export default function DashboardPage() {
 
           {/* ── Row 2: Trends + Severity ──────────────── */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 min-w-0">
               <AlertTrendsChart
                 data={trendsData?.points ?? []}
                 isLoading={trendsLoading}
@@ -257,7 +257,7 @@ export default function DashboardPage() {
                 onPeriodChange={setTrendsPeriod}
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <SeverityPieChart
                 data={severityData?.buckets ?? []}
                 total={severityData?.total}
@@ -283,12 +283,14 @@ export default function DashboardPage() {
 
           {/* ── Row 4: Asset Risk + IOC Stats ──────────── */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AssetRiskTable
-              data={assetData?.assets ?? []}
-              isLoading={assetLoading}
-              title={t("dashboard.assetRiskTop10")}
-            />
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <div className="min-w-0">
+              <AssetRiskTable
+                data={assetData?.assets ?? []}
+                isLoading={assetLoading}
+                title={t("dashboard.assetRiskTop10")}
+              />
+            </div>
+            <div className="min-w-0 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-green-500" />
                 {t("dashboard.iocStats")}

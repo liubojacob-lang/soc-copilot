@@ -44,7 +44,7 @@ class ContextVariableRenderer:
         - {{secret.xxx}} - References secret values (v0.7.4)
 
         Args:
-            template: Template (string, dict, or list) to render
+            template: Input value (string, dict, or list) with variable references
             context: Current context dictionary
             input_data: Initial input data
             node_outputs: Dictionary of node outputs {node_id: output_dict}

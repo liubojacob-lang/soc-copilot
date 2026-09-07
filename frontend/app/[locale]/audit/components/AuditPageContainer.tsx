@@ -9,10 +9,12 @@ import { AuditFilters } from "./AuditFilters";
 import { VirtualAuditTable } from "./VirtualAuditTable";
 import { getMethodClass, getStatusCodeClass } from "../utils";
 import { AuditPagination } from "./AuditPagination";
+import { useToast } from "@/components/Toast";
 
 export function AuditPageContainer() {
   const format = useFormatter();
   const t = useTranslations("auditPage");
+  const { showToast } = useToast();
 
   // Filter states
   const [filterAction, setFilterAction] = useState("");
@@ -104,12 +106,13 @@ export function AuditPageContainer() {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+        showToast("Audit logs exported successfully", "success");
       } else {
-        alert(t("export.failed"));
+        showToast(t("export.failed"), "error");
       }
     } catch (err) {
       console.error("Export failed:", err);
-      alert(t("export.error"));
+      showToast(t("export.error"), "error");
     }
   };
 

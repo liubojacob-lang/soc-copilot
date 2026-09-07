@@ -298,11 +298,16 @@ class AuditArchiveService:
         Returns:
             Path to exported file
         """
+        if format not in ("json", "csv"):
+            raise ValueError(f"Unsupported audit export format: {format}")
+
         export_dir = self.archive_dir / "exports"
         export_dir.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        export_file = export_dir / f"audit_export_{timestamp}.{format}"
+        export_file = (export_dir / f"audit_export_{timestamp}.{format}").resolve()
+        if not export_file.is_relative_to(self.archive_dir.resolve()):
+            raise ValueError("Audit export path escaped archive directory")
 
         all_logs = []
 
@@ -365,7 +370,7 @@ class AuditArchiveService:
 
         # Write export file
         if format == "json":
-            with open(export_file, "w", encoding="utf-8") as f:
+            with export_file.open("w", encoding="utf-8") as f:
                 json.dump(
                     {
                         "export_date": datetime.now().isoformat(),
@@ -383,7 +388,7 @@ class AuditArchiveService:
         elif format == "csv":
             import csv
 
-            with open(export_file, "w", newline="", encoding="utf-8") as f:
+            with export_file.open("w", newline="", encoding="utf-8") as f:
                 if all_logs:
                     writer = csv.DictWriter(f, fieldnames=all_logs[0].keys())
                     writer.writeheader()

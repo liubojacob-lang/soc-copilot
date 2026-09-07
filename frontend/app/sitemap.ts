@@ -10,6 +10,7 @@ const STATIC_ROUTES = [
   "/alerts",
   "/cases",
   "/playbooks",
+  "/playbooks/create",
   "/playbooks/definitions",
   "/playbooks/approvals",
   "/threat-intel",

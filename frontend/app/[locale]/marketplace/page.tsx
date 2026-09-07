@@ -7,6 +7,7 @@ import { apiClient as api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState } from "@/components/common/LoadingState";
+import { useToast } from "@/components/Toast";
 import { Star, Download, Search, CheckCircle, TrendingUp, Award } from "lucide-react";
 
 interface MarketplacePlaybook {
@@ -57,6 +58,7 @@ export default function MarketplacePage() {
   const t = useTranslations("marketplace");
   const tCommon = useTranslations("common");
   const tNav = useTranslations("nav");
+  const { showToast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [playbooks, setPlaybooks] = useState<MarketplacePlaybook[]>([]);
   const [featured, setFeatured] = useState<MarketplacePlaybook[]>([]);
@@ -107,7 +109,7 @@ export default function MarketplacePage() {
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Unknown error";
       console.error("Failed to load marketplace:", message);
-      alert("Failed to load marketplace: " + message);
+      showToast("Failed to load marketplace: " + message, "error");
     } finally {
       setLoading(false);
     }
@@ -123,10 +125,10 @@ export default function MarketplacePage() {
       }>(`/api/marketplace/playbooks/${playbookId}/download`);
       if (response.success) {
         const name = response.playbook?.name || response.playbook_name || "Playbook";
-        alert(t("downloadSuccess", { name, page: tNav("playbookDefinitions") }));
+        showToast(t("downloadSuccess", { name, page: tNav("playbookDefinitions") }), "success");
       }
     } catch {
-      alert(t("downloadFailed"));
+      showToast(t("downloadFailed"), "error");
     } finally {
       setDownloading(null);
     }
@@ -146,19 +148,10 @@ export default function MarketplacePage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-ground pb-12">
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Debug Info */}
-        {!loading && playbooks.length > 0 && (
-          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <p className="text-sm text-green-800 dark:text-green-200">
-              ✅ {t("loaded", { count: playbooks.length })}
-            </p>
-          </div>
-        )}
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Search & Filter */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">

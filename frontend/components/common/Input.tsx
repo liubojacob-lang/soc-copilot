@@ -14,21 +14,21 @@ import { cn } from "@/lib/utils";
  * Input 组件变体配置
  */
 const inputVariants = cva(
-  "w-full rounded-lg border bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation",
+  "w-full rounded-md border bg-surface-input text-text-primary placeholder:text-text-disabled transition-all duration-150 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation",
   {
     variants: {
       variant: {
         default:
-          "border-border-default dark:border-gray-600 focus:ring-2 focus:ring-accent-500 focus:border-transparent",
+          "border-border-default hover:border-text-disabled focus:ring-2 focus:ring-accent-500/30 focus:border-accent-600 dark:focus:border-accent-400",
         error:
-          "border-danger-500 dark:border-danger-500 focus:ring-2 focus:ring-danger-500 focus:border-transparent",
+          "border-danger-500 text-danger-900 dark:text-danger-100 focus:ring-2 focus:ring-danger-500/30 focus:border-danger-600",
         success:
-          "border-success-500 dark:border-success-500 focus:ring-2 focus:ring-success-500 focus:border-transparent",
+          "border-success-500 text-success-900 dark:text-success-100 focus:ring-2 focus:ring-success-500/30 focus:border-success-600",
       },
       size: {
-        sm: "px-3 py-1.5 text-sm",
-        md: "px-4 py-2.5 text-sm",
-        lg: "px-6 py-3 text-base",
+        sm: "h-8 px-2.5 text-xs",
+        md: "h-9 px-3 text-sm",
+        lg: "h-10 px-3.5 text-sm",
       },
     },
     defaultVariants: {

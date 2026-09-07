@@ -41,6 +41,8 @@ import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type ColumnDef, type TableSeverity } from "@/components/ui/DataTable";
 import { LoadingState } from "@/components/common/LoadingState";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { Button } from "@/components/common/Button";
 import { useToast } from "@/components/Toast";
 import { useAlerts, useBatchUpdateAlerts, useDeleteAlert, useAlertStats } from "@/hooks/useAlerts";
 import type { SecurityAlertItem, AlertListFilters, AlertStatus, AlertSeverity } from "@/lib/api";
@@ -179,43 +181,43 @@ function FilterDropdown({ label, options, selected, onChange }: FilterDropdownPr
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex items-center gap-2 px-3 py-2 text-sm rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 border transition-colors",
+          "flex items-center gap-2 px-3 py-2 text-xs sm:text-sm rounded-lg border transition-all duration-150",
           selected.length > 0
-            ? "border-accent-300 bg-accent-50 text-accent-700 dark:border-accent-600 dark:bg-accent-900/20 dark:text-accent-300"
-            : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+            ? "border-accent-500/40 bg-accent-500/10 text-accent-700 dark:text-accent-300 font-medium"
+            : "border-border-subtle bg-surface-card text-text-secondary hover:border-border-default hover:text-text-primary shadow-xs"
         )}
       >
-        <Filter className="w-3.5 h-3.5" />
+        <Filter className="w-3.5 h-3.5 text-text-muted" />
         <span>{label}</span>
         {selected.length > 0 && (
-          <span className="ml-1 px-1.5 py-0.5 text-xs bg-accent-200 dark:bg-accent-800 rounded-full">
+          <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-semibold bg-accent-600 text-white">
             {selected.length}
           </span>
         )}
-        <ChevronDown className="w-3 h-3 ml-1" />
+        <ChevronDown className="w-3 h-3 ml-0.5 text-text-muted" />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1 max-h-60 overflow-y-auto">
+        <div className="absolute top-full left-0 mt-1.5 w-52 bg-surface-card border border-border-subtle rounded-xl shadow-elevated z-20 py-1.5 max-h-60 overflow-y-auto">
           {options.map((opt) => (
             <label
               key={opt.value}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-700 cursor-pointer text-sm"
+              className="flex items-center gap-2.5 px-3 py-2 hover:bg-surface-ground active:bg-surface-ground cursor-pointer text-xs sm:text-sm text-text-primary transition-colors"
             >
               <input
                 type="checkbox"
                 checked={selected.includes(opt.value)}
                 onChange={() => toggle(opt.value)}
-                className="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
+                className="rounded border-border-default text-accent-600 focus:ring-accent-500/40"
               />
-              <span className="text-gray-700 dark:text-gray-300">{opt.label}</span>
+              <span>{opt.label}</span>
             </label>
           ))}
           {selected.length > 0 && (
             <button
               type="button"
               onClick={() => onChange([])}
-              className="w-full text-left px-3 py-2 text-xs text-gray-500 hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-700 border-t border-gray-100 dark:border-gray-700"
+              className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-text-primary hover:bg-surface-ground border-t border-border-subtle transition-colors"
             >
               Clear all
             </button>
@@ -384,13 +386,21 @@ export default function AlertsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this alert permanently?")) return;
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+
+  const handleDelete = (id: number) => {
+    setDeleteTargetId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTargetId === null) return;
     try {
-      await deleteAlert.mutateAsync(id);
+      await deleteAlert.mutateAsync(deleteTargetId);
       showToast("Alert deleted", "success");
-    } catch (err) {
+    } catch {
       showToast("Delete failed", "error");
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -428,7 +438,7 @@ export default function AlertsPage() {
         cell: (row) => (
           <div className="min-w-0">
             <button
-              onClick={() => router.push(`/${locale}/alerts/${row.id}`)}
+              onClick={() => router.push(`/alerts/${row.id}`)}
               className="text-sm font-medium text-gray-900 dark:text-white hover:text-accent-600 dark:hover:text-accent-400 truncate block max-w-[320px] text-left transition-colors"
             >
               {row.title}
@@ -537,15 +547,15 @@ export default function AlertsPage() {
         cell: (row) => (
           <div className="flex items-center gap-1 justify-end">
             <button
-              onClick={() => router.push(`/${locale}/alerts/${row.id}`)}
-              className="p-1.5 text-gray-400 hover:text-accent-600 dark:hover:text-accent-400 rounded hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 transition-colors"
+              onClick={() => router.push(`/alerts/${row.id}`)}
+              className="p-1.5 text-text-muted hover:text-accent-600 dark:hover:text-accent-400 rounded-md hover:bg-surface-ground active:bg-surface-ground transition-colors"
               title={tCommon("view")}
             >
               <Eye className="w-4 h-4" />
             </button>
             <button
               onClick={() => handleDelete(row.id)}
-              className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 transition-colors"
+              className="p-1.5 text-text-muted hover:text-danger-600 dark:hover:text-danger-400 rounded-md hover:bg-danger-500/10 active:bg-danger-500/10 transition-colors"
               title={tCommon("delete")}
             >
               <Trash2 className="w-4 h-4" />
@@ -578,10 +588,10 @@ export default function AlertsPage() {
     <div
       key={alert.id}
       className={cn(
-        "bg-white dark:bg-gray-800 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 border p-4 transition-colors",
+        "bg-surface-card rounded-xl border p-4 transition-all duration-150 shadow-subtle",
         selectedIds.has(alert.id)
           ? "border-accent-500 ring-1 ring-accent-500"
-          : "border-gray-200 dark:border-gray-700"
+          : "border-border-subtle hover:border-border-default"
       )}
     >
       <div className="flex items-start gap-3">
@@ -589,27 +599,27 @@ export default function AlertsPage() {
           type="checkbox"
           checked={selectedIds.has(alert.id)}
           onChange={() => toggleSelect(alert.id)}
-          className="mt-1 rounded border-gray-300 text-accent-600 focus:ring-accent-500"
+          className="mt-1 rounded border-border-default text-accent-600 focus:ring-accent-500"
         />
         <div className="flex-1 min-w-0">
           <button
-            onClick={() => router.push(`/${locale}/alerts/${alert.id}`)}
-            className="text-sm font-semibold text-gray-900 dark:text-white hover:text-accent-600 dark:hover:text-accent-400 text-left line-clamp-2"
+            onClick={() => router.push(`/alerts/${alert.id}`)}
+            className="text-sm font-semibold text-text-primary hover:text-accent-600 dark:hover:text-accent-400 text-left line-clamp-2 transition-colors"
           >
             {alert.title}
           </button>
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <SeverityTag severity={alert.severity} />
             <StatusTag status={alert.status} />
-            <span className="text-xs text-gray-400">{alert.source}</span>
+            <span className="text-xs text-text-muted">{alert.source}</span>
           </div>
-          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-            <Clock className="w-3 h-3" />
+          <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
+            <Clock className="w-3.5 h-3.5" />
             {formatTime(alert.event_timestamp || alert.created_at, format)}
             {alert.source_ip && (
               <>
-                <span className="text-gray-300">·</span>
-                <Server className="w-3 h-3" />
+                <span className="text-border-default">·</span>
+                <Server className="w-3.5 h-3.5" />
                 <code className="text-xs">{alert.source_ip}</code>
               </>
             )}
@@ -643,20 +653,20 @@ export default function AlertsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
         {/* Search */}
         <div className="relative flex-1 max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("list.searchPlaceholder")}
-            className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
+            className="w-full pl-9 pr-8 py-2 text-sm bg-surface-input border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 text-text-primary placeholder:text-text-disabled transition-all"
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
@@ -695,34 +705,38 @@ export default function AlertsPage() {
           />
         </div>
 
-        {/* Refresh */}
-        {/* Import Alerts Button */}
-        <button
-          onClick={() => setShowImportModal(true)}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-accent-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-accent-700 active:bg-accent-700 transition-colors shadow-sm"
-          title={t("importAlerts")}
-        >
-          <Upload className="w-4 h-4" />
-          <span className="hidden sm:inline">{tCommon("import")}</span>
-        </button>
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowImportModal(true)}
+            variant="primary"
+            size="sm"
+            leftIcon={<Upload className="w-4 h-4" />}
+            title={t("importAlerts")}
+          >
+            <span className="hidden sm:inline">{tCommon("import")}</span>
+          </Button>
 
-        <button
-          onClick={() => refetch()}
-          className="p-2.5 text-gray-400 hover:text-accent-600 dark:hover:text-accent-400 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 transition-colors"
-          title={tCommon("refresh")}
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+          <Button
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            title={tCommon("refresh")}
+            aria-label={tCommon("refresh")}
+          >
+            <RefreshCw className="w-4 h-4 text-text-muted" />
+          </Button>
+        </div>
 
         {/* Mobile Filter Toggle */}
         <button
           onClick={() => setShowMobileFilters(!showMobileFilters)}
-          className="sm:hidden flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+          className="sm:hidden flex items-center gap-2 px-3 py-2 text-xs font-medium border border-border-subtle rounded-lg bg-surface-card text-text-secondary"
         >
           <Filter className="w-3.5 h-3.5" />
           Filters
           {(statusFilter.length > 0 || severityFilter.length > 0) && (
-            <span className="px-1.5 py-0.5 text-xs bg-accent-100 dark:bg-accent-900/30 text-accent-600 rounded-full">
+            <span className="px-1.5 py-0.2 text-[11px] bg-accent-500/20 text-accent-600 rounded-full font-semibold">
               {statusFilter.length + severityFilter.length}
             </span>
           )}
@@ -797,34 +811,34 @@ export default function AlertsPage() {
 
       {/* Batch Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800 rounded-lg p-3 mb-4 flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-accent-700 dark:text-accent-300">
+        <div className="bg-surface-card border border-accent-500/30 rounded-xl p-3 mb-4 flex items-center gap-3 flex-wrap shadow-subtle">
+          <span className="text-xs font-semibold text-accent-600 dark:text-accent-400">
             {selectedIds.size} selected
           </span>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              size="xs"
+              variant="primary"
               onClick={() => handleBatchStatus("resolved")}
-              className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center gap-1"
+              className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white"
+              leftIcon={<CheckCircle className="w-3.5 h-3.5" />}
             >
-              <CheckCircle className="w-3 h-3" />
               Resolve
-            </button>
-            <button
+            </Button>
+            <Button
+              size="xs"
+              variant="secondary"
               onClick={() => handleBatchStatus("false_positive")}
-              className="px-3 py-1.5 text-xs font-medium bg-gray-600 text-white rounded hover:bg-gray-700 active:bg-gray-700 transition-colors"
             >
               False Positive
-            </button>
-            <button
-              onClick={() => handleBatchStatus("investigating")}
-              className="px-3 py-1.5 text-xs font-medium bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
-            >
+            </Button>
+            <Button size="xs" variant="outline" onClick={() => handleBatchStatus("investigating")}>
               Investigate
-            </button>
+            </Button>
           </div>
           <button
             onClick={() => setSelectedIds(new Set())}
-            className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+            className="ml-auto p-1 text-text-muted hover:text-text-primary rounded-md transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -832,7 +846,7 @@ export default function AlertsPage() {
       )}
 
       {/* Desktop Table */}
-      <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="hidden sm:block bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-subtle">
         <DataTable
           data={sortedAlerts}
           columns={columns}
@@ -851,9 +865,9 @@ export default function AlertsPage() {
       {/* Mobile Cards */}
       <div className="sm:hidden space-y-3">
         {sortedAlerts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <AlertTriangle className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t("list.emptyTitle")}</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center bg-surface-card rounded-xl border border-border-subtle p-6">
+            <AlertTriangle className="w-10 h-10 text-text-muted mb-2.5 opacity-60" />
+            <p className="text-sm text-text-muted">{t("list.emptyTitle")}</p>
           </div>
         ) : (
           sortedAlerts.map(renderMobileCard)
@@ -861,24 +875,26 @@ export default function AlertsPage() {
 
         {/* Mobile Pagination */}
         {total > PAGE_SIZE && (
-          <div className="flex items-center justify-center gap-2 pt-4">
-            <button
+          <div className="flex items-center justify-between gap-2 pt-4 px-1">
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="px-3 py-1.5 text-sm border rounded disabled:opacity-40"
             >
               ← Prev
-            </button>
-            <span className="text-sm text-gray-500">
+            </Button>
+            <span className="text-xs font-medium text-text-muted tabular-nums">
               {page} / {Math.ceil(total / PAGE_SIZE)}
             </span>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => Math.min(Math.ceil(total / PAGE_SIZE), p + 1))}
               disabled={page >= Math.ceil(total / PAGE_SIZE)}
-              className="px-3 py-1.5 text-sm border rounded disabled:opacity-40"
             >
               Next →
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -888,7 +904,7 @@ export default function AlertsPage() {
   // ── Render ──────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-ground">
       <PageHeader title={t("title")} subtitle={total > 0 ? `${total} alerts` : t("subtitle")} />
 
       {/* Main Content */}
@@ -917,6 +933,17 @@ export default function AlertsPage() {
         onImportSuccess={() => {
           refetch();
         }}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        onCancel={() => setDeleteTargetId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Alert"
+        description="Are you sure you want to delete this alert permanently? This action cannot be undone."
+        variant="danger"
+        confirmText="Delete"
       />
     </div>
   );

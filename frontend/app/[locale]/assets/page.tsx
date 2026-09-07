@@ -5,6 +5,8 @@ import { api, AssetResponse, Criticality } from "@/lib/api";
 import { SkeletonTable } from "@/components/common/LoadingState";
 import { Modal } from "@/components/common/Modal";
 import { PageHeader } from "@/components/common/PageHeader";
+import { useToast } from "@/components/Toast";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useTranslations } from "next-intl";
 
 export default function AssetsPage() {
@@ -51,19 +53,29 @@ export default function AssetsPage() {
     setLoading(false);
   };
 
+  const { showToast } = useToast();
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     loadAssets();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t("deleteConfirm"))) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
     try {
-      await api.deleteAsset(id);
+      await api.deleteAsset(deleteTargetId);
+      showToast("Asset deleted", "success");
       loadAssets();
     } catch (error) {
       console.error("Failed to delete asset:", error);
-      alert(t("deleteFailed"));
+      showToast(t("deleteFailed"), "error");
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -76,7 +88,10 @@ export default function AssetsPage() {
     try {
       const data = JSON.parse(importJson);
       const result = await api.importAssets({ assets: data });
-      alert(t("importSuccess", { imported: result.imported, failed: result.failed }));
+      showToast(
+        t("importSuccess", { imported: result.imported, failed: result.failed }),
+        "success"
+      );
       if (result.errors.length > 0) {
         console.error("Import errors:", result.errors);
       }
@@ -85,7 +100,7 @@ export default function AssetsPage() {
       loadAssets();
     } catch (error) {
       console.error("Import failed:", error);
-      alert(t("importFailed"));
+      showToast(t("importFailed"), "error");
     }
   };
 
@@ -272,6 +287,17 @@ export default function AssetsPage() {
           />
         )}
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        onCancel={() => setDeleteTargetId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Asset"
+        description={t("deleteConfirm")}
+        variant="danger"
+        confirmText="Delete"
+      />
     </div>
   );
 }
@@ -287,6 +313,7 @@ function AssetForm({
 }) {
   const t = useTranslations("assets");
   const tCommon = useTranslations("common");
+  const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
     hostname: asset?.hostname || "",
@@ -320,9 +347,10 @@ function AssetForm({
         });
       }
       onSave();
+      showToast("Asset saved", "success");
     } catch (error: unknown) {
       const err = error as { status?: number; message: string };
-      alert(err.message || t("saveFailed"));
+      showToast(err.message || t("saveFailed"), "error");
     }
   };
 

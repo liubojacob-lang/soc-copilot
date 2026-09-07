@@ -6,6 +6,8 @@ import { useFormatter, useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
+import { useToast } from "@/components/Toast";
+import { cn } from "@/lib/utils";
 import {
   Cloud,
   Container,
@@ -85,6 +87,7 @@ export default function CloudNativePage() {
   const router = useRouter();
   const t = useTranslations("cloudNative");
   const format = useFormatter();
+  const { showToast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [dashboard, setDashboard] = useState<CloudDashboard | null>(null);
   const [connections, setConnections] = useState<CloudConnection[]>([]);
@@ -153,7 +156,10 @@ export default function CloudNativePage() {
       });
       const vulnCount = (response as unknown as { total_vulnerabilities: number })
         .total_vulnerabilities;
-      alert(`${t("scanComplete")}\n${t("foundVulnerabilities", { count: vulnCount })}`);
+      showToast(
+        `${t("scanComplete")} - ${t("foundVulnerabilities", { count: vulnCount })}`,
+        "info"
+      );
     } catch (e) {
       console.error("Scan failed:", e);
     } finally {
@@ -287,22 +293,42 @@ export default function CloudNativePage() {
                   <div className="p-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {[
-                        { key: "critical_findings", color: "red" },
-                        { key: "high_findings", color: "orange" },
-                        { key: "medium_findings", color: "yellow" },
-                        { key: "low_findings", color: "blue" },
-                      ].map(({ key, color }) => (
-                        <div
-                          key={key}
-                          className={`text-center p-4 bg-${color}-50 dark:bg-${color}-900/20 rounded-lg`}
-                        >
-                          <p
-                            className={`text-2xl font-bold text-${color}-600 dark:text-${color}-400`}
-                          >
+                        {
+                          key: "critical_findings",
+                          labelKey: "critical",
+                          bg: "bg-danger-500/10 border border-danger-500/20",
+                          text: "text-danger-600 dark:text-danger-400",
+                        },
+                        {
+                          key: "high_findings",
+                          labelKey: "high",
+                          bg: "bg-warning-500/10 border border-warning-500/20",
+                          text: "text-warning-600 dark:text-warning-400",
+                        },
+                        {
+                          key: "medium_findings",
+                          labelKey: "medium",
+                          bg: "bg-amber-500/10 border border-amber-500/20",
+                          text: "text-amber-600 dark:text-amber-400",
+                        },
+                        {
+                          key: "low_findings",
+                          labelKey: "low",
+                          bg: "bg-accent-500/10 border border-accent-500/20",
+                          text: "text-accent-600 dark:text-accent-400",
+                        },
+                      ].map(({ key, labelKey, bg, text }) => (
+                        <div key={key} className={cn("text-center p-4 rounded-xl shadow-xs", bg)}>
+                          <p className={cn("text-2xl font-bold tracking-tight tabular-nums", text)}>
                             {(dashboard.security_summary as any)?.[key] ?? 0}
                           </p>
-                          <p className={`text-sm text-${color}-600 dark:text-${color}-400`}>
-                            {t(key.replace("_findings", ""))}
+                          <p
+                            className={cn(
+                              "text-xs font-semibold uppercase tracking-wider mt-1",
+                              text
+                            )}
+                          >
+                            {t(labelKey)}
                           </p>
                         </div>
                       ))}
@@ -355,8 +381,8 @@ export default function CloudNativePage() {
                   </button>
 
                   <button
-                    onClick={() => alert(t("k8sScanComingSoon"))}
-                    className="p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors text-left"
+                    onClick={() => showToast(t("k8sScanComingSoon"), "info")}
+                    className="p-4 border-2 border-dashed border-border-subtle rounded-xl hover:border-accent-500 hover:bg-accent-500/10 transition-colors text-left"
                   >
                     <Server className="w-8 h-8 text-green-500 mb-2" />
                     <h3 className="font-medium text-gray-900 dark:text-white">

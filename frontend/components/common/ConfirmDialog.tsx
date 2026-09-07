@@ -48,24 +48,26 @@ export function ConfirmDialog({
       closeOnOverlayClick={!loading}
       ariaLabel={typeof title === "string" ? title : undefined}
     >
-      <div className="flex flex-col items-center text-center">
+      <div className="flex flex-col items-center text-center pt-2">
         <div
           className={cn(
-            "w-12 h-12 rounded-full flex items-center justify-center mb-4",
-            isDanger ? "bg-red-100 dark:bg-red-900/30" : "bg-blue-100 dark:bg-blue-900/30"
+            "w-11 h-11 rounded-full flex items-center justify-center mb-3.5 border",
+            isDanger
+              ? "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400"
+              : "bg-accent-500/10 text-accent-600 border-accent-500/20 dark:text-accent-400"
           )}
         >
           {isDanger ? (
-            <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" aria-hidden="true" />
+            <AlertTriangle className="w-5 h-5" aria-hidden="true" />
           ) : (
-            <Info className="w-6 h-6 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+            <Info className="w-5 h-5" aria-hidden="true" />
           )}
         </div>
 
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
+        <h3 className="text-base font-semibold text-text-primary mb-1.5">{title}</h3>
 
         {description && (
-          <div className="text-sm text-gray-600 dark:text-gray-400">{description}</div>
+          <div className="text-xs text-text-secondary leading-relaxed max-w-xs">{description}</div>
         )}
       </div>
 

@@ -51,3 +51,8 @@ export { LoadingSpinner, FullScreenLoader, SkeletonLoader } from "./LoadingSpinn
 
 // 标签切换过渡组件
 export { TabTransition } from "./TabTransition";
+
+// 返回按钮组件与页面标题
+export { BackButton } from "./BackButton";
+export type { BackButtonProps } from "./BackButton";
+export { PageHeader } from "./PageHeader";

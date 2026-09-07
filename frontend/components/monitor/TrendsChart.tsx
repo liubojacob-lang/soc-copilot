@@ -255,8 +255,8 @@ export function TrendsChart({
   }
 
   return (
-    <div className="w-full">
-      <ResponsiveContainer width="100%" height={height}>
+    <div className="w-full min-w-0">
+      <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={0}>
         {renderChart()}
       </ResponsiveContainer>
     </div>
@@ -300,33 +300,35 @@ export function SimpleTrendChart({ data, height = 200 }: { data: TrendData[]; he
   }
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-        <CartesianGrid {...themeGrid} />
-        <XAxis dataKey="date" {...themeAxis} />
-        <YAxis {...themeAxis} />
-        <Tooltip
-          content={({ active, payload }) => {
-            if (!active || !payload || !payload.length) return null;
-            const data = payload[0] as { value: number; payload: { date: string } };
-            return (
-              <div style={themeTooltip.contentStyle}>
-                <p style={{ fontSize: "12px", fontWeight: 500 }}>
-                  {data.payload.date}: {data.value} alerts
-                </p>
-              </div>
-            );
-          }}
-        />
-        <Area
-          type="monotone"
-          dataKey="count"
-          stroke={severityChartColors.info}
-          strokeWidth={2}
-          fill={severityChartColors.info}
-          fillOpacity={0.08}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
+    <div className="w-full min-w-0">
+      <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={0}>
+        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <CartesianGrid {...themeGrid} />
+          <XAxis dataKey="date" {...themeAxis} />
+          <YAxis {...themeAxis} />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload || !payload.length) return null;
+              const data = payload[0] as { value: number; payload: { date: string } };
+              return (
+                <div style={themeTooltip.contentStyle}>
+                  <p style={{ fontSize: "12px", fontWeight: 500 }}>
+                    {data.payload.date}: {data.value} alerts
+                  </p>
+                </div>
+              );
+            }}
+          />
+          <Area
+            type="monotone"
+            dataKey="count"
+            stroke={severityChartColors.info}
+            strokeWidth={2}
+            fill={severityChartColors.info}
+            fillOpacity={0.08}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

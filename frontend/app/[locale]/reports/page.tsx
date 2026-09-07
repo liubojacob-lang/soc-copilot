@@ -5,13 +5,22 @@ import { useRouter } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { loadAuthState, authFetchJSON } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
-import { FileText, Download, Plus, Copy, Check } from "lucide-react";
+import {
+  FileText,
+  Download,
+  Plus,
+  Copy,
+  Check,
+  Ticket,
+  BarChart3,
+  ClipboardList,
+} from "lucide-react";
 
 interface ReportTemplate {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 export default function ReportsPage() {
@@ -25,19 +34,19 @@ export default function ReportsPage() {
       id: "ticket",
       name: t("templates.ticket.name"),
       description: t("templates.ticket.description"),
-      icon: "🎫",
+      icon: <Ticket className="w-5 h-5 text-accent-500" />,
     },
     {
       id: "daily",
       name: t("templates.daily.name"),
       description: t("templates.daily.description"),
-      icon: "📊",
+      icon: <BarChart3 className="w-5 h-5 text-emerald-500" />,
     },
     {
       id: "postmortem",
       name: t("templates.postmortem.name"),
       description: t("templates.postmortem.description"),
-      icon: "📋",
+      icon: <ClipboardList className="w-5 h-5 text-amber-500" />,
     },
   ];
 
@@ -96,28 +105,30 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-ground pb-12">
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="mb-4 p-3.5 bg-danger-500/10 border border-danger-500/25 rounded-xl text-xs sm:text-sm text-danger-700 dark:text-danger-400">
+            <p>{error}</p>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Generate Report */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface-card rounded-xl border border-border-subtle shadow-subtle p-5 sm:p-6">
+              <h2 className="text-base font-semibold tracking-tight text-text-primary mb-2">
                 {t("generateReports")}
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t("description")}</p>
+              <p className="text-xs sm:text-sm text-text-secondary mb-4 leading-relaxed">
+                {t("description")}
+              </p>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-medium text-text-secondary mb-1.5">
                     {t("alertId")}
                   </label>
                   <input
@@ -125,12 +136,12 @@ export default function ReportsPage() {
                     value={alertId}
                     onChange={(e) => setAlertId(e.target.value)}
                     placeholder={t("alertIdPlaceholder")}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-medium text-text-secondary mb-1.5">
                     {t("additionalNotes")}
                   </label>
                   <textarea
@@ -138,14 +149,14 @@ export default function ReportsPage() {
                     onChange={(e) => setAdditionalNotes(e.target.value)}
                     placeholder={t("notesPlaceholder")}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all"
                   />
                 </div>
 
                 <button
                   onClick={generateReports}
                   disabled={generating || !alertId.trim()}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full px-4 py-2.5 bg-accent-600 hover:bg-accent-700 active:bg-accent-800 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 text-xs sm:text-sm font-medium shadow-sm transition-all"
                 >
                   {generating ? (
                     <>{t("generating")}</>
@@ -160,22 +171,22 @@ export default function ReportsPage() {
             </div>
 
             {/* Report Templates Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
-              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3">
+            <div className="bg-surface-card rounded-xl border border-border-subtle shadow-subtle p-5 sm:p-6 mt-6">
+              <h3 className="text-sm font-semibold tracking-tight text-text-primary mb-3">
                 {t("availableTemplates")}
               </h3>
               <div className="space-y-3">
                 {TEMPLATES.map((template) => (
                   <div
                     key={template.id}
-                    className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    className="flex items-start gap-3 p-3 bg-surface-ground rounded-xl border border-border-subtle"
                   >
-                    <span className="text-xl">{template.icon}</span>
+                    <div className="p-2 rounded-lg bg-surface-card border border-border-subtle shrink-0">
+                      {template.icon}
+                    </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {template.name}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-sm font-medium text-text-primary">{template.name}</p>
+                      <p className="text-xs text-text-secondary mt-0.5 leading-relaxed">
                         {template.description}
                       </p>
                     </div>
@@ -190,38 +201,38 @@ export default function ReportsPage() {
             {generatedReports ? (
               <div className="space-y-6">
                 {generatedReports.ticket_template && (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                    <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">🎫</span>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                  <div className="bg-surface-card rounded-xl border border-border-subtle shadow-subtle overflow-hidden">
+                    <div className="flex justify-between items-center p-4 bg-surface-ground border-b border-border-subtle">
+                      <div className="flex items-center gap-2.5">
+                        <Ticket className="w-5 h-5 text-accent-500" />
+                        <h3 className="font-semibold text-text-primary text-sm">
                           {t("templates.ticket.name")}
                         </h3>
                       </div>
                       <button
                         onClick={() => copyToClipboard(generatedReports.ticket_template!, "ticket")}
-                        className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-card rounded-lg transition-colors border border-border-subtle"
                       >
                         {copiedTemplate === "ticket" ? (
-                          <Check className="w-4 h-4" />
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
                         ) : (
-                          <Copy className="w-4 h-4" />
+                          <Copy className="w-3.5 h-3.5" />
                         )}
                         {copiedTemplate === "ticket" ? tCommon("copied") : tCommon("copy")}
                       </button>
                     </div>
-                    <pre className="p-4 text-sm text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
+                    <pre className="p-4 text-xs sm:text-sm text-text-primary overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">
                       {generatedReports.ticket_template}
                     </pre>
                   </div>
                 )}
 
                 {generatedReports.daily_report_template && (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                    <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">📊</span>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                  <div className="bg-surface-card rounded-xl border border-border-subtle shadow-subtle overflow-hidden">
+                    <div className="flex justify-between items-center p-4 bg-surface-ground border-b border-border-subtle">
+                      <div className="flex items-center gap-2.5">
+                        <BarChart3 className="w-5 h-5 text-emerald-500" />
+                        <h3 className="font-semibold text-text-primary text-sm">
                           {t("templates.daily.name")}
                         </h3>
                       </div>
@@ -229,28 +240,28 @@ export default function ReportsPage() {
                         onClick={() =>
                           copyToClipboard(generatedReports.daily_report_template!, "daily")
                         }
-                        className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-card rounded-lg transition-colors border border-border-subtle"
                       >
                         {copiedTemplate === "daily" ? (
-                          <Check className="w-4 h-4" />
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
                         ) : (
-                          <Copy className="w-4 h-4" />
+                          <Copy className="w-3.5 h-3.5" />
                         )}
                         {copiedTemplate === "daily" ? tCommon("copied") : tCommon("copy")}
                       </button>
                     </div>
-                    <pre className="p-4 text-sm text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
+                    <pre className="p-4 text-xs sm:text-sm text-text-primary overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">
                       {generatedReports.daily_report_template}
                     </pre>
                   </div>
                 )}
 
                 {generatedReports.postmortem_template && (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                    <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">📋</span>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                  <div className="bg-surface-card rounded-xl border border-border-subtle shadow-subtle overflow-hidden">
+                    <div className="flex justify-between items-center p-4 bg-surface-ground border-b border-border-subtle">
+                      <div className="flex items-center gap-2.5">
+                        <ClipboardList className="w-5 h-5 text-amber-500" />
+                        <h3 className="font-semibold text-text-primary text-sm">
                           {t("templates.postmortem.name")}
                         </h3>
                       </div>
@@ -258,29 +269,31 @@ export default function ReportsPage() {
                         onClick={() =>
                           copyToClipboard(generatedReports.postmortem_template!, "postmortem")
                         }
-                        className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-card rounded-lg transition-colors border border-border-subtle"
                       >
                         {copiedTemplate === "postmortem" ? (
-                          <Check className="w-4 h-4" />
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
                         ) : (
-                          <Copy className="w-4 h-4" />
+                          <Copy className="w-3.5 h-3.5" />
                         )}
                         {copiedTemplate === "postmortem" ? tCommon("copied") : tCommon("copy")}
                       </button>
                     </div>
-                    <pre className="p-4 text-sm text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
+                    <pre className="p-4 text-xs sm:text-sm text-text-primary overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">
                       {generatedReports.postmortem_template}
                     </pre>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-                <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <div className="bg-surface-card rounded-xl border border-border-subtle shadow-subtle p-12 text-center">
+                <FileText className="w-12 h-12 mx-auto text-text-muted mb-3 opacity-60" />
+                <h3 className="text-base font-semibold text-text-primary mb-1.5">
                   {t("noReportsGenerated")}
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400">{t("noReportsDescription")}</p>
+                <p className="text-xs sm:text-sm text-text-muted max-w-sm mx-auto leading-relaxed">
+                  {t("noReportsDescription")}
+                </p>
               </div>
             )}
           </div>

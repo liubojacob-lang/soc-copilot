@@ -8,6 +8,7 @@ import { useFormatter, useTranslations } from "next-intl";
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/common/PageHeader";
+import { useToast } from "@/components/Toast";
 import { authFetchJSON } from "@/lib/auth";
 import {
   Brain,
@@ -60,6 +61,7 @@ interface TestResult {
 export default function AIModelsPage() {
   const t = useTranslations("aiModels");
   const format = useFormatter();
+  const { showToast } = useToast();
   const [models, setModels] = useState<AIModel[]>([]);
   const [defaultModelId, setDefaultModelId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,9 +126,10 @@ export default function AIModelsPage() {
         body: JSON.stringify({ model_id: modelId }),
       });
       await fetchModels();
+      showToast("Default model updated", "success");
     } catch (error) {
       console.error("Failed to set default model:", error);
-      alert(t("setDefaultFailed"));
+      showToast(t("setDefaultFailed"), "error");
     } finally {
       setSettingDefault(null);
     }

@@ -52,9 +52,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
       label: t("dashboard"),
       items: [
         { label: t("home"), path: "/" },
-        { label: t("runs"), path: "/playbooks" },
-        { label: t("definitions"), path: "/playbooks/definitions" },
-        { label: t("approvals"), path: "/playbooks/approvals" },
+        { label: t("playbooks"), path: "/playbooks" },
       ],
     },
     {
@@ -87,13 +85,6 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
 
   const isLinkActive = (linkPath: string) => {
     if (pathname === linkPath) return true;
-    if (linkPath === "/playbooks") {
-      return (
-        pathname?.startsWith("/playbooks/") &&
-        !pathname.startsWith("/playbooks/definitions") &&
-        !pathname.startsWith("/playbooks/approvals")
-      );
-    }
     if (linkPath !== "/" && pathname?.startsWith(linkPath + "/")) return true;
     return false;
   };

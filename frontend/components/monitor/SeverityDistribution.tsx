@@ -170,8 +170,8 @@ export function SeverityDistribution({
   }
 
   return (
-    <div className="w-full">
-      <ResponsiveContainer width="100%" height={height}>
+    <div className="w-full min-w-0">
+      <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={0}>
         <PieChart>
           <Pie
             data={chartData}

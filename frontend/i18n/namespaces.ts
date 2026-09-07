@@ -8,6 +8,7 @@ export const ROUTE_NAMESPACES: Record<string, string[]> = {
   "/cases/[id]": ["cases"],
   "/alerts/[id]": ["alerts", "playbooks"],
   "/playbooks": ["playbooks"],
+  "/playbooks/create": ["playbooks"],
   "/playbooks/definitions": ["playbooks"],
   "/playbooks/approvals": ["playbooks"],
   "/threat-intel": ["threat-intel"],

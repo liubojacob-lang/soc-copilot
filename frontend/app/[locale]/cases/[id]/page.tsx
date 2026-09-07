@@ -37,6 +37,9 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { Button } from "@/components/common/Button";
+import { BackButton } from "@/components/common";
 import { useToast } from "@/components/Toast";
 import {
   useCaseDetail,
@@ -365,11 +368,22 @@ export default function CaseDetailPage() {
     }
   }, [id, newComment, addComment, addToast]);
 
-  const handleDelete = useCallback(async () => {
-    if (!confirm("Delete this case? This cannot be undone.")) return;
-    await deleteCase.mutateAsync(id);
-    addToast("Case deleted", "success");
-    router.push("/cases");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDelete = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    try {
+      await deleteCase.mutateAsync(id);
+      addToast("Case deleted", "success");
+      router.push("/cases");
+    } catch {
+      addToast("Failed to delete case", "error");
+    } finally {
+      setShowDeleteConfirm(false);
+    }
   }, [id, deleteCase, addToast, router]);
 
   // ── Loading ────────────────────────────────────────
@@ -410,28 +424,25 @@ export default function CaseDetailPage() {
   const sla = getSlaInfo(c.sla_deadline);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-ground pb-12">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-surface-card border-b border-border-subtle shadow-xs">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-3 mb-2">
-            <button
-              onClick={() => router.push("/cases")}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <BackButton fallbackUrl="/cases" label={t("common.back")} />
+            <div className="p-2 bg-accent-500/10 border border-accent-500/20 rounded-lg">
+              <Briefcase className="w-5 h-5 text-accent-600 dark:text-accent-400" />
             </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white flex-1 min-w-0 truncate">
+            <h1 className="text-xl font-bold tracking-tight text-text-primary flex-1 min-w-0 truncate">
               {c.title}
             </h1>
           </div>
 
           {/* Meta badges */}
           <div className="flex flex-wrap items-center gap-2 ml-11">
-            <Badge severity={mapCaseSeverity(c.severity) as any}>{c.severity}</Badge>
+            <Badge severity={mapCaseSeverity(c.severity) as any} variant="pill">
+              {c.severity}
+            </Badge>
             <span
               className={cn(
                 "px-2.5 py-0.5 rounded-full text-xs font-medium",
@@ -441,13 +452,13 @@ export default function CaseDetailPage() {
               {getStatusLabel(c.status, t)}
             </span>
             {sla.expired && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-danger-500/10 text-danger-600 dark:text-danger-400 border border-danger-500/20 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 SLA OVERDUE
               </span>
             )}
             {sla.urgent && !sla.expired && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning-500/10 text-warning-600 dark:text-warning-400 border border-warning-500/20 flex items-center gap-1">
                 <Timer className="w-3 h-3" />
                 SLA: {sla.text}
               </span>
@@ -461,14 +472,14 @@ export default function CaseDetailPage() {
           {/* Left column: Main content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Case Info */}
-            <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            <section className="bg-surface-card rounded-xl border border-border-subtle p-5 shadow-subtle">
+              <h2 className="text-sm font-semibold tracking-tight text-text-primary mb-3">
                 {t("cases.details")}
               </h2>
 
               {c.description && (
                 <div className="mb-4">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                  <p className="text-sm text-text-secondary whitespace-pre-wrap leading-relaxed">
                     {c.description}
                   </p>
                 </div>
@@ -734,6 +745,17 @@ export default function CaseDetailPage() {
         onClose={() => setLinkAlertModalOpen(false)}
         onLink={handleLinkAlert}
         t={t}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Delete Case"
+        description="Are you sure you want to delete this case? This cannot be undone."
+        variant="danger"
+        confirmText="Delete"
       />
     </div>
   );

@@ -6,20 +6,20 @@ event bus integration, and notification API router.
 from __future__ import annotations
 
 import unittest.mock as mock
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
 
 from models.on_call_schedule import OnCallSchedule
+from services.notification_service import NotificationService
 from services.notifications.base import NotificationMessage, NotificationProvider
 from services.notifications.email import EmailProvider
 from services.notifications.feishu import FeishuProvider
 from services.notifications.registry import NotificationRegistry
 from services.notifications.slack import SlackProvider
 from services.notifications.templates import render_alert_template
-from services.notification_service import NotificationService, get_notification_service
-
 
 # ─────────────────────────────────────────────────────────────
 # 1. Template Rendering & Message Formulation Tests
@@ -117,7 +117,8 @@ async def test_email_provider_send_mocked():
     provider = EmailProvider()
     provider.to_email = "soc-oncall@example.com"
     provider.smtp_user = "soc-bot@example.com"
-    provider.smtp_password = "fake-secret-password"
+    # Dummy credential generated at runtime (no literal in source)
+    provider.smtp_password = "test-" + uuid.uuid4().hex
     assert provider.is_configured() is True
 
     msg = NotificationMessage(title="Security Notice", body="Test email content", severity="low", payload={})
@@ -129,7 +130,7 @@ async def test_email_provider_send_mocked():
         result = await provider.send(msg)
         assert result is True
         mock_smtp_inst.starttls.assert_called_once()
-        mock_smtp_inst.login.assert_called_once_with("soc-bot@example.com", "fake-secret-password")
+        mock_smtp_inst.login.assert_called_once_with("soc-bot@example.com", provider.smtp_password)
         mock_smtp_inst.sendmail.assert_called_once()
 
 

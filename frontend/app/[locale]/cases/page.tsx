@@ -36,6 +36,9 @@ import { Badge } from "@/components/ui/Badge";
 import { DataTable, type ColumnDef, type TableSeverity } from "@/components/ui/DataTable";
 import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
+import { Modal } from "@/components/common/Modal";
+import { Button } from "@/components/common/Button";
+import { Input, Textarea, Select } from "@/components/common/Input";
 import { useToast } from "@/components/Toast";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useCases, useCreateCase } from "@/hooks/useCases";
@@ -148,97 +151,59 @@ function CreateCaseModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-lg mx-4 p-6 animate-fade-in-up">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-            {t("cases.createTitle")}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700"
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title={t("cases.createTitle")}
+      size="md"
+      footer={
+        <div className="flex justify-end gap-2.5">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
+            {tCommon("cancel")}
+          </Button>
+          <Button
+            type="submit"
+            form="create-case-form"
+            variant="primary"
+            isLoading={submitting}
+            disabled={submitting || !title.trim()}
           >
-            <X className="w-5 h-5" />
-          </button>
+            {tCommon("create")}
+          </Button>
         </div>
+      }
+    >
+      <form id="create-case-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
+        <Input
+          label={`${t("cases.title")} *`}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={t("cases.titlePlaceholder")}
+          required
+          autoFocus
+        />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t("cases.title")} *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={t("cases.titlePlaceholder")}
-              required
-            />
-          </div>
+        <Textarea
+          label={t("cases.description")}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
+          placeholder={t("cases.descriptionPlaceholder")}
+        />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t("cases.description")}
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={t("cases.descriptionPlaceholder")}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t("cases.severity")}
-            </label>
-            <select
-              value={severity}
-              onChange={(e) => setSeverity(e.target.value as CaseSeverity)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="critical">{t("cases.severityCritical")}</option>
-              <option value="high">{t("cases.severityHigh")}</option>
-              <option value="medium">{t("cases.severityMedium")}</option>
-              <option value="low">{t("cases.severityLow")}</option>
-            </select>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg"
-            >
-              {tCommon("cancel")}
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || !title.trim()}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  {tCommon("loading")}
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4" />
-                  {tCommon("create")}
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <Select
+          label={t("cases.severity")}
+          value={severity}
+          onChange={(e) => setSeverity(e.target.value as CaseSeverity)}
+        >
+          <option value="critical">{t("cases.severityCritical")}</option>
+          <option value="high">{t("cases.severityHigh")}</option>
+          <option value="medium">{t("cases.severityMedium")}</option>
+          <option value="low">{t("cases.severityLow")}</option>
+        </Select>
+      </form>
+    </Modal>
   );
 }
 
@@ -417,57 +382,60 @@ export default function CasesPage() {
       return (
         <div
           key={c.id}
-          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3 shadow-sm"
+          className="bg-surface-card rounded-xl border border-border-subtle hover:border-border-default p-4 space-y-3 shadow-subtle transition-all"
         >
           <div className="flex items-start justify-between gap-2">
             <button
               onClick={() => router.push(`/cases/${c.id}`)}
-              className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline text-left"
+              className="text-sm font-semibold text-text-primary hover:text-accent-600 dark:hover:text-accent-400 text-left transition-colors line-clamp-1"
             >
               {c.title}
             </button>
-            <Badge severity={mapToTableSeverity(mapCaseSeverity(c.severity))}>{c.severity}</Badge>
+            <Badge severity={mapToTableSeverity(mapCaseSeverity(c.severity))} size="xs">
+              {c.severity}
+            </Badge>
           </div>
 
           {c.description && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{c.description}</p>
+            <p className="text-xs text-text-secondary line-clamp-2">{c.description}</p>
           )}
 
           <div className="flex items-center justify-between">
             <Badge
+              size="xs"
               severity={mapToTableSeverity(
                 mapCaseSeverity(c.status === "contained" ? "medium" : "low")
               )}
             >
               {getStatusLabel(c.status, t)}
             </Badge>
-            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+            <span className="text-xs text-text-muted flex items-center gap-1">
               <User className="w-3 h-3" />
               {c.assigned_analyst_name || "Unassigned"}
             </span>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
             <span
               className={cn(
                 "text-xs font-mono flex items-center gap-1",
                 sla.expired
-                  ? "text-red-600 dark:text-red-400 font-bold"
+                  ? "text-danger-600 dark:text-danger-400 font-bold"
                   : sla.urgent
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-gray-500 dark:text-gray-400"
+                    ? "text-warning-600 dark:text-warning-400 font-semibold"
+                    : "text-text-muted"
               )}
             >
               <Timer className="w-3 h-3" /> SLA: {sla.text}
             </span>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-text-muted">
               {format.dateTime(new Date(c.created_at), { dateStyle: "medium" })}
             </span>
           </div>
         </div>
       );
     },
-    [t, router]
+    [t, router, format]
   );
 
   // ── Content ────────────────────────────────────────
@@ -479,13 +447,14 @@ export default function CasesPage() {
           title={t("cases.emptyTitle")}
           description={t("cases.emptyDescription")}
           action={
-            <button
+            <Button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-700 text-sm flex items-center gap-2"
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
               {t("cases.createCase")}
-            </button>
+            </Button>
           }
         />
       );
@@ -494,7 +463,7 @@ export default function CasesPage() {
     return (
       <>
         {/* Desktop Table */}
-        <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="hidden sm:block bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-subtle">
           <DataTable
             data={cases}
             columns={columns}
@@ -516,24 +485,26 @@ export default function CasesPage() {
 
           {/* Mobile Pagination */}
           {total > PAGE_SIZE && (
-            <div className="flex items-center justify-center gap-2 pt-4">
-              <button
+            <div className="flex items-center justify-between gap-2 pt-4 px-1">
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1.5 text-sm border rounded disabled:opacity-40"
               >
                 ← Prev
-              </button>
-              <span className="text-sm text-gray-500">
+              </Button>
+              <span className="text-xs font-medium text-text-muted tabular-nums">
                 {page} / {Math.ceil(total / PAGE_SIZE)}
               </span>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setPage((p) => Math.min(Math.ceil(total / PAGE_SIZE), p + 1))}
                 disabled={page >= Math.ceil(total / PAGE_SIZE)}
-                className="px-3 py-1.5 text-sm border rounded disabled:opacity-40"
               >
                 Next →
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -543,18 +514,19 @@ export default function CasesPage() {
 
   // ── Render ─────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-ground">
       <PageHeader
         title={t("cases.title")}
         subtitle={total > 0 ? `${total} ${t("cases.cases").toLowerCase()}` : t("cases.subtitle")}
         actions={
-          <button
+          <Button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">{t("cases.createCase")}</span>
-          </button>
+          </Button>
         }
       />
 
@@ -563,7 +535,7 @@ export default function CasesPage() {
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <input
               type="text"
               value={search}
@@ -572,7 +544,7 @@ export default function CasesPage() {
                 setPage(1);
               }}
               placeholder={t("cases.searchPlaceholder")}
-              className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-9 pr-4 py-2 text-sm bg-surface-input border border-border-default rounded-lg text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all"
             />
           </div>
 
@@ -583,7 +555,7 @@ export default function CasesPage() {
               setStatusFilter(e.target.value ? [e.target.value] : []);
               setPage(1);
             }}
-            className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300"
+            className="px-3 py-2 text-xs sm:text-sm rounded-lg border border-border-subtle bg-surface-card text-text-secondary hover:border-border-default focus:ring-2 focus:ring-accent-500/20 transition-all"
           >
             <option value="">{t("cases.status")}</option>
             <option value="new">{t("cases.statusNew")}</option>
@@ -601,7 +573,7 @@ export default function CasesPage() {
               setSeverityFilter(e.target.value ? [e.target.value] : []);
               setPage(1);
             }}
-            className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300"
+            className="px-3 py-2 text-xs sm:text-sm rounded-lg border border-border-subtle bg-surface-card text-text-secondary hover:border-border-default focus:ring-2 focus:ring-accent-500/20 transition-all"
           >
             <option value="">{t("cases.severity")}</option>
             <option value="critical">{t("cases.severityCritical")}</option>
@@ -612,9 +584,9 @@ export default function CasesPage() {
 
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
-            className="sm:hidden px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5"
+            className="sm:hidden px-3 py-2 rounded-lg border border-border-subtle bg-surface-card text-xs text-text-secondary flex items-center gap-1.5"
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="w-3.5 h-3.5" />
             Filters
           </button>
         </div>

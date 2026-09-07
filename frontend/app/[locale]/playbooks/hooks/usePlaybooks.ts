@@ -118,14 +118,25 @@ export function usePlaybooks() {
 
         if (response.ok) {
           const data = await response.json();
+          const rawItems = (data.definitions || data.items || []) as Record<string, unknown>[];
+          const normalizedDefinitions: PlaybookDefinition[] = rawItems.map((d) => ({
+            id: String(d.id),
+            name: String(d.name || ""),
+            description: (d.description as string) || null,
+            version: String(d.version || "1.0.0"),
+            status: (d.status as string) || (d.is_active ? "published" : "draft"),
+            is_active: Boolean(d.is_active),
+            created_at: String(d.created_at || ""),
+            updated_at: String(d.updated_at || ""),
+          }));
           setData((prev) => ({
             ...prev,
-            definitions: data.definitions || [],
+            definitions: normalizedDefinitions,
           }));
           setDefinitionsPagination({
             currentPage: page,
             pageSize: definitionsPagination.pageSize,
-            total: data.total || 0,
+            total: (data.total as number) || normalizedDefinitions.length,
           });
         }
       } catch (e) {
@@ -151,14 +162,14 @@ export function usePlaybooks() {
   useEffect(() => {
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     loadData(1);
     loadQueueStats();
     const interval = setInterval(loadQueueStats, 10000);
     return () => clearInterval(interval);
-  }, [router, locale]);
+  }, [router]);
 
   return {
     ...data,

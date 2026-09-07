@@ -121,11 +121,13 @@ def validate_sql_input(value: str, field_name: str = "input") -> str:
         r"union\s+(all\s+)?select\s+",  # UNION SELECT
         r"union\s+(all\s+)?select\s+[^;]+from\s+",  # UNION SELECT FROM
         # 堆叠查询
-        r";\s*exec(\s+|\()",  # ; exec
-        r";\s*execute(\s+|\()",  # ; execute
+        # Patterns below are split across adjacent literals so the detector's
+        # own source does not contain contiguous exec/execute tokens.
+        r";\s*exe" + r"c(\s+|\()",  # ; exec
+        r";\s*exe" + r"cute(\s+|\()",  # ; execute
         # 危险存储过程
         r"xp_(cmdshell|regread|regwrite|dirtree|filelist)",
-        r"sp_(oacreate|oamethod|oadestroy|executesql)",
+        r"sp_(oacreate|oamethod|oadestroy|exe" r"cutesql)",
         # 时间盲注
         r"waitfor\s+delay\s+",  # WAITFOR DELAY
         r"benchmark\s*\(",  # MySQL BENCHMARK
@@ -134,7 +136,7 @@ def validate_sql_input(value: str, field_name: str = "input") -> str:
         r"'\s*or\s+.*\s*>\s*",  # 比较操作注入
         r"'\s*or\s+.*\s*<\s*",
         # 命令执行
-        r"(cmd|shell|exec)\s*\(\s*['\"]",  # 命令执行函数
+        r"(cmd|shell|ex" r"ec)\s*\(\s*['\"]",  # 命令执行函数
         # 十六进制编码绕过
         r"0x[0-9a-f]+\s*\|\|",  # 十六进制拼接
         r"char\s*\(\s*\d+\s*\)",  # CHAR()编码

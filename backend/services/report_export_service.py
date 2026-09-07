@@ -6,7 +6,6 @@ ISO 27001, GDPR, and NIST CSF.
 """
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -174,16 +173,29 @@ class ReportExportService:
             logger.warning("PDF export unavailable — returning HTML as fallback")
             return html_content.encode("utf-8")
 
+        # Optional output path is restricted to the application data directory
+        validated_output: Path | None = None
+        if output_path:
+            from db.session import DATA_DIR
+
+            candidate = Path(output_path).resolve()
+            if candidate.is_relative_to(DATA_DIR.resolve()):
+                validated_output = candidate
+            else:
+                logger.error(
+                    f"Rejected output_path outside application data directory: {output_path}"
+                )
+
         try:
             import weasyprint  # type: ignore[import-untyped]
 
             pdf_bytes = weasyprint.HTML(string=html_content).write_pdf()
 
-            if output_path:
-                os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-                with open(output_path, "wb") as f:
+            if validated_output is not None:
+                validated_output.parent.mkdir(parents=True, exist_ok=True)
+                with validated_output.open("wb") as f:
                     f.write(pdf_bytes)
-                logger.info(f"PDF saved to {output_path}")
+                logger.info(f"PDF saved to {validated_output}")
 
             return pdf_bytes
         except Exception as e:

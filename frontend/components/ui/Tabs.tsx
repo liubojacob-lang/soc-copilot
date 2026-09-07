@@ -28,29 +28,23 @@ export function TabButton({
 }: TabButtonProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "group relative flex items-center gap-2 px-4 py-2 transition-colors duration-200",
-        "border-b-2",
-        active ? "border-slate-900 dark:border-white" : "border-transparent",
-        disabled && "opacity-50 cursor-not-allowed",
+        "group relative flex items-center gap-2 px-3.5 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150 select-none",
+        "border-b-2 -mb-px",
+        active
+          ? "border-accent-600 text-accent-600 dark:border-accent-400 dark:text-accent-300 font-semibold"
+          : "border-transparent text-text-tertiary hover:text-text-primary hover:border-border-default",
+        disabled && "opacity-40 cursor-not-allowed",
         className
       )}
     >
-      {icon}
-      <Caption
-        className={cn(
-          "font-medium",
-          active
-            ? "text-text-primary dark:text-white"
-            : "text-text-tertiary group-hover:text-text-secondary dark:text-slate-400 dark:group-hover:text-slate-200"
-        )}
-      >
-        {label}
-      </Caption>
+      {icon && <span className="inline-flex shrink-0">{icon}</span>}
+      <span>{label}</span>
       {badge !== undefined && (
-        <Badge severity={badgeSeverity} className="ml-1">
+        <Badge severity={badgeSeverity} size="xs" variant="pill" className="ml-1">
           {badge}
         </Badge>
       )}

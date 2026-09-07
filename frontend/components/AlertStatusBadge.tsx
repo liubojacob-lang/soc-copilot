@@ -17,39 +17,44 @@ interface AlertStatusBadgeProps {
   showLabel?: boolean;
 }
 
-const statusConfig = {
+const statusConfig: Record<AlertStatus, { color: string; dotColor: string }> = {
   new: {
-    color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    dotColor: "bg-blue-500",
+    color:
+      "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/25",
+    dotColor: "bg-sky-500",
   },
   investigating: {
-    color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    dotColor: "bg-yellow-500",
+    color:
+      "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/25",
+    dotColor: "bg-amber-500",
   },
   resolved: {
-    color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    dotColor: "bg-green-500",
+    color:
+      "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/25",
+    dotColor: "bg-emerald-500",
   },
   false_positive: {
-    color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-    dotColor: "bg-gray-500",
+    color:
+      "bg-slate-100 text-slate-700 border-slate-200/80 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700/60",
+    dotColor: "bg-slate-400",
   },
   escalated: {
-    color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    color:
+      "bg-red-50 text-red-700 border-red-200/80 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/25",
     dotColor: "bg-red-500",
   },
 };
 
 const sizeStyles = {
-  sm: "px-2 py-0.5 text-xs",
-  md: "px-2.5 py-1 text-sm",
-  lg: "px-3 py-1.5 text-base",
+  sm: "px-2 py-0.5 text-xs gap-1.5",
+  md: "px-2.5 py-1 text-xs gap-1.5 font-medium",
+  lg: "px-3 py-1.5 text-sm gap-2 font-medium",
 };
 
 const dotSize = {
   sm: "w-1.5 h-1.5",
   md: "w-2 h-2",
-  lg: "w-2.5 h-2.5",
+  lg: "w-2 h-2",
 };
 
 function AlertStatusBadge_({ status, size = "md", showLabel = true }: AlertStatusBadgeProps) {
@@ -68,10 +73,10 @@ function AlertStatusBadge_({ status, size = "md", showLabel = true }: AlertStatu
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-medium ${config.color} ${sizeClass}`}
+      className={`inline-flex items-center rounded-full font-medium border ${config.color} ${sizeClass} tracking-tight select-none`}
     >
-      <span className={`rounded-full ${dotClass} ${config.dotColor}`} />
-      {showLabel && statusLabels[status]}
+      <span className={`rounded-full ${dotClass} ${config.dotColor} shrink-0`} />
+      {showLabel && <span>{statusLabels[status] || status}</span>}
     </span>
   );
 }
@@ -83,36 +88,31 @@ interface SeverityBadgeProps {
   score?: number;
 }
 
-const severityConfig = {
+const severityConfig: Record<AlertSeverity, { color: string; dotColor: string }> = {
   critical: {
     color:
-      "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 border-red-300 dark:border-red-700",
-    borderColor: "border-red-500",
-    icon: "🔴",
+      "bg-red-50 text-red-700 border-red-200/80 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/25",
+    dotColor: "bg-red-500",
   },
   high: {
     color:
-      "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200 border-orange-300 dark:border-orange-700",
-    borderColor: "border-orange-500",
-    icon: "🟠",
+      "bg-orange-50 text-orange-700 border-orange-200/80 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/25",
+    dotColor: "bg-orange-500",
   },
   medium: {
     color:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700",
-    borderColor: "border-yellow-500",
-    icon: "🟡",
+      "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/25",
+    dotColor: "bg-amber-500",
   },
   low: {
     color:
-      "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border-blue-300 dark:border-blue-700",
-    borderColor: "border-blue-500",
-    icon: "🔵",
+      "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/25",
+    dotColor: "bg-emerald-500",
   },
   info: {
     color:
-      "bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-200 border-gray-300 dark:border-gray-700",
-    borderColor: "border-gray-500",
-    icon: "⚪",
+      "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/25",
+    dotColor: "bg-sky-500",
   },
 };
 
@@ -120,6 +120,7 @@ function SeverityBadge_({ severity, size = "md", showScore = false, score }: Sev
   const t = useTranslations("severity");
   const config = severityConfig[severity] || severityConfig.info;
   const sizeClass = sizeStyles[size];
+  const dotClass = dotSize[size];
 
   const severityLabels: Record<AlertSeverity, string> = {
     critical: t("critical"),
@@ -130,15 +131,17 @@ function SeverityBadge_({ severity, size = "md", showScore = false, score }: Sev
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="inline-flex items-center gap-1.5">
       <span
-        className={`inline-flex items-center gap-1.5 rounded-full border-2 ${config.color} ${config.borderColor} ${sizeClass} font-semibold`}
+        className={`inline-flex items-center rounded-full border font-semibold ${config.color} ${sizeClass} tracking-tight select-none`}
       >
-        <span>{config.icon}</span>
-        {severityLabels[severity]}
+        <span className={`rounded-full ${dotClass} ${config.dotColor} shrink-0`} />
+        <span>{severityLabels[severity] || severity}</span>
       </span>
-      {showScore && score !== undefined && (
-        <span className="text-sm font-mono text-gray-600 dark:text-gray-400">({score})</span>
+      {showScore !== false && score !== undefined && (
+        <span className="text-xs font-mono text-gray-500 dark:text-gray-400 tabular-nums">
+          ({score})
+        </span>
       )}
     </div>
   );
@@ -180,20 +183,20 @@ function AlertCard_({ alert, onClick, size = "md", showActions = false, actions 
     return tTime("daysAgo", { count: diffDays });
   };
 
+  const severityBorderColor =
+    {
+      critical: "border-l-red-500",
+      high: "border-l-orange-500",
+      medium: "border-l-amber-500",
+      low: "border-l-emerald-500",
+      info: "border-l-sky-500",
+    }[alert.severity] || "border-l-slate-400";
+
   return (
     <div
       className={`
-        bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg
-        transition-all duration-200 cursor-pointer border-l-4
-        ${
-          alert.severity === "critical"
-            ? "border-red-500"
-            : alert.severity === "high"
-              ? "border-orange-500"
-              : alert.severity === "medium"
-                ? "border-yellow-500"
-                : "border-blue-500"
-        }
+        bg-surface-card border border-border-subtle rounded-xl shadow-subtle card-hover
+        cursor-pointer border-l-4 ${severityBorderColor}
         ${size === "sm" ? "p-3" : size === "lg" ? "p-5" : "p-4"}
       `}
       onClick={onClick}
@@ -206,7 +209,7 @@ function AlertCard_({ alert, onClick, size = "md", showActions = false, actions 
           </div>
 
           <h3
-            className={`font-semibold text-gray-900 dark:text-white truncate ${
+            className={`font-semibold text-text-primary truncate ${
               size === "sm" ? "text-sm" : size === "lg" ? "text-lg" : "text-base"
             }`}
           >
@@ -214,17 +217,15 @@ function AlertCard_({ alert, onClick, size = "md", showActions = false, actions 
           </h3>
 
           {alert.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-              {alert.description}
-            </p>
+            <p className="text-sm text-text-secondary mt-1 line-clamp-2">{alert.description}</p>
           )}
 
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-500">
+          <div className="flex items-center gap-3 mt-2.5 text-xs text-text-tertiary">
             <span className="font-mono">{alert.source}</span>
             <span>•</span>
             <span>{alert.event_type}</span>
             <span>•</span>
-            <span>{timeSince(alert.timestamp)}</span>
+            <span className="tabular-nums">{timeSince(alert.timestamp)}</span>
           </div>
         </div>
 

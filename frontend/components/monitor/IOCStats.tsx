@@ -232,12 +232,12 @@ export const IOCStats = React.memo(function IOCStats({
       {/* 饼图和图例 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 饼图 */}
-        <div>
+        <div className="min-w-0">
           <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
             {tMonitor("reputationDistribution")}
           </h4>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full min-w-0 h-64">
+            <ResponsiveContainer width="100%" height={256} minWidth={0}>
               <PieChart>
                 <Pie
                   data={chartData}

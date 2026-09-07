@@ -25,6 +25,7 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 
 export default function PlaybooksPage() {
@@ -55,10 +56,31 @@ export default function PlaybooksPage() {
 
   useEffect(() => {
     setMounted(true);
-    if (activeTab === "definitions") {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "definitions") {
+        setActiveTab("definitions");
+        loadDefinitions(1);
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tab: "runs" | "definitions") => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (tab === "runs") {
+        url.searchParams.delete("tab");
+      } else {
+        url.searchParams.set("tab", tab);
+      }
+      window.history.replaceState(null, "", url.toString());
+    }
+    if (tab === "definitions") {
       loadDefinitions(1);
     }
-  }, [activeTab]);
+  };
 
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [autoRefreshInterval, setAutoRefreshInterval] = useState<NodeJS.Timeout | null>(null);
@@ -121,13 +143,13 @@ export default function PlaybooksPage() {
           <TabList>
             <TabButton
               active={activeTab === "runs"}
-              onClick={() => setActiveTab("runs")}
+              onClick={() => handleTabChange("runs")}
               label={t("tabs.runs")}
               icon={<Play className="w-4 h-4" />}
             />
             <TabButton
               active={activeTab === "definitions"}
-              onClick={() => setActiveTab("definitions")}
+              onClick={() => handleTabChange("definitions")}
               label={t("tabs.definitions")}
               icon={<BookOpen className="w-4 h-4" />}
             />
@@ -328,13 +350,14 @@ export default function PlaybooksPage() {
                               )}
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <a
-                                href={`/${locale}/playbooks/${run.id}`}
-                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
+                              <button
+                                type="button"
+                                onClick={() => router.push(`/playbooks/${run.id}`)}
+                                className="inline-flex items-center gap-1 text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 text-sm font-medium transition-colors"
                               >
                                 <Eye className="w-4 h-4" />
-                                {tCommon("viewDetails")}
-                              </a>
+                                <span>{tCommon("viewDetails")}</span>
+                              </button>
                             </td>
                           </tr>
                         );
@@ -390,6 +413,13 @@ export default function PlaybooksPage() {
                 </h2>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">{t("definitions.subtitle")}</p>
               </div>
+              <button
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-xl text-xs font-medium transition-colors shadow-xs"
+                onClick={() => router.push("/playbooks/create")}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{t("definitions.createNew")}</span>
+              </button>
             </div>
             {definitions.length === 0 ? (
               <div className="text-center py-16">
@@ -450,10 +480,18 @@ export default function PlaybooksPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors">
+                            <button
+                              onClick={() => router.push(`/playbooks/definitions/${def.id}`)}
+                              className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
+                              title={tCommon("viewDetails")}
+                            >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors">
+                            <button
+                              onClick={() => router.push(`/playbooks/definitions/${def.id}/edit`)}
+                              className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
+                              title={tCommon("edit")}
+                            >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors">

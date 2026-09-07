@@ -6,6 +6,7 @@ import { useFormatter, useTranslations, useLocale } from "next-intl";
 import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
+import { useToast } from "@/components/Toast";
 import {
   Target,
   Play,
@@ -123,6 +124,7 @@ export default function ThreatHuntingPage() {
   const t = useTranslations("threatHunting");
   const format = useFormatter();
   const tCommon = useTranslations("common");
+  const { showToast } = useToast();
   const [mounted, setMounted] = useState(false);
 
   /* ── Existing state ── */
@@ -721,7 +723,7 @@ export default function ThreatHuntingPage() {
                 {t("iocHunt.description")}
               </p>
               <button
-                onClick={() => alert(t("iocHunt.comingSoon"))}
+                onClick={() => showToast(t("iocHunt.comingSoon"), "info")}
                 className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
               >
                 {t("iocHunt.button")}

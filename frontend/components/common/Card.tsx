@@ -9,19 +9,20 @@ import { Heading, Text } from "@/components/ui/Typography";
  * Card 组件变体配置
  * 使用设计 Token 保持一致性
  */
-const cardVariants = cva("rounded-lg border shadow-sm transition-colors duration-200", {
+const cardVariants = cva("rounded-xl border shadow-subtle transition-all duration-150", {
   variants: {
     variant: {
-      default: "bg-surface-card dark:bg-slate-800 border-border-subtle dark:border-slate-700",
-      outlined: "bg-transparent dark:bg-transparent border-border-subtle dark:border-slate-700",
-      elevated:
-        "bg-surface-card dark:bg-slate-800 border-border-subtle dark:border-slate-700 shadow-md",
+      default: "bg-surface-card border-border-subtle",
+      outlined: "bg-transparent border-border-subtle",
+      elevated: "bg-surface-card border-border-subtle shadow-md dark:shadow-black/50",
+      glass: "glass-surface border-border-subtle",
     },
     padding: {
       none: "",
-      sm: "p-3",
-      md: "p-4",
-      lg: "p-6",
+      xs: "p-2.5",
+      sm: "p-3.5",
+      md: "p-5",
+      lg: "p-6 sm:p-7",
     },
   },
   defaultVariants: {
@@ -55,20 +56,22 @@ function Card({
   onClick,
 }: CardProps) {
   const hoverClasses = onClick
-    ? "cursor-pointer hover:bg-surface-hover dark:hover:bg-slate-700"
+    ? "cursor-pointer card-hover hover:border-border-default hover:bg-surface-hover/50"
     : "";
 
   const paddingClasses = {
     none: "",
-    sm: "p-3",
-    md: "p-4",
-    lg: "p-6",
+    xs: "p-2.5",
+    sm: "p-3.5",
+    md: "p-5",
+    lg: "p-6 sm:p-7",
   };
 
   const headerPaddingClasses = {
     none: "px-4 py-3",
-    sm: "px-3 py-3",
-    md: "px-4 py-3",
+    xs: "px-2.5 py-2",
+    sm: "px-3.5 py-2.5",
+    md: "px-5 py-3.5",
     lg: "px-6 py-4",
   };
 
