@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -62,7 +60,7 @@ services:
     environment:
       - "DATABASE_URL=postgresql+asyncpg://${DB_USER:-soc_copilot}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-soc_copilot}"
       - "REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
-      - "SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}"
+      - "JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}"
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - DIFY_API_URL=${DIFY_API_URL:-}
       - DIFY_API_KEY=${DIFY_API_KEY:-}
@@ -109,7 +107,7 @@ services:
     environment:
       - "DATABASE_URL=postgresql+asyncpg://${DB_USER:-soc_copilot}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-soc_copilot}"
       - "REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
-      - "SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}"
+      - "JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}"
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - AUTO_RUN_MIGRATIONS=false
     volumes:

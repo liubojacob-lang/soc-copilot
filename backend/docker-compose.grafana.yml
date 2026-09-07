@@ -32,13 +32,18 @@ services:
       - "GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}"
       - "GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}"
       - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      # Provisioned datasource (Prometheus) and the SOC overview dashboard
+      - ./observability/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./observability/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./observability/dashboards/grafana-soc-overview.json:/var/lib/grafana/dashboards/grafana-soc-overview.json:ro
     networks:
       - monitoring
     depends_on:
       - loki
+      - prometheus
     restart: unless-stopped
-    volumes:
-      - grafana-data:/var/lib/grafana
 
   prometheus:
     image: prom/prometheus:latest
@@ -46,8 +51,14 @@ services:
     ports:
       - "127.0.0.1:9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Alerting rules referenced by prometheus.yml rule_files
+      - ./observability/dashboards/prometheus-rules.yml:/etc/prometheus/rules/prometheus-rules.yml:ro
       - prometheus-data:/prometheus
+    # host.docker.internal resolves on macOS/Windows out of the box; on Linux
+    # this alias maps it to the docker bridge so the backend target is reachable.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - monitoring
     restart: unless-stopped

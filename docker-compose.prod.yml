@@ -1,5 +1,3 @@
-version: "3.8"
-
 # Production Docker Compose Configuration
 # Usage: docker-compose -f docker-compose.prod.yml up -d
 
@@ -57,7 +55,6 @@ services:
       - "REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
       - "REDIS_ENABLED=true"
       - "REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
-      - "SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}"
       - "JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}"
       - "BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD is required}"
       - "SECRET_ENCRYPTION_KEY=${SECRET_ENCRYPTION_KEY:?SECRET_ENCRYPTION_KEY is required}"
@@ -104,6 +101,8 @@ services:
       - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./nginx/logs:/var/log/nginx
+      # ACME HTTP-01 challenge webroot (nginx.conf serves /.well-known/acme-challenge)
+      - ./nginx/certbot-www:/var/www/certbot:ro
     ports:
       - "80:80"
       - "443:443"
@@ -113,6 +112,22 @@ services:
     networks:
       - soc-copilot-prod
     restart: always
+
+  # TLS 证书签发/续期。首次签发（需真实域名解析到本机）：
+  #   docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+  #     --webroot -w /var/www/certbot -d "$DOMAIN" --email "$LETSENCRYPT_EMAIL" \
+  #     --agree-tos --no-eff-email
+  # 然后重启 nginx 加载 ./nginx/ssl 下生成的证书。
+  certbot:
+    image: certbot/certbot
+    container_name: soc-copilot-certbot-prod
+    profiles: ["tls"] # 仅按需运行：docker compose --profile tls run --rm certbot renew
+    volumes:
+      - ./nginx/ssl:/etc/letsencrypt
+      - ./nginx/certbot-www:/var/www/certbot
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
+    networks:
+      - soc-copilot-prod
 
   alert-worker:
     build:
