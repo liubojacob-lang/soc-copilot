@@ -1,6 +1,9 @@
 import asyncio
+
 import pytest
+
 from utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenException, CircuitState
+
 
 @pytest.mark.asyncio
 async def test_circuit_breaker_normal_flow():

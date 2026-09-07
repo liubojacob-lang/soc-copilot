@@ -15,7 +15,6 @@ if str(backend_dir) not in sys.path:
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
 from db.session import AsyncSessionLocal, engine
 
 

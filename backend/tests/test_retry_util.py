@@ -1,5 +1,7 @@
 import pytest
+
 from utils.retry import with_retry, with_sync_retry
+
 
 @pytest.mark.asyncio
 async def test_async_retry_success():

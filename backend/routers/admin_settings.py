@@ -6,7 +6,6 @@ including Dify integration configuration.
 
 import re
 from pathlib import Path
-
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException

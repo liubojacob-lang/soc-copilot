@@ -91,14 +91,14 @@ async def test_audit_archive_service_lifecycle(tmp_path: Path):
     end_date = datetime.now(UTC) + timedelta(days=1)
     export_json = await service.export_logs(start_date, end_date, format="json", include_archived=True)
     assert export_json.exists()
-    with open(export_json, "r", encoding="utf-8") as f:
+    with open(export_json, encoding="utf-8") as f:
         exported = json.load(f)
         assert exported["total_count"] >= 1
 
     # 4. Export Logs (CSV)
     export_csv = await service.export_logs(start_date, end_date, format="csv", include_archived=True)
     assert export_csv.exists()
-    with open(export_csv, "r", encoding="utf-8") as f:
+    with open(export_csv, encoding="utf-8") as f:
         reader = csv.reader(f)
         rows = list(reader)
         assert len(rows) >= 2  # Header + row
@@ -125,7 +125,7 @@ async def test_audit_repository_crud_and_filters():
         repo = AuditRepository(session)
 
         # Create audit entries
-        now = datetime.now(UTC)
+        datetime.now(UTC)
         await repo.create(
             action="user:login_success",
             method="POST",
@@ -165,17 +165,17 @@ async def test_audit_repository_crud_and_filters():
         # 1. Filter by wildcard action prefix (user:*)
         logs, total = await repo.list(action="user:*", limit=50)
         assert total >= 2
-        assert all(l.action.startswith("user:") for l in logs)
+        assert all(entry.action.startswith("user:") for entry in logs)
 
         # 2. Filter by status_code="success" (2xx)
         success_logs, s_total = await repo.list(status_code="success", limit=50)
         assert s_total >= 1
-        assert all(200 <= l.status_code < 300 for l in success_logs)
+        assert all(200 <= entry.status_code < 300 for entry in success_logs)
 
         # 3. Filter by status_code="4xx"
         client_err_logs, c_total = await repo.list(status_code="4xx", limit=50)
         assert c_total >= 1
-        assert any(l.status_code == 401 for l in client_err_logs)
+        assert any(entry.status_code == 401 for entry in client_err_logs)
 
         # 4. Filter by status_code="error" (4xx + 5xx)
         err_logs, e_total = await repo.list(status_code="error", limit=50)

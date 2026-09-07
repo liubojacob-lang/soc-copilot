@@ -18,7 +18,7 @@ async def test_cloud_native_compliance_report(auth_client):
     resp = await auth_client.get("/api/v1/cloud-native/compliance/report")
     assert resp.status_code == 200
     data = resp.json()
-    assert isinstance(data, (dict, list))
+    assert isinstance(data, dict | list)
 
 
 @pytest.mark.asyncio
@@ -27,7 +27,7 @@ async def test_cloud_native_connections(auth_client):
     resp = await auth_client.get("/api/v1/cloud-native/cloud/connections")
     assert resp.status_code == 200
     data = resp.json()
-    assert isinstance(data, (dict, list))
+    assert isinstance(data, dict | list)
 
 
 @pytest.mark.asyncio

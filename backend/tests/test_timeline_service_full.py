@@ -3,20 +3,21 @@ Comprehensive Unit Tests for TimelineService
 Tests log timeline reconstruction, dual-engine IOC merging, impact analysis, threat intel enrichment, and markdown formatting.
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from schemas.impact import ImpactAnalysis, Severity
 from schemas.threat_intel import ThreatIntelAnalysis
 from schemas.timeline import (
-    TimelineResponse,
-    TimelineEvent,
-    SuspiciousEvent,
-    IOCsFinal,
-    IOCsLocal,
-    IOCsLLM,
     IOCCount,
+    IOCsFinal,
+    IOCsLLM,
+    IOCsLocal,
+    SuspiciousEvent,
+    TimelineEvent,
+    TimelineResponse,
 )
 from services.timeline_service import TimelineService
 from utils.ioc_extract import IOCs

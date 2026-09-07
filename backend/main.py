@@ -604,8 +604,10 @@ app.include_router(alert_enrichment.router)  # v0.9.0: Threat intelligence enric
 app.include_router(
     notifications.router
 )  # v0.9.x: Notification channels and queue status
-from routers import alerts_lifecycle  # v0.9.0: Alert lifecycle management
-from routers import alert_import  # v0.9.2: CEF/Syslog/JSON/CSV alert import
+from routers import (
+    alert_import,  # v0.9.2: CEF/Syslog/JSON/CSV alert import
+    alerts_lifecycle,  # v0.9.0: Alert lifecycle management
+)
 
 app.include_router(alerts_lifecycle.router)  # v0.9.0: Alert lifecycle management
 app.include_router(alert_import.router)  # v0.9.2: Alert import (frontend ImportAlertModal)

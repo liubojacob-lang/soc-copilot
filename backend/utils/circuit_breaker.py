@@ -6,8 +6,9 @@ dependencies (LLMs, TI feeds, Wazuh, etc.).
 
 import asyncio
 import time
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, TypeVar
 
 from core.logger import get_logger
 
@@ -54,7 +55,7 @@ class CircuitBreaker:
         self.failure_count = 0
         self.success_count = 0
         self.last_state_change = time.time()
-        self.last_failure_time: Optional[float] = None
+        self.last_failure_time: float | None = None
         self._lock = asyncio.Lock()
 
     @property

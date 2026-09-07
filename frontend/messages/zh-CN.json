@@ -1409,7 +1409,8 @@
     "falcoSetupTitle": "Falco Sidekick 配置",
     "falcoSetupDesc": "将 Falco 运行时安全告警转发到 SOC Copilot：",
     "severity": "严重程度",
-    "description": "描述"
+    "description": "描述",
+    "demoNotice": "演示数据提示：在配置集群/云集成之前，以下 Kubernetes 与云提供商数据为示例数据。容器镜像扫描（Trivy）与 Falco 告警为真实数据。"
   },
   "actions": {
     "quickActions": "快速操作",

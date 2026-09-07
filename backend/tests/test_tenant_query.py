@@ -1,6 +1,8 @@
 from sqlalchemy import select
+
 from models.security_alert import SecurityAlert
-from services.tenant_query import with_tenant_scope, redis_tenant_key
+from services.tenant_query import redis_tenant_key, with_tenant_scope
+
 
 def test_redis_tenant_key():
     assert redis_tenant_key("tenant-1", "cache_key") == "tenant:tenant-1:cache_key"

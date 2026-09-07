@@ -1652,7 +1652,8 @@
     "falcoSetupTitle": "Falco Sidekick Setup",
     "falcoSetupDesc": "Forward Falco runtime security alerts to SOC Copilot:",
     "severity": "Severity",
-    "description": "Description"
+    "description": "Description",
+    "demoNotice": "Demo data notice: Kubernetes and cloud provider insights below are sample data until cluster/cloud integrations are configured. Container image scans (Trivy) and Falco alerts use real data."
   },
   "correlation": {
     "createRule": "Create Rule",

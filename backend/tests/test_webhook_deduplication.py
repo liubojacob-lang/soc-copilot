@@ -1,6 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from services.webhook_deduplication import WebhookDeduplicationService
+
 
 @pytest.mark.asyncio
 async def test_webhook_fingerprint_and_memory_deduplication():

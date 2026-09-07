@@ -18,7 +18,7 @@ from core.prompt_sanitizer import (
 )
 from services.ai_providers import LLMFactory, LLMProvider
 from services.ai_utils import clean_json_content
-from utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenException
+from utils.circuit_breaker import CircuitBreaker
 
 logger = get_logger(__name__)
 
@@ -652,7 +652,7 @@ Be concise, professional, and helpful."""
         elif is_alert or is_cve:
             target_obj = message[:60].replace("\n", " ") + ("..." if len(message) > 60 else "")
             lines = [
-                f"### 🛡️ 安全告警 / 威胁分析报告\n\n",
+                "### 🛡️ 安全告警 / 威胁分析报告\n\n",
                 f"**分析对象**：`{target_obj}`\n\n",
                 "#### 1. 威胁研判与特征提取\n",
             ]

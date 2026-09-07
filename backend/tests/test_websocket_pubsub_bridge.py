@@ -4,8 +4,9 @@ Unit tests for WebSocket ConnectionManager Redis Pub/Sub multi-instance broadcas
 
 import asyncio
 import json
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from services.websocket_manager import ConnectionManager, WebSocketMessage
 
