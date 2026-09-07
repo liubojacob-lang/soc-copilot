@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_auditor_or_admin
 from models.user import UserModel
 from repositories.audit_repository import AuditRepository
 
@@ -152,7 +152,8 @@ async def export_audit_logs(
     limit: int = Query(
         default=10000, ge=1, le=50000, description="Maximum records to export"
     ),
-    current_user: UserModel = Depends(get_current_user),
+    # Audit data is readable by auditors/admins only (same as GET /audit-logs)
+    current_user: UserModel = Depends(require_auditor_or_admin),
     session: AsyncSession = Depends(get_session),
 ):
     """Export audit logs in various formats.

@@ -12,7 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user, get_current_user_optional
+from dependencies.auth import (
+    get_current_user,
+    get_current_user_optional,
+    require_analyst_or_admin,
+)
 from models.user import UserModel, UserRole
 from repositories.audit_repository import AuditRepository
 from schemas.playbook_run import (
@@ -34,7 +38,8 @@ router = APIRouter(tags=["playbook-runs"])
 async def create_playbook_run(
     request: PlaybookRunCreateRequest,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    # Executing playbooks has external side effects; auditors are read-only
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> PlaybookRunResponse:
     """Create and start a new playbook run.
 
@@ -202,7 +207,8 @@ async def resume_playbook_run(
     run_id: str,
     request: PlaybookResumeRequest,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    # Resuming re-executes nodes with external side effects; auditors are read-only
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> PlaybookResumeResponse:
     """Resume a failed or partial playbook run.
 

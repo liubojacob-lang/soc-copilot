@@ -5,7 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
+from dependencies.auth import (
+    get_current_user,
+    require_admin,
+    require_analyst_or_admin,
+)
 from models.user import UserModel
 from schemas.asset import (
     AssetCreate,
@@ -25,7 +29,7 @@ logger = get_logger(__name__)
 async def create_asset(
     data: AssetCreate,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> AssetResponse:
     """Create a new asset."""
     try:
@@ -68,7 +72,7 @@ async def update_asset(
     asset_id: str,
     data: AssetUpdate,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> AssetResponse:
     """Update an asset."""
     try:
@@ -85,9 +89,9 @@ async def update_asset(
 async def delete_asset(
     asset_id: str,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_admin),
 ) -> None:
-    """Delete an asset."""
+    """Delete an asset (admin only)."""
     try:
         service = AssetService(session)
         await service.delete(asset_id)
@@ -107,7 +111,8 @@ async def discover_assets(
         None, description="Port specification for nmap (e.g. 1-1024)"
     ),
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    # Network/cloud discovery has intrusive side effects; auditors are read-only
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """
     Discover assets via network scan or cloud API.
@@ -173,7 +178,8 @@ async def discover_assets(
 async def preview_discovery(
     targets: str = Query(default="192.168.1.0/24", description="IP range to preview"),
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    # Preview performs a real network scan; auditors are read-only
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """
     Preview what a discovery scan would find without registering assets.
@@ -215,7 +221,7 @@ async def preview_discovery(
 async def import_assets(
     data: AssetImportRequest,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> AssetImportResponse:
     """Import assets in bulk.
 

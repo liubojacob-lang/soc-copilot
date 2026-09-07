@@ -197,6 +197,15 @@ async def ingest_alert(
             logger.error(f"  ✗ Error publishing to message queue: {e}")
             # Don't fail the request if queue publish fails
 
+        # Push the new alert to connected WebSocket clients; failures here
+        # must not fail the ingestion request
+        try:
+            from routers.websocket import push_alert
+
+            await push_alert({**alert_dict, "status": new_alert.status})
+        except Exception as e:
+            logger.error(f"  ✗ Error pushing alert to WebSocket clients: {e}")
+
         return {
             "status": "success",
             "message": "Alert ingested successfully",

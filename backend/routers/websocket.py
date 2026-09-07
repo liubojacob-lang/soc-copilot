@@ -180,6 +180,18 @@ async def alerts_websocket(
         await websocket.close(code=4001, reason="Invalid token")
         return
 
+    # Only access tokens may open a WS session (refresh tokens are for
+    # rotation only), and logged-out tokens must be rejected like over HTTP
+    if payload.get("type") != "access":
+        await websocket.close(code=4001, reason="Access token required")
+        return
+
+    from core.token_blacklist import get_token_blacklist
+
+    if await get_token_blacklist().is_blacklisted(token):
+        await websocket.close(code=4001, reason="Token has been revoked")
+        return
+
     user_id = payload.get("sub")
     user_role = payload.get("role")
 

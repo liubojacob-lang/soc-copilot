@@ -192,8 +192,34 @@ class AlertLifecycleService:
             f"Alert {alert_id} status updated: {old_status} -> {status.value} by {user_id}"
         )
 
-        # 发送 WebSocket 通知
-        # await push_alert_update(alert)
+        # 发送 WebSocket 通知（推送失败不影响状态更新本身）
+        try:
+            from routers.websocket import push_alert
+
+            await push_alert(
+                {
+                    "id": alert.id,
+                    "source": alert.source,
+                    "event_type": alert.event_type,
+                    "severity": alert.severity,
+                    "title": alert.title,
+                    "description": alert.description,
+                    "source_ip": alert.source_ip,
+                    "destination_ip": alert.destination_ip,
+                    "status": alert.status,
+                    "assigned_to": alert.assigned_to,
+                    "updated_by": user_id,
+                    "previous_status": old_status,
+                    "created_at": (
+                        alert.created_at.isoformat() if alert.created_at else None
+                    ),
+                    "updated_at": (
+                        alert.updated_at.isoformat() if alert.updated_at else None
+                    ),
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to push alert status update via WebSocket: {e}")
 
         return await self.get_alert_lifecycle(alert_id)
 
