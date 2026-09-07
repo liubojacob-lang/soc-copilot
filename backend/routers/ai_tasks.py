@@ -14,9 +14,25 @@ from pydantic import BaseModel, Field
 
 from dependencies.auth import get_current_user
 from models.ai_task import AITaskStatus, AITaskType
+from models.user import UserModel, UserRole
 from services.ai_task_service import get_ai_task_service
 
 router = APIRouter(prefix="/api/v1/ai-tasks", tags=["AI Tasks"])
+
+
+def _ensure_task_access(task_status: dict, current_user: UserModel) -> None:
+    """Non-admin users may only access their own tasks.
+
+    A mismatch raises 404 (not 403) so the endpoint does not leak the
+    existence of other users' task IDs.
+    """
+    if current_user.role == UserRole.ADMIN:
+        return
+    if task_status.get("user_id") != str(current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
 
 
 class SubmitAITaskRequest(BaseModel):
@@ -85,7 +101,7 @@ class CancelTaskResponse(BaseModel):
 )
 async def submit_ai_task(
     request: SubmitAITaskRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Submit an AI task for background processing.
 
@@ -109,7 +125,7 @@ async def submit_ai_task(
         )
 
     service = get_ai_task_service()
-    user_id = current_user.get("id") if current_user else None
+    user_id = str(current_user.id) if current_user else None
 
     task_id = await service.submit_task(
         task_type=task_type,
@@ -136,7 +152,7 @@ async def submit_ai_task(
 )
 async def get_task_status(
     task_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Get the current status of an AI task.
 
@@ -157,6 +173,8 @@ async def get_task_status(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Task {task_id} not found",
         )
+
+    _ensure_task_access(task_status, current_user)
 
     # Calculate progress
     progress_percent = None
@@ -180,7 +198,7 @@ async def get_task_status(
 )
 async def get_task_result(
     task_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Get the result of a completed AI task.
 
@@ -188,17 +206,17 @@ async def get_task_result(
     Returns 404 if task not found or not completed.
     """
     service = get_ai_task_service()
+
+    task_status = await service.get_task_status(task_id)
+    if not task_status:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task {task_id} not found",
+        )
+    _ensure_task_access(task_status, current_user)
+
     result = await service.get_task_result(task_id)
-
     if result is None:
-        # Check if task exists
-        task_status = await service.get_task_status(task_id)
-        if not task_status:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task {task_id} not found",
-            )
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Task is not completed. Current status: {task_status['status']}",
@@ -215,7 +233,7 @@ async def get_task_result(
 )
 async def cancel_task(
     task_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Cancel a pending or processing AI task.
 
@@ -223,6 +241,15 @@ async def cancel_task(
     Completed, failed, or timeout tasks cannot be cancelled.
     """
     service = get_ai_task_service()
+
+    task_status = await service.get_task_status(task_id)
+    if not task_status:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task {task_id} not found",
+        )
+    _ensure_task_access(task_status, current_user)
+
     success = await service.cancel_task(task_id)
 
     if not success:
@@ -248,7 +275,7 @@ async def list_tasks(
     task_type: str | None = None,
     limit: int = 20,
     offset: int = 0,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """List AI tasks for the current user.
 
@@ -257,18 +284,24 @@ async def list_tasks(
     - **limit**: Maximum number of tasks to return (default 20)
     - **offset**: Offset for pagination
     """
-    from sqlalchemy import and_, func, select
+    from sqlalchemy import and_, false, func, select
 
     from db.session import AsyncSessionLocal
     from models.ai_task import AITaskModel
 
-    user_id = current_user.get("id") if current_user else None
+    is_admin = current_user.role == UserRole.ADMIN
+    user_id = str(current_user.id) if current_user else None
 
     async with AsyncSessionLocal() as session:
         # Build query
         conditions = []
-        if user_id:
-            conditions.append(AITaskModel.user_id == user_id)
+        if not is_admin:
+            # Non-admins only ever see their own tasks, even if the
+            # authenticated identity somehow carries no id.
+            if user_id:
+                conditions.append(AITaskModel.user_id == user_id)
+            else:
+                conditions.append(false())  # matches nothing
         if status_filter:
             conditions.append(AITaskModel.status == status_filter)
         if task_type:
