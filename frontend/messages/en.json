@@ -236,6 +236,18 @@
     "devMode": "Dev Mode",
     "checkServerLogs": "Check server logs for default credentials"
   },
+  "changePassword": {
+    "title": "Change Your Password",
+    "subtitle": "Your account must set a new password before you can continue. Choose a strong password you have not used before.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "submit": "Update password",
+    "changing": "Updating…",
+    "success": "Password updated. Please sign in with your new password.",
+    "failed": "Failed to update password",
+    "mismatch": "New password and confirmation do not match"
+  },
   "users": {
     "title": "Users",
     "subtitle": "Manage user accounts and permissions",

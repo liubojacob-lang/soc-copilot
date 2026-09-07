@@ -49,6 +49,13 @@ export default function LoginPage() {
     try {
       const authState = await login(username, password);
       saveAuthState(authState);
+      // Bootstrap/flagged accounts must set a new password before entering
+      // the app; the target page is preserved in sessionStorage by the guard.
+      if (authState.mustChangePassword) {
+        sessionStorage.setItem("redirect_after_login", redirectPath);
+        router.push("/change-password");
+        return;
+      }
       router.push(redirectPath);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("error"));

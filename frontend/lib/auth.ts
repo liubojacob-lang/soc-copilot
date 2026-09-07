@@ -104,6 +104,8 @@ export interface AuthState {
   user: User | null;
   tokens: AuthTokens | null;
   storageStrategy: StorageStrategy;
+  /** Server requires this session's user to set a new password before proceeding. */
+  mustChangePassword?: boolean;
 }
 
 /**
@@ -139,6 +141,7 @@ export async function login(username: string, password: string): Promise<AuthSta
     user: data.user,
     tokens: null,
     storageStrategy: "cookie",
+    mustChangePassword: data.must_change_password === true,
   };
 
   saveAuthState(authState);

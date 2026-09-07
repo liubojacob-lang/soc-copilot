@@ -236,6 +236,18 @@
     "devMode": "开发模式",
     "checkServerLogs": "检查服务器日志获取默认凭据"
   },
+  "changePassword": {
+    "title": "修改你的密码",
+    "subtitle": "该账户必须先设置新密码才能继续使用。请选择一个之前未使用过的强密码。",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "confirmPassword": "确认新密码",
+    "submit": "更新密码",
+    "changing": "更新中…",
+    "success": "密码已更新，请使用新密码重新登录。",
+    "failed": "密码更新失败",
+    "mismatch": "两次输入的新密码不一致"
+  },
   "users": {
     "title": "用户",
     "subtitle": "管理用户账户和权限",
