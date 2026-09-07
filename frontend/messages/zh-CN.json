@@ -1242,7 +1242,8 @@
     "active": "活跃",
     "saveSuccess": "资产保存成功",
     "saveFailed": "保存资产失败",
-    "unknown": "未知"
+    "unknown": "未知",
+    "loadFailed": "加载资产失败"
   },
   "correlation": {
     "title": "关联分析",

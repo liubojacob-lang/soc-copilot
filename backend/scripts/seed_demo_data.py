@@ -20,6 +20,7 @@
 import argparse
 import asyncio
 import hashlib
+import json
 import math
 import sys
 import uuid
@@ -1375,7 +1376,10 @@ async def seed(session) -> dict:
             continue
         new_assets.append(AssetDB(
             id=asset_ids[hostname], hostname=hostname, ip=ip, owner=owner, business=business,
-            criticality=criticality, tags=tags, notes=f"{notes}（演示数据）", is_active=True,
+            criticality=criticality,
+            # tags 列约定为 JSON 数组字符串，与 AssetService._to_response 的解析一致
+            tags=json.dumps([t.strip() for t in tags.split(",") if t.strip()]) if tags else None,
+            notes=f"{notes}（演示数据）", is_active=True,
             created_at=ago(days=30), updated_at=ago(days=30),
         ))
     session.add_all(new_assets)

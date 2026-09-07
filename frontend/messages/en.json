@@ -1193,7 +1193,8 @@
     "active": "Active",
     "saveSuccess": "Asset saved successfully",
     "saveFailed": "Failed to save asset",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "loadFailed": "Failed to load assets"
   },
   "actions": {
     "quickActions": "Quick Actions",

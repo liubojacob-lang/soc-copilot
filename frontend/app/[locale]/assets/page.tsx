@@ -14,6 +14,7 @@ export default function AssetsPage() {
   const tCommon = useTranslations("common");
   const [assets, setAssets] = useState<AssetResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [criticalityFilter, setCriticalityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -44,11 +45,14 @@ export default function AssetsPage() {
 
   const loadAssets = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const result = await api.listAssets({ query: search || undefined, limit: 100 });
       setAssets(result.items);
     } catch (error) {
       console.error("Failed to load assets:", error);
+      setLoadError(error instanceof Error ? error.message : String(error));
+      setAssets([]);
     }
     setLoading(false);
   };
@@ -177,6 +181,20 @@ export default function AssetsPage() {
             {tCommon("search")}
           </button>
         </form>
+
+        {loadError && !loading && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg px-4 py-3 mb-4 flex items-center justify-between">
+            <span>
+              {t("loadFailed")}：{loadError}
+            </span>
+            <button
+              onClick={loadAssets}
+              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              {tCommon("retry")}
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
