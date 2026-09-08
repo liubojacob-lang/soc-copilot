@@ -287,7 +287,7 @@ export default function AIAssistantPage() {
         className="w-full flex-shrink-0 pt-3 sm:pt-4 pb-1"
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-3 sm:pb-4 flex-1 min-h-0 w-full flex flex-col overflow-hidden">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-3 sm:pb-4 flex-1 min-h-0 w-full flex flex-col overflow-hidden">
         {/* Floating Error Toast */}
         {errorMessage && (
           <div className="mb-3 flex-shrink-0 rounded-xl border border-rose-200 bg-rose-50/95 dark:border-rose-900/60 dark:bg-rose-950/90 backdrop-blur px-4 py-2 text-xs text-rose-700 dark:text-rose-300 shadow-sm flex items-center justify-between">

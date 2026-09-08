@@ -442,7 +442,7 @@ export default function AlertDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-surface-ground">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-[1600px] mx-auto px-4 py-6">
           <LoadingState isLoading={true} type="skeleton" skeletonType="card" />
         </div>
       </div>
@@ -453,7 +453,7 @@ export default function AlertDetailPage() {
   if (error || !alert) {
     return (
       <div className="min-h-screen bg-surface-ground">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-[1600px] mx-auto px-4 py-8">
           <LoadingState
             isLoading={false}
             error={error || "Alert not found"}
@@ -471,7 +471,7 @@ export default function AlertDetailPage() {
     <div className="min-h-screen bg-surface-ground pb-12">
       {/* Header */}
       <div className="bg-surface-card border-b border-border-subtle shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-start gap-4">
             <BackButton fallbackUrl="/alerts" label={tCommon("back")} className="mt-0.5 shrink-0" />
 
@@ -523,7 +523,7 @@ export default function AlertDetailPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Column (2/3) */}
           <div className="lg:col-span-2 space-y-6">

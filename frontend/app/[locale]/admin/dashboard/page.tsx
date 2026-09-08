@@ -237,7 +237,7 @@ export default function SystemDashboardPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <PageHeader title={t("title")} subtitle={t("subtitle")} />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[50vh]">
             <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
           </div>
@@ -250,7 +250,7 @@ export default function SystemDashboardPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <PageHeader title={t("title")} subtitle={t("subtitle")} />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <EmptyState
             icon="alert"
             title={t("error")}
@@ -314,7 +314,7 @@ export default function SystemDashboardPage() {
         }
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* KPI Cards - 4 cards in first row, 2 cards in second row = 6 total */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard

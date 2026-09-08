@@ -189,18 +189,24 @@ export function ChatMessages({
                     <div className="text-sm prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed">
                       <ReactMarkdown
                         components={{
-                          code({ node, inline, className, children, ...props }: any) {
-                            if (inline) {
-                              return (
-                                <code
-                                  className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-purple-600 dark:text-purple-400 font-mono text-xs"
-                                  {...props}
-                                >
-                                  {children}
-                                </code>
-                              );
-                            }
-                            return <CodeBlock className={className}>{children}</CodeBlock>;
+                          // react-markdown v9+ removed the `inline` prop; block code arrives as <pre><code>
+                          pre({ children }: any) {
+                            const codeEl = Array.isArray(children) ? children[0] : children;
+                            return (
+                              <CodeBlock className={codeEl?.props?.className}>
+                                {codeEl?.props?.children}
+                              </CodeBlock>
+                            );
+                          },
+                          code({ className, children, ...props }: any) {
+                            return (
+                              <code
+                                className={`px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-purple-600 dark:text-purple-400 font-mono text-xs ${className ?? ""}`}
+                                {...props}
+                              >
+                                {children}
+                              </code>
+                            );
                           },
                           p({ children }) {
                             return <p className="mb-2.5 last:mb-0 leading-relaxed">{children}</p>;

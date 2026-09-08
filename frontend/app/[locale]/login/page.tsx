@@ -77,7 +77,7 @@ export default function LoginPage() {
       </div>
 
       {/* Top right utility bar for locale and theme */}
-      <header className="relative z-10 flex items-center justify-between p-4 sm:p-6 max-w-7xl mx-auto w-full">
+      <header className="relative z-10 flex items-center justify-between p-4 sm:p-6 max-w-[1600px] mx-auto w-full">
         <div className="flex items-center gap-2.5 text-xs font-medium text-text-muted">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>SOC Platform v2.0</span>

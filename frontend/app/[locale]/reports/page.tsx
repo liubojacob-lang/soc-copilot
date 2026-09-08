@@ -110,7 +110,7 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-surface-ground pb-12">
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
           <div className="mb-4 p-3.5 bg-danger-500/10 border border-danger-500/25 rounded-xl text-xs sm:text-sm text-danger-700 dark:text-danger-400">
             <p>{error}</p>

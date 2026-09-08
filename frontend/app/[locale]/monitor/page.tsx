@@ -159,7 +159,7 @@ export default function DashboardPage() {
           subtitle={t("dashboard.overview")}
           apiStatus="checking"
         />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[1, 2, 3, 4].map((i) => (
@@ -204,7 +204,7 @@ export default function DashboardPage() {
         }
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
           {/* ── Row 1: Real-time Metrics ───────────────── */}
           <section>

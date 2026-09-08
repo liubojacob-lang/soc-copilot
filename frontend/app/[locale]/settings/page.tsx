@@ -41,7 +41,7 @@ export default function SettingsPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <PageHeader title={t("title")} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
             {error}
           </div>
@@ -54,7 +54,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <PageHeader title={t("title")} subtitle={t("description")} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Settings Sections */}
         <div className="space-y-6">
           {/* Additional Settings Links */}

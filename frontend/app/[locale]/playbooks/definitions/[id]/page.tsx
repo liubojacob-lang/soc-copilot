@@ -168,7 +168,7 @@ export default function PlaybookDefinitionDetailPage() {
     return (
       <div className="min-h-screen bg-surface-canvas transition-colors">
         <PageHeader title={t("title")} subtitle={t("subtitle")} backButton={backButton} />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <LoadingState isLoading={true} type="skeleton" skeletonType="card" />
         </main>
       </div>
@@ -180,7 +180,7 @@ export default function PlaybookDefinitionDetailPage() {
     return (
       <div className="min-h-screen bg-surface-canvas transition-colors">
         <PageHeader title={t("title")} subtitle={t("subtitle")} backButton={backButton} />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <LoadingState
             isLoading={false}
             error={error === "notFound" ? t("notFound") : t("loadFailed")}
@@ -213,7 +213,7 @@ export default function PlaybookDefinitionDetailPage() {
         }
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Basic Info */}
           <div className="bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-xs space-y-4">

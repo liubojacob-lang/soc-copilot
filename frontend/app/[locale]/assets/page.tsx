@@ -145,7 +145,7 @@ export default function AssetsPage() {
         }
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <form onSubmit={handleSearch} className="mb-6 flex gap-2 flex-wrap">
           <input
             type="text"

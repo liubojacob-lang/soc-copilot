@@ -470,7 +470,7 @@ export default function CreatePlaybookPage() {
         }
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         {/* Feedback Alert */}
         {feedback && (
           <div

@@ -73,7 +73,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
   const user = authState?.user;
 
   // English labels are much wider than Chinese ones and would overflow the
-  // fixed max-w-7xl container, so English gets tighter padding/tracking. Both
+  // fixed max-w-[1600px] container, so English gets tighter padding/tracking. Both
   // locales share the same 13px nav font so switching languages doesn't jump.
   const compactNav = locale !== "zh-CN";
   const navTriggerClass = compactNav
@@ -372,7 +372,7 @@ export default function Navigation({ title, subtitle, apiStatus, actions }: Navi
 
   return (
     <nav className="sticky top-0 z-40 bg-surface-card/85 backdrop-blur-xl border-b border-border-subtle transition-colors">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex justify-between items-center h-14">
           <div className="flex items-center space-x-3 shrink-0">
             <Link

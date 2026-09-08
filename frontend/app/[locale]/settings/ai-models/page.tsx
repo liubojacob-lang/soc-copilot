@@ -196,7 +196,7 @@ export default function AIModelsPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <PageHeader title={t("title")} subtitle={t("subtitle")} />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[50vh]">
             <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
           </div>
@@ -222,7 +222,7 @@ export default function AIModelsPage() {
         }
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Models Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {models.map((model) => (

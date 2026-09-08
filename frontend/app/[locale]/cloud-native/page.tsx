@@ -196,7 +196,7 @@ export default function CloudNativePage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Demo data notice: K8s/cloud insights come from sample data until
             cluster/cloud integrations are configured; Trivy & Falco are real */}
         <div className="rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">

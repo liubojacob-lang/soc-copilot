@@ -128,7 +128,7 @@ export default function AdminSettingsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {loadError && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg px-4 py-3 flex items-center justify-between">
             <span>

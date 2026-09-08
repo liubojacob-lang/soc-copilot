@@ -89,7 +89,7 @@ export default function HomePage() {
         subtitle={t("subtitle")}
         apiStatus={apiStatus === "unhealthy" ? "error" : apiStatus}
       />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* ── Real-time stat cards ─────────────────────────── */}
         <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
