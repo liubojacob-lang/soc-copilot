@@ -2,7 +2,7 @@
 
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { loadAuthState, logout, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
+import { loadAuthState, logout } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
 import { AuditPageContainer } from "./components/AuditPageContainer";
 import { useEffect, useState } from "react";
@@ -22,7 +22,9 @@ export default function AuditLogsPage() {
         return;
       }
 
-      if (!isAdmin(authState.user) && !isAnalystOrAdmin(authState.user)) {
+      // Auditor / admin / analyst 都可查看审计日志（后端按 auditor 放行）
+      const role = authState.user?.role;
+      if (role !== "admin" && role !== "analyst" && role !== "auditor") {
         router.push("/");
         return;
       }

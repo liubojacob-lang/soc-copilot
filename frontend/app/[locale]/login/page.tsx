@@ -25,11 +25,14 @@ export default function LoginPage() {
   // Get redirect path from session storage (validate against open redirect)
   useEffect(() => {
     const storedRedirect = sessionStorage.getItem("redirect_after_login");
-    if (storedRedirect && storedRedirect.startsWith("/")) {
+    // Server-side guard (proxy.ts) hands the intended destination via ?next=
+    const searchNext = new URLSearchParams(window.location.search).get("next");
+    const candidate = storedRedirect || searchNext;
+    if (candidate && candidate.startsWith("/")) {
       try {
-        const url = new URL(storedRedirect, window.location.origin);
+        const url = new URL(candidate, window.location.origin);
         if (url.origin === window.location.origin) {
-          const segments = storedRedirect.split("/");
+          const segments = candidate.split("/");
           const localeAt = locales.includes(segments[1] as (typeof locales)[number]) ? 1 : -1;
           if (localeAt !== -1) segments.splice(1, 1);
           setRedirectPath(segments.join("/") || "/");

@@ -45,13 +45,33 @@ function withCsp(request: NextRequest, locale: string): NextResponse {
   return response;
 }
 
+// Paths reachable without a session cookie. Everything else redirects to
+// /login when the access_token cookie is absent — a coarse server-side gate
+// (signature verification still belongs to the API); it keeps page HTML and
+// bundle names from being served to anonymous visitors.
+const PUBLIC_PATHS = new Set(["/login", "/change-password"]);
+
+function isPublicPath(pathname: string, locale: string | undefined): boolean {
+  const withoutLocale = locale ? pathname.slice(`/${locale}`.length) || "/" : pathname;
+  const normalized = withoutLocale === "/" ? "/" : withoutLocale.replace(/\/$/, "");
+  if (normalized === "/") return false; // the dashboard is data-driven but gated too
+  return PUBLIC_PATHS.has(normalized);
+}
+
 export default function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const locale = locales.find((l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`));
+  const hasSession = Boolean(request.cookies.get("access_token")?.value);
+
+  if (!hasSession && !(locale && isPublicPath(pathname, locale))) {
+    const loginUrl = new URL(`${locale ? `/${locale}` : "/en"}/login`, request.nextUrl.origin);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
   if (process.env.NODE_ENV !== "production") {
     return intlMiddleware(request);
   }
-
-  const pathname = request.nextUrl.pathname;
-  const locale = locales.find((l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`));
 
   if (!locale) {
     return intlMiddleware(request);

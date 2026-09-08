@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     # v0.6.2: Authentication & JWT Settings
     jwt_secret: str = ""  # MUST be set in production (min 32 characters)
     jwt_secret_previous: str = ""  # P1-17: Previous JWT secret for rotation过渡期
-    jwt_expire_minutes: int = 720  # 12 hours
+    jwt_expire_minutes: int = 60  # 1 hour — short-lived access tokens; refresh tokens carry longevity
     jwt_refresh_expire_minutes: int = 10080  # 7 days
     # S0-20: Replaced allow_public_readonly bool with endpoint whitelist
     # for defense-in-depth (default deny). Only endpoints explicitly listed

@@ -1,15 +1,51 @@
 """HTTP Request node plugin with SSRF protection (v0.7.4)."""
 
 import logging
+import socket
 from typing import Any
 
 import aiohttp
+from aiohttp.abc import AbstractResolver
+from aiohttp.resolver import DefaultResolver
 
-from core.ssrf_protection import is_url_safe
+from core.ssrf_protection import _is_private_ip, is_url_safe
 
 from ..base_node import BaseNodePlugin, NodeExecutionContext
 
 logger = logging.getLogger(__name__)
+
+
+class _SsrfPinnedResolver(AbstractResolver):
+    """Resolver that drops any address failing the SSRF private-IP check.
+
+    The connector consults this resolver at connection time, so a DNS
+    rebinding attempt (public IP during validation, private IP at request
+    time) resolves to zero usable addresses and the request fails instead
+    of reaching the internal network.
+    """
+
+    def __init__(self) -> None:
+        self._inner = DefaultResolver()
+
+    async def resolve(self, host: str, port: int = 0, family: int = socket.AF_INET):
+        infos = await self._inner.resolve(host, port, family=family)
+        allowed = [
+            info
+            for info in infos
+            if not _is_private_ip(
+                str(info["host"] if isinstance(info, dict) else getattr(info, "host", ""))
+            )
+        ]
+        if len(allowed) != len(infos):
+            logger.warning(
+                "SSRF pinned resolver dropped %d private/reserved address(es) for %s",
+                len(infos) - len(allowed),
+                host,
+            )
+        return allowed
+
+    async def close(self) -> None:
+        await self._inner.close()
 
 
 class HttpRequestPlugin(BaseNodePlugin):
@@ -81,9 +117,11 @@ class HttpRequestPlugin(BaseNodePlugin):
 
         logger.info(f"[{context.run_id}] HTTP {method} {url}")
 
-        # Make the request
+        # Make the request through the pinned resolver: whatever addresses
+        # the connector uses have just passed the private-IP check, closing
+        # the DNS-rebinding (TOCTOU) gap between validation and connect.
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(resolver=_SsrfPinnedResolver()) as session:
                 async with session.request(
                     method,
                     url,
