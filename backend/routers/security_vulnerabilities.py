@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +18,7 @@ from models.security_vulnerability import (
 )
 from models.user import UserModel
 from schemas.common import paginated_response, success_response
+from schemas.security_vulnerability import VulnerabilityCreate, VulnerabilityResponse
 from services.security.security_vulnerability_service import (
     get_security_vulnerability_service,
 )
@@ -25,28 +26,15 @@ from services.security.security_vulnerability_service import (
 logger = get_logger(__name__)
 
 router = APIRouter(
-    prefix="/api/security/vulnerabilities",
+    prefix="/api/v1/security/vulnerabilities",
     tags=["security-vulnerabilities"],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.post("", response_model=dict)
+@router.post("", response_model=VulnerabilityResponse)
 async def create_vulnerability(
-    title: str,
-    description: str,
-    severity: VulnerabilitySeverity,
-    vulnerability_type: VulnerabilityType,
-    affected_component: str,
-    affected_version: str | None = None,
-    attack_vector: str | None = None,
-    impact: str | None = None,
-    reproduction_steps: str | None = None,
-    fix_recommendation: str | None = None,
-    cve_id: str | None = None,
-    cvss_score: float | None = None,
-    reference_urls: str | None = None,
-    assigned_to: str | None = None,
+    payload: VulnerabilityCreate,
     current_user: UserModel = Depends(get_current_user),
     db_session: AsyncSession = Depends(get_session),
 ):
@@ -54,32 +42,28 @@ async def create_vulnerability(
     service = get_security_vulnerability_service(db_session)
 
     vulnerability = await service.create_vulnerability(
-        title=title,
-        description=description,
-        severity=severity,
-        vulnerability_type=vulnerability_type,
-        affected_component=affected_component,
-        affected_version=affected_version,
-        attack_vector=attack_vector,
-        impact=impact,
-        reproduction_steps=reproduction_steps,
-        fix_recommendation=fix_recommendation,
-        cve_id=cve_id,
-        cvss_score=cvss_score,
-        reference_urls=reference_urls,
-        assigned_to=assigned_to,
+        title=payload.title,
+        description=payload.description,
+        severity=payload.severity,
+        vulnerability_type=payload.vulnerability_type,
+        affected_component=payload.affected_component,
+        affected_version=payload.affected_version,
+        attack_vector=payload.attack_vector,
+        impact=payload.impact,
+        reproduction_steps=payload.reproduction_steps,
+        fix_recommendation=payload.fix_recommendation,
+        cve_id=payload.cve_id,
+        cvss_score=payload.cvss_score,
+        reference_urls=payload.reference_urls,
+        assigned_to=payload.assigned_to,
         reporter=current_user.username,
     )
 
-    return success_response(
-        data={
-            "id": vulnerability.id,
-            "title": vulnerability.title,
-            "status": vulnerability.status.value,
-            "severity": vulnerability.severity.value,
-        },
-        message="Vulnerability created successfully",
-        trace_id=get_trace_id(),
+    return VulnerabilityResponse(
+        id=vulnerability.id,
+        title=vulnerability.title,
+        status=vulnerability.status,
+        severity=vulnerability.severity,
     )
 
 
@@ -94,7 +78,9 @@ async def get_vulnerability(
     vulnerability = await service.get_vulnerability(vulnerability_id)
 
     if not vulnerability:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found"
+        )
 
     # Get notes
     notes = await service.get_vulnerability_notes(vulnerability_id)
@@ -116,19 +102,31 @@ async def get_vulnerability(
             "fix_implementation": vulnerability.fix_implementation,
             "reporter": vulnerability.reporter,
             "reported_at": (
-                vulnerability.reported_at.isoformat() if vulnerability.reported_at else None
+                vulnerability.reported_at.isoformat()
+                if vulnerability.reported_at
+                else None
             ),
             "triaged_at": (
-                vulnerability.triaged_at.isoformat() if vulnerability.triaged_at else None
+                vulnerability.triaged_at.isoformat()
+                if vulnerability.triaged_at
+                else None
             ),
             "in_progress_at": (
-                vulnerability.in_progress_at.isoformat() if vulnerability.in_progress_at else None
+                vulnerability.in_progress_at.isoformat()
+                if vulnerability.in_progress_at
+                else None
             ),
-            "fixed_at": (vulnerability.fixed_at.isoformat() if vulnerability.fixed_at else None),
+            "fixed_at": (
+                vulnerability.fixed_at.isoformat() if vulnerability.fixed_at else None
+            ),
             "verified_at": (
-                vulnerability.verified_at.isoformat() if vulnerability.verified_at else None
+                vulnerability.verified_at.isoformat()
+                if vulnerability.verified_at
+                else None
             ),
-            "closed_at": (vulnerability.closed_at.isoformat() if vulnerability.closed_at else None),
+            "closed_at": (
+                vulnerability.closed_at.isoformat() if vulnerability.closed_at else None
+            ),
             "cve_id": vulnerability.cve_id,
             "cvss_score": vulnerability.cvss_score,
             "reference_urls": vulnerability.reference_urls,
@@ -178,7 +176,7 @@ async def list_vulnerabilities(
     )
 
     # Get statistics
-    stats = await service.get_vulnerability_statistics()
+    await service.get_vulnerability_statistics()
 
     vulnerability_items = [
         {
@@ -274,7 +272,9 @@ async def update_vulnerability(
     )
 
     if not vulnerability:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found"
+        )
 
     return success_response(
         data={
@@ -301,7 +301,9 @@ async def add_vulnerability_note(
     # Check if vulnerability exists
     vulnerability = await service.get_vulnerability(vulnerability_id)
     if not vulnerability:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found"
+        )
 
     note = await service.add_vulnerability_note(
         vulnerability_id=vulnerability_id, content=content, author=current_user.username
@@ -329,7 +331,7 @@ async def get_vulnerability_statistics(
     stats = await service.get_vulnerability_statistics()
 
     return success_response(
-        data={"statistics": stats, "last_updated": datetime.utcnow().isoformat()},
+        data={"statistics": stats, "last_updated": datetime.now(UTC).isoformat()},
         message="Statistics retrieved successfully",
         trace_id=get_trace_id(),
     )
@@ -379,15 +381,17 @@ async def export_vulnerabilities(
     service = get_security_vulnerability_service(db_session)
 
     try:
-        export_data = await service.export_vulnerabilities(format=format)
+        export_data = await service.export_vulnerabilities(format=export_format)
         return success_response(
             data={
-                "format": format,
+                "format": export_format,
                 "data": export_data,
-                "exported_at": datetime.utcnow().isoformat(),
+                "exported_at": datetime.now(UTC).isoformat(),
             },
             message="Export completed successfully",
             trace_id=get_trace_id(),
         )
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bad request")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Bad request"
+        )

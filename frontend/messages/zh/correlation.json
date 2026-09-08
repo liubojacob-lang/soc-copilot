@@ -1,9 +1,0 @@
-{
-  "correlation": {
-    "title": "关联分析",
-    "subtitle": "配置和管理关联规则",
-    "createRule": "创建规则",
-    "rules": "规则列表",
-    "noRules": "暂无关联规则"
-  }
-}

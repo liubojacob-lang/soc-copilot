@@ -24,6 +24,11 @@ const nodeTypes: NodeTypes = {
   dagNode: DAGNode,
 };
 
+const defaultEdgeOptions = {
+  animated: false,
+  style: { strokeWidth: 2 },
+};
+
 // P0-2: Maximum update iterations to prevent infinite loops
 const MAX_UPDATE_ITERATIONS = 100;
 
@@ -466,10 +471,7 @@ export function DAGCanvas({
         attributionPosition="bottom-left"
         minZoom={0.2}
         maxZoom={2}
-        defaultEdgeOptions={{
-          animated: false,
-          style: { strokeWidth: 2 },
-        }}
+        defaultEdgeOptions={defaultEdgeOptions}
       >
         <Background color="#94a3b8" gap={16} />
         <Controls showZoom={true} showFitView={true} showInteractive={!readonly} />

@@ -1,87 +1,950 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
-import { loadAuthState, isAdmin } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
-import { WazuhAlertStream } from "@/components/alerts/RealTimeAlertStream";
-import { Shield, AlertTriangle } from "lucide-react";
+/**
+ * Security Alerts List Page
+ *
+ * Features:
+ * - Search: by title, description, IP, agent
+ * - Filters: status (multi-select), severity (multi-select), source type, time range
+ * - Sort: by created_at, severity, status (asc/desc)
+ * - Pagination: via existing DataTable
+ * - Batch operations: select rows → batch status change
+ * - Loading/Empty/Error states: via LoadingState
+ * - Responsive: card view on mobile, table on desktop
+ */
 
-export default function AlertsPage() {
-  const router = useRouter();
-  const locale = useLocale();
-  const t = useTranslations("alertsPage");
-  const [mounted, setMounted] = useState(false);
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
+import {
+  Shield,
+  Search,
+  Filter,
+  X,
+  ChevronDown,
+  ChevronUp,
+  ArrowUpDown,
+  Trash2,
+  CheckCircle,
+  Eye,
+  MoreHorizontal,
+  AlertTriangle,
+  Clock,
+  Server,
+  RefreshCw,
+  Upload,
+} from "lucide-react";
+import ImportAlertModal from "./components/ImportAlertModal";
+import { loadAuthState } from "@/lib/auth";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/Badge";
+import { PageHeader } from "@/components/common/PageHeader";
+import { DataTable, type ColumnDef, type TableSeverity } from "@/components/ui/DataTable";
+import { LoadingState } from "@/components/common/LoadingState";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { Button } from "@/components/common/Button";
+import { useToast } from "@/components/Toast";
+import { useAlerts, useBatchUpdateAlerts, useDeleteAlert, useAlertStats } from "@/hooks/useAlerts";
+import type { SecurityAlertItem, AlertListFilters, AlertStatus, AlertSeverity } from "@/lib/api";
+
+// ── Constants ──────────────────────────────────────────
+
+const PAGE_SIZE = 20;
+
+type SortField = "created_at" | "severity" | "status";
+type SortDir = "asc" | "desc";
+
+const SEVERITY_ORDER: Record<string, number> = {
+  critical: 5,
+  high: 4,
+  medium: 3,
+  low: 2,
+  info: 1,
+};
+
+const STATUS_ORDER: Record<string, number> = {
+  new: 1,
+  investigating: 2,
+  escalated: 3,
+  resolved: 4,
+  false_positive: 5,
+};
+
+// ── Helper: map severity to TableSeverity ────────────────
+
+function mapSeverity(s: string): TableSeverity {
+  const m: Record<string, TableSeverity> = {
+    critical: "critical",
+    high: "high",
+    medium: "medium",
+    low: "low",
+    info: "info",
+  };
+  return m[s] || "neutral";
+}
+
+// ── Helper: map status to badge variant ─────────────────
+
+function mapStatusSeverity(s: string): TableSeverity {
+  const m: Record<string, TableSeverity> = {
+    new: "info",
+    investigating: "medium",
+    resolved: "low",
+    false_positive: "neutral",
+    escalated: "high",
+  };
+  return m[s] || "neutral";
+}
+
+// ── Helper: format time ────────────────────────────────
+
+function formatTime(ts: string | null, format: ReturnType<typeof useFormatter>): string {
+  if (!ts) return "-";
+  try {
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return "-";
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    const diffDays = Math.floor(diffHrs / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return format.dateTime(d, { dateStyle: "medium" });
+  } catch {
+    return "-";
+  }
+}
+
+// ── Severity Badge ─────────────────────────────────────
+
+function SeverityTag({ severity }: { severity: string }) {
+  const t = useTranslations("severity");
+  const labels: Record<string, string> = {
+    critical: t("critical"),
+    high: t("high"),
+    medium: t("medium"),
+    low: t("low"),
+    info: "Info",
+  };
+  return <Badge severity={mapSeverity(severity)}>{labels[severity] || severity}</Badge>;
+}
+
+// ── Status Badge ───────────────────────────────────────
+
+function StatusTag({ status }: { status: string }) {
+  const t = useTranslations("status");
+  const labels: Record<string, string> = {
+    new: t("new"),
+    investigating: t("investigating"),
+    resolved: t("resolved"),
+    false_positive: t("falsePositive"),
+    escalated: t("escalated"),
+  };
+  return <Badge severity={mapStatusSeverity(status)}>{labels[status] || status}</Badge>;
+}
+
+// ── Filter Dropdown ────────────────────────────────────
+
+interface FilterDropdownProps {
+  label: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onChange: (values: string[]) => void;
+}
+
+function FilterDropdown({ label, options, selected, onChange }: FilterDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMounted(true);
-
-    const authState = loadAuthState();
-    if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
-      return;
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
-    if (!isAdmin(authState.user)) {
-      router.push(`/${locale}`);
-      return;
-    }
-  }, [router, locale]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  if (!mounted) {
-    return null;
-  }
+  const toggle = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((v) => v !== value));
+    } else {
+      onChange([...selected, value]);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 text-xs sm:text-sm rounded-lg border transition-all duration-150",
+          selected.length > 0
+            ? "border-accent-500/40 bg-accent-500/10 text-accent-700 dark:text-accent-300 font-medium"
+            : "border-border-subtle bg-surface-card text-text-secondary hover:border-border-default hover:text-text-primary shadow-xs"
+        )}
+      >
+        <Filter className="w-3.5 h-3.5 text-text-muted" />
+        <span>{label}</span>
+        {selected.length > 0 && (
+          <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-semibold bg-accent-600 text-white">
+            {selected.length}
+          </span>
+        )}
+        <ChevronDown className="w-3 h-3 ml-0.5 text-text-muted" />
+      </button>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t("subtitle")}</p>
-            </div>
+      {open && (
+        <div className="absolute top-full left-0 mt-1.5 w-52 bg-surface-card border border-border-subtle rounded-xl shadow-elevated z-20 py-1.5 max-h-60 overflow-y-auto">
+          {options.map((opt) => (
+            <label
+              key={opt.value}
+              className="flex items-center gap-2.5 px-3 py-2 hover:bg-surface-ground active:bg-surface-ground cursor-pointer text-xs sm:text-sm text-text-primary transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(opt.value)}
+                onChange={() => toggle(opt.value)}
+                className="rounded border-border-default text-accent-600 focus:ring-accent-500/40"
+              />
+              <span>{opt.label}</span>
+            </label>
+          ))}
+          {selected.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-text-primary hover:bg-surface-ground border-t border-border-subtle transition-colors"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Stats Bar ───────────────────────────────────────────
+
+function StatsBar({
+  total,
+  stats,
+}: {
+  total: number;
+  stats?: { by_severity?: Record<string, number>; by_status?: Record<string, number> };
+}) {
+  const t = useTranslations("common");
+  if (!stats) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4">
+      <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">{total} alerts</span>
+      {stats.by_severity &&
+        Object.entries(stats.by_severity).map(([sev, count]) => (
+          <span key={sev} className="text-xs text-gray-400 dark:text-gray-500">
+            <Badge severity={mapSeverity(sev)}>{sev}</Badge> ×{count}
+          </span>
+        ))}
+    </div>
+  );
+}
+
+// ── Page Component ──────────────────────────────────────
+
+export default function AlertsPage() {
+  const format = useFormatter();
+  const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("alerts");
+  const tCommon = useTranslations("common");
+  const { showToast } = useToast();
+
+  // Auth
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    const authState = loadAuthState();
+    if (!authState?.isAuthenticated) {
+      router.push("/login");
+    }
+  }, [router]);
+
+  // ── Filter State ────────────────────────────────────
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [severityFilter, setSeverityFilter] = useState<string[]>([]);
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showBatchPanel, setShowBatchPanel] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  // Debounce search
+  const debounceRef = useRef<NodeJS.Timeout>(undefined);
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [search]);
+
+  // ── Build Filters ────────────────────────────────────
+  const filters: AlertListFilters = useMemo(() => {
+    const f: AlertListFilters = {
+      page,
+      page_size: PAGE_SIZE,
+    };
+    if (debouncedSearch) f.search = debouncedSearch;
+    if (statusFilter.length === 1) {
+      f.status = statusFilter[0];
+    } else if (statusFilter.length > 1) {
+      f.status = statusFilter.join(",");
+    }
+    if (severityFilter.length === 1) {
+      f.severity = severityFilter[0];
+    } else if (severityFilter.length > 1) {
+      f.severity = severityFilter.join(",");
+    }
+    if (sourceFilter) f.source = sourceFilter;
+    return f;
+  }, [page, debouncedSearch, statusFilter, severityFilter, sourceFilter]);
+
+  // ── Data Fetching ────────────────────────────────────
+  const { data, isLoading, error, refetch } = useAlerts(filters);
+  const { data: statsData } = useAlertStats();
+  const batchUpdate = useBatchUpdateAlerts();
+  const deleteAlert = useDeleteAlert();
+
+  const total = data?.total ?? 0;
+  const alerts: SecurityAlertItem[] = data?.alerts ?? [];
+
+  // ── Client-side sort (when backed doesn't support full sort) ─
+  const sortedAlerts = useMemo(() => {
+    const sorted = [...alerts];
+    sorted.sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "created_at") {
+        const aTime = a.created_at || "";
+        const bTime = b.created_at || "";
+        cmp = aTime.localeCompare(bTime);
+      } else if (sortField === "severity") {
+        cmp = (SEVERITY_ORDER[a.severity] || 0) - (SEVERITY_ORDER[b.severity] || 0);
+      } else if (sortField === "status") {
+        cmp = (STATUS_ORDER[a.status] || 0) - (STATUS_ORDER[b.status] || 0);
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [alerts, sortField, sortDir]);
+
+  // ── Selection ────────────────────────────────────────
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === sortedAlerts.length && sortedAlerts.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sortedAlerts.map((a) => a.id)));
+    }
+  }, [selectedIds, sortedAlerts]);
+
+  // ── Batch Actions ────────────────────────────────────
+  const handleBatchStatus = async (status: string) => {
+    if (selectedIds.size === 0) return;
+    try {
+      await batchUpdate.mutateAsync({
+        ids: Array.from(selectedIds),
+        payload: { status },
+      });
+      setSelectedIds(new Set());
+      setShowBatchPanel(false);
+      showToast(`Updated ${selectedIds.size} alerts to "${status}"`, "success");
+    } catch (err) {
+      showToast(
+        `Batch update failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+        "error"
+      );
+    }
+  };
+
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+
+  const handleDelete = (id: number) => {
+    setDeleteTargetId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTargetId === null) return;
+    try {
+      await deleteAlert.mutateAsync(deleteTargetId);
+      showToast("Alert deleted", "success");
+    } catch {
+      showToast("Delete failed", "error");
+    } finally {
+      setDeleteTargetId(null);
+    }
+  };
+
+  // Reset page on filter change
+  useEffect(() => setPage(1), [debouncedSearch, statusFilter, severityFilter, sourceFilter]);
+
+  // ── Columns ──────────────────────────────────────────
+
+  const columns: ColumnDef<SecurityAlertItem>[] = useMemo(
+    () => [
+      {
+        key: "select",
+        header: (
+          <input
+            type="checkbox"
+            checked={sortedAlerts.length > 0 && selectedIds.size === sortedAlerts.length}
+            onChange={toggleSelectAll}
+            className="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
+          />
+        ),
+        cell: (row) => (
+          <input
+            type="checkbox"
+            checked={selectedIds.has(row.id)}
+            onChange={() => toggleSelect(row.id)}
+            className="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
+          />
+        ),
+        width: "40px",
+        align: "center",
+      },
+      {
+        key: "title",
+        header: t("list.title"),
+        cell: (row) => (
+          <div className="min-w-0">
+            <button
+              onClick={() => router.push(`/alerts/${row.id}`)}
+              className="text-sm font-medium text-gray-900 dark:text-white hover:text-accent-600 dark:hover:text-accent-400 truncate block max-w-[320px] text-left transition-colors"
+            >
+              {row.title}
+            </button>
+            {row.description && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[320px] mt-0.5">
+                {row.description}
+              </p>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: "severity",
+        header: (
+          <button
+            type="button"
+            onClick={() => {
+              if (sortField === "severity") setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+              else {
+                setSortField("severity");
+                setSortDir("desc");
+              }
+            }}
+            className="flex items-center gap-1 text-body font-semibold text-text-tertiary select-none"
+          >
+            {tCommon("severity")}
+            {sortField === "severity" &&
+              (sortDir === "asc" ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              ))}
+          </button>
+        ),
+        cell: (row) => <SeverityTag severity={row.severity} />,
+        width: "100px",
+      },
+      {
+        key: "status",
+        header: (
+          <button
+            type="button"
+            onClick={() => {
+              if (sortField === "status") setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+              else {
+                setSortField("status");
+                setSortDir("asc");
+              }
+            }}
+            className="flex items-center gap-1 text-body font-semibold text-text-tertiary select-none"
+          >
+            {t("list.status")}
+            {sortField === "status" &&
+              (sortDir === "asc" ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              ))}
+          </button>
+        ),
+        cell: (row) => <StatusTag status={row.status} />,
+        width: "120px",
+      },
+      {
+        key: "source",
+        header: t("list.source"),
+        cell: (row) => (
+          <span className="text-sm text-gray-600 dark:text-gray-400">{row.source || "-"}</span>
+        ),
+        width: "100px",
+      },
+      {
+        key: "time",
+        header: (
+          <button
+            type="button"
+            onClick={() => {
+              if (sortField === "created_at") setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+              else {
+                setSortField("created_at");
+                setSortDir("desc");
+              }
+            }}
+            className="flex items-center gap-1 text-body font-semibold text-text-tertiary select-none"
+          >
+            {t("list.time")}
+            {sortField === "created_at" &&
+              (sortDir === "asc" ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              ))}
+          </button>
+        ),
+        cell: (row) => (
+          <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            {formatTime(row.event_timestamp || row.created_at, format)}
+          </span>
+        ),
+        width: "100px",
+      },
+      {
+        key: "actions",
+        header: "",
+        cell: (row) => (
+          <div className="flex items-center gap-1 justify-end">
+            <button
+              onClick={() => router.push(`/alerts/${row.id}`)}
+              className="p-1.5 text-text-muted hover:text-accent-600 dark:hover:text-accent-400 rounded-md hover:bg-surface-ground active:bg-surface-ground transition-colors"
+              title={tCommon("view")}
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handleDelete(row.id)}
+              className="p-1.5 text-text-muted hover:text-danger-600 dark:hover:text-danger-400 rounded-md hover:bg-danger-500/10 active:bg-danger-500/10 transition-colors"
+              title={tCommon("delete")}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ),
+        width: "80px",
+        align: "right",
+      },
+    ],
+    [
+      t,
+      tCommon,
+      locale,
+      router,
+      selectedIds,
+      sortedAlerts,
+      toggleSelectAll,
+      toggleSelect,
+      sortField,
+      sortDir,
+    ]
+  );
+
+  if (!mounted) return null;
+
+  // ── Mobile Card Render ────────────────────────────────
+
+  const renderMobileCard = (alert: SecurityAlertItem) => (
+    <div
+      key={alert.id}
+      className={cn(
+        "bg-surface-card rounded-xl border p-4 transition-all duration-150 shadow-subtle",
+        selectedIds.has(alert.id)
+          ? "border-accent-500 ring-1 ring-accent-500"
+          : "border-border-subtle hover:border-border-default"
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          checked={selectedIds.has(alert.id)}
+          onChange={() => toggleSelect(alert.id)}
+          className="mt-1 rounded border-border-default text-accent-600 focus:ring-accent-500"
+        />
+        <div className="flex-1 min-w-0">
+          <button
+            onClick={() => router.push(`/alerts/${alert.id}`)}
+            className="text-sm font-semibold text-text-primary hover:text-accent-600 dark:hover:text-accent-400 text-left line-clamp-2 transition-colors"
+          >
+            {alert.title}
+          </button>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <SeverityTag severity={alert.severity} />
+            <StatusTag status={alert.status} />
+            <span className="text-xs text-text-muted">{alert.source}</span>
+          </div>
+          <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
+            <Clock className="w-3.5 h-3.5" />
+            {formatTime(alert.event_timestamp || alert.created_at, format)}
+            {alert.source_ip && (
+              <>
+                <span className="text-border-default">·</span>
+                <Server className="w-3.5 h-3.5" />
+                <code className="text-xs">{alert.source_ip}</code>
+              </>
+            )}
           </div>
         </div>
+      </div>
+    </div>
+  );
 
-        {/* Alert Stream Component */}
-        <WazuhAlertStream maxAlerts={100} autoScroll={true} showFilters={true} />
+  // ── Skeleton State ───────────────────────────────────
+  const SkeletonRows = () => (
+    <div className="space-y-2 p-4">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+      ))}
+    </div>
+  );
 
-        {/* Info Box */}
-        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            {t("info")}
-          </h3>
-          <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <li>{t("realtimeFeature1")}</li>
-            <li>{t("realtimeFeature2")}</li>
-            <li>{t("realtimeFeature3")}</li>
-            <li>{t("realtimeFeature4")}</li>
-          </ul>
+  // ── Error State ─────────────────────────────────────
+  const errorState = error && (
+    <LoadingState isLoading={false} error={error} onRetry={() => refetch()} />
+  );
+
+  // ── Content ──────────────────────────────────────────
+  const content = (
+    <>
+      {/* Stats Bar */}
+      {statsData && <StatsBar total={total} stats={statsData} />}
+
+      {/* Toolbar: Search + Filters + Refresh */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("list.searchPlaceholder")}
+            className="w-full pl-9 pr-8 py-2 text-sm bg-surface-input border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 text-text-primary placeholder:text-text-disabled transition-all"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
-        {/* Link to Grafana */}
-        <div className="mt-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            {t("grafanaDashboard")}
-          </h3>
-          <a
-            href="http://localhost:3001/d/soc-copilot-full/9a7be4f"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+        {/* Desktop Filters */}
+        <div className="hidden sm:flex items-center gap-2">
+          <FilterDropdown
+            label={t("list.status")}
+            options={[
+              { value: "new", label: t("statusNew") },
+              { value: "investigating", label: t("statusInvestigating") },
+              { value: "resolved", label: t("statusResolved") },
+              { value: "false_positive", label: t("statusFalsePositive") },
+              { value: "escalated", label: t("statusEscalated") },
+            ]}
+            selected={statusFilter}
+            onChange={(v) => {
+              setStatusFilter(v);
+              setPage(1);
+            }}
+          />
+          <FilterDropdown
+            label={tCommon("severity")}
+            options={[
+              { value: "critical", label: t("severityCritical") },
+              { value: "high", label: t("severityHigh") },
+              { value: "medium", label: t("severityMedium") },
+              { value: "low", label: t("severityLow") },
+              { value: "info", label: t("severityInfo") },
+            ]}
+            selected={severityFilter}
+            onChange={(v) => {
+              setSeverityFilter(v);
+              setPage(1);
+            }}
+          />
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowImportModal(true)}
+            variant="primary"
+            size="sm"
+            leftIcon={<Upload className="w-4 h-4" />}
+            title={t("importAlerts")}
           >
-            {t("openDashboard")}
-          </a>
+            <span className="hidden sm:inline">{tCommon("import")}</span>
+          </Button>
+
+          <Button
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            title={tCommon("refresh")}
+            aria-label={tCommon("refresh")}
+          >
+            <RefreshCw className="w-4 h-4 text-text-muted" />
+          </Button>
         </div>
+
+        {/* Mobile Filter Toggle */}
+        <button
+          onClick={() => setShowMobileFilters(!showMobileFilters)}
+          className="sm:hidden flex items-center gap-2 px-3 py-2 text-xs font-medium border border-border-subtle rounded-lg bg-surface-card text-text-secondary"
+        >
+          <Filter className="w-3.5 h-3.5" />
+          Filters
+          {(statusFilter.length > 0 || severityFilter.length > 0) && (
+            <span className="px-1.5 py-0.2 text-[11px] bg-accent-500/20 text-accent-600 rounded-full font-semibold">
+              {statusFilter.length + severityFilter.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Filters Panel */}
+      {showMobileFilters && (
+        <div className="sm:hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 space-y-3">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Status</h3>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: "new", label: t("statusNew") },
+              { value: "investigating", label: t("statusInvestigating") },
+              { value: "resolved", label: t("statusResolved") },
+              { value: "false_positive", label: t("statusFalsePositive") },
+              { value: "escalated", label: t("statusEscalated") },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setStatusFilter((prev) =>
+                    prev.includes(opt.value)
+                      ? prev.filter((v) => v !== opt.value)
+                      : [...prev, opt.value]
+                  );
+                  setPage(1);
+                }}
+                className={cn(
+                  "px-2.5 py-1 text-xs rounded-full border transition-colors",
+                  statusFilter.includes(opt.value)
+                    ? "border-accent-500 bg-accent-50 text-accent-700 dark:border-accent-400 dark:bg-accent-900/30 dark:text-accent-300"
+                    : "border-gray-200 text-gray-500 dark:border-gray-600 dark:text-gray-400"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Severity</h3>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: "critical", label: t("severityCritical") },
+              { value: "high", label: t("severityHigh") },
+              { value: "medium", label: t("severityMedium") },
+              { value: "low", label: t("severityLow") },
+              { value: "info", label: t("severityInfo") },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setSeverityFilter((prev) =>
+                    prev.includes(opt.value)
+                      ? prev.filter((v) => v !== opt.value)
+                      : [...prev, opt.value]
+                  );
+                  setPage(1);
+                }}
+                className={cn(
+                  "px-2.5 py-1 text-xs rounded-full border transition-colors",
+                  severityFilter.includes(opt.value)
+                    ? "border-accent-500 bg-accent-50 text-accent-700 dark:border-accent-400 dark:bg-accent-900/30 dark:text-accent-300"
+                    : "border-gray-200 text-gray-500 dark:border-gray-600 dark:text-gray-400"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Batch Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="bg-surface-card border border-accent-500/30 rounded-xl p-3 mb-4 flex items-center gap-3 flex-wrap shadow-subtle">
+          <span className="text-xs font-semibold text-accent-600 dark:text-accent-400">
+            {selectedIds.size} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="xs"
+              variant="primary"
+              onClick={() => handleBatchStatus("resolved")}
+              className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white"
+              leftIcon={<CheckCircle className="w-3.5 h-3.5" />}
+            >
+              Resolve
+            </Button>
+            <Button
+              size="xs"
+              variant="secondary"
+              onClick={() => handleBatchStatus("false_positive")}
+            >
+              False Positive
+            </Button>
+            <Button size="xs" variant="outline" onClick={() => handleBatchStatus("investigating")}>
+              Investigate
+            </Button>
+          </div>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="ml-auto p-1 text-text-muted hover:text-text-primary rounded-md transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Desktop Table */}
+      <div className="hidden sm:block bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-subtle">
+        <DataTable
+          data={sortedAlerts}
+          columns={columns}
+          currentPage={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          onPageChange={setPage}
+          emptyState={{
+            title: t("list.emptyTitle"),
+            description: t("list.emptyDescription"),
+          }}
+          showPagination={total > PAGE_SIZE}
+        />
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="sm:hidden space-y-3">
+        {sortedAlerts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center bg-surface-card rounded-xl border border-border-subtle p-6">
+            <AlertTriangle className="w-10 h-10 text-text-muted mb-2.5 opacity-60" />
+            <p className="text-sm text-text-muted">{t("list.emptyTitle")}</p>
+          </div>
+        ) : (
+          sortedAlerts.map(renderMobileCard)
+        )}
+
+        {/* Mobile Pagination */}
+        {total > PAGE_SIZE && (
+          <div className="flex items-center justify-between gap-2 pt-4 px-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+            >
+              ← Prev
+            </Button>
+            <span className="text-xs font-medium text-text-muted tabular-nums">
+              {page} / {Math.ceil(total / PAGE_SIZE)}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(Math.ceil(total / PAGE_SIZE), p + 1))}
+              disabled={page >= Math.ceil(total / PAGE_SIZE)}
+            >
+              Next →
+            </Button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  // ── Render ──────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-surface-ground">
+      <PageHeader title={t("title")} subtitle={total > 0 ? `${total} alerts` : t("subtitle")} />
+
+      {/* Main Content */}
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Loading State */}
+        {isLoading && (
+          <LoadingState
+            isLoading={true}
+            type="skeleton"
+            skeletonType="table"
+            skeletonProps={{ rows: 8, columns: 6 }}
+          />
+        )}
+
+        {/* Error State */}
+        {errorState}
+
+        {/* Content */}
+        {!isLoading && !error && content}
       </main>
+
+      {/* Import Alert Modal */}
+      <ImportAlertModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportSuccess={() => {
+          refetch();
+        }}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        onCancel={() => setDeleteTargetId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Alert"
+        description="Are you sure you want to delete this alert permanently? This action cannot be undone."
+        variant="danger"
+        confirmText="Delete"
+      />
     </div>
   );
 }

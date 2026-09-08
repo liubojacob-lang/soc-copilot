@@ -258,7 +258,7 @@ class VectorStoreFactory:
         if store_type == "auto":
             # Try ChromaDB first, fallback to memory
             try:
-                import chromadb
+                import chromadb  # noqa: F401 (availability probe)
 
                 store_type = "chromadb"
             except ImportError:

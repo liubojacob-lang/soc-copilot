@@ -10,7 +10,7 @@ v0.8.5: Audit log archiving and cleanup service.
 import asyncio
 import gzip
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from sqlalchemy import delete, func, select
@@ -70,9 +70,9 @@ class AuditArchiveService:
         Returns:
             Dict with archive statistics
         """
-        days = days or self.retention_days
-        cutoff_date = datetime.now() - timedelta(days=days)
-        cutoff_str = cutoff_date.isoformat()
+        days = days if days is not None else self.retention_days
+        cutoff = datetime.now(UTC) - timedelta(days=days)
+        cutoff_str = cutoff.isoformat()
 
         stats = {
             "archived_count": 0,
@@ -92,7 +92,7 @@ class AuditArchiveService:
                         func.date(AuditLogModel.created_at).label("log_date"),
                         func.count(AuditLogModel.id).label("count"),
                     )
-                    .where(AuditLogModel.created_at < cutoff_str)
+                    .where(AuditLogModel.created_at < cutoff)
                     .group_by(func.date(AuditLogModel.created_at))
                     .order_by(func.date(AuditLogModel.created_at))
                 )
@@ -101,7 +101,7 @@ class AuditArchiveService:
 
                 for date_group in date_groups:
                     log_date = date_group[0]
-                    count = date_group[1]
+                    date_group[1]
 
                     try:
                         # Archive logs for this date
@@ -169,6 +169,11 @@ class AuditArchiveService:
                 break
 
             for log in logs:
+                created_at_val = (
+                    log.created_at.isoformat()
+                    if hasattr(log.created_at, "isoformat")
+                    else str(log.created_at)
+                )
                 all_logs.append(
                     {
                         "id": log.id,
@@ -183,7 +188,7 @@ class AuditArchiveService:
                         "user_agent": log.user_agent,
                         "duration_ms": log.duration_ms,
                         "extra_json": log.extra_json,
-                        "created_at": log.created_at,
+                        "created_at": created_at_val,
                     }
                 )
 
@@ -207,6 +212,7 @@ class AuditArchiveService:
                 },
                 f,
                 indent=2,
+                default=str,
             )
 
         # Delete archived logs from database
@@ -228,7 +234,9 @@ class AuditArchiveService:
         Returns:
             Dict with cleanup statistics
         """
-        retention_days = retention_days or self.archive_retention_days
+        retention_days = (
+            retention_days if retention_days is not None else self.archive_retention_days
+        )
         cutoff_date = datetime.now() - timedelta(days=retention_days)
 
         stats = {
@@ -290,11 +298,16 @@ class AuditArchiveService:
         Returns:
             Path to exported file
         """
+        if format not in ("json", "csv"):
+            raise ValueError(f"Unsupported audit export format: {format}")
+
         export_dir = self.archive_dir / "exports"
         export_dir.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        export_file = export_dir / f"audit_export_{timestamp}.{format}"
+        export_file = (export_dir / f"audit_export_{timestamp}.{format}").resolve()
+        if not export_file.is_relative_to(self.archive_dir.resolve()):
+            raise ValueError("Audit export path escaped archive directory")
 
         all_logs = []
 
@@ -302,13 +315,18 @@ class AuditArchiveService:
         async with self.session_factory() as session:
             result = await session.execute(
                 select(AuditLogModel)
-                .where(AuditLogModel.created_at >= start_date.isoformat())
-                .where(AuditLogModel.created_at <= end_date.isoformat())
+                .where(AuditLogModel.created_at >= start_date)
+                .where(AuditLogModel.created_at <= end_date)
                 .order_by(AuditLogModel.created_at)
             )
             logs = result.scalars().all()
 
             for log in logs:
+                created_at_val = (
+                    log.created_at.isoformat()
+                    if hasattr(log.created_at, "isoformat")
+                    else str(log.created_at)
+                )
                 all_logs.append(
                     {
                         "id": log.id,
@@ -323,7 +341,7 @@ class AuditArchiveService:
                         "user_agent": log.user_agent,
                         "duration_ms": log.duration_ms,
                         "extra_json": log.extra_json,
-                        "created_at": log.created_at,
+                        "created_at": created_at_val,
                         "source": "database",
                     }
                 )
@@ -348,11 +366,11 @@ class AuditArchiveService:
                     logger.warning(f"Failed to read archive {archive_file}: {e}")
 
         # Sort by created_at
-        all_logs.sort(key=lambda x: x.get("created_at", ""))
+        all_logs.sort(key=lambda x: str(x.get("created_at", "")))
 
         # Write export file
         if format == "json":
-            with open(export_file, "w", encoding="utf-8") as f:
+            with export_file.open("w", encoding="utf-8") as f:
                 json.dump(
                     {
                         "export_date": datetime.now().isoformat(),
@@ -365,11 +383,12 @@ class AuditArchiveService:
                     },
                     f,
                     indent=2,
+                    default=str,
                 )
         elif format == "csv":
             import csv
 
-            with open(export_file, "w", newline="", encoding="utf-8") as f:
+            with export_file.open("w", newline="", encoding="utf-8") as f:
                 if all_logs:
                     writer = csv.DictWriter(f, fieldnames=all_logs[0].keys())
                     writer.writeheader()

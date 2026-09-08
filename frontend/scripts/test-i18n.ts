@@ -4,7 +4,7 @@
  */
 
 import * as en from "../messages/en.json";
-import * as zh from "../messages/zh.json";
+import * as zh from "../messages/zh-CN.json";
 
 // 检查两个文件的键是否一致
 function checkKeys(obj1: any, obj2: any, path = ""): string[] {
@@ -33,7 +33,7 @@ function checkKeys(obj1: any, obj2: any, path = ""): string[] {
   return errors;
 }
 
-// 检查英文残留（zh.json中的英文值）
+// 检查英文残留（zh-CN.json中的英文值）
 function checkEnglishResiduals(obj: any, path = ""): string[] {
   const errors: string[] = [];
 
@@ -83,7 +83,7 @@ if (keyErrors.length > 0) {
   console.log("❌ Key mismatches found:");
   keyErrors.forEach((e) => console.log(`  - ${e}`));
 } else {
-  console.log("✅ All keys match between en.json and zh.json");
+  console.log("✅ All keys match between en.json and zh-CN.json");
 }
 
 console.log("\n");
@@ -91,13 +91,13 @@ console.log("\n");
 // 检查英文残留
 const residualErrors = checkEnglishResiduals(zh);
 if (residualErrors.length > 0) {
-  console.log("⚠️  English residuals found in zh.json:");
+  console.log("⚠️  English residuals found in zh-CN.json:");
   residualErrors.slice(0, 20).forEach((e) => console.log(`  - ${e}`));
   if (residualErrors.length > 20) {
     console.log(`  ... and ${residualErrors.length - 20} more`);
   }
 } else {
-  console.log("✅ No English residuals found in zh.json");
+  console.log("✅ No English residuals found in zh-CN.json");
 }
 
 console.log("\n📊 Summary:");

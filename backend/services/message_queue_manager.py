@@ -158,7 +158,7 @@ class MessageQueueManager:
 
     def _run_async(self, coro):
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             # For async contexts, callers should use async methods when available.
             # Keep compat by creating a task and waiting in a threadsafe way is not possible here,
             # so we fail loud and instruct migration.

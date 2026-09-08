@@ -82,7 +82,7 @@ class RedisCache:
                 return False
 
             # Serialize to JSON
-            if not isinstance(value, (str, bytes)):
+            if not isinstance(value, str | bytes):
                 value = json.dumps(value)
 
             await client.setex(key, ttl, value)

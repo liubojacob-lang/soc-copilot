@@ -138,3 +138,35 @@ class PlaybookHistoryResponse(BaseModel):
 
     items: list[PlaybookOutputResponse]
     total: int
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DAG Definition Schemas (S0-10: Pydantic replacement for bare dict)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class PlaybookDefinitionCreate(BaseModel):
+    """Schema for creating a DAG-based playbook definition."""
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    name: str = Field(..., description="Playbook definition name")
+    description: str | None = Field(None, description="Playbook description")
+    version: str = Field("1.0.0", description="Definition version")
+    definition_json: dict[str, Any] = Field(
+        default_factory=dict, description="DAG definition (nodes, edges)"
+    )
+
+
+class DAGExecutionRequest(BaseModel):
+    """Schema for executing a DAG-based playbook definition."""
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    input_json: dict[str, Any] = Field(
+        default_factory=dict, description="Input parameters for DAG execution"
+    )
+    mode: str = Field(
+        "dry_run",
+        description="Execution mode: dry_run (simulation) or apply (live)",
+    )

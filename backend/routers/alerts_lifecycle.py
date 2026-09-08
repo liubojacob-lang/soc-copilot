@@ -2,7 +2,7 @@
 告警生命周期管理 API 路由
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies import get_current_user
+from dependencies.auth import get_current_user, require_analyst_or_admin
 from models.user import UserModel
 from schemas.alert_lifecycle import (
     AlertAssignment,
@@ -57,7 +57,7 @@ async def update_alert_status(
     alert_id: str,
     status: AlertStatus,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """更新告警状态"""
     await ensure_security_alerts_schema(db)
@@ -75,7 +75,7 @@ async def assign_alert(
     alert_id: str,
     assignment: AlertAssignment,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """分配告警"""
     await ensure_security_alerts_schema(db)
@@ -93,7 +93,7 @@ async def resolve_alert(
     alert_id: str,
     resolution: AlertResolution,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """解决告警"""
     await ensure_security_alerts_schema(db)
@@ -111,7 +111,7 @@ async def escalate_alert(
     alert_id: str,
     escalation: AlertEscalationCreate,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """升级告警"""
     await ensure_security_alerts_schema(db)
@@ -129,7 +129,7 @@ async def add_alert_note(
     alert_id: str,
     note: AlertNoteCreate,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """添加告警备注"""
     await ensure_security_alerts_schema(db)
@@ -140,7 +140,9 @@ async def add_alert_note(
     if not lifecycle:
         raise HTTPException(status_code=404, detail="Alert not found")
 
-    return await service.add_note(alert_id, note, current_user.id, current_user.username)
+    return await service.add_note(
+        alert_id, note, current_user.id, current_user.username
+    )
 
 
 @router.get("/statistics/summary", response_model=AlertStatistics)
@@ -198,7 +200,7 @@ async def get_threat_intel_statistics(
 async def batch_update_alerts(
     batch: AlertBatchUpdate,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """批量更新告警"""
     await ensure_security_alerts_schema(db)
@@ -210,7 +212,9 @@ async def batch_update_alerts(
 
     for alert_id in batch.alert_ids:
         try:
-            result = await db.execute(select(SecurityAlert).where(SecurityAlert.id == alert_id))
+            result = await db.execute(
+                select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            )
             alert = result.scalar_one_or_none()
 
             if not alert:
@@ -223,14 +227,16 @@ async def batch_update_alerts(
 
             if batch.assigned_to:
                 alert.assigned_to = batch.assigned_to
-                alert.assigned_at = datetime.utcnow()
+                alert.assigned_at = datetime.now(UTC)
 
             if batch.tags:
                 current_tags = alert.tags or []
                 if batch.tags_operation == "add":
                     # Order-preserving dedup: existing tags first, then new unique tags
                     existing_set = set(current_tags)
-                    alert.tags = current_tags + [t for t in batch.tags if t not in existing_set]
+                    alert.tags = current_tags + [
+                        t for t in batch.tags if t not in existing_set
+                    ]
                 elif batch.tags_operation == "remove":
                     remove_set = set(batch.tags)
                     alert.tags = [tag for tag in current_tags if tag not in remove_set]
@@ -238,7 +244,7 @@ async def batch_update_alerts(
                     # Default: replace
                     alert.tags = batch.tags
 
-            alert.updated_at = datetime.utcnow()
+            alert.updated_at = datetime.now(UTC)
             updated_count += 1
 
         except Exception as e:

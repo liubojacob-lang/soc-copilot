@@ -4,7 +4,8 @@ Automatically enrich security alerts with threat intelligence data
 """
 
 import asyncio
-from datetime import datetime
+import os
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -23,8 +24,8 @@ class ThreatIntelEnricher:
     def __init__(self):
         self.client = None
         self.sources = {
-            "virustotal": False,  # Requires API key
-            "abuseipdb": False,  # Requires API key
+            "virustotal": bool(os.getenv("VIRUSTOTAL_API_KEY")),
+            "abuseipdb": bool(os.getenv("ABUSEIPDB_API_KEY")),
             "otx": True,  # OTX is free
         }
 
@@ -43,7 +44,7 @@ class ThreatIntelEnricher:
         Returns enrichment data to be stored in alert
         """
         enrichment = {
-            "enriched_at": datetime.utcnow().isoformat(),
+            "enriched_at": datetime.now(UTC).isoformat(),
             "indicators": {},
             "threat_scores": {},
             "tags": [],
@@ -86,14 +87,15 @@ class ThreatIntelEnricher:
                 )
                 result["tags"].extend(abuse_data.get("reports", []))
 
-        # Check OTX AlienVault (always available)
-        otx_data = await self._check_otx_ip(ip)
-        if otx_data:
-            result["reputation"] = (
-                "malicious" if otx_data.get("reputation", 0) > 0 else "clean"
-            )
-            result["scores"]["otx"] = otx_data.get("reputation", 0)
-            result["tags"].extend(otx_data.get("pulse_info", {}).get("pulses", []))
+        # Check OTX AlienVault (external network call, honours allow_external_ti)
+        if self.sources.get("otx"):
+            otx_data = await self._check_otx_ip(ip)
+            if otx_data:
+                result["reputation"] = (
+                    "malicious" if otx_data.get("reputation", 0) > 0 else "clean"
+                )
+                result["scores"]["otx"] = otx_data.get("reputation", 0)
+                result["tags"].extend(otx_data.get("pulse_info", {}).get("pulses", []))
 
         return result
 
@@ -115,8 +117,31 @@ class ThreatIntelEnricher:
         return None
 
     async def _check_abuseipdb(self, ip: str) -> dict | None:
-        """Check IP against AbuseIPDB (requires API key)"""
-        # TODO: Add when API key is available
+        """Check IP against AbuseIPDB (requires API key)."""
+        api_key = os.getenv("ABUSEIPDB_API_KEY")
+        if not api_key:
+            return None
+
+        try:
+            url = "https://api.abuseipdb.com/api/v2/check"
+            headers = {
+                "Key": api_key,
+                "Accept": "application/json",
+            }
+            params = {"ipAddress": ip, "maxAgeInDays": "90"}
+            response = await self.client.get(url, headers=headers, params=params)
+            if response.status_code == 200:
+                data = response.json().get("data", {})
+                return {
+                    "abuse_confidence_score": data.get("abuseConfidenceScore", 0),
+                    "is_whitelisted": data.get("isWhitelisted", False),
+                    "country_code": data.get("countryCode"),
+                    "usage_type": data.get("usageType"),
+                    "total_reports": data.get("totalReports", 0),
+                }
+        except Exception as e:
+            logger.warning(f"AbuseIPDB IP lookup failed for {ip}: {e}")
+
         return None
 
     async def _get_mitre_info(self, mitre_csv: str) -> dict[str, Any]:
@@ -227,7 +252,7 @@ class AlertEnrichmentService:
                 if alert.raw_data and alert.raw_data.get("enriched_at"):
                     # Check if enriched in last 24h
                     enriched_at = datetime.fromisoformat(alert.raw_data["enriched_at"])
-                    if (datetime.utcnow() - enriched_at).days < 1:
+                    if (datetime.now(UTC) - enriched_at).days < 1:
                         logger.debug(f"Alert {alert_id} already enriched recently")
                         return False
 
@@ -262,7 +287,7 @@ class AlertEnrichmentService:
             async with AsyncSessionLocal() as session:
                 from datetime import timedelta
 
-                cutoff = datetime.utcnow() - timedelta(hours=hours)
+                cutoff = datetime.now(UTC) - timedelta(hours=hours)
 
                 query = (
                     select(SecurityAlert)

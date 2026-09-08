@@ -2,7 +2,7 @@ import secrets
 import string
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     zhipu_model: str = "glm-4"  # Zhipu model to use
     openai_api_key: str = ""
     nvidia_api_key: str = ""
-    nvidia_model: str = "meta/llama-3.1-405b-instruct"  # NVIDIA model to use
+    nvidia_model: str = "meta/llama-3.2-11b-vision-instruct"  # NVIDIA model to use
     moonshot_api_key: str = ""
     moonshot_model: str = "moonshot-v1-8k"  # Moonshot AI model to use
     openrouter_api_key: str = ""
@@ -25,6 +25,14 @@ class Settings(BaseSettings):
 
     # v0.4: Threat Intelligence Settings
     otx_api_key: str = ""
+
+    # v1.0: VirusTotal + MISP Integration
+    virustotal_api_key: str = ""
+    virustotal_rate_limit_rpm: int = 4  # 4 req/min for free tier
+    misp_base_url: str = ""
+    misp_api_key: str = ""
+    misp_verify_ssl: bool = True
+    misp_timeout_sec: int = 30
     abuseipdb_api_key: str = ""  # AbuseIPDB API key for IP reputation checks
     allow_external_ti: bool = False  # Default: DISABLED for compliance
     ti_cache_ttl_hours: int = 168  # Default: 7 days
@@ -38,6 +46,26 @@ class Settings(BaseSettings):
         False  # Whether URLs with private IP hosts are allowed
     )
 
+    # v1.2: Alert pipeline (auto enrichment -> correlation -> AI triage)
+    alert_pipeline_enabled: bool = True
+    alert_pipeline_interval_seconds: int = 15
+    alert_pipeline_batch_size: int = 50
+    alert_pipeline_ai_min_severity: str = "high"  # AI triage cost control
+    alert_pipeline_correlation_window_minutes: int = 60
+    alert_pipeline_correlation_max_events: int = 500
+
+    # v1.2: Data retention (0 = keep forever for that table)
+    data_retention_enabled: bool = True
+    data_retention_interval_hours: int = 6
+    data_retention_batch_size: int = 5000
+    security_alert_retention_days: int = 90
+    siem_log_retention_days: int = 30
+    playbook_run_retention_days: int = 90
+    ioc_hit_retention_days: int = 180
+    history_retention_days: int = 180
+    correlated_event_retention_days: int = 180
+    threat_intel_cache_retention_days: int = 30  # expired rows purge window
+
     # Environment: production 时将校验敏感默认值
     environment: str = "development"  # development | production
     strict_production_checks: bool = (
@@ -49,9 +77,16 @@ class Settings(BaseSettings):
 
     # v0.6.2: Authentication & JWT Settings
     jwt_secret: str = ""  # MUST be set in production (min 32 characters)
-    jwt_expire_minutes: int = 720  # 12 hours
+    jwt_secret_previous: str = ""  # P1-17: Previous JWT secret for rotation过渡期
+    jwt_expire_minutes: int = 60  # 1 hour — short-lived access tokens; refresh tokens carry longevity
     jwt_refresh_expire_minutes: int = 10080  # 7 days
-    allow_public_readonly: bool = False  # Allow unauthenticated read-only access
+    # S0-20: Replaced allow_public_readonly bool with endpoint whitelist
+    # for defense-in-depth (default deny). Only endpoints explicitly listed
+    # are accessible without authentication.
+    public_readonly_endpoints: list[str] = []
+    expose_tokens_in_body: bool = (
+        False  # v1.0: Expose access/refresh tokens in login response body (security risk)
+    )
 
     # v0.6.2: Bootstrap Admin Settings
     bootstrap_admin_username: str = "admin"
@@ -76,6 +111,7 @@ class Settings(BaseSettings):
     api_timeout_dag_run_ms: int = 300000  # 5 minutes for DAG playbook execution
 
     # v0.8.1: Database connection pool settings
+    auto_run_migrations: bool = True  # Run Alembic migrations on startup; set to False in multi-replica deployments
     db_pool_size: int = 20  # Default connection pool size (increased from 10)
     db_max_overflow: int = 40  # Maximum overflow connections (increased from 20)
     db_pool_timeout: int = 30  # Pool timeout in seconds
@@ -85,6 +121,11 @@ class Settings(BaseSettings):
     # v0.8.2: Redis settings for distributed deployments
     redis_url: str = ""  # Redis connection URL (e.g., redis://localhost:6379/0)
     redis_enabled: bool = False  # Enable Redis for token blacklist and idempotency
+
+    # v1.1: Message queue backend selection
+    queue_backend: str = (
+        "redis"  # redis | kafka | memory (auto-degrades if Redis unreachable)
+    )
 
     # v0.8.3: DAG Concurrency Settings
     dag_concurrency_default: int = 5  # Default concurrent nodes per DAG execution
@@ -101,7 +142,7 @@ class Settings(BaseSettings):
         True  # Enable performance monitoring middleware
     )
 
-    # v1.0.0: Wazuh SIEM Integration Settings
+    # v0.8.6: Wazuh SIEM Integration Settings
     wazuh_enabled: bool = False  # Enable Wazuh integration
     wazuh_required: bool = False  # Fail startup if Wazuh initialization fails
     wazuh_api_url: str = (
@@ -119,12 +160,31 @@ class Settings(BaseSettings):
     wazuh_batch_size: int = 100  # Maximum events to fetch per poll
     wazuh_lookback_minutes: int = 5  # Minutes to look back on startup
 
+    # P1-24: Langfuse LLM Tracing Settings (optional)
+    langfuse_public_key: str = ""  # Langfuse public key (optional)
+    langfuse_secret_key: str = ""  # Langfuse secret key (optional)
+    langfuse_host: str = "https://cloud.langfuse.com"  # Langfuse API host
+
+    @property
+    def enforce_strict_checks(self) -> bool:
+        """Whether strict security checks are enforced.
+
+        Strict mode is active when either:
+        - explicitly enabled via STRICT_PRODUCTION_CHECKS=true, OR
+        - running in production environment (defense-in-depth: a prod
+          deployment with weak secrets must fail fast rather than warn)
+        """
+        return self.strict_production_checks or self.environment == "production"
+
     @field_validator("jwt_secret")
     @classmethod
     def validate_jwt_secret(cls, v: str, info) -> str:
         """Validate JWT secret key strength."""
         environment = info.data.get("environment", "development")
-        strict_mode = info.data.get("strict_production_checks", False)
+        strict_mode = (
+            info.data.get("strict_production_checks", False)
+            or environment == "production"
+        )
 
         # Production requires JWT secret
         if environment == "production":
@@ -142,6 +202,17 @@ class Settings(BaseSettings):
                     "⚠️  SECURITY WARNING: JWT secret is not configured or too weak. "
                     "Set JWT_SECRET environment variable with at least 32 random characters."
                 )
+
+            insecure_patterns = [
+                "changeme", "change-this", "password", "default", "example",
+                "your-jwt-secret", "your-secret-key", "replace-me"
+            ]
+            if any(p in v.lower() for p in insecure_patterns):
+                if strict_mode:
+                    raise ValueError(
+                        "Insecure default pattern detected in JWT_SECRET for production. "
+                        "Set a secure, randomly generated JWT_SECRET."
+                    )
         # Development: auto-generate if not set
         elif not v:
             import logging
@@ -159,7 +230,10 @@ class Settings(BaseSettings):
     def validate_admin_password(cls, v: str, info) -> str:
         """Validate bootstrap admin password strength."""
         environment = info.data.get("environment", "development")
-        strict_mode = info.data.get("strict_production_checks", False)
+        strict_mode = (
+            info.data.get("strict_production_checks", False)
+            or environment == "production"
+        )
 
         # Production requires admin password
         if environment == "production":
@@ -177,6 +251,16 @@ class Settings(BaseSettings):
                     "⚠️  SECURITY WARNING: Bootstrap admin password is not configured or too weak. "
                     "Set BOOTSTRAP_ADMIN_PASSWORD environment variable with at least 12 characters."
                 )
+
+            insecure_passwords = [
+                "admin", "password", "123456", "changeme", "default", "soc_copilot"
+            ]
+            if any(p in v.lower() for p in insecure_passwords):
+                if strict_mode:
+                    raise ValueError(
+                        "Insecure default password pattern detected in BOOTSTRAP_ADMIN_PASSWORD for production. "
+                        "Choose a strong random password."
+                    )
         # Development: auto-generate if not set
         elif not v:
             import logging
@@ -213,7 +297,10 @@ class Settings(BaseSettings):
         Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
         """
         environment = info.data.get("environment", "development")
-        strict_mode = info.data.get("strict_production_checks", False)
+        strict_mode = (
+            info.data.get("strict_production_checks", False)
+            or environment == "production"
+        )
 
         # Production requires a valid Fernet key
         if environment == "production":
@@ -278,6 +365,37 @@ class Settings(BaseSettings):
                 return ""
 
         return v
+
+    @field_validator("http_allowed_hosts")
+    @classmethod
+    def validate_http_allowed_hosts(cls, v: str, info) -> str:
+        """Validate HTTP_ALLOWED_HOSTS is configured in production."""
+        environment = info.data.get("environment", "development")
+        if environment == "production":
+            if not v or not v.strip():
+                raise ValueError(
+                    "HTTP_ALLOWED_HOSTS must be configured in production. "
+                    "Set a comma-separated list of allowed hostnames for HTTP sandbox security."
+                )
+        return v or ""
+
+    @model_validator(mode="after")
+    def validate_redis_in_production(self):
+        """P1-13: Enforce Redis configuration in production.
+
+        Production deployments must have Redis enabled for:
+        - Token blacklist (distributed logout)
+        - Rate limiting (consistent across instances)
+        - Idempotency key storage
+        """
+        if self.environment == "production":
+            if not self.redis_enabled or not self.redis_url:
+                raise ValueError(
+                    "REDIS_ENABLED and REDIS_URL must be configured in production. "
+                    "Set REDIS_ENABLED=true and REDIS_URL=redis://host:port/db. "
+                    "Redis is required for token blacklist and rate limiting."
+                )
+        return self
 
     # Pydantic V2 config using SettingsConfigDict
     model_config = SettingsConfigDict(

@@ -37,27 +37,34 @@ class ResourceAuthorizationMiddleware(BaseHTTPMiddleware):
     }
 
     # Paths that require resource authorization
+    # NOTE: routes are mounted under /api/v1 (non-/api/v1 /api/* paths are
+    # 308-redirected before this middleware sees them), so legacy /api/*
+    # prefixes never matched anything. Actual enforcement lives in the
+    # endpoint dependencies (require_admin / require_analyst_or_admin);
+    # this middleware only annotates request.state for future use.
     PROTECTED_PATHS = {
-        "/api/playbook-runs",
-        "/api/playbook-definitions",
-        "/api/triggers",
-        "/api/webhooks",
-        "/api/secrets",
-        "/api/assets",
-        "/api/history",
+        "/api/v1/playbook-runs",
+        "/api/v1/playbook-definitions",
+        "/api/v1/playbook/runs",
+        "/api/v1/playbook/definitions",
+        "/api/v1/triggers",
+        "/api/v1/webhooks",
+        "/api/v1/secrets",
+        "/api/v1/assets",
+        "/api/v1/history",
     }
 
     # Paths to exclude from authorization
     EXCLUDED_PATHS = {
-        "/api/auth",
-        "/api/health",
+        "/api/v1/auth",
+        "/api/v1/health",
         "/health",
         "/metrics",
         "/docs",
         "/openapi.json",
         "/redoc",
-        "/api/admin",  # Admin endpoints have their own authorization
-        "/api/audit-logs",  # Audit logs are read-only for auditors
+        "/api/v1/admin",  # Admin endpoints have their own authorization
+        "/api/v1/audit-logs",  # Audit logs are read-only for auditors
     }
 
     def __init__(self, app: ASGIApp):
@@ -174,10 +181,7 @@ def check_resource_ownership(
         return True
 
     # Owner check
-    if resource_owner_id == current_user_id:
-        return True
-
-    return False
+    return resource_owner_id == current_user_id
 
 
 def require_resource_ownership(

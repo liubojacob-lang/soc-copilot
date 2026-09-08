@@ -1,18 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { api, api_ai_models, type AIModel, type TestModelResponse } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import { useChatHistory, type ChatConversation } from "@/hooks/useChatHistory";
-import { ChatHistorySidebar } from "@/components/ChatHistorySidebar";
-import { ChatHeader, ChatInput, ChatMessages, QuickActions } from "./components";
+import { ChatHeader, ChatInput, ChatMessages, HeroPrompts, ChatHistoryPanel } from "./components";
 import { useAIChat } from "./hooks/useAIChat";
-import { getErrorMessage, cleanModelName, convertToHistoryMessage } from "./utils";
-import type { QuickAction } from "./types";
-import { AlertTriangle, Lightbulb, FileText, Brain, Zap } from "lucide-react";
+import { getErrorMessage, convertToHistoryMessage } from "./utils";
+import { X } from "lucide-react";
 
 export default function AIAssistantPage() {
   const router = useRouter();
@@ -20,20 +18,6 @@ export default function AIAssistantPage() {
   const t = useTranslations("aiAssistant");
   const tCommon = useTranslations("common");
   const [mounted, setMounted] = useState(false);
-
-  // Welcome message
-  const getWelcomeMessage = () => {
-    return `${t("welcome.greeting")}
-
-${t("welcome.capabilities")}
-
-${t("welcome.features.alertAnalysis")}
-${t("welcome.features.playbookRecommend")}
-${t("welcome.features.naturalLanguage")}
-${t("welcome.features.reportGeneration")}
-
-${t("welcome.prompt")}`;
-  };
 
   // Model state
   const [models, setModels] = useState<AIModel[]>([]);
@@ -46,7 +30,7 @@ ${t("welcome.prompt")}`;
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   // UI state
-  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(true);
   const skipAutoSaveRef = useRef(false);
   const [inputValue, setInputValue] = useState("");
 
@@ -73,7 +57,6 @@ ${t("welcome.prompt")}`;
     isStreaming,
     streamingMessage,
     sendMessage,
-    setMessages,
     loadConversation: loadChatConversation,
     clearChat,
   } = useAIChat({
@@ -86,35 +69,56 @@ ${t("welcome.prompt")}`;
     setMounted(true);
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     void loadAIStatus();
     void loadModels();
-
-    // Set initial welcome message
-    setMessages([
-      {
-        role: "assistant",
-        content: getWelcomeMessage(),
-        timestamp: new Date(),
-      },
-    ]);
   }, [router, locale]);
 
   // Auto-save conversation when messages change
   useEffect(() => {
-    if (!historyLoaded || messages.length <= 1) return;
+    if (!historyLoaded || messages.length === 0) return;
     if (skipAutoSaveRef.current) {
       skipAutoSaveRef.current = false;
       return;
     }
+    // Don't auto-save during typewriter streaming
+    if (isStreaming || messages.some((m) => m.isStreaming)) return;
+
     const hasUserMessages = messages.some((m) => m.role === "user");
     if (hasUserMessages) {
-      const historyMessages = messages.map(convertToHistoryMessage) as any[];
-      saveConversation(historyMessages, selectedModel?.id, selectedModel?.display_name);
+      const validMessages = messages.filter(
+        (m) => m && m.role && typeof m.content === "string" && m.content.trim() && !m.isStreaming
+      );
+      if (validMessages.length > 0) {
+        const historyMessages = validMessages.map(convertToHistoryMessage) as any[];
+        saveConversation(historyMessages, selectedModel?.id, selectedModel?.display_name);
+      }
     }
-  }, [messages, historyLoaded, selectedModel, saveConversation]);
+  }, [messages, historyLoaded, isStreaming, selectedModel, saveConversation]);
+
+  // Restore sidebar open preference on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("chatHistorySidebarOpen");
+      if (saved !== null) {
+        setShowHistoryPanel(saved === "true");
+      } else if (window.innerWidth < 1024) {
+        setShowHistoryPanel(false);
+      }
+    } catch {}
+  }, []);
+
+  const handleToggleHistory = useCallback(() => {
+    setShowHistoryPanel((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("chatHistorySidebarOpen", String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -125,16 +129,16 @@ ${t("welcome.prompt")}`;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "/") {
         e.preventDefault();
-        setShowHistoryPanel((prev) => !prev);
+        handleToggleHistory();
       }
-      if (e.key === "Escape" && showHistoryPanel) {
+      if (e.key === "Escape" && showHistoryPanel && window.innerWidth < 768) {
         setShowHistoryPanel(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showHistoryPanel]);
+  }, [showHistoryPanel, handleToggleHistory]);
 
   // Load conversation handler
   const handleLoadConversation = useCallback(
@@ -147,15 +151,18 @@ ${t("welcome.prompt")}`;
         const model = models.find((m) => m.id === conv.modelId);
         if (model) setSelectedModel(model);
       }
-      setShowHistoryPanel(false);
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setShowHistoryPanel(false);
+      }
     },
     [models, loadConversation, loadChatConversation]
   );
 
   // New chat handler
   const handleNewChat = useCallback(() => {
-    clearChat(getWelcomeMessage());
+    clearChat();
     createNewConversation();
+    setInputValue("");
   }, [clearChat, createNewConversation]);
 
   const loadAIStatus = async () => {
@@ -230,10 +237,15 @@ ${t("welcome.prompt")}`;
     e?.preventDefault();
     const input = inputValue.trim();
 
-    if (!input) return;
+    if (!input || loading || thinking || isStreaming) return;
 
     setInputValue("");
     await sendMessage(input, messages);
+  };
+
+  const handleSelectPrompt = async (prompt: string) => {
+    setInputValue("");
+    await sendMessage(prompt, messages);
   };
 
   const copyToClipboard = async (text: string, index: number) => {
@@ -263,176 +275,109 @@ ${t("welcome.prompt")}`;
     [t]
   );
 
-  const quickActions: QuickAction[] = [
-    {
-      icon: AlertTriangle,
-      label: t("quickActions.analyzeAlert.label"),
-      query: t("quickActions.analyzeAlert.query"),
-      color: "red",
-    },
-    {
-      icon: Lightbulb,
-      label: t("quickActions.recommendPlaybook.label"),
-      query: t("quickActions.recommendPlaybook.query"),
-      color: "amber",
-    },
-    {
-      icon: FileText,
-      label: t("quickActions.generateReport.label"),
-      query: t("quickActions.generateReport.query"),
-      color: "blue",
-    },
-    {
-      icon: Brain,
-      label: t("quickActions.threatHunt.label"),
-      query: t("quickActions.threatHunt.query"),
-      color: "purple",
-    },
-  ];
-
   if (!mounted) return null;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
+  const hasMessages = messages.length > 0;
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+  return (
+    <div className="h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] bg-surface-ground flex flex-col overflow-hidden">
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        className="w-full flex-shrink-0 pt-3 sm:pt-4 pb-1"
+      />
+
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-3 sm:pb-4 flex-1 min-h-0 w-full flex flex-col overflow-hidden">
+        {/* Floating Error Toast */}
         {errorMessage && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-300">
-            {errorMessage}
+          <div className="mb-3 flex-shrink-0 rounded-xl border border-rose-200 bg-rose-50/95 dark:border-rose-900/60 dark:bg-rose-950/90 backdrop-blur px-4 py-2 text-xs text-rose-700 dark:text-rose-300 shadow-sm flex items-center justify-between">
+            <span>{errorMessage}</span>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="p-1 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-          <div className="flex flex-col lg:flex-row h-[calc(100vh-180px)] min-h-[600px]">
-            {/* Chat Area */}
-            <div className="flex-1 flex flex-col">
-              <ChatHeader
-                t={t}
-                tCommon={tCommon}
-                selectedModel={selectedModel}
-                models={models}
-                defaultModel={defaultModel}
-                testResult={testResult}
-                testingModel={testingModel}
-                showModelPanel={showModelPanel}
-                setShowModelPanel={setShowModelPanel}
-                onModelSelect={handleModelSelect}
-                onTestModel={testModelConnectivity}
-                onSetDefault={setModelAsDefault}
-                onRefreshModels={loadModels}
-                onClearChat={handleNewChat}
-                onToggleHistory={() => setShowHistoryPanel(!showHistoryPanel)}
-                loading={loading}
-                thinking={thinking}
-                isStreaming={isStreaming}
-              />
+        {/* AI Workspace Card (Embedded 2-Column Flex Container) */}
+        <div className="bg-white dark:bg-gray-850/90 border border-gray-200/80 dark:border-gray-700/80 rounded-2xl shadow-sm flex flex-1 min-h-0 h-full max-h-full overflow-hidden relative">
+          {/* Embedded Left History Sidebar */}
+          <ChatHistoryPanel
+            isOpen={showHistoryPanel}
+            onToggle={handleToggleHistory}
+            conversations={filteredConversations}
+            currentId={currentId}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSelect={handleLoadConversation}
+            onDelete={deleteConversation}
+            onRename={renameConversation}
+            onNewChat={handleNewChat}
+            formatTimeAgo={formatTimeAgo}
+          />
 
-              <ChatMessages
-                messages={messages}
-                streamingMessage={streamingMessage}
-                thinking={thinking}
-                copiedIndex={copiedIndex}
-                onCopy={copyToClipboard}
-                t={t}
-              />
+          {/* Right Main Chat Column */}
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 h-full overflow-hidden relative">
+            {/* Card Top Chat Header */}
+            <ChatHeader
+              t={t}
+              tCommon={tCommon}
+              onClearChat={handleNewChat}
+              onToggleHistory={handleToggleHistory}
+              showHistory={showHistoryPanel}
+              loading={loading}
+              thinking={thinking}
+              isStreaming={isStreaming}
+            />
 
-              <QuickActions
-                actions={quickActions}
-                onActionClick={(query) => {
-                  setInputValue(query);
-                }}
-                loading={loading}
-                thinking={thinking}
-                isStreaming={isStreaming}
-                t={t}
-              />
-
-              <ChatInput
-                input={inputValue}
-                setInput={setInputValue}
-                onSend={handleSubmit}
-                loading={loading}
-                thinking={thinking}
-                isStreaming={isStreaming}
-                t={t}
-                tCommon={tCommon}
-              />
+            {/* Dynamic Content: Empty State Hero vs Active Chat Thread */}
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
+              {!hasMessages ? (
+                <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-center py-6">
+                  <HeroPrompts
+                    onSelectPrompt={handleSelectPrompt}
+                    disabled={loading || thinking || isStreaming}
+                  />
+                </div>
+              ) : (
+                <ChatMessages
+                  messages={messages}
+                  streamingMessage={streamingMessage}
+                  thinking={thinking}
+                  copiedIndex={copiedIndex}
+                  onCopy={copyToClipboard}
+                  t={t}
+                />
+              )}
             </div>
 
-            {/* Sidebar */}
-            <div className="hidden lg:block w-72 border-l border-gray-200/50 dark:border-gray-700/50 bg-gray-50/30 dark:bg-gray-800/30">
-              <div className="p-4 space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-500" />
-                    {t("sidebar.capabilities")}
-                  </h3>
-                  <div className="space-y-2">
-                    {[
-                      { name: t("quickActions.analyzeAlert.label"), colorClass: "bg-red-500" },
-                      {
-                        name: t("quickActions.recommendPlaybook.label"),
-                        colorClass: "bg-blue-500",
-                      },
-                      { name: t("quickActions.generateReport.label"), colorClass: "bg-purple-500" },
-                      { name: t("quickActions.threatHunt.label"), colorClass: "bg-green-500" },
-                    ].map((item, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
-                      >
-                        <div className={`w-2 h-2 rounded-full ${item.colorClass}`}></div>
-                        <span>{item.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4">
-                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
-                    💡 {t("sidebar.usageTips")}
-                  </h4>
-                  <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1.5">
-                    <li>• {t("sidebar.tips.naturalLanguage")}</li>
-                    <li>• {t("sidebar.tips.alertAnalysis")}</li>
-                    <li>• {t("sidebar.tips.securityReports")}</li>
-                    <li>• {t("sidebar.tips.recommendations")}</li>
-                  </ul>
-                </div>
-
-                {selectedModel && (
-                  <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                      {t("sidebar.currentModel")}
-                    </div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {cleanModelName(selectedModel.display_name, selectedModel.provider)}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {t(`providers.${selectedModel.provider}`) || selectedModel.provider}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Mainstream Floating Glassmorphic Input with integrated Model Selector */}
+            <ChatInput
+              input={inputValue}
+              setInput={setInputValue}
+              onSend={handleSubmit}
+              loading={loading}
+              thinking={thinking}
+              isStreaming={isStreaming}
+              t={t}
+              tCommon={tCommon}
+              selectedModel={selectedModel}
+              models={models}
+              defaultModel={defaultModel}
+              testResult={testResult}
+              testingModel={testingModel}
+              showModelPanel={showModelPanel}
+              setShowModelPanel={setShowModelPanel}
+              onModelSelect={handleModelSelect}
+              onTestModel={testModelConnectivity}
+              onSetDefault={setModelAsDefault}
+              onRefreshModels={loadModels}
+            />
           </div>
         </div>
       </main>
-
-      <ChatHistorySidebar
-        isOpen={showHistoryPanel}
-        onClose={() => setShowHistoryPanel(false)}
-        conversations={filteredConversations}
-        currentId={currentId}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onSelect={handleLoadConversation}
-        onDelete={deleteConversation}
-        onRename={renameConversation}
-        onNewChat={handleNewChat}
-        formatTimeAgo={formatTimeAgo}
-      />
     </div>
   );
 }

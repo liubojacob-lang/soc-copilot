@@ -9,7 +9,7 @@ from services.trigger_service import TriggerService
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
+router = APIRouter(prefix="/api/v1/webhooks", tags=["webhooks"])
 
 
 @router.post("/{trigger_id}")

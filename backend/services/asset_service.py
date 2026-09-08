@@ -18,6 +18,10 @@ from schemas.asset import (
 logger = get_logger(__name__)
 
 
+class DuplicateAssetError(ValueError):
+    """Raised when an asset's hostname or IP already exists (HTTP 409)."""
+
+
 class AssetService:
     """Service for asset management."""
 
@@ -41,7 +45,7 @@ class AssetService:
 
         Raises:
             ValueError: If hostname and IP are both empty
-            ValueError: If hostname or IP already exists
+            DuplicateAssetError: If hostname or IP already exists
         """
         if not data.hostname and not data.ip:
             raise ValueError("At least one of hostname or ip must be provided")
@@ -52,7 +56,7 @@ class AssetService:
                 self.session, data.hostname
             )
             if existing:
-                raise ValueError(
+                raise DuplicateAssetError(
                     f"Asset with hostname '{data.hostname}' already exists"
                 )
 
@@ -60,9 +64,10 @@ class AssetService:
         if data.ip:
             existing = await self.repository.get_by_ip(self.session, data.ip)
             if existing:
-                raise ValueError(f"Asset with IP '{data.ip}' already exists")
+                raise DuplicateAssetError(f"Asset with IP '{data.ip}' already exists")
 
         asset = await self.repository.create(self.session, data)
+        await self.session.commit()
         logger.info(f"Created asset: {asset.id}")
         return self._to_response(asset)
 
@@ -119,7 +124,7 @@ class AssetService:
                 self.session, data.hostname
             )
             if existing and existing.id != asset_id:
-                raise ValueError(
+                raise DuplicateAssetError(
                     f"Asset with hostname '{data.hostname}' already exists"
                 )
 
@@ -127,9 +132,10 @@ class AssetService:
         if data.ip and data.ip != asset.ip:
             existing = await self.repository.get_by_ip(self.session, data.ip)
             if existing and existing.id != asset_id:
-                raise ValueError(f"Asset with IP '{data.ip}' already exists")
+                raise DuplicateAssetError(f"Asset with IP '{data.ip}' already exists")
 
         updated = await self.repository.update(self.session, asset, data)
+        await self.session.commit()
         logger.info(f"Updated asset: {asset_id}")
         return self._to_response(updated)
 
@@ -147,6 +153,7 @@ class AssetService:
             raise ValueError(f"Asset not found: {asset_id}")
 
         await self.repository.delete(self.session, asset)
+        await self.session.commit()
         logger.info(f"Deleted asset: {asset_id}")
 
     async def import_assets(self, data: AssetImportRequest) -> AssetImportResponse:
@@ -190,7 +197,9 @@ class AssetService:
         assets = await self.repository.get_by_ips(self.session, ips)
         return [self._to_response(a) for a in assets]
 
-    async def get_by_hostnames(self, hostnames: builtins.list[str]) -> builtins.list[AssetResponse]:
+    async def get_by_hostnames(
+        self, hostnames: builtins.list[str]
+    ) -> builtins.list[AssetResponse]:
         """Get assets by list of hostnames.
 
         Args:
@@ -201,6 +210,21 @@ class AssetService:
         """
         assets = await self.repository.get_by_hostnames(self.session, hostnames)
         return [self._to_response(a) for a in assets]
+
+    @staticmethod
+    def _parse_tags(raw: str | None) -> builtins.list[str]:
+        """Parse the stored tags JSON, tolerating legacy plain-text rows.
+
+        Older seed data wrote comma-separated plain text (e.g. "web,nginx"),
+        which would crash json.loads and 500 the whole list endpoint.
+        """
+        if not raw:
+            return []
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            return [tag.strip() for tag in raw.split(",") if tag.strip()]
+        return parsed if isinstance(parsed, list) else []
 
     def _to_response(self, asset) -> AssetResponse:
         """Convert database model to response schema.
@@ -218,7 +242,7 @@ class AssetService:
             owner=asset.owner,
             business=asset.business,
             criticality=asset.criticality,
-            tags=json.loads(asset.tags) if asset.tags else [],
+            tags=self._parse_tags(asset.tags),
             notes=asset.notes,
             is_active=asset.is_active,
             created_at=asset.created_at,

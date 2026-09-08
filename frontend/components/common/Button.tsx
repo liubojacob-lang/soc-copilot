@@ -4,7 +4,6 @@ import { ReactNode, ButtonHTMLAttributes, forwardRef, useState, useRef, useEffec
 import { cva, type VariantProps } from "class-variance-authority";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { patterns, transitions } from "@/styles/designTokens";
 
 interface Ripple {
   id: number;
@@ -12,27 +11,39 @@ interface Ripple {
   y: number;
 }
 
-// Extract Tailwind classes from design tokens
-const buttonVariants = cva(patterns.button.base, {
-  variants: {
-    variant: {
-      primary: patterns.button.variants.primary,
-      secondary: patterns.button.variants.secondary,
-      ghost: patterns.button.variants.ghost,
-      danger: patterns.button.variants.danger,
-      outline: patterns.button.variants.outline,
+const buttonVariants = cva(
+  "relative inline-flex items-center justify-center font-medium select-none transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-45 active:scale-[0.98]",
+  {
+    variants: {
+      variant: {
+        primary:
+          "bg-accent-600 text-white shadow-sm hover:bg-accent-700 active:bg-accent-800 shadow-accent-600/20",
+        secondary:
+          "bg-surface-card text-text-primary border border-border-subtle hover:bg-surface-hover hover:border-border-default active:bg-surface-active shadow-subtle",
+        ghost:
+          "bg-transparent text-text-secondary hover:text-text-primary hover:bg-surface-hover active:bg-surface-active",
+        outline:
+          "bg-transparent text-text-primary border border-border-default hover:bg-surface-hover active:bg-surface-active",
+        danger:
+          "bg-danger-600 text-white shadow-sm hover:bg-danger-700 active:bg-danger-800 shadow-danger-600/20",
+        subtle:
+          "bg-accent-50 text-accent-700 hover:bg-accent-100 dark:bg-accent-950/40 dark:text-accent-300 dark:hover:bg-accent-900/50",
+      },
+      size: {
+        xs: "h-7 px-2.5 text-xs rounded-sm gap-1.5",
+        sm: "h-8 px-3 text-xs rounded-md gap-1.5",
+        md: "h-9 px-3.5 text-sm rounded-md gap-2",
+        lg: "h-10 px-4 text-sm rounded-md gap-2 font-semibold",
+        icon: "h-8 w-8 p-0 rounded-md",
+        "icon-sm": "h-7 w-7 p-0 rounded-sm",
+      },
     },
-    size: {
-      sm: patterns.button.sizes.sm,
-      md: patterns.button.sizes.md,
-      lg: patterns.button.sizes.lg,
+    defaultVariants: {
+      variant: "primary",
+      size: "md",
     },
-  },
-  defaultVariants: {
-    variant: "primary",
-    size: "md",
-  },
-});
+  }
+);
 
 type ButtonVariant = VariantProps<typeof buttonVariants>["variant"];
 type ButtonSize = VariantProps<typeof buttonVariants>["size"];
@@ -56,68 +67,26 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       className,
       disabled,
-      disableRipple = false,
+      disableRipple,
       onClick,
+      type = "button",
       ...props
     },
     ref
   ) => {
-    const [ripples, setRipples] = useState<Ripple[]>([]);
-    const buttonRef = useRef<HTMLButtonElement>(null);
-    const nextRippleId = useRef(0);
-
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (!disableRipple && buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const id = nextRippleId.current++;
-
-        setRipples((prev) => [...prev, { id, x, y }]);
-
-        setTimeout(() => {
-          setRipples((prev) => prev.filter((r) => r.id !== id));
-        }, 600);
-      }
-
-      onClick?.(e);
-    };
-
-    useEffect(() => {
-      if (ref) {
-        if (typeof ref === "function") {
-          ref(buttonRef.current);
-        } else {
-          ref.current = buttonRef.current;
-        }
-      }
-    }, [ref]);
-
     return (
       <button
-        ref={buttonRef}
+        ref={ref}
+        type={type}
         className={cn(buttonVariants({ variant, size }), className)}
         disabled={disabled || isLoading}
-        onClick={handleClick}
+        onClick={onClick}
         {...props}
       >
-        {!disableRipple &&
-          ripples.map((ripple) => (
-            <span
-              key={ripple.id}
-              className="absolute rounded-full bg-white/30 pointer-events-none animate-ripple"
-              style={{
-                left: ripple.x,
-                top: ripple.y,
-                transform: "translate(-50%, -50%)",
-              }}
-            />
-          ))}
-
-        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin relative z-10" />}
-        {!isLoading && leftIcon && <span className="mr-2 relative z-10">{leftIcon}</span>}
-        <span className="relative z-10">{children}</span>
-        {!isLoading && rightIcon && <span className="ml-2 relative z-10">{rightIcon}</span>}
+        {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+        {!isLoading && leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>}
+        {children && <span>{children}</span>}
+        {!isLoading && rightIcon && <span className="inline-flex shrink-0">{rightIcon}</span>}
       </button>
     );
   }

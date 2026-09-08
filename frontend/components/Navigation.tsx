@@ -1,10 +1,33 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, Link } from "@/i18n/navigation";
 import { loadAuthState, logout, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Menu, X, ChevronDown, ShieldCheck } from "lucide-react";
+import { useLocale } from "next-intl";
+import {
+  Menu,
+  X,
+  ChevronDown,
+  ShieldCheck,
+  Bot,
+  Globe,
+  Network,
+  Fingerprint,
+  Crosshair,
+  Store,
+  Cloud,
+  Server,
+  Zap,
+  LayoutDashboard,
+  Settings,
+  Cpu,
+  KeyRound,
+  ScrollText,
+  Users,
+  Search,
+} from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeToggle } from "./ThemeToggle";
 import { useTranslations } from "next-intl";
 
 interface NavigationProps {
@@ -16,24 +39,23 @@ interface NavigationProps {
 
 interface NavItem {
   label: string;
+  description?: string;
   path: string;
   icon?: React.ReactNode;
+  badge?: string;
 }
 
 interface NavGroup {
   label: string;
+  badge?: string;
   icon?: React.ReactNode;
   items: NavItem[];
 }
 
-export default function Navigation({
-  title = "SOC Copilot",
-  subtitle,
-  apiStatus,
-  actions,
-}: NavigationProps) {
+export default function Navigation({ title, subtitle, apiStatus, actions }: NavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const locale = useLocale();
   const t = useTranslations("navigation");
   const tCommon = useTranslations("common");
   const [mounted, setMounted] = useState(false);
@@ -49,6 +71,14 @@ export default function Navigation({
   }, []);
 
   const user = authState?.user;
+
+  // English labels are much wider than Chinese ones and would overflow the
+  // fixed max-w-[1600px] container, so English gets tighter padding/tracking. Both
+  // locales share the same 13px nav font so switching languages doesn't jump.
+  const compactNav = locale !== "zh-CN";
+  const navTriggerClass = compactNav
+    ? "px-1.5 xl:px-2 py-1.5 xl:py-2 text-xs xl:text-[13px] tracking-tight rounded-xl whitespace-nowrap shrink-0 transition-all duration-200"
+    : "px-2 xl:px-3 py-1.5 xl:py-2 text-xs xl:text-[13px] rounded-xl whitespace-nowrap shrink-0 transition-all duration-200";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -78,7 +108,7 @@ export default function Navigation({
       case "admin":
         return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300";
       case "analyst":
-        return "bg-soc-100 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300";
+        return "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300";
       case "auditor":
         return "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300";
       default:
@@ -89,8 +119,10 @@ export default function Navigation({
   const mainNavItems: NavItem[] = useMemo(
     () => [
       { label: t("home"), path: "/" },
-      { label: t("runs"), path: "/playbooks" },
-      { label: t("definitions"), path: "/playbooks/definitions" },
+      { label: t("monitor"), path: "/monitor" },
+      { label: t("cases"), path: "/cases" },
+      { label: t("alerts"), path: "/alerts" },
+      { label: t("playbooks"), path: "/playbooks" },
     ],
     [t]
   );
@@ -99,9 +131,31 @@ export default function Navigation({
     () => ({
       label: t("analytics"),
       items: [
-        { label: t("aiCopilot"), path: "/ai-assistant" },
-        { label: t("ueba"), path: "/ueba" },
-        { label: t("threatHunting"), path: "/threat-hunting" },
+        {
+          label: t("aiCopilot"),
+          path: "/ai-assistant",
+          icon: <Bot className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("threatIntel"),
+          path: "/threat-intel",
+          icon: <Globe className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("correlation"),
+          path: "/correlation",
+          icon: <Network className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("ueba"),
+          path: "/ueba",
+          icon: <Fingerprint className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("threatHunting"),
+          path: "/threat-hunting",
+          icon: <Crosshair className="h-4 w-4 shrink-0" />,
+        },
       ],
     }),
     [t]
@@ -111,10 +165,26 @@ export default function Navigation({
     () => ({
       label: t("ecosystem"),
       items: [
-        { label: t("marketplace"), path: "/marketplace" },
-        { label: t("cloudNative"), path: "/cloud-native" },
-        { label: t("alerts"), path: "/alerts" },
-        { label: t("triggers"), path: "/triggers" },
+        {
+          label: t("marketplace"),
+          path: "/marketplace",
+          icon: <Store className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("cloudNative"),
+          path: "/cloud-native",
+          icon: <Cloud className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("assets"),
+          path: "/assets",
+          icon: <Server className="h-4 w-4 shrink-0" />,
+        },
+        {
+          label: t("triggers"),
+          path: "/triggers",
+          icon: <Zap className="h-4 w-4 shrink-0" />,
+        },
       ],
     }),
     [t]
@@ -124,27 +194,88 @@ export default function Navigation({
     () => [
       ...(isAdmin(user ?? null)
         ? [
-            { label: t("dashboard"), path: "/admin/dashboard" },
-            { label: t("settings"), path: "/settings" },
+            {
+              label: t("dashboard"),
+              path: "/admin/dashboard",
+              icon: <LayoutDashboard className="h-4 w-4 shrink-0" />,
+            },
+            {
+              label: t("settings"),
+              path: "/settings",
+              icon: <Settings className="h-4 w-4 shrink-0" />,
+            },
           ]
         : []),
-      { label: t("aiModels"), path: "/settings/ai-models" },
-      { label: t("apiKeys"), path: "/settings/api-keys" },
+      {
+        label: t("aiModels"),
+        path: "/settings/ai-models",
+        icon: <Cpu className="h-4 w-4 shrink-0" />,
+      },
+      {
+        label: t("apiKeys"),
+        path: "/settings/api-keys",
+        icon: <KeyRound className="h-4 w-4 shrink-0" />,
+      },
       ...(isAdmin(user ?? null) || isAnalystOrAdmin(user ?? null)
-        ? [{ label: t("audit"), path: "/audit" }]
+        ? [
+            {
+              label: t("audit"),
+              path: "/audit",
+              icon: <ScrollText className="h-4 w-4 shrink-0" />,
+            },
+          ]
         : []),
-      ...(isAdmin(user ?? null) ? [{ label: t("users"), path: "/admin/users" }] : []),
+      ...(isAdmin(user ?? null)
+        ? [
+            {
+              label: t("users"),
+              path: "/admin/users",
+              icon: <Users className="h-4 w-4 shrink-0" />,
+            },
+          ]
+        : []),
     ],
     [t, user]
   );
 
+  const adminGroup: NavGroup = useMemo(
+    () => ({
+      label: tCommon("admin"),
+      items: adminItems,
+    }),
+    [tCommon, adminItems]
+  );
+
+  const allNavPaths = useMemo(() => {
+    const paths: string[] = mainNavItems.map((item) => item.path);
+    analyticsGroup.items.forEach((item) => paths.push(item.path));
+    ecosystemGroup.items.forEach((item) => paths.push(item.path));
+    adminItems.forEach((item) => paths.push(item.path));
+    return paths;
+  }, [mainNavItems, analyticsGroup, ecosystemGroup, adminItems]);
+
   const isLinkActive = useCallback(
     (linkPath: string) => {
+      if (!pathname) return false;
+      if (linkPath === "/") return pathname === "/";
       if (pathname === linkPath) return true;
-      if (linkPath !== "/" && pathname?.startsWith(linkPath)) return true;
+
+      // Match nested subpaths with trailing slash (e.g. /alerts/123 -> /alerts)
+      if (pathname.startsWith(`${linkPath}/`)) {
+        // Disambiguate against other more specific registered nav routes
+        // (e.g. /playbooks vs /playbooks/definitions, /settings vs /settings/ai-models)
+        const hasMoreSpecificMatch = allNavPaths.some(
+          (otherPath) =>
+            otherPath !== linkPath &&
+            otherPath.startsWith(`${linkPath}/`) &&
+            (pathname === otherPath || pathname.startsWith(`${otherPath}/`))
+        );
+        return !hasMoreSpecificMatch;
+      }
+
       return false;
     },
-    [pathname]
+    [pathname, allNavPaths]
   );
 
   const isGroupActive = useCallback(
@@ -154,7 +285,7 @@ export default function Navigation({
     [isLinkActive]
   );
 
-  const renderDropdown = (group: NavGroup, alignRight = false) => {
+  const renderDropdown = (group: NavGroup, align: "center" | "left" | "right" = "center") => {
     const isActive = isGroupActive(group);
     const isHovered = hoveredDropdown === group.label;
 
@@ -171,19 +302,24 @@ export default function Navigation({
       }, 150);
     };
 
+    const alignmentClass =
+      align === "center" ? "left-1/2 -translate-x-1/2" : align === "right" ? "right-0" : "left-0";
+
     return (
       <div
-        className="relative"
+        className="relative shrink-0"
         ref={isHovered ? dropdownRef : undefined}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         <button
-          className={`flex items-center gap-1 px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
+          type="button"
+          className={`flex items-center gap-1 ${navTriggerClass} ${
             isActive
-              ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
-              : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+              ? "bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300 font-semibold"
+              : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
           }`}
+          aria-expanded={isHovered}
         >
           {group.label}
           <ChevronDown
@@ -193,7 +329,7 @@ export default function Navigation({
 
         {isHovered && (
           <div
-            className={`absolute ${alignRight ? "right-0" : "left-0"} top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-2 z-50 animate-fade-in overflow-hidden`}
+            className={`absolute ${alignmentClass} top-full mt-1.5 min-w-[124px] w-max bg-surface-card border border-border-subtle rounded-xl shadow-elevated p-1 z-50 animate-fade-in overflow-hidden backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/5 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']`}
             onMouseEnter={() => {
               if (dropdownTimeoutRef.current) {
                 clearTimeout(dropdownTimeoutRef.current);
@@ -201,22 +337,33 @@ export default function Navigation({
             }}
             onMouseLeave={handleMouseLeave}
           >
-            {group.items.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => {
-                  router.push(item.path);
-                  setHoveredDropdown(null);
-                }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 ${
-                  isLinkActive(item.path)
-                    ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isLinkActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    onClick={() => setHoveredDropdown(null)}
+                    className={`flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg transition-colors whitespace-nowrap ${
+                      active
+                        ? "bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300 font-semibold"
+                        : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
+                    }`}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <span
+                      className={`shrink-0 ${
+                        active ? "text-accent-600 dark:text-accent-400" : "text-text-tertiary"
+                      }`}
+                    >
+                      {item.icon}
+                    </span>
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -224,36 +371,44 @@ export default function Navigation({
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/85 dark:bg-gray-800/85 backdrop-blur-xl shadow-sm border-b border-gray-200/70 dark:border-gray-700/70">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => router.push("/")}
-              className="flex items-center gap-2.5 text-soc-600 hover:text-soc-700 dark:text-soc-400 dark:hover:text-soc-300 font-bold text-base whitespace-nowrap transition-colors"
+    <nav className="sticky top-0 z-40 bg-surface-card/85 backdrop-blur-xl border-b border-border-subtle transition-colors">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="flex justify-between items-center h-14">
+          <div className="flex items-center space-x-3 shrink-0">
+            <Link
+              href="/"
+              className="flex items-center gap-2.5 text-text-primary font-bold text-base whitespace-nowrap transition-transform active:scale-[0.98] shrink-0"
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-soc-500 to-soc-700 flex items-center justify-center shadow-lg shadow-soc-500/25">
-                <ShieldCheck className="w-4.5 h-4.5 text-white" />
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-600 to-accent-700 flex items-center justify-center shadow-sm shadow-accent-600/30 text-white shrink-0">
+                <ShieldCheck className="w-4 h-4 text-white" />
               </div>
-              <span className="hidden sm:inline tracking-tight">SOC Copilot</span>
-            </button>
-            <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
-            <div className="hidden md:block">
-              <h1 className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[10rem] lg:max-w-[15rem]">
-                {title}
-              </h1>
-              {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>}
-            </div>
+              <span className="hidden sm:inline tracking-tight font-semibold">SOC Copilot</span>
+            </Link>
+            {title && (
+              <>
+                <div className="hidden md:block h-5 w-px bg-border-subtle shrink-0"></div>
+                <div className="hidden md:block shrink-0">
+                  <h1 className="text-xs font-semibold text-text-primary truncate max-w-[8rem] xl:max-w-[14rem]">
+                    {title}
+                  </h1>
+                  {subtitle && (
+                    <p className="text-[11px] text-text-tertiary truncate max-w-[8rem] xl:max-w-[14rem]">
+                      {subtitle}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
-          <div className="hidden lg:flex items-center justify-between flex-1">
-            <div className="flex items-center space-x-1.5 ml-6">
+          <div className="hidden lg:flex items-center justify-between flex-1 min-w-0 ml-3 xl:ml-6">
+            <div className="flex items-center space-x-1 min-w-0">
               {user && (
                 <>
                   {apiStatus && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full mr-2 bg-gray-75 dark:bg-gray-700/50">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full mr-1 bg-surface-hover border border-border-subtle shrink-0">
                       <span
-                        className={`w-2.5 h-2.5 rounded-full ${
+                        className={`w-2 h-2 rounded-full shrink-0 ${
                           apiStatus === "healthy"
                             ? "bg-success-500 animate-pulse-soft"
                             : apiStatus === "checking"
@@ -261,7 +416,7 @@ export default function Navigation({
                               : "bg-danger-500"
                         }`}
                       />
-                      <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 hidden xl:inline">
+                      <span className="text-[10px] font-semibold text-text-secondary hidden 2xl:inline whitespace-nowrap">
                         {apiStatus === "healthy"
                           ? "API OK"
                           : apiStatus === "checking"
@@ -272,111 +427,67 @@ export default function Navigation({
                   )}
 
                   {mainNavItems.map((link) => (
-                    <button
+                    <Link
                       key={link.path}
-                      onClick={() => router.push(link.path)}
-                      className={`px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
+                      href={link.path}
+                      className={`${navTriggerClass} ${
                         isLinkActive(link.path)
-                          ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
-                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                          ? "bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300 font-semibold"
+                          : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
                       }`}
+                      aria-current={isLinkActive(link.path) ? "page" : undefined}
                     >
                       {link.label}
-                    </button>
+                    </Link>
                   ))}
 
                   {renderDropdown(analyticsGroup)}
                   {renderDropdown(ecosystemGroup)}
 
-                  {adminItems.length > 0 && (
-                    <div
-                      className="relative"
-                      ref={hoveredDropdown === "adminGroup" ? dropdownRef : undefined}
-                      onMouseEnter={() => {
-                        if (dropdownTimeoutRef.current) {
-                          clearTimeout(dropdownTimeoutRef.current);
-                        }
-                        setHoveredDropdown("adminGroup");
-                      }}
-                      onMouseLeave={() => {
-                        dropdownTimeoutRef.current = setTimeout(() => {
-                          setHoveredDropdown(null);
-                        }, 150);
-                      }}
-                    >
-                      <button
-                        className={`flex items-center gap-1 px-3 py-2.5 text-sm rounded-xl whitespace-nowrap transition-all duration-300 ${
-                          adminItems.some((item) => isLinkActive(item.path))
-                            ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
-                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                        }`}
-                      >
-                        {tCommon("admin")}
-                        <ChevronDown
-                          className={`w-3.5 h-3.5 transition-transform duration-200 ${hoveredDropdown === "adminGroup" ? "rotate-180" : ""}`}
-                        />
-                      </button>
-
-                      {hoveredDropdown === "adminGroup" && (
-                        <div
-                          className="absolute right-0 top-full w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-elevated border border-gray-200 dark:border-gray-700 py-2 z-50 animate-fade-in overflow-hidden"
-                          onMouseEnter={() => {
-                            if (dropdownTimeoutRef.current) {
-                              clearTimeout(dropdownTimeoutRef.current);
-                            }
-                          }}
-                          onMouseLeave={() => {
-                            dropdownTimeoutRef.current = setTimeout(() => {
-                              setHoveredDropdown(null);
-                            }, 150);
-                          }}
-                        >
-                          {adminItems.map((item) => (
-                            <button
-                              key={item.path}
-                              onClick={() => {
-                                router.push(item.path);
-                                setHoveredDropdown(null);
-                              }}
-                              className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 ${
-                                isLinkActive(item.path)
-                                  ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
-                                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-75 dark:hover:bg-gray-700/50"
-                              }`}
-                            >
-                              {item.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {adminItems.length > 0 && renderDropdown(adminGroup)}
                 </>
               )}
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 shrink-0 ml-auto pl-2">
+              <button
+                type="button"
+                onClick={() => {
+                  document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+                }}
+                className="flex items-center gap-1.5 px-2 py-1 text-xs text-text-tertiary bg-surface-hover hover:text-text-primary rounded-lg border border-border-subtle hover:border-border-default transition-all duration-150 shrink-0"
+                title="Search (⌘K)"
+                aria-label="Global search"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span className="hidden xl:inline text-xs">Search</span>
+                <kbd className="text-[10px] font-mono px-1 py-0.5 rounded bg-surface-card border border-border-subtle">
+                  ⌘K
+                </kbd>
+              </button>
+
               {actions}
 
               <LanguageSwitcher />
+              <ThemeToggle />
 
-              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-0.5"></div>
+              <div className="h-5 w-px bg-border-subtle mx-0.5 shrink-0"></div>
 
               {user && (
                 <>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-75 dark:bg-gray-700/50">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-hover border border-border-subtle shrink-0">
                     <span
-                      className={`px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${getRoleBadgeClass(user.role)}`}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0 ${getRoleBadgeClass(user.role)}`}
                     >
                       {user.role}
                     </span>
-                    <span className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[5rem] xl:max-w-[8rem]">
+                    <span className="text-xs text-text-secondary truncate max-w-[4rem] xl:max-w-[7rem]">
                       {user.username}
                     </span>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="px-3 py-2 text-sm text-danger-600 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-xl transition-all duration-300"
+                    className="px-2.5 py-1 text-xs text-danger-600 hover:text-danger-700 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-lg transition-colors whitespace-nowrap shrink-0"
                   >
                     {t("logout")}
                   </button>
@@ -388,10 +499,22 @@ export default function Navigation({
           <div className="lg:hidden flex items-center space-x-2">
             {user && (
               <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.dispatchEvent(
+                      new KeyboardEvent("keydown", { key: "k", metaKey: true })
+                    );
+                  }}
+                  className="p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface-hover transition-colors"
+                  aria-label="Search"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
                 {apiStatus && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-full">
+                  <div className="flex items-center gap-1 px-1.5 py-1 rounded-full bg-surface-hover">
                     <span
-                      className={`w-2.5 h-2.5 rounded-full ${
+                      className={`w-2 h-2 rounded-full ${
                         apiStatus === "healthy"
                           ? "bg-success-500"
                           : apiStatus === "checking"
@@ -403,7 +526,7 @@ export default function Navigation({
                 )}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-300"
+                  className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
                 >
                   {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
@@ -413,113 +536,111 @@ export default function Navigation({
         </div>
 
         {mobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-200 dark:border-gray-700 animate-fade-in-up">
+          <div className="lg:hidden py-3 border-t border-border-subtle animate-fade-in max-h-[80vh] overflow-y-auto">
             <div className="space-y-1">
               {mainNavItems.map((link) => (
-                <button
+                <Link
                   key={link.path}
-                  onClick={() => {
-                    router.push(link.path);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 ${
+                  href={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block w-full text-left px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
                     isLinkActive(link.path)
-                      ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                      ? "bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300 font-semibold"
+                      : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
                   }`}
+                  aria-current={isLinkActive(link.path) ? "page" : undefined}
                 >
                   {link.label}
-                </button>
+                </Link>
               ))}
 
-              <div className="px-4 py-2.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-2">
+              <div className="px-3 py-2 text-[10px] font-semibold text-text-tertiary uppercase tracking-wider mt-2">
                 {t("analytics")}
               </div>
               {analyticsGroup.items.map((item) => (
-                <button
+                <Link
                   key={item.path}
-                  onClick={() => {
-                    router.push(item.path);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 pl-8 ${
+                  href={item.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs rounded-lg transition-colors pl-6 ${
                     isLinkActive(item.path)
-                      ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                      ? "bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300 font-semibold"
+                      : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
                   }`}
+                  aria-current={isLinkActive(item.path) ? "page" : undefined}
                 >
-                  {item.label}
-                </button>
+                  <span className="text-text-tertiary">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
               ))}
 
-              <div className="px-4 py-2.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-2">
+              <div className="px-3 py-2 text-[10px] font-semibold text-text-tertiary uppercase tracking-wider mt-2">
                 {t("ecosystem")}
               </div>
               {ecosystemGroup.items.map((item) => (
-                <button
+                <Link
                   key={item.path}
-                  onClick={() => {
-                    router.push(item.path);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 pl-8 ${
+                  href={item.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs rounded-lg transition-colors pl-6 ${
                     isLinkActive(item.path)
-                      ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                      ? "bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300 font-semibold"
+                      : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
                   }`}
+                  aria-current={isLinkActive(item.path) ? "page" : undefined}
                 >
-                  {item.label}
-                </button>
+                  <span className="text-text-tertiary">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
               ))}
 
               {adminItems.length > 0 && (
                 <>
-                  <div className="px-4 py-2.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-2">
+                  <div className="px-3 py-2 text-[10px] font-semibold text-text-tertiary uppercase tracking-wider mt-2">
                     {tCommon("admin")}
                   </div>
                   {adminItems.map((item) => (
-                    <button
+                    <Link
                       key={item.path}
-                      onClick={() => {
-                        router.push(item.path);
-                        setMobileMenuOpen(false);
-                      }}
-                      className={`block w-full text-left px-4 py-3 text-sm rounded-xl transition-all duration-300 pl-8 ${
+                      href={item.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs rounded-lg transition-colors pl-6 ${
                         isLinkActive(item.path)
-                          ? "bg-soc-50 text-soc-700 dark:bg-soc-900/30 dark:text-soc-300 font-semibold"
-                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                          ? "bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300 font-semibold"
+                          : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
                       }`}
+                      aria-current={isLinkActive(item.path) ? "page" : undefined}
                     >
-                      {item.label}
-                    </button>
+                      <span className="text-text-tertiary">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
                   ))}
                 </>
               )}
             </div>
 
-            <div className="border-t border-gray-200 dark:border-gray-700 mt-5 pt-5 space-y-4 px-4">
+            <div className="border-t border-border-subtle mt-4 pt-3 space-y-3 px-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Language
-                </span>
-                <LanguageSwitcher />
+                <span className="text-xs font-semibold text-text-secondary">{t("language")}</span>
+                <div className="flex items-center gap-2">
+                  <LanguageSwitcher />
+                  <ThemeToggle />
+                </div>
               </div>
 
               {user && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center space-x-2">
                     <span
-                      className={`px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${getRoleBadgeClass(user?.role ?? "")}`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${getRoleBadgeClass(user?.role ?? "")}`}
                     >
                       {user?.role}
                     </span>
-                    <span className="text-sm text-gray-600 dark:text-gray-300">
-                      {user?.username}
-                    </span>
+                    <span className="text-xs text-text-secondary">{user?.username}</span>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="px-4 py-2.5 text-sm text-danger-600 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-xl transition-all duration-300"
+                    className="px-3 py-1 text-xs text-danger-600 hover:text-danger-700 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-lg transition-colors"
                   >
                     Logout
                   </button>

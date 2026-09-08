@@ -1,0 +1,292 @@
+name: PR Review Checks
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
+
+jobs:
+  # PR标题规范检查
+  pr-title-check:
+    name: PR Title Convention
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title follows Conventional Commits
+        uses: amannn/action-semantic-pull-request@v5.5.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            security
+            perf
+            docs
+            test
+            config
+            migration
+          scopes: |
+            backend
+            frontend
+            infra
+            security
+            database
+            fullstack
+          requireScope: false
+          headerPattern: '^(\w*)(?:\(([\w\$\.\*/-]*)\))?!?: (.*)$'
+
+  # PR描述完整性检查
+  pr-description-check:
+    name: PR Description Completeness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PR description is not empty
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if [ -z "$PR_BODY" ] || [ "$PR_BODY" = "" ]; then
+            echo "::error::PR描述不能为空。请填写变更描述、变更类型和影响范围。"
+            exit 1
+          fi
+
+          # 检查是否包含变更类型勾选
+          if ! echo "$PR_BODY" | grep -qE '\- \[x\] `(feat|fix|refactor|security|perf|docs|test|config|migration)`'; then
+            echo "::warning::PR描述中未勾选变更类型。请在审查检查清单中勾选至少一个变更类型。"
+          fi
+
+          # 检查是否包含影响范围勾选
+          if ! echo "$PR_BODY" | grep -qE '\- \[x\] `(backend|frontend|fullstack|infra|security|database)`'; then
+            echo "::warning::PR描述中未勾选影响范围。请在审查检查清单中勾选至少一个影响范围。"
+          fi
+
+  # PR大小检查
+  pr-size-check:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PR change size
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 获取PR变更行数
+          TOTAL_LINES=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" | \
+            python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          additions = data.get('additions', 0)
+          deletions = data.get('deletions', 0)
+          print(additions + deletions)
+          ")
+
+          echo "PR total changed lines: $TOTAL_LINES"
+
+          if [ "$TOTAL_LINES" -gt 500 ]; then
+            echo "::warning::PR变更超过500行($TOTAL_LINES行)，建议拆分为多个小PR以便审查。大型PR审查效率较低，容易遗漏问题。"
+          elif [ "$TOTAL_LINES" -gt 200 ]; then
+            echo "::notice::PR变更超过200行($TOTAL_LINES行)，建议考虑是否可以拆分。"
+          fi
+
+  # 安全相关文件变更检测
+  security-files-detection:
+    name: Security Files Detection
+    runs-on: ubuntu-latest
+    outputs:
+      has_security_changes: ${{ steps.detect.outputs.has_security_changes }}
+      security_files: ${{ steps.detect.outputs.security_files }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect security-related file changes
+        id: detect
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # 获取PR变更文件列表
+          CHANGED_FILES=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/files" | \
+            python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          for f in data:
+            print(f['filename'])
+          ")
+
+          # 安全相关文件模式
+          SECURITY_PATTERNS=(
+            "backend/app/core/security"
+            "backend/app/core/csrf"
+            "backend/app/core/ssrf_protection"
+            "backend/app/core/token_blacklist"
+            "backend/app/core/sensitive_data"
+            "backend/app/core/cookie_auth"
+            "backend/app/core/security_validators"
+            "backend/app/core/prompt_sanitizer"
+            "backend/app/core/config.py"
+            "backend/app/models/secret.py"
+            "backend/app/models/api_key.py"
+            "backend/app/models/security_alert.py"
+            "backend/app/models/security_vulnerability.py"
+            "backend/app/models/rbac.py"
+            "backend/app/models/audit_log.py"
+            "backend/app/models/user.py"
+            "backend/app/dependencies/auth.py"
+            "backend/app/dependencies/authorization.py"
+            "backend/app/dependencies/rbac.py"
+            "backend/app/dependencies/audit.py"
+            "backend/app/middleware/security_headers.py"
+            "backend/app/middleware/csrf_middleware.py"
+            "backend/app/middleware/authorization_middleware.py"
+            "backend/app/middleware/audit_middleware.py"
+            "backend/app/routers/auth.py"
+            "backend/app/routers/secrets.py"
+            "backend/app/routers/security_alerts.py"
+            "backend/app/routers/security_vulnerabilities.py"
+            "backend/app/routers/api_keys.py"
+            "backend/app/repositories/secret_repository.py"
+            "backend/app/repositories/api_key_repository.py"
+            ".pre-commit-config-security.yaml"
+            ".gitleaks.toml"
+          )
+
+          SECURITY_FILES=""
+          HAS_SECURITY="false"
+
+          for file in $CHANGED_FILES; do
+            for pattern in "${SECURITY_PATTERNS[@]}"; do
+              if [[ "$file" == *"$pattern"* ]]; then
+                HAS_SECURITY="true"
+                SECURITY_FILES="$SECURITY_FILES $file"
+                break
+              fi
+            done
+          done
+
+          echo "has_security_changes=$HAS_SECURITY" >> $GITHUB_OUTPUT
+          echo "security_files=$SECURITY_FILES" >> $GITHUB_OUTPUT
+
+          if [ "$HAS_SECURITY" = "true" ]; then
+            echo "::warning::⚠️ 检测到安全相关文件变更: $SECURITY_FILES。此PR需要安全审计员审查。请确保安全专项检查清单全部勾选。"
+          fi
+
+  # 数据库迁移变更检测
+  migration-detection:
+    name: Database Migration Detection
+    runs-on: ubuntu-latest
+    outputs:
+      has_migration: ${{ steps.detect.outputs.has_migration }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect database migration changes
+        id: detect
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          CHANGED_FILES=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/files" | \
+            python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          for f in data:
+            print(f['filename'])
+          ")
+
+          HAS_MIGRATION="false"
+
+          for file in $CHANGED_FILES; do
+            if [[ "$file" == "backend/app/migrations_alembic/"* ]] || \
+               [[ "$file" == "backend/app/migrations/"* ]] || \
+               [[ "$file" == "backend/alembic.ini" ]]; then
+              HAS_MIGRATION="true"
+              break
+            fi
+          done
+
+          echo "has_migration=$HAS_MIGRATION" >> $GITHUB_OUTPUT
+
+          if [ "$HAS_MIGRATION" = "true" ]; then
+            echo "::warning::⚠️ 检测到数据库迁移变更。此PR需要后端开发 + DevOps工程师审查。请确保数据库变更检查清单已勾选。"
+          fi
+
+  # 审查提醒 - 安全审计员通知
+  security-review-reminder:
+    name: Security Review Reminder
+    runs-on: ubuntu-latest
+    needs: security-files-detection
+    if: ${{ needs.security-files-detection.outputs.has_security_changes == 'true' }}
+    steps:
+      - name: Add security review label and comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SECURITY_FILES: ${{ needs.security-files-detection.outputs.security_files }}
+        run: |
+          # 添加安全审查标签
+          gh issue edit $PR_NUMBER --add-label "type:security,scope:security,priority:high" \
+            --repo "${{ github.repository }}" || true
+
+          # 添加审查提醒评论
+          gh issue comment $PR_NUMBER --repo "${{ github.repository }}" --body "
+          ⚠️ **安全审查提醒**
+
+          此PR涉及安全相关文件变更，需要安全审计员参与审查。
+
+          **变更的安全文件**: $SECURITY_FILES
+
+          **安全审查要求**:
+          - 认证安全: 认证流程是否安全、Token管理是否规范
+          - 授权安全: RBAC权限检查是否完整、无越权风险
+          - 密钥管理: 无密钥硬编码、支持密钥轮换
+          - 输入验证: 所有用户输入经过验证和清洗
+          - 敏感数据: 敏感数据加密存储、日志脱敏
+          - CSRF防护: 状态变更请求有CSRF Token验证
+          - SSRF防护: 外部请求URL有白名单/黑名单验证
+          - 审计日志: 安全相关操作有审计日志记录
+
+          请确保PR模板中安全专项检查清单全部勾选 ✅
+          " || true
+
+  # 审查提醒 - 数据库迁移通知
+  migration-review-reminder:
+    name: Migration Review Reminder
+    runs-on: ubuntu-latest
+    needs: migration-detection
+    if: ${{ needs.migration-detection.outputs.has_migration == 'true' }}
+    steps:
+      - name: Add migration review label and comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # 添加数据库迁移标签
+          gh issue edit $PR_NUMBER --add-label "type:migration,scope:database" \
+            --repo "${{ github.repository }}" || true
+
+          # 添加审查提醒评论
+          gh issue comment $PR_NUMBER --repo "${{ github.repository }}" --body "
+          📋 **数据库迁移审查提醒**
+
+          此PR涉及数据库迁移变更，需要后端开发 + DevOps工程师审查。
+
+          **审查要求**:
+          - Alembic迁移文件可正向执行（upgrade）
+          - Alembic迁移文件可回滚（downgrade）
+          - 数据模型变更是否向后兼容
+          - 是否需要数据迁移脚本
+          - 迁移是否影响现有数据
+
+          请确保PR模板中数据库变更检查清单已勾选 ✅
+          " || true

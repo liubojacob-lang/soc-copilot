@@ -106,7 +106,7 @@ def has_blocked_tld(host: str, blocked_tlds: list[str]) -> bool:
         return True
 
     tld = parts[-1]
-    blocked_set = set(x.lower().strip() for x in blocked_tlds if x.strip())
+    blocked_set = {x.lower().strip() for x in blocked_tlds if x.strip()}
     return tld in blocked_set
 
 

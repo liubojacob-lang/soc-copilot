@@ -32,13 +32,16 @@ IS_SQLITE = DATABASE_URL.startswith("sqlite")
 # Use separate test database in test environment
 if IS_TEST_ENV and IS_SQLITE:
     # Use in-memory database for tests (faster and isolated)
-    TEST_DB_PATH = os.getenv("TEST_DB_PATH", "/tmp/soc_copilot_test.db")
+    TEST_DB_PATH = os.getenv(
+        "TEST_DB_PATH", "/tmp/soc_copilot_test.db"
+    )  # nosec B108 - test-only path
     DATABASE_URL = f"sqlite+aiosqlite:///{TEST_DB_PATH}"
 
 # Create engine with appropriate settings based on database type
 if IS_SQLITE or (IS_TEST_ENV):
     # SQLite: No connection pool parameters (not supported)
     # Use NullPool for SQLite to avoid connection issues
+    from sqlalchemy import event
     from sqlalchemy.pool import NullPool
 
     if IS_TEST_ENV:
@@ -55,6 +58,17 @@ if IS_SQLITE or (IS_TEST_ENV):
         connect_args={"check_same_thread": False},
         poolclass=NullPool,  # SQLite works best with NullPool
     )
+
+    @event.listens_for(engine.sync_engine, "connect")
+    def _enable_sqlite_fk(dbapi_connection, _connection_record):
+        """Enforce FK constraints (incl. ON DELETE CASCADE) on SQLite.
+
+        SQLite disables foreign key enforcement per-connection by default,
+        which silently turned retention deletes into orphan rows in dev.
+        """
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 elif IS_POSTGRESQL:
     # PostgreSQL: Use connection pool settings
     # Convert sync URL to async if needed
@@ -98,17 +112,15 @@ Base = declarative_base()
 async def get_session() -> AsyncSession:
     """Get database session for dependency injection.
 
-    Uses explicit transaction management to ensure data is persisted.
+    The caller (route handler) is responsible for explicitly calling
+    await session.commit() when the operation succeeds. This prevents
+    premature commits if an exception occurs in a response interceptor or
+    downstream middleware after the route handler has returned.
     """
     session = AsyncSessionLocal()
     try:
         yield session
-        # Explicit commit at the end
-        await session.commit()
-    except Exception as e:
-        import logging
-
-        logging.getLogger(__name__).error(f"Session error, rolling back: {e}")
+    except Exception:
         await session.rollback()
         raise
     finally:

@@ -1,3 +1,4 @@
+const path = require("path");
 const createNextIntlPlugin = require("next-intl/plugin");
 const { withSentryConfig } = require("@sentry/nextjs");
 
@@ -9,6 +10,17 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   output: "standalone",
+  // Pin the Turbopack workspace root to the monorepo root (next is hoisted
+  // there). Without it, Next infers the root from stray lockfiles — e.g.
+  // ~/package-lock.json — and watches the entire home directory, pinning CPUs.
+  turbopack: {
+    root: path.join(__dirname, ".."),
+  },
+  // Type errors now fail the build. Keep this off: it previously masked a
+  // runtime crash (/cases), a broken endpoint and two build-breaking imports.
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
@@ -16,17 +28,41 @@ const nextConfig = {
     minimumCacheTTL: 60,
   },
   experimental: {
-    optimizeCss: true,
+    // Critters runs a heavy CSS pipeline per compile; in dev this spawns
+    // node workers on every cold start and can exhaust memory. Prod only.
+    optimizeCss: process.env.NODE_ENV === "production",
     optimizePackageImports: ["lucide-react", "recharts", "reactflow"],
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },
+  // Optimize webpack file watcher to prevent CPU spikes / overheating
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        aggregateTimeout: 300,
+        poll: false,
+        ignored: [
+          "**/node_modules/**",
+          "**/.next/**",
+          "**/backend/**",
+          "**/coverage/**",
+          "**/playwright-report/**",
+          "**/test-results/**",
+          "**/.git/**",
+          "**/docs/**",
+          "**/__pycache__/**",
+          "**/.pytest_cache/**",
+        ],
+      };
+    }
+    return config;
+  },
   async rewrites() {
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:8000/api/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/:path*`,
       },
     ];
   },
@@ -34,25 +70,36 @@ const nextConfig = {
     const securityHeaders = [
       { key: "X-Frame-Options", value: "DENY" },
       { key: "X-Content-Type-Options", value: "nosniff" },
-      { key: "X-XSS-Protection", value: "1; mode=block" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-      {
-        key: "Content-Security-Policy",
-        value: [
-          "default-src 'self'",
-          process.env.NODE_ENV === "production"
-            ? "script-src 'self' 'unsafe-inline'"
-            : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-          "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: https:",
-          "font-src 'self' data:",
-          "connect-src 'self' ws://localhost:* wss:",
-          "frame-ancestors 'none'",
-          "base-uri 'self'",
-          "form-action 'self'",
-        ].join("; "),
-      },
+      ...(process.env.NODE_ENV === "production"
+        ? [
+            {
+              key: "Strict-Transport-Security",
+              value: "max-age=31536000; includeSubDomains; preload",
+            },
+          ]
+        : []),
+      ...(process.env.NODE_ENV !== "production"
+        ? [
+            {
+              key: "Content-Security-Policy",
+              // Development only: HMR needs 'unsafe-eval'. In production the
+              // nonce-based CSP is issued per request by middleware.ts.
+              value: [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+                "style-src 'self' 'unsafe-inline'",
+                "img-src 'self' data: blob: https:",
+                "font-src 'self' data:",
+                "connect-src 'self' ws://localhost:* wss:",
+                "frame-ancestors 'none'",
+                "base-uri 'self'",
+                "form-action 'self'",
+              ].join("; "),
+            },
+          ]
+        : []),
     ];
 
     return [

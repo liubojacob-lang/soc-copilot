@@ -312,9 +312,7 @@ class TriggerRepository:
         logger.info(f"Cleaned up {deleted_count} old invocations")
         return deleted_count
 
-    async def get_invocation(
-        self, invocation_id: str
-    ) -> TriggerInvocationModel | None:
+    async def get_invocation(self, invocation_id: str) -> TriggerInvocationModel | None:
         """Get invocation by ID."""
         stmt = select(TriggerInvocationModel).where(
             TriggerInvocationModel.id == invocation_id

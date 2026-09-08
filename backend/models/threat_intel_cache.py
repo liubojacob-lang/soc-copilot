@@ -1,7 +1,7 @@
 """Threat Intelligence Cache database model."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, Index, Integer, String, Text
 
@@ -16,8 +16,13 @@ class ThreatIntelCacheDB(Base):
     __tablename__ = "threat_intel_cache"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(
+        DateTime(timezone=True), nullable=True, index=True
+    )  # v1.1: soft delete
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), index=True)
+    updated_at = Column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
     provider = Column(String, nullable=False, index=True)  # e.g., "otx"
     ioc_type = Column(String, nullable=False, index=True)  # ip/domain/url/hash
     ioc_value = Column(String, nullable=False, index=True)

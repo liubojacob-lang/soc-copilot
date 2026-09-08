@@ -1,7 +1,7 @@
 """Blocked IP model for threat response."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Index, String, Text
 
@@ -14,8 +14,10 @@ class BlockedIP(Base):
     __tablename__ = "blocked_ips"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
     value = Column(String(255), nullable=False, index=True)
     type = Column(String(20), nullable=False, default="ip")

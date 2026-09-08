@@ -69,5 +69,26 @@
       "noAlerts": "No alerts",
       "notConnected": "Not connected to stream"
     }
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "close": "Close",
+    "footer": "Press <kbd>?</kbd> anytime to open this help",
+    "categories": {
+      "general": "General",
+      "home": "Home",
+      "other": "Other"
+    },
+    "items": {
+      "refreshPage": "Refresh current page",
+      "focusSearch": "Focus search box",
+      "closeDialog": "Close dialog / cancel",
+      "showHelp": "Show shortcut help",
+      "openSearch": "Open global search",
+      "tabAlerts": "Switch to alerts tab",
+      "tabTimeline": "Switch to timeline tab",
+      "tabReports": "Switch to reports tab",
+      "tabAssets": "Switch to assets tab"
+    }
   }
 }

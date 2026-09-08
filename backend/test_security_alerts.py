@@ -86,7 +86,7 @@ async def main():
 
     try:
         # Test 1: Create alert
-        alert = await create_test_alert()
+        await create_test_alert()
 
         # Test 2: List alerts
         await list_alerts()

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { loadAuthState } from "@/lib/auth";
+import { apiClient } from "@/lib/api/client";
 import { Shield, Filter, Plus, Trash2, Save, RefreshCw, CheckCircle } from "lucide-react";
 import { SeverityLevel } from "@/types/wazuh";
 
@@ -57,16 +58,8 @@ export const FilterConfig = React.memo(function FilterConfig() {
 
       setLoading(true);
       try {
-        const response = await fetch("/api/v1/websocket/filters", {
-          headers: {
-            Authorization: `Bearer ${authState.tokens?.access_token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setFilters(data);
-        }
+        const data = await apiClient.get<FilterSet>("/api/v1/websocket/filters");
+        setFilters(data);
       } catch (error) {
         console.error("Error fetching filters:", error);
         setMessage({ type: "error", text: "Failed to load filters" });
@@ -87,20 +80,8 @@ export const FilterConfig = React.memo(function FilterConfig() {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/v1/websocket/filters", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${authState.tokens?.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(filters),
-      });
-
-      if (response.ok) {
-        setMessage({ type: "success", text: "Filters saved successfully" });
-      } else {
-        throw new Error("Failed to save filters");
-      }
+      await apiClient.put("/api/v1/websocket/filters", filters);
+      setMessage({ type: "success", text: "Filters saved successfully" });
     } catch (error) {
       console.error("Error saving filters:", error);
       setMessage({ type: "error", text: "Failed to save filters" });
@@ -116,21 +97,13 @@ export const FilterConfig = React.memo(function FilterConfig() {
     setSaving(true);
 
     try {
-      const response = await fetch("/api/v1/websocket/filters", {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${authState.tokens?.access_token}`,
-        },
+      await apiClient.delete("/api/v1/websocket/filters");
+      setFilters({
+        user_id: filters.user_id,
+        default_action: "allow",
+        rules: [],
       });
-
-      if (response.ok) {
-        setFilters({
-          user_id: filters.user_id,
-          default_action: "allow",
-          rules: [],
-        });
-        setMessage({ type: "success", text: "Filters cleared" });
-      }
+      setMessage({ type: "success", text: "Filters cleared" });
     } catch (error) {
       console.error("Error clearing filters:", error);
       setMessage({ type: "error", text: "Failed to clear filters" });

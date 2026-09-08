@@ -38,6 +38,60 @@
     "errors": {
       "failedToLoad": "Failed to load audit logs",
       "failedToLoadStats": "Failed to load stats"
+    },
+    "title": "Audit Logs",
+    "description": "Track and review all API access and operation records",
+    "empty": "No audit logs",
+    "error": {
+      "title": "Failed to load audit logs",
+      "retry": "Retry"
+    },
+    "export": {
+      "failed": "CSV export failed",
+      "error": "Failed to export audit logs"
+    },
+    "logs": {
+      "title": "Audit Log Entries",
+      "count": "{count} entries"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "export": "Export CSV"
+    },
+    "filters": {
+      "title": "Filters",
+      "reset": "Reset",
+      "action": "Action",
+      "allActions": "All actions",
+      "statusCode": "Status Code",
+      "allStatuses": "All statuses",
+      "dateFrom": "From",
+      "dateTo": "To",
+      "path": "Request Path",
+      "pathPlaceholder": "/api/v1/alerts",
+      "userId": "User ID",
+      "userIdPlaceholder": "e.g. user-123",
+      "ipAddress": "IP Address",
+      "ipAddressPlaceholder": "e.g. 192.168.1.1"
+    },
+    "stats": {
+      "totalRequests": "Total Requests",
+      "last24h": "Last 24 Hours",
+      "failedRequests": "Failed Requests",
+      "trendUp": "trending up",
+      "trendDown": "trending down",
+      "rateHigh": "high error rate",
+      "rateModerate": "moderate error rate",
+      "rateLow": "low error rate"
+    },
+    "pagination": {
+      "range": "Showing <strong>{from}</strong>–<strong>{to}</strong> of <strong>{total}</strong> records",
+      "first": "First page",
+      "prev": "Previous page",
+      "next": "Next page",
+      "last": "Last page",
+      "perPagePrefix": "Per page:",
+      "perPageSuffix": ""
     }
   },
   "adminAudit": {

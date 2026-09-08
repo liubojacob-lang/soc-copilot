@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { loadAuthState } from "@/lib/auth";
+import { apiClient } from "@/lib/api/client";
 import {
   Activity,
   MessageSquare,
@@ -76,16 +77,8 @@ export const MonitoringDashboard = React.memo(function MonitoringDashboard() {
 
       setRefreshing(true);
 
-      const response = await fetch("/api/v1/ws/monitoring/metrics", {
-        headers: {
-          Authorization: `Bearer ${authState.tokens?.access_token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMetrics(data);
-      }
+      const data = await apiClient.get<MetricsData>("/api/v1/ws/monitoring/metrics");
+      setMetrics(data);
     } catch (error) {
       console.error("Error fetching metrics:", error);
     } finally {

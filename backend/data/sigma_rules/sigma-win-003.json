@@ -1,0 +1,38 @@
+{
+  "id": "sigma-win-003",
+  "title": "Suspicious Scheduled Task Creation",
+  "description": "Detects creation of scheduled tasks with suspicious command lines (EventID 4698) containing powershell, cmd, wscript, or cscript.",
+  "status": "stable",
+  "level": "medium",
+  "author": "SOC Copilot",
+  "category": "windows",
+  "tags": [
+    "attack.persistence",
+    "attack.t1053.005"
+  ],
+  "mitre_techniques": [
+    "T1053.005"
+  ],
+  "logsource": {
+    "product": "windows",
+    "service": "security"
+  },
+  "detection": {
+    "selection": {
+      "EventID": 4698,
+      "TaskContent|contains": [
+        "powershell",
+        "cmd.exe /c",
+        "wscript",
+        "cscript"
+      ]
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Legitimate administrative task creation"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1053/005/"
+  ]
+}

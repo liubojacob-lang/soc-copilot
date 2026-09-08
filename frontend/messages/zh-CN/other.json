@@ -1,0 +1,94 @@
+{
+  "audit": {
+    "actions": {
+      "allActions": "所有操作",
+      "authentication": "身份认证",
+      "userManagement": "用户管理",
+      "playbooks": "剧本",
+      "assets": "资产",
+      "apiKeys": "API 密钥",
+      "playbookDefinitions": "剧本定义",
+      "threatIntel": "威胁情报",
+      "iocHits": "IOC 命中",
+      "alertAnalysis": "告警分析",
+      "reports": "报告",
+      "timelines": "时间线",
+      "auditLogs": "审计日志",
+      "webhooks": "Webhooks",
+      "history": "历史记录"
+    },
+    "paths": {
+      "allPaths": "所有路径",
+      "playbooks": "剧本",
+      "authentication": "身份认证",
+      "userManagement": "用户管理",
+      "assets": "资产",
+      "apiKeys": "API 密钥",
+      "threatIntel": "威胁情报",
+      "auditLogs": "审计日志",
+      "webhooks": "Webhooks",
+      "history": "历史记录",
+      "alertAnalysis": "告警分析",
+      "reports": "报告",
+      "timelines": "时间线"
+    },
+    "statusCodes": {
+      "allStatus": "所有状态",
+      "success": "成功 (2xx)",
+      "allErrors": "所有错误",
+      "clientErrors": "客户端错误 (4xx)",
+      "serverErrors": "服务器错误 (5xx)",
+      "ok200": "200 OK",
+      "created201": "201 已创建",
+      "noContent204": "204 无内容",
+      "badRequest400": "400 错误请求",
+      "unauthorized401": "401 未授权",
+      "forbidden403": "403 禁止访问",
+      "notFound404": "404 未找到",
+      "unprocessable422": "422 无法处理",
+      "serverError500": "500 服务器错误"
+    }
+  },
+  "api": "API",
+  "checking": "检查中",
+  "statusError": "状态异常",
+  "logout": "退出登录",
+  "wazuh": {
+    "stream": {
+      "title": "实时告警流",
+      "toggleFilters": "切换筛选器",
+      "clearAlerts": "清除告警",
+      "exportAlerts": "导出告警",
+      "filters": "筛选器",
+      "minSeverity": "最低严重程度",
+      "allSeverities": "所有严重程度",
+      "search": "搜索",
+      "searchPlaceholder": "搜索告警...",
+      "agent": "代理",
+      "allAgents": "所有代理",
+      "noAlerts": "暂无告警",
+      "notConnected": "未连接到流"
+    }
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "close": "关闭",
+    "footer": "按 <kbd>?</kbd> 随时打开此帮助",
+    "categories": {
+      "general": "通用",
+      "home": "首页",
+      "other": "其他"
+    },
+    "items": {
+      "refreshPage": "刷新当前页面",
+      "focusSearch": "聚焦搜索框",
+      "closeDialog": "关闭弹窗/取消操作",
+      "showHelp": "显示快捷键帮助",
+      "openSearch": "打开全局搜索",
+      "tabAlerts": "切换到告警分析标签",
+      "tabTimeline": "切换到时间线标签",
+      "tabReports": "切换到报告标签",
+      "tabAssets": "切换到资产标签"
+    }
+  }
+}

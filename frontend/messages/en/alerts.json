@@ -25,6 +25,7 @@
     "medium": "Medium",
     "high": "High",
     "critical": "Critical",
+    "info": "Info",
     "open": "Open",
     "investigating": "Investigating",
     "resolved": "Resolved",

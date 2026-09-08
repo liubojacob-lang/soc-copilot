@@ -84,15 +84,16 @@ def validate_security_env():
     except EnvVarError as e:
         errors.append(str(e))
 
-    # JWT Secret
+    # JWT Secret (the signing key actually consumed by core.config.jwt_secret;
+    # a legacy SECRET_KEY variable was never read by the application)
     try:
         secret_key = validate_env_var(
-            "SECRET_KEY", required=True, min_length=32, hint="openssl rand -base64 64"
+            "JWT_SECRET", required=True, min_length=32, hint="openssl rand -base64 64"
         )
         # Additional check for secret strength
         if secret_key and len(secret_key) < 32:
             errors.append(
-                f"❌ SECRET_KEY too weak (length: {len(secret_key)}, minimum: 32)\n"
+                f"❌ JWT_SECRET too weak (length: {len(secret_key)}, minimum: 32)\n"
                 f"   💡 Generate strong key: openssl rand -base64 64"
             )
     except EnvVarError as e:

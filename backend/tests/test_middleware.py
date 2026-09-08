@@ -35,7 +35,7 @@ def mock_request():
         "state": {},
     }
     receive = AsyncMock()
-    send = AsyncMock()
+    AsyncMock()
     return Request(scope, receive)
 
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 const STORAGE_KEY = "ai_chat_history";
 const MAX_CONVERSATIONS = 50;
@@ -27,6 +28,7 @@ interface ChatHistoryStorage {
 }
 
 export function useChatHistory() {
+  const t = useTranslations("aiAssistant.history");
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,7 +104,7 @@ export function useChatHistory() {
           return;
         }
 
-        const title = generateTitle(validMessages);
+        const title = generateTitle(validMessages, t("newChat"));
         const now = new Date().toISOString();
 
         setConversations((prev) => {
@@ -219,10 +221,10 @@ export function useChatHistory() {
 }
 
 // Generate conversation title from first user message
-function generateTitle(messages: ChatMessage[]): string {
+function generateTitle(messages: ChatMessage[], fallbackTitle: string): string {
   try {
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return "新对话";
+      return fallbackTitle;
     }
 
     const firstUserMsg = messages.find((m) => m && m.role === "user");
@@ -230,12 +232,12 @@ function generateTitle(messages: ChatMessage[]): string {
       const content = firstUserMsg.content;
       // Clean up and truncate
       const cleaned = content.replace(/\n/g, " ").trim();
-      if (!cleaned) return "新对话";
+      if (!cleaned) return fallbackTitle;
       return cleaned.length > 30 ? cleaned.slice(0, 30) + "..." : cleaned;
     }
-    return "新对话";
+    return fallbackTitle;
   } catch (error) {
     console.error("Error generating title:", error);
-    return "新对话";
+    return fallbackTitle;
   }
 }

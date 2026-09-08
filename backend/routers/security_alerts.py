@@ -3,11 +3,12 @@ Security Alert Ingestion Router
 Receives and manages alerts from external security monitoring tools (Wazuh, Snort, OSQuery, etc).
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import ValidationError
 from sqlalchemy import and_, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -58,7 +59,9 @@ async def ingest_alert(
 
         # Parse timestamp
         try:
-            event_timestamp = datetime.fromisoformat(alert_data.timestamp.replace("Z", "+00:00"))
+            event_timestamp = datetime.fromisoformat(
+                alert_data.timestamp.replace("Z", "+00:00")
+            )
         except ValueError:
             raise HTTPException(
                 status_code=400,
@@ -102,8 +105,12 @@ async def ingest_alert(
             agent_ip=alert_data.agent_ip,
             rule_id=alert_data.rule_id,
             rule_level=alert_data.rule_level,
-            rule_groups=(",".join(alert_data.rule_groups) if alert_data.rule_groups else None),
-            rule_mitre=(",".join(alert_data.rule_mitre) if alert_data.rule_mitre else None),
+            rule_groups=(
+                ",".join(alert_data.rule_groups) if alert_data.rule_groups else None
+            ),
+            rule_mitre=(
+                ",".join(alert_data.rule_mitre) if alert_data.rule_mitre else None
+            ),
             full_log=alert_data.full_log,
             location=alert_data.location,
             geoip=alert_data.geoip,
@@ -113,7 +120,33 @@ async def ingest_alert(
         )
 
         session.add(new_alert)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            # Two concurrent ingests of the same (source, event_id) race past
+            # the SELECT above; the unique index catches the loser here.
+            # Roll back and report a duplicate instead of a 500.
+            await session.rollback()
+            raced = await session.execute(
+                select(SecurityAlert).where(
+                    and_(
+                        SecurityAlert.source == alert_data.source,
+                        SecurityAlert.external_event_id == alert_data.event_id,
+                    )
+                )
+            )
+            winner = raced.scalar_one_or_none()
+            if winner is None:
+                raise
+            logger.info(
+                f"Duplicate alert (race resolved): source={alert_data.source}, "
+                f"event_id={alert_data.event_id}"
+            )
+            return {
+                "status": "duplicate",
+                "message": "Alert already exists",
+                "alert_id": winner.id,
+            }
         await session.refresh(new_alert)
 
         logger.info(
@@ -141,9 +174,13 @@ async def ingest_alert(
                 "agent_name": new_alert.agent_name,
                 "rule_id": new_alert.rule_id,
                 "rule_level": new_alert.rule_level,
-                "created_at": (new_alert.created_at.isoformat() if new_alert.created_at else None),
+                "created_at": (
+                    new_alert.created_at.isoformat() if new_alert.created_at else None
+                ),
                 "event_timestamp": (
-                    new_alert.event_timestamp.isoformat() if new_alert.event_timestamp else None
+                    new_alert.event_timestamp.isoformat()
+                    if new_alert.event_timestamp
+                    else None
                 ),
             }
 
@@ -159,6 +196,15 @@ async def ingest_alert(
         except Exception as e:
             logger.error(f"  ✗ Error publishing to message queue: {e}")
             # Don't fail the request if queue publish fails
+
+        # Push the new alert to connected WebSocket clients; failures here
+        # must not fail the ingestion request
+        try:
+            from routers.websocket import push_alert
+
+            await push_alert({**alert_dict, "status": new_alert.status})
+        except Exception as e:
+            logger.error(f"  ✗ Error pushing alert to WebSocket clients: {e}")
 
         return {
             "status": "success",
@@ -177,6 +223,7 @@ async def ingest_alert(
         raise HTTPException(status_code=500, detail=f"Failed to ingest alert: {e!s}")
 
 
+@router.get("", response_model=SecurityAlertListResponse)
 @router.get("/", response_model=SecurityAlertListResponse)
 async def list_alerts(
     source: str | None = Query(None, description="Filter by source"),
@@ -253,6 +300,88 @@ async def list_alerts(
         raise HTTPException(status_code=500, detail=f"Failed to list alerts: {e!s}")
 
 
+@router.get("/stats/summary", response_model=SecurityAlertStats)
+@cached(ttl=60, prefix="alert_stats")
+async def get_alert_statistics(
+    session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
+) -> SecurityAlertStats:
+    """
+    Get alert statistics summary.
+
+    Returns:
+    - Total alert count
+    - Breakdown by severity
+    - Breakdown by status
+    - Breakdown by source
+    - Counts for last 24h, 7d, 30d
+    """
+    try:
+        # Total count
+        total_query = select(func.count()).select_from(SecurityAlert)
+        total_result = await session.execute(total_query)
+        total = total_result.scalar() or 0
+
+        # By severity
+        severity_query = select(
+            SecurityAlert.severity, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.severity)
+        severity_result = await session.execute(severity_query)
+        by_severity = {row[0]: row[1] for row in severity_result.all()}
+
+        # By status
+        status_query = select(
+            SecurityAlert.status, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.status)
+        status_result = await session.execute(status_query)
+        by_status = {row[0]: row[1] for row in status_result.all()}
+
+        # By source
+        source_query = select(
+            SecurityAlert.source, func.count(SecurityAlert.id)
+        ).group_by(SecurityAlert.source)
+        source_result = await session.execute(source_query)
+        by_source = {row[0]: row[1] for row in source_result.all()}
+
+        # Time-based counts
+        now = datetime.now(UTC)
+
+        last_24h_query = (
+            select(func.count())
+            .select_from(SecurityAlert)
+            .where(SecurityAlert.created_at >= now - timedelta(hours=24))
+        )
+        last_24h = (await session.execute(last_24h_query)).scalar() or 0
+
+        last_7d_query = (
+            select(func.count())
+            .select_from(SecurityAlert)
+            .where(SecurityAlert.created_at >= now - timedelta(days=7))
+        )
+        last_7d = (await session.execute(last_7d_query)).scalar() or 0
+
+        last_30d_query = (
+            select(func.count())
+            .select_from(SecurityAlert)
+            .where(SecurityAlert.created_at >= now - timedelta(days=30))
+        )
+        last_30d = (await session.execute(last_30d_query)).scalar() or 0
+
+        return SecurityAlertStats(
+            total=total,
+            by_severity=by_severity,
+            by_status=by_status,
+            by_source=by_source,
+            last_24h=last_24h,
+            last_7d=last_7d,
+            last_30d=last_30d,
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting alert statistics: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {e!s}")
+
+
 @router.get("/{alert_id}", response_model=SecurityAlertResponse)
 async def get_alert(
     alert_id: int,
@@ -309,7 +438,7 @@ async def update_alert(
             alert.status = update_data.status.lower()
             # Set closed_at if status is closed or false_positive
             if alert.status in ["closed", "false_positive"] and not alert.closed_at:
-                alert.closed_at = datetime.utcnow()
+                alert.closed_at = datetime.now(UTC)
 
         if update_data.assigned_to:
             alert.assigned_to = update_data.assigned_to
@@ -332,88 +461,6 @@ async def update_alert(
         logger.error(f"Error updating alert {alert_id}: {e!s}")
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to update alert: {e!s}")
-
-
-@router.get("/stats/summary", response_model=SecurityAlertStats)
-@cached(ttl=60, prefix="alert_stats")
-async def get_alert_statistics(
-    session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
-) -> SecurityAlertStats:
-    """
-    Get alert statistics summary.
-
-    Returns:
-    - Total alert count
-    - Breakdown by severity
-    - Breakdown by status
-    - Breakdown by source
-    - Counts for last 24h, 7d, 30d
-    """
-    try:
-        # Total count
-        total_query = select(func.count()).select_from(SecurityAlert)
-        total_result = await session.execute(total_query)
-        total = total_result.scalar() or 0
-
-        # By severity
-        severity_query = select(SecurityAlert.severity, func.count(SecurityAlert.id)).group_by(
-            SecurityAlert.severity
-        )
-        severity_result = await session.execute(severity_query)
-        by_severity = {row[0]: row[1] for row in severity_result.all()}
-
-        # By status
-        status_query = select(SecurityAlert.status, func.count(SecurityAlert.id)).group_by(
-            SecurityAlert.status
-        )
-        status_result = await session.execute(status_query)
-        by_status = {row[0]: row[1] for row in status_result.all()}
-
-        # By source
-        source_query = select(SecurityAlert.source, func.count(SecurityAlert.id)).group_by(
-            SecurityAlert.source
-        )
-        source_result = await session.execute(source_query)
-        by_source = {row[0]: row[1] for row in source_result.all()}
-
-        # Time-based counts
-        now = datetime.utcnow()
-
-        last_24h_query = (
-            select(func.count())
-            .select_from(SecurityAlert)
-            .where(SecurityAlert.created_at >= now - timedelta(hours=24))
-        )
-        last_24h = (await session.execute(last_24h_query)).scalar() or 0
-
-        last_7d_query = (
-            select(func.count())
-            .select_from(SecurityAlert)
-            .where(SecurityAlert.created_at >= now - timedelta(days=7))
-        )
-        last_7d = (await session.execute(last_7d_query)).scalar() or 0
-
-        last_30d_query = (
-            select(func.count())
-            .select_from(SecurityAlert)
-            .where(SecurityAlert.created_at >= now - timedelta(days=30))
-        )
-        last_30d = (await session.execute(last_30d_query)).scalar() or 0
-
-        return SecurityAlertStats(
-            total=total,
-            by_severity=by_severity,
-            by_status=by_status,
-            by_source=by_source,
-            last_24h=last_24h,
-            last_7d=last_7d,
-            last_30d=last_30d,
-        )
-
-    except Exception as e:
-        logger.error(f"Error getting alert statistics: {e!s}")
-        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {e!s}")
 
 
 @router.delete("/{alert_id}", response_model=dict)

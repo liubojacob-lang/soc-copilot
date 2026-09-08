@@ -112,7 +112,7 @@ class TestTokenInvalidationByUserUpdate:
     def test_token_without_iat_claim_is_rejected(self):
         """Old tokens without 'iat' claim should be rejected."""
         # Manually create a token without iat (simulating old behavior)
-        from jose import jwt
+        import jwt
 
         from core.security import JWT_ALGORITHM, get_jwt_secret
 

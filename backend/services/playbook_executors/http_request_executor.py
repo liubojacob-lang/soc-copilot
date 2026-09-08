@@ -29,10 +29,7 @@ def is_private_ip(ip_str: str) -> bool:
     """Check if an IP address is private/internal."""
     try:
         ip = ipaddress.ip_address(ip_str)
-        for network in PRIVATE_IP_RANGES:
-            if ip in network:
-                return True
-        return False
+        return any(ip in network for network in PRIVATE_IP_RANGES)
     except ValueError:
         return False
 

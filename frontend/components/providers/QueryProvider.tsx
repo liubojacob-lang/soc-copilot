@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState, useEffect } from "react";
 import { queryClient } from "@/lib/queryClient";
 import { cacheUtils } from "@/lib/queryClient";
+import { getAccessToken, usingHttpOnlyCookies } from "@/lib/auth";
 
 interface QueryProviderProps {
   children: React.ReactNode;
@@ -18,6 +19,9 @@ export function QueryProvider({ children, enableDevtools = false }: QueryProvide
   useEffect(() => {
     const prefetchData = async () => {
       try {
+        // Skip prefetching while logged out — both queries would 401
+        // (e.g. on the login page) and pollute the console with errors.
+        if (!getAccessToken() && !usingHttpOnlyCookies()) return;
         await cacheUtils.prefetchCommonQueries();
       } catch (error) {
         console.warn("Failed to prefetch common queries:", error);
@@ -62,29 +66,6 @@ export function QueryProvider({ children, enableDevtools = false }: QueryProvide
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [enableDevtools]);
-
-  // Setup global error handler
-  useEffect(() => {
-    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
-      // Check for query errors via the query state
-      if (event.query?.state?.status === "error") {
-        const query = event.query;
-        const error = query.state.error;
-
-        // Log query errors for monitoring
-        console.error("Query error:", {
-          queryKey: query.queryKey,
-          error: error instanceof Error ? error.message : "Unknown error",
-          timestamp: new Date().toISOString(),
-        });
-
-        // You could send this to your error tracking service here
-        // Example: Sentry.captureException(error, { extra: { queryKey: query.queryKey } });
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

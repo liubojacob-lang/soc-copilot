@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.session import Base
@@ -135,16 +135,16 @@ class CorrelatedEvent(Base):
         String(20), nullable=True, doc="high, medium, low, none"
     )
 
-    # Metadata
-    created_at: Mapped[str] = mapped_column(
-        String(50), default=lambda: datetime.now(UTC).isoformat()
+    # Metadata — real timestamps (were String(50) ISO text before v0.9.2)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
-    updated_at: Mapped[str] = mapped_column(
-        String(50), default=lambda: datetime.now(UTC).isoformat()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
-    resolved_at: Mapped[str] = mapped_column(String(50), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Performance metrics
     correlation_time_ms: Mapped[int] = mapped_column(

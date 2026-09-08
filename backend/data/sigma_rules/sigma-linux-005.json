@@ -1,0 +1,33 @@
+{
+  "id": "sigma-linux-005",
+  "title": "Kernel Module Loading",
+  "description": "Detects loading of kernel modules via finit_module (syscall 313), potentially for rootkit installation.",
+  "status": "stable",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "linux",
+  "tags": [
+    "attack.persistence",
+    "attack.t1547.006"
+  ],
+  "mitre_techniques": [
+    "T1547.006"
+  ],
+  "logsource": {
+    "product": "linux",
+    "service": "audit"
+  },
+  "detection": {
+    "selection": {
+      "syscall": 313,
+      "key": "modules"
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Legitimate kernel module loading"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1547/006/"
+  ]
+}

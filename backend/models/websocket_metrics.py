@@ -20,8 +20,14 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
-class MetricType(str, Enum):
-    """Types of metrics collected."""
+class MetricCategory(str, Enum):
+    """Categories of metrics collected.
+
+    Renamed from MetricType to avoid collision with the unrelated
+    AlertMetricType in monitoring_alerts.py (which enumerates the specific
+    metric names that can trigger alerts). This enum groups metrics by
+    collection domain (connection / message / error / performance).
+    """
 
     CONNECTION = "connection"
     MESSAGE = "message"
@@ -69,9 +75,7 @@ class ConnectionMetrics(BaseModel):
     unique_users_connected: int = 0
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def increment_connection(self, user_id: str | None = None) -> None:
         """Increment total connections counter."""
@@ -138,9 +142,7 @@ class MessageMetrics(BaseModel):
     avg_broadcast_recipients: float = 0.0
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def record_message_sent(
         self, message_type: str, size_bytes: int, recipients: int = 1
@@ -209,9 +211,7 @@ class ErrorMetrics(BaseModel):
     current_error_rate: float = 0.0  # Errors per second
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def record_error(
         self,
@@ -286,9 +286,7 @@ class PerformanceMetrics(BaseModel):
     cpu_usage_percent: float = 0.0
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def record_latency(self, latency_ms: float) -> None:
         """Record a latency measurement."""
@@ -349,9 +347,7 @@ class AggregatedMetrics(BaseModel):
     health_score: float = 100.0
 
     # Timestamp
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def calculate_health_score(self) -> float:
         """
@@ -427,9 +423,7 @@ class MetricsSnapshot(BaseModel):
     """
 
     id: str | None = None
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     # Metrics data (serialized)
     connection: ConnectionMetrics
@@ -452,7 +446,7 @@ class MetricsQuery(BaseModel):
 
     start_time: str | None = None  # ISO format timestamp
     end_time: str | None = None  # ISO format timestamp
-    metric_types: list[MetricType] = Field(default_factory=list)
+    metric_types: list[MetricCategory] = Field(default_factory=list)
     limit: int = 100
     offset: int = 0
     aggregate_by: str | None = None  # "1m", "5m", "1h", etc.
@@ -464,9 +458,7 @@ class MetricsReport(BaseModel):
     """
 
     report_id: str
-    generated_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    generated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     time_range: dict[str, str] = Field(default_factory=dict)
 
     # Summary statistics

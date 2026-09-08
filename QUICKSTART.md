@@ -50,7 +50,11 @@ docker-compose up -d
 **生产模式** (使用 nginx):
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml --profile production up -d
+# 生产栈是独立 compose 文件，不要与基础 compose 混用：
+# 先 cp .env.production.example .env.production 并填写必填值
+docker compose --env-file .env.production -f docker-compose.prod.yml config -q
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+# 完整步骤（TLS/备份/回滚）见 docs/09-ops-deploy.md
 ```
 
 ### 5. 访问应用

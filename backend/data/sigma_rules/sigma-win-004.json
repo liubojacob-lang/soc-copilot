@@ -1,0 +1,41 @@
+{
+  "id": "sigma-win-004",
+  "title": "WMI Persistence via Event Subscription",
+  "description": "Detects WMI event subscriptions (EventID 19, 20, 21) used for attacker persistence via __EventFilter, CommandLineEventConsumer, or ActiveScriptEventConsumer.",
+  "status": "experimental",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "windows",
+  "tags": [
+    "attack.persistence",
+    "attack.t1546.003"
+  ],
+  "mitre_techniques": [
+    "T1546.003"
+  ],
+  "logsource": {
+    "product": "windows",
+    "service": "sysmon"
+  },
+  "detection": {
+    "selection": {
+      "EventID": [
+        19,
+        20,
+        21
+      ],
+      "CommandLine|contains": [
+        "__EventFilter",
+        "CommandLineEventConsumer",
+        "ActiveScriptEventConsumer"
+      ]
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Legitimate WMI administration"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1546/003/"
+  ]
+}

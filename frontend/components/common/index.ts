@@ -3,19 +3,19 @@
 // 无障碍组件
 export { SkipToContent } from "./SkipToContent";
 
+// 确认弹窗组件
+export { ConfirmDialog } from "./ConfirmDialog";
+export type { ConfirmDialogProps } from "./ConfirmDialog";
+
 // 按钮组件
 export { Button, buttonVariants } from "./Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button";
 
 // 卡片组件
-export { Card, StatCard, cardVariants, statCardColorClasses } from "./Card";
-export type {
-  CardProps,
-  CardVariant,
-  CardPadding,
-  StatCardProps,
-  StatCardColorScheme,
-} from "./Card";
+export { Card, cardVariants } from "./Card";
+export type { CardProps, CardVariant, CardPadding } from "./Card";
+export { StatCard } from "@/components/dashboard/StatCard";
+export type { StatCardProps } from "@/components/dashboard/StatCard";
 
 // 表单输入组件
 export { Input, Textarea, Select, Checkbox, Switch, inputVariants } from "./Input";
@@ -51,3 +51,8 @@ export { LoadingSpinner, FullScreenLoader, SkeletonLoader } from "./LoadingSpinn
 
 // 标签切换过渡组件
 export { TabTransition } from "./TabTransition";
+
+// 返回按钮组件与页面标题
+export { BackButton } from "./BackButton";
+export type { BackButtonProps } from "./BackButton";
+export { PageHeader } from "./PageHeader";

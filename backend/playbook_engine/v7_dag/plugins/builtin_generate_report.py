@@ -1,7 +1,7 @@
 """Generate incident response report node plugin (v0.7.4)."""
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from ..base_node import BaseNodePlugin, NodeExecutionContext
@@ -71,7 +71,7 @@ class GenerateReportPlugin(BaseNodePlugin):
         report_lines.append(f"# Incident Response Report: {case_id}")
         report_lines.append("")
         report_lines.append(
-            f"**Generated:** {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC"
+            f"**Generated:** {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')} UTC"
         )
         report_lines.append(f"**Playbook Run ID:** {context.run_id}")
         report_lines.append("")
@@ -212,7 +212,7 @@ class GenerateReportPlugin(BaseNodePlugin):
         )
 
         markdown = "\n".join(report_lines)
-        report_id = f"RPT-{case_id}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+        report_id = f"RPT-{case_id}-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
         logger.info(f"[{context.run_id}] Report generated: {report_id}")
 
@@ -222,7 +222,7 @@ class GenerateReportPlugin(BaseNodePlugin):
             "case_id": case_id,
             "markdown": markdown,
             "report_url": f"/api/reports/{report_id}",
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "threat_level": "high" if is_malicious else "low",
             "word_count": len(markdown.split()),
         }

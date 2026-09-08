@@ -39,6 +39,10 @@
     "resetSuccess": "Password reset successfully",
     "saveChanges": "Save Changes",
     "searchPlaceholder": "Search users...",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "deleteSuccess": "User deleted successfully",
+    "deleteFailed": "Failed to delete user",
+    "updateSuccess": "User updated successfully",
+    "updateFailed": "Failed to update user"
   }
 }

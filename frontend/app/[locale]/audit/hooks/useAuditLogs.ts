@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { authFetchJSON } from "@/lib/auth";
+import { apiClient } from "@/lib/api/client";
 import type { AuditLog } from "../types";
 
 interface AuditLogStats {
@@ -88,23 +88,17 @@ export function useAuditLogs(options: UseAuditLogsOptions = {}): UseAuditLogsRes
 
     try {
       const queryParams = buildQueryParams();
-      const response = await authFetchJSON<{
-        ok: boolean;
-        json: () => Promise<{ logs: AuditLog[]; total: number; stats: AuditLogStats | null }>;
-      }>(`/api/audit?${queryParams}`);
+      const data = await apiClient.get<{
+        items: AuditLog[];
+        total: number;
+        page: number;
+        page_size: number;
+      }>(`/api/v1/audit-logs?${queryParams}`);
 
-      if (response.ok) {
-        const data = await response.json();
-        setLogs(data.logs || []);
-        setTotal(data.total || 0);
-        setStats(data.stats || null);
-      } else {
-        setError("Failed to fetch audit logs");
-        setLogs([]);
-        setTotal(0);
-      }
+      setLogs(data.items || []);
+      setTotal(data.total || 0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(err instanceof Error ? err.message : "Failed to fetch audit logs");
       setLogs([]);
       setTotal(0);
     } finally {

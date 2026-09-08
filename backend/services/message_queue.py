@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 try:
-    import redis
+    import redis  # noqa: F401 (availability probe)
     from redis.asyncio import Redis as AsyncRedis
 
     REDIS_AVAILABLE = True
@@ -135,7 +135,9 @@ class MessageQueueService:
                     return False
             else:
                 # Create new queue metadata with configured max_size
-                queue_meta = UserQueue(user_id=user_id, max_size=self.config.max_queue_size)
+                queue_meta = UserQueue(
+                    user_id=user_id, max_size=self.config.max_queue_size
+                )
 
             # Create queued message
             queued_msg = QueuedMessage(
@@ -151,7 +153,9 @@ class MessageQueueService:
             # Update metadata
             if queue_meta.add_message():
                 await self._redis.setex(
-                    meta_key, self.config.default_ttl_seconds, queue_meta.model_dump_json()
+                    meta_key,
+                    self.config.default_ttl_seconds,
+                    queue_meta.model_dump_json(),
                 )
                 # Set TTL on queue key to match metadata
                 await self._redis.expire(queue_key, self.config.default_ttl_seconds)
@@ -163,7 +167,9 @@ class MessageQueueService:
             logger.error(f"Error pushing message for user {user_id}: {e}")
             return False
 
-    async def get_messages(self, user_id: str, count: int | None = None) -> list[QueuedMessage]:
+    async def get_messages(
+        self, user_id: str, count: int | None = None
+    ) -> list[QueuedMessage]:
         """
         Get queued messages for a user.
 

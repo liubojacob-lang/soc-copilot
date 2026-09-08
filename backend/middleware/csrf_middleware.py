@@ -16,8 +16,11 @@ logger = get_logger(__name__)
 # Paths that don't require CSRF validation
 CSRF_EXEMPT_PATHS = {
     "/api/auth/login",
+    "/api/v1/auth/login",  # v1.1: versioned login endpoint is also exempt
     "/api/auth/refresh",
+    "/api/v1/auth/refresh",  # refresh rotates its own HttpOnly cookie
     "/api/auth/logout",
+    "/api/v1/auth/logout",
     "/api/health",
     "/api/ready",
     "/metrics",
@@ -97,7 +100,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Validate CSRF token
-        if not validate_csrf_token(request):
+        if not await validate_csrf_token(request):
             logger.warning(
                 "CSRF validation failed",
                 extra={

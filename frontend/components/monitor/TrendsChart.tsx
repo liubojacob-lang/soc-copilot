@@ -5,7 +5,7 @@
  * 告警趋势图表 - 使用 Recharts
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import {
   LineChart,
@@ -22,6 +22,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { TrendingUp } from "lucide-react";
+import {
+  severityChartColors,
+  getAxisProps,
+  getGridProps,
+  getTooltipProps,
+  getLegendProps,
+} from "@/lib/chartThemeAdapter";
 
 interface TrendData {
   timestamp: string;
@@ -40,14 +47,6 @@ interface TrendsChartProps {
   height?: number;
 }
 
-const COLORS = {
-  critical: "#dc2626",
-  high: "#f97316",
-  medium: "#eab308",
-  low: "#3b82f6",
-  total: "#6b7280",
-};
-
 export function TrendsChart({
   data,
   type = "area",
@@ -55,6 +54,28 @@ export function TrendsChart({
   height = 300,
 }: TrendsChartProps) {
   const tSeverity = useTranslations("severity");
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains("dark"));
+
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const mode = isDark ? ("dark" as const) : ("light" as const);
+  const themeAxis = getAxisProps(mode);
+  const themeGrid = getGridProps(mode);
+  const themeTooltip = getTooltipProps(mode);
+  const themeLegend = getLegendProps(mode);
+
+  const colors = severityChartColors;
 
   // 格式化数据
   const chartData = useMemo(() => {
@@ -78,15 +99,15 @@ export function TrendsChart({
     if (!active || !payload || !payload.length) return null;
 
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3">
-        <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+      <div style={themeTooltip.contentStyle}>
+        <p style={{ ...themeTooltip.labelStyle, marginBottom: "8px", fontWeight: 500 }}>
           {payload[0].payload.date}
         </p>
         {payload.map((entry: { value: number; name: string; color: string }, index: number) => (
           <div key={index} className="flex items-center gap-2 text-xs">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-            <span className="text-gray-600 dark:text-gray-400">{entry.name}:</span>
-            <span className="font-semibold text-gray-900 dark:text-white">{entry.value}</span>
+            <span style={{ color: themeTooltip.labelStyle.color }}>{entry.name}:</span>
+            <span style={{ fontWeight: 600 }}>{entry.value}</span>
           </div>
         ))}
       </div>
@@ -103,47 +124,45 @@ export function TrendsChart({
       case "line":
         return (
           <LineChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} />
-            <XAxis
-              dataKey="date"
-              stroke="#6b7280"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+            <CartesianGrid {...themeGrid} />
+            <XAxis dataKey="date" {...themeAxis} />
+            <YAxis {...themeAxis} />
             <Tooltip content={<CustomTooltip />} />
-            {showLegend && <Legend />}
+            {showLegend && <Legend wrapperStyle={themeLegend.wrapperStyle} />}
             <Line
               type="monotone"
               dataKey="critical"
-              stroke={COLORS.critical}
+              stroke={colors.critical}
               strokeWidth={2}
-              dot={{ r: 3 }}
+              dot={false}
+              activeDot={{ r: 4 }}
               name={tSeverity("critical")}
             />
             <Line
               type="monotone"
               dataKey="high"
-              stroke={COLORS.high}
+              stroke={colors.high}
               strokeWidth={2}
-              dot={{ r: 3 }}
+              dot={false}
+              activeDot={{ r: 4 }}
               name={tSeverity("high")}
             />
             <Line
               type="monotone"
               dataKey="medium"
-              stroke={COLORS.medium}
+              stroke={colors.medium}
               strokeWidth={2}
-              dot={{ r: 3 }}
+              dot={false}
+              activeDot={{ r: 4 }}
               name={tSeverity("medium")}
             />
             <Line
               type="monotone"
               dataKey="low"
-              stroke={COLORS.low}
+              stroke={colors.low}
               strokeWidth={2}
-              dot={{ r: 3 }}
+              dot={false}
+              activeDot={{ r: 4 }}
               name={tSeverity("low")}
             />
           </LineChart>
@@ -152,31 +171,25 @@ export function TrendsChart({
       case "bar":
         return (
           <BarChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} />
-            <XAxis
-              dataKey="date"
-              stroke="#6b7280"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+            <CartesianGrid {...themeGrid} />
+            <XAxis dataKey="date" {...themeAxis} />
+            <YAxis {...themeAxis} />
             <Tooltip content={<CustomTooltip />} />
-            {showLegend && <Legend />}
+            {showLegend && <Legend wrapperStyle={themeLegend.wrapperStyle} />}
             <Bar
               dataKey="critical"
-              fill={COLORS.critical}
+              fill={colors.critical}
               name={tSeverity("critical")}
               radius={[4, 4, 0, 0]}
             />
-            <Bar dataKey="high" fill={COLORS.high} name={tSeverity("high")} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="high" fill={colors.high} name={tSeverity("high")} radius={[4, 4, 0, 0]} />
             <Bar
               dataKey="medium"
-              fill={COLORS.medium}
+              fill={colors.medium}
               name={tSeverity("medium")}
               radius={[4, 4, 0, 0]}
             />
-            <Bar dataKey="low" fill={COLORS.low} name={tSeverity("low")} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="low" fill={colors.low} name={tSeverity("low")} radius={[4, 4, 0, 0]} />
           </BarChart>
         );
 
@@ -184,65 +197,45 @@ export function TrendsChart({
       default:
         return (
           <AreaChart {...commonProps}>
-            <defs>
-              <linearGradient id="colorCritical" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={COLORS.critical} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={COLORS.critical} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorHigh" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={COLORS.high} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={COLORS.high} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorMedium" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={COLORS.medium} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={COLORS.medium} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorLow" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={COLORS.low} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={COLORS.low} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} />
-            <XAxis
-              dataKey="date"
-              stroke="#6b7280"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+            <CartesianGrid {...themeGrid} />
+            <XAxis dataKey="date" {...themeAxis} />
+            <YAxis {...themeAxis} />
             <Tooltip content={<CustomTooltip />} />
-            {showLegend && <Legend />}
+            {showLegend && <Legend wrapperStyle={themeLegend.wrapperStyle} />}
             <Area
               type="monotone"
               dataKey="critical"
-              stroke={COLORS.critical}
+              stroke={colors.critical}
               strokeWidth={2}
-              fill="url(#colorCritical)"
+              fill={colors.critical}
+              fillOpacity={0.08}
               name={tSeverity("critical")}
             />
             <Area
               type="monotone"
               dataKey="high"
-              stroke={COLORS.high}
+              stroke={colors.high}
               strokeWidth={2}
-              fill="url(#colorHigh)"
+              fill={colors.high}
+              fillOpacity={0.08}
               name={tSeverity("high")}
             />
             <Area
               type="monotone"
               dataKey="medium"
-              stroke={COLORS.medium}
+              stroke={colors.medium}
               strokeWidth={2}
-              fill="url(#colorMedium)"
+              fill={colors.medium}
+              fillOpacity={0.08}
               name={tSeverity("medium")}
             />
             <Area
               type="monotone"
               dataKey="low"
-              stroke={COLORS.low}
+              stroke={colors.low}
               strokeWidth={2}
-              fill="url(#colorLow)"
+              fill={colors.low}
+              fillOpacity={0.08}
               name={tSeverity("low")}
             />
           </AreaChart>
@@ -252,18 +245,18 @@ export function TrendsChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
+      <div className="flex items-center justify-center h-64 bg-surface-hover dark:bg-slate-800/50 rounded-lg border border-dashed border-border-subtle dark:border-slate-700">
         <div className="text-center">
-          <TrendingUp className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">No trend data available</p>
+          <TrendingUp className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+          <p className="text-sm text-text-tertiary">No trend data available</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <ResponsiveContainer width="100%" height={height}>
+    <div className="w-full min-w-0">
+      <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={0}>
         {renderChart()}
       </ResponsiveContainer>
     </div>
@@ -272,6 +265,26 @@ export function TrendsChart({
 
 // 简化版：仅显示总数趋势
 export function SimpleTrendChart({ data, height = 200 }: { data: TrendData[]; height?: number }) {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains("dark"));
+
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const mode = isDark ? ("dark" as const) : ("light" as const);
+  const themeAxis = getAxisProps(mode);
+  const themeGrid = getGridProps(mode);
+  const themeTooltip = getTooltipProps(mode);
+
   const chartData = useMemo(() => {
     return data.map((item) => ({
       date: new Date(item.timestamp).toLocaleDateString("en-US", {
@@ -287,38 +300,35 @@ export function SimpleTrendChart({ data, height = 200 }: { data: TrendData[]; he
   }
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-        <defs>
-          <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.3} />
-        <XAxis dataKey="date" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
-        <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
-        <Tooltip
-          content={({ active, payload }) => {
-            if (!active || !payload || !payload.length) return null;
-            const data = payload[0] as { value: number; payload: { date: string } };
-            return (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2">
-                <p className="text-xs font-medium text-gray-900 dark:text-white">
-                  {data.payload.date}: {data.value} alerts
-                </p>
-              </div>
-            );
-          }}
-        />
-        <Area
-          type="monotone"
-          dataKey="count"
-          stroke="#3b82f6"
-          strokeWidth={2}
-          fill="url(#colorTotal)"
-        />
-      </AreaChart>
-    </ResponsiveContainer>
+    <div className="w-full min-w-0">
+      <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={0}>
+        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <CartesianGrid {...themeGrid} />
+          <XAxis dataKey="date" {...themeAxis} />
+          <YAxis {...themeAxis} />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload || !payload.length) return null;
+              const data = payload[0] as { value: number; payload: { date: string } };
+              return (
+                <div style={themeTooltip.contentStyle}>
+                  <p style={{ fontSize: "12px", fontWeight: 500 }}>
+                    {data.payload.date}: {data.value} alerts
+                  </p>
+                </div>
+              );
+            }}
+          />
+          <Area
+            type="monotone"
+            dataKey="count"
+            stroke={severityChartColors.info}
+            strokeWidth={2}
+            fill={severityChartColors.info}
+            fillOpacity={0.08}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

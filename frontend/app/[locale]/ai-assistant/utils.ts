@@ -4,45 +4,52 @@ import type { Message } from "./types";
 import type { ChatMessage as HistoryChatMessage } from "@/hooks/useChatHistory";
 
 /** Convert Message to ChatMessage for history */
+/** Convert Message to ChatMessage for history */
 export function convertToHistoryMessage(msg: Message): HistoryChatMessage {
-  if (!msg || !msg.role || !msg.content || !msg.timestamp) {
-    console.error("Invalid message for history conversion:", msg);
-    throw new Error("Invalid message format");
+  const role = msg?.role === "user" ? "user" : "assistant";
+  const content = typeof msg?.content === "string" ? msg.content : "";
+  let timestampStr: string;
+
+  try {
+    if (msg?.timestamp instanceof Date && !isNaN(msg.timestamp.getTime())) {
+      timestampStr = msg.timestamp.toISOString();
+    } else if (msg?.timestamp) {
+      const parsed = new Date(msg.timestamp);
+      timestampStr = !isNaN(parsed.getTime()) ? parsed.toISOString() : new Date().toISOString();
+    } else {
+      timestampStr = new Date().toISOString();
+    }
+  } catch {
+    timestampStr = new Date().toISOString();
   }
 
   return {
-    role: msg.role,
-    content: msg.content,
-    timestamp: msg.timestamp.toISOString(),
+    role,
+    content,
+    timestamp: timestampStr,
   };
 }
 
 /** Convert ChatMessage to Message for display */
 export function convertFromHistoryMessage(msg: HistoryChatMessage): Message {
-  if (!msg || !msg.role || !msg.content) {
-    throw new Error("Invalid message format");
-  }
-
-  // Validate role
-  if (msg.role !== "user" && msg.role !== "assistant") {
-    throw new Error(`Invalid role: ${msg.role}`);
-  }
+  const role = msg?.role === "user" ? "user" : "assistant";
+  const content = typeof msg?.content === "string" ? msg.content : "";
 
   // Validate and parse timestamp
   let timestamp: Date;
   try {
-    timestamp = new Date(msg.timestamp);
+    timestamp = msg?.timestamp ? new Date(msg.timestamp) : new Date();
     if (isNaN(timestamp.getTime())) {
-      throw new Error("Invalid timestamp");
+      timestamp = new Date();
     }
   } catch (e) {
-    console.error("Error parsing timestamp:", msg.timestamp, e);
+    console.error("Error parsing timestamp:", msg?.timestamp, e);
     timestamp = new Date(); // Fallback to current time
   }
 
   return {
-    role: msg.role,
-    content: msg.content,
+    role,
+    content,
     timestamp,
   };
 }

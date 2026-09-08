@@ -36,7 +36,7 @@ def generate_siem_queries(
         for time_range in time_ranges:
             time_range_str = format_time_range(platform, time_range)
 
-            for query_key, query_template in platform_queries.items():
+            for _query_key, query_template in platform_queries.items():
                 formatted_query = _format_query_template(
                     query_template["query_template"],
                     platform,
@@ -585,7 +585,7 @@ def _generate_scan_cmd(hashes: list[str]) -> str:
 
     cmds.append("# Linux:")
     cmds.append(
-        "find / -type f -exec sha256sum {} \\; | grep -E '{}'".format(
+        "find / -type f -exec sha256sum {{}} \\; | grep -E '{}'".format(
             "|".join(hashes[:5])
         )
     )

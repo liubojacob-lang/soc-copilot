@@ -33,14 +33,10 @@ class MessageType(str, Enum):
 class QueuedMessage(BaseModel):
     """A queued message for offline client"""
 
-    id: str = Field(
-        default_factory=lambda: f"msg_{datetime.now(UTC).timestamp()}"
-    )
+    id: str = Field(default_factory=lambda: f"msg_{datetime.now(UTC).timestamp()}")
     type: MessageType
     data: dict[str, Any]
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     channel: str = "alerts"
     ttl_seconds: int = Field(
         default=86400, description="Time to live in seconds (default 24 hours)"
@@ -62,12 +58,8 @@ class UserQueue(BaseModel):
 
     user_id: str
     message_count: int = 0
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
-    last_updated: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    last_updated: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     max_size: int = Field(default=1000, description="Maximum messages in queue")
     ttl_seconds: int = Field(default=86400, description="Queue TTL in seconds")
 

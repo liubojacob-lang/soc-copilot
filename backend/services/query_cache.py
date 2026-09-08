@@ -93,7 +93,7 @@ def generate_cache_key(prefix: str, *args, **kwargs) -> str:
         "kwargs": sorted(kwargs.items()),
     }
     key_string = json.dumps(key_data, sort_keys=True, default=str)
-    return f"{prefix}:{hashlib.md5(key_string.encode()).hexdigest()}"
+    return f"{prefix}:{hashlib.md5(key_string.encode(), usedforsecurity=False).hexdigest()}"
 
 
 def cached(ttl: int = 300, prefix: str | None = None):
@@ -155,9 +155,7 @@ def invalidate_cache(pattern: str) -> int:
     Returns:
         Number of invalidated keys
     """
-    keys_to_delete = [
-        key for key in _query_cache.cache.keys() if key.startswith(pattern)
-    ]
+    keys_to_delete = [key for key in _query_cache.cache if key.startswith(pattern)]
     for key in keys_to_delete:
         del _query_cache.cache[key]
     if keys_to_delete:

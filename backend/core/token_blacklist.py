@@ -101,10 +101,11 @@ class InMemoryBackend(TokenBlacklistBackend):
             for t in expired:
                 del self._blacklist[t]
 
+            # Never return raw token strings: this dict is exposed via the
+            # health endpoint and revoked JWTs must stay confidential.
             return {
                 "backend": "memory",
                 "count": len(self._blacklist),
-                "tokens": list(self._blacklist.keys())[:10],
             }
 
 
@@ -224,12 +225,18 @@ class TokenBlacklist:
         self._primary_backend: TokenBlacklistBackend | None = None
         self._fallback_backend = InMemoryBackend()
         self._use_redis = False
+        self._is_production = settings.environment == "production"
 
         if redis_url and REDIS_AVAILABLE:
             self._primary_backend = RedisBackend(redis_url)
             self._use_redis = True
             logger.info("Token blacklist initialized with Redis backend")
         else:
+            if self._is_production:
+                logger.critical(
+                    "Token blacklist: Redis is REQUIRED in production but not initialized. "
+                    "Token revocation will NOT work across multiple workers."
+                )
             logger.info("Token blacklist initialized with in-memory backend")
 
     async def add_to_blacklist(
@@ -263,34 +270,95 @@ class TokenBlacklist:
             success = await self._primary_backend.add(token, ttl, reason)
             if success:
                 return True
+            # Primary backend failed
+            if self._is_production:
+                logger.critical(
+                    "CRITICAL: Redis backend failed to add token to blacklist. "
+                    "Refusing to fall back to InMemoryBackend in production — "
+                    "this would cause inconsistent token state across multiple workers. "
+                    f"Token prefix: {token[:20]}..., reason: {reason}"
+                )
+                raise RuntimeError(
+                    "Token blacklist operation failed: Redis backend unavailable in production. "
+                    "Token revocation cannot proceed with InMemoryBackend in multi-worker setup."
+                )
 
-        # Fallback to in-memory
+        # Fallback to in-memory (development only)
+        logger.warning(
+            "⚠️  Token blacklist falling back to InMemoryBackend. "
+            "This is NOT safe in multi-worker deployments — tokens may not be "
+            "consistently revoked across all workers. "
+            f"Token prefix: {token[:20]}..., reason: {reason}"
+        )
         return await self._fallback_backend.add(token, ttl, reason)
 
     async def is_blacklisted(self, token: str) -> bool:
         """Check if token is blacklisted."""
-        # Check primary backend first
-        if self._primary_backend and await self._primary_backend.contains(token):
-            return True
+        # Check primary backend first (fail-closed in production)
+        if self._primary_backend:
+            try:
+                if await self._primary_backend.contains(token):
+                    return True
+            except Exception as e:
+                if self._is_production:
+                    logger.critical(
+                        "CRITICAL: Redis backend failed during blacklist check. "
+                        "Failing closed — refusing to authenticate token that cannot "
+                        "be verified against the centralized blacklist. "
+                        f"Error: {e}"
+                    )
+                    raise RuntimeError(
+                        "Token blacklist check failed: Redis backend unavailable in production. "
+                        "Cannot verify token status without centralized blacklist."
+                    )
+                logger.warning(
+                    f"Redis backend error during blacklist check, falling back to in-memory: {e}"
+                )
 
-        # Also check fallback
+        # Fallback to in-memory (development only)
+        logger.debug("Checking in-memory blacklist (single-worker fallback)")
         return await self._fallback_backend.contains(token)
 
     async def remove_from_blacklist(self, token: str) -> bool:
         """Remove token from blacklist."""
         success = False
+        primary_failed = False
 
         if self._primary_backend:
-            success = await self._primary_backend.remove(token) or success
+            try:
+                success = await self._primary_backend.remove(token)
+            except Exception as e:
+                primary_failed = True
+                if self._is_production:
+                    logger.critical(
+                        "CRITICAL: Redis backend failed to remove token from blacklist. "
+                        "Failing closed — inconsistent blacklist state in multi-worker setup. "
+                        f"Error: {e}"
+                    )
+                    raise RuntimeError(
+                        "Token blacklist removal failed: Redis backend unavailable in production. "
+                        "Cannot reliably remove token without centralized blacklist."
+                    )
+                logger.warning(
+                    f"Redis backend error during blacklist removal, falling back to in-memory: {e}"
+                )
 
-        success = await self._fallback_backend.remove(token) or success
+        if primary_failed or not self._primary_backend:
+            logger.debug(
+                "Using in-memory blacklist for token removal (single-worker fallback)"
+            )
+            success = await self._fallback_backend.remove(token) or success
         return success
 
     async def get_blacklist_info(self) -> dict:
         """Get blacklist info for debugging."""
         return {
             "redis_available": REDIS_AVAILABLE and self._use_redis,
-            "primary": (await self._primary_backend.get_info() if self._primary_backend else None),
+            "primary": (
+                await self._primary_backend.get_info()
+                if self._primary_backend
+                else None
+            ),
             "fallback": await self._fallback_backend.get_info(),
         }
 

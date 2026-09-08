@@ -1,0 +1,37 @@
+{
+  "id": "sigma-cloud-004",
+  "title": "GCP IAM Policy Modification",
+  "description": "Detects GCP IAM/Bucket IAM policy changes that may grant excessive permissions.",
+  "status": "stable",
+  "level": "high",
+  "author": "SOC Copilot",
+  "category": "cloud",
+  "tags": [
+    "attack.persistence",
+    "attack.t1098"
+  ],
+  "mitre_techniques": [
+    "T1098"
+  ],
+  "logsource": {
+    "product": "gcp",
+    "service": "audit"
+  },
+  "detection": {
+    "selection": {
+      "resource.type": "gce_instance",
+      "protoPayload.methodName": [
+        "SetIamPolicy",
+        "SetBucketIamPolicy"
+      ],
+      "protoPayload.authenticationInfo.principalEmail|contains": "gserviceaccount.com"
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Normal IAM policy management"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1098/"
+  ]
+}

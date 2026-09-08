@@ -5,6 +5,31 @@ All notable changes to SOC Copilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-09-08
+
+### Fixed
+- **Assets**: create/update/delete never committed the session (phantom writes — 201 responses whose rows vanished); legacy plain-text tags 500'd the list endpoint for all users
+- **Cases**: creation returned 500 (lazy-load `MissingGreenlet`) and all ten write paths silently rolled back
+- **Broken pages**: approvals inbox called a nonexistent route; report generation died on a missing `GET /api/alerts/{id}`; alert import had no backend at all (new `POST /api/alerts/import[/batch][/preview]`)
+- **RBAC regression**: any authenticated user could trigger `/ai/models/refresh` and wipe the model catalog (admin check restored)
+- **Model seeding**: startup seed no longer DELETEs admin-created custom models; user defaults only reset when the referenced model is gone
+- **ai-tasks**: router 500'd at runtime (dict-typed `current_user`); task status/result/cancel now enforce per-user ownership
+
+### Security
+- JWT access lifetime default 720 → 60 minutes
+- Server-side page gate in `proxy.ts` (anonymous visitors redirected before page HTML is served)
+- AI chat: input cap (20k chars), per-IP rate limits on all AI endpoints, `role:"system"` injection blocked, real SSE streaming
+- Audit-log listing restricted to owner/admin/auditor (was any authenticated user)
+- Secrets governance: full credentials removed from docs; test script credentials moved to env vars; git history contains legacy blobs (rotate values; scrub before external exposure)
+- HTTP request node pins SSRF-validated addresses at connect time (DNS rebinding closed)
+
+### Added
+- Forced password change flow for flagged accounts (frontend + login interception)
+- Alert import API (CEF/Syslog/JSON/CSV) with idempotent content-hash dedup
+- RBAC matrix, assets, and cases integration test suites (419+ backend tests, 43.9% coverage)
+- Backup/restore: `make db-backup` / `make db-restore FILE=`, k8s backup CronJob, deploy.sh fixes, certbot service, k8s alert-worker manifest, monitoring provisioning mounts
+- PROJECT_FINAL_AUDIT.md + FUTURE_BACKLOG.md acceptance documents
+
 ## [0.9.0] - 2026-04-13
 
 ### Added

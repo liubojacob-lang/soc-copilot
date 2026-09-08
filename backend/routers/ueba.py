@@ -6,8 +6,10 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
+from db.session import get_session
 from dependencies.auth import get_current_user
 from models.user import UserModel
 from services.ueba_service import (
@@ -16,7 +18,7 @@ from services.ueba_service import (
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/ueba", tags=["ueba", "analytics"])
+router = APIRouter(prefix="/api/v1/ueba", tags=["ueba", "analytics"])
 
 
 # Request/Response Models
@@ -256,6 +258,73 @@ async def get_high_risk_users(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get high risk users: {e!s}",
+        )
+
+
+@router.get("/batch-build-baselines")
+async def batch_build_baselines(
+    days_of_history: int = Query(default=30, ge=7, le=90),
+    session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Batch-build behavior baselines for all users.
+
+    Scans audit_logs for active users, extracts 6-class behavior features
+    from security_alerts + audit_logs, trains IsolationForest models,
+    and persists to ueba_baselines table.
+
+    Use this as a periodic cron job or on-demand initialization.
+    """
+    from services.ueba_service import UEBAEngine
+
+    try:
+        engine = UEBAEngine(session=session)
+        result = await engine.build_all_baselines(session, days_of_history)
+        return result
+    except Exception as e:
+        logger.error(f"Batch baseline build failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Batch baseline build failed: {e!s}",
+        )
+
+
+@router.get("/baseline/{user_id}")
+async def get_user_baseline(
+    user_id: str,
+    session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get persisted baseline for a specific user.
+
+    Loads the stored IsolationForest model and feature data from ueba_baselines.
+    """
+    from services.ueba_service import UEBAEngine
+
+    try:
+        engine = UEBAEngine(session=session)
+        baseline = await engine.load_baseline_from_db(user_id, session)
+        if baseline is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No baseline found for user {user_id}",
+            )
+        features = engine.feature_cache.get(user_id, {})
+        return {
+            "user_id": baseline.entity_id,
+            "entity_type": baseline.entity_type,
+            "features": features,
+            "last_updated": baseline.last_updated.isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error loading baseline: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to load baseline: {e!s}",
         )
 
 

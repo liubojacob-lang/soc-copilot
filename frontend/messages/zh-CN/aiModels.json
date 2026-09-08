@@ -1,0 +1,26 @@
+{
+  "aiModels": {
+    "title": "AI 模型",
+    "subtitle": "管理并配置 SOC Copilot 的 AI 模型",
+    "refresh": "刷新模型",
+    "default": "默认",
+    "active": "启用",
+    "inactive": "停用",
+    "capabilities": "模型能力",
+    "noCapabilities": "暂无能力信息",
+    "maxTokens": "最大 Token 数",
+    "costPer1k": "千 Token 成本",
+    "requests": "请求数",
+    "testConnection": "测试连接",
+    "testing": "测试中...",
+    "connectionSuccess": "连接成功",
+    "responseTime": "响应时间：",
+    "testFailed": "测试失败",
+    "setDefault": "设为默认",
+    "setting": "设置中...",
+    "lastUsed": "最近使用：",
+    "emptyTitle": "尚未配置 AI 模型",
+    "emptyDescription": "在设置中配置 AI 模型以启用 AI 功能。",
+    "setDefaultFailed": "设置默认模型失败"
+  }
+}

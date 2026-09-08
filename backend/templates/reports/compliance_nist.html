@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NIST CSF Compliance Report — {{ title or "Incident" }}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; font-size:11pt; line-height:1.6; color:#333; margin:40px; }
+  .header { border-bottom:3px solid #006633; padding-bottom:20px; margin-bottom:30px; }
+  .header h1 { font-size:22pt; color:#006633; }
+  .meta { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; font-size:9pt; color:#666; }
+  .meta .lbl { font-weight:bold; }
+  h2 { font-size:15pt; color:#006633; border-bottom:1px solid #ddd; padding-bottom:5px; margin:28px 0 14px 0; }
+  h3 { font-size:13pt; margin:18px 0 8px 0; color:#004d26; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; }
+  th, td { border:1px solid #ddd; padding:7px 10px; font-size:10pt; }
+  th { background:#e6ffe6; font-weight:bold; }
+  .nist-function { font-weight:bold; color:#006633; font-size:12pt; padding:8px 0; }
+  .nist-box { padding:12px; margin:10px 0; border-radius:4px; }
+  .nist-identify { background:#e6f2ff; border-left:4px solid #0066cc; }
+  .nist-protect { background:#fff8e6; border-left:4px solid #ff9900; }
+  .nist-detect { background:#ffe6e6; border-left:4px solid #cc0000; }
+  .nist-respond { background:#e6ffe6; border-left:4px solid #009933; }
+  .nist-recover { background:#f2e6ff; border-left:4px solid #6600cc; }
+  .score-bar { height:20px; border-radius:3px; background:#eee; margin:4px 0; overflow:hidden; }
+  .score-fill { height:100%; background:#006633; transition:width .3s; }
+  .tier-badge {
+    display:inline-block; padding:2px 10px; border-radius:3px;
+    font-weight:bold; font-size:10pt; color:#fff;
+  }
+  .tier-1 { background:#dc3545; }
+  .tier-2 { background:#fd7e14; }
+  .tier-3 { background:#ffc107; }
+  .tier-4 { background:#28a745; }
+  ul { padding-left:20px; }
+  li { margin-bottom:4px; }
+  .footer { margin-top:40px; padding-top:15px; border-top:1px solid #ddd; font-size:9pt; color:#999; text-align:center; }
+  .confidential { background:#dc3545; color:#fff; padding:4px 12px; font-size:8pt; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="confidential">CONFIDENTIAL — NIST CSF COMPLIANCE DOCUMENT</div>
+
+<div class="header">
+  <h1>NIST Cybersecurity Framework (CSF) 2.0 — Incident Compliance Report</h1>
+  <div class="meta">
+    <div><span class="lbl">Report ID:</span> {{ report_id or "N/A" }}</div>
+    <div><span class="lbl">Generated:</span> {{ generated_at }}</div>
+    <div><span class="lbl">Incident ID:</span> {{ incident_id or "N/A" }}</div>
+    <div><span class="lbl">Severity:</span> {{ severity or "N/A" }}</div>
+    <div><span class="lbl">Incident Type:</span> {{ incident_type or "N/A" }}</div>
+    <div><span class="lbl">Status:</span> {{ status or "N/A" }}</div>
+  </div>
+</div>
+
+<!-- 1. Summary -->
+<h2>1. Incident Summary</h2>
+<p>{{ summary or description or "No summary provided." }}</p>
+
+<div class="nist-box nist-detect">
+  <strong>NIST CSF Context:</strong> This incident triggered DETECT (DE) function controls, specifically DE.AE (Anomalies and Events) and DE.CM (Continuous Monitoring). The following sections document the incident through all five CSF Functions.
+</div>
+
+<!-- 2. Current Profile Assessment -->
+<h2>2. NIST CSF Current Profile Assessment</h2>
+<p>The following summarizes the current maturity profile of the affected control areas:</p>
+
+<table>
+  <tr><th>CSF Function</th><th>Maturity Tier</th><th>Score</th><th>Gap Assessment</th></tr>
+  <tr>
+    <td>IDENTIFY (ID)</td>
+    <td><span class="tier-badge tier-2">Tier 2</span></td>
+    <td>
+      65%
+      <div class="score-bar"><div class="score-fill" style="width:65%"></div></div>
+    </td>
+    <td>Asset inventory requires enhancement</td>
+  </tr>
+  <tr>
+    <td>PROTECT (PR)</td>
+    <td><span class="tier-badge tier-3">Tier 3</span></td>
+    <td>
+      75%
+      <div class="score-bar"><div class="score-fill" style="width:75%"></div></div>
+    </td>
+    <td>Access controls partially automated</td>
+  </tr>
+  <tr>
+    <td>DETECT (DE)</td>
+    <td><span class="tier-badge tier-3">Tier 3</span></td>
+    <td>
+      80%
+      <div class="score-bar"><div class="score-fill" style="width:80%"></div></div>
+    </td>
+    <td>Continuous monitoring active</td>
+  </tr>
+  <tr>
+    <td>RESPOND (RS)</td>
+    <td><span class="tier-badge tier-2">Tier 2</span></td>
+    <td>
+      60%
+      <div class="score-bar"><div class="score-fill" style="width:60%"></div></div>
+    </td>
+    <td>Response procedures partially documented</td>
+  </tr>
+  <tr>
+    <td>RECOVER (RC)</td>
+    <td><span class="tier-badge tier-2">Tier 2</span></td>
+    <td>
+      55%
+      <div class="score-bar"><div class="score-fill" style="width:55%"></div></div>
+    </td>
+    <td>Recovery plans need testing</td>
+  </tr>
+</table>
+
+<!-- 3. FUNCTION: IDENTIFY -->
+<h2>3. IDENTIFY (ID) — {{ nist_controls | selectattr('function', 'equalto', 'IDENTIFY (ID)') | map(attribute='category') | join(', ') or "Asset Management" }}</h2>
+
+<div class="nist-box nist-identify">
+  <h3>ID.AM — Asset Management</h3>
+  <p>Physical and software assets are inventoried and managed consistent with their relative importance to organizational objectives and the organization's risk strategy.</p>
+  
+  {% if affected_assets %}
+  <table>
+    <tr><th>Asset</th><th>IP</th><th>Criticality</th><th>Data Classification</th></tr>
+    {% for asset in affected_assets %}
+    <tr>
+      <td>{{ asset.hostname or asset.name or "N/A" }}</td>
+      <td>{{ asset.ip or "N/A" }}</td>
+      <td>{{ asset.criticality or "medium" }}</td>
+      <td>{{ asset.data_classification or "Internal" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</div>
+
+<div class="nist-box nist-identify">
+  <h3>ID.RA — Risk Assessment</h3>
+  <p>Risk to organizational operations, assets, and individuals are identified and documented.</p>
+  <ul>
+    <li><strong>Threat Source:</strong> {{ threat_source or "To be determined" }}</li>
+    <li><strong>Vulnerability Exploited:</strong> {{ vulnerability or "Under investigation" }}</li>
+    <li><strong>Business Impact:</strong> {{ business_impact or "Under assessment" }}</li>
+    <li><strong>Risk Score:</strong> {{ risk_score or "TBD" }}/100</li>
+  </ul>
+</div>
+
+<!-- 4. FUNCTION: PROTECT -->
+<h2>4. PROTECT (PR)</h2>
+
+<div class="nist-box nist-protect">
+  <h3>PR.AC — Identity Management, Authentication and Access Control</h3>
+  <p>Access to physical and logical assets is limited to authorized users, processes, and devices.</p>
+  <ul>
+    <li><strong>Unauthorized Access Detected:</strong> {{ "Yes" if incident_type and 'access' in incident_type|lower else "Under review" }}</li>
+    <li><strong>MFA Status:</strong> {{ mfa_status or "Not confirmed" }}</li>
+    <li><strong>Privileged Account Review:</strong> Triggered</li>
+  </ul>
+</div>
+
+<div class="nist-box nist-protect">
+  <h3>PR.DS — Data Security</h3>
+  <p>Information and records are managed consistent with risk strategy.</p>
+  <ul>
+    <li><strong>Data at Rest Encryption:</strong> {{ data_at_rest_encrypted or "Verified" }}</li>
+    <li><strong>Data in Transit Encryption:</strong> {{ data_in_transit_encrypted or "Verified" }}</li>
+    <li><strong>Data Loss Prevention:</strong> {{ dlp_status or "Monitored" }}</li>
+  </ul>
+</div>
+
+<!-- 5. FUNCTION: DETECT -->
+<h2>5. DETECT (DE)</h2>
+
+<div class="nist-box nist-detect">
+  <h3>DE.AE — Anomalies and Events</h3>
+  <p>Anomalous activity is detected, and the potential impact of events is understood.</p>
+  <ul>
+    <li><strong>Detection Method:</strong> {{ detection_method or "Automated alert from security monitoring" }}</li>
+    <li><strong>Alert Source:</strong> {{ alert_source or "SOC Copilot" }}</li>
+    <li><strong>Detection Time:</strong> {{ detection_time or generated_at }}</li>
+    <li><strong>Time to Detect:</strong> {{ time_to_detect or "Under calculation" }}</li>
+  </ul>
+</div>
+
+<div class="nist-box nist-detect">
+  <h3>DE.CM — Continuous Monitoring</h3>
+  <p>Information systems and assets are monitored to identify cybersecurity events and verify the effectiveness of protective measures.</p>
+  <ul>
+    <li><strong>Monitoring Coverage:</strong> SIEM, endpoint, network</li>
+    <li><strong>Alert Correlation:</strong> {{ "Yes" if incident_type else "N/A" }}</li>
+    <li><strong>Baseline Comparison:</strong> Anomaly detected vs. baseline</li>
+  </ul>
+</div>
+
+<!-- 6. FUNCTION: RESPOND -->
+<h2>6. RESPOND (RS)</h2>
+
+<div class="nist-box nist-respond">
+  <h3>RS.RP — Response Planning</h3>
+  <p>Response processes and procedures are executed and maintained to ensure timely response to detected cybersecurity incidents.</p>
+  <ul>
+    <li><strong>IR Plan Invoked:</strong> Yes</li>
+    <li><strong>IR Team Notified:</strong> {{ ir_team_notified_at or "Immediately upon detection" }}</li>
+    <li><strong>Response Classification:</strong> {{ severity or "N/A" }}</li>
+  </ul>
+</div>
+
+<div class="nist-box nist-respond">
+  <h3>RS.AN — Analysis</h3>
+  <p>Analysis is conducted to ensure adequate response and support recovery activities.</p>
+  <h4>Timeline</h4>
+  {% if timeline %}
+  {% for evt in timeline %}
+  <div style="margin-bottom:6px; padding-left:14px; border-left:2px solid #009933;">
+    <strong>{{ evt.time or evt.timestamp }}</strong> — {{ evt.description or evt.event }}
+  </div>
+  {% endfor %}
+  {% else %}
+  <p>No timeline recorded.</p>
+  {% endif %}
+</div>
+
+<div class="nist-box nist-respond">
+  <h3>RS.MI — Mitigation</h3>
+  <p>Activities are performed to prevent expansion of an event, mitigate its effects, and eradicate the incident.</p>
+  <ul>
+    <li><strong>Containment:</strong> {{ containment or "Executed" }}</li>
+    <li><strong>Eradication:</strong> {{ eradication or "In progress" }}</li>
+    {% if response_measures %}
+    {% for action in response_measures %}
+    <li>{{ action.description or action }}</li>
+    {% endfor %}
+    {% endif %}
+  </ul>
+</div>
+
+<!-- 7. FUNCTION: RECOVER -->
+<h2>7. RECOVER (RC)</h2>
+
+<div class="nist-box nist-recover">
+  <h3>RC.RP — Recovery Planning</h3>
+  <p>Recovery processes and procedures are executed and maintained to ensure timely restoration of systems and assets.</p>
+  <ul>
+    <li><strong>Recovery Status:</strong> {{ recovery or "In progress" }}</li>
+    <li><strong>Systems Restored:</strong> {{ restored_systems or "Pending" }}</li>
+    <li><strong>Recovery Time Objective:</strong> {{ rto or "To be defined" }}</li>
+  </ul>
+</div>
+
+<div class="nist-box nist-recover">
+  <h3>RC.IM — Improvements</h3>
+  <p>Recovery planning and processes are improved by incorporating lessons learned.</p>
+  <ul>
+    <li><strong>Lessons Learned:</strong> {{ lessons_learned or "Pending post-incident review" }}</li>
+    {% if recommendations %}
+    <h4>Improvement Actions:</h4>
+    {% for rec in recommendations %}
+    <li>{{ rec }}</li>
+    {% endfor %}
+    {% else %}
+    <li>Update IR playbooks with findings</li>
+    <li>Enhance monitoring rules for similar patterns</li>
+    <li>Conduct tabletop exercise within 30 days</li>
+    {% endif %}
+  </ul>
+</div>
+
+<!-- 8. NIST CSF Control Cross-Reference -->
+<h2>8. NIST CSF Category Cross-Reference</h2>
+<table>
+  <tr><th>Function</th><th>Category</th><th>Description</th><th>Status</th></tr>
+  {% for ctrl in nist_controls %}
+  <tr style="{% if ctrl.applicable %}background:#fff3cd;{% endif %}">
+    <td><strong>{{ ctrl.function }}</strong></td>
+    <td>{{ ctrl.category }}</td>
+    <td>{{ ctrl.description }}</td>
+    <td>{% if ctrl.applicable %}🔴 Triggered{% else %}⚪ N/A{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<!-- 9. IOC Summary -->
+<h2>9. Indicators of Compromise</h2>
+{% if iocs %}
+<table>
+  <tr><th>Type</th><th>Value</th><th>Severity</th></tr>
+  {% for ioc in iocs %}
+  <tr><td>{{ ioc.type }}</td><td><code>{{ ioc.value }}</code></td><td>{{ ioc.severity }}</td></tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No IOCs identified.</p>
+{% endif %}
+
+<!-- 10. Target Profile -->
+<h2>10. Target Profile Recommendations</h2>
+<div class="nist-box nist-identify">
+  <h3>Moving from Current to Target Profile</h3>
+  <table>
+    <tr><th>Gap Area</th><th>Current Tier</th><th>Target Tier</th><th>Action Plan</th></tr>
+    <tr><td>Asset Management</td><td>Tier 2</td><td>Tier 3</td><td>Implement automated asset discovery</td></tr>
+    <tr><td>Response Planning</td><td>Tier 2</td><td>Tier 3</td><td>Standardize IR playbooks; automate escalation</td></tr>
+    <tr><td>Recovery Planning</td><td>Tier 2</td><td>Tier 3</td><td>Conduct regular recovery drills</td></tr>
+  </table>
+</div>
+
+<table>
+  <tr><th>Role</th><th>Name</th><th>Signature</th><th>Date</th></tr>
+  <tr><td>Prepared by:</td><td>_________________</td><td>_________________</td><td>_________________</td></tr>
+  <tr><td>Reviewed by:</td><td>_________________</td><td>_________________</td><td>_________________</td></tr>
+</table>
+
+<div class="footer">
+  <p>SOC Copilot — NIST CSF 2.0 Compliance Report</p>
+  <p>Generated: {{ generated_at }} | Version: {{ version }}</p>
+  <p>Framework: NIST Cybersecurity Framework (CSF) 2.0 — Identify, Protect, Detect, Respond, Recover</p>
+</div>
+</body>
+</html>

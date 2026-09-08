@@ -1,0 +1,34 @@
+{
+  "id": "sigma-k8s-002",
+  "title": "Kubernetes Pod with Host Network",
+  "description": "Detects pods created with hostNetwork=true, which can bypass network isolation and access host network interfaces.",
+  "status": "stable",
+  "level": "medium",
+  "author": "SOC Copilot",
+  "category": "kubernetes",
+  "tags": [
+    "attack.defense_evasion",
+    "attack.t1611"
+  ],
+  "mitre_techniques": [
+    "T1611"
+  ],
+  "logsource": {
+    "product": "kubernetes",
+    "service": "audit"
+  },
+  "detection": {
+    "selection": {
+      "verb": "create",
+      "objectRef.resource": "pods",
+      "requestObject.spec.hostNetwork": "true"
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Networking components that require host network (e.g., CNI plugins)"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1611/"
+  ]
+}

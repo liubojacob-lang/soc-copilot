@@ -65,7 +65,7 @@ async def publish_playbook_definition(
         await audit_repo.create(
             action="playbook.publish",
             method="POST",
-            path=f"/api/playbook/definitions/{definition_id}/publish",
+            path=f"/api/v1/playbook/definitions/{definition_id}/publish",
             status_code=200,
             user_id=current_user.id,
             target_type="playbook_definition",
@@ -156,7 +156,7 @@ async def restore_playbook_definition_version(
         await audit_repo.create(
             action="playbook.restore",
             method="POST",
-            path=f"/api/playbook/definitions/{definition_id}/restore/{version_no}",
+            path=f"/api/v1/playbook/definitions/{definition_id}/restore/{version_no}",
             status_code=200,
             user_id=current_user.id,
             target_type="playbook_definition",
@@ -249,7 +249,7 @@ async def replay_playbook_run(
         await audit_repo.create(
             action="playbook.replay",
             method="POST",
-            path=f"/api/playbook/runs/{run_id}/replay",
+            path=f"/api/v1/playbook/runs/{run_id}/replay",
             status_code=200,
             user_id=current_user.id,
             target_type="playbook_run",
@@ -340,7 +340,7 @@ async def export_playbook_definition(
         await audit_repo.create(
             action="playbook.export",
             method="GET",
-            path=f"/api/playbook/definitions/{definition_id}/export",
+            path=f"/api/v1/playbook/definitions/{definition_id}/export",
             status_code=200,
             user_id=current_user.id,
             target_type="playbook_definition",
@@ -415,7 +415,7 @@ async def import_playbook_definition(
         await audit_repo.create(
             action="playbook.import",
             method="POST",
-            path="/api/playbook/definitions/import",
+            path="/api/v1/playbook/definitions/import",
             status_code=200,
             user_id=current_user.id,
             target_type="playbook_definition",

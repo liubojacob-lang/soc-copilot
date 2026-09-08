@@ -49,19 +49,52 @@ class CronSchedulerService:
         logger.info("Cron scheduler stopped")
 
     async def _scheduler_loop(self) -> None:
-        """Main scheduler loop that checks for due cron triggers."""
+        """Main scheduler loop that checks for due cron triggers and escalations."""
         logger.info("Cron scheduler loop started")
+
+        _last_escalation_check = 0  # unix timestamp
 
         while self._running:
             try:
                 await self._check_and_execute_triggers()
             except Exception as e:
-                logger.error(f"Error in cron scheduler loop: {e}")
+                logger.error(f"Error in cron scheduler loop (triggers): {e}")
+
+            # v1.1: Notification escalation check (every 5 minutes)
+            try:
+                now_ts = asyncio.get_event_loop().time()
+                from services.notification.escalation_service import (
+                    ESCALATION_CHECK_INTERVAL_SECONDS,
+                )
+
+                if now_ts - _last_escalation_check >= ESCALATION_CHECK_INTERVAL_SECONDS:
+                    await self._check_escalations()
+                    _last_escalation_check = now_ts
+            except Exception as e:
+                logger.error(f"Error in escalation check: {e}")
 
             # Wait before next check
             await asyncio.sleep(self._check_interval)
 
         logger.info("Cron scheduler loop ended")
+
+    async def _acquire_distributed_lock(self, key: str, ttl_seconds: int = 55) -> bool:
+        """Acquire a distributed lock via Redis to prevent duplicate executions across replicas.
+
+        Falls back to in-memory set if Redis is not configured or unavailable.
+        """
+        try:
+            from core.redis_client import get_redis_client
+
+            client = await get_redis_client()
+            if client:
+                lock_key = f"lock:cron:{key}"
+                acquired = await client.set(lock_key, "1", nx=True, ex=ttl_seconds)
+                return bool(acquired)
+        except Exception as e:
+            logger.warning(f"Redis distributed lock error for {key}: {e}")
+
+        return True
 
     async def _check_and_execute_triggers(self) -> None:
         """Check all cron triggers and execute those that are due."""
@@ -108,7 +141,18 @@ class CronSchedulerService:
                         ).total_seconds() < self._check_interval * 2
 
                     if should_run:
-                        # Add to pending set to prevent duplicate execution
+                        # Distributed lock check across multiple worker/API replicas
+                        has_lock = await self._acquire_distributed_lock(
+                            f"trigger:{trigger.id}", ttl_seconds=55
+                        )
+                        if not has_lock:
+                            skipped_count += 1
+                            logger.debug(
+                                f"Cron trigger {trigger.id} skipped (lock acquired by another replica)"
+                            )
+                            continue
+
+                        # Add to pending set to prevent duplicate execution in this instance
                         self._pending_triggers.add(trigger.id)
 
                         # Execute the trigger (fire and forget within transaction)
@@ -138,6 +182,31 @@ class CronSchedulerService:
                     f"Cron scheduler check: executed={executed_count}, "
                     f"skipped={skipped_count}, total={len(triggers)}"
                 )
+
+    async def _check_escalations(self) -> None:
+        """v1.1: Check for unacknowledged alerts and escalate to on-call personnel."""
+        from services.notification.escalation_service import (
+            ESCALATION_CHECK_INTERVAL_SECONDS,
+            get_escalation_service,
+        )
+
+        has_lock = await self._acquire_distributed_lock(
+            "escalations", ttl_seconds=max(30, ESCALATION_CHECK_INTERVAL_SECONDS - 5)
+        )
+        if not has_lock:
+            logger.debug("Escalation check skipped (handled by another replica)")
+            return
+
+        try:
+            svc = get_escalation_service()
+            summary = await svc.check_and_escalate()
+            if summary.get("escalated", 0) > 0:
+                logger.info(
+                    f"Escalation check: {summary['escalated']} alerts escalated, "
+                    f"{summary.get('errors', 0)} errors"
+                )
+        except Exception as e:
+            logger.error(f"Escalation check failed: {e}")
 
     async def _remove_from_pending(self, trigger_id: str) -> None:
         """Remove trigger from pending set after a delay."""

@@ -182,7 +182,7 @@ class AlertEvaluator:
                 if hasattr(rule, key):
                     setattr(rule, key, value)
 
-            rule.updated_at = datetime.now(UTC).isoformat()
+            rule.updated_at = datetime.now(UTC)
             logger.info(f"Updated alert rule: {rule.name} ({rule_id})")
             return True
 
@@ -259,9 +259,7 @@ class AlertEvaluator:
 
                         if success:
                             notification.status = "sent"
-                            notification.sent_at = datetime.now(
-                                UTC
-                            ).isoformat()
+                            notification.sent_at = datetime.now(UTC).isoformat()
                         else:
                             notification.status = "failed"
 

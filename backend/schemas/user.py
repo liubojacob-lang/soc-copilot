@@ -1,11 +1,21 @@
 """Schemas for user operations."""
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from datetime import datetime
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_serializer,
+    field_validator,
+)
 
 from models.user import UserRole
 
 
 class UserBase(BaseModel):
+    model_config = {"from_attributes": True}
     """Base user schema."""
 
     username: str = Field(..., min_length=3, max_length=100)
@@ -31,17 +41,32 @@ class UserInDB(UserBase):
 
     id: str
     is_active: bool
-    created_at: str
+    created_at: str  # v1.0: ORM sends datetime; field_validator converts to ISO str
     updated_at: str
     last_login_at: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_validator("created_at", "updated_at", "last_login_at", mode="before")
+    @classmethod
+    def _dt_to_str(cls, v: object) -> str | None:
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return str(v)
+
 
 class UserResponse(UserInDB):
     """Schema for user response (excludes sensitive data)."""
 
-    pass
+    @field_serializer("created_at", "updated_at", "last_login_at", when_used="always")
+    def _serialize_dt(v: object) -> str | None:
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return str(v)
 
 
 class UserLogin(BaseModel):
@@ -52,10 +77,14 @@ class UserLogin(BaseModel):
 
 
 class TokenResponse(BaseModel):
-    """Schema for token response."""
+    """Schema for token response.
 
-    access_token: str
-    refresh_token: str
+    Body tokens are populated only when EXPOSE_TOKENS_IN_BODY=true (tests /
+    legacy clients). The default cookie flow keeps tokens out of the body.
+    """
+
+    access_token: str | None = None
+    refresh_token: str | None = None
     token_type: str = "bearer"
     user: UserResponse
     csrf_token: str | None = None  # CSRF token for protected requests
@@ -63,9 +92,13 @@ class TokenResponse(BaseModel):
 
 
 class TokenRefresh(BaseModel):
-    """Schema for token refresh."""
+    """Schema for token refresh.
 
-    refresh_token: str
+    refresh_token is optional: cookie-authenticated clients omit it and the
+    backend falls back to the refresh_token HttpOnly cookie.
+    """
+
+    refresh_token: str | None = None
 
 
 class MeResponse(UserResponse):

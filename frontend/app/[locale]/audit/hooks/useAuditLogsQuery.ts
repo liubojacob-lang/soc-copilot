@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { authFetchJSON } from "@/lib/auth";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/queryClient";
 import type { AuditLog } from "../types";
 
@@ -56,13 +56,18 @@ async function fetchAuditLogs(options: UseAuditLogsQueryOptions) {
   if (options.filterUserId) params.append("user_id", options.filterUserId);
   if (options.filterIpAddress) params.append("ip_address", options.filterIpAddress);
 
-  const response = await authFetchJSON<Response>(`/api/audit?${params.toString()}`);
+  const data = await apiClient.get<{
+    items: AuditLog[];
+    total: number;
+    page: number;
+    page_size: number;
+  }>(`/api/v1/audit-logs?${params.toString()}`);
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch audit logs");
-  }
-
-  return response.json();
+  return {
+    logs: data.items || [],
+    total: data.total || 0,
+    stats: null,
+  };
 }
 
 /**
@@ -199,9 +204,7 @@ export function useAuditStatsQuery() {
   return useQuery({
     queryKey: queryKeys.audit.stats(),
     queryFn: async () => {
-      const response = await authFetchJSON<Response>("/api/audit/stats");
-      if (!response.ok) throw new Error("Failed to fetch audit stats");
-      return response.json();
+      return apiClient.get<AuditLogStats>("/api/v1/audit-logs/stats/summary");
     },
     staleTime: 60 * 1000, // 1 minute
     gcTime: 10 * 60 * 1000, // 10 minutes

@@ -1,6 +1,5 @@
 """Schemas for API key operations."""
 
-
 from pydantic import BaseModel, ConfigDict, Field
 
 

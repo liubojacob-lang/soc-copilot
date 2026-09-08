@@ -28,7 +28,14 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
 
 from core.logger import get_logger
 from core.security import decode_token
@@ -60,7 +67,7 @@ async def push_alert(alert_data: dict[str, Any]):
     if message_queue and await message_queue.is_available():
         from models.message_queue import MessageType
 
-        for user_id in manager.known_users.keys():
+        for user_id in manager.known_users:
             # Check if user is currently connected
             is_connected = any(
                 conn.get("user_id") == user_id
@@ -88,7 +95,7 @@ async def push_playbook_run_update(run_data: dict[str, Any]):
     if message_queue and await message_queue.is_available():
         from models.message_queue import MessageType
 
-        for user_id in manager.known_users.keys():
+        for user_id in manager.known_users:
             is_connected = any(
                 conn.get("user_id") == user_id
                 for conn in manager.active_connections.values()
@@ -142,16 +149,26 @@ async def alerts_websocket(
     # Extract token from Sec-WebSocket-Protocol header
     # Client sends: new WebSocket(url, "access_token.<jwt>")
     token = None
+    chosen_subprotocol = None
     protocol_header = websocket.headers.get("sec-websocket-protocol", "")
     for proto in protocol_header.split(","):
         proto = proto.strip()
         if proto.startswith("access_token."):
             token = proto[len("access_token.") :]
+            chosen_subprotocol = proto
             break
 
-    # Fallback: also accept token via query parameter for backward compatibility
+    # v1.0: Removed query parameter token fallback (security: query params leak in logs)
+    # Token must be provided via Sec-WebSocket-Protocol header.
+
+    # Cookie fallback: browsers attach same-site cookies to the WS handshake,
+    # so cookie-authenticated clients (no JS-readable token) still connect.
     if not token:
-        token = websocket.query_params.get("token")
+        from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, get_token_from_cookie
+
+        token = get_token_from_cookie(
+            websocket.headers.get("cookie"), COOKIE_ACCESS_TOKEN_NAME
+        )
 
     # Authenticate
     if not token:
@@ -161,6 +178,18 @@ async def alerts_websocket(
     payload = decode_token(token)
     if not payload:
         await websocket.close(code=4001, reason="Invalid token")
+        return
+
+    # Only access tokens may open a WS session (refresh tokens are for
+    # rotation only), and logged-out tokens must be rejected like over HTTP
+    if payload.get("type") != "access":
+        await websocket.close(code=4001, reason="Access token required")
+        return
+
+    from core.token_blacklist import get_token_blacklist
+
+    if await get_token_blacklist().is_blacklisted(token):
+        await websocket.close(code=4001, reason="Token has been revoked")
         return
 
     user_id = payload.get("sub")
@@ -185,7 +214,12 @@ async def alerts_websocket(
 
     # Connect with message queue for offline messages
     await manager.connect(
-        websocket, user_id, user_role, subscribed_channels, message_queue
+        websocket,
+        user_id,
+        user_role,
+        subscribed_channels,
+        message_queue,
+        subprotocol=chosen_subprotocol,
     )
 
     try:
@@ -296,7 +330,6 @@ async def get_monitoring_metrics(user=Depends(get_current_user)):
             "health_score": 100.0,
             "connection": {},
             "message": {},
-            "error": {},
             "performance": {},
         }
 
@@ -394,9 +427,7 @@ async def flush_batches(user=Depends(get_current_user)):
         return {"message": "All batches flushed successfully"}
     except Exception as e:
         logger.error(f"Failed to flush batches: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to flush batches: {e!s}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to flush batches: {e!s}")
 
 
 @router.get("/ws/pool/stats")

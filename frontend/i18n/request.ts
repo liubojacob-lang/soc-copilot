@@ -1,29 +1,46 @@
+import { hasLocale } from "next-intl";
 import { getRequestConfig } from "next-intl/server";
 import { notFound } from "next/navigation";
 
-export const locales = ["en", "zh"] as const;
-export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = "en";
+import { routing } from "./routing";
 
+export type Locale = (typeof routing.locales)[number];
+export const locales = routing.locales;
+
+/**
+ * Loads the message catalog for a locale. `messages/<locale>.json` is the
+ * authoritative single-file catalog; per-namespace files under
+ * `messages/<locale>/` only serve the client-side preloader
+ * (`lib/i18n-cache.ts`).
+ */
 async function loadAllMessages(locale: Locale) {
   try {
     const messages = await import(`../messages/${locale}.json`);
     return messages.default;
   } catch {
-    const coreMessages = await import(`../messages/${locale}/core.json`);
-    return coreMessages.default;
+    const fallback = await import("../messages/zh-CN.json");
+    return fallback.default;
   }
 }
 
 export default getRequestConfig(async ({ requestLocale }) => {
-  const locale = await requestLocale;
+  const requested = await requestLocale;
 
-  if (!locale || !locales.includes(locale as Locale)) {
+  if (!hasLocale(routing.locales, requested)) {
     notFound();
   }
 
   return {
-    locale,
-    messages: await loadAllMessages(locale as Locale),
+    locale: requested,
+    messages: await loadAllMessages(requested),
+    onError(error) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(`[i18n warning] ${error.message}`);
+      }
+    },
+    getMessageFallback({ error, key, namespace }) {
+      const nestedKey = namespace ? `${namespace}.${key}` : key;
+      return key.split(".").pop() || nestedKey;
+    },
   };
 });

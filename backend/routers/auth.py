@@ -1,39 +1,56 @@
 """Authentication API endpoints."""
 
-from datetime import datetime, timedelta
-
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
-from core.cookie_auth import clear_auth_cookies, set_auth_cookies
+from core.cookie_auth import (
+    COOKIE_REFRESH_TOKEN_NAME,
+    clear_auth_cookies,
+    get_token_from_cookie,
+    set_auth_cookies,
+)
 from core.csrf import generate_csrf_token, set_csrf_cookie
 from core.logger import get_logger
-from middleware.rate_limiter import rate_limit
-from core.security import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    get_password_hash,
-    verify_password,
-)
 from db.session import get_session
 from dependencies.auth import (
     get_current_user,
+    get_current_user_optional,
     require_admin,
     user_to_response,
 )
+from middleware.rate_limiter import rate_limit
 from models.user import UserModel
-from repositories.user_repository import UserRepository
-from schemas.user import ChangePasswordRequest, MeResponse, TokenRefresh, TokenResponse, UserLogin
+from schemas.user import (
+    ChangePasswordRequest,
+    MeResponse,
+    TokenRefresh,
+    TokenResponse,
+    UserLogin,
+)
+from services.auth_service import AuthService
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
-# Security constants
-MAX_LOGIN_ATTEMPTS = 5
-LOCKOUT_DURATION_MINUTES = 30
+
+def _body_tokens(
+    access_token: str, refresh_token: str
+) -> tuple[str | None, str | None]:
+    """Return body tokens only when explicitly exposed (tests/legacy clients).
+
+    The default cookie flow keeps JWTs out of the response body so they never
+    touch JavaScript-readable storage.
+    """
+    if settings.expose_tokens_in_body:
+        return access_token, refresh_token
+    return None, None
+
+
+def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthService:
+    """Dependency: provide AuthService instance."""
+    return AuthService(session)
 
 
 @router.post(
@@ -65,8 +82,8 @@ LOCKOUT_DURATION_MINUTES = 30
             "content": {
                 "application/json": {
                     "example": {
-                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "access_token": "<access-jwt>",
+                        "refresh_token": "<refresh-jwt>",
                         "token_type": "bearer",
                         "expires_in": 720,
                         "user": {
@@ -88,169 +105,10 @@ async def login(
     credentials: UserLogin,
     request: Request,
     response: Response,
-    session: AsyncSession = Depends(get_session),
+    auth_service: AuthService = Depends(get_auth_service),
 ):
     """Authenticate user and return tokens (stored in httpOnly cookies)."""
-    user_repo = UserRepository(session)
-
-    # Find user by username
-    user = await user_repo.get_by_username(credentials.username)
-    if not user:
-        # Create audit log for failed login
-        from repositories.audit_repository import AuditRepository
-
-        audit_repo = AuditRepository(session)
-        await audit_repo.create(
-            action="login:failed",
-            method="POST",
-            path="/api/auth/login",
-            status_code=401,
-            extra_json={"username": credentials.username, "reason": "user_not_found"},
-        )
-        await session.commit()
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-        )
-
-    # Check if account is locked
-    if user.locked_until:
-        locked_until = datetime.fromisoformat(user.locked_until)
-        if locked_until > datetime.now():
-            # Account is still locked
-            remaining_minutes = int((locked_until - datetime.now()).total_seconds() / 60)
-            from repositories.audit_repository import AuditRepository
-
-            audit_repo = AuditRepository(session)
-            await audit_repo.create(
-                action="login:failed",
-                method="POST",
-                path="/api/auth/login",
-                status_code=423,
-                user_id=user.id,
-                extra_json={
-                    "reason": "account_locked",
-                    "locked_until": user.locked_until,
-                },
-            )
-            await session.commit()
-            raise HTTPException(
-                status_code=status.HTTP_423_LOCKED,
-                detail=f"Account is locked. Try again in {remaining_minutes} minutes or contact administrator.",
-            )
-        else:
-            # Lockout period has expired, clear it
-            user.locked_until = None
-            user.failed_login_attempts = 0
-
-    # Verify password
-    if not verify_password(credentials.password, user.hashed_password):
-        # Increment failed login attempts
-        user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-
-        # Check if we should lock the account
-        if user.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
-            # Lock the account
-            lockout_until = datetime.now() + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
-            user.locked_until = lockout_until.isoformat()
-
-            from repositories.audit_repository import AuditRepository
-
-            audit_repo = AuditRepository(session)
-            await audit_repo.create(
-                action="account_locked",
-                method="POST",
-                path="/api/auth/login",
-                status_code=423,
-                user_id=user.id,
-                extra_json={
-                    "reason": "max_login_attempts_exceeded",
-                    "attempts": user.failed_login_attempts,
-                    "locked_until": user.locked_until,
-                },
-            )
-            await session.commit()
-            raise HTTPException(
-                status_code=status.HTTP_423_LOCKED,
-                detail=f"Too many failed login attempts. Account locked for {LOCKOUT_DURATION_MINUTES} minutes.",
-            )
-
-        # Log failed attempt
-        from repositories.audit_repository import AuditRepository
-
-        audit_repo = AuditRepository(session)
-        await audit_repo.create(
-            action="login:failed",
-            method="POST",
-            path="/api/auth/login",
-            status_code=401,
-            user_id=user.id,
-            extra_json={
-                "reason": "invalid_password",
-                "attempts": user.failed_login_attempts,
-                "max_attempts": MAX_LOGIN_ATTEMPTS,
-            },
-        )
-        await session.commit()
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-        )
-
-    # Check if user is active
-    if not user.is_active:
-        from repositories.audit_repository import AuditRepository
-
-        audit_repo = AuditRepository(session)
-        await audit_repo.create(
-            action="login:failed",
-            method="POST",
-            path="/api/auth/login",
-            status_code=403,
-            user_id=user.id,
-            extra_json={"reason": "account_disabled"},
-        )
-        await session.commit()
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is disabled",
-        )
-
-    # Reset failed login attempts on successful login
-    user.failed_login_attempts = 0
-    user.locked_until = None
-
-    # Update last login
-    await user_repo.update_last_login(user.id)
-
-    # Create tokens with role for authorization
-    access_token = create_access_token(
-        data={
-            "sub": user.id,
-            "role": user.role.value if hasattr(user.role, "value") else user.role,
-        },
-        expires_delta=timedelta(minutes=settings.jwt_expire_minutes),
-    )
-    refresh_token = create_refresh_token(
-        data={
-            "sub": user.id,
-            "role": user.role.value if hasattr(user.role, "value") else user.role,
-        }
-    )
-
-    # Create audit log for successful login
-    from repositories.audit_repository import AuditRepository
-
-    audit_repo = AuditRepository(session)
-    await audit_repo.create(
-        action="login:success",
-        method="POST",
-        path="/api/auth/login",
-        status_code=200,
-        user_id=user.id,
-        extra_json={"username": user.username},
-    )
-    await session.commit()
+    user, access_token, refresh_token = await auth_service.authenticate(credentials)
 
     # Set httpOnly cookies for XSS protection
     set_auth_cookies(response, access_token, refresh_token)
@@ -259,11 +117,10 @@ async def login(
     csrf_token = generate_csrf_token()
     set_csrf_cookie(response, csrf_token)
 
-    # Return tokens in response body for backward compatibility
-    # (but prefer cookies in production)
+    body_access, body_refresh = _body_tokens(access_token, refresh_token)
     return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
+        access_token=body_access,
+        refresh_token=body_refresh,
         user=user_to_response(user),
         must_change_password=user.must_change_password,
         csrf_token=csrf_token,  # Include CSRF token for frontend use
@@ -273,86 +130,87 @@ async def login(
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
     refresh_data: TokenRefresh,
-    session: AsyncSession = Depends(get_session),
+    request: Request,
+    response: Response,
+    auth_service: AuthService = Depends(get_auth_service),
 ):
-    """Refresh access token using refresh token."""
-    # Decode refresh token
-    payload = decode_token(refresh_data.refresh_token)
-    if not payload or payload.get("type") != "refresh":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token",
-        )
+    """Refresh access token using the refresh token.
 
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token",
-        )
+    Implements token rotation: old refresh token is blacklisted
+    after new tokens are issued to prevent replay attacks.
 
-    # Get user
-    user_repo = UserRepository(session)
-    user = await user_repo.get_by_id(user_id)
-    if not user or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive",
+    The refresh token comes from the request body (legacy clients) or, when
+    absent, from the HttpOnly refresh_token cookie (cookie flow).
+    """
+    refresh_token_value = refresh_data.refresh_token
+    if not refresh_token_value:
+        cookie_token = get_token_from_cookie(
+            request.headers.get("cookie"), COOKIE_REFRESH_TOKEN_NAME
         )
+        if not cookie_token:
+            raise HTTPException(
+                status_code=401,
+                detail="No refresh token provided (body or cookie)",
+            )
+        refresh_token_value = cookie_token
 
-    # Create new tokens with role for authorization
-    access_token = create_access_token(
-        data={
-            "sub": user.id,
-            "role": user.role.value if hasattr(user.role, "value") else user.role,
-        },
-        expires_delta=timedelta(minutes=settings.jwt_expire_minutes),
-    )
-    new_refresh_token = create_refresh_token(
-        data={
-            "sub": user.id,
-            "role": user.role.value if hasattr(user.role, "value") else user.role,
-        }
+    user, access_token, new_refresh_token = await auth_service.refresh_tokens(
+        refresh_token_value
     )
 
-    # Create audit log
-    from repositories.audit_repository import AuditRepository
+    # Update httpOnly cookies with new tokens
+    set_auth_cookies(response, access_token, new_refresh_token)
 
-    audit_repo = AuditRepository(session)
-    await audit_repo.create(
-        action="token:refresh",
-        method="POST",
-        path="/api/auth/refresh",
-        status_code=200,
-        user_id=user.id,
-    )
-    await session.commit()
-
+    body_access, body_refresh = _body_tokens(access_token, new_refresh_token)
     return TokenResponse(
-        access_token=access_token,
-        refresh_token=new_refresh_token,
+        access_token=body_access,
+        refresh_token=body_refresh,
         user=user_to_response(user),
     )
 
 
+@router.get("/csrf-token")
+async def issue_csrf_token(response: Response):
+    """Issue a fresh CSRF token (double-submit pair).
+
+    Sets the hashed csrf_token cookie and returns the raw token, which the
+    client must send in the X-CSRF-Token header on state-changing requests.
+    """
+    csrf_token = generate_csrf_token()
+    set_csrf_cookie(response, csrf_token)
+    return {"csrf_token": csrf_token}
+
+
 @router.post("/logout")
 async def logout(
+    request: Request,
     response: Response,
-    current_user: UserModel = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    current_user: UserModel | None = Depends(get_current_user_optional),
+    auth_service: AuthService = Depends(get_auth_service),
 ):
-    """Logout user and clear httpOnly cookies."""
-    from repositories.audit_repository import AuditRepository
+    # v1.0: Idempotent logout - return 200 even if token already blacklisted/expired.
+    # The auth dependency is optional; cookies are always cleared.
+    """Logout user, blacklist tokens, and clear httpOnly cookies."""
+    from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, COOKIE_REFRESH_TOKEN_NAME
+    from core.cookie_auth import get_token_from_cookie as _get_cookie
 
-    audit_repo = AuditRepository(session)
-    await audit_repo.create(
-        action="logout",
-        method="POST",
-        path="/api/auth/logout",
-        status_code=200,
-        user_id=current_user.id,
+    # Extract tokens from cookies
+    cookie_header = request.headers.get("cookie")
+    access_token = _get_cookie(cookie_header, COOKIE_ACCESS_TOKEN_NAME)
+    refresh_token = _get_cookie(cookie_header, COOKIE_REFRESH_TOKEN_NAME)
+
+    # Also extract Bearer token if present
+    bearer_token = None
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        bearer_token = auth_header[7:]
+
+    await auth_service.logout(
+        user_id=current_user.id if current_user else None,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        bearer_token=bearer_token,
     )
-    await session.commit()
 
     # Clear httpOnly cookies
     clear_auth_cookies(response)
@@ -384,74 +242,27 @@ async def get_me(
 async def change_password(
     data: ChangePasswordRequest,
     current_user: UserModel = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    auth_service: AuthService = Depends(get_auth_service),
 ):
     """Change the current user's password."""
-    if not verify_password(data.current_password, current_user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect",
-        )
-
-    if data.new_password != data.confirm_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password and confirmation do not match",
-        )
-
-    if data.new_password == data.current_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be different from current password",
-        )
-
-    user_repo = UserRepository(session)
-    hashed = get_password_hash(data.new_password)
-    await user_repo.update_password(current_user.id, hashed)
-    await session.commit()
-
+    await auth_service.change_password(current_user, data)
     return {"message": "Password changed successfully"}
 
 
 @router.post("/unlock-user/{username}")
 async def unlock_user_account(
     username: str,
-    session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(require_admin),
+    auth_service: AuthService = Depends(get_auth_service),
 ):
     """Unlock a user account (admin only).
 
     Clears failed login attempts and lockout status for the specified user.
     """
-    user_repo = UserRepository(session)
-    user = await user_repo.get_by_username(username)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
-    # Clear lockout
-    user.failed_login_attempts = 0
-    user.locked_until = None
-
-    # Create audit log
-    from repositories.audit_repository import AuditRepository
-
-    audit_repo = AuditRepository(session)
-    await audit_repo.create(
-        action="account_unlocked",
-        method="POST",
-        path=f"/api/auth/unlock-user/{username}",
-        status_code=200,
-        user_id=current_user.id,
-        extra_json={
-            "unlocked_user_id": user.id,
-            "unlocked_username": user.username,
-        },
+    user = await auth_service.unlock_user(
+        admin_id=current_user.id,
+        username=username,
     )
-    await session.commit()
 
     return {
         "message": f"User account '{username}' has been unlocked",

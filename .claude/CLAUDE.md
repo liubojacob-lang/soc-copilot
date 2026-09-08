@@ -3,7 +3,7 @@
 ## 项目概述
 
 - **项目名称**: SOC Copilot
-- **版本**: v0.8.2
+- **版本**: v0.9.0
 - **类型**: 安全运营中心(SOC)智能化平台
 - **技术栈**: FastAPI + Next.js 16 + SQLite/PostgreSQL + Redis
 

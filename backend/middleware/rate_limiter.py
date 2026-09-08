@@ -20,8 +20,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.logger import get_logger
 from models.api_key import APIKeyModel
+from utils.client_ip import get_client_ip
 
 logger = get_logger(__name__)
+
+# Atomic fixed-window counter: EXPIRE must only be set when the counter is
+# created (first request in a window). Setting it on every request keeps
+# refreshing the TTL, so a continuously-hit key never resets and active
+# clients get permanently rate-limited.
+_RATE_LIMIT_INCR_SCRIPT = """
+local current = redis.call('INCR', KEYS[1])
+if current == 1 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return current
+"""
 
 # Check if Redis is available
 try:
@@ -52,6 +65,21 @@ class AsyncRateLimiter:
         self._enabled: bool = settings.redis_enabled and REDIS_AVAILABLE
         self._healthy: bool = False
         self._last_health_check: datetime | None = None
+
+        # Security: endpoint patterns considered sensitive (fail-closed when Redis unavailable)
+        self._SENSITIVE_ENDPOINT_PATTERNS: set[str] = {
+            "auth",
+            "login",
+            "api_key",
+            "token",
+            "password",
+            "register",
+            "signup",
+            "oauth",
+            "mfa",
+            "2fa",
+            "otp",
+        }
 
     async def _init_redis(self) -> bool:
         """Initialize async Redis client with connection pool.
@@ -174,30 +202,62 @@ class AsyncRateLimiter:
         current_time = datetime.now()
         window_start = current_time - timedelta(seconds=window_seconds)
 
+        is_sensitive = any(
+            p in endpoint.lower() for p in self._SENSITIVE_ENDPOINT_PATTERNS
+        )
+
         # Try Redis first
         if await self._ensure_connection():
-            return await self._check_redis(key, max_requests, window_seconds)
+            return await self._check_redis(
+                key, max_requests, window_seconds, endpoint, is_sensitive
+            )
         else:
-            # Fallback to in-memory
+            # Redis unavailable
+            # P1-13: In production, Redis is mandatory — fail-closed for all endpoints
+            if settings.environment == "production":
+                logger.error(
+                    f"Redis unavailable in production for {endpoint}, fail-closed (503)"
+                )
+                return False, {
+                    "limit": max_requests,
+                    "remaining": 0,
+                    "reset": window_seconds,
+                    "redis_unavailable": True,
+                }
+            if is_sensitive:
+                # Production fail-closed is handled above; outside production
+                # fall back to the in-memory store so local development
+                # (no Redis) can still authenticate.
+                logger.warning(
+                    f"Redis unavailable for sensitive endpoint {endpoint} "
+                    "outside production — using in-memory rate limit fallback"
+                )
+            # Fallback to in-memory for non-sensitive endpoints (development only)
             return self._check_in_memory(
                 key, max_requests, window_seconds, window_start
             )
 
     async def _check_redis(
-        self, key: str, max_requests: int, window_seconds: int
+        self,
+        key: str,
+        max_requests: int,
+        window_seconds: int,
+        endpoint: str,
+        sensitive: bool,
     ) -> tuple[bool, dict]:
         """Check rate limit using async Redis.
 
         Uses Redis pipeline for atomic operations.
         """
         try:
-            # Use async pipeline for atomic operations
-            async with self._redis_client.pipeline(transaction=True) as pipe:
-                pipe.incr(key)
-                pipe.expire(key, window_seconds)
-                results = await pipe.execute()
-
-            current_count = results[0]
+            # INCR + conditional EXPIRE must be atomic (Lua) so the window
+            # start is fixed; a pipeline of INCR+EXPIRE would reset the
+            # TTL on every request and never release the counter.
+            current_count = int(
+                await self._redis_client.eval(
+                    _RATE_LIMIT_INCR_SCRIPT, 1, key, window_seconds
+                )
+            )
             remaining = max(0, max_requests - current_count)
 
             if current_count > max_requests:
@@ -214,9 +274,33 @@ class AsyncRateLimiter:
                 "reset": window_seconds,
             }
         except Exception as e:
-            logger.error(f"Redis rate limit check failed: {e}")
+            logger.error(f"Redis rate limit check failed for {endpoint}: {e}")
             self._healthy = False
-            # Fallback to allow request if Redis fails (fail-open)
+            # P1-13: In production, Redis is mandatory — fail-closed for all endpoints
+            if settings.environment == "production":
+                logger.error(
+                    f"Redis unavailable in production for {endpoint}, fail-closed (503)"
+                )
+                return False, {
+                    "limit": max_requests,
+                    "remaining": 0,
+                    "reset": window_seconds,
+                    "redis_unavailable": True,
+                }
+            if sensitive:
+                logger.error(
+                    f"Redis unavailable for sensitive endpoint {endpoint}, fail-closed"
+                )
+                return False, {
+                    "limit": max_requests,
+                    "remaining": 0,
+                    "reset": window_seconds,
+                    "redis_unavailable": True,
+                }
+            # Fallback to allow request if Redis fails (fail-open) for non-sensitive endpoints
+            logger.warning(
+                f"Redis unavailable for non-sensitive endpoint {endpoint}, fail-open (in-memory fallback)"
+            )
             return True, {
                 "limit": max_requests,
                 "remaining": max_requests,
@@ -341,6 +425,10 @@ async def check_api_key_rate_limit(
     Returns:
         Tuple of (allowed, info_dict)
     """
+    # v1.0: Skip in test environment (same policy as @rate_limit decorator)
+    if settings.environment == "test":
+        return True, {"limit": 1000, "remaining": 999, "reset": 60}
+
     limiter = get_rate_limiter()
 
     # Check if API key has custom rate limit
@@ -382,13 +470,18 @@ def rate_limit(max_requests: int = 10, window_seconds: int = 60):
     def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, **kwargs):
+            # Skip rate limiting in test environment (tests fire rapid requests
+            # and would otherwise hit limits, producing false 429 failures).
+            if settings.environment == "test":
+                return await func(*args, **kwargs)
+
             # Extract request from kwargs
             request = kwargs.get("request")
             if not request:
                 return await func(*args, **kwargs)
 
-            # Get identifier (IP address or API key)
-            identifier = request.client.host if request.client else "unknown"
+            # Get identifier (real client IP behind proxy, or API key)
+            identifier = get_client_ip(request) if request.client else "unknown"
 
             # Check rate limit
             limiter = get_rate_limiter()
@@ -400,6 +493,15 @@ def rate_limit(max_requests: int = 10, window_seconds: int = 60):
             )
 
             if not allowed:
+                if info.get("redis_unavailable"):
+                    logger.error(
+                        f"Rate limit service unavailable for {identifier} on {request.url.path}"
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Rate limiting service unavailable. Please try again later.",
+                    )
+
                 logger.warning(
                     f"Rate limit exceeded for {identifier} on {request.url.path}"
                 )

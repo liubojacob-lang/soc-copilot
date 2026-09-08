@@ -47,8 +47,14 @@ class AlertChannelType(str, Enum):
     SMS = "sms"
 
 
-class MetricType(str, Enum):
-    """Types of metrics that can trigger alerts."""
+class AlertMetricType(str, Enum):
+    """Specific metrics that can trigger alerts.
+
+    Renamed from MetricType to avoid collision with the unrelated
+    MetricCategory in websocket_metrics.py (which groups metrics by
+    collection domain). This enum lists the concrete metric names an
+    alert condition can reference.
+    """
 
     HEALTH_SCORE = "health_score"
     ACTIVE_CONNECTIONS = "active_connections"
@@ -62,7 +68,7 @@ class MetricType(str, Enum):
 class AlertCondition(BaseModel):
     """A single condition for an alert rule."""
 
-    metric_type: MetricType
+    metric_type: AlertMetricType
     operator: AlertOperator
     threshold: float
     duration_seconds: int = 60  # How long condition must be true
@@ -99,12 +105,8 @@ class AlertRule(BaseModel):
     max_notifications_per_hour: int = 10
 
     # Timestamps
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
-    updated_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     last_triggered_at: str | None = None
 
     # Trigger count
@@ -219,9 +221,7 @@ class AlertNotification(BaseModel):
     error_message: str | None = None
 
     # Timestamps
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     sent_at: str | None = None
 
 

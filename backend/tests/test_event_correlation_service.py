@@ -240,7 +240,7 @@ class TestTimeGrouping:
         assert len(groups) > 0
 
         # Each group should have events
-        for time_bucket, group_events in groups.items():
+        for _time_bucket, group_events in groups.items():
             assert len(group_events) > 0
 
     @pytest.mark.asyncio
@@ -366,13 +366,6 @@ class TestCorrelationGeneration:
         assert len(merged) <= 2
         if len(merged) == 1:
             assert merged[0].raw_event_count == 3  # alert-1, alert-2, alert-3
-
-
-# Fixtures
-@pytest.fixture
-def mock_db_session():
-    """Mock database session."""
-    return None
 
 
 # Run tests

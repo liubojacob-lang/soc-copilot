@@ -23,7 +23,7 @@ interface UseAIChatResult {
     conv: ChatConversation,
     models: Array<{ id: string; display_name: string }>
   ) => void;
-  clearChat: (welcomeMessage: string) => void;
+  clearChat: (welcomeMessage?: string) => void;
 }
 
 export function useAIChat({
@@ -75,6 +75,72 @@ export function useAIChat({
     [clearTypingTimers]
   );
 
+  /** Try the SSE streaming endpoint; returns null when streaming is not
+   * available (caller falls back to the one-shot request). */
+  const streamChat = useCallback(
+    async (
+      userMessage: string,
+      history: Array<{ role: string; content: string }>,
+      onDelta: (delta: string) => void
+    ): Promise<{ routedModel?: string; routeReason?: string } | null> => {
+      const { ensureCSRFToken, addCSRFToken } = await import("@/lib/csrf");
+      await ensureCSRFToken();
+      const options = addCSRFToken({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include" as const,
+        body: JSON.stringify({
+          message: userMessage,
+          ...(selectedModelId ? { model_id: selectedModelId } : {}),
+          conversation_history: history,
+        }),
+      });
+
+      const response = await fetch("/api/ai/chat/stream", options);
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok || !contentType.includes("text/event-stream")) {
+        return null;
+      }
+
+      let routedModel: string | undefined;
+      let routeReason: string | undefined;
+
+      const reader = response.body?.getReader();
+      if (!reader) return null;
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() || "";
+        for (const frame of frames) {
+          const line = frame.trim();
+          if (!line.startsWith("data:")) continue;
+          try {
+            const event = JSON.parse(line.slice(5).trim());
+            if (event.meta?.routed_model) {
+              routedModel = event.meta.routed_model;
+              routeReason = event.meta.route_reason;
+            }
+            if (typeof event.delta === "string" && event.delta.length > 0) {
+              onDelta(event.delta);
+            }
+            if (event.done) {
+              return { routedModel, routeReason };
+            }
+          } catch {
+            // malformed frame — skip
+          }
+        }
+      }
+      return { routedModel, routeReason };
+    },
+    [selectedModelId]
+  );
+
   const sendMessage = useCallback(
     async (userMessage: string, conversationHistory: Message[]) => {
       if (!userMessage.trim() || loading || thinking || isStreaming) {
@@ -99,7 +165,64 @@ export function useAIChat({
       setIsStreaming(false);
       setMessages((prev) => [...prev, userEntry]);
 
+      const finishStreamingMessage = (
+        fullText: string,
+        routedModel?: string,
+        routeReason?: string
+      ) => {
+        setStreamingMessage("");
+        setIsStreaming(false);
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage?.isStreaming) {
+            lastMessage.content = fullText;
+            lastMessage.isStreaming = false;
+            if (routedModel) lastMessage.routedModel = routedModel;
+            if (routeReason) lastMessage.routeReason = routeReason;
+          }
+          return newMessages;
+        });
+      };
+
       try {
+        // Preferred path: real SSE streaming from the provider
+        try {
+          setThinking(false);
+          setIsStreaming(true);
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: "",
+              timestamp: new Date(),
+              isStreaming: true,
+            },
+          ]);
+
+          let streamed = "";
+          const meta = await streamChat(userMessage, history, (delta) => {
+            streamed += delta;
+            setStreamingMessage(streamed);
+          });
+
+          if (streamed.length > 0 || meta) {
+            finishStreamingMessage(
+              streamed || "No response from AI service",
+              meta?.routedModel,
+              meta?.routeReason
+            );
+            return;
+          }
+          // No stream frames — remove placeholder and fall through to one-shot
+          setMessages((prev) => prev.filter((m) => !m.isStreaming));
+        } catch (streamError) {
+          console.warn("[AI Assistant] Streaming unavailable, falling back:", streamError);
+          setMessages((prev) => prev.filter((m) => !m.isStreaming));
+        }
+
+        // Fallback: one-shot request + typewriter effect
+        setThinking(true);
         const chatResponse = (await api.post("/api/ai/chat", {
           message: userMessage,
           ...(selectedModelId ? { model_id: selectedModelId } : {}),
@@ -121,6 +244,9 @@ export function useAIChat({
           return;
         }
 
+        const routedModel = chatResponse?.routed_model ?? undefined;
+        const routeReason = chatResponse?.route_reason ?? undefined;
+
         setThinking(false);
         setIsStreaming(true);
         setMessages((prev) => [
@@ -130,6 +256,8 @@ export function useAIChat({
             content: "",
             timestamp: new Date(),
             isStreaming: true,
+            routedModel,
+            routeReason,
           },
         ]);
 
@@ -140,17 +268,7 @@ export function useAIChat({
         const typingDuration = Math.max(Math.ceil(fullResponse.length / 3) * 15 + 100, 500);
         typingTimeoutRef.current = setTimeout(() => {
           clearTypingTimers();
-          setStreamingMessage("");
-          setIsStreaming(false);
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage?.isStreaming) {
-              lastMessage.content = fullResponse;
-              lastMessage.isStreaming = false;
-            }
-            return newMessages;
-          });
+          finishStreamingMessage(fullResponse, routedModel, routeReason);
         }, typingDuration);
       } catch (error) {
         console.error("[AI Assistant] Chat request error:", error);
@@ -170,7 +288,15 @@ export function useAIChat({
         setThinking(false);
       }
     },
-    [loading, thinking, isStreaming, selectedModelId, typeWriterEffect, clearTypingTimers]
+    [
+      loading,
+      thinking,
+      isStreaming,
+      selectedModelId,
+      streamChat,
+      typeWriterEffect,
+      clearTypingTimers,
+    ]
   );
 
   const loadConversation = useCallback(
@@ -210,15 +336,19 @@ export function useAIChat({
   );
 
   const clearChat = useCallback(
-    (welcomeMessage: string) => {
+    (welcomeMessage?: string) => {
       clearTypingTimers();
-      setMessages([
-        {
-          role: "assistant",
-          content: welcomeMessage,
-          timestamp: new Date(),
-        },
-      ]);
+      if (welcomeMessage) {
+        setMessages([
+          {
+            role: "assistant",
+            content: welcomeMessage,
+            timestamp: new Date(),
+          },
+        ]);
+      } else {
+        setMessages([]);
+      }
       setIsStreaming(false);
       setStreamingMessage("");
       setThinking(false);

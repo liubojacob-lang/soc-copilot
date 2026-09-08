@@ -13,6 +13,7 @@ from db.session import get_session
 from dependencies import get_current_user
 from models.user import UserModel
 from services.alerting.alert_enrichment import AlertEnrichmentService
+from services.query_cache import cached
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1/alert-enrichment", tags=["alert-enrichment"])
@@ -100,41 +101,53 @@ async def get_enrichment_stats(
     - Enrichment rate
     - Alerts by threat score
     """
+    return await _compute_enrichment_stats()
+
+
+@cached(ttl=60, prefix="enrichment_stats")
+async def _compute_enrichment_stats() -> dict[str, Any]:
+    """Compute enrichment statistics.
+
+    Streams only the raw_data column in bounded chunks so memory stays flat
+    on large alert tables (full_log and other heavy columns are never
+    loaded), and serves the result from a 60s cache.
+    """
+    from sqlalchemy import func, select
+
+    from db.session import AsyncSessionLocal
+    from models.security_alert import SecurityAlert
+
+    enriched_count = 0
+    threat_scores = {"clean": 0, "suspicious": 0, "malicious": 0, "unknown": 0}
+
     try:
-        from sqlalchemy import func, select
+        async with AsyncSessionLocal() as session:
+            total = (
+                await session.execute(select(func.count()).select_from(SecurityAlert))
+            ).scalar() or 0
 
-        from models.security_alert import SecurityAlert
+            # SQLite/PG both support chunked streaming via yield_per; only the
+            # raw_data column is fetched, one JSON blob at a time.
+            stream = await session.stream(select(SecurityAlert.raw_data).yield_per(500))
+            async for (raw_data,) in stream:
+                if not raw_data:
+                    continue
+                ti = raw_data.get("threat_intel")
+                if not ti:
+                    continue
 
-        # Total alerts
-        total_query = select(func.count()).select_from(SecurityAlert)
-        total = (await session.execute(total_query)).scalar() or 0
-
-        # Enriched alerts (have threat_intel in raw_data)
-        # SQLite doesn't support JSON extraction well, so we'll count manually
-        query = select(SecurityAlert)
-        result = await session.execute(query)
-        all_alerts = result.scalars().all()
-
-        enriched_count = 0
-        threat_scores = {"clean": 0, "suspicious": 0, "malicious": 0, "unknown": 0}
-
-        for alert in all_alerts:
-            if alert.raw_data and alert.raw_data.get("threat_intel"):
                 enriched_count += 1
-
-                # Check threat scores
-                ti = alert.raw_data["threat_intel"]
-                indicators = ti.get("indicators", {})
+                indicators = ti.get("indicators", {}) or {}
 
                 has_malicious = False
                 has_suspicious = False
 
-                for indicator_type, indicator_data in indicators.items():
+                for indicator_data in indicators.values():
                     if isinstance(indicator_data, dict):
                         reputation = indicator_data.get("reputation", "unknown")
                         if reputation == "malicious":
                             has_malicious = True
-                        elif reputation in ["suspicious", "unknown"]:
+                        elif reputation in ("suspicious", "unknown"):
                             has_suspicious = True
 
                 if has_malicious:
@@ -145,7 +158,6 @@ async def get_enrichment_stats(
                     threat_scores["clean"] += 1
 
         threat_scores["unknown"] = total - enriched_count
-
         enrichment_rate = (enriched_count / total * 100) if total > 0 else 0
 
         return {

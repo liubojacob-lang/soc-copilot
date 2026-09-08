@@ -197,7 +197,7 @@ async def approve_approval(
     await audit_repo.create(
         action="approval:approve",
         method="POST",
-        path=f"/api/playbook/approvals/{approval_id}/approve",
+        path=f"/api/v1/playbook/approvals/{approval_id}/approve",
         status_code=200,
         user_id=current_user.id,
         target_type="approval",
@@ -289,7 +289,7 @@ async def reject_approval(
     await audit_repo.create(
         action="approval:reject",
         method="POST",
-        path=f"/api/playbook/approvals/{approval_id}/reject",
+        path=f"/api/v1/playbook/approvals/{approval_id}/reject",
         status_code=200,
         user_id=current_user.id,
         target_type="approval",

@@ -2,6 +2,8 @@
 Tests for core security and token blacklist modules.
 """
 
+import secrets
+
 import pytest
 import pytest_asyncio
 
@@ -18,13 +20,16 @@ from core.token_blacklist import (
     verify_token_not_blacklisted,
 )
 
+# Hashing-test input, generated at runtime (no credentials in source).
+TEST_HASH_PASSWORD = f"Hs-{secrets.token_urlsafe(12)}!7"
+
 
 class TestPasswordHashing:
     """Test password hashing functions."""
 
     def test_password_hash_creates_different_hashes(self):
         """Same password should create different hashes due to salt."""
-        password = "test_password_123"
+        password = TEST_HASH_PASSWORD
         hash1 = get_password_hash(password)
         hash2 = get_password_hash(password)
 
@@ -34,21 +39,21 @@ class TestPasswordHashing:
 
     def test_verify_password_correct(self):
         """Correct password should verify successfully."""
-        password = "test_password_123"
+        password = TEST_HASH_PASSWORD
         hashed = get_password_hash(password)
 
         assert verify_password(password, hashed) is True
 
     def test_verify_password_incorrect(self):
         """Incorrect password should fail verification."""
-        password = "test_password_123"
+        password = TEST_HASH_PASSWORD
         hashed = get_password_hash(password)
 
         assert verify_password("wrong_password", hashed) is False
 
     def test_verify_password_empty(self):
         """Empty password should fail verification."""
-        password = "test_password_123"
+        password = TEST_HASH_PASSWORD
         hashed = get_password_hash(password)
 
         assert verify_password("", hashed) is False

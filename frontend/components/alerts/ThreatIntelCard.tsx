@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormatter } from "next-intl";
 /**
  * ThreatIntelCard Component
  * 威胁情报展示卡片
@@ -76,6 +77,7 @@ export const ThreatIntelCard = React.memo(function ThreatIntelCard({
   onRefresh,
 }: ThreatIntelCardProps) {
   const { iocs, mitre_tactics, threat_score, enrichment_status, enriched_at } = data;
+  const format = useFormatter();
 
   return (
     <div className="space-y-4">
@@ -193,7 +195,8 @@ export const ThreatIntelCard = React.memo(function ThreatIntelCard({
 
         {enriched_at && (
           <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            Last enriched: {new Date(enriched_at).toLocaleString()}
+            Last enriched:{" "}
+            {format.dateTime(new Date(enriched_at), { dateStyle: "medium", timeStyle: "medium" })}
           </div>
         )}
       </div>
@@ -236,7 +239,8 @@ export const ThreatIntelCard = React.memo(function ThreatIntelCard({
                             <>
                               <span className="text-gray-300 dark:text-gray-600">•</span>
                               <span className="text-xs text-gray-500 dark:text-gray-400">
-                                First: {new Date(ioc.first_seen).toLocaleDateString()}
+                                First:{" "}
+                                {format.dateTime(new Date(ioc.first_seen), { dateStyle: "medium" })}
                               </span>
                             </>
                           )}
@@ -245,7 +249,8 @@ export const ThreatIntelCard = React.memo(function ThreatIntelCard({
                             <>
                               <span className="text-gray-300 dark:text-gray-600">•</span>
                               <span className="text-xs text-gray-500 dark:text-gray-400">
-                                Last: {new Date(ioc.last_seen).toLocaleDateString()}
+                                Last:{" "}
+                                {format.dateTime(new Date(ioc.last_seen), { dateStyle: "medium" })}
                               </span>
                             </>
                           )}

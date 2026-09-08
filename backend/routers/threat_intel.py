@@ -1,3 +1,5 @@
+import uuid
+
 """Threat Intelligence router for OTX API endpoints."""
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
@@ -16,7 +18,7 @@ from schemas.threat_intel import (
 )
 from services.threat_intel_service import ThreatIntelService
 
-router = APIRouter(prefix="/api/ti", tags=["threat_intel"])
+router = APIRouter(prefix="/api/v1/ti", tags=["threat_intel"])
 logger = get_logger(__name__)
 
 
@@ -205,3 +207,118 @@ async def clear_all_cache(
         "action": "all_cache_cleared",
         "deleted_count": result.rowcount,
     }
+
+
+# ── Batch IOC Query  —  v0.9.0 ─────────────────────────────────────
+
+from schemas.threat_intel import (
+    IOCBatchRequest,
+    IOCBatchResponse,
+    IOCBatchResultItem,
+    Verdict,
+)
+
+
+@router.post("/batch", response_model=IOCBatchResponse)
+async def batch_ioc_query(
+    data: IOCBatchRequest,
+    session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
+) -> IOCBatchResponse:
+    """Batch query IOCs for threat intelligence (max 50).
+
+    Returns per-IOC results including source, score, tags, references,
+    and details. Results are cached where available.
+
+    Args:
+        data: Batch IOC request with list of {ioc_type, ioc_value}
+
+    Returns:
+        IOCBatchResponse with per-IOC results and error details
+    """
+    request_id = str(uuid.uuid4())[:8]
+    try:
+        service = ThreatIntelService(session)
+        results: list[IOCBatchResultItem] = []
+        errors: list[dict] = []
+        skipped_count = 0
+
+        for item in data.items:
+            try:
+                result = await service.lookup(
+                    ioc_type=item.ioc_type,
+                    ioc_value=item.ioc_value,
+                )
+
+                results.append(
+                    IOCBatchResultItem(
+                        ioc_type=result.ioc_type,
+                        ioc_value=result.ioc_value,
+                        verdict=result.verdict,
+                        score=result.score,
+                        source=result.provider,
+                        pulse_count=result.pulse_count,
+                        tags=result.tags,
+                        references=result.references,
+                        details=result.raw if hasattr(result, "raw") else {},
+                        cached=result.cached,
+                        error=result.error_reason,
+                    )
+                )
+            except ValueError as e:
+                errors.append(
+                    {
+                        "ioc_type": item.ioc_type,
+                        "ioc_value": item.ioc_value,
+                        "error": str(e),
+                    }
+                )
+                results.append(
+                    IOCBatchResultItem(
+                        ioc_type=item.ioc_type,
+                        ioc_value=item.ioc_value,
+                        verdict=Verdict.unknown,
+                        score=0,
+                        source="none",
+                        error=str(e),
+                    )
+                )
+            except Exception as e:
+                logger.warning(
+                    "Batch IOC query failed for %s:%s: %s",
+                    item.ioc_type,
+                    item.ioc_value,
+                    e,
+                )
+                errors.append(
+                    {
+                        "ioc_type": item.ioc_type,
+                        "ioc_value": item.ioc_value,
+                        "error": str(e),
+                    }
+                )
+                results.append(
+                    IOCBatchResultItem(
+                        ioc_type=item.ioc_type,
+                        ioc_value=item.ioc_value,
+                        verdict=Verdict.unknown,
+                        score=0,
+                        source="none",
+                        error=str(e),
+                    )
+                )
+
+        return IOCBatchResponse(
+            request_id=request_id,
+            provider="otx",
+            total=len(data.items),
+            results=results,
+            skipped_count=skipped_count,
+            errors=errors,
+        )
+    except Exception as e:
+        logger.error(f"Batch IOC query error: {e!s}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# Add uuid import if not already present at module top

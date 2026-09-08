@@ -3,11 +3,20 @@
 /**
  * System Dashboard Page
  * 系统仪表盘 - 显示系统整体健康状态、资源使用情况、功能开关等
+ * 重构：采用 8pt 网格、设计令牌、Typography、StatCard、ChartCard、DataTable
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import Navigation from "@/components/Navigation";
+import { apiClient } from "@/lib/api/client";
+import { PageHeader } from "@/components/common/PageHeader";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { ChartCard } from "@/components/dashboard/ChartCard";
+import { DataTable, ColumnDef } from "@/components/ui/DataTable";
+import { Text, Caption } from "@/components/ui/Typography";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/EmptyState";
+import { StatusTimeline } from "@/components/dashboard/StatusTimeline";
 import {
   Activity,
   Database,
@@ -15,12 +24,12 @@ import {
   Cpu,
   MemoryStick,
   Server,
+  Clock,
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Zap,
-  Clock,
   RefreshCw,
+  Zap,
 } from "lucide-react";
 
 // Types
@@ -101,17 +110,7 @@ export default function SystemDashboardPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/system/dashboard", {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get<SystemDashboard>("/api/v1/system/dashboard");
       setDashboard(data);
     } catch (err) {
       console.error("Failed to fetch dashboard:", err);
@@ -130,34 +129,6 @@ export default function SystemDashboardPage() {
     }
   }, [autoRefresh]);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "ok":
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case "error":
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      case "degraded":
-      case "disabled":
-        return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-      default:
-        return <Activity className="w-5 h-5 text-gray-400" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ok":
-        return "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400";
-      case "error":
-        return "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400";
-      case "degraded":
-      case "disabled":
-        return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400";
-      default:
-        return "text-gray-600 bg-gray-50 dark:bg-gray-900/20 dark:text-gray-400";
-    }
-  };
-
   const formatUptime = (seconds: number) => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
@@ -172,55 +143,150 @@ export default function SystemDashboardPage() {
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    const variant: "low" | "critical" | "medium" | "neutral" =
+      status === "ok"
+        ? "low"
+        : status === "error"
+          ? "critical"
+          : status === "degraded" || status === "disabled"
+            ? "medium"
+            : "neutral";
+
+    return <Badge severity={variant}>{status.toUpperCase()}</Badge>;
+  };
+
+  const aiModelColumns = useMemo<ColumnDef<AIModelStatus>[]>(
+    () => [
+      {
+        key: "name",
+        header: t("modelName"),
+        cell: (row) => (
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-warning-600" />
+            <span className="font-medium text-text-primary dark:text-white">{row.name}</span>
+          </div>
+        ),
+        width: "30%",
+      },
+      {
+        key: "provider",
+        header: t("provider"),
+        cell: (row) => <Caption color="tertiary">{row.provider}</Caption>,
+        width: "20%",
+      },
+      {
+        key: "status",
+        header: t("status"),
+        cell: (row) => (
+          <Badge severity={row.is_active ? "low" : "neutral"}>
+            {row.is_active ? t("active") : t("inactive")}
+          </Badge>
+        ),
+        width: "15%",
+      },
+      {
+        key: "requests",
+        header: t("requests"),
+        cell: (row) => (
+          <span className="font-mono text-sm text-text-primary dark:text-white">
+            {row.total_requests.toLocaleString()}
+          </span>
+        ),
+        width: "15%",
+      },
+      {
+        key: "last_used",
+        header: t("lastUsed"),
+        cell: (row) => (
+          <Caption color="tertiary">
+            {row.last_used ? new Date(row.last_used).toLocaleString() : "--"}
+          </Caption>
+        ),
+        width: "20%",
+      },
+    ],
+    [t]
+  );
+
+  const statusSteps = useMemo(() => {
+    if (!dashboard) return [];
+    return [
+      {
+        label: "DB",
+        status: (dashboard.database.status === "ok" ? "completed" : "current") as
+          | "completed"
+          | "current"
+          | "pending",
+      },
+      {
+        label: "Redis",
+        status: (dashboard.redis.status === "ok" ? "completed" : "current") as
+          | "completed"
+          | "current"
+          | "pending",
+      },
+      {
+        label: "System",
+        status: "completed" as const,
+      },
+    ];
+  }, [dashboard]);
+
   if (loading && !dashboard) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <PageHeader title={t("title")} subtitle={t("subtitle")} />
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
+          </div>
+        </main>
       </div>
     );
   }
 
   if (error && !dashboard) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-4">
-        <XCircle className="w-16 h-16 text-red-500" />
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {t("error", { default: "Failed to load dashboard" })}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">{error}</p>
-        </div>
-        <button
-          onClick={fetchDashboard}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          {tCommon("retry")}
-        </button>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <PageHeader title={t("title")} subtitle={t("subtitle")} />
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <EmptyState
+            icon="alert"
+            title={t("error")}
+            description={error}
+            action={
+              <button
+                onClick={fetchDashboard}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                {tCommon("retry")}
+              </button>
+            }
+          />
+        </main>
       </div>
     );
   }
 
   if (!dashboard) return null;
 
+  const cpuTrend = dashboard.system.cpu_percent > 80 ? "up" : "neutral";
+  const memoryTrend = dashboard.system.memory.percent_used > 80 ? "up" : "neutral";
+  const diskTrend = dashboard.system.disk.percent_used > 80 ? "up" : "neutral";
+
   return (
-    <>
-      <Navigation title={t("title")} />
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">{t("subtitle")}</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        actions={
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-mono">
               v{dashboard.version} • {dashboard.environment}
-            </div>
-            {/* Auto-refresh toggle switch */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {t("autoRefresh", { default: "Auto-refresh" })}
-              </span>
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">{t("autoRefresh")}</span>
               <button
                 onClick={() => setAutoRefresh(!autoRefresh)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
@@ -239,405 +305,273 @@ export default function SystemDashboardPage() {
             <button
               onClick={fetchDashboard}
               disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
               <span>{tCommon("refresh")}</span>
             </button>
           </div>
+        }
+      />
+
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* KPI Cards - 4 cards in first row, 2 cards in second row = 6 total */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <StatCard
+            title={t("cpuUsage")}
+            value={`${dashboard.system.cpu_percent.toFixed(1)}%`}
+            trend={dashboard.system.cpu_percent > 80 ? "High" : "Normal"}
+            trendDirection={cpuTrend}
+            icon={<Cpu className="w-6 h-6 text-primary-600" />}
+            subtitle={t("realTime")}
+          />
+          <StatCard
+            title={t("memoryUsage")}
+            value={`${dashboard.system.memory.percent_used.toFixed(1)}%`}
+            trend={`${dashboard.system.memory.used_gb.toFixed(1)} / ${dashboard.system.memory.total_gb.toFixed(1)} GB`}
+            trendDirection={memoryTrend}
+            icon={<MemoryStick className="w-6 h-6 text-primary-600" />}
+            subtitle={`${dashboard.system.memory.available_gb.toFixed(1)} GB ${t("available")}`}
+          />
+          <StatCard
+            title={t("diskUsage")}
+            value={`${dashboard.system.disk.percent_used.toFixed(1)}%`}
+            trend={`${dashboard.system.disk.free_gb.toFixed(1)} GB ${t("free")}`}
+            trendDirection={diskTrend}
+            icon={<HardDrive className="w-6 h-6 text-primary-600" />}
+            subtitle={`${dashboard.system.disk.total_gb.toFixed(1)} GB ${t("total")}`}
+          />
+          <StatCard
+            title={t("database")}
+            value={`${dashboard.database.latency_ms.toFixed(1)} ms`}
+            trend={dashboard.database.status.toUpperCase()}
+            trendDirection={dashboard.database.status === "ok" ? "neutral" : "up"}
+            icon={<Database className="w-6 h-6 text-primary-600" />}
+            subtitle={dashboard.database.version ? `v${dashboard.database.version}` : undefined}
+          />
+          <StatCard
+            title={t("redis")}
+            value={
+              dashboard.redis.latency_ms ? `${dashboard.redis.latency_ms.toFixed(1)} ms` : "--"
+            }
+            trend={dashboard.redis.status.toUpperCase()}
+            trendDirection={dashboard.redis.status === "ok" ? "neutral" : "up"}
+            icon={<Server className="w-6 h-6 text-primary-600" />}
+            subtitle={dashboard.redis.version ? `v${dashboard.redis.version}` : undefined}
+          />
+          <StatCard
+            title={t("uptime")}
+            value={formatUptime(dashboard.system.uptime_seconds)}
+            trend={dashboard.system.platform}
+            trendDirection="neutral"
+            icon={<Clock className="w-6 h-6 text-primary-600" />}
+            subtitle={`Python ${dashboard.system.python_version}`}
+          />
         </div>
 
-        {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Database Status */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <Database className="w-5 h-5 text-blue-500" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {t("database", { default: "Database" })}
-                </h3>
-              </div>
-              {getStatusIcon(dashboard.database.status)}
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  {t("status", { default: "Status" })}
-                </span>
-                <span className={`font-medium ${getStatusColor(dashboard.database.status)}`}>
-                  {dashboard.database.status.toUpperCase()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  {t("latency", { default: "Latency" })}
-                </span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {dashboard.database.latency_ms.toFixed(2)} ms
-                </span>
-              </div>
-              {dashboard.database.version && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {t("version", { default: "Version" })}
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {dashboard.database.version}
-                  </span>
-                </div>
-              )}
-              {dashboard.database.database_size && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {t("size", { default: "Size" })}
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {dashboard.database.database_size}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Redis Status */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <Server className="w-5 h-5 text-red-500" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">Redis</h3>
-              </div>
-              {getStatusIcon(dashboard.redis.status)}
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  {t("status", { default: "Status" })}
-                </span>
-                <span className={`font-medium ${getStatusColor(dashboard.redis.status)}`}>
-                  {dashboard.redis.status.toUpperCase()}
-                </span>
-              </div>
-              {dashboard.redis.latency_ms && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {t("latency", { default: "Latency" })}
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {dashboard.redis.latency_ms.toFixed(2)} ms
-                  </span>
-                </div>
-              )}
-              {dashboard.redis.used_memory && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {t("memory", { default: "Memory" })}
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {dashboard.redis.used_memory}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* CPU Usage */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <Cpu className="w-5 h-5 text-purple-500" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">CPU</h3>
-              </div>
-              {dashboard.system.cpu_percent > 80 ? (
-                <AlertTriangle className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-end justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {t("usage", { default: "Usage" })}
-                </span>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {dashboard.system.cpu_percent.toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full transition-colors ${
-                    dashboard.system.cpu_percent > 80
-                      ? "bg-red-500"
-                      : dashboard.system.cpu_percent > 60
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
-                  }`}
-                  style={{ width: `${Math.min(dashboard.system.cpu_percent, 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Memory Usage */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <MemoryStick className="w-5 h-5 text-green-500" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {t("memory", { default: "Memory" })}
-                </h3>
-              </div>
-              {dashboard.system.memory.percent_used > 80 ? (
-                <AlertTriangle className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  {t("used", { default: "Used" })}
-                </span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {dashboard.system.memory.used_gb.toFixed(2)} GB
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  {t("total", { default: "Total" })}
-                </span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {dashboard.system.memory.total_gb.toFixed(2)} GB
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full transition-colors ${
-                    dashboard.system.memory.percent_used > 80
-                      ? "bg-red-500"
-                      : dashboard.system.memory.percent_used > 60
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
-                  }`}
-                  style={{ width: `${Math.min(dashboard.system.memory.percent_used, 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Detailed Sections */}
+        {/* Service Status + Resource Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Database Details */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Database className="w-5 h-5 mr-2 text-blue-500" />
-              {t("databaseDetails", { default: "Database Details" })}
-            </h2>
-            {dashboard.database.pool ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
-                    <div className="text-gray-600 dark:text-gray-400">
-                      {t("poolSize", { default: "Pool Size" })}
-                    </div>
-                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {dashboard.database.pool.size}
-                    </div>
+          {/* Service Status ChartCard */}
+          <ChartCard title={t("serviceStatus")} subtitle={t("serviceStatusSubtitle")}>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <Database className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
-                    <div className="text-gray-600 dark:text-gray-400">
-                      {t("checkedIn", { default: "Checked In" })}
-                    </div>
-                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {dashboard.database.pool.checked_in}
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
-                    <div className="text-gray-600 dark:text-gray-400">
-                      {t("checkedOut", { default: "Checked Out" })}
-                    </div>
-                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {dashboard.database.pool.checked_out}
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-md">
-                    <div className="text-gray-600 dark:text-gray-400">
-                      {t("overflow", { default: "Overflow" })}
-                    </div>
-                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {dashboard.database.pool.overflow}
-                    </div>
+                  <div>
+                    <Text color="primary" className="font-medium dark:text-white">
+                      {t("database")}
+                    </Text>
+                    <Caption color="tertiary">
+                      {t("latency")}: {dashboard.database.latency_ms.toFixed(2)} ms
+                      {dashboard.database.active_connections !== undefined &&
+                        ` • ${dashboard.database.active_connections} ${t("connections")}`}
+                    </Caption>
                   </div>
                 </div>
+                <div className="flex items-center gap-3">
+                  {getStatusBadge(dashboard.database.status)}
+                  {dashboard.database.database_size && (
+                    <Caption color="tertiary">{dashboard.database.database_size}</Caption>
+                  )}
+                </div>
               </div>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                {t("poolInfoNotAvailable", {
-                  default: "Connection pool information not available",
-                })}
-              </p>
-            )}
-          </div>
 
-          {/* Disk Usage */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <HardDrive className="w-5 h-5 mr-2 text-orange-500" />
-              {t("diskUsage", { default: "Disk Usage" })}
-            </h2>
-            <div className="space-y-4">
-              <div className="flex items-end justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {t("usedSpace", { default: "Used Space" })}
-                </span>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {dashboard.system.disk.used_gb.toFixed(2)} GB
-                </span>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {t("total", { default: "Total" })}
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {dashboard.system.disk.total_gb.toFixed(2)} GB
-                  </span>
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <Server className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <Text color="primary" className="font-medium dark:text-white">
+                      Redis
+                    </Text>
+                    <Caption color="tertiary">
+                      {dashboard.redis.latency_ms
+                        ? `${t("latency")}: ${dashboard.redis.latency_ms.toFixed(2)} ms`
+                        : t("status")}
+                      {dashboard.redis.connected_clients !== undefined &&
+                        ` • ${dashboard.redis.connected_clients} ${t("clients")}`}
+                    </Caption>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {t("free", { default: "Free" })}
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {dashboard.system.disk.free_gb.toFixed(2)} GB
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {t("usage", { default: "Usage" })}
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {dashboard.system.disk.percent_used.toFixed(1)}%
-                  </span>
+                <div className="flex items-center gap-3">
+                  {getStatusBadge(dashboard.redis.status)}
+                  {dashboard.redis.used_memory && (
+                    <Caption color="tertiary">{dashboard.redis.used_memory}</Caption>
+                  )}
                 </div>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                <div
-                  className={`h-3 rounded-full transition-colors ${
-                    dashboard.system.disk.percent_used > 80
-                      ? "bg-red-500"
-                      : dashboard.system.disk.percent_used > 60
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
-                  }`}
-                  style={{ width: `${Math.min(dashboard.system.disk.percent_used, 100)}%` }}
-                />
-              </div>
+
+              <StatusTimeline steps={statusSteps} />
             </div>
-          </div>
+          </ChartCard>
 
-          {/* AI Models */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Zap className="w-5 h-5 mr-2 text-yellow-500" />
-              {t("aiModels", { default: "AI Models" })}
-            </h2>
-            <div className="space-y-3">
-              {dashboard.ai_models.length > 0 ? (
-                dashboard.ai_models.map((model) => (
+          {/* Resource Breakdown ChartCard */}
+          <ChartCard title={t("resourceBreakdown")} subtitle={t("resourceBreakdownSubtitle")}>
+            <div className="space-y-6">
+              {/* CPU Bar */}
+              <div>
+                <div className="flex justify-between mb-2">
+                  <Text color="secondary" className="text-sm dark:text-slate-300">
+                    {t("cpu")}
+                  </Text>
+                  <Caption color="tertiary">{dashboard.system.cpu_percent.toFixed(1)}%</Caption>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
-                    key={model.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-md"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {model.name}
-                        </span>
-                        {model.is_active ? (
-                          <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 rounded-full">
-                            {t("active", { default: "Active" })}
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 rounded-full">
-                            {t("inactive", { default: "Inactive" })}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {model.provider} • {model.total_requests}{" "}
-                        {t("requests", { default: "requests" })}
-                      </div>
-                    </div>
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      dashboard.system.cpu_percent > 80
+                        ? "bg-danger-500"
+                        : dashboard.system.cpu_percent > 60
+                          ? "bg-warning-500"
+                          : "bg-success-500"
+                    }`}
+                    style={{ width: `${Math.min(dashboard.system.cpu_percent, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Memory Bar */}
+              <div>
+                <div className="flex justify-between mb-2">
+                  <Text color="secondary" className="text-sm dark:text-slate-300">
+                    {t("memory")}
+                  </Text>
+                  <Caption color="tertiary">
+                    {dashboard.system.memory.used_gb.toFixed(1)} /{" "}
+                    {dashboard.system.memory.total_gb.toFixed(1)} GB
+                  </Caption>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      dashboard.system.memory.percent_used > 80
+                        ? "bg-danger-500"
+                        : dashboard.system.memory.percent_used > 60
+                          ? "bg-warning-500"
+                          : "bg-success-500"
+                    }`}
+                    style={{ width: `${Math.min(dashboard.system.memory.percent_used, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Disk Bar */}
+              <div>
+                <div className="flex justify-between mb-2">
+                  <Text color="secondary" className="text-sm dark:text-slate-300">
+                    {t("disk")}
+                  </Text>
+                  <Caption color="tertiary">
+                    {dashboard.system.disk.used_gb.toFixed(1)} /{" "}
+                    {dashboard.system.disk.total_gb.toFixed(1)} GB
+                  </Caption>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      dashboard.system.disk.percent_used > 80
+                        ? "bg-danger-500"
+                        : dashboard.system.disk.percent_used > 60
+                          ? "bg-warning-500"
+                          : "bg-success-500"
+                    }`}
+                    style={{ width: `${Math.min(dashboard.system.disk.percent_used, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Database Pool (if available) */}
+              {dashboard.database.pool && (
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <Text color="secondary" className="text-sm dark:text-slate-300">
+                      {t("poolConnections")}
+                    </Text>
+                    <Caption color="tertiary">
+                      {dashboard.database.pool.checked_out} / {dashboard.database.pool.size} active
+                    </Caption>
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  {t("noAiModels", { default: "No AI models configured" })}
-                </p>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full bg-info-500 transition-all duration-500"
+                      style={{
+                        width: `${Math.min(
+                          (dashboard.database.pool.checked_out / dashboard.database.pool.size) *
+                            100,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
               )}
             </div>
-          </div>
-
-          {/* System Info */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Server className="w-5 h-5 mr-2 text-gray-500" />
-              {t("systemInfo", { default: "System Information" })}
-            </h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  {t("platform", { default: "Platform" })}
-                </span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {dashboard.system.platform}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Python</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {dashboard.system.python_version}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400 flex items-center">
-                  <Clock className="w-4 h-4 mr-1" />
-                  {t("uptime", { default: "Uptime" })}
-                </span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {formatUptime(dashboard.system.uptime_seconds)}
-                </span>
-              </div>
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                  {t("features", { default: "Features" })}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(dashboard.features).map(([key, value]) => (
-                    <div key={key} className="flex items-center space-x-2">
-                      {value ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <XCircle className="w-4 h-4 text-gray-400" />
-                      )}
-                      <span className="text-gray-700 dark:text-gray-300 capitalize">
-                        {key.replace(/_/g, " ")}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          </ChartCard>
         </div>
 
-        {/* Last Updated */}
-        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-          {t("lastUpdated", { default: "Last updated" })}:{" "}
-          {new Date(dashboard.timestamp).toLocaleString()}
-        </div>
-      </div>
-    </>
+        {/* AI Models Table */}
+        <ChartCard title={t("aiModels")} subtitle={t("aiModelsSubtitle")}>
+          <DataTable
+            data={dashboard.ai_models}
+            columns={aiModelColumns}
+            showPagination={false}
+            showRowBorder={true}
+            emptyState={{
+              icon: <Zap className="w-12 h-12" />,
+              title: t("noAiModels"),
+              description: t("noAiModelsDesc"),
+            }}
+          />
+        </ChartCard>
+
+        {/* Features Grid */}
+        <ChartCard title={t("features")} subtitle={t("featuresSubtitle")}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Object.entries(dashboard.features).map(([key, value]) => (
+              <div
+                key={key}
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 rounded-lg"
+              >
+                {value ? (
+                  <CheckCircle className="w-5 h-5 text-success-500 shrink-0" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-text-disabled shrink-0" />
+                )}
+                <Text color="secondary" className="text-sm capitalize dark:text-slate-300">
+                  {key.replace(/_/g, " ")}
+                </Text>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
+
+        <Caption color="tertiary" className="text-center block">
+          {t("lastUpdated")}: {new Date(dashboard.timestamp).toLocaleString()}
+        </Caption>
+      </main>
+    </div>
   );
 }

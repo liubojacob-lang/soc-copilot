@@ -1,5 +1,3 @@
-version: "3.8"
-
 # Production Docker Compose Configuration
 # Usage: docker-compose -f docker-compose.prod.yml up -d
 
@@ -8,9 +6,9 @@ services:
     image: postgres:15-alpine
     container_name: soc-copilot-postgres-prod
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
       - ./backups:/backups
@@ -34,13 +32,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: soc-copilot-redis-prod
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     volumes:
       - redis_prod_data:/data
     ports:
       - "127.0.0.1:6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,17 +47,24 @@ services:
     restart: always
 
   backend:
-    image: ${DOCKERHUB_USERNAME}/soc-copilot-backend:latest
+    image: ${DOCKERHUB_USERNAME}/soc-copilot-backend:${IMAGE_TAG:-0.9.0}
     container_name: soc-copilot-backend-prod
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY}
-      - ENVIRONMENT=production
-      - DIFY_API_URL=${DIFY_API_URL}
-      - DIFY_API_KEY=${DIFY_API_KEY}
-      - LOG_LEVEL=INFO
-      - WORKERS=4
+      - "DATABASE_URL=postgresql+asyncpg://${DB_USER:?DB_USER is required}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:?DB_NAME is required}"
+      - "DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD is required}"
+      - "REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
+      - "REDIS_ENABLED=true"
+      - "REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
+      - "JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}"
+      - "BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD is required}"
+      - "SECRET_ENCRYPTION_KEY=${SECRET_ENCRYPTION_KEY:?SECRET_ENCRYPTION_KEY is required}"
+      - "HTTP_ALLOWED_HOSTS=${HTTP_ALLOWED_HOSTS:?HTTP_ALLOWED_HOSTS is required}"
+      - "CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS is required}"
+      - "ENVIRONMENT=production"
+      - "DIFY_API_URL=${DIFY_API_URL}"
+      - "DIFY_API_KEY=${DIFY_API_KEY}"
+      - "LOG_LEVEL=INFO"
+      - "WORKERS=4"
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,7 +80,7 @@ services:
           memory: 2G
 
   frontend:
-    image: ${DOCKERHUB_USERNAME}/soc-copilot-frontend:latest
+    image: ${DOCKERHUB_USERNAME}/soc-copilot-frontend:${IMAGE_TAG:-0.9.0}
     container_name: soc-copilot-frontend-prod
     environment:
       - NEXT_PUBLIC_API_URL=${API_URL}
@@ -96,6 +101,8 @@ services:
       - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./nginx/logs:/var/log/nginx
+      # ACME HTTP-01 challenge webroot (nginx.conf serves /.well-known/acme-challenge)
+      - ./nginx/certbot-www:/var/www/certbot:ro
     ports:
       - "80:80"
       - "443:443"
@@ -106,6 +113,22 @@ services:
       - soc-copilot-prod
     restart: always
 
+  # TLS 证书签发/续期。首次签发（需真实域名解析到本机）：
+  #   docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+  #     --webroot -w /var/www/certbot -d "$DOMAIN" --email "$LETSENCRYPT_EMAIL" \
+  #     --agree-tos --no-eff-email
+  # 然后重启 nginx 加载 ./nginx/ssl 下生成的证书。
+  certbot:
+    image: certbot/certbot
+    container_name: soc-copilot-certbot-prod
+    profiles: ["tls"] # 仅按需运行：docker compose --profile tls run --rm certbot renew
+    volumes:
+      - ./nginx/ssl:/etc/letsencrypt
+      - ./nginx/certbot-www:/var/www/certbot
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
+    networks:
+      - soc-copilot-prod
+
   alert-worker:
     build:
       context: ./backend
@@ -113,7 +136,7 @@ services:
     # Note: container_name removed to support replicas (unique names auto-generated)
     command: python workers/alert_worker.py
     environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - "REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
       - WORKER_ID=${WORKER_ID:-1}
       - FEISHU_WEBHOOK_URL=${FEISHU_WEBHOOK_URL}
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
@@ -127,6 +150,14 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    # The backend image ships an HTTP healthcheck that a worker can never
+    # satisfy; ping Redis as the worker's functional check instead.
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import os, redis; redis.Redis.from_url(os.environ['REDIS_URL']).ping()\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       - soc-copilot-prod
     restart: always

@@ -2,7 +2,7 @@
 告警生命周期管理服务
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, desc, func, select
@@ -12,6 +12,7 @@ from core.logger import get_logger
 from schemas.alert_lifecycle import (
     AlertAssignee,
     AlertAssignment,
+    AlertEscalation,
     AlertEscalationCreate,
     AlertLifecycleResponse,
     AlertNote,
@@ -48,9 +49,7 @@ class AlertLifecycleService:
         }
         return mapping.get((raw_status or "").lower(), AlertStatus.NEW)
 
-    async def get_alert_lifecycle(
-        self, alert_id: str
-    ) -> AlertLifecycleResponse | None:
+    async def get_alert_lifecycle(self, alert_id: str) -> AlertLifecycleResponse | None:
         """获取告警生命周期信息"""
         from models.alert_note import AlertNoteModel
         from models.security_alert import SecurityAlert
@@ -85,6 +84,15 @@ class AlertLifecycleService:
             for note in note_models
         ]
 
+        escalated_info = None
+        if getattr(alert, "escalated_to", None) or getattr(alert, "escalated_at", None):
+            escalated_info = AlertEscalation(
+                escalated_to=alert.escalated_to or "Unassigned",
+                escalated_by=alert.assigned_to or "system",
+                reason=getattr(alert, "escalation_reason", None) or "Escalated for higher-level investigation",
+                escalated_at=alert.escalated_at or alert.updated_at or alert.created_at,
+            )
+
         return AlertLifecycleResponse(
             alert_id=str(alert.id),
             status=self._normalize_status(alert.status),
@@ -98,7 +106,7 @@ class AlertLifecycleService:
                 if alert.assigned_to
                 else None
             ),
-            escalated=None,  # TODO: 从关联表获取
+            escalated=escalated_info,
             notes=notes,  # 从数据库加载备注
             created_at=alert.created_at,
             updated_at=alert.updated_at,
@@ -175,7 +183,7 @@ class AlertLifecycleService:
 
         old_status = alert.status
         alert.status = status.value
-        alert.updated_at = datetime.utcnow()
+        alert.updated_at = datetime.now(UTC)
 
         await self.db.commit()
         await self.db.refresh(alert)
@@ -184,8 +192,34 @@ class AlertLifecycleService:
             f"Alert {alert_id} status updated: {old_status} -> {status.value} by {user_id}"
         )
 
-        # 发送 WebSocket 通知
-        # await push_alert_update(alert)
+        # 发送 WebSocket 通知（推送失败不影响状态更新本身）
+        try:
+            from routers.websocket import push_alert
+
+            await push_alert(
+                {
+                    "id": alert.id,
+                    "source": alert.source,
+                    "event_type": alert.event_type,
+                    "severity": alert.severity,
+                    "title": alert.title,
+                    "description": alert.description,
+                    "source_ip": alert.source_ip,
+                    "destination_ip": alert.destination_ip,
+                    "status": alert.status,
+                    "assigned_to": alert.assigned_to,
+                    "updated_by": user_id,
+                    "previous_status": old_status,
+                    "created_at": (
+                        alert.created_at.isoformat() if alert.created_at else None
+                    ),
+                    "updated_at": (
+                        alert.updated_at.isoformat() if alert.updated_at else None
+                    ),
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to push alert status update via WebSocket: {e}")
 
         return await self.get_alert_lifecycle(alert_id)
 
@@ -204,8 +238,8 @@ class AlertLifecycleService:
             return None
 
         alert.assigned_to = assignment.assigned_to
-        alert.assigned_at = datetime.utcnow()
-        alert.updated_at = datetime.utcnow()
+        alert.assigned_at = datetime.now(UTC)
+        alert.updated_at = datetime.now(UTC)
 
         await self.db.commit()
         await self.db.refresh(alert)
@@ -234,9 +268,9 @@ class AlertLifecycleService:
         alert.resolution_note = resolution.resolution_note
         alert.root_cause = resolution.root_cause
         alert.remediation = resolution.remediation
-        alert.resolved_at = datetime.utcnow()
+        alert.resolved_at = datetime.now(UTC)
         alert.resolved_by = user_id
-        alert.updated_at = datetime.utcnow()
+        alert.updated_at = datetime.now(UTC)
 
         await self.db.commit()
         await self.db.refresh(alert)
@@ -261,9 +295,9 @@ class AlertLifecycleService:
 
         alert.status = AlertStatus.ESCALATED.value
         alert.escalated_to = escalation.escalated_to
-        alert.escalated_at = datetime.utcnow()
+        alert.escalated_at = datetime.now(UTC)
         alert.escalation_reason = escalation.reason
-        alert.updated_at = datetime.utcnow()
+        alert.updated_at = datetime.now(UTC)
 
         await self.db.commit()
         await self.db.refresh(alert)
@@ -319,7 +353,7 @@ class AlertLifecycleService:
         from models.security_alert import SecurityAlert
 
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=7)
 
@@ -358,7 +392,7 @@ class AlertLifecycleService:
             )
             .group_by(SecurityAlert.severity)
         )
-        by_severity = {severity: count for severity, count in severity_result.all()}
+        by_severity = dict(severity_result.all())
 
         # 按来源统计
         source_result = await self.db.execute(
@@ -373,7 +407,7 @@ class AlertLifecycleService:
             .order_by(desc(func.count(SecurityAlert.id)))
             .limit(10)
         )
-        by_source = {source: count for source, count in source_result.all()}
+        by_source = dict(source_result.all())
 
         # 计算平均解决时间
         mttr_result = await self.db.execute(
@@ -417,43 +451,50 @@ class AlertLifecycleService:
         """
 
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=7)
 
-        # 确定时间分组格式
-        if interval == "hour":
-            # 按小时分组: YYYY-MM-DD HH:00:00
-            date_format = "%Y-%m-%d %H:00:00"
-            date_trunc = "strftime('%Y-%m-%d %H:00:00', created_at)"
-        elif interval == "day":
-            # 按天分组: YYYY-MM-DD
-            date_format = "%Y-%m-%d"
-            date_trunc = "date(created_at)"
-        elif interval == "week":
-            # 按周分组: YYYY-WW
-            date_trunc = "strftime('%Y-W%W', created_at)"
-        else:
+        if interval not in ("hour", "day", "week"):
             raise ValueError(
                 f"Invalid interval: {interval}. Must be 'hour', 'day', or 'week'"
             )
 
-        # 使用原生SQL进行时间序列聚合（SQLite特定）
-        # 获取每个时间段的告警统计
-        query = f"""
-            SELECT
-                {date_trunc} as period,
-                COUNT(*) as total,
-                SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical,
-                SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END) as high,
-                SUM(CASE WHEN severity = 'medium' THEN 1 ELSE 0 END) as medium,
-                SUM(CASE WHEN severity = 'low' THEN 1 ELSE 0 END) as low,
-                SUM(CASE WHEN severity = 'info' THEN 1 ELSE 0 END) as info
-            FROM security_alerts
-            WHERE created_at >= :start_date AND created_at <= :end_date
-            GROUP BY period
-            ORDER BY period
-        """
+        # 时间分组表达式：按数据库方言选择函数，输出统一为文本供下游解析
+        # （SQLite: strftime；PostgreSQL: date_trunc + TO_CHAR）
+        if self.db.get_bind().dialect.name == "sqlite":
+            period_expr = {
+                "hour": "strftime('%Y-%m-%d %H:00:00', created_at)",
+                "day": "strftime('%Y-%m-%d', created_at)",
+                # 先回退 6 天再推进到最近的周一 => 归到所在周的周一
+                "week": "strftime('%Y-%m-%d', created_at, '-6 days', 'weekday 1')",
+            }[interval]
+        else:
+            period_expr = {
+                "hour": "TO_CHAR(date_trunc('hour', created_at), 'YYYY-MM-DD HH24:00:00')",
+                "day": "TO_CHAR(date_trunc('day', created_at), 'YYYY-MM-DD')",
+                "week": "TO_CHAR(date_trunc('week', created_at), 'YYYY-MM-DD')",
+            }[interval]
+
+        # 使用原生 SQL 进行时间序列聚合
+        # period 表达式来自上方按 interval 白名单构建的映射；
+        # 其余为常量 SQL，值通过绑定参数传入
+        query = "\n".join(
+            [
+                "SELECT",
+                f"    {period_expr} as period,",
+                "    COUNT(*) as total,",
+                "    SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical,",
+                "    SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END) as high,",
+                "    SUM(CASE WHEN severity = 'medium' THEN 1 ELSE 0 END) as medium,",
+                "    SUM(CASE WHEN severity = 'low' THEN 1 ELSE 0 END) as low,",
+                "    SUM(CASE WHEN severity = 'info' THEN 1 ELSE 0 END) as info",
+                "FROM security_alerts",
+                "WHERE created_at >= :start_date AND created_at <= :end_date",
+                "GROUP BY period",
+                "ORDER BY period",
+            ]
+        )
 
         from sqlalchemy import text
 
@@ -463,25 +504,13 @@ class AlertLifecycleService:
 
         trends = []
         for row in result:
-            # 解析时间戳
+            # 解析时间戳：各方言输出统一为文本
+            # hour => 小时起点；day => 日期；week => 该周周一的日期
+            period = str(row.period)
             if interval == "hour":
-                timestamp = datetime.strptime(str(row.period), "%Y-%m-%d %H:00:00")
-            elif interval == "day":
-                timestamp = datetime.strptime(str(row.period), "%Y-%m-%d").replace(
-                    hour=0, minute=0, second=0
-                )
-            else:  # week
-                # 对于周，使用周的开始时间
-                parts = str(row.period).split("-W")
-                if len(parts) == 2:
-                    year, week = int(parts[0]), int(parts[1])
-                    # 计算周的开始时间（周一）
-                    from datetime import timedelta
-
-                    timestamp = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
-                    timestamp += timedelta(weeks=week - 1, days=-timestamp.weekday())
-                else:
-                    timestamp = datetime.utcnow()
+                timestamp = datetime.strptime(period, "%Y-%m-%d %H:%M:%S")
+            else:  # day / week
+                timestamp = datetime.strptime(period, "%Y-%m-%d")
 
             # 构建严重性统计
             by_severity = {
@@ -518,7 +547,7 @@ class AlertLifecycleService:
         from models.security_alert import SecurityAlert
 
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=7)
 
@@ -577,7 +606,7 @@ class AlertLifecycleService:
         from models.security_alert import SecurityAlert
 
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=7)
 

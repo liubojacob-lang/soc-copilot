@@ -1,8 +1,11 @@
 """Sensitive data redaction utilities for audit logging."""
 
 import json
+import logging
 import re
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # Sensitive field names (case-insensitive matching)
 SENSITIVE_FIELD_NAMES: set[str] = {
@@ -259,8 +262,11 @@ def redact_request_body(
                 else:
                     redacted[key] = [redact_value(v) for v in values]
             return str(redacted)
-        except Exception:
-            pass
+        except Exception as e:
+            # Fail closed: raw form data may contain credentials, so never
+            # let it escape redaction — return a placeholder instead
+            logger.warning(f"Form data redaction failed, redacting whole body: {e}")
+            return REDACTED
 
     # Apply pattern-based redaction for other content
     result = body

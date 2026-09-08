@@ -1,0 +1,22 @@
+{
+  "dashboard": {
+    "title": "运营大屏",
+    "overview": "实时安全运营监控与指标",
+    "realTimeMetrics": "实时指标",
+    "totalAlerts": "告警总数",
+    "unresolvedAlerts": "未处理",
+    "activeCases": "进行中案例",
+    "mttr": "MTTR",
+    "last24h": "过去24小时",
+    "needsAction": "待处理",
+    "openCases": "当前进行中",
+    "meanTimeToResolve": "平均解决时间",
+    "alertTrends": "告警趋势",
+    "severityDistribution": "严重级别分布",
+    "mitreAttack": "MITRE ATT&CK 热力图",
+    "assetRiskTop10": "资产风险 Top 10",
+    "iocStats": "IOC 命中统计",
+    "days": "天",
+    "noData": "暂无数据"
+  }
+}

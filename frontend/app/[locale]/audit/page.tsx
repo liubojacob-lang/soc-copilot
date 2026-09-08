@@ -1,15 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { loadAuthState, logout, isAdmin, isAnalystOrAdmin } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { loadAuthState, logout } from "@/lib/auth";
+import { PageHeader } from "@/components/common/PageHeader";
 import { AuditPageContainer } from "./components/AuditPageContainer";
 import { useEffect, useState } from "react";
 
 export default function AuditLogsPage() {
   const router = useRouter();
-  const t = useTranslations("audit");
+  const t = useTranslations("adminAudit");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +22,9 @@ export default function AuditLogsPage() {
         return;
       }
 
-      if (!isAdmin(authState.user) && !isAnalystOrAdmin(authState.user)) {
+      // Auditor / admin / analyst 都可查看审计日志（后端按 auditor 放行）
+      const role = authState.user?.role;
+      if (role !== "admin" && role !== "analyst" && role !== "auditor") {
         router.push("/");
         return;
       }
@@ -42,7 +44,7 @@ export default function AuditLogsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation title="Audit Logs" />
+        <PageHeader title="Audit Logs" />
         <div className="p-6">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
@@ -67,7 +69,7 @@ export default function AuditLogsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title="Audit Logs" />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
       <AuditPageContainer />
     </div>
   );

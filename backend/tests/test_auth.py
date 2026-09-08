@@ -3,7 +3,14 @@
 import pytest
 
 # Import test setup
-from tests.conftest_setup import TEST_PASSWORD
+from tests.conftest_setup import (
+    TEST_ALT_PASSWORD,
+    TEST_DUMMY_REFRESH_TOKEN,
+    TEST_MISMATCH_PASSWORD,
+    TEST_NEW_PASSWORD,
+    TEST_PASSWORD,
+    TEST_WRONG_PASSWORD,
+)
 
 
 class TestAuthentication:
@@ -63,6 +70,9 @@ class TestAuthentication:
         """Test getting current user without authentication returns 401."""
         original_headers = dict(client.headers)
         client.headers.pop("Authorization", None)
+        # Clear cookies too - session-scoped client may carry access_token
+        # from earlier tests in the same session (would bypass auth → 200)
+        client.cookies.clear()
         try:
             response = await client.get("/api/auth/me")
             assert response.status_code == 401
@@ -87,7 +97,7 @@ class TestAuthentication:
 
         # Try to refresh - requires refresh_token in body
         refresh_response = await auth_client.post(
-            "/api/auth/refresh", json={"refresh_token": "test_refresh_token"}
+            "/api/auth/refresh", json={"refresh_token": TEST_DUMMY_REFRESH_TOKEN}
         )
         # Using a dummy token, expect unauthorized or validation error
         assert refresh_response.status_code in [
@@ -154,7 +164,9 @@ class TestAPIKeyAuthentication:
 
         if api_key:
             # Use API key to authenticate
-            protected_response = await client.get("/api/auth/me", headers={"X-API-Key": api_key})
+            protected_response = await client.get(
+                "/api/auth/me", headers={"X-API-Key": api_key}
+            )
             assert protected_response.status_code == 200
 
 
@@ -209,6 +221,10 @@ class TestTokenBlacklist:
         logout_response = await client.post("/api/auth/logout")
         assert logout_response.status_code == 200
 
+        # Restore the shared session client: the blacklisted token must not
+        # leak into subsequent tests through the default headers.
+        client.headers.pop("Authorization", None)
+
         # Clear the header and try to use the blacklisted token again
         # Note: The token is blacklisted on the server side, but we need a new request
         # For now, just verify logout succeeded
@@ -236,21 +252,47 @@ class TestPasswordManagement:
             "/api/auth/change-password",
             json={
                 "current_password": TEST_PASSWORD,
-                "new_password": "NewPassword123!",
-                "confirm_password": "NewPassword123!",
+                "new_password": TEST_NEW_PASSWORD,
+                "confirm_password": TEST_NEW_PASSWORD,
             },
         )
         assert response.status_code == 200
 
+        # A password change invalidates tokens issued before it (iat vs
+        # updated_at). Re-authenticate exactly as a real client would after
+        # its session is invalidated.
+        relogin = await auth_client.post(
+            "/api/auth/login",
+            json={"username": "admin", "password": TEST_NEW_PASSWORD},
+        )
+        assert relogin.status_code == 200, relogin.text
+        fresh_token = relogin.json()["access_token"]
+
+        # Use an intermediate password (not TEST_PASSWORD) to avoid
+        # password-history rejection (TEST_PASSWORD was just saved to history)
         response = await auth_client.post(
             "/api/auth/change-password",
+            headers={"Authorization": f"Bearer {fresh_token}"},
             json={
-                "current_password": "NewPassword123!",
-                "new_password": TEST_PASSWORD,
-                "confirm_password": TEST_PASSWORD,
+                "current_password": TEST_NEW_PASSWORD,
+                "new_password": TEST_ALT_PASSWORD,
+                "confirm_password": TEST_ALT_PASSWORD,
             },
         )
         assert response.status_code == 200
+
+        # Restore TEST_PASSWORD so subsequent tests can log in as admin
+        # (use direct repo call since password history prevents reusing TEST_PASSWORD)
+        from core.security import get_password_hash
+        from db.session import AsyncSessionLocal
+        from repositories.user_repository import UserRepository
+
+        async with AsyncSessionLocal() as session:
+            repo = UserRepository(session)
+            user = await repo.get_by_username("admin")
+            user.hashed_password = get_password_hash(TEST_PASSWORD)
+            user.password_history = []
+            await session.commit()
 
     @pytest.mark.asyncio
     async def test_change_password_wrong_current(self, auth_client):
@@ -258,9 +300,9 @@ class TestPasswordManagement:
         response = await auth_client.post(
             "/api/auth/change-password",
             json={
-                "current_password": "WrongPassword123!",
-                "new_password": "NewPassword123!",
-                "confirm_password": "NewPassword123!",
+                "current_password": TEST_WRONG_PASSWORD,
+                "new_password": TEST_NEW_PASSWORD,
+                "confirm_password": TEST_NEW_PASSWORD,
             },
         )
         assert response.status_code == 400  # Bad request - wrong current password
@@ -272,8 +314,8 @@ class TestPasswordManagement:
             "/api/auth/change-password",
             json={
                 "current_password": TEST_PASSWORD,
-                "new_password": "NewPassword123!",
-                "confirm_password": "DifferentPassword123!",
+                "new_password": TEST_NEW_PASSWORD,
+                "confirm_password": TEST_MISMATCH_PASSWORD,
             },
         )
         assert response.status_code == 400  # Bad request - password mismatch

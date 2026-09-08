@@ -38,13 +38,16 @@ check_docker() {
         print_error "Docker is not installed. Please install Docker first."
         exit 1
     fi
-    
-    if ! command -v docker-compose &> /dev/null; then
+
+    # Compose v2 ships as a docker plugin (`docker compose`)
+    if docker compose version &> /dev/null; then
+        print_status "Docker and Docker Compose are installed"
+    elif command -v docker-compose &> /dev/null; then
+        print_warning "Legacy docker-compose detected; compose v2 is recommended."
+    else
         print_error "Docker Compose is not installed. Please install Docker Compose first."
         exit 1
     fi
-    
-    print_status "Docker and Docker Compose are installed"
 }
 
 # Load environment variables
@@ -86,13 +89,13 @@ deploy_staging() {
     print_status "Deploying to staging..."
     
     # Pull latest images
-    docker-compose -f docker-compose.prod.yml pull
+    docker compose -f docker-compose.prod.yml pull
     
     # Start services
-    docker-compose -f docker-compose.prod.yml up -d
+    docker compose -f docker-compose.prod.yml up -d
     
     # Run migrations
-    docker-compose -f docker-compose.prod.yml exec -T backend alembic upgrade head
+    docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head
     
     print_status "Staging deployment complete!"
 }
@@ -111,14 +114,14 @@ deploy_production() {
     
     # Create backup
     print_status "Creating database backup..."
-    docker-compose -f docker-compose.prod.yml exec -T postgres pg_dump -U ${DB_USER} ${DB_NAME} > backups/backup_$(date +%Y%m%d_%H%M%S).sql
+    docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U "${DB_USER:-soc_copilot}" "${DB_NAME:-soc_copilot}" > "backups/backup_$(date +%Y%m%d_%H%M%S).sql"
     
     # Deploy
-    docker-compose -f docker-compose.prod.yml pull
-    docker-compose -f docker-compose.prod.yml up -d
+    docker compose -f docker-compose.prod.yml pull
+    docker compose -f docker-compose.prod.yml up -d
     
     # Run migrations
-    docker-compose -f docker-compose.prod.yml exec -T backend alembic upgrade head
+    docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head
     
     # Health check
     print_status "Running health checks..."
@@ -136,8 +139,9 @@ deploy_production() {
 
 # Main deployment logic
 main() {
-    cd "$SCRIPT_DIR"
-    
+    # Run from the repository root: every compose path below is relative to it.
+    cd "$SCRIPT_DIR/../.."
+
     check_docker
     load_env
     

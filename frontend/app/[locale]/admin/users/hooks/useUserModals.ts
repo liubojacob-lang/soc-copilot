@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
+import { authFetch } from "@/lib/auth";
+import { useToast } from "@/components/Toast";
 import { generatePassword, type User } from "./useUsers";
 
 interface FormErrors {
@@ -15,6 +18,9 @@ interface SuccessData {
 }
 
 export function useUserModals(fetchUsers: (page?: number) => Promise<void>, currentPage: number) {
+  const t = useTranslations("users");
+  const { showToast } = useToast();
+
   // Modal visibility
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -72,9 +78,9 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
         errors.email = "Please enter a valid email address";
       }
       if (!generatedPassword) {
-        errors.password = "Password is required";
+        errors.password = t("passwordRequired");
       } else if (generatedPassword.length < 8) {
-        errors.password = "Password must be at least 8 characters";
+        errors.password = t("passwordTooShort");
       }
       if (Object.keys(errors).length > 0) {
         setFormErrors(errors);
@@ -85,11 +91,10 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
       setCreating(true);
 
       try {
-        const token = localStorage.getItem("access_token");
         const password = generatedPassword || generatePassword();
-        const response = await fetch("/api/users", {
+        const response = await authFetch("/api/users", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, email, password, role, is_active: isActive }),
         });
 
@@ -117,10 +122,9 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
       setSaving(true);
 
       try {
-        const token = localStorage.getItem("access_token");
-        const response = await fetch(`/api/users/${selectedUser.id}`, {
+        const response = await authFetch(`/api/users/${selectedUser.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, role, is_active: isActive }),
         });
 
@@ -128,32 +132,40 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
           setShowEditModal(false);
           setSelectedUser(null);
           fetchUsers(currentPage);
+          showToast(t("updateSuccess"), "success");
+        } else {
+          showToast(t("updateFailed"), "error");
         }
       } catch {
-        // Error handled by UI state
+        showToast(t("updateFailed"), "error");
       } finally {
         setSaving(false);
       }
     },
-    [selectedUser, email, role, isActive, fetchUsers, currentPage]
+    [selectedUser, email, role, isActive, fetchUsers, currentPage, showToast, t]
   );
 
   const handleDeleteUser = useCallback(async () => {
     if (!selectedUser) return;
     setDeleting(true);
     try {
-      const token = localStorage.getItem("access_token");
-      await fetch(`/api/users/${selectedUser.id}`, {
+      const response = await authFetch(`/api/users/${selectedUser.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
-      setShowDeleteModal(false);
-      setSelectedUser(null);
-      fetchUsers(currentPage);
+      if (response.ok) {
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+        fetchUsers(currentPage);
+        showToast(t("deleteSuccess"), "success");
+      } else {
+        showToast(t("deleteFailed"), "error");
+      }
+    } catch {
+      showToast(t("deleteFailed"), "error");
     } finally {
       setDeleting(false);
     }
-  }, [selectedUser, fetchUsers, currentPage]);
+  }, [selectedUser, fetchUsers, currentPage, showToast, t]);
 
   const handleResetPassword = useCallback(
     async (e: React.FormEvent) => {
@@ -162,10 +174,9 @@ export function useUserModals(fetchUsers: (page?: number) => Promise<void>, curr
       setResetting(true);
 
       try {
-        const token = localStorage.getItem("access_token");
-        const response = await fetch(`/api/users/${selectedUser.id}/reset-password`, {
+        const response = await authFetch(`/api/users/${selectedUser.id}/reset-password`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ new_password: resetNewPassword }),
         });
 

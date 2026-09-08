@@ -43,7 +43,7 @@ class ActionPlanPlugin(BaseNodePlugin):
         Returns:
             Prioritized action plan
         """
-        risk_score = context.input_json.get("risk_score", 0)
+        context.input_json.get("risk_score", 0)
         risk_level = context.input_json.get("risk_level", "unknown")
         iocs = (
             context.input_json.get("iocs")

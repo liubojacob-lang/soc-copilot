@@ -5,7 +5,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import type { AppError } from "@/lib/errorHandler";
 
 interface ErrorDisplayProps {

@@ -1,6 +1,6 @@
 """Blocked IPs router for IP/domain blocking API."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import desc, select
@@ -18,7 +18,7 @@ from schemas.blocked_ip import (
     BlockIPRequest,
 )
 
-router = APIRouter(prefix="/api/blocked-ips", tags=["blocked-ips"])
+router = APIRouter(prefix="/api/v1/blocked-ips", tags=["blocked-ips"])
 logger = get_logger(__name__)
 
 
@@ -46,7 +46,7 @@ async def block_ip(
         # Calculate expiration
         expires_at = None
         if data.expires_in_hours:
-            expires_at = datetime.utcnow() + timedelta(hours=data.expires_in_hours)
+            expires_at = datetime.now(UTC) + timedelta(hours=data.expires_in_hours)
 
         blocked = BlockedIP(
             value=data.value,
@@ -76,9 +76,7 @@ async def block_ip(
 
 @router.get("", response_model=BlockedIPListResponse)
 async def list_blocked_ips(
-    type: str | None = Query(
-        None, description="Filter by type: ip, domain, url, hash"
-    ),
+    type: str | None = Query(None, description="Filter by type: ip, domain, url, hash"),
     is_active: bool | None = Query(None, description="Filter by active status"),
     limit: int = Query(50, ge=1, le=500, description="Maximum results"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
@@ -199,7 +197,7 @@ async def unblock_ip(
             )
 
         blocked.is_active = False
-        blocked.deactivated_at = datetime.utcnow()
+        blocked.deactivated_at = datetime.now(UTC)
         blocked.deactivated_by = current_user.username
 
         await session.commit()
@@ -231,7 +229,7 @@ async def check_if_blocked(
         )
         blocked = result.scalar_one_or_none()
 
-        if blocked and blocked.expires_at and blocked.expires_at < datetime.utcnow():
+        if blocked and blocked.expires_at and blocked.expires_at < datetime.now(UTC):
             # Expired, update status
             blocked.is_active = False
             await session.commit()

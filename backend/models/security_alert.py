@@ -2,7 +2,7 @@
 Security Alert data model for ingested alerts from external security tools.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import (
@@ -14,7 +14,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 
 from db.session import Base
 
@@ -31,6 +31,9 @@ class SecurityAlert(Base):
 
     # Source identification
     tenant_id = Column(String(64), nullable=False, index=True, default="default")
+    deleted_at = Column(
+        DateTime(timezone=True), nullable=True, index=True
+    )  # v1.1: soft delete
     source = Column(
         String(50), nullable=False, index=True
     )  # wazuh, snort, osquery, etc
@@ -115,19 +118,30 @@ class SecurityAlert(Base):
     )  # Whether this is an aggregated alert (0=no, 1=yes)
 
     # Legacy fields (for backward compatibility)
-    closed_at = resolved_at
-    closed_by = resolved_by
-    resolution = resolution_note
+    # v1.1: Proper synonyms (fixes SAWarning "Column named directly multiple times")
+    # Canonical columns: resolved_at / resolved_by / resolution_note
+    # Legacy aliases (closed_at / closed_by / resolution) kept for backward compat
+    closed_at = synonym("resolved_at")
+    closed_by = synonym("resolved_by")
+    resolution = synonym("resolution_note")
 
     # Relationships
     notes = relationship(
         "AlertNoteModel", back_populates="alert", cascade="all, delete-orphan"
     )
+    cases = relationship(
+        "CaseModel",
+        secondary="case_alerts",
+        back_populates="alerts",
+        lazy="selectin",
+    )
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     # Event timestamp (from source system)

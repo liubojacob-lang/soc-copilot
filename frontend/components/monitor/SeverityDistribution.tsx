@@ -5,9 +5,10 @@
  * 告警严重程度分布 - 饼图/环形图
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { PieChart as PieChartIcon } from "lucide-react";
+import { severityChartColors, getTooltipProps, getLegendProps } from "@/lib/chartThemeAdapter";
 
 interface SeverityData {
   name: string;
@@ -28,14 +29,6 @@ interface SeverityDistributionProps {
   height?: number;
 }
 
-const SEVERITY_COLORS = {
-  critical: "#dc2626",
-  high: "#f97316",
-  medium: "#eab308",
-  low: "#3b82f6",
-  info: "#6b7280",
-};
-
 const SEVERITY_LABELS = {
   critical: "Critical",
   high: "High",
@@ -50,6 +43,25 @@ export function SeverityDistribution({
   showLegend = true,
   height = 300,
 }: SeverityDistributionProps) {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains("dark"));
+
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const mode = isDark ? ("dark" as const) : ("light" as const);
+  const themeTooltip = getTooltipProps(mode);
+  const themeLegend = getLegendProps(mode);
+
   // 转换数据格式
   const chartData = useMemo(() => {
     return Object.entries(data)
@@ -57,7 +69,7 @@ export function SeverityDistribution({
       .map(([key, value]) => ({
         name: SEVERITY_LABELS[key as keyof typeof SEVERITY_LABELS],
         value,
-        color: SEVERITY_COLORS[key as keyof typeof SEVERITY_COLORS],
+        color: severityChartColors[key as keyof typeof severityChartColors],
       }))
       .sort((a, b) => b.value - a.value);
   }, [data]);
@@ -81,20 +93,18 @@ export function SeverityDistribution({
     const percentage = ((data.value / total) * 100).toFixed(1);
 
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3">
+      <div style={themeTooltip.contentStyle} className="flex flex-col gap-1">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.color }} />
-          <span className="text-sm font-medium text-gray-900 dark:text-white">{data.name}</span>
+          <span style={{ fontWeight: 500, fontSize: 14 }}>{data.name}</span>
         </div>
-        <div className="space-y-1 text-xs">
-          <div className="flex justify-between gap-4">
-            <span className="text-gray-600 dark:text-gray-400">Count:</span>
-            <span className="font-semibold text-gray-900 dark:text-white">{data.value}</span>
-          </div>
-          <div className="flex justify-between gap-4">
-            <span className="text-gray-600 dark:text-gray-400">Percentage:</span>
-            <span className="font-semibold text-gray-900 dark:text-white">{percentage}%</span>
-          </div>
+        <div className="flex justify-between gap-4 text-xs">
+          <span style={{ color: themeTooltip.labelStyle.color }}>Count:</span>
+          <span style={{ fontWeight: 600 }}>{data.value}</span>
+        </div>
+        <div className="flex justify-between gap-4 text-xs">
+          <span style={{ color: themeTooltip.labelStyle.color }}>Percentage:</span>
+          <span style={{ fontWeight: 600 }}>{percentage}%</span>
         </div>
       </div>
     );
@@ -131,7 +141,7 @@ export function SeverityDistribution({
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-    if (percent < 0.05) return null; // 小于5%不显示标签
+    if (percent < 0.05) return null;
 
     return (
       <text
@@ -150,18 +160,18 @@ export function SeverityDistribution({
 
   if (total === 0) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
+      <div className="flex items-center justify-center h-64 bg-surface-hover dark:bg-slate-800/50 rounded-lg border border-dashed border-border-subtle dark:border-slate-700">
         <div className="text-center">
-          <PieChartIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">No severity data available</p>
+          <PieChartIcon className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+          <p className="text-sm text-text-tertiary">No severity data available</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <ResponsiveContainer width="100%" height={height}>
+    <div className="w-full min-w-0">
+      <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={0}>
         <PieChart>
           <Pie
             data={chartData}
@@ -184,8 +194,9 @@ export function SeverityDistribution({
               verticalAlign="bottom"
               height={36}
               iconType="circle"
+              wrapperStyle={themeLegend.wrapperStyle}
               formatter={(value, entry) => (
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="text-sm text-text-secondary dark:text-slate-300">
                   {value} ({(entry.payload as { value: number })?.value ?? 0})
                 </span>
               )}
@@ -198,8 +209,8 @@ export function SeverityDistribution({
       {type === "donut" && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
-            <div className="text-3xl font-bold text-gray-900 dark:text-white">{total}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Total Alerts</div>
+            <div className="text-3xl font-bold text-text-primary dark:text-white">{total}</div>
+            <div className="text-xs text-text-tertiary">Total Alerts</div>
           </div>
         </div>
       )}
@@ -221,7 +232,7 @@ export function SeverityBars({
       .map(([key, value]) => ({
         name: SEVERITY_LABELS[key as keyof typeof SEVERITY_LABELS],
         value,
-        color: SEVERITY_COLORS[key as keyof typeof SEVERITY_COLORS],
+        color: severityChartColors[key as keyof typeof severityChartColors],
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, limit);
@@ -241,10 +252,10 @@ export function SeverityBars({
         return (
           <div key={item.name} className="space-y-1">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-900 dark:text-white">{item.name}</span>
-              <span className="text-gray-600 dark:text-gray-400">{item.value}</span>
+              <span className="font-medium text-text-primary dark:text-white">{item.name}</span>
+              <span className="text-text-tertiary">{item.value}</span>
             </div>
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-surface-active dark:bg-slate-700 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
@@ -269,7 +280,7 @@ export function SeverityCards({ data }: { data: SeverityDistributionProps["data"
         key,
         label: SEVERITY_LABELS[key as keyof typeof SEVERITY_LABELS],
         value,
-        color: SEVERITY_COLORS[key as keyof typeof SEVERITY_COLORS],
+        color: severityChartColors[key as keyof typeof severityChartColors],
       }))
       .sort((a, b) => b.value - a.value);
   }, [data]);
@@ -283,15 +294,13 @@ export function SeverityCards({ data }: { data: SeverityDistributionProps["data"
       {cards.map((card) => (
         <div
           key={card.key}
-          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3"
+          className="bg-surface-card dark:bg-slate-800 rounded-lg border border-border-subtle dark:border-slate-700 p-3"
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: card.color }} />
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              {card.label}
-            </span>
+            <span className="text-xs font-medium text-text-tertiary">{card.label}</span>
           </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</div>
+          <div className="text-2xl font-bold text-text-primary dark:text-white">{card.value}</div>
         </div>
       ))}
     </div>

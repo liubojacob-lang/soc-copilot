@@ -5,14 +5,19 @@ from datetime import UTC, datetime
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.user import UserModel, UserRole
+from models.user import UserModel as _UserModel
+from models.user import UserRole
+from repositories.base import BaseRepository
+
+# Re-export with alias for BaseRepository generic
+UserModel = _UserModel
 
 
-class UserRepository:
-    """Repository for user CRUD operations."""
+class UserRepository(BaseRepository[UserModel]):
+    """Repository for user CRUD operations. Inherits standard CRUD from BaseRepository."""
 
     def __init__(self, session: AsyncSession):
-        self.session = session
+        super().__init__(session, UserModel)
 
     async def create(
         self,
@@ -37,17 +42,23 @@ class UserRepository:
 
     async def get_by_id(self, user_id: str) -> UserModel | None:
         """Get user by ID."""
-        result = await self.session.execute(select(UserModel).where(UserModel.id == user_id))
+        result = await self.session.execute(
+            select(UserModel).where(UserModel.id == user_id)
+        )
         return result.scalar_one_or_none()
 
     async def get_by_username(self, username: str) -> UserModel | None:
         """Get user by username."""
-        result = await self.session.execute(select(UserModel).where(UserModel.username == username))
+        result = await self.session.execute(
+            select(UserModel).where(UserModel.username == username)
+        )
         return result.scalar_one_or_none()
 
     async def get_by_email(self, email: str) -> UserModel | None:
         """Get user by email."""
-        result = await self.session.execute(select(UserModel).where(UserModel.email == email))
+        result = await self.session.execute(
+            select(UserModel).where(UserModel.email == email)
+        )
         return result.scalar_one_or_none()
 
     async def list(
@@ -80,7 +91,9 @@ class UserRepository:
 
         # Get total count
         count_result = await self.session.execute(
-            select(UserModel.id).where(and_(*conditions)) if conditions else select(UserModel.id)
+            select(UserModel.id).where(and_(*conditions))
+            if conditions
+            else select(UserModel.id)
         )
         total = len(count_result.all())
 
@@ -107,7 +120,7 @@ class UserRepository:
         if is_active is not None:
             user.is_active = is_active
 
-        user.updated_at = datetime.now(UTC).isoformat()
+        user.updated_at = datetime.now(UTC)
 
         self.session.add(user)
         await self.session.flush()
@@ -118,18 +131,43 @@ class UserRepository:
         """Update user's last login timestamp."""
         user = await self.get_by_id(user_id)
         if user:
-            user.last_login_at = datetime.now(UTC).isoformat()
+            user.last_login_at = datetime.now(UTC)
             self.session.add(user)
             await self.session.flush()
 
     async def update_password(self, user_id: str, hashed_password: str) -> bool:
-        """Update user's password and clear must_change_password flag."""
+        """Update user's password and clear must_change_password flag.
+
+        P1-19: Saves previous password to history (retains last 5 entries)
+        to prevent reuse.
+        """
         user = await self.get_by_id(user_id)
         if not user:
             return False
+
+        # Save current password to history before updating
+        if user.hashed_password:
+            history = user.password_history or []
+            history.insert(
+                0,
+                {
+                    "hashed_password": user.hashed_password,
+                    "changed_at": datetime.now(
+                        UTC
+                    ).isoformat(),  # JSON-safe (datetime not serializable)
+                },
+            )
+            # Retain only the last 5 entries
+            user.password_history = history[:5]
+
         user.hashed_password = hashed_password
         user.must_change_password = False
-        user.password_changed_at = datetime.now(UTC).isoformat()
+        user.password_changed_at = datetime.now(UTC)
+        # S0-19: Update updated_at to invalidate existing JWT tokens
+        # Token invalidation check (is_token_invalidated_by_user_update)
+        # compares token iat with user.updated_at — without this update,
+        # existing tokens would remain valid after password change
+        user.updated_at = datetime.now(UTC)
         self.session.add(user)
         await self.session.flush()
         return True
@@ -140,7 +178,7 @@ class UserRepository:
         if not user:
             return False
         user.is_active = False
-        user.updated_at = datetime.now(UTC).isoformat()
+        user.updated_at = datetime.now(UTC)
         self.session.add(user)
         await self.session.flush()
         return True

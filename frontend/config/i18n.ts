@@ -1,109 +1,48 @@
 /**
- * Shared i18n configuration for the application
- * This file should be imported by both next.config.js and i18n/request.ts
+ * Shared i18n configuration for the application.
+ *
+ * The routing itself (locales/default/prefix) is owned by `i18n/routing.ts`;
+ * this file only carries display metadata consumed by UI helpers.
  */
 
-export const i18nConfig = {
-  // Supported locales
-  locales: ["en", "zh"] as const,
+import { routing, type Locale } from "@/i18n/routing";
 
-  // Default locale to use when no locale is specified
-  defaultLocale: "en" as const,
+export const i18nConfig = {
+  locales: routing.locales,
+
+  defaultLocale: routing.defaultLocale,
 
   // Fallback locale to use when a translation key is missing
   fallbackLocale: "en" as const,
 
   // Locale names for display in UI
   localeNames: {
+    "zh-CN": "中文",
     en: "English",
-    zh: "中文",
   } as const,
 
   // Locale flags for display in UI
   localeFlags: {
+    "zh-CN": "🇨🇳",
     en: "🇺🇸",
-    zh: "🇨🇳",
   } as const,
 } as const;
 
-export type Locale = (typeof i18nConfig.locales)[number];
 export type LocaleNames = typeof i18nConfig.localeNames;
 export type LocaleFlags = typeof i18nConfig.localeFlags;
-
-/**
- * Translation key namespace structure
- * This defines the shape of translation keys for type safety
- */
-export type TranslationNamespace =
-  | "meta"
-  | "common"
-  | "nav"
-  | "home"
-  | "login"
-  | "users"
-  | "admin"
-  | "adminDashboard"
-  | "adminSettings"
-  | "adminAudit"
-  | "alertsPage"
-  | "settings"
-  | "notificationSettings"
-  | "errors"
-  | "playbooks"
-  | "alerts"
-  | "reports"
-  | "monitor"
-  | "ai"
-  | "aiAssistant"
-  | "threatIntel"
-  | "marketplace"
-  | "threatHunting"
-  | "ueba"
-  | "difyPage"
-  | "triggers"
-  | "triggersPage"
-  | "assets"
-  | "correlation"
-  | "cloudNative"
-  | "actions"
-  | "activities"
-  | "approvals"
-  | "chart"
-  | "configModal"
-  | "definitions"
-  | "difficulty"
-  | "history"
-  | "infoBox"
-  | "manualImport"
-  | "mlPowered"
-  | "modal"
-  | "model"
-  | "queue"
-  | "quickActions"
-  | "resources"
-  | "services"
-  | "severity"
-  | "sidebar"
-  | "status"
-  | "statuses"
-  | "tabs"
-  | "welcome"
-  | "iocHunt"
-  | "settingsApiKeys"
-  | "navigation";
 
 /**
  * Helper to check if a string is a valid locale
  */
 export function isValidLocale(locale: string): locale is Locale {
-  return i18nConfig.locales.includes(locale as Locale);
+  return routing.locales.includes(locale as Locale);
 }
 
 /**
  * Helper to get the default locale
  */
 export function getDefaultLocale(): Locale {
-  return i18nConfig.defaultLocale;
+  return routing.defaultLocale;
 }
 
 /**
@@ -117,7 +56,7 @@ export function getFallbackLocale(): Locale {
  * Helper to get all available locales
  */
 export function getLocales(): readonly Locale[] {
-  return i18nConfig.locales;
+  return routing.locales;
 }
 
 /**

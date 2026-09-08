@@ -25,6 +25,9 @@ class PlaybookDefinitionModel(Base):
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )  # v1.1: soft delete
     name: Mapped[str] = mapped_column(String(200), index=True, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     version: Mapped[str] = mapped_column(String(20), default="1.0.0")

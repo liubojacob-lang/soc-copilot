@@ -44,13 +44,17 @@ from routers import (
     ai_tasks,
     alert,
     alert_enrichment,
+    alert_stream,
+    alerts_to_loki,
     api_keys,
     assets,
     audit,
     auth,
     blocked_ips,
+    cases,
     cloud_native,
     correlation,
+    dashboard,
     export,
     health,
     history,
@@ -61,10 +65,12 @@ from routers import (
     notifications,
     playbook,
     playbook_definitions,
+    prompt_registry,
     report,
     secrets,
     security_alerts,
     security_vulnerabilities,
+    siem,
     system_dashboard,
     threat_hunting,
     threat_intel,
@@ -74,10 +80,9 @@ from routers import (
     users,
     webhooks,
     websocket_filters,
-    alert_stream,
-    alerts_to_loki,
 )
 from routers import websocket as ws_router
+from routers.playbook import internal as playbook_internal
 
 setup_json_logging(settings.log_level)
 logger = get_logger(__name__)
@@ -106,7 +111,9 @@ async def create_bootstrap_admin():
 
         if user_count == 0:
             logger.info("No users found. Creating bootstrap admin user...")
-            logger.info(f"Bootstrap admin username: {settings.bootstrap_admin_username}")
+            logger.info(
+                f"Bootstrap admin username: {settings.bootstrap_admin_username}"
+            )
             logger.info(f"Bootstrap admin email: {settings.bootstrap_admin_email}")
             logger.info("Bootstrap admin password: [REDACTED for security]")
             logger.warning("CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
@@ -143,6 +150,12 @@ async def create_bootstrap_admin():
 
 async def run_migrations():
     """Run Alembic database migrations on startup."""
+    if not getattr(settings, "auto_run_migrations", True):
+        logger.info(
+            "Automatic database migrations on startup disabled via AUTO_RUN_MIGRATIONS=false; skipping"
+        )
+        return
+
     from pathlib import Path
 
     from alembic.config import Config
@@ -178,12 +191,30 @@ async def run_migrations():
                     cwd=str(Path(__file__).parent),
                 )
 
-            result = await asyncio.to_thread(run_migrations_sync)
+            try:
+                from services.migration_lock import migration_process_lock
+            except ImportError:  # pragma: no cover - Windows dev only
+                migration_process_lock = None
+
+            def run_migrations_locked():
+                if migration_process_lock is None:
+                    return run_migrations_sync()
+                with migration_process_lock():
+                    return run_migrations_sync()
+
+            result = await asyncio.to_thread(run_migrations_locked)
             if result.returncode == 0:
                 logger.info("Database migrations completed")
             else:
-                logger.warning(f"Migration output: {result.stderr or result.stdout}")
+                detail = result.stderr or result.stdout
+                if settings.environment == "production":
+                    raise RuntimeError(f"Database migration failed: {detail}")
+                logger.warning(f"Migration output: {detail}")
         except Exception as e:
+            if settings.environment == "production":
+                # Fail fast: running with an unverified schema in production is worse
+                # than a crashed container (restart policy will retry after fix).
+                raise
             logger.warning(f"Migration failed (might be ok if already applied): {e}")
 
 
@@ -193,15 +224,17 @@ def register_lifecycle_services():
     Services are registered in order of priority:
     1. CRITICAL: Database
     2. ESSENTIAL: Queue Manager, Cron Scheduler, Rate Limiter
-    3. NORMAL: AI Task Processor, WebSocket Monitoring, Alert Evaluator
+    3. NORMAL: AI Task Processor, Alert Pipeline, WebSocket Monitoring, Alert Evaluator
     4. OPTIONAL: Audit Archive
     """
     from services.lifecycle import (
         AITaskProcessorService,
         AlertEvaluatorService,
+        AlertPipelineService,
         AuditArchiveService,
         CronSchedulerServiceWrapper,
         DatabaseService,
+        DataRetentionService,
         QueueManagerService,
         RateLimiterService,
         WebSocketMonitoringService,
@@ -220,12 +253,15 @@ def register_lifecycle_services():
 
     # NORMAL priority
     manager.register(AITaskProcessorService())
+    manager.register(AlertPipelineService())
     manager.register(WebSocketMonitoringService())
     manager.register(AlertEvaluatorService())
 
     # OPTIONAL priority
     if settings.audit_log_cleanup_enabled:
         manager.register(AuditArchiveService())
+    if settings.data_retention_enabled:
+        manager.register(DataRetentionService())
 
     return manager
 
@@ -238,13 +274,15 @@ async def lifespan(app_instance: FastAPI):
     startup and shutdown of all services.
     """
     # Startup
-    logger.info("Initializing SOC Copilot API v0.8.0")
+    logger.info("Initializing SOC Copilot API v0.9.0")
     logger.info(f"Environment: {settings.environment}")
     logger.info("Playbook Engine: ENABLED (DAG-based with Node Plugin System)")
     logger.info("Trigger System: ENABLED (webhook + cron)")
     logger.info(f"Run Queue: ENABLED (max_concurrent={settings.run_queue_max})")
     logger.info("Secrets Management: ENABLED (Fernet encryption)")
-    logger.info(f"External TI: {'ENABLED' if settings.allow_external_ti else 'DISABLED'}")
+    logger.info(
+        f"External TI: {'ENABLED' if settings.allow_external_ti else 'DISABLED'}"
+    )
     logger.info("Authentication: ENABLED")
     logger.info("RBAC: ENABLED (admin, analyst, auditor)")
     logger.info("Audit Logging: ENABLED")
@@ -255,10 +293,13 @@ async def lifespan(app_instance: FastAPI):
     security_errors = run_production_security_checks()
     if security_errors:
         msg = "Production security validation failed: " + "; ".join(security_errors)
-        if settings.strict_production_checks:
+        if settings.enforce_strict_checks:
             logger.critical(msg)
             raise RuntimeError(msg)
-        logger.critical(msg + " (startup allowed; set STRICT_PRODUCTION_CHECKS=true to fail)")
+        logger.critical(
+            msg
+            + " (startup allowed; set STRICT_PRODUCTION_CHECKS=true or ENVIRONMENT=production to fail)"
+        )
 
     # Run migrations
     await run_migrations()
@@ -276,6 +317,16 @@ async def lifespan(app_instance: FastAPI):
 
     # Create bootstrap admin
     await create_bootstrap_admin()
+
+    # Ensure default AI models exist
+    try:
+        from init_ai_models import seed_ai_models
+
+        async with AsyncSessionLocal() as session:
+            await seed_ai_models(session)
+        logger.info("AI models initialized/verified")
+    except Exception as e:
+        logger.warning(f"Failed to auto-seed AI models on startup: {e}")
 
     # Load node plugins
     from pathlib import Path
@@ -311,10 +362,22 @@ async def lifespan(app_instance: FastAPI):
     cleanup_task = asyncio.create_task(websocket_cleanup_task())
     logger.info("Started WebSocket user cleanup background task")
 
+    # Start WebSocket multi-instance Redis Pub/Sub broadcast bridge
+    ws_manager = get_manager()
+    await ws_manager.start_pubsub()
+
+    # Start DynamicConfig multi-instance Redis Pub/Sub reload bridge
+    from core.dynamic_config import get_dynamic_config
+
+    dynamic_config = get_dynamic_config()
+    await dynamic_config.start_pubsub()
+
     yield
 
     # Shutdown
     logger.info("Shutting down SOC Copilot API")
+    await dynamic_config.stop_pubsub()
+    await ws_manager.stop_pubsub()
     if cleanup_task:
         cleanup_task.cancel()
         try:
@@ -348,7 +411,7 @@ class SetUserStateMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         """Set current user in request.state for audit and authorization middleware."""
-        # Try to get user from Authorization header only
+        # Try to get user from Authorization header or Cookie
         # API key lookup is done in the auth dependency to avoid DB calls in middleware
         auth_header = request.headers.get("authorization")
         user_id = None
@@ -358,10 +421,24 @@ class SetUserStateMiddleware(BaseHTTPMiddleware):
             from core.security import decode_token
 
             token = auth_header.split(" ")[1]
-            payload = decode_token(token)
-            if payload:
-                user_id = payload.get("sub")
-                user_role = payload.get("role")
+            if token not in ("undefined", "null", ""):
+                payload = decode_token(token)
+                if payload:
+                    user_id = payload.get("sub")
+                    user_role = payload.get("role")
+
+        if not user_id and request.headers.get("cookie"):
+            from core.cookie_auth import COOKIE_ACCESS_TOKEN_NAME, get_token_from_cookie
+            from core.security import decode_token
+
+            cookie_token = get_token_from_cookie(
+                request.headers.get("cookie"), COOKIE_ACCESS_TOKEN_NAME
+            )
+            if cookie_token:
+                payload = decode_token(cookie_token)
+                if payload:
+                    user_id = payload.get("sub")
+                    user_role = payload.get("role")
 
         request.state.user_id = user_id
         request.state.user_role = user_role
@@ -401,6 +478,21 @@ app.add_middleware(
     expose_headers=["Content-Length", "Content-Range"],
 )
 
+# v1.0: Runtime assertion - reject allow_credentials=True with wildcard origins
+if "*" in _cors_origins:
+    # In development, warn but allow. In production, this is already blocked above.
+    if settings.environment != "production":
+        logger.warning(
+            "CORS: allow_credentials=True with wildcard origins in development. "
+            "This is insecure - do not use in production. "
+            "Set explicit CORS_ORIGINS instead."
+        )
+    else:
+        raise RuntimeError(
+            "CORS: allow_credentials=True requires explicit origins, not wildcard. "
+            "Set CORS_ORIGINS to comma-separated explicit URLs."
+        )
+
 # Add credentials header for localhost origins
 app.add_middleware(AddCredentialsMiddleware)
 
@@ -439,6 +531,30 @@ app.add_middleware(ResourceAuthorizationMiddleware)
 # Setup global exception handlers
 setup_exception_handlers(app)
 
+
+# ============================================================================
+# v1.1: legacy /api/* alias → /api/v1/* (rewritten in-place, no redirect)
+# ============================================================================
+
+
+@app.middleware("http")
+async def api_version_alias(request: Request, call_next):
+    """Alias legacy /api/* paths onto /api/v1/* by rewriting the path in place.
+
+    The whole frontend client uses legacy /api/* paths. A 308 redirect here
+    would bounce browsers to an absolute URL built from the Host header —
+    cross-origin in dev, where CSP connect-src 'self' blocks it (and even in
+    prod it costs an extra roundtrip). Rewriting scope["path"] routes the
+    request to the v1 endpoint with zero client-visible changes.
+    """
+    path = request.url.path
+    if path.startswith("/api/") and not path.startswith("/api/v1/"):
+        new_path = path.replace("/api/", "/api/v1/", 1)
+        request.scope["path"] = new_path
+        request.scope["raw_path"] = new_path.encode()
+    return await call_next(request)
+
+
 # Setup CSRF protection (must be before exception handlers in request chain)
 setup_csrf_middleware(
     app,
@@ -470,11 +586,13 @@ app.include_router(ioc_hits.router)
 app.include_router(threat_intel.router)
 app.include_router(playbook.router)
 app.include_router(playbook_definitions.router)
+app.include_router(playbook_internal.router)
 app.include_router(webhooks.router)
 app.include_router(triggers.router)
 app.include_router(secrets.router)  # v0.7.4: Secrets management
 app.include_router(admin_settings.router)  # System settings
 app.include_router(ai.router)  # Phase 2: AI Copilot service
+app.include_router(prompt_registry.router)  # P1-23: Prompt Registry
 app.include_router(ai_tasks.router)  # v0.7.7: AI background task queue
 app.include_router(ueba.router)  # Phase 3: UEBA analytics
 app.include_router(threat_hunting.router)  # Phase 3: Threat hunting
@@ -483,24 +601,33 @@ app.include_router(cloud_native.router)  # Phase 4: Cloud native security
 app.include_router(monitor.router)  # Real-time monitoring dashboard
 app.include_router(security_alerts.router)  # v0.9.0: External security alert ingestion
 app.include_router(alert_enrichment.router)  # v0.9.0: Threat intelligence enrichment
-app.include_router(notifications.router)  # v0.9.x: Notification channels and queue status
-from routers import alerts_lifecycle  # v0.9.0: Alert lifecycle management
+app.include_router(
+    notifications.router
+)  # v0.9.x: Notification channels and queue status
+from routers import (
+    alert_import,  # v0.9.2: CEF/Syslog/JSON/CSV alert import
+    alerts_lifecycle,  # v0.9.0: Alert lifecycle management
+)
 
 app.include_router(alerts_lifecycle.router)  # v0.9.0: Alert lifecycle management
+app.include_router(alert_import.router)  # v0.9.2: Alert import (frontend ImportAlertModal)
 app.include_router(ws_router.router)  # v0.8.5: WebSocket real-time alerts
+app.include_router(ws_router.router, prefix="/api/v1")  # v0.8.5: WebSocket real-time alerts & monitoring under /api/v1
 app.include_router(websocket_filters.router)  # v0.9.0: WebSocket filter management
 app.include_router(monitoring_alerts.router)  # v0.9.1: Monitoring alert rules
 app.include_router(export.router)  # v0.8.5: Data export functionality
 app.include_router(system_dashboard.router)  # v0.8.5: System health dashboard
-app.include_router(security_vulnerabilities.router)  # v0.9.2: Security vulnerability management
+app.include_router(
+    security_vulnerabilities.router
+)  # v0.9.2: Security vulnerability management
 app.include_router(alert_stream.router)  # v0.9.0: Wazuh alert stream management
 app.include_router(alerts_to_loki.router)  # v0.9.0: Send alerts to Loki
+app.include_router(cases.router)  # v0.10.0: Case management
+app.include_router(dashboard.router)  # v0.10.0: Operational dashboard
+app.include_router(siem.router)  # v1.1: SIEM log storage and search
 
 
 # Global OPTIONS handler for CORS preflight
-from fastapi.responses import Response
-
-
 @app.options("/{path:path}")
 async def options_handler(path: str, request: Request):
     """Handle OPTIONS preflight requests for CORS.
@@ -512,7 +639,10 @@ async def options_handler(path: str, request: Request):
     # Security: Validate origin against whitelist
     if origin:
         # Check if origin is in allowed list
-        allowed_origins = settings.cors_origins if hasattr(settings, "cors_origins") else []
+        # cors_origins is a comma-separated string; split before matching or
+        # `origin in allowed_origins` degrades into substring matching
+        raw_origins = getattr(settings, "cors_origins", "") or ""
+        allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
         # Handle wildcard and specific origins
         is_allowed = "*" in allowed_origins or origin in allowed_origins
 
@@ -526,7 +656,10 @@ async def options_handler(path: str, request: Request):
 
         # In development, allow localhost variants
         if not is_allowed and settings.environment == "development":
-            if not (origin.startswith("http://localhost") or origin.startswith("http://127.0.0.1")):
+            if not (
+                origin.startswith("http://localhost")
+                or origin.startswith("http://127.0.0.1")
+            ):
                 return Response(
                     status_code=403,
                     headers={"Content-Type": "text/plain"},
@@ -548,13 +681,13 @@ async def options_handler(path: str, request: Request):
 @app.get("/")
 async def root() -> dict[str, str]:
     """Root endpoint."""
-    return {"message": "SOC Copilot API v0.7", "auth": "enabled"}
+    return {"message": "SOC Copilot API v1.1", "auth": "enabled"}
 
 
-@app.get("/api/health")
+@app.get("/api/v1/health")
 async def health() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "ok", "version": "0.8.0", "auth": "enabled"}
+    return {"status": "ok", "version": "1.1.0", "auth": "enabled"}
 
 
 if __name__ == "__main__":
@@ -563,7 +696,7 @@ if __name__ == "__main__":
     # Increase timeout for long AI analysis requests (120 seconds)
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104 - container entrypoint, port published by compose
         port=8000,
         reload=True,
         timeout_keep_alive=120,

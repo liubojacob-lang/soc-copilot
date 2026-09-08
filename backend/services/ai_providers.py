@@ -3,8 +3,8 @@ AI Service Module - SOC Copilot AI Assistant
 Provides intelligent analysis and recommendations using LLM
 """
 
-from dataclasses import dataclass
-from typing import Any
+import json
+from collections.abc import AsyncIterator
 
 import httpx
 
@@ -13,29 +13,6 @@ from core.http_client import get_http_client
 from core.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-@dataclass
-class AIAnalysisResult:
-    """Result of AI analysis."""
-
-    summary: str
-    root_cause: str
-    recommendations: list[str]
-    confidence: float
-    related_cases: list[dict[str, Any]]
-    suggested_playbooks: list[str]
-
-
-@dataclass
-class NaturalLanguageQuery:
-    """Natural language query result."""
-
-    query: str
-    intent: str
-    parameters: dict[str, Any]
-    sql_or_filter: str | None
-    response: str
 
 
 class LLMProvider:
@@ -84,7 +61,7 @@ class ZhipuAIProvider(LLMProvider):
     ) -> str:
         """Generate chat completion using Zhipu AI."""
         try:
-            actual_model = model or self.model
+            actual_model = self.model if (not model or model.lower() == "auto") else model
 
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
@@ -393,7 +370,7 @@ class MoonshotAIProvider(LLMProvider):
 class NVIDIAProvider(LLMProvider):
     """NVIDIA AI Foundation Models provider (OpenAI-compatible)."""
 
-    def __init__(self, api_key: str, model: str = "meta/llama-3.1-405b-instruct"):
+    def __init__(self, api_key: str, model: str = "meta/llama-3.2-11b-vision-instruct"):
         # NVIDIA API endpoint
         super().__init__(api_key, "https://integrate.api.nvidia.com/v1")
         self.model = model
@@ -409,7 +386,7 @@ class NVIDIAProvider(LLMProvider):
         """Generate chat completion using NVIDIA API."""
         try:
             # Use provided model or default from initialization
-            actual_model = model or self.model
+            actual_model = self.model if (not model or model.lower() == "auto") else model
 
             # Use custom timeout if provided
             client = self.client
@@ -431,7 +408,9 @@ class NVIDIAProvider(LLMProvider):
             )
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            choice = data["choices"][0]
+            msg = choice.get("message", {})
+            return msg.get("content") or msg.get("reasoning_content") or ""
         except Exception as e:
             logger.error(f"NVIDIA API error: {e}")
             raise
@@ -493,6 +472,13 @@ class LLMFactory:
             "openrouter": ("openrouter_api_key", "openrouter_model"),
         }
 
+        if provider_type.lower() == "auto" or model_id.lower() == "auto":
+            from services.ai_service_enhanced import get_enhanced_ai_service
+
+            svc = get_enhanced_ai_service()
+            m_id, p_type, _ = svc.resolve_auto_model("")
+            return LLMFactory.create_provider_for_model(m_id, p_type)
+
         if provider_type.lower() not in provider_key_map:
             raise ValueError(f"Unknown provider: {provider_type}")
 
@@ -544,7 +530,7 @@ class LLMFactory:
             api_key = getattr(settings, "nvidia_api_key", None)
             if api_key:
                 nvidia_model = getattr(
-                    settings, "nvidia_model", "meta/llama-3.1-405b-instruct"
+                    settings, "nvidia_model", "meta/llama-3.2-11b-vision-instruct"
                 )
                 return NVIDIAProvider(api_key, nvidia_model)
         elif ai_provider == "moonshot":
@@ -562,3 +548,76 @@ class LLMFactory:
 
         logger.warning(f"No API key found for provider: {ai_provider}")
         return None
+
+
+async def stream_chat_completion(
+    provider: LLMProvider,
+    messages: list[dict[str, str]],
+    model: str | None = None,
+    temperature: float = 0.5,
+    max_tokens: int = 4096,
+    timeout: float | None = None,
+) -> AsyncIterator[str]:
+    """Yield content deltas for a chat completion.
+
+    Streams over SSE for OpenAI-compatible httpx providers. Providers with a
+    non-compatible endpoint (Anthropic native) or a failing stream fall back
+    to a one-shot completion yielded as a single chunk — callers need no
+    special casing.
+    """
+    api_key = getattr(provider, "api_key", "") or ""
+    base_url = getattr(provider, "base_url", "") or ""
+    model_id = model or getattr(provider, "model", None)
+
+    if not api_key or not base_url or "api.anthropic.com" in base_url:
+        text = await provider.chat_completion(
+            messages, model=model_id, temperature=temperature, max_tokens=max_tokens
+        )
+        yield text
+        return
+
+    client = provider.client
+    if timeout:
+        client = httpx.AsyncClient(timeout=timeout)
+
+    try:
+        async with client.stream(
+            "POST",
+            f"{base_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": model_id,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": True,
+            },
+        ) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                line = line.strip()
+                if not line.startswith("data:"):
+                    continue
+                payload = line[len("data:") :].strip()
+                if payload == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(payload)
+                except json.JSONDecodeError:
+                    continue
+                choices = chunk.get("choices") or [{}]
+                delta = (choices[0].get("delta") or {}).get("content")
+                if delta:
+                    yield delta
+    except Exception as e:
+        logger.warning(f"SSE stream failed ({e}); falling back to one-shot completion")
+        text = await provider.chat_completion(
+            messages, model=model_id, temperature=temperature, max_tokens=max_tokens
+        )
+        yield text
+    finally:
+        if timeout and client is not provider.client:
+            await client.aclose()

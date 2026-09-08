@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
 
 type ToastType = "success" | "error" | "info" | "warning";
@@ -42,6 +43,7 @@ const ICON_COLORS = {
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const t = useTranslations("common");
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((message: string, type: ToastType = "info") => {
@@ -62,7 +64,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
         role="region"
-        aria-label="通知"
+        aria-label={t("notifications")}
       >
         {toasts.map((toast) => {
           const Icon = ICONS[toast.type];
@@ -83,7 +85,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <button
                 onClick={() => removeToast(toast.id)}
                 className="flex-shrink-0 hover:opacity-70"
-                aria-label="关闭通知"
+                aria-label={t("closeNotification")}
               >
                 <X className="w-4 h-4" aria-hidden="true" />
               </button>

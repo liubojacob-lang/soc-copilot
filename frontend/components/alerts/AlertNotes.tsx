@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useRef, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { MessageSquare, Send, Trash2, Edit, User } from "lucide-react";
 
 interface AlertNote {
@@ -39,6 +39,7 @@ export const AlertNotes = React.memo(function AlertNotes({
   canDelete = true,
   canEdit = true,
 }: AlertNotesProps) {
+  const format = useFormatter();
   const t = useTranslations("notes");
   const tTime = useTranslations("time");
   const [newNote, setNewNote] = useState("");
@@ -120,7 +121,7 @@ export const AlertNotes = React.memo(function AlertNotes({
     if (diffMins < 60) return tTime("minutesAgo", { count: diffMins });
     if (diffHours < 24) return tTime("hoursAgo", { count: diffHours });
     if (diffDays < 7) return tTime("daysAgo", { count: diffDays });
-    return then.toLocaleDateString();
+    return format.dateTime(then, { dateStyle: "medium" });
   };
 
   return (
@@ -270,6 +271,7 @@ export const AlertNotes = React.memo(function AlertNotes({
 
 // 简化版：仅用于侧边栏显示
 export function CompactNotes({ notes, limit = 3 }: { notes: AlertNote[]; limit?: number }) {
+  const format = useFormatter();
   const t = useTranslations("notes");
   const tTime = useTranslations("time");
 
@@ -293,7 +295,7 @@ export function CompactNotes({ notes, limit = 3 }: { notes: AlertNote[]; limit?:
     if (diffMins < 60) return tTime("minutesAgo", { count: diffMins });
     if (diffHours < 24) return tTime("hoursAgo", { count: diffHours });
     if (diffDays < 7) return tTime("daysAgo", { count: diffDays });
-    return then.toLocaleDateString();
+    return format.dateTime(then, { dateStyle: "medium" });
   };
 
   return (

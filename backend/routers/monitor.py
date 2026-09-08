@@ -12,20 +12,22 @@ from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 
 from core.config import settings
 from core.logger import get_logger
 from core.token_blacklist import REDIS_AVAILABLE
 from db.session import AsyncSessionLocal
+from dependencies.auth import get_current_user
 from models.monitor_history import MonitorHistoryModel
+from models.user import UserModel
 
 logger = get_logger(__name__)
 
-router = APIRouter(tags=["monitor"], prefix="/api/monitor")
+router = APIRouter(tags=["monitor"], prefix="/api/v1/monitor")
 
 # Track last update time
 _last_update_time = 0
@@ -202,36 +204,31 @@ async def collect_recent_activities(limit: int = 10) -> list:
     activities = []
 
     try:
-        # Dynamic import to avoid circular dependencies
-        import importlib
+        from models.playbook_run import PlaybookRunModel
 
-        models_module = importlib.import_module("models.playbook_run")
-        PlaybookRun = getattr(models_module, "PlaybookRun", None)
+        async with AsyncSessionLocal() as session:
+            from sqlalchemy import desc as sa_desc
+            from sqlalchemy import select as sa_select
 
-        if PlaybookRun:
-            async with AsyncSessionLocal() as session:
-                from sqlalchemy import desc as sa_desc
-                from sqlalchemy import select as sa_select
+            result = await session.execute(
+                sa_select(PlaybookRunModel)
+                .order_by(sa_desc(PlaybookRunModel.created_at))
+                .limit(limit)
+            )
+            runs = result.scalars().all()
 
-                result = await session.execute(
-                    sa_select(PlaybookRun)
-                    .order_by(sa_desc(PlaybookRun.created_at))
-                    .limit(limit)
+            for run in runs:
+                activities.append(
+                    {
+                        "type": "playbook",
+                        "id": str(run.id),
+                        "name": run.playbook_name or "Unknown",
+                        "status": run.status,
+                        "timestamp": (
+                            run.created_at.isoformat() if run.created_at else None
+                        ),
+                    }
                 )
-                runs = result.scalars().all()
-
-                for run in runs:
-                    activities.append(
-                        {
-                            "type": "playbook",
-                            "id": str(run.id),
-                            "name": run.playbook_name or "Unknown",
-                            "status": run.status,
-                            "timestamp": (
-                                run.created_at.isoformat() if run.created_at else None
-                            ),
-                        }
-                    )
     except Exception as e:
         logger.error(f"Failed to collect activities: {e}")
 
@@ -329,13 +326,11 @@ async def monitor_event_generator() -> AsyncGenerator[str, None]:
 
 
 @router.get("/stream")
-async def monitor_stream(request: Request) -> StreamingResponse:
-    """
-    SSE endpoint for real-time monitoring data.
-
-    Note: Admin check should be added via dependency injection.
-    For now, open access for development.
-    """
+async def monitor_stream(
+    request: Request,
+    current_user: UserModel = Depends(get_current_user),
+) -> StreamingResponse:
+    """SSE endpoint for real-time monitoring data (requires authentication)."""
     return StreamingResponse(
         monitor_event_generator(),
         media_type="text/event-stream",
@@ -348,8 +343,10 @@ async def monitor_stream(request: Request) -> StreamingResponse:
 
 
 @router.get("/snapshot")
-async def get_monitor_snapshot() -> dict[str, Any]:
-    """Get current monitoring snapshot (single request)."""
+async def get_monitor_snapshot(
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Get current monitoring snapshot (single request, requires authentication)."""
     data = await get_monitor_data()
     # Also save to database for history
     await save_monitor_data_to_db(data)
@@ -357,7 +354,10 @@ async def get_monitor_snapshot() -> dict[str, Any]:
 
 
 @router.get("/history")
-async def get_monitor_history(minutes: int = 60) -> dict[str, Any]:
+async def get_monitor_history(
+    minutes: int = 60,
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Get historical monitoring data from persistent storage.
 
@@ -388,9 +388,7 @@ async def get_monitor_history(minutes: int = 60) -> dict[str, Any]:
             # Note: Database timestamps are naive (no timezone), treat as UTC
             history = [
                 {
-                    "timestamp": entry.timestamp.replace(
-                        tzinfo=UTC
-                    ).isoformat(),
+                    "timestamp": entry.timestamp.replace(tzinfo=UTC).isoformat(),
                     "resources": {
                         "cpu_percent": entry.cpu_percent,
                         "memory_percent": entry.memory_percent,
@@ -430,7 +428,10 @@ async def get_monitor_history(minutes: int = 60) -> dict[str, Any]:
 
 
 @router.delete("/history/cleanup")
-async def cleanup_old_monitor_history(days: int = 7) -> dict[str, Any]:
+async def cleanup_old_monitor_history(
+    days: int = 7,
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Clean up monitor history older than specified days.
 
@@ -479,7 +480,9 @@ async def cleanup_old_monitor_history(days: int = 7) -> dict[str, Any]:
 
 
 @router.delete("/history/clear")
-async def clear_all_monitor_history() -> dict[str, Any]:
+async def clear_all_monitor_history(
+    current_user: UserModel = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Clear ALL monitor history data.
 
@@ -493,10 +496,13 @@ async def clear_all_monitor_history() -> dict[str, Any]:
 
     try:
         async with AsyncSessionLocal() as session:
-            # Count all records before deletion
-            count_result = await session.execute(select(MonitorHistoryModel))
-            all_records = count_result.scalars().all()
-            total_count = len(all_records)
+            # Count all records before deletion (aggregate count; loading
+            # every row just to len() them would drag the whole table into
+            # memory on large history tables)
+            count_result = await session.execute(
+                select(func.count()).select_from(MonitorHistoryModel)
+            )
+            total_count = count_result.scalar() or 0
 
             # Delete all records
             await session.execute(sa_delete(MonitorHistoryModel))

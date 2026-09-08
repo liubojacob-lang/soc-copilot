@@ -51,6 +51,10 @@ const CONFIG = {
     /\btCommon\(['"`][^'"`]+['"`]\)/,
     /useTranslations/,
 
+    // CSS font stacks are not user-facing copy
+    /fontFamily|font-family|font:\s/,
+    /-[a-z]+-system|BlinkMacSystemFont|Segoe UI|Helvetica Neue|sans-serif/,
+
     // Console statements
     /console\.(log|error|warn|debug|info)/,
 
@@ -226,7 +230,7 @@ class I18nChecker {
 
     console.log("\n💡 Suggestions:");
     console.log('   1. Replace hardcoded text with t("key")');
-    console.log("   2. Add translation keys to messages/en.json and messages/zh.json");
+    console.log("   2. Add translation keys to messages/en.json and messages/zh-CN.json");
     console.log("   3. Run npm run i18n:check again to verify fixes\n");
 
     return 1;

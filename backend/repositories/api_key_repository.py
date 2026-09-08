@@ -115,7 +115,7 @@ class APIKeyRepository:
         """Update API key's last used timestamp."""
         api_key = await self.get_by_id(api_key_id)
         if api_key:
-            api_key.last_used_at = datetime.now().isoformat()
+            api_key.last_used_at = datetime.now()
             self.session.add(api_key)
             await self.session.flush()
 

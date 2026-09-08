@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from dependencies import get_current_user
 from models.user import UserModel
-from schemas.wazuh_stream import (
+from schemas.alert_stream import (
     AlertStreamFilter,
     AlertStreamStats,
     SeverityLevel,
@@ -61,7 +61,9 @@ class TestStreamAlertRequest(BaseModel):
     agent_id: str = "001"
     severity: SeverityLevel = SeverityLevel.HIGH
     event_type: str = "ssh_login"
-    count: int = Field(default=1, ge=1, le=100, description="Number of test alerts (max 100)")
+    count: int = Field(
+        default=1, ge=1, le=100, description="Number of test alerts (max 100)"
+    )
 
 
 # ========== API Endpoints ==========
@@ -195,7 +197,9 @@ async def get_stream_stats(current_user: UserModel = Depends(get_current_user)):
 
 @router.get("/history", response_model=list[WazuhAlertStream])
 async def get_recent_alerts(
-    limit: int = Query(50, ge=1, le=1000, description="Maximum number of alerts to return"),
+    limit: int = Query(
+        50, ge=1, le=1000, description="Maximum number of alerts to return"
+    ),
     current_user: UserModel = Depends(get_current_user),
 ):
     """
@@ -287,7 +291,8 @@ async def send_test_alert(
             "message": f"Sent {alerts_sent} test alert(s)",
             "alerts_sent": alerts_sent,
             "alert_ids": [
-                f"test-{datetime.now(UTC).isoformat()}-{i}" for i in range(request.count)
+                f"test-{datetime.now(UTC).isoformat()}-{i}"
+                for i in range(request.count)
             ],
         }
 

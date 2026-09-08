@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
-import Navigation from "@/components/Navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations, useLocale } from "next-intl";
+import { PageHeader } from "@/components/common/PageHeader";
 import { SkeletonTable } from "@/components/common/LoadingState";
-import { loadAuthState } from "@/lib/auth";
+import { loadAuthState, authFetch } from "@/lib/auth";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import {
   Search,
@@ -45,6 +45,7 @@ export default function PlaybookApprovalsPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("playbooks");
+  const format = useFormatter();
   const tCommon = useTranslations("common");
 
   const [mounted, setMounted] = useState(false);
@@ -66,7 +67,6 @@ export default function PlaybookApprovalsPage() {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("access_token");
       const params = new URLSearchParams({
         page: page.toString(),
         page_size: pagination.pageSize.toString(),
@@ -75,9 +75,7 @@ export default function PlaybookApprovalsPage() {
         params.append("status", statusFilter);
       }
 
-      const response = await fetch(`/api/approvals?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await authFetch(`/api/playbook/approvals?${params.toString()}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -88,7 +86,7 @@ export default function PlaybookApprovalsPage() {
           total: data.total || 0,
         });
       } else if (response.status === 401) {
-        router.push(`/${locale}/login`);
+        router.push("/login");
         return;
       } else {
         setError(`Failed to load approvals: ${response.statusText}`);
@@ -114,11 +112,9 @@ export default function PlaybookApprovalsPage() {
   const handleApprove = async (approvalId: string) => {
     setActionLoading(approvalId);
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`/api/approvals/${approvalId}/approve`, {
+      const response = await authFetch(`/api/playbook/approvals/${approvalId}/approve`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ comments: "" }),
@@ -140,11 +136,9 @@ export default function PlaybookApprovalsPage() {
   const handleReject = async (approvalId: string) => {
     setActionLoading(approvalId);
     try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`/api/approvals/${approvalId}/reject`, {
+      const response = await authFetch(`/api/playbook/approvals/${approvalId}/reject`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ comments: "" }),
@@ -167,11 +161,11 @@ export default function PlaybookApprovalsPage() {
     setMounted(true);
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     loadApprovals(1);
-  }, [router, locale, statusFilter]);
+  }, [router, statusFilter]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts(
@@ -210,26 +204,14 @@ export default function PlaybookApprovalsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation
+      <PageHeader
         title={t("approvals.title") || "Approvals"}
         subtitle={t("approvals.subtitle") || "Manage playbook approval requests"}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {t("approvals.title") || "Approval Requests"}
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">
-                {t("approvals.subtitle") || "Review and manage playbook approval requests"}
-              </p>
-            </div>
-          </div>
-
-          {/* Filters */}
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -352,9 +334,9 @@ export default function PlaybookApprovalsPage() {
                         {approval.requested_by || "-"}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {new Date(approval.created_at).toLocaleDateString()}
+                        {format.dateTime(new Date(approval.created_at), { dateStyle: "medium" })}
                         <div className="text-xs text-gray-400">
-                          {new Date(approval.created_at).toLocaleTimeString()}
+                          {format.dateTime(new Date(approval.created_at), { timeStyle: "medium" })}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">

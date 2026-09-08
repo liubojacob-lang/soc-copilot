@@ -25,7 +25,10 @@ from dataclasses import dataclass, field
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.logger import get_logger
 from repositories.audit_repository import AuditRepository
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -95,8 +98,9 @@ def audit_context(
                 payload = decode_token(token)
                 if payload:
                     user_id = payload.get("sub")
-        except Exception:
-            pass
+        except Exception as e:
+            # Best-effort attribution only; the audit record itself is still written
+            logger.debug(f"Could not extract user for audit record: {e}")
 
         return AuditContext(
             repo=AuditRepository(session),

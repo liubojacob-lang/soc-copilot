@@ -1,11 +1,22 @@
 /** Custom hook for managing playbook runs and definitions */
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
-import { api, type PlaybookRunResponse, type PlaybookMetadata } from "@/lib/api";
-import { loadAuthState } from "@/lib/auth";
-import type { QueueStats } from "../constants";
+import { api } from "@/lib/api";
+import { loadAuthState, authFetch } from "@/lib/auth";
+import type { QueueStats, PlaybookMetadata } from "../constants";
+
+interface PlaybookRunResponse {
+  id: string;
+  playbook_name: string;
+  status: string;
+  mode: string;
+  started_at: string;
+  finished_at: string | null;
+  items?: PlaybookRunResponse[];
+  total?: number;
+}
 
 interface PlaybookDefinition {
   id: string;
@@ -101,24 +112,31 @@ export function usePlaybooks() {
     async (page: number = 1) => {
       setData((prev) => ({ ...prev, loading: true }));
       try {
-        const token = localStorage.getItem("access_token");
-        const response = await fetch(
-          `/api/playbook-definitions?page=${page}&page_size=${definitionsPagination.pageSize}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+        const response = await authFetch(
+          `/api/playbook-definitions?page=${page}&page_size=${definitionsPagination.pageSize}`
         );
 
         if (response.ok) {
           const data = await response.json();
+          const rawItems = (data.definitions || data.items || []) as Record<string, unknown>[];
+          const normalizedDefinitions: PlaybookDefinition[] = rawItems.map((d) => ({
+            id: String(d.id),
+            name: String(d.name || ""),
+            description: (d.description as string) || null,
+            version: String(d.version || "1.0.0"),
+            status: (d.status as string) || (d.is_active ? "published" : "draft"),
+            is_active: Boolean(d.is_active),
+            created_at: String(d.created_at || ""),
+            updated_at: String(d.updated_at || ""),
+          }));
           setData((prev) => ({
             ...prev,
-            definitions: data.definitions || [],
+            definitions: normalizedDefinitions,
           }));
           setDefinitionsPagination({
             currentPage: page,
             pageSize: definitionsPagination.pageSize,
-            total: data.total || 0,
+            total: (data.total as number) || normalizedDefinitions.length,
           });
         }
       } catch (e) {
@@ -144,14 +162,14 @@ export function usePlaybooks() {
   useEffect(() => {
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     loadData(1);
     loadQueueStats();
     const interval = setInterval(loadQueueStats, 10000);
     return () => clearInterval(interval);
-  }, [router, locale]);
+  }, [router]);
 
   return {
     ...data,

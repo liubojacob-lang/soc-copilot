@@ -6,9 +6,9 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 # v0.7 DAG Execution Status Types
-NodeStatus = Literal["pending", "running", "success", "failed", "skipped", "cancelled"]
-RunStatus = Literal["pending", "running", "success", "failed", "partial", "cancelled"]
-EngineVersion = Literal["v0.6", "v0.7"]
+NodeStatus = Literal["pending", "running", "success", "failed", "skipped", "cancelled", "queued"]
+RunStatus = Literal["pending", "running", "success", "failed", "partial", "cancelled", "queued"]
+EngineVersion = str
 ExecutionMode = Literal["linear", "dag"]
 FailureStrategy = Literal["fail_fast", "continue"]
 
@@ -190,6 +190,7 @@ class PlaybookDefinitionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     is_active: bool
+    status: str = Field("published")
 
     # Computed fields
     node_count: int = Field(0)
@@ -222,19 +223,19 @@ class DAGNodeRunResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: str
-    run_id: str
+    id: str | None = None
+    run_id: str | None = None
     node_id: str
     node_name: str
     node_type: str
     status: NodeStatus
-    started_at: datetime | None
-    finished_at: datetime | None
-    attempt_count: int
-    last_error: str | None
-    input_json: dict[str, Any]
-    output_json: dict[str, Any]
-    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    attempt_count: int = 0
+    last_error: str | None = None
+    input_json: dict[str, Any] = Field(default_factory=dict)
+    output_json: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime | None = None
 
 
 class DAGNodeAttemptResponse(BaseModel):
@@ -262,20 +263,20 @@ class DAGPlaybookRunResponse(BaseModel):
     id: str
     playbook_name: str
     playbook_version: str
-    engine_version: EngineVersion
+    engine_version: EngineVersion = "v0.7"
     mode: str
     status: RunStatus
-    failure_strategy: FailureStrategy
-    created_by_user_id: str | None
-    input_json: dict[str, Any]
-    output_json: dict[str, Any]
+    failure_strategy: FailureStrategy | str | None = None
+    created_by_user_id: str | None = None
+    input_json: dict[str, Any] = Field(default_factory=dict)
+    output_json: dict[str, Any] = Field(default_factory=dict)
     started_at: datetime
-    finished_at: datetime | None
-    error_message: str | None
+    finished_at: datetime | None = None
+    error_message: str | None = None
 
     # DAG-specific
-    definition_id: str | None
-    execution_mode: ExecutionMode
+    definition_id: str | None = None
+    execution_mode: ExecutionMode | str = "dag"
 
     # Node summary
     total_nodes: int = 0
@@ -285,7 +286,7 @@ class DAGPlaybookRunResponse(BaseModel):
     pending_nodes: int = 0
 
     # Control flags
-    cancel_requested_at: datetime | None
+    cancel_requested_at: datetime | None = None
     can_resume: bool = False
 
 
@@ -332,7 +333,5 @@ class PlaybookRunErrorResponse(BaseModel):
     success: bool = Field(False, description="Always false for error responses")
     error_code: str = Field(..., description="Error code for categorization")
     message: str = Field(..., description="Human-readable error message")
-    details: dict[str, Any] | None = Field(
-        None, description="Additional error details"
-    )
+    details: dict[str, Any] | None = Field(None, description="Additional error details")
     trace_id: str | None = Field(None, description="Request trace ID for debugging")

@@ -4,7 +4,7 @@ Wazuh Real-time Alert Stream Schemas
 Defines data models for real-time alert streaming via WebSocket.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -81,18 +81,14 @@ class WazuhAlertStream(BaseModel):
     # Analysis metadata
     analyzed: bool = Field(default=False, description="Whether AI analysis is complete")
     correlation_id: str | None = Field(None, description="Correlation group ID")
-    risk_score: float | None = Field(
-        None, description="Calculated risk score (0-100)"
-    )
+    risk_score: float | None = Field(None, description="Calculated risk score (0-100)")
 
     # Processing metadata
     received_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When SOC Copilot received the alert",
     )
-    processed_at: datetime | None = Field(
-        None, description="When processing completed"
-    )
+    processed_at: datetime | None = Field(None, description="When processing completed")
 
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}
@@ -106,7 +102,7 @@ class WazuhStreamMessage(BaseModel):
     type: str = Field(..., description="Message type: alert, heartbeat, stats, error")
     data: dict[str, Any] = Field(..., description="Message payload")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Message timestamp"
+        default_factory=lambda: datetime.now(UTC), description="Message timestamp"
     )
     channel: str = Field(default="wazuh", description="Channel name")
 
@@ -125,9 +121,7 @@ class AlertStreamFilter(BaseModel):
     agent_ids: list[str] | None = Field(None, description="Filter by agent IDs")
     event_types: list[str] | None = Field(None, description="Filter by event types")
     source_ips: list[str] | None = Field(None, description="Filter by source IPs")
-    has_mitre: bool | None = Field(
-        None, description="Only alerts with MITRE mapping"
-    )
+    has_mitre: bool | None = Field(None, description="Only alerts with MITRE mapping")
     limit: int | None = Field(None, description="Max alerts to stream (0=unlimited)")
 
 
@@ -150,9 +144,7 @@ class AlertStreamStats(BaseModel):
         default_factory=list, description="Top source IPs"
     )
     stream_start_time: datetime = Field(..., description="When stream started")
-    last_alert_time: datetime | None = Field(
-        None, description="Last alert timestamp"
-    )
+    last_alert_time: datetime | None = Field(None, description="Last alert timestamp")
 
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}

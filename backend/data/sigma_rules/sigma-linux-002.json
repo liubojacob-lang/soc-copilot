@@ -1,0 +1,34 @@
+{
+  "id": "sigma-linux-002",
+  "title": "Suspicious Cron Job Creation",
+  "description": "Detects creation of cron jobs (audit syscall 257 with comm=crontab), potentially for attacker persistence.",
+  "status": "stable",
+  "level": "medium",
+  "author": "SOC Copilot",
+  "category": "linux",
+  "tags": [
+    "attack.persistence",
+    "attack.t1053.003"
+  ],
+  "mitre_techniques": [
+    "T1053.003"
+  ],
+  "logsource": {
+    "product": "linux",
+    "service": "audit"
+  },
+  "detection": {
+    "selection": {
+      "syscall": 257,
+      "comm": "crontab",
+      "key": "cron"
+    },
+    "condition": "selection"
+  },
+  "false_positives": [
+    "Legitimate cron job management"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1053/003/"
+  ]
+}

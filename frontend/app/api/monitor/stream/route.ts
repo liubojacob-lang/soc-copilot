@@ -6,12 +6,19 @@ export async function GET(request: NextRequest) {
   const url = `${backendUrl}/api/monitor/stream`;
 
   try {
+    const authHeader = request.headers.get("authorization");
+    const headers: Record<string, string> = {
+      Accept: "text/event-stream",
+      "Cache-Control": "no-cache",
+    };
+    if (authHeader) {
+      headers["Authorization"] = authHeader;
+    }
+
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        Accept: "text/event-stream",
-        "Cache-Control": "no-cache",
-      },
+      headers,
+      signal: request.signal,
     });
 
     if (!response.ok) {
@@ -21,9 +28,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // For SSE, we need to return a streaming response
     const reader = response.body?.getReader();
-
     if (!reader) {
       return new Response(JSON.stringify({ error: "No response body" }), {
         status: 500,
@@ -31,36 +36,44 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    let isClosed = false;
+    const cleanup = () => {
+      if (isClosed) return;
+      isClosed = true;
+      try {
+        reader.cancel();
+      } catch {
+        // ignore
+      }
+    };
+
+    request.signal.addEventListener("abort", cleanup);
+
     const stream = new ReadableStream({
       async start(controller) {
-        const decoder = new TextDecoder();
-
         try {
-          while (true) {
+          while (!isClosed && !request.signal.aborted) {
             const { done, value } = await reader.read();
-
-            if (done) {
-              try {
-                controller.close();
-              } catch {
-                // Controller might already be closed, ignore
-              }
+            if (done || isClosed || request.signal.aborted) {
               break;
             }
-
             controller.enqueue(value);
           }
         } catch (error) {
-          console.error("[SSE Proxy] Stream error:", error);
+          if (!request.signal.aborted) {
+            console.error("[SSE Proxy] Stream error:", error);
+          }
+        } finally {
+          cleanup();
           try {
-            controller.error(error);
+            controller.close();
           } catch {
-            // Controller might already be closed, ignore
+            // ignore
           }
         }
       },
       cancel() {
-        reader.cancel();
+        cleanup();
       },
     });
 
@@ -73,6 +86,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    if ((error as any)?.name === "AbortError" || request.signal.aborted) {
+      return new Response(null, { status: 499 });
+    }
     console.error("[SSE Proxy] Error:", error);
     return new Response(JSON.stringify({ error: "Failed to connect to backend" }), {
       status: 500,

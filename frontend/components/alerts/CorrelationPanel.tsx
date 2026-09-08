@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { AlertTriangle, Link2, Clock, User, Server } from "lucide-react";
+import { apiClient } from "@/lib/api/client";
 
 interface CorrelatedEvent {
   id: string;
@@ -32,6 +33,7 @@ export const CorrelationPanel = React.memo(function CorrelationPanel({
   alertId,
 }: CorrelationPanelProps) {
   const t = useTranslations("correlation");
+  const format = useFormatter();
   const [incidents, setIncidents] = useState<CorrelatedEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIncident, setSelectedIncident] = useState<CorrelatedEvent | null>(null);
@@ -43,9 +45,8 @@ export const CorrelationPanel = React.memo(function CorrelationPanel({
   const fetchRelatedIncidents = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/correlation/incidents?limit=10`);
-      const data = await response.json();
-      setIncidents(data);
+      const data = await apiClient.get<CorrelatedEvent[]>("/api/v1/correlation/incidents?limit=10");
+      setIncidents(data || []);
     } catch (error) {
       console.error("Failed to fetch correlated incidents:", error);
     } finally {
@@ -145,8 +146,8 @@ export const CorrelationPanel = React.memo(function CorrelationPanel({
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               <span>
-                {new Date(incident.first_seen).toLocaleTimeString()} -{" "}
-                {new Date(incident.last_seen).toLocaleTimeString()}
+                {format.dateTime(new Date(incident.first_seen), { timeStyle: "medium" })} -{" "}
+                {format.dateTime(new Date(incident.last_seen), { timeStyle: "medium" })}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -206,7 +207,8 @@ interface IncidentDetailModalProps {
 }
 
 function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModalProps) {
-  const t = useTranslations("triggers");
+  const format = useFormatter();
+  const t = useTranslations("correlation");
   const [status, setStatus] = useState(incident.status);
   const [assignedTo, setAssignedTo] = useState(incident.assigned_to || "");
   const [updating, setUpdating] = useState(false);
@@ -217,14 +219,9 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
       const params = new URLSearchParams({ status });
       if (assignedTo) params.append("assigned_to", assignedTo);
 
-      const response = await fetch(`/api/correlation/incidents/${incident.id}/status?${params}`, {
-        method: "PUT",
-      });
-
-      if (response.ok) {
-        onUpdate();
-        onClose();
-      }
+      await apiClient.put(`/api/v1/correlation/incidents/${incident.id}/status?${params}`);
+      onUpdate();
+      onClose();
     } catch (error) {
       console.error("Failed to update incident:", error);
     } finally {
@@ -268,11 +265,21 @@ function IncidentDetailModal({ incident, onClose, onUpdate }: IncidentDetailModa
             </div>
             <div>
               <span className="font-medium">First Seen:</span>
-              <span className="ml-2">{new Date(incident.first_seen).toLocaleString()}</span>
+              <span className="ml-2">
+                {format.dateTime(new Date(incident.first_seen), {
+                  dateStyle: "medium",
+                  timeStyle: "medium",
+                })}
+              </span>
             </div>
             <div>
               <span className="font-medium">Last Seen:</span>
-              <span className="ml-2">{new Date(incident.last_seen).toLocaleString()}</span>
+              <span className="ml-2">
+                {format.dateTime(new Date(incident.last_seen), {
+                  dateStyle: "medium",
+                  timeStyle: "medium",
+                })}
+              </span>
             </div>
           </div>
 

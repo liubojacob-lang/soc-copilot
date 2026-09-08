@@ -1,0 +1,59 @@
+# Alert worker（Redis Streams 消费 + 通知派发）— compose 生产栈对应物
+# k8s 拓扑此前缺失该组件，导致通知派发在 k8s 部署下整体缺失。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soc-copilot-alert-worker
+  namespace: soc-copilot
+  labels:
+    app: soc-copilot-alert-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: soc-copilot-alert-worker
+  template:
+    metadata:
+      labels:
+        app: soc-copilot-alert-worker
+    spec:
+      containers:
+        - name: alert-worker
+          image: soc-copilot-backend:0.9.0 # 与 backend 使用同一镜像（workers/ 内置）
+          imagePullPolicy: IfNotPresent
+          command: ["python", "workers/alert_worker.py"]
+          envFrom:
+            - configMapRef:
+                name: soc-copilot-config
+            - secretRef:
+                name: soc-copilot-secrets
+          env:
+            - name: WORKER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            exec:
+              command:
+                - python3
+                - -c
+                - "import os, redis; redis.Redis.from_url(os.environ['REDIS_URL']).ping()"
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            exec:
+              command:
+                - python3
+                - -c
+                - "import os, redis; redis.Redis.from_url(os.environ['REDIS_URL']).ping()"
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+      restartPolicy: Always

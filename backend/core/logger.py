@@ -19,6 +19,41 @@ from contextvars import ContextVar
 _ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development").lower()
 from datetime import UTC, datetime
 
+# Sensitive keys to redact from log extra fields
+_SENSITIVE_EXTRA_KEYS = frozenset(
+    {
+        "password",
+        "passwd",
+        "secret",
+        "token",
+        "api_key",
+        "apikey",
+        "access_token",
+        "refresh_token",
+        "private_key",
+        "credential",
+        "authorization",
+        "cookie",
+        "set-cookie",
+    }
+)
+
+
+def _redact_extra(extra: dict) -> dict:
+    """Redact sensitive keys from log extra dict (recursive)."""
+    if not extra or not isinstance(extra, dict):
+        return extra
+    result = {}
+    for k, v in extra.items():
+        if any(sensitive in str(k).lower() for sensitive in _SENSITIVE_EXTRA_KEYS):
+            result[k] = "***"
+        elif isinstance(v, dict):
+            result[k] = _redact_extra(v)
+        else:
+            result[k] = v
+    return result
+
+
 try:
     from pythonjsonlogger.json import JsonFormatter
 except ImportError:
@@ -91,9 +126,9 @@ class StructuredJsonFormatter(JsonFormatter):
         # Use logger name as the module
         log_record["logger"] = record.name
 
-        # Handle extra fields from extra parameter
+        # Handle extra fields from extra parameter (with sensitive data redaction)
         if hasattr(record, "extra") and record.extra:
-            log_record["extra"] = record.extra
+            log_record["extra"] = _redact_extra(record.extra)
 
 
 class StructuredLogger(logging.Logger):

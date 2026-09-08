@@ -20,7 +20,7 @@ const roundedClasses = {
   full: "rounded-full",
 };
 
-export function Skeleton({
+const Skeleton = React.memo(function Skeleton({
   className = "",
   width,
   height,
@@ -33,9 +33,9 @@ export function Skeleton({
       style={{ width, height }}
     />
   );
-}
+});
 
-export function SkeletonText({
+const SkeletonText = React.memo(function SkeletonText({
   lines = 3,
   lineHeight = "1rem",
   lastLineWidth = "60%",
@@ -53,9 +53,9 @@ export function SkeletonText({
       ))}
     </div>
   );
-}
+});
 
-export function SkeletonAvatar({
+const SkeletonAvatar = React.memo(function SkeletonAvatar({
   size = "md",
   className = "",
 }: {
@@ -66,9 +66,9 @@ export function SkeletonAvatar({
   return (
     <Skeleton width={sizeMap[size]} height={sizeMap[size]} rounded="full" className={className} />
   );
-}
+});
 
-export function SkeletonCard({
+const SkeletonCard = React.memo(function SkeletonCard({
   hasHeader = true,
   hasAvatar = false,
   lines = 3,
@@ -93,9 +93,9 @@ export function SkeletonCard({
       <SkeletonText lines={lines} />
     </div>
   );
-}
+});
 
-export function SkeletonTable({
+const SkeletonTable = React.memo(function SkeletonTable({
   rows = 5,
   columns = 4,
   hasHeader = true,
@@ -134,9 +134,9 @@ export function SkeletonTable({
       ))}
     </div>
   );
-}
+});
 
-export function SkeletonList({
+const SkeletonList = React.memo(function SkeletonList({
   items = 5,
   hasAvatar = true,
   hasSecondaryText = true,
@@ -164,9 +164,13 @@ export function SkeletonList({
       ))}
     </div>
   );
-}
+});
 
-export function SkeletonPlaybookRun({ className = "" }: { className?: string }) {
+const SkeletonPlaybookRun = React.memo(function SkeletonPlaybookRun({
+  className = "",
+}: {
+  className?: string;
+}) {
   return (
     <div className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg ${className}`}>
       <div className="flex items-center justify-between mb-3">
@@ -184,9 +188,9 @@ export function SkeletonPlaybookRun({ className = "" }: { className?: string }) 
       </div>
     </div>
   );
-}
+});
 
-export function SkeletonChart({
+const SkeletonChart = React.memo(function SkeletonChart({
   type = "bar",
   className = "",
 }: {
@@ -215,9 +219,9 @@ export function SkeletonChart({
       </div>
     </div>
   );
-}
+});
 
-export function SkeletonStatGrid({
+const SkeletonStatGrid = React.memo(function SkeletonStatGrid({
   count = 4,
   className = "",
 }: {
@@ -244,9 +248,9 @@ export function SkeletonStatGrid({
       ))}
     </div>
   );
-}
+});
 
-export function SkeletonPage({ className = "" }: { className?: string }) {
+const SkeletonPage = React.memo(function SkeletonPage({ className = "" }: { className?: string }) {
   return (
     <div className={`p-6 ${className}`}>
       <div className="mb-6 flex items-center justify-between">
@@ -269,6 +273,19 @@ export function SkeletonPage({ className = "" }: { className?: string }) {
       <SkeletonTable />
     </div>
   );
-}
+});
+
+export {
+  Skeleton,
+  SkeletonText,
+  SkeletonAvatar,
+  SkeletonCard,
+  SkeletonTable,
+  SkeletonList,
+  SkeletonPlaybookRun,
+  SkeletonChart,
+  SkeletonStatGrid,
+  SkeletonPage,
+};
 
 export default Skeleton;

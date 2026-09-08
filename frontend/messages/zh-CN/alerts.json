@@ -1,0 +1,63 @@
+{
+  "alertsPage": {
+    "title": "安全告警中心",
+    "subtitle": "实时告警流 - 由 Grafana + Loki 提供支持",
+    "realtimeStream": "实时告警流",
+    "realtimeDescription": "实时显示来自 Loki 的安全告警流，支持按严重级别、来源、类型等维度筛选和过滤。",
+    "realtimeFeatures": "功能特性",
+    "realtimeFeature1": "实时接收来自 Grafana Loki 的告警数据流",
+    "realtimeFeature2": "支持按严重级别 (Critical/High/Medium/Low) 筛选",
+    "realtimeFeature3": "支持按来源 IP、攻击类型等维度过滤",
+    "realtimeFeature4": "自动刷新告警列表，显示最新 100 条告警",
+    "grafanaDashboard": "Grafana 仪表板",
+    "grafanaDescription": "查看完整的 Grafana 安全运营仪表板，包含告警趋势、攻击类型分布、Agent 分布等可视化图表。",
+    "openDashboard": "打开 Grafana Dashboard →",
+    "info": "实时告警流",
+    "infoText": "此页面实时显示来自 Loki 的安全告警，数据由 Wazuh 事件接收器生成并发送到 Loki。"
+  },
+  "alerts": {
+    "title": "告警",
+    "filter": "筛选告警",
+    "assign": "分配",
+    "status": "状态",
+    "severity": "严重级别",
+    "low": "低",
+    "medium": "中",
+    "high": "高",
+    "critical": "严重",
+    "info": "提示",
+    "open": "开放",
+    "investigating": "调查中",
+    "resolved": "已解决",
+    "closed": "已关闭"
+  },
+  "alertDetails": {
+    "realtimeUpdate": "告警已实时更新"
+  },
+  "alertAnalyzer": {
+    "input": "输入",
+    "output": "输出",
+    "history": "历史",
+    "placeholder": "在此粘贴您的告警日志...",
+    "analyze": "分析",
+    "analyzing": "分析中...",
+    "analysisFailed": "分析失败",
+    "confidence": "置信度",
+    "escalate": "升级",
+    "id": "ID",
+    "summary": "摘要",
+    "entities": "实体",
+    "users": "用户",
+    "hosts": "主机",
+    "processes": "进程",
+    "evidencePoints": "证据点",
+    "recommendedActions": "建议操作",
+    "verify": "验证"
+  },
+  "ioc": {
+    "totalIocs": "IOC 总数",
+    "malicious": "恶意",
+    "suspicious": "可疑",
+    "benign": "良性"
+  }
+}

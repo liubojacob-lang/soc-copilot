@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations } from "next-intl";
 import { loadAuthState, logout, isAdmin, authFetchJSON } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
+import { ConfirmDialog } from "@/components/common";
+import { useToast } from "@/components/Toast";
 
 interface Secret {
   id: string;
@@ -16,8 +18,10 @@ interface Secret {
 }
 
 export default function SecretsPage() {
+  const format = useFormatter();
   const t = useTranslations("admin.secrets");
   const tCommon = useTranslations("common");
+  const { showToast } = useToast();
   const router = useRouter();
   const [secrets, setSecrets] = useState<Secret[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,8 +77,10 @@ export default function SecretsPage() {
       setShowCreateModal(false);
       resetCreateForm();
       await fetchSecrets();
+      showToast(t("createdSuccess"), "success");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create secret");
+      showToast(err instanceof Error ? err.message : t("failedToCreate"), "error");
     } finally {
       setCreating(false);
     }
@@ -94,8 +100,10 @@ export default function SecretsPage() {
       setShowDeleteModal(false);
       setSelectedSecret(null);
       await fetchSecrets();
+      showToast(t("deletedSuccess"), "success");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to delete secret");
+      showToast(err instanceof Error ? err.message : t("failedToDelete"), "error");
     } finally {
       setDeleting(false);
     }
@@ -107,7 +115,7 @@ export default function SecretsPage() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString();
+    return format.dateTime(new Date(dateStr), { dateStyle: "medium", timeStyle: "medium" });
   };
 
   if (loading) {
@@ -120,27 +128,25 @@ export default function SecretsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t("secrets")}</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t("encryptedStorage")}</p>
-          </div>
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        actions={
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
           >
-            {t("createSecret")}
+            + {t("createSecret")}
           </button>
-        </div>
+        }
+      />
+
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {error && (
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        )}
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
           {secrets.length === 0 ? (
@@ -330,59 +336,26 @@ export default function SecretsPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedSecret && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center mb-4">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-red-600 dark:text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-              <h3 className="ml-3 text-lg font-medium text-gray-900 dark:text-white">
-                {t("deleteSecret")}
-              </h3>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {t("deleteConfirm", { name: selectedSecret.name })}
-              </p>
-              <p className="text-sm text-red-600 dark:text-red-400 mt-2">{t("deleteWarning")}</p>
-            </div>
-
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSelectedSecret(null);
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                {tCommon("cancel")}
-              </button>
-              <button
-                onClick={handleDeleteSecret}
-                disabled={deleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {deleting ? t("deletingSecret") : t("deleteSecret")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteModal && !!selectedSecret}
+        title={t("deleteSecret")}
+        description={
+          <>
+            <p>{t("deleteConfirm", { name: selectedSecret?.name ?? "" })}</p>
+            <p className="text-red-600 dark:text-red-400 mt-2">{t("deleteWarning")}</p>
+          </>
+        }
+        confirmText={deleting ? t("deletingSecret") : t("deleteSecret")}
+        cancelText={tCommon("cancel")}
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDeleteSecret}
+        onCancel={() => {
+          setShowDeleteModal(false);
+          setSelectedSecret(null);
+        }}
+      />
     </div>
   );
 }

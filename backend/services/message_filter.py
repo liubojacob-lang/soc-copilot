@@ -117,7 +117,7 @@ class MessageFilterEngine:
                 if rule.matches(message_data):
                     matched_rules.append(rule.id or rule.name)
                     # Update last triggered time
-                    rule.last_triggered_at = datetime.now(UTC).isoformat()
+                    rule.last_triggered_at = datetime.now(UTC)
 
             # Make decision
             should_send = filter_set.should_send_message(message_data)
@@ -205,9 +205,7 @@ class RateLimiter:
         self.message_counts: dict[str, list[datetime]] = {}
         self._lock = asyncio.Lock()
 
-    async def check_rate_limit(
-        self, user_id: str, max_per_minute: int | None
-    ) -> bool:
+    async def check_rate_limit(self, user_id: str, max_per_minute: int | None) -> bool:
         """
         Check if user is within their rate limit.
 

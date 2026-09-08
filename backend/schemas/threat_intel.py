@@ -1,6 +1,5 @@
 """Schemas for threat intelligence."""
 
-import ipaddress
 import re
 from enum import Enum
 
@@ -44,7 +43,9 @@ class ThreatIntelItem(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Threat tags")
     references: list[str] = Field(default_factory=list, description="Reference URLs")
     cached: bool = Field(default=False, description="Whether from cache")
-    skipped: bool = Field(default=False, description="Whether skipped due to limit/filter")
+    skipped: bool = Field(
+        default=False, description="Whether skipped due to limit/filter"
+    )
     skipped_reason: str | None = Field(
         None,
         description="Reason for skipping (e.g., 'private_ip', 'internal_domain', 'blocked_tld', 'rate_limit')",
@@ -87,7 +88,9 @@ class BulkThreatIntelRequestItem(BaseModel):
     def validate_ioc_type(cls, v: str) -> str:
         valid = {e.value for e in IOCType}
         if v not in valid:
-            raise ValueError(f"Invalid IOC type '{v}'. Must be one of: {', '.join(sorted(valid))}")
+            raise ValueError(
+                f"Invalid IOC type '{v}'. Must be one of: {', '.join(sorted(valid))}"
+            )
         return v
 
     @field_validator("ioc_value")
@@ -121,7 +124,9 @@ class BulkThreatIntelResponse(BaseModel):
     results: list[ThreatIntelResponse] = Field(
         default_factory=list, description="List of lookup results"
     )
-    skipped_count: int = Field(default=0, description="Number of IOCs skipped due to rate limiting")
+    skipped_count: int = Field(
+        default=0, description="Number of IOCs skipped due to rate limiting"
+    )
     skipped_items: list[ThreatIntelItem] = Field(
         default_factory=list, description="List of IOCs skipped due to rate limiting"
     )
@@ -156,3 +161,70 @@ class ThreatIntelAnalysis(BaseModel):
         description="IOCs filtered by compliance policy (not sent to external TI)",
     )
     error_reason: str | None = Field(None, description="Error message if lookup failed")
+
+
+# ── v0.9.0 IOC Batch Query (simplified batch) ──────────────────────
+
+
+class IOCBatchRequestItem(BaseModel):
+    """Single IOC for batch query."""
+
+    ioc_type: str = Field(..., description="IOC type (ip/domain/url/hash)")
+    ioc_value: str = Field(..., description="IOC value")
+
+    @field_validator("ioc_type")
+    @classmethod
+    def validate_ioc_type(cls, v: str) -> str:
+        valid = {e.value for e in IOCType}
+        if v not in valid:
+            raise ValueError(
+                f"Invalid IOC type '{v}'. Must be one of: {', '.join(sorted(valid))}"
+            )
+        return v
+
+    @field_validator("ioc_value")
+    @classmethod
+    def validate_ioc_value(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("IOC value must not be empty")
+        return v.strip()
+
+
+class IOCBatchRequest(BaseModel):
+    """Batch IOC query request."""
+
+    items: list[IOCBatchRequestItem] = Field(
+        ..., min_length=1, max_length=50, description="IOCs to query (1-50)"
+    )
+
+
+class IOCBatchResultItem(BaseModel):
+    """Single IOC batch query result."""
+
+    ioc_type: str
+    ioc_value: str
+    verdict: Verdict = Field(default=Verdict.unknown)
+    score: int = Field(default=0, ge=0, le=100)
+    source: str = Field(default="otx", description="Intelligence source")
+    pulse_count: int = Field(default=0, description="Number of threat pulses")
+    tags: list[str] = Field(default_factory=list)
+    references: list[str] = Field(default_factory=list)
+    details: dict = Field(
+        default_factory=dict, description="Additional details/raw data"
+    )
+    cached: bool = Field(default=False)
+    error: str | None = Field(None, description="Error if lookup failed")
+
+
+class IOCBatchResponse(BaseModel):
+    """Batch IOC query response."""
+
+    request_id: str = Field(..., description="Request tracing ID")
+    provider: str = Field(default="otx")
+    total: int = Field(..., description="Total IOCs in request")
+    results: list[IOCBatchResultItem] = Field(default_factory=list)
+    skipped_count: int = Field(default=0)
+    errors: list[dict] = Field(
+        default_factory=list,
+        description="Error details [{ioc_type, ioc_value, error}]",
+    )

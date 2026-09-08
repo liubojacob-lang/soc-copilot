@@ -23,12 +23,16 @@
 **文件:** `backend/.env`
 
 ```
-NVIDIA_API_KEY=nvapi-qFTni6ysv...
-ZHIPU_API_KEY=7b575e9642cf...
-OTX_API_KEY=7d16366aa30e9c...
-JWT_SECRET=6-yj8jtzGaPf33GOuHeLqdnyrWNXByqq8CW6pT_5EPM
-SECRET_ENCRYPTION_KEY=94xQFVaBr-BEYwct6T9fohRBdMYWJcbaFyml2ALlh_M=
+NVIDIA_API_KEY=[REDACTED - 已轮换，值已从文档移除]
+ZHIPU_API_KEY=[REDACTED - 已轮换，值已从文档移除]
+OTX_API_KEY=[REDACTED - 已轮换，值已从文档移除]
+JWT_SECRET=[REDACTED - 值已从文档移除]
+SECRET_ENCRYPTION_KEY=[REDACTED - 值已从文档移除]
 ```
+
+> 2026-09-07 注：原文误将完整密钥值抄录进本报告并随仓库提交。
+> 涉及的旧值视为已泄露（即使已停用），相关密钥均已轮换；
+> git 历史中的残留 blob 需用 git filter-repo/BFG 清理后方可开源。
 
 **修复:**
 

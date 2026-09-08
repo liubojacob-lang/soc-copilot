@@ -63,7 +63,7 @@ class BaseNodePlugin(ABC):
         """
         ...
 
-    def validate_input(self, input_json: dict[str, Any]) -> None:
+    def validate_input(self, input_json: dict[str, Any]) -> None:  # noqa: B027
         """Validate input before execution.
 
         Override this method to provide custom validation.

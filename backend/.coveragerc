@@ -19,4 +19,6 @@ exclude_lines =
     raise NotImplementedError
     if TYPE_CHECKING:
     @abstractmethod
-fail_under = 80
+# Coverage threshold is set in a single place: pytest.ini's --cov-fail-under
+# (the CLI flag overrides any value here, so defining it in both files is a
+# maintenance trap). Do not re-add fail_under here.

@@ -51,8 +51,13 @@ export function AlertWebSocket({
     }
 
     const token = getAccessToken();
-    if (!token) {
-      console.warn("[AlertWebSocket] No access token found");
+
+    // Token is optional: with the cookie auth flow there is no JS-readable
+    // token, and the backend authenticates the WS handshake via the
+    // access_token cookie (sent automatically on the same-site handshake).
+    if (!token && typeof document !== "undefined" && !document.cookie.includes("csrf_token")) {
+      // No token AND no cookies at all — nothing to authenticate with.
+      console.warn("[AlertWebSocket] No credentials available");
       return;
     }
 
@@ -71,7 +76,11 @@ export function AlertWebSocket({
       // Pass token via Sec-WebSocket-Protocol to avoid URL exposure in logs/history.
       // Backend must extract token from the Sec-WebSocket-Protocol header.
       // Query parameter channels are acceptable (non-sensitive).
-      const ws = new WebSocket(`${wsUrl}?channels=${channelParam}`, `access_token.${token}`);
+      // Cookie-authenticated sessions (no JS-readable token) omit the
+      // subprotocol; the backend falls back to the access_token cookie.
+      const ws = token
+        ? new WebSocket(`${wsUrl}?channels=${channelParam}`, `access_token.${token}`)
+        : new WebSocket(`${wsUrl}?channels=${channelParam}`);
 
       ws.onopen = () => {
         setConnectionStatus("connected");

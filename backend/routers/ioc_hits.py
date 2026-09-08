@@ -1,11 +1,12 @@
 """IOC Hits router for IOC hit management API."""
 
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user
+from models.user import UserModel
 from schemas.ioc_hit import (
     IOCHitCreate,
     IOCHitListResponse,
@@ -13,7 +14,7 @@ from schemas.ioc_hit import (
 )
 from services.ioc_hits_service import IOCHitsService
 
-router = APIRouter(prefix="/api/ioc-hits", tags=["ioc_hits"])
+router = APIRouter(prefix="/api/v1/ioc-hits", tags=["ioc_hits"])
 logger = get_logger(__name__)
 
 
@@ -22,6 +23,7 @@ async def list_ioc_hits(
     ioc: str | None = Query(None, description="Filter by IOC value"),
     limit: int = Query(100, ge=1, le=500, description="Maximum results"),
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> IOCHitListResponse:
     """List IOC hits with optional IOC filter."""
     if not ioc:
@@ -37,6 +39,7 @@ async def list_ioc_hits_by_asset(
     asset_id: str,
     limit: int = Query(100, ge=1, le=500, description="Maximum results"),
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> IOCHitListResponse:
     """List IOC hits by asset ID."""
     service = IOCHitsService(session)
@@ -49,6 +52,7 @@ async def list_ioc_hits_by_history(
     history_id: str,
     limit: int = Query(100, ge=1, le=500, description="Maximum results"),
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> list[IOCHitResponse]:
     """List IOC hits by history ID."""
     service = IOCHitsService(session)
@@ -59,6 +63,7 @@ async def list_ioc_hits_by_history(
 async def create_manual_ioc_hit(
     data: IOCHitCreate,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> IOCHitResponse:
     """Manually create an IOC hit.
 

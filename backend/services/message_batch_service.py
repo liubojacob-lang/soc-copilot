@@ -90,10 +90,7 @@ class MessageBatch:
 
         # Ready if max delay exceeded
         age_ms = (time.time() - self.created_at) * 1000
-        if age_ms >= max_delay_ms and len(self.messages) > 0:
-            return True
-
-        return False
+        return bool(age_ms >= max_delay_ms and len(self.messages) > 0)
 
     def can_fit_more(self, min_size: int) -> bool:
         """Check if batch can accept more messages."""

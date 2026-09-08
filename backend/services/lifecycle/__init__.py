@@ -36,7 +36,9 @@ from core.lifecycle import (
 )
 
 from .ai_task_processor_service import AITaskProcessorService
+from .alert_pipeline_service import AlertPipelineService
 from .cron_scheduler_service import CronSchedulerServiceWrapper
+from .data_retention_service import DataRetentionService
 from .database_service import DatabaseService
 from .queue_manager_service import QueueManagerService
 from .rate_limiter_service import RateLimiterService
@@ -47,20 +49,22 @@ from .websocket_monitoring_service import (
 )
 
 __all__ = [
-    # Core lifecycle components
-    "LifecycleService",
-    "LifecycleManager",
-    "ServicePriority",
-    "ServiceState",
-    "get_lifecycle_manager",
-    "reset_lifecycle_manager",
+    "AITaskProcessorService",
+    "AlertEvaluatorService",
+    "AlertPipelineService",
+    "AuditArchiveService",
+    "CronSchedulerServiceWrapper",
+    "DataRetentionService",
     # Service implementations
     "DatabaseService",
+    "LifecycleManager",
+    # Core lifecycle components
+    "LifecycleService",
     "QueueManagerService",
-    "CronSchedulerServiceWrapper",
-    "AITaskProcessorService",
     "RateLimiterService",
+    "ServicePriority",
+    "ServiceState",
     "WebSocketMonitoringService",
-    "AlertEvaluatorService",
-    "AuditArchiveService",
+    "get_lifecycle_manager",
+    "reset_lifecycle_manager",
 ]

@@ -36,9 +36,7 @@ class AssetRepository:
         await session.flush()
         return asset
 
-    async def get_by_id(
-        self, session: AsyncSession, asset_id: str
-    ) -> AssetDB | None:
+    async def get_by_id(self, session: AsyncSession, asset_id: str) -> AssetDB | None:
         """Get asset by ID."""
         result = await session.execute(select(AssetDB).where(AssetDB.id == asset_id))
         return result.scalar_one_or_none()
@@ -114,7 +112,9 @@ class AssetRepository:
         """Delete an asset."""
         await session.delete(asset)
 
-    async def get_by_ips(self, session: AsyncSession, ips: builtins.list[str]) -> builtins.list[AssetDB]:
+    async def get_by_ips(
+        self, session: AsyncSession, ips: builtins.list[str]
+    ) -> builtins.list[AssetDB]:
         """Get assets by list of IPs."""
         result = await session.execute(select(AssetDB).where(AssetDB.ip.in_(ips)))
         return list(result.scalars().all())

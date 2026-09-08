@@ -1,27 +1,29 @@
 "use client";
 
 import { useEffect, useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 import { X, Keyboard } from "lucide-react";
 
 interface ShortcutItem {
   key: string;
-  description: string;
-  category?: string;
+  descriptionKey: string;
+  categoryKey: string;
 }
 
 const SHORTCUTS: ShortcutItem[] = [
-  { key: "r", description: "刷新当前页面", category: "通用" },
-  { key: "/", description: "聚焦搜索框", category: "通用" },
-  { key: "Escape", description: "关闭弹窗/取消操作", category: "通用" },
-  { key: "?", description: "显示快捷键帮助", category: "通用" },
-  { key: "⌘/Ctrl + K", description: "打开全局搜索", category: "通用" },
-  { key: "1", description: "切换到告警分析标签", category: "首页" },
-  { key: "2", description: "切换到时间线标签", category: "首页" },
-  { key: "3", description: "切换到报告标签", category: "首页" },
-  { key: "4", description: "切换到资产标签", category: "首页" },
+  { key: "r", descriptionKey: "items.refreshPage", categoryKey: "categories.general" },
+  { key: "/", descriptionKey: "items.focusSearch", categoryKey: "categories.general" },
+  { key: "Escape", descriptionKey: "items.closeDialog", categoryKey: "categories.general" },
+  { key: "?", descriptionKey: "items.showHelp", categoryKey: "categories.general" },
+  { key: "⌘/Ctrl + K", descriptionKey: "items.openSearch", categoryKey: "categories.general" },
+  { key: "1", descriptionKey: "items.tabAlerts", categoryKey: "categories.home" },
+  { key: "2", descriptionKey: "items.tabTimeline", categoryKey: "categories.home" },
+  { key: "3", descriptionKey: "items.tabReports", categoryKey: "categories.home" },
+  { key: "4", descriptionKey: "items.tabAssets", categoryKey: "categories.home" },
 ];
 
 export function KeyboardShortcutsHelp() {
+  const t = useTranslations("shortcuts");
   const [isOpen, setIsOpen] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -50,7 +52,7 @@ export function KeyboardShortcutsHelp() {
 
   const groupedShortcuts = SHORTCUTS.reduce(
     (acc, shortcut) => {
-      const category = shortcut.category || "其他";
+      const category = t(shortcut.categoryKey);
       if (!acc[category]) acc[category] = [];
       acc[category].push(shortcut);
       return acc;
@@ -77,13 +79,13 @@ export function KeyboardShortcutsHelp() {
               id="shortcuts-title"
               className="text-lg font-semibold text-gray-900 dark:text-white"
             >
-              键盘快捷键
+              {t("title")}
             </h2>
           </div>
           <button
             onClick={handleClose}
             className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            aria-label="关闭"
+            aria-label={t("close")}
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -102,7 +104,7 @@ export function KeyboardShortcutsHelp() {
                     className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   >
                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {shortcut.description}
+                      {t(shortcut.descriptionKey)}
                     </span>
                     <kbd className="px-2 py-1 text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded border border-gray-200 dark:border-gray-600">
                       {shortcut.key}
@@ -116,11 +118,13 @@ export function KeyboardShortcutsHelp() {
 
         <div className="p-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            按{" "}
-            <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-200 dark:bg-gray-700 rounded">
-              ?
-            </kbd>{" "}
-            随时打开此帮助
+            {t.rich("footer", {
+              kbd: (chunks) => (
+                <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-200 dark:bg-gray-700 rounded">
+                  {chunks}
+                </kbd>
+              ),
+            })}
           </p>
         </div>
       </div>

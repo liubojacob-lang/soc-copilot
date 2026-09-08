@@ -13,7 +13,7 @@ test.describe("Internationalization (i18n)", () => {
   });
 
   test("loads Chinese content when switching locale", async ({ page }) => {
-    await page.goto("/zh");
+    await page.goto("/zh-CN");
 
     await expect(page.locator("text=/告警|仪表盘|安全/i")).toBeVisible({ timeout: 10000 });
   });
@@ -23,17 +23,17 @@ test.describe("Internationalization (i18n)", () => {
 
     const langSwitcher = page
       .locator(
-        '[data-testid="lang-switcher"], button:has-text("中文"), button:has-text("EN"), select[aria-label*="language" i], a[href*="/zh/"]'
+        '[data-testid="lang-switcher"], button:has-text("中文"), button:has-text("EN"), select[aria-label*="language" i], a[href*="/zh-CN/"]'
       )
       .first();
 
     if (await langSwitcher.isVisible()) {
       await langSwitcher.click();
 
-      const zhLink = page.locator('a[href*="/zh/"], button:has-text("中文")').first();
+      const zhLink = page.locator('a[href*="/zh-CN/"], button:has-text("中文")').first();
       if (await zhLink.isVisible()) {
         await zhLink.click();
-        await expect(page).toHaveURL(/\/zh/);
+        await expect(page).toHaveURL(/\/zh-CN/);
       }
     }
   });
@@ -42,7 +42,7 @@ test.describe("Internationalization (i18n)", () => {
     await page.goto("/en/alerts");
 
     const langSwitcher = page
-      .locator('a[href*="/zh/alerts"], button:has-text("中文"), [data-testid="lang-switcher"]')
+      .locator('a[href*="/zh-CN/alerts"], button:has-text("中文"), [data-testid="lang-switcher"]')
       .first();
 
     if (await langSwitcher.isVisible()) {
@@ -63,14 +63,14 @@ test.describe("Internationalization (i18n)", () => {
   });
 
   test("falls back to English for missing translations", async ({ page }) => {
-    await page.goto("/zh");
+    await page.goto("/zh-CN");
 
     const bodyText = await page.locator("body").textContent();
     expect(bodyText).toBeTruthy();
   });
 
   test("valid locale paths are accessible", async ({ page }) => {
-    const locales = ["en", "zh"];
+    const locales = ["en", "zh-CN"];
 
     for (const locale of locales) {
       const response = await page.request.get(`/${locale}`);

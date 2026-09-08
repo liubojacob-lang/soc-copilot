@@ -1,0 +1,257 @@
+{
+  "playbooks": {
+    "title": "剧本",
+    "execute": "执行",
+    "history": "运行历史",
+    "dag": "DAG可视化",
+    "create": "创建剧本",
+    "delete": "删除剧本",
+    "running": "运行中",
+    "completed": "已完成",
+    "failed": "失败",
+    "subtitle": "剧本自动化与编排",
+    "duration": "持续时间",
+    "mode": "模式",
+    "started": "开始时间",
+    "playbook": "剧本",
+    "status": "状态",
+    "searchPlaceholder": "按名称或 ID 搜索...",
+    "noPlaybookRuns": "暂无剧本运行",
+    "runPlaybookHint": "运行剧本以在此处查看",
+    "noDefinitions": "未找到剧本定义",
+    "statuses": {
+      "running": "运行中",
+      "success": "成功",
+      "failed": "失败",
+      "pending": "待审批",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "expired": "已过期"
+    },
+    "queue": {
+      "queued": "排队中",
+      "running": "运行中"
+    },
+    "tabs": {
+      "definitions": "定义",
+      "runs": "运行",
+      "approvals": "审批",
+      "dag": "DAG",
+      "history": "历史"
+    },
+    "allPlaybooks": "所有剧本",
+    "allStatuses": "所有状态",
+    "approvals": {
+      "title": "剧本执行审批",
+      "subtitle": "审批剧本执行请求",
+      "status": "状态",
+      "requestedBy": "请求人",
+      "runId": "运行 ID",
+      "searchPlaceholder": "搜索审批...",
+      "actions": "操作",
+      "approve": "批准",
+      "reject": "拒绝",
+      "created": "创建时间",
+      "noApprovals": "无待审批项",
+      "noApprovalsDesc": "当前没有需要审批的剧本执行"
+    },
+    "definitions": {
+      "title": "剧本定义",
+      "subtitle": "管理剧本定义",
+      "name": "名称",
+      "description": "描述",
+      "version": "版本",
+      "status": "状态",
+      "actions": "操作",
+      "noDefinitions": "暂无剧本定义",
+      "searchPlaceholder": "搜索定义...",
+      "createFirst": "创建第一个剧本定义",
+      "createNew": "创建新定义",
+      "updated": "更新时间"
+    },
+    "detail": {
+      "title": "剧本详情",
+      "subtitle": "查看剧本定义与 DAG 流程编排",
+      "backToList": "返回列表",
+      "edit": "编辑剧本",
+      "basicInfo": "基础信息",
+      "version": "版本",
+      "nodes": "节点数",
+      "edges": "连线数",
+      "description": "描述",
+      "noDescription": "暂无描述",
+      "createdBy": "创建者",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "definitionId": "定义 ID",
+      "dagTitle": "DAG 流程拓扑",
+      "canvasView": "流程画布",
+      "jsonView": "JSON 源码",
+      "notFound": "剧本定义不存在或已被删除",
+      "loadFailed": "加载剧本定义失败",
+      "footerNodes": "{nodes} 个执行节点 · {edges} 条转换关系",
+      "footerHint": "支持平移缩放、节点选中与链路排查"
+    },
+    "edit": {
+      "title": "编辑剧本",
+      "subtitle": "修改剧本基础配置与 DAG 流程编排",
+      "backToDetail": "返回详情",
+      "save": "保存修改",
+      "saving": "正在保存...",
+      "loadFailed": "加载剧本定义失败",
+      "notFound": "剧本定义不存在或已被删除",
+      "basicConfig": "基础配置",
+      "name": "剧本名称",
+      "namePlaceholder": "例如: 自动化 IP 封禁响应",
+      "version": "版本号",
+      "isActive": "立即激活",
+      "activeLabel": "已激活 (Active)",
+      "draftLabel": "草稿 (Draft)",
+      "description": "功能描述",
+      "descriptionPlaceholder": "简明描述该剧本的触发条件、执行逻辑与应急响应目的...",
+      "dagTitle": "DAG 流程拓扑可视化",
+      "canvasView": "流程画布",
+      "jsonView": "JSON 源码",
+      "stepSummary": "步骤概要清单 ({count})",
+      "footerStats": "共计 {nodes} 个执行节点，{edges} 条转换关系",
+      "footerHint": "支持平移缩放、节点选中与链路排查",
+      "nameRequired": "请输入剧本名称",
+      "nodesRequired": "剧本流程必须包含至少一个节点",
+      "invalidEdge": "流程连线异常：节点 \"{source}\" 或 \"{target}\" 不存在于节点列表中",
+      "saveSuccess": "剧本定义保存成功！正在返回详情页...",
+      "saveFailed": "保存剧本定义失败，请检查数据格式",
+      "networkError": "网络请求异常，请检查后端服务连接状态"
+    },
+    "runDetail": {
+      "title": "运行详情",
+      "subtitle": "查看剧本运行状态与节点执行明细",
+      "backToRuns": "返回运行列表",
+      "cancel": "取消运行",
+      "cancelling": "正在取消...",
+      "autoRefreshHint": "运行中页面每 5 秒自动刷新",
+      "total": "总节点",
+      "completed": "成功",
+      "failed": "失败",
+      "running": "运行中",
+      "pending": "等待中",
+      "runInfo": "运行信息",
+      "version": "剧本版本",
+      "engineVersion": "引擎版本",
+      "failureStrategy": "失败策略",
+      "startedAt": "开始时间",
+      "finishedAt": "结束时间",
+      "duration": "耗时",
+      "createdBy": "执行人",
+      "runId": "运行 ID",
+      "definitionId": "定义 ID",
+      "errorMessage": "错误信息",
+      "dagTitle": "DAG 执行拓扑",
+      "canvasView": "流程画布",
+      "jsonView": "JSON 源码",
+      "nodeList": "节点执行明细",
+      "node": "节点",
+      "type": "类型",
+      "nodeStatus": "状态",
+      "attempts": "重试次数",
+      "error": "错误",
+      "noNodes": "暂无节点执行记录",
+      "notFound": "运行记录不存在或已被删除",
+      "loadFailed": "加载运行详情失败",
+      "nodeStatuses": {
+        "pending": "等待中",
+        "running": "运行中",
+        "success": "成功",
+        "failed": "失败",
+        "skipped": "已跳过",
+        "cancelled": "已取消"
+      }
+    }
+  },
+  "definitions": {
+    "name": "名称",
+    "subtitle": "剧本定义",
+    "title": "剧本定义",
+    "createFirst": "创建第一个剧本定义",
+    "createNew": "创建新定义",
+    "actions": "操作"
+  },
+  "approvals": {
+    "status": "状态",
+    "noApprovals": "无待审批项",
+    "created": "创建时间",
+    "subtitle": "剧本执行审批",
+    "approve": "批准",
+    "searchPlaceholder": "搜索审批...",
+    "noApprovalsDesc": "当前没有需要审批的剧本执行",
+    "requestedBy": "请求人",
+    "runId": "运行 ID",
+    "reject": "拒绝",
+    "title": "剧本执行审批",
+    "actions": "操作"
+  },
+  "runs": "运行",
+  "history": {
+    "justNow": "刚刚",
+    "title": "历史"
+  },
+  "queue": {
+    "running": "运行中",
+    "queued": "队列中"
+  },
+  "difficulty": {
+    "advanced": "高级",
+    "intermediate": "中级",
+    "beginner": "初级"
+  },
+  "playbookPanel": {
+    "title": "Playbook 助手",
+    "tabs": {
+      "queries": "查询",
+      "actions": "动作"
+    },
+    "errors": {
+      "noIOCs": "没有可用的 IOC",
+      "generateQueriesFailed": "生成查询失败",
+      "noHistoryId": "没有可用的历史 ID",
+      "generateActionsFailed": "生成动作失败"
+    },
+    "queries": {
+      "platform": "平台",
+      "platforms": {
+        "splunk": "Splunk",
+        "elastic_kql": "Elastic KQL",
+        "sentinel_kql": "Sentinel KQL"
+      },
+      "timeRange": "时间范围",
+      "timeRanges": {
+        "last_1h": "最近 1 小时",
+        "last_24h": "最近 24 小时",
+        "last_7d": "最近 7 天"
+      },
+      "generate": "生成查询",
+      "generating": "生成中...",
+      "fields": "字段",
+      "prerequisite": "前置条件",
+      "expectedFields": "期望字段"
+    },
+    "actions": {
+      "policy": "策略",
+      "policies": {
+        "safe": "安全",
+        "moderate": "适中",
+        "aggressive": "激进"
+      },
+      "generate": "生成动作",
+      "generating": "生成中...",
+      "copyMD": "复制 MD",
+      "risk": "风险",
+      "priority": "优先级",
+      "steps": "步骤",
+      "verification": "验证",
+      "rollback": "回滚"
+    }
+  },
+  "dag": {
+    "output": "输出"
+  }
+}

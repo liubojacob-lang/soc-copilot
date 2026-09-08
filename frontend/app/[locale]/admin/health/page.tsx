@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { loadAuthState, isAdmin, authFetchJSON } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import { CheckCircle, XCircle, RefreshCw, Database, HardDrive, Cpu, Settings } from "lucide-react";
 
 interface DatabaseHealth {
@@ -102,15 +102,15 @@ export default function AdminHealthPage() {
   useEffect(() => {
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     if (!isAdmin(authState.user)) {
-      router.push(`/${locale}`);
+      router.push("/");
       return;
     }
     loadHealth();
-  }, [router, locale]);
+  }, [router]);
 
   const refresh = async () => {
     setRefreshing(true);
@@ -125,23 +125,22 @@ export default function AdminHealthPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation
-        title={t("systemHealth", { default: "System Health" })}
-        subtitle={t("subtitle", { default: "Runtime status and infrastructure health" })}
-      />
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-end mb-6">
+      <PageHeader
+        title={t("systemHealth")}
+        subtitle={t("subtitle")}
+        actions={
           <button
             onClick={refresh}
             disabled={refreshing}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
           </button>
-        </div>
+        }
+      />
 
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
             {error}

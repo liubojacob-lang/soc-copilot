@@ -10,6 +10,7 @@ from starlette.types import ASGIApp
 from core.logger import get_logger
 from core.sensitive_data import redact_dict, redact_headers, redact_request_body
 from repositories.audit_repository import AuditRepository
+from utils.client_ip import get_client_ip
 
 logger = get_logger(__name__)
 
@@ -167,17 +168,8 @@ class AuditMiddleware(BaseHTTPMiddleware):
             return f"[body capture failed: {e!s}]"
 
     def _get_client_ip(self, request: Request) -> str:
-        """Get client IP address from request."""
-        # Check for proxy headers
-        forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-
-        real_ip = request.headers.get("x-real-ip")
-        if real_ip:
-            return real_ip
-
-        return request.client.host if request.client else "unknown"
+        """Get the real client IP (nginx-trusted resolution, rightmost XFF)."""
+        return get_client_ip(request)
 
     def _sanitize_params(self, params: dict) -> dict:
         """Remove sensitive parameters from query params."""

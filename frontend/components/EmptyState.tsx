@@ -1,7 +1,9 @@
 "use client";
 
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { FileText, AlertTriangle, Search, Inbox } from "lucide-react";
+import { Heading, Text } from "@/components/ui/Typography";
+import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
   icon?: "file" | "alert" | "search" | "inbox" | "custom";
@@ -9,6 +11,7 @@ interface EmptyStateProps {
   description?: string;
   action?: ReactNode;
   customIcon?: ReactNode;
+  className?: string;
 }
 
 const ICONS = {
@@ -18,33 +21,47 @@ const ICONS = {
   inbox: Inbox,
 };
 
-export function EmptyState({
+const EmptyState = React.memo(function EmptyState({
   icon = "inbox",
   title,
   description,
   action,
   customIcon,
+  className,
 }: EmptyStateProps) {
-  // Only get icon from ICONS if it's not 'custom' and no customIcon provided
   const iconName = icon !== "custom" ? icon : "inbox";
   const IconComponent = !customIcon ? ICONS[iconName] : null;
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+    <div
+      className={cn("flex flex-col items-center justify-center py-12 px-4 text-center", className)}
+    >
       {customIcon ? (
-        <div className="mb-4">{customIcon}</div>
+        <div className="mb-4 opacity-15">{customIcon}</div>
       ) : (
         IconComponent && (
-          <div className="w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <IconComponent className="w-8 h-8 text-gray-400" />
+          <div className="mb-4 opacity-15">
+            <IconComponent
+              className="w-16 h-16 text-slate-900 dark:text-slate-100"
+              strokeWidth={1.5}
+            />
           </div>
         )
       )}
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">{title}</h3>
+
+      <Heading level={3} color="primary" className="text-base mb-1">
+        {title}
+      </Heading>
+
       {description && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-sm">{description}</p>
+        <Text color="tertiary" className="text-sm max-w-sm mb-4">
+          {description}
+        </Text>
       )}
+
       {action && <div className="mt-2">{action}</div>}
     </div>
   );
-}
+});
+
+export { EmptyState };

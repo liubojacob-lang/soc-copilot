@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormatter } from "next-intl";
 /**
  * CorrelatedAlerts Component
  * 关联告警视图
@@ -72,6 +73,7 @@ export const CorrelatedAlerts = React.memo(function CorrelatedAlerts({
   groups,
   onAlertClick,
 }: CorrelatedAlertsProps) {
+  const format = useFormatter();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const toggleGroup = (groupId: string) => {
@@ -241,7 +243,10 @@ export const CorrelatedAlerts = React.memo(function CorrelatedAlerts({
                               </span>
                               <span className="text-gray-300 dark:text-gray-600">•</span>
                               <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {new Date(alert.timestamp).toLocaleString()}
+                                {format.dateTime(new Date(alert.timestamp), {
+                                  dateStyle: "medium",
+                                  timeStyle: "medium",
+                                })}
                               </span>
                             </div>
                             <h5 className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -261,7 +266,11 @@ export const CorrelatedAlerts = React.memo(function CorrelatedAlerts({
                   {/* Footer */}
                   <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      Correlation detected {new Date(group.created_at).toLocaleString()}
+                      Correlation detected{" "}
+                      {format.dateTime(new Date(group.created_at), {
+                        dateStyle: "medium",
+                        timeStyle: "medium",
+                      })}
                     </div>
                   </div>
                 </div>
@@ -276,6 +285,8 @@ export const CorrelatedAlerts = React.memo(function CorrelatedAlerts({
 
 // 简化版：仅显示关联告警列表
 export function SimpleCorrelationList({ groups, onAlertClick }: CorrelatedAlertsProps) {
+  const format = useFormatter();
+
   if (!groups || groups.length === 0) {
     return null;
   }
@@ -301,7 +312,10 @@ export function SimpleCorrelationList({ groups, onAlertClick }: CorrelatedAlerts
             <div className="flex items-center gap-2 mb-1">
               <SeverityBadge severity={alert.severity} size="sm" />
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {new Date(alert.timestamp).toLocaleString()}
+                {format.dateTime(new Date(alert.timestamp), {
+                  dateStyle: "medium",
+                  timeStyle: "medium",
+                })}
               </span>
             </div>
             <h5 className="text-sm font-medium text-gray-900 dark:text-white truncate">

@@ -16,13 +16,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_auditor_or_admin
 from models.user import UserModel
 from repositories.audit_repository import AuditRepository
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/export", tags=["Export"])
+router = APIRouter(prefix="/api/v1/export", tags=["Export"])
 
 
 # Export format enum
@@ -147,14 +147,13 @@ async def export_audit_logs(
     status_code: str | None = Query(
         default=None, description="Filter by status code (2xx, 4xx, 5xx, etc.)"
     ),
-    date_from: str | None = Query(
-        default=None, description="Start date (ISO format)"
-    ),
+    date_from: str | None = Query(default=None, description="Start date (ISO format)"),
     date_to: str | None = Query(default=None, description="End date (ISO format)"),
     limit: int = Query(
         default=10000, ge=1, le=50000, description="Maximum records to export"
     ),
-    current_user: UserModel = Depends(get_current_user),
+    # Audit data is readable by auditors/admins only (same as GET /audit-logs)
+    current_user: UserModel = Depends(require_auditor_or_admin),
     session: AsyncSession = Depends(get_session),
 ):
     """Export audit logs in various formats.
@@ -281,13 +280,9 @@ async def export_playbook_runs(
     format: str = Query(
         default=ExportFormat.JSON, description="Export format: json, csv, xlsx"
     ),
-    playbook_id: str | None = Query(
-        default=None, description="Filter by playbook ID"
-    ),
+    playbook_id: str | None = Query(default=None, description="Filter by playbook ID"),
     status: str | None = Query(default=None, description="Filter by status"),
-    date_from: str | None = Query(
-        default=None, description="Start date (ISO format)"
-    ),
+    date_from: str | None = Query(default=None, description="Start date (ISO format)"),
     date_to: str | None = Query(default=None, description="End date (ISO format)"),
     limit: int = Query(
         default=10000, ge=1, le=50000, description="Maximum records to export"
@@ -419,9 +414,7 @@ async def export_alerts(
     ),
     severity: str | None = Query(default=None, description="Filter by severity"),
     status: str | None = Query(default=None, description="Filter by status"),
-    date_from: str | None = Query(
-        default=None, description="Start date (ISO format)"
-    ),
+    date_from: str | None = Query(default=None, description="Start date (ISO format)"),
     date_to: str | None = Query(default=None, description="End date (ISO format)"),
     limit: int = Query(
         default=10000, ge=1, le=50000, description="Maximum records to export"
@@ -436,22 +429,22 @@ async def export_alerts(
     """
     from sqlalchemy import select
 
-    from models.history import HistoryModel
+    from models.security_alert import SecurityAlert
 
     # Build query
-    query = select(HistoryModel)
+    query = select(SecurityAlert).where(SecurityAlert.deleted_at.is_(None))
 
     # Apply filters
     if severity:
-        query = query.where(HistoryModel.severity == severity)
+        query = query.where(SecurityAlert.severity == severity)
     if status:
-        query = query.where(HistoryModel.status == status)
+        query = query.where(SecurityAlert.status == status)
     if date_from:
-        query = query.where(HistoryModel.created_at >= date_from)
+        query = query.where(SecurityAlert.created_at >= date_from)
     if date_to:
-        query = query.where(HistoryModel.created_at <= date_to)
+        query = query.where(SecurityAlert.created_at <= date_to)
 
-    query = query.order_by(HistoryModel.created_at.desc()).limit(limit)
+    query = query.order_by(SecurityAlert.created_at.desc()).limit(limit)
 
     result = await session.execute(query)
     alerts = list(result.scalars().all())
@@ -462,11 +455,11 @@ async def export_alerts(
         data.append(
             {
                 "id": alert.id,
-                "alert_id": alert.alert_id,
+                "source": alert.source,
                 "title": alert.title,
                 "severity": alert.severity,
                 "status": alert.status,
-                "source": alert.source,
+                "source_ip": alert.source_ip,
                 "assigned_to": alert.assigned_to,
                 "created_at": alert.created_at,
                 "updated_at": alert.updated_at,
@@ -476,11 +469,11 @@ async def export_alerts(
     # Define columns
     columns = [
         "id",
-        "alert_id",
+        "source",
         "title",
         "severity",
         "status",
-        "source",
+        "source_ip",
         "assigned_to",
         "created_at",
         "updated_at",

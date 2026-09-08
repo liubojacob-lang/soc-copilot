@@ -53,7 +53,7 @@ async def generate_queries(
     await audit_repo.create(
         action="playbook:generate_queries",
         method="POST",
-        path="/api/playbook/queries",
+        path="/api/v1/playbook/queries",
         status_code=200,
         user_id=current_user.id,
         extra_json={"module": request.module},
@@ -87,7 +87,7 @@ async def generate_actions(
     await audit_repo.create(
         action="playbook:generate_actions",
         method="POST",
-        path="/api/playbook/actions",
+        path="/api/v1/playbook/actions",
         status_code=200,
         user_id=current_user.id,
         extra_json={"history_id": request.history_id, "policy": request.policy},

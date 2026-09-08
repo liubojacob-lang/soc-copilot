@@ -6,6 +6,7 @@ including Dify integration configuration.
 
 import re
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -14,8 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
-from models.user import UserModel, UserRole
+from dependencies.auth import get_current_user, require_permission
+from models.user import UserModel
 
 logger = get_logger(__name__)
 
@@ -59,7 +60,7 @@ def _update_env_file(key: str, value: str | None) -> None:
         raise
 
 
-router = APIRouter(prefix="/api/admin/settings", tags=["admin", "settings"])
+router = APIRouter(prefix="/api/v1/admin/settings", tags=["admin", "settings"])
 
 
 class SettingsUpdateRequest(BaseModel):
@@ -83,24 +84,19 @@ class TimeoutConfigResponse(BaseModel):
 
 @router.get("", response_model=SettingsResponse)
 async def get_settings(
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
 ) -> SettingsResponse:
     """Get current system settings.
 
-    Requires: admin role
+    Requires: admin:write permission
     """
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=403, detail="Only administrators can view settings"
-        )
-
     return SettingsResponse()
 
 
 @router.post("")
 async def update_settings(
     request: SettingsUpdateRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_permission("admin", "write")),
     db: AsyncSession = Depends(get_session),
 ):
     """Update system settings.
@@ -108,12 +104,8 @@ async def update_settings(
     This updates the in-memory settings. For persistence, these should be
     saved to environment variables or a settings file.
 
-    Requires: admin role
+    Requires: admin:write permission
     """
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=403, detail="Only administrators can update settings"
-        )
 
     try:
         # Update settings in-memory and persist to .env file
@@ -132,7 +124,11 @@ async def update_settings(
 
         logger.error(f"Failed to update settings: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
-        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+        # Do NOT expose exception details or traceback to the client — info leak.
+        return {
+            "success": False,
+            "error": "Failed to update settings. Check server logs for details.",
+        }
 
 
 @router.get("/timeouts", response_model=TimeoutConfigResponse)
@@ -152,3 +148,81 @@ async def get_timeout_config(
         timeline_ms=settings.api_timeout_timeline_ms,
         dag_run_ms=settings.api_timeout_dag_run_ms,
     )
+
+
+class DynamicConfigItem(BaseModel):
+    """Dynamic configuration item definition."""
+
+    key: str
+    current_value: Any
+    default_value: Any = None
+    is_overridden: bool
+    type: str
+    description: str = ""
+
+
+class DynamicConfigSetRequest(BaseModel):
+    """Request model to update dynamic configuration parameter."""
+
+    value: Any
+
+
+@router.get("/dynamic", response_model=list[DynamicConfigItem])
+async def list_dynamic_settings(
+    current_user: UserModel = Depends(require_permission("admin", "read")),
+) -> list[DynamicConfigItem]:
+    """List all dynamic configuration settings with override status and defaults."""
+    from core.dynamic_config import get_dynamic_config
+
+    dyn = get_dynamic_config()
+    items = await dyn.get_all()
+    return [DynamicConfigItem(**item) for item in items]
+
+
+@router.get("/dynamic/{key}")
+async def get_dynamic_setting(
+    key: str,
+    current_user: UserModel = Depends(require_permission("admin", "read")),
+):
+    """Get a specific dynamic configuration setting value."""
+    from core.dynamic_config import get_dynamic_config
+
+    dyn = get_dynamic_config()
+    val = await dyn.get(key)
+    return {"key": key, "value": val}
+
+
+@router.put("/dynamic/{key}")
+async def set_dynamic_setting(
+    key: str,
+    body: DynamicConfigSetRequest,
+    current_user: UserModel = Depends(require_permission("admin", "write")),
+):
+    """Override a dynamic configuration setting and broadcast hot-reload across all pods."""
+    from core.dynamic_config import get_dynamic_config
+
+    dyn = get_dynamic_config()
+    success = await dyn.set(key, body.value)
+    if not success:
+        raise HTTPException(
+            status_code=500, detail="Failed to persist dynamic config override"
+        )
+    return {"success": True, "key": key, "value": body.value}
+
+
+@router.delete("/dynamic/{key}")
+async def reset_dynamic_setting(
+    key: str,
+    current_user: UserModel = Depends(require_permission("admin", "write")),
+):
+    """Reset a dynamic configuration setting back to default and broadcast."""
+    from core.dynamic_config import get_dynamic_config
+
+    dyn = get_dynamic_config()
+    success = await dyn.delete(key)
+    if not success:
+        raise HTTPException(
+            status_code=500, detail="Failed to reset dynamic config override"
+        )
+    return {"success": True, "key": key, "message": "Reset to default"}
+

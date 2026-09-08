@@ -2,10 +2,12 @@
 AI Service Router - API endpoints for SOC Copilot AI features
 """
 
+import json
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +15,9 @@ from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
+from middleware.rate_limiter import rate_limit
 from models.user import UserModel
+from observability.llm_tracing import observe_endpoint
 from services.ai_service_enhanced import (
     AIAnalysisResult,
     PlaybookRecommendation,
@@ -22,7 +26,7 @@ from services.ai_service_enhanced import (
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/ai", tags=["ai", "copilot"])
+router = APIRouter(prefix="/api/v1/ai", tags=["ai", "copilot"])
 
 
 # Request/Response Models
@@ -84,10 +88,15 @@ class PlaybookRecommendationResponse(BaseModel):
 
 
 class ChatMessage(BaseModel):
-    """Chat message."""
+    """Chat message.
 
-    role: str = Field(..., pattern="^(user|assistant|system)$")
-    content: str
+    Role is restricted to user|assistant: the server owns the system
+    prompt, so client-supplied "system" entries would be an injection
+    vector into the model context.
+    """
+
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str = Field(..., max_length=20_000)
 
     model_config = ConfigDict(protected_namespaces=())
 
@@ -95,7 +104,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     """Request for chat."""
 
-    message: str
+    message: str = Field(..., min_length=1, max_length=20_000)
     model_id: str | None = None
     conversation_history: list[ChatMessage] | None = None
 
@@ -108,6 +117,8 @@ class ChatResponse(BaseModel):
     message: str
     response: str
     conversation_id: str | None = None
+    routed_model: str | None = None
+    route_reason: str | None = None
 
     model_config = ConfigDict(protected_namespaces=())
 
@@ -122,8 +133,11 @@ class ReportGenerationRequest(BaseModel):
 
 
 @router.post("/analyze-alert", response_model=AlertAnalysisResponse)
+@observe_endpoint("ai_analyze_alert")
+@rate_limit(max_requests=30, window_seconds=60)
 async def analyze_alert(
-    request: AlertAnalysisRequest,
+    payload: AlertAnalysisRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -140,35 +154,40 @@ async def analyze_alert(
         ai_service = get_enhanced_ai_service()
 
         alert_data = {
-            "title": request.title,
-            "description": request.description,
-            "severity": request.severity,
-            "source": request.source,
-            "alert_type": request.alert_type,
-            "metadata": request.metadata,
+            "title": payload.title,
+            "description": payload.description,
+            "severity": payload.severity,
+            "source": payload.source,
+            "alert_type": payload.alert_type,
+            "metadata": payload.metadata,
         }
 
         analysis = await ai_service.analyze_alert_with_rag(
-            alert_data=alert_data, use_rag=request.use_rag
+            alert_data=alert_data, use_rag=payload.use_rag
         )
 
         return AlertAnalysisResponse(
-            alert_id=request.alert_id,
+            alert_id=payload.alert_id,
             analysis=analysis,
             processed_at=datetime.now().isoformat(),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error analyzing alert: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to analyze alert: {e!s}",
+            detail="Failed to analyze alert. Check server logs for details.",
         )
 
 
 @router.post("/query", response_model=NaturalLanguageQueryResponse)
+@observe_endpoint("ai_query")
+@rate_limit(max_requests=60, window_seconds=60)
 async def natural_language_query(
-    request: NaturalLanguageQueryRequest,
+    payload: NaturalLanguageQueryRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -190,11 +209,11 @@ async def natural_language_query(
         }
 
         result = await ai_service.natural_language_query(
-            query=request.query, user_context=user_context
+            query=payload.query, user_context=user_context
         )
 
         return NaturalLanguageQueryResponse(
-            query=request.query,
+            query=payload.query,
             intent=result.intent,
             parameters=result.parameters,
             filter_criteria=result.filter_criteria,
@@ -202,17 +221,22 @@ async def natural_language_query(
             processed_at=datetime.now().isoformat(),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing query: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process query: {e!s}",
+            detail="Failed to process query. Check server logs for details.",
         )
 
 
 @router.post("/recommend-playbooks", response_model=PlaybookRecommendationResponse)
+@observe_endpoint("ai_recommend_playbooks")
+@rate_limit(max_requests=30, window_seconds=60)
 async def recommend_playbooks(
-    request: PlaybookRecommendationRequest,
+    payload: PlaybookRecommendationRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -244,10 +268,10 @@ async def recommend_playbooks(
         ]
 
         alert_data = {
-            "title": request.title,
-            "description": request.description,
-            "severity": request.severity,
-            "alert_type": request.alert_type,
+            "title": payload.title,
+            "description": payload.description,
+            "severity": payload.severity,
+            "alert_type": payload.alert_type,
         }
 
         recommendations = await ai_service.recommend_playbooks(
@@ -255,37 +279,51 @@ async def recommend_playbooks(
         )
 
         return PlaybookRecommendationResponse(
-            alert_id=request.alert_id,
+            alert_id=payload.alert_id,
             recommendations=recommendations,
             generated_at=datetime.now().isoformat(),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error recommending playbooks: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to recommend playbooks: {e!s}",
+            detail="Failed to recommend playbooks. Check server logs for details.",
         )
 
 
 @router.post("/chat")
+@observe_endpoint("ai_chat")
+@rate_limit(max_requests=30, window_seconds=60)
 async def chat(
-    request: ChatRequest,
+    payload: ChatRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     """
     Chat with SOC Copilot AI assistant.
+
+    Rate limited per client IP (30/min): the endpoint triggers real LLM
+    calls, so unbounded request volume translates directly into provider
+    cost.
     """
     try:
         ai_service = get_enhanced_ai_service()
 
-        # Get model to use
-        model_id = request.model_id
-        model_provider = None
+        # Bound client-supplied context: last 20 turns is plenty for the
+        # routing layer and the service (which consumes the last 10).
+        recent_history = (payload.conversation_history or [])[-20:]
 
-        if model_id:
-            # User specified a model - verify it exists and is enabled
+        # Get model to use
+        model_id = payload.model_id
+        model_provider = None
+        route_reason = None
+
+        if model_id and model_id.lower() != "auto":
+            # User manually specified a model - verify it exists and is enabled
             from repositories.ai_model_repository import AIModelRepository
 
             model_repo = AIModelRepository(db)
@@ -296,45 +334,58 @@ async def chat(
                     detail=f"Model {model_id} not found or not enabled",
                 )
             model_provider = model.provider
-            logger.info(f"Using requested model: {model_id} (provider: {model_provider})")
-        else:
-            # Use user's default model
-            from repositories.ai_model_repository import (
-                AIModelRepository,
-                AIUserSettingRepository,
+            logger.info(
+                f"Using requested model: {model_id} (provider: {model_provider})"
             )
-
-            setting_repo = AIUserSettingRepository(db)
-            model_repo = AIModelRepository(db)
-
-            # Get user's preferred model
-            user_settings = await setting_repo.get_by_user_id(str(current_user.id))
-            user_model_id = user_settings.default_model_id if user_settings else None
-
-            if user_model_id:
-                model = await model_repo.get_by_id(user_model_id)
-                if model and model.enabled:
-                    model_id = user_model_id
-                    model_provider = model.provider
-                    logger.info(f"Using user's default model: {model_id}")
-
-            # If no user default, fall back to service default
+        else:
+            # Model is "auto" or not specified: check user default setting first if not explicit 'auto'
             if not model_id:
-                model_id = None
-                model_provider = None
-                logger.info(f"Using service default provider: {ai_service.provider}")
+                from repositories.ai_model_repository import (
+                    AIModelRepository,
+                    AIUserSettingRepository,
+                )
 
-        # Convert ChatMessage to dict format
+                setting_repo = AIUserSettingRepository(db)
+                model_repo = AIModelRepository(db)
+
+                # Get user's preferred model
+                user_settings = await setting_repo.get_by_user_id(str(current_user.id))
+                user_model_id = user_settings.default_model_id if user_settings else None
+
+                if user_model_id and user_model_id.lower() != "auto":
+                    model = await model_repo.get_by_id(user_model_id)
+                    if model and model.enabled:
+                        model_id = user_model_id
+                        model_provider = model.provider
+                        logger.info(f"Using user's default model: {model_id}")
+
+            # If still 'auto' or None, invoke intelligent auto-routing
+            if not model_id or model_id.lower() == "auto":
+                history_for_router = [
+                    {"role": msg.role, "content": msg.content}
+                    for msg in recent_history
+                ]
+                model_id, model_provider, route_reason = ai_service.resolve_auto_model(
+                    message=payload.message,
+                    conversation_history=history_for_router,
+                )
+                logger.info(
+                    f"[Auto-Route] Dynamically routed to: {model_id} ({model_provider}) - {route_reason}"
+                )
+
+        # Convert ChatMessage to dict format (bounded to the last 20 turns;
+        # the service itself only consumes the most recent 10)
         history = None
-        if request.conversation_history:
+        if recent_history:
             history = [
-                {"role": msg.role, "content": msg.content} for msg in request.conversation_history
+                {"role": msg.role, "content": msg.content}
+                for msg in recent_history
             ]
 
         # Get complete response directly
-        logger.info(f"Processing chat request: {request.message[:50]}...")
+        logger.info(f"Processing chat request: {payload.message[:50]}...")
         full_response = await ai_service.chat(
-            message=request.message,
+            message=payload.message,
             conversation_history=history,
             model_id=model_id,
             model_provider=model_provider,
@@ -344,9 +395,11 @@ async def chat(
         conversation_id = str(uuid.uuid4())
 
         return ChatResponse(
-            message=request.message,
+            message=payload.message,
             response=full_response,
             conversation_id=conversation_id,
+            routed_model=model_id,
+            route_reason=route_reason,
         )
 
     except HTTPException:
@@ -355,13 +408,15 @@ async def chat(
         logger.error(f"Error in chat: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Chat error: {e!s}",
+            detail="Chat error. Check server logs for details.",
         )
 
 
 @router.post("/generate-report")
+@rate_limit(max_requests=10, window_seconds=60)
 async def generate_report(
-    request: ReportGenerationRequest,
+    payload: ReportGenerationRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
 ):
     """
@@ -371,22 +426,79 @@ async def generate_report(
         ai_service = get_enhanced_ai_service()
 
         report = await ai_service.generate_investigation_report(
-            alert_id=request.alert_id, investigation_data=request.investigation_data
+            alert_id=payload.alert_id, investigation_data=payload.investigation_data
         )
 
         return {
-            "alert_id": request.alert_id,
+            "alert_id": payload.alert_id,
             "report": report,
             "format": "markdown",
             "generated_at": datetime.now().isoformat(),
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error generating report: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate report: {e!s}",
+            detail="Failed to generate report. Check server logs for details.",
         )
+
+
+@router.post("/chat/stream")
+@rate_limit(max_requests=30, window_seconds=60)
+async def chat_stream(
+    payload: ChatRequest,
+    request: Request,
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Stream chat deltas over Server-Sent Events.
+
+    Frames: `data: {"meta": {routed_model, route_reason}}`, then
+    `data: {"delta": "..."}` repeatedly, then `data: {"done": true}`.
+    Falls back to a single delta when the provider cannot stream.
+    """
+    ai_service = get_enhanced_ai_service()
+
+    model_id = payload.model_id
+    model_provider = None
+    route_reason = None
+    if not model_id or model_id.lower() == "auto":
+        history = [
+            {"role": m.role, "content": m.content}
+            for m in (payload.conversation_history or [])[-20:]
+        ]
+        model_id, model_provider, route_reason = ai_service.resolve_auto_model(
+            payload.message, history
+        )
+
+    recent_history = [
+        {"role": m.role, "content": m.content}
+        for m in (payload.conversation_history or [])[-20:]
+    ]
+
+    async def sse():
+        meta = {"meta": {"routed_model": model_id, "route_reason": route_reason}}
+        yield f"data: {json.dumps(meta, ensure_ascii=False)}\n\n"
+        try:
+            async for delta in ai_service.chat_stream(
+                message=payload.message,
+                conversation_history=recent_history,
+                model_id=model_id,
+                model_provider=model_provider,
+            ):
+                yield f"data: {json.dumps({'delta': delta}, ensure_ascii=False)}\n\n"
+        except Exception as e:  # SSE 层兜底，连接不能半途断
+            logger.error(f"chat_stream error: {e}")
+            yield f"data: {json.dumps({'delta': 'Service unavailable, please retry.'})}\n\n"
+        yield f"data: {json.dumps({'done': True})}\n\n"
+
+    return StreamingResponse(
+        sse(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/status")
@@ -401,7 +513,9 @@ async def get_ai_status(
 
         # Check if AI service is properly initialized
         if not ai_service._initialized:
-            logger.warning(f"AI service not initialized. Provider: {ai_service.provider}")
+            logger.warning(
+                f"AI service not initialized. Provider: {ai_service.provider}"
+            )
             return {
                 "status": "unavailable",
                 "provider": ai_service.provider,

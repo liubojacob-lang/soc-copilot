@@ -17,7 +17,7 @@ from .runs import router as runs_router
 from .versions import router as versions_router
 
 # Create main router that includes all sub-routers
-router = APIRouter(prefix="/api/playbook", tags=["playbook"])
+router = APIRouter(prefix="/api/v1/playbook", tags=["playbook"])
 
 # Include all sub-routers
 router.include_router(queries_router)

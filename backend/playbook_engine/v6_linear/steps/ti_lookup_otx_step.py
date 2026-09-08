@@ -2,8 +2,17 @@
 
 from typing import Any
 
+from core.config import settings
+from core.logger import get_logger
+from utils.ti_filter import should_send_ioc_to_external_ti
+
 from ..registry import register_step
 from .base_step import BaseStepImpl
+
+logger = get_logger(__name__)
+
+# Cap external lookups per step run so a large IOC batch cannot hammer OTX
+MAX_LOOKUPS_PER_RUN = 20
 
 
 class TILookupOTXStep(BaseStepImpl):
@@ -29,15 +38,17 @@ class TILookupOTXStep(BaseStepImpl):
     def supports_apply(self) -> bool:
         return True
 
-    def execute(self, input_json: dict[str, Any], mode: str) -> dict[str, Any]:
+    async def execute(self, input_json: dict[str, Any], mode: str) -> dict[str, Any]:
         """Perform threat intelligence lookup.
 
         Args:
             input_json: Input containing IOCs
-            mode: Execution mode
+            mode: Execution mode ("dry_run" simulates; "apply" queries real OTX)
 
         Returns:
-            Dictionary with threat intel results
+            Dictionary with threat intel results. In apply mode the lookup is
+            real: without a configured OTX API key the step reports an error
+            instead of fabricating matches.
         """
         iocs = input_json.get("iocs", {})
 
@@ -56,31 +67,44 @@ class TILookupOTXStep(BaseStepImpl):
         # Count total IOCs
         results["summary"]["total_iocs"] = sum(len(v) for v in iocs.values())
 
-        # In dry run mode, simulate results
+        # Dry run mode is explicitly side-effect free; simulated matches are expected
         if mode == "dry_run":
             results["matches"] = self._simulate_lookup(iocs)
-            results["summary"]["malicious"] = len(
-                [r for r in results["matches"] if r.get("threat_level") == "malicious"]
-            )
-            results["summary"]["suspicious"] = len(
-                [r for r in results["matches"] if r.get("threat_level") == "suspicious"]
+            results["simulated"] = True
+            self._fill_threat_counts(results)
+            return results
+
+        results["simulated"] = False
+
+        if not settings.allow_external_ti:
+            results["error"] = "External threat intelligence is disabled by configuration"
+            return results
+
+        if not settings.otx_api_key:
+            results["error"] = (
+                "OTX API key not configured; set OTX_API_KEY to enable real lookups"
             )
             return results
 
-        # In apply mode, perform actual lookups
-        # Note: This requires OTX API key configuration
+        # Apply mode: perform actual lookups
         try:
-            results["matches"] = self._perform_lookup(iocs)
-            results["summary"]["malicious"] = len(
-                [r for r in results["matches"] if r.get("threat_level") == "malicious"]
-            )
-            results["summary"]["suspicious"] = len(
-                [r for r in results["matches"] if r.get("threat_level") == "suspicious"]
-            )
+            results["matches"] = await self._perform_lookup(iocs)
+            self._fill_threat_counts(results)
         except Exception as e:
+            logger.exception("OTX lookup step failed")
             results["error"] = str(e)
 
         return results
+
+    @staticmethod
+    def _fill_threat_counts(results: dict[str, Any]) -> None:
+        """Fill malicious/suspicious counters from current matches."""
+        results["summary"]["malicious"] = len(
+            [r for r in results["matches"] if r.get("threat_level") == "malicious"]
+        )
+        results["summary"]["suspicious"] = len(
+            [r for r in results["matches"] if r.get("threat_level") == "suspicious"]
+        )
 
     def _simulate_lookup(self, iocs: dict) -> list[dict]:
         """Simulate threat intel lookup for dry run."""
@@ -121,17 +145,89 @@ class TILookupOTXStep(BaseStepImpl):
 
         return matches
 
-    def _perform_lookup(self, iocs: dict) -> list[dict]:
-        """Perform actual OTX lookup."""
-        matches = []
-        api_key = ""  # Would be loaded from config
+    async def _perform_lookup(self, iocs: dict) -> list[dict]:
+        """Perform real OTX lookups with compliance filtering and a rate budget.
 
-        if not api_key:
-            return self._simulate_lookup(iocs)
+        Private IPs, internal domains and blocked TLDs are never sent to the
+        external service (utils.ti_filter); at most MAX_LOOKUPS_PER_RUN
+        indicators are queried per run.
+        """
+        from integrations.otx_client import OTXClient
+        from services.threat_intel_service import (
+            _parse_blocked_tlds,
+            _parse_internal_domains,
+        )
 
-        # Actual OTX API calls would go here
-        # For now, return simulated results
-        return self._simulate_lookup(iocs)
+        internal_suffixes = _parse_internal_domains()
+        blocked_tlds = _parse_blocked_tlds()
+
+        matches: list[dict] = []
+        budget = MAX_LOOKUPS_PER_RUN
+
+        client = OTXClient(api_key=settings.otx_api_key)
+        try:
+            lookup_plan = [
+                ("ip", iocs.get("ips", []), client.lookup_ip),
+                ("domain", iocs.get("domains", []), client.lookup_domain),
+                ("url", iocs.get("urls", []), client.lookup_url),
+                ("hash", iocs.get("hashes", []), client.lookup_hash),
+            ]
+
+            for ioc_type, values, lookup in lookup_plan:
+                for value in values:
+                    if budget <= 0:
+                        logger.warning(
+                            "OTX lookup budget of %d reached; remaining IOCs skipped",
+                            MAX_LOOKUPS_PER_RUN,
+                        )
+                        return matches
+
+                    decision = should_send_ioc_to_external_ti(
+                        ioc_type,
+                        value,
+                        internal_domain_suffixes=internal_suffixes,
+                        blocked_tlds=blocked_tlds,
+                    )
+                    if not decision.allowed:
+                        logger.debug(
+                            "Skipped %s IOC %r: %s", ioc_type, value, decision.reason
+                        )
+                        continue
+
+                    budget -= 1
+                    result = await lookup(value)
+
+                    if result.get("error"):
+                        logger.warning(
+                            "OTX lookup failed for %s %r: %s",
+                            ioc_type,
+                            value,
+                            result.get("message"),
+                        )
+                        continue
+
+                    if result.get("not_found"):
+                        continue
+
+                    verdict = result.get("verdict", "unknown")
+                    if verdict in ("malicious", "suspicious"):
+                        matches.append(
+                            {
+                                "indicator": value,
+                                "type": ioc_type,
+                                "threat_level": verdict,
+                                "score": result.get("score", 0),
+                                "pulse_count": result.get("pulse_count", 0),
+                                "tags": result.get("tags", []),
+                                "source": "otx",
+                                "description": f"{verdict.capitalize()} indicator "
+                                f"({result.get('pulse_count', 0)} pulses)",
+                            }
+                        )
+        finally:
+            await client.close()
+
+        return matches
 
 
 # Register the step

@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
+from dependencies.auth import get_current_user
+from models.user import UserModel
 from schemas.timeline import TimelineRequest, TimelineResponse
 from services.timeline_service import TimelineService
 
@@ -14,10 +16,11 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["timeline"])
 
 
-@router.post("/api/build-timeline", response_model=TimelineResponse)
+@router.post("/api/v1/build-timeline", response_model=TimelineResponse)
 async def build_timeline(
     request: TimelineRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: UserModel = Depends(get_current_user),
 ) -> TimelineResponse:
     """Build a security timeline from logs.
 
@@ -40,7 +43,7 @@ async def build_timeline(
         raise HTTPException(status_code=500, detail="Timeline build failed")
 
 
-@router.get("/api/timeline/health")
+@router.get("/api/v1/timeline/health")
 async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy", "service": "soc-copilot"}

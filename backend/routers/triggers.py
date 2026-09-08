@@ -27,7 +27,7 @@ from services.trigger_service import TriggerService
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/triggers", tags=["triggers"])
+router = APIRouter(prefix="/api/v1/triggers", tags=["triggers"])
 
 
 # Helper dependencies that can be reused

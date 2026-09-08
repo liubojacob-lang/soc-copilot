@@ -168,10 +168,10 @@ npm run dev
 
 | Technology  | Version | Purpose                |
 | ----------- | ------- | ---------------------- |
-| Python      | 3.10+   | Language               |
-| FastAPI     | 0.115.0 | Web Framework          |
-| SQLAlchemy  | 2.0.36  | ORM                    |
-| aiosqlite   | 0.20.0  | Async SQLite           |
+| Python      | 3.12    | Language               |
+| FastAPI     | 0.115+  | Web Framework          |
+| SQLAlchemy  | 2.0 async | ORM (async)          |
+| PostgreSQL  | 15      | Primary database (SQLite dev fallback) |
 | Alembic     | 1.14.0  | Database Migration     |
 | Pydantic    | 2.9.2   | Data Validation        |
 | python-jose | 3.3.0   | JWT Authentication     |
@@ -183,7 +183,7 @@ npm run dev
 
 | Technology   | Version | Purpose           |
 | ------------ | ------- | ----------------- |
-| Next.js      | 15.1    | React Framework   |
+| Next.js      | 16.2    | React Framework (App Router) |
 | React        | 19.0    | UI Library        |
 | TypeScript   | 5.x     | Type System       |
 | Tailwind CSS | 3.4.17  | CSS Framework     |
@@ -354,8 +354,7 @@ soc-copilot/
 │   │   ├── Navigation.tsx      # Navigation Bar
 │   │   └── playbook/           # Playbook Components
 │   └── package.json
-├── data/                       # Data Directory
-│   └── app.db                  # SQLite Database
+├── data/                       # Dev SQLite database (prod uses PostgreSQL)
 ├── docs/                       # Documentation
 ├── MANUAL_TEST.md              # Manual Test Documentation
 ├── TEST_CASES.md               # Test Cases
@@ -398,7 +397,7 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 
 ## Version History
 
-### v0.8.0 (Current Version)
+### v0.9.0 (Current Version)
 
 - ✨ **Added**: Node plugin system with dynamic auto-loading
 - ✨ **Added**: Secrets management with Fernet encryption
@@ -531,6 +530,9 @@ This project has undergone comprehensive security optimization. [View Full Repor
 - [MANUAL_TEST.md](./MANUAL_TEST.md) - Manual Test Documentation
 - [TEST_CASES.md](./TEST_CASES.md) - Test Cases
 - [API Documentation](http://localhost:8000/docs) - Interactive API Documentation (backend must be running)
+- [`openapi.json`](./openapi.json) - Full machine-readable spec (269 paths / 314 operations)
+- [docs/api-retry-policy.md](./docs/api-retry-policy.md) - Rate limits & retry policy
+- [PROJECT_FINAL_AUDIT.md](./PROJECT_FINAL_AUDIT.md) - Final acceptance audit
 
 ---
 
@@ -540,6 +542,6 @@ This project is an internal security operations tool for authorized users only.
 
 ---
 
-**Version**: v0.8.0
-**Last Updated**: 2026-02-10
+**Version**: v0.9.2
+**Last Updated**: 2026-09-08
 **Maintainer**: SOC Team

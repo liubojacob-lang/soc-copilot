@@ -1,13 +1,11 @@
 """Marketplace Router - Playbook Marketplace API with DB persistence."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
-from dependencies.authorization import require_admin
+from dependencies.auth import get_current_user, require_admin
 from models.user import UserModel
 from repositories.marketplace_repository import MarketplaceRepository
 from repositories.playbook_definition_repository import PlaybookDefinitionRepository
@@ -23,14 +21,18 @@ from schemas.marketplace import (
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/marketplace", tags=["marketplace", "community"])
+router = APIRouter(prefix="/api/v1/marketplace", tags=["marketplace", "community"])
 
 
-def get_marketplace_repo(db: AsyncSession = Depends(get_session)) -> MarketplaceRepository:
+def get_marketplace_repo(
+    db: AsyncSession = Depends(get_session),
+) -> MarketplaceRepository:
     return MarketplaceRepository(db)
 
 
-def get_playbook_repo(db: AsyncSession = Depends(get_session)) -> PlaybookDefinitionRepository:
+def get_playbook_repo(
+    db: AsyncSession = Depends(get_session),
+) -> PlaybookDefinitionRepository:
     return PlaybookDefinitionRepository(db)
 
 
@@ -92,7 +94,9 @@ async def publish_playbook(
         raise HTTPException(status_code=404, detail="Playbook definition not found")
 
     if definition.created_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only publish your own playbooks")
+        raise HTTPException(
+            status_code=403, detail="You can only publish your own playbooks"
+        )
 
     playbook = await repo.create_playbook(
         definition=definition,
@@ -129,7 +133,9 @@ async def download_playbook(
         created_by_user_id=current_user.id,
     )
 
-    logger.info(f"User {current_user.id} downloaded playbook {playbook_id} as {imported.id}")
+    logger.info(
+        f"User {current_user.id} downloaded playbook {playbook_id} as {imported.id}"
+    )
 
     return {
         "success": True,
@@ -161,7 +167,9 @@ async def get_reviews(
 
 
 @router.post(
-    "/playbooks/{playbook_id}/reviews", response_model=MarketplaceReviewResponse, status_code=201
+    "/playbooks/{playbook_id}/reviews",
+    response_model=MarketplaceReviewResponse,
+    status_code=201,
 )
 async def submit_review(
     playbook_id: str,
@@ -178,7 +186,8 @@ async def submit_review(
     )
     if not review:
         raise HTTPException(
-            status_code=400, detail="Cannot submit review (playbook not found or already reviewed)"
+            status_code=400,
+            detail="Cannot submit review (playbook not found or already reviewed)",
         )
     return MarketplaceReviewResponse.model_validate(review)
 
@@ -249,7 +258,9 @@ async def get_pending_playbooks(
     }
 
 
-@router.post("/admin/playbooks/{playbook_id}/review", response_model=MarketplacePlaybookResponse)
+@router.post(
+    "/admin/playbooks/{playbook_id}/review", response_model=MarketplacePlaybookResponse
+)
 async def review_playbook(
     playbook_id: str,
     request: MarketplaceApprovalRequest,

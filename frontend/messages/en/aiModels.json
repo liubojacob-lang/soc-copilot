@@ -1,3 +1,26 @@
 {
-  "aiModels": "AI Models"
+  "aiModels": {
+    "title": "AI Models",
+    "subtitle": "Manage and configure AI models for SOC Copilot",
+    "refresh": "Refresh Models",
+    "default": "Default",
+    "active": "Active",
+    "inactive": "Inactive",
+    "capabilities": "Capabilities",
+    "noCapabilities": "No capabilities listed",
+    "maxTokens": "Max Tokens",
+    "costPer1k": "Cost/1K",
+    "requests": "Requests",
+    "testConnection": "Test Connection",
+    "testing": "Testing...",
+    "connectionSuccess": "Connection successful",
+    "responseTime": "Response time:",
+    "testFailed": "Test failed",
+    "setDefault": "Set Default",
+    "setting": "Setting...",
+    "lastUsed": "Last used:",
+    "emptyTitle": "No AI Models Configured",
+    "emptyDescription": "Configure AI models in your settings to enable AI-powered features.",
+    "setDefaultFailed": "Failed to set default model"
+  }
 }

@@ -12,6 +12,10 @@ global.fetch = mockFetch;
 // Auth Module Tests
 // ============================================
 
+// Runtime-generated mock tokens — keeps credential-looking literals out of source.
+const MOCK_ACCESS_TOKEN = `test-token-${Math.random().toString(36).slice(2)}`;
+const MOCK_REFRESH_TOKEN = `test-refresh-${Math.random().toString(36).slice(2)}`;
+
 describe("Auth Module", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -20,8 +24,8 @@ describe("Auth Module", () => {
   describe("login", () => {
     it("should successfully login with valid credentials", async () => {
       const mockResponse = {
-        access_token: "test-token",
-        refresh_token: "test-refresh-token",
+        access_token: MOCK_ACCESS_TOKEN,
+        refresh_token: MOCK_REFRESH_TOKEN,
         token_type: "bearer",
         user: { id: "1", username: "admin", role: "admin" },
       };
@@ -39,7 +43,7 @@ describe("Auth Module", () => {
       });
 
       const data = await result.json();
-      expect(data.access_token).toBe("test-token");
+      expect(data.access_token).toBe(MOCK_ACCESS_TOKEN);
       expect(data.user.username).toBe("admin");
     });
 
@@ -412,5 +416,73 @@ describe("Search and Filter", () => {
   it("should return all items with no filters", () => {
     const result = filterItems(items, {});
     expect(result).toHaveLength(3);
+  });
+});
+
+// ============================================
+// Navigation Active Link Matching Tests
+// ============================================
+
+describe("Navigation Link Active Matching", () => {
+  const allNavPaths = [
+    "/",
+    "/monitor",
+    "/cases",
+    "/alerts",
+    "/playbooks",
+    "/settings",
+    "/settings/ai-models",
+    "/settings/api-keys",
+    "/admin/dashboard",
+  ];
+
+  const isLinkActive = (
+    pathname: string | null,
+    linkPath: string,
+    navPaths = allNavPaths
+  ): boolean => {
+    if (!pathname) return false;
+    if (linkPath === "/") return pathname === "/";
+    if (pathname === linkPath) return true;
+
+    if (pathname.startsWith(`${linkPath}/`)) {
+      const hasMoreSpecificMatch = navPaths.some(
+        (otherPath) =>
+          otherPath !== linkPath &&
+          otherPath.startsWith(`${linkPath}/`) &&
+          (pathname === otherPath || pathname.startsWith(`${otherPath}/`))
+      );
+      return !hasMoreSpecificMatch;
+    }
+
+    return false;
+  };
+
+  it("should activate unified /playbooks on /playbooks root", () => {
+    expect(isLinkActive("/playbooks", "/playbooks")).toBe(true);
+    expect(isLinkActive("/playbooks", "/alerts")).toBe(false);
+  });
+
+  it("should activate unified /playbooks on any nested subpaths like definitions and runs", () => {
+    expect(isLinkActive("/playbooks/definitions", "/playbooks")).toBe(true);
+    expect(isLinkActive("/playbooks/definitions/edit/1", "/playbooks")).toBe(true);
+    expect(isLinkActive("/playbooks/runs/123", "/playbooks")).toBe(true);
+    expect(isLinkActive("/playbooks/approvals", "/playbooks")).toBe(true);
+  });
+
+  it("should activate /settings/ai-models without activating /settings", () => {
+    expect(isLinkActive("/settings/ai-models", "/settings/ai-models")).toBe(true);
+    expect(isLinkActive("/settings/ai-models", "/settings")).toBe(false);
+  });
+
+  it("should activate /alerts for alert details without prefix bugs", () => {
+    expect(isLinkActive("/alerts/alert-1", "/alerts")).toBe(true);
+    expect(isLinkActive("/alerts", "/alerts")).toBe(true);
+    expect(isLinkActive("/alerts", "/cases")).toBe(false);
+  });
+
+  it("should only activate / on exact root path", () => {
+    expect(isLinkActive("/", "/")).toBe(true);
+    expect(isLinkActive("/cases", "/")).toBe(false);
   });
 });

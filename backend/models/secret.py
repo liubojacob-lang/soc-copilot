@@ -25,10 +25,10 @@ class SecretModel(Base):
         String(36), ForeignKey("users.id", ondelete="SET NULL")
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.utcnow()
+        DateTime(timezone=True), server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.utcnow(), onupdate=func.utcnow()
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     def __repr__(self) -> str:

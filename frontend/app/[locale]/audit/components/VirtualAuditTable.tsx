@@ -1,7 +1,9 @@
 "use client";
 
 import { FixedSizeList } from "react-window";
-import { formatDate, getStatusCodeClass, getMethodClass } from "../utils";
+import { useFormatter } from "next-intl";
+
+import { getStatusCodeClass, getMethodClass } from "../utils";
 import type { AuditLog } from "../types";
 
 interface VirtualAuditTableProps {
@@ -14,15 +16,16 @@ const HEADER_HEIGHT = 56;
 const ROW_HEIGHT = 64;
 
 function AuditLogRow({ log, style }: { log: AuditLog; style: React.CSSProperties }) {
+  const format = useFormatter();
   return (
     <div
       style={style}
       className="flex items-center border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
     >
       <div className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 w-40">
-        {formatDate(log.created_at)}
+        {format.dateTime(new Date(log.created_at), { dateStyle: "medium", timeStyle: "medium" })}
       </div>
-      <div className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white w-28">
+      <div className="hidden md:block px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white w-28">
         {log.username || <span className="text-gray-400 italic">System</span>}
       </div>
       <div className="px-4 py-3 text-sm text-gray-900 dark:text-white w-32">
@@ -47,14 +50,14 @@ function AuditLogRow({ log, style }: { log: AuditLog; style: React.CSSProperties
           {log.status_code}
         </span>
       </div>
-      <div className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 w-32">
+      <div className="hidden md:block px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 w-32">
         {log.target_type && (
           <span>
             {log.target_type}:{log.target_id}
           </span>
         )}
       </div>
-      <div className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 w-20">
+      <div className="hidden md:block px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 w-20">
         {log.duration_ms !== null ? `${log.duration_ms}ms` : "-"}
       </div>
     </div>
@@ -96,7 +99,7 @@ export function VirtualAuditTable({
           <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
             Time
           </div>
-          <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">
+          <div className="hidden md:block px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">
             User
           </div>
           <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
@@ -111,10 +114,10 @@ export function VirtualAuditTable({
           <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
             Status
           </div>
-          <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
+          <div className="hidden md:block px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
             Target
           </div>
-          <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
+          <div className="hidden md:block px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
             Duration
           </div>
         </div>

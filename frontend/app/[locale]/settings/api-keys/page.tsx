@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations } from "next-intl";
 import { loadAuthState, logout, authFetchJSON } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
+import { ConfirmDialog } from "@/components/common";
+import { useToast } from "@/components/Toast";
 
 interface APIKey {
   id: string;
@@ -28,13 +30,16 @@ interface CreateKeyResponse {
 }
 
 export default function APIKeysPage() {
+  const format = useFormatter();
   const router = useRouter();
-  const t = useTranslations("settings");
   const tApiKeys = useTranslations("settingsApiKeys");
   const tCommon = useTranslations("common");
+  const { showToast } = useToast();
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<APIKey | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKeyDescription, setNewKeyDescription] = useState("");
   const [newKeyExpiresInDays, setNewKeyExpiresInDays] = useState<number | null>(null);
@@ -93,17 +98,21 @@ export default function APIKeysPage() {
   };
 
   const handleDeleteKey = async (id: string) => {
-    if (!confirm(t("modal.deleteConfirm"))) {
-      return;
-    }
+    setDeleting(true);
+    setError("");
 
     try {
       await authFetchJSON(`/api/api-keys/${id}`, {
         method: "DELETE",
       });
+      setDeleteTarget(null);
       await fetchAPIKeys();
+      showToast(tApiKeys("deletedSuccess"), "success");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to delete API key");
+      showToast(err instanceof Error ? err.message : tApiKeys("failedToDelete"), "error");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -114,8 +123,10 @@ export default function APIKeysPage() {
         body: JSON.stringify({ is_active: false }),
       });
       await fetchAPIKeys();
+      showToast(tApiKeys("disabledSuccess"), "success");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to disable API key");
+      showToast(err instanceof Error ? err.message : tApiKeys("failedToDisable"), "error");
     }
   };
 
@@ -126,8 +137,10 @@ export default function APIKeysPage() {
         body: JSON.stringify({ is_active: true }),
       });
       await fetchAPIKeys();
+      showToast(tApiKeys("enabledSuccess"), "success");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to enable API key");
+      showToast(err instanceof Error ? err.message : tApiKeys("failedToEnable"), "error");
     }
   };
 
@@ -143,8 +156,8 @@ export default function APIKeysPage() {
   };
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "Never";
-    return new Date(dateStr).toLocaleString();
+    if (!dateStr) return tCommon("never");
+    return format.dateTime(new Date(dateStr), { dateStyle: "medium", timeStyle: "medium" });
   };
 
   const isExpired = (expiresAt: string | null) => {
@@ -163,34 +176,27 @@ export default function APIKeysPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Navigation */}
-      <Navigation title={tApiKeys("title")} subtitle={tApiKeys("subtitle")} />
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-
-        {/* Page Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {tApiKeys("yourApiKeys")}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {tApiKeys("manageApiKeys")}
-            </p>
-          </div>
+      <PageHeader
+        title={tApiKeys("title")}
+        subtitle={tApiKeys("subtitle")}
+        actions={
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
           >
-            {tApiKeys("createNewKey")}
+            + {tApiKeys("createNewKey")}
           </button>
-        </div>
+        }
+      />
+
+      {/* Main Content */}
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Error Message */}
+        {error && (
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        )}
 
         {/* API Keys List */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -280,7 +286,7 @@ export default function APIKeysPage() {
                           </button>
                         )}
                         <button
-                          onClick={() => handleDeleteKey(key.id)}
+                          onClick={() => setDeleteTarget(key)}
                           className="text-red-600 hover:text-red-900"
                         >
                           {tCommon("delete")}
@@ -432,6 +438,21 @@ export default function APIKeysPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={tApiKeys("deleteKeyTitle")}
+        description={tApiKeys("deleteKeyConfirm")}
+        confirmText={tCommon("delete")}
+        cancelText={tCommon("cancel")}
+        variant="danger"
+        loading={deleting}
+        onConfirm={() => {
+          if (deleteTarget) handleDeleteKey(deleteTarget.id);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

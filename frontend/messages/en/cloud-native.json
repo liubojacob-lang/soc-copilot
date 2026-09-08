@@ -1,7 +1,8 @@
 {
   "cloudNative": {
-    "subtitle": "云环境安全监控和管理",
-    "title": "云原生安全",
+    "subtitle": "Cloud environment security monitoring",
+    "title": "Cloud-Native Security",
+    "demoNotice": "Demo data notice: Kubernetes and cloud provider insights below are sample data until cluster/cloud integrations are configured. Container image scans (Trivy) and Falco alerts use real data.",
     "aws": "AWS",
     "azure": "Azure",
     "gcp": "GCP",
@@ -30,6 +31,8 @@
     "connected": "Connected",
     "notConfigured": "Not Configured",
     "recentVulnerabilities": "Recent Vulnerabilities",
-    "supportedCloudProviders": "Supported Cloud Providers"
+    "supportedCloudProviders": "Supported Cloud Providers",
+    "severity": "Severity",
+    "description": "Description"
   }
 }

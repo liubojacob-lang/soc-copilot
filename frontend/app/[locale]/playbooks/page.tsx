@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatter, useTranslations, useLocale } from "next-intl";
 import { api } from "@/lib/api";
 import { loadAuthState } from "@/lib/auth";
-import Navigation from "@/components/Navigation";
+import { PageHeader } from "@/components/common/PageHeader";
 import { SkeletonTable } from "@/components/common/LoadingState";
+import { TabButton, TabList } from "@/components/ui/Tabs";
 import { STATUS_COLORS, MODE_COLORS } from "./constants";
 import { usePlaybooks } from "./hooks/usePlaybooks";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -24,12 +25,14 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 
 export default function PlaybooksPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("playbooks");
+  const format = useFormatter();
   const tCommon = useTranslations("common");
   const [activeTab, setActiveTab] = useState<"runs" | "definitions" | "create">("runs");
   const [mounted, setMounted] = useState(false);
@@ -53,10 +56,31 @@ export default function PlaybooksPage() {
 
   useEffect(() => {
     setMounted(true);
-    if (activeTab === "definitions") {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "definitions") {
+        setActiveTab("definitions");
+        loadDefinitions(1);
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tab: "runs" | "definitions") => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (tab === "runs") {
+        url.searchParams.delete("tab");
+      } else {
+        url.searchParams.set("tab", tab);
+      }
+      window.history.replaceState(null, "", url.toString());
+    }
+    if (tab === "definitions") {
       loadDefinitions(1);
     }
-  }, [activeTab]);
+  };
 
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [autoRefreshInterval, setAutoRefreshInterval] = useState<NodeJS.Timeout | null>(null);
@@ -111,29 +135,25 @@ export default function PlaybooksPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs */}
         <div className="mb-6">
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab("runs")}
-                className={`${activeTab === "runs" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
-              >
-                <Play className="w-4 h-4" />
-                {t("tabs.runs")}
-              </button>
-              <button
-                onClick={() => setActiveTab("definitions")}
-                className={`${activeTab === "definitions" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
-              >
-                <BookOpen className="w-4 h-4" />
-                {t("tabs.definitions")}
-              </button>
-            </nav>
-          </div>
+          <TabList>
+            <TabButton
+              active={activeTab === "runs"}
+              onClick={() => handleTabChange("runs")}
+              label={t("tabs.runs")}
+              icon={<Play className="w-4 h-4" />}
+            />
+            <TabButton
+              active={activeTab === "definitions"}
+              onClick={() => handleTabChange("definitions")}
+              label={t("tabs.definitions")}
+              icon={<BookOpen className="w-4 h-4" />}
+            />
+          </TabList>
         </div>
 
         {/* Runs Tab */}
@@ -206,17 +226,17 @@ export default function PlaybooksPage() {
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
                 >
                   <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
                   {refreshing ? tCommon("loading") : tCommon("refresh")}
                 </button>
                 <button
                   onClick={() => setAutoRefresh(!autoRefresh)}
-                  className={`px-3 py-2 border rounded-lg flex items-center gap-2 transition-colors ${
+                  className={`px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 flex items-center gap-2 transition-colors ${
                     autoRefresh
                       ? "bg-green-50 border-green-300 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-400"
-                      : "border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      : "border-gray-300 dark:border-gray-600 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700"
                   }`}
                   title={autoRefresh ? "Auto-refresh ON (10s)" : "Auto-refresh OFF"}
                 >
@@ -287,7 +307,7 @@ export default function PlaybooksPage() {
                         return (
                           <tr
                             key={run.id}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                            className="hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-700/50 transition-colors"
                           >
                             <td className="px-6 py-4">
                               <div className="font-medium text-gray-900 dark:text-white">
@@ -317,9 +337,9 @@ export default function PlaybooksPage() {
                               </span>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                              {new Date(run.started_at).toLocaleDateString()}
+                              {format.dateTime(new Date(run.started_at), { dateStyle: "medium" })}
                               <div className="text-xs text-gray-400">
-                                {new Date(run.started_at).toLocaleTimeString()}
+                                {format.dateTime(new Date(run.started_at), { timeStyle: "medium" })}
                               </div>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
@@ -330,13 +350,14 @@ export default function PlaybooksPage() {
                               )}
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <a
-                                href={`/${locale}/playbooks/${run.id}`}
-                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
+                              <button
+                                type="button"
+                                onClick={() => router.push(`/playbooks/${run.id}`)}
+                                className="inline-flex items-center gap-1 text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 text-sm font-medium transition-colors"
                               >
                                 <Eye className="w-4 h-4" />
-                                {tCommon("viewDetails")}
-                              </a>
+                                <span>{tCommon("viewDetails")}</span>
+                              </button>
                             </td>
                           </tr>
                         );
@@ -359,7 +380,7 @@ export default function PlaybooksPage() {
                         <button
                           onClick={() => handlePageChange(runsPagination.currentPage - 1)}
                           disabled={runsPagination.currentPage === 1}
-                          className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -369,7 +390,7 @@ export default function PlaybooksPage() {
                         <button
                           onClick={() => handlePageChange(runsPagination.currentPage + 1)}
                           disabled={runsPagination.currentPage === totalRunsPages}
-                          className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ChevronRight className="w-4 h-4" />
                         </button>
@@ -392,6 +413,13 @@ export default function PlaybooksPage() {
                 </h2>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">{t("definitions.subtitle")}</p>
               </div>
+              <button
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-xl text-xs font-medium transition-colors shadow-xs"
+                onClick={() => router.push("/playbooks/create")}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{t("definitions.createNew")}</span>
+              </button>
             </div>
             {definitions.length === 0 ? (
               <div className="text-center py-16">
@@ -428,7 +456,7 @@ export default function PlaybooksPage() {
                     {definitions.map((def) => (
                       <tr
                         key={def.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                        className="hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-700/50 transition-colors"
                       >
                         <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                           {def.name}
@@ -452,13 +480,21 @@ export default function PlaybooksPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                            <button
+                              onClick={() => router.push(`/playbooks/definitions/${def.id}`)}
+                              className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
+                              title={tCommon("viewDetails")}
+                            >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                            <button
+                              onClick={() => router.push(`/playbooks/definitions/${def.id}/edit`)}
+                              className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
+                              title={tCommon("edit")}
+                            >
                               <Edit2 className="w-4 h-4" />
                             </button>
-                            <button className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                            <button className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>

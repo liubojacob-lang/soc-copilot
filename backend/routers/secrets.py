@@ -14,7 +14,7 @@ from services.security.secret_service import get_secret_service
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/secrets", tags=["secrets"])
+router = APIRouter(prefix="/api/v1/secrets", tags=["secrets"])
 
 
 # ============ Schemas ============
@@ -23,14 +23,20 @@ router = APIRouter(prefix="/api/secrets", tags=["secrets"])
 class SecretCreate(BaseModel):
     """Schema for creating a secret."""
 
-    name: str = Field(..., min_length=1, max_length=100, description="Unique secret name")
-    value: str = Field(..., min_length=1, description="Secret value (will be encrypted)")
+    name: str = Field(
+        ..., min_length=1, max_length=100, description="Unique secret name"
+    )
+    value: str = Field(
+        ..., min_length=1, description="Secret value (will be encrypted)"
+    )
 
 
 class SecretUpdate(BaseModel):
     """Schema for updating a secret."""
 
-    value: str = Field(..., min_length=1, description="New secret value (will be encrypted)")
+    value: str = Field(
+        ..., min_length=1, description="New secret value (will be encrypted)"
+    )
 
 
 class SecretResponse(BaseModel):
@@ -104,7 +110,9 @@ async def create_secret(
     # Check if secret already exists
     existing = await repo.get_by_name(data.name)
     if existing:
-        raise HTTPException(status_code=400, detail=f"Secret '{data.name}' already exists")
+        raise HTTPException(
+            status_code=400, detail=f"Secret '{data.name}' already exists"
+        )
 
     # Encrypt the value
     secret_service = get_secret_service()

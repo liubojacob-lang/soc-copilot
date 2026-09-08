@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import { loadAuthState, logout, isAdmin } from "@/lib/auth";
 import { useTranslations } from "next-intl";
 import { X, Shield, LogOut, ChevronRight } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -25,9 +26,13 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("navigation");
-  const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
   const [mounted, setMounted] = useState(false);
+
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap
+  useFocusTrap(isOpen, onClose, drawerRef);
 
   useEffect(() => {
     setMounted(true);
@@ -44,27 +49,25 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   // Navigation groups
   const navGroups: NavGroup[] = [
     {
-      label: tNav("dashboard"),
+      label: t("dashboard"),
       items: [
-        { label: tNav("home"), path: "/" },
-        { label: tNav("runs"), path: "/playbooks" },
-        { label: tNav("definitions"), path: "/playbooks/definitions" },
-        { label: t("approvals"), path: "/playbooks/approvals" },
+        { label: t("home"), path: "/" },
+        { label: t("playbooks"), path: "/playbooks" },
       ],
     },
     {
-      label: tNav("analysis"),
+      label: t("analytics"),
       items: [
-        { label: tNav("ai"), path: "/ai-assistant" },
-        { label: tNav("ueba"), path: "/ueba" },
-        { label: tNav("threatHunting"), path: "/threat-hunting" },
+        { label: t("aiCopilot"), path: "/ai-assistant" },
+        { label: t("ueba"), path: "/ueba" },
+        { label: t("threatHunting"), path: "/threat-hunting" },
       ],
     },
     {
-      label: tNav("ecosystem"),
+      label: t("ecosystem"),
       items: [
-        { label: tNav("marketplace"), path: "/marketplace" },
-        { label: tNav("cloudNative"), path: "/cloud-native" },
+        { label: t("marketplace"), path: "/marketplace" },
+        { label: t("cloudNative"), path: "/cloud-native" },
         { label: t("triggers"), path: "/triggers" },
       ],
     },
@@ -82,13 +85,6 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
 
   const isLinkActive = (linkPath: string) => {
     if (pathname === linkPath) return true;
-    if (linkPath === "/playbooks") {
-      return (
-        pathname?.startsWith("/playbooks/") &&
-        !pathname.startsWith("/playbooks/definitions") &&
-        !pathname.startsWith("/playbooks/approvals")
-      );
-    }
     if (linkPath !== "/" && pathname?.startsWith(linkPath + "/")) return true;
     return false;
   };
@@ -106,18 +102,6 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     router.push("/login");
     onClose();
   }, [router, onClose]);
-
-  // Close on escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -157,6 +141,11 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
 
       {/* Drawer */}
       <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={tCommon("mainMenu")}
+        tabIndex={-1}
         className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white dark:bg-gray-800 z-[201] transform transition-transform duration-300 ease-out shadow-xl ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -170,7 +159,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
           <button
             onClick={onClose}
             className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-            aria-label="Close menu"
+            aria-label={tCommon("closeMenu")}
           >
             <X className="w-5 h-5" />
           </button>
