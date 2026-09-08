@@ -241,11 +241,17 @@ export default function PlaybookDefinitionsPage() {
                     >
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                         <div className="flex items-center gap-3">
-                          <BookOpen className="w-5 h-5 text-gray-400" />
+                          <BookOpen className="w-5 h-5 text-gray-400 shrink-0" />
                           <div>
-                            <div className="font-semibold">{def.name}</div>
+                            <button
+                              type="button"
+                              onClick={() => router.push(`/playbooks/definitions/${def.id}`)}
+                              className="font-semibold text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 hover:underline text-left block transition-colors"
+                            >
+                              {def.name}
+                            </button>
                             {def.description && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                 {def.description}
                               </div>
                             )}
@@ -273,13 +279,6 @@ export default function PlaybookDefinitionsPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
-                            title={tCommon("viewDetails")}
-                            onClick={() => router.push(`/playbooks/definitions/${def.id}`)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
                           <button
                             className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
                             title={tCommon("edit")}

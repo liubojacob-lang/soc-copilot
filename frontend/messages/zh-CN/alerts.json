@@ -29,7 +29,27 @@
     "open": "开放",
     "investigating": "调查中",
     "resolved": "已解决",
-    "closed": "已关闭"
+    "closed": "已关闭",
+    "batch": {
+      "selected": "已选择 {count} 项",
+      "resolve": "解决",
+      "falsePositive": "误报",
+      "investigate": "调查",
+      "updated": "已将 {count} 条告警更新为“{status}”",
+      "failed": "批量更新失败"
+    },
+    "totalCount": "{count} 条告警",
+    "deleteSuccess": "告警已删除",
+    "deleteFailed": "删除失败",
+    "deleteDialog": {
+      "title": "删除告警",
+      "description": "确定要永久删除此告警吗？此操作无法撤销。"
+    },
+    "filterMobile": "筛选",
+    "pagination": {
+      "prev": "← 上一页",
+      "next": "下一页 →"
+    }
   },
   "alertDetails": {
     "realtimeUpdate": "告警已实时更新"

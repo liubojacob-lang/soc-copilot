@@ -7,6 +7,8 @@ Provides real-time operational metrics including:
 - Top sources, risky assets, IOC hits, playbook runs
 """
 
+import json
+from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends
@@ -77,6 +79,18 @@ class TopRiskyAsset(BaseModel):
     high_count: int = 0
 
 
+class MITRETechniqueItem(BaseModel):
+    technique: str
+    technique_id: str
+    count: int
+
+
+class MITRETacticItem(BaseModel):
+    tactic: str
+    tactic_id: str
+    techniques: list[MITRETechniqueItem] = Field(default_factory=list)
+
+
 class DashboardStats(BaseModel):
     """Real-time operational dashboard statistics."""
 
@@ -95,6 +109,60 @@ class DashboardStats(BaseModel):
     top_risky_assets: list[TopRiskyAsset] = Field(default_factory=list)
     ioc_hits_today: int = 0
     playbook_runs_today: int = 0
+    mitre_tactics: list[MITRETacticItem] = Field(default_factory=list)
+
+
+# ── Constants ─────────────────────────────────────────────────────
+
+MITRE_TACTIC_ORDER: list[tuple[str, str, str]] = [
+    ("TA0043", "Reconnaissance", "reconnaissance"),
+    ("TA0042", "Resource Development", "resource_development"),
+    ("TA0001", "Initial Access", "initial_access"),
+    ("TA0002", "Execution", "execution"),
+    ("TA0003", "Persistence", "persistence"),
+    ("TA0004", "Privilege Escalation", "privilege_escalation"),
+    ("TA0005", "Defense Evasion", "defense_evasion"),
+    ("TA0006", "Credential Access", "credential_access"),
+    ("TA0007", "Discovery", "discovery"),
+    ("TA0008", "Lateral Movement", "lateral_movement"),
+    ("TA0009", "Collection", "collection"),
+    ("TA0011", "Command and Control", "command_and_control"),
+    ("TA0010", "Exfiltration", "exfiltration"),
+    ("TA0040", "Impact", "impact"),
+]
+
+MITRE_TACTIC_BY_KEY: dict[str, tuple[str, str]] = {
+    t[2]: (t[0], t[1]) for t in MITRE_TACTIC_ORDER
+}
+
+MITRE_TECHNIQUE_NAMES: dict[str, str] = {
+    "T1003.001": "LSASS Memory Dump",
+    "T1021.002": "SMB/Windows Admin Shares",
+    "T1046": "Network Service Discovery",
+    "T1052.001": "Exfiltration over USB",
+    "T1053.003": "Cron Scheduled Task",
+    "T1071.001": "Web Protocols C2",
+    "T1071.004": "DNS C2",
+    "T1078": "Valid Accounts",
+    "T1078.004": "Cloud Accounts",
+    "T1110.001": "Password Guessing",
+    "T1110.003": "Password Spraying",
+    "T1114.003": "Email Forwarding Rule",
+    "T1136.001": "Local Account Creation",
+    "T1136.003": "Cloud Account Creation",
+    "T1190": "Exploit Public-Facing App",
+    "T1204.002": "Malicious File Execution",
+    "T1486": "Data Encrypted for Impact",
+    "T1490": "Inhibit System Recovery",
+    "T1496": "Resource Hijacking",
+    "T1530": "Data from Cloud Storage",
+    "T1562.001": "Disable Security Tools",
+    "T1566.002": "Spearphishing Link",
+    "T1567.002": "Exfiltration to Cloud",
+    "T1569.002": "Service Execution",
+    "T1573": "Encrypted Channel",
+    "T1611": "Escape to Host",
+}
 
 
 # ── Endpoint ───────────────────────────────────────────────────────
@@ -110,7 +178,7 @@ async def get_dashboard_stats(
     Aggregates are cached for 60s: the dashboard is polled by every open
     browser tab, so uncached per-request aggregates scale with viewers.
     """
-    cache_key = "dashboard_stats:v1"
+    cache_key = "dashboard_stats:v2"
     cached = get_query_cache().get(cache_key)
     if cached is not None:
         return cached
@@ -313,6 +381,74 @@ async def _compute_dashboard_stats(session: AsyncSession) -> DashboardStats:
     )
     playbook_runs_today = playbook_result.scalar() or 0
 
+    # ── MITRE ATT&CK Heatmap Aggregation ───────────────────────────
+    mitre_query = select(
+        SecurityAlert.rule_mitre,
+        SecurityAlert.mitre_tactics,
+        SecurityAlert.mitre_techniques,
+    ).where(live)
+    mitre_rows = (await session.execute(mitre_query)).all()
+
+    def _norm_tactic(s: str) -> str:
+        return s.lower().strip().replace(" ", "_").replace("-", "_")
+
+    tactic_tech_map: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for rule_mitre, mitre_tactics, mitre_techniques in mitre_rows:
+        t_list: list[str] = []
+        if mitre_tactics:
+            try:
+                parsed = json.loads(mitre_tactics) if isinstance(mitre_tactics, str) else mitre_tactics
+                if isinstance(parsed, list):
+                    t_list.extend([str(x) for x in parsed])
+                elif isinstance(parsed, str):
+                    t_list.append(parsed)
+            except Exception:
+                t_list.append(str(mitre_tactics))
+        elif rule_mitre:
+            t_list.extend([x.strip() for x in str(rule_mitre).split(",") if x.strip()])
+
+        tech_list: list[str] = []
+        if mitre_techniques:
+            try:
+                parsed = json.loads(mitre_techniques) if isinstance(mitre_techniques, str) else mitre_techniques
+                if isinstance(parsed, list):
+                    tech_list.extend([str(x) for x in parsed])
+                elif isinstance(parsed, str):
+                    tech_list.append(parsed)
+            except Exception:
+                tech_list.append(str(mitre_techniques))
+
+        for t in t_list:
+            k = _norm_tactic(t)
+            if k in MITRE_TACTIC_BY_KEY:
+                if tech_list:
+                    for tech_id in tech_list:
+                        tactic_tech_map[k][tech_id] += 1
+                else:
+                    tactic_tech_map[k]["General"] += 1
+
+    mitre_tactics_list: list[MITRETacticItem] = []
+    for tid, tname, key in MITRE_TACTIC_ORDER:
+        techs_map = tactic_tech_map.get(key, {})
+        tech_items: list[MITRETechniqueItem] = []
+        for tech_id, count in sorted(techs_map.items(), key=lambda x: -x[1]):
+            name = MITRE_TECHNIQUE_NAMES.get(tech_id, tech_id)
+            tech_items.append(
+                MITRETechniqueItem(
+                    technique=name,
+                    technique_id=tech_id,
+                    count=count,
+                )
+            )
+        if tech_items:
+            mitre_tactics_list.append(
+                MITRETacticItem(
+                    tactic=tname,
+                    tactic_id=tid,
+                    techniques=tech_items,
+                )
+            )
+
     return DashboardStats(
         alerts_total=alerts_total,
         alerts_unresolved=alerts_unresolved,
@@ -327,4 +463,5 @@ async def _compute_dashboard_stats(session: AsyncSession) -> DashboardStats:
         top_risky_assets=top_risky_assets,
         ioc_hits_today=ioc_hits_today,
         playbook_runs_today=playbook_runs_today,
+        mitre_tactics=mitre_tactics_list,
     )

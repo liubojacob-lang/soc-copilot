@@ -145,6 +145,10 @@ class CaseResponse(BaseModel):
     tenant_id: str
     created_at: datetime
     updated_at: datetime
+    # Aliases & Frontend Compatibility
+    sla_deadline: datetime | None = None
+    tags: list[str] = Field(default_factory=list)
+    related_alert_count: int = 0
     # Counts (populated by service)
     alert_count: int = 0
     comment_count: int = 0
@@ -163,6 +167,7 @@ class CaseListResponse(BaseModel):
     """Schema for case list response."""
 
     items: list[CaseResponse]
+    cases: list[CaseResponse] = Field(default_factory=list)
     total: int
     page: int = 1
     page_size: int = 20

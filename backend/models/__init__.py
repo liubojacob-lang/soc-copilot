@@ -9,6 +9,7 @@ from models.asset import AssetModel
 from models.audit_log import AuditLogModel
 from models.blocked_ip import BlockedIP
 from models.case import (
+    CaseAlertAssociation,
     CaseComment,
     CaseModel,
     CaseTimelineEntry,

@@ -50,6 +50,7 @@ class CaseService:
             status=case.status,
             assigned_to=case.assigned_to,
             sla_due_at=case.sla_due_at,
+            sla_deadline=case.sla_due_at,
             resolution=case.resolution,
             resolved_at=case.resolved_at,
             closed_at=case.closed_at,
@@ -82,6 +83,7 @@ class CaseService:
             status=case.status,
             assigned_to=case.assigned_to,
             sla_due_at=case.sla_due_at,
+            sla_deadline=case.sla_due_at,
             resolution=case.resolution,
             resolved_at=case.resolved_at,
             closed_at=case.closed_at,
@@ -89,6 +91,7 @@ class CaseService:
             created_at=case.created_at,
             updated_at=case.updated_at,
             alert_count=alert_count,
+            related_alert_count=alert_count,
             comment_count=comment_count,
             alerts=alerts,
             timeline_entries=[
@@ -191,11 +194,13 @@ class CaseService:
         for case in items:
             resp = self._to_response(case)
             resp.alert_count = await self.repo.count_alerts(self.session, case.id)
+            resp.related_alert_count = resp.alert_count
             resp.comment_count = await self.repo.count_comments(self.session, case.id)
             responses.append(resp)
 
         return CaseListResponse(
             items=responses,
+            cases=responses,
             total=total,
             page=page,
             page_size=page_size,

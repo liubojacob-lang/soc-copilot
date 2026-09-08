@@ -17,6 +17,19 @@
     "assetRiskTop10": "资产风险 Top 10",
     "iocStats": "IOC 命中统计",
     "days": "天",
-    "noData": "暂无数据"
+    "noData": "暂无数据",
+    "mitre": {
+      "tactics": "战术覆盖",
+      "techniques": "触发技术",
+      "alerts": "关联告警",
+      "noData": "暂无 MITRE ATT&CK 战术数据",
+      "breakdown": "战术分布详情",
+      "noActivity": "无触发",
+      "legendNoData": "无告警",
+      "legendLow": "低频活动",
+      "legendHigh": "高频命中",
+      "alertCount": "{count} 条告警",
+      "techniqueCount": "{count} 项技术"
+    }
   }
 }

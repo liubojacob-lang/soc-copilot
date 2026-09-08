@@ -130,10 +130,7 @@ async def get_session() -> AsyncSession:
 async def init_db() -> None:
     """Initialize database tables."""
     # Import all models to ensure they're registered with Base
-    from models.api_key import APIKeyModel  # noqa: F401
-    from models.audit_log import AuditLogModel  # noqa: F401
-    from models.playbook_run import PlaybookRunModel, PlaybookRunStepModel  # noqa: F401
-    from models.user import UserModel  # noqa: F401
+    import models  # noqa: F401
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

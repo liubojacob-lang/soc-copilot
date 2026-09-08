@@ -42,6 +42,7 @@ from models.case import (
     CaseTimelineEntry,
 )
 from models.correlated_event import CorrelatedEvent
+from models.correlation_rule import CorrelationRule
 from models.ioc_hit import IOCHitDB
 from models.monitor_history import MonitorHistoryModel
 from models.playbook_definition import PlaybookDefinitionModel
@@ -733,6 +734,20 @@ CASES: list[dict] = [
              ("admin", 22, "备份核查：backup-nas-01 快照完好（最后快照 22:00），勒索样本未触及备份网段。已通知暂停全部 SMB 写入。"),
              ("wang.fang", 20, "财务共享目录受影响清单已导出：3,214 个文件 / 41 个部门目录。已要求全员暂停使用共享盘，改用临时协作空间。"),
          ]},
+    {"key": "bastion-compromise", "title": "堡垒机凭据失窃与异常登录横向侦察事件",
+         "description": "45.155.205.233 经多次爆破后利用失陷的 deploy 账户成功登入 jump-bastion-01，执行内网网段端口探测与敏感凭据枚举，触发主机安全引擎与网络威胁阻断。",
+         "severity": "critical", "status": "investigating", "assign": "admin",
+         "created_h": 18, "sla_h": 2,
+         "alert_keys": ["bf-06", "bf-success-01"],
+         "timeline": [
+             ("status_change", "检测到暴力破解后成功登录，自动提升事件等级为 P1 Critical", "bf-success-01"),
+             ("assignment", "分配给值班安全专家 admin 紧急介入排查", None),
+             ("status_change", "EDR 监测到 deploy 进程下发内网扫描脚本，已下发指令冻结进程并强制注销会话", None),
+         ],
+         "comments": [
+             ("admin", 17, "已强制终止会话并禁用 deploy 账号密码登录；正在排查该 IP 登录期间执行的所有历史命令审计日志。"),
+             ("admin", 15, "经分析 bash_history 与 auditd 日志，攻击者尝试拉取 /etc/shadow 失败，尝试访问内网 172.16.0.0/24 被堡垒机 ACL 阻断。"),
+         ]},
     {"key": "phishing", "title": "钓鱼邮件致财务人员凭据泄露与云控制台滥用",
          "description": "财务部 12 人收到仿冒 SSO 钓鱼邮件，liu.yiming 点击并提交凭据。随后该账户出现不可能 travel 登录、新增 IAM 密钥与 S3 桶公开等云上滥用行为。",
          "severity": "high", "status": "investigating", "assign": "admin",
@@ -744,6 +759,125 @@ CASES: list[dict] = [
          "comments": [
              ("admin", 48, "已吊销 liu.yiming 全部会话令牌并强制重置密码 + 重注册 MFA；finance-readonly 的新增密钥已删除。"),
              ("admin", 46, "finance-exports 桶已恢复私有，CloudTrail 未发现批量 GetObject 下载记录，泄露影响待评估。"),
+         ]},
+    {"key": "citrix-bleed", "title": "Citrix Gateway 内存泄露与未授权会话重放排查",
+         "description": "外部多源扫描器探测边界 Citrix NetScaler 网关 (CVE-2023-4966 Citrix Bleed)，检测到非法的 HTTP 会话令牌重放，存在绕过二次多因素认证（MFA）进入内网的安全隐患。",
+         "severity": "high", "status": "investigating", "assign": "admin",
+         "created_h": 10, "sla_h": 6,
+         "alert_keys": ["vuln-citrix-01"],
+         "timeline": [
+             ("status_change", "Trivy 与 WAF 联动上报漏洞利用 PoC 探测特征", "vuln-citrix-01"),
+             ("assignment", "指派基础架构与安全团队联合处置", None),
+         ],
+         "comments": [
+             ("admin", 9, "已下发 WAF 临时热补丁规则，拦截 URI 包含 /oauth/idp/.well-known/openid-configuration 的畸形请求。"),
+             ("admin", 5, "与网络组确认今晚 23:00 安排双机热备轮流升级固件至安全版本，升级完成后将强制注销当前所有活跃 ICA 会话。"),
+         ]},
+    {"key": "data-exfil", "title": "疑似敏感数据外发至个人网盘与 DNS 隐蔽信道",
+         "description": "hr-laptop-wang 非工作时段向个人网盘上传 2.3GB；同网段 it-laptop-zhang 出现 DNS 隧道特征。待 HR 与法务联合定性。",
+         "severity": "high", "status": "pending_review", "assign": None,
+         "created_h": 6, "sla_h": 8,
+         "alert_keys": ["exfil-upload-01", "dns-tunnel-01", "mail-rule-01"],
+         "timeline": [
+             ("status_change", "与邮箱自动转发规则关联，合并调查", None),
+         ],
+         "comments": [
+             ("admin", 4, "已导出 DLP 命中明细与代理日志，等待 HR 确认 wang.xiaotong 近期离职意向。"),
+         ]},
+    {"key": "audit-tampering", "title": "核心支付网关系统级审计守护进程（auditd）异常终止",
+         "description": "核心生产环境支付前置机 pay-gw-01 上的 auditd 进程突遭 SIGKILL 终止，系统完整性监控检测到 /etc/audit/audit.rules 规则被注释，疑似攻击者意图清理痕迹并逃避检测。",
+         "severity": "critical", "status": "new", "assign": None,
+         "created_h": 2, "sla_h": 2,
+         "alert_keys": ["audit-policy-01"],
+         "timeline": [
+             ("status_change", "FIM 监控到安全敏感审计配置哈希不符，SOC 自动触发 P0 级工单", "audit-policy-01"),
+         ],
+         "comments": [
+             ("admin", 1, "初步核实：运维团队未报备维护变更。建议立即提取该机器只读内存快照，并保留原始 syslog 远程日志。"),
+         ]},
+    {"key": "mfa-fatigue", "title": "研发主管账号遭遇频繁多因素认证（MFA）疲劳轰炸攻击",
+         "description": "未知攻击者在掌握研发部门经理内网账号密码后，连续发起 40 余次 Microsoft Authenticator 弹窗 Push 请求，企图利用用户误触疲劳通过二次认证验证。",
+         "severity": "high", "status": "investigating", "assign": "admin",
+         "created_h": 14, "sla_h": 6,
+         "alert_keys": ["logon-spike-01"],
+         "timeline": [
+             ("status_change", "UEBA 检测到短时间集中认证推送异常，自动锁定该用户账号", "logon-spike-01"),
+             ("assignment", "安全运营值班人员跟进确认用户真实身份状态", None),
+         ],
+         "comments": [
+             ("admin", 13, "已与当事人电话确认，其并未主动发起登录。已要求当事人重置密码，并开启密码与设备绑定限制。"),
+         ]},
+    {"key": "container-escape", "title": "Kubernetes 特权容器逃逸（runC CVE-2024-21626）行为阻断",
+         "description": "构建节点预发布测试容器在启动时尝试利用 runC 漏洞通过工作目录文件描述符泄露访问宿主机 procfs，被 Falco 实时检测并由平台防护组件自动销毁容器实例。",
+         "severity": "high", "status": "resolved", "assign": "admin",
+         "created_h": 48, "sla_h": 12, "resolved": True,
+         "alert_keys": ["vuln-runc-01"],
+         "timeline": [
+             ("status_change", "Falco 触发 Rule 'Kernel Workdir Fd Leak' 告警，自动隔离目标 Pod", "vuln-runc-01"),
+             ("resolution", "经分析为第三方依赖库内嵌测试 PoC 触发，宿主机未受实质影响；已全量升级 runc 并结案", None),
+         ],
+         "comments": [
+             ("chen.hao", 40, "排查该容器镜像来源为开发引入的非官方基础镜像，已清理仓库中所有同指纹镜像并加入黑名单。"),
+         ]},
+    {"key": "usb-dlp-violation", "title": "研发终端违规插入移动介质与源码拷贝行为调查",
+         "description": "终端安全代理检测到 rd-pc-004 非工作时段插入未受信任的 USB 移动硬盘，DLP 规则命中尝试复制 450MB 核心平台源码压缩包行为，当前已被安全策略静默拦截。",
+         "severity": "medium", "status": "pending_review", "assign": None,
+         "created_h": 8, "sla_h": 12,
+         "alert_keys": ["usb-dlp-01"],
+         "timeline": [
+             ("status_change", "DLP 驱动层拦截写入操作，保存拦截证据链", "usb-dlp-01"),
+             ("status_change", "工单已流转至合规部门与员工直线主管进行联合定性审核", None),
+         ],
+         "comments": [
+             ("admin", 6, "已调取该终端当日操作录屏与进程树，用户表示在家办公需要备份，需签署保密与合规自查承诺书。"),
+         ]},
+    {"key": "macro-malware-edr", "title": "财务邮箱收到恶意宏 Office 附件被 EDR 驱动级拦截",
+         "description": "外部仿冒合作伙伴向财务部投递包含恶毒 VBA 宏的 Excel 对账单附件，员工双击后宏代码尝试拉取境外 CDN 恶意动态链接库，已被终端 EDR 行为引擎秒级查杀隔离。",
+         "severity": "medium", "status": "resolved", "assign": "admin",
+         "created_h": 85, "sla_h": 12, "resolved": True,
+         "alert_keys": ["edr-quarantine-01"],
+         "timeline": [
+             ("status_change", "终端 EDR 隔离样本并上报至安全中心沙箱", "edr-quarantine-01"),
+             ("resolution", "沙箱动态分析完成，判定为已知 Emotet 家族变种，关联 IoC 已全局同步封禁，结案", None),
+         ],
+         "comments": [
+             ("admin", 80, "邮件网关已对相同特征发件人与主题进行全量回撤，共清理同类钓鱼邮件 8 封。"),
+         ]},
+    {"key": "cloud-root-login", "title": "AWS 云平台 Root 根凭据境外控制台登录合规核查",
+         "description": "CloudTrail 记录到 AWS Root 账号在非工作时间自新加坡公网 IP 成功登录 Management Console，违反‘禁用 Root 账户进行日常管理’的安全基线标准。",
+         "severity": "high", "status": "closed", "assign": "admin",
+         "created_h": 96, "sla_h": 8, "resolved": True, "closed": True,
+         "alert_keys": ["root-login-01"],
+         "timeline": [
+             ("status_change", "云合规卫士自动触发高危基线告警并通知安全值班群", "root-login-01"),
+             ("resolution", "核实为海外出差技术合伙人紧急处理账单异动，已当面要求封存 Root 凭据改用 IAM 权限，闭环结案", None),
+         ],
+         "comments": [
+             ("admin", 90, "已重新锁定 Root 账号访问密钥，并将紧急救援硬件 Ukey 放入保险柜物理保管。"),
+         ]},
+    {"key": "ddos-rapid-reset", "title": "对外公共 API 网关 HTTP/2 Rapid Reset 流量突增处置",
+         "description": "监测到外部僵尸网络针对开放平台 OpenAPI 网关发起峰值达 600,000 QPS 的 HTTP/2 RST_STREAM 突发连接洪水，试图耗尽服务端连接池与反向代理 CPU 算力。",
+         "severity": "medium", "status": "resolved", "assign": "admin",
+         "created_h": 70, "sla_h": 8, "resolved": True,
+         "alert_keys": ["vuln-rapid-reset-01"],
+         "timeline": [
+             ("status_change", "网关连接数与错误率触发告警，流量自动牵引至高防清洗中心", "vuln-rapid-reset-01"),
+             ("resolution", "开启 WAF 畸形帧丢弃规则与客户端并发 RST 限速，网关指标已恢复正常，结案", None),
+         ],
+         "comments": [
+             ("admin", 65, "网关 Nginx 核心已在维护窗口完成补丁加固，抗重置攻击能力满足基线。"),
+         ]},
+    {"key": "cryptomining", "title": "K8s 集群挖矿木马（XMRig）事件",
+         "description": "攻击者通过 Jenkins 未授权 API 在预发节点部署挖矿容器，安装 cron 持久化。已清理并加固。",
+         "severity": "medium", "status": "resolved", "assign": "admin",
+         "created_h": 122, "sla_h": 12, "resolved": True,
+         "alert_keys": ["miner-pool-01", "miner-proc-01", "miner-cron-01"],
+         "timeline": [
+             ("status_change", "根因定位：Jenkins 8080 未授权访问", None),
+             ("resolution", "恶意容器与 cron 已清理，Jenkins 已启用认证，结案", None),
+         ],
+         "comments": [
+             ("chen.hao", 118, "预发节点镜像层已重建，Jenkins 端口改为仅研发网段可达。"),
          ]},
     {"key": "vpn-bruteforce", "title": "堡垒机 SSH 持续暴力破解攻击",
          "description": "近两周多源 IP 对堡垒机 SSH 管理接口持续爆破，fail2ban 自动封禁，未发现成功登入。已加固为密钥认证。",
@@ -758,18 +892,6 @@ CASES: list[dict] = [
          "comments": [
              ("admin", 6 * 24, "本周爆破源新增 2 个 IP，均已封禁。建议尽快关闭密码认证（跟踪单 TICK-4182）。"),
          ]},
-    {"key": "cryptomining", "title": "K8s 集群挖矿木马（XMRig）事件",
-         "description": "攻击者通过 Jenkins 未授权 API 在预发节点部署挖矿容器，安装 cron 持久化。已清理并加固。",
-         "severity": "medium", "status": "resolved", "assign": "admin",
-         "created_h": 122, "sla_h": 12, "resolved": True,
-         "alert_keys": ["miner-pool-01", "miner-proc-01", "miner-cron-01"],
-         "timeline": [
-             ("status_change", "根因定位：Jenkins 8080 未授权访问", None),
-             ("resolution", "恶意容器与 cron 已清理，Jenkins 已启用认证，结案", None),
-         ],
-         "comments": [
-             ("chen.hao", 118, "预发节点镜像层已重建，Jenkins 端口改为仅研发网段可达。"),
-         ]},
     {"key": "web-attack", "title": "Web 应用 SQL 注入与扫描探测",
          "description": "外部扫描器对商城 Web 层进行批量 SQL 注入与目录扫描，WAF 全部拦截，无实际渗透。",
          "severity": "low", "status": "closed", "assign": "admin",
@@ -780,16 +902,17 @@ CASES: list[dict] = [
              ("resolution", "扫描源封禁；Log4j 组件完成升级复扫；结案", None),
          ],
          "comments": []},
-    {"key": "data-exfil", "title": "疑似敏感数据外发至个人网盘",
-         "description": "hr-laptop-wang 非工作时段向个人网盘上传 2.3GB；同网段 it-laptop-zhang 出现 DNS 隧道特征。待 HR 与法务联合定性。",
-         "severity": "high", "status": "pending_review", "assign": None,
-         "created_h": 6, "sla_h": 8,
-         "alert_keys": ["exfil-upload-01", "dns-tunnel-01", "mail-rule-01"],
+    {"key": "log4j-remediation", "title": "Log4j2 远程代码执行漏洞历史资产全面清零专项",
+         "description": "例行季度资产脆弱性普查发现 3 台归档数据分析服务仍依赖 Log4j 2.14.1 版本组件，协同数据中台组统一进行热补丁替换与流量安全回归验证。",
+         "severity": "low", "status": "closed", "assign": "admin",
+         "created_h": 240, "sla_h": 48, "resolved": True, "closed": True,
+         "alert_keys": ["vuln-log4j-01"],
          "timeline": [
-             ("status_change", "与邮箱自动转发规则关联，合并调查", None),
+             ("status_change", "扫描任务命中已弃用老旧服务节点组件，发起整改追踪单", "vuln-log4j-01"),
+             ("resolution", "组件全量升级至 Log4j 2.22 安全版本，重新复扫已通过，结案归档", None),
          ],
          "comments": [
-             ("admin", 4, "已导出 DLP 命中明细与代理日志，等待 HR 确认 wang.xiaotong 近期离职意向。"),
+             ("admin", 220, "已同步更新 CI/CD 构建流水线中的安全检查插件，阻断不合规依赖包引入。"),
          ]},
 ]
 
@@ -1398,7 +1521,10 @@ async def seed(session) -> dict:
         alerts.append(a)
     session.add_all(alerts)
     await session.flush()  # 取得自增 id
-    alerts_by_key = {a.external_event_id.removeprefix("DEMO-").lower(): a for a in alerts}
+    all_demo_alerts = (await session.scalars(
+        select(SecurityAlert).where(SecurityAlert.external_event_id.startswith("DEMO-"))
+    )).all()
+    alerts_by_key = {a.external_event_id.removeprefix("DEMO-").lower(): a for a in all_demo_alerts}
     counts["alerts"] = len(alerts)
 
     # 3. 告警分析笔记
@@ -1445,6 +1571,7 @@ async def seed(session) -> dict:
             closed_at=ago(hours=spec["created_h"] - 1) if spec.get("closed") else None,
             created_at=created, updated_at=created,
         ))
+        await session.flush()
         for idx, key in enumerate(spec["alert_keys"]):
             alert = alerts_by_key.get(key)
             if not alert:
@@ -1512,7 +1639,25 @@ async def seed(session) -> dict:
         new_blocked += 1
     counts["blocked_ips"] = new_blocked
 
-    # 7. 关联事件
+    # 7. 关联事件与规则
+    rule_ids_needed = {spec["rule_id"] for spec in CORRELATED_EVENTS}
+    for rid in rule_ids_needed:
+        if not await session.get(CorrelationRule, rid):
+            session.add(CorrelationRule(
+                id=rid,
+                name=f"Demo Correlation Rule ({rid})",
+                description="Auto-generated demo rule for incident correlation",
+                enabled=True,
+                is_builtin=True,
+                time_window_seconds=3600,
+                entity_types={"ip_address": True, "username": True, "hostname": True},
+                min_similarity=0.7,
+                created_by="admin",
+                created_at=ago(days=30),
+                updated_at=ago(days=30),
+            ))
+    await session.flush()
+
     new_ces = 0
     for spec in CORRELATED_EVENTS:
         ce_id = uid("ce", spec["key"])
@@ -1528,7 +1673,8 @@ async def seed(session) -> dict:
             common_entities=spec["entities"],
             first_seen=ago(hours=spec["first_h"]).isoformat(),
             last_seen=ago(hours=spec["last_h"]).isoformat(),
-            status=spec["status"], assigned_to=spec.get("assign"),
+            status=spec["status"],
+            assigned_to=ADMIN_ID if spec.get("assign") == "admin" else None,
             tactics=spec["tactics"], techniques=spec["techniques"],
             ai_summary=spec["summary"], ai_remediation=spec["remediation"],
             risk_score=spec["risk"], affected_assets=spec["assets"],

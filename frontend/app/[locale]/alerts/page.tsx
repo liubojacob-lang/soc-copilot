@@ -26,7 +26,6 @@ import {
   ArrowUpDown,
   Trash2,
   CheckCircle,
-  Eye,
   MoreHorizontal,
   AlertTriangle,
   Clock,
@@ -105,13 +104,9 @@ function formatTime(ts: string | null, format: ReturnType<typeof useFormatter>):
     if (isNaN(d.getTime())) return "-";
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHrs = Math.floor(diffMins / 60);
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    const diffDays = Math.floor(diffHrs / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMs < 7 * 24 * 60 * 60 * 1000) {
+      return format.relativeTime(d);
+    }
     return format.dateTime(d, { dateStyle: "medium" });
   } catch {
     return "-";
@@ -122,14 +117,14 @@ function formatTime(ts: string | null, format: ReturnType<typeof useFormatter>):
 
 function SeverityTag({ severity }: { severity: string }) {
   const t = useTranslations("severity");
-  const labels: Record<string, string> = {
-    critical: t("critical"),
-    high: t("high"),
-    medium: t("medium"),
-    low: t("low"),
-    info: "Info",
-  };
-  return <Badge severity={mapSeverity(severity)}>{labels[severity] || severity}</Badge>;
+  const s = severity.toLowerCase();
+  let label = severity;
+  try {
+    label = t(s as any) || severity;
+  } catch {
+    label = severity;
+  }
+  return <Badge severity={mapSeverity(severity)}>{label}</Badge>;
 }
 
 // ── Status Badge ───────────────────────────────────────
@@ -237,18 +232,33 @@ function StatsBar({
   total: number;
   stats?: { by_severity?: Record<string, number>; by_status?: Record<string, number> };
 }) {
-  const t = useTranslations("common");
+  const t = useTranslations("alerts");
+  const tSev = useTranslations("severity");
   if (!stats) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2 mb-4">
-      <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">{total} alerts</span>
+      <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-2">
+        {t("totalCount", { count: total })}
+      </span>
       {stats.by_severity &&
-        Object.entries(stats.by_severity).map(([sev, count]) => (
-          <span key={sev} className="text-xs text-gray-400 dark:text-gray-500">
-            <Badge severity={mapSeverity(sev)}>{sev}</Badge> ×{count}
-          </span>
-        ))}
+        Object.entries(stats.by_severity).map(([sev, count]) => {
+          let label = sev;
+          try {
+            label = tSev(sev.toLowerCase() as any) || sev;
+          } catch {
+            label = sev;
+          }
+          return (
+            <span
+              key={sev}
+              className="text-xs text-gray-400 dark:text-gray-500 inline-flex items-center gap-1"
+            >
+              <Badge severity={mapSeverity(sev)}>{label}</Badge>
+              <span>×{count}</span>
+            </span>
+          );
+        })}
     </div>
   );
 }
@@ -370,6 +380,7 @@ export default function AlertsPage() {
   // ── Batch Actions ────────────────────────────────────
   const handleBatchStatus = async (status: string) => {
     if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
     try {
       await batchUpdate.mutateAsync({
         ids: Array.from(selectedIds),
@@ -377,10 +388,18 @@ export default function AlertsPage() {
       });
       setSelectedIds(new Set());
       setShowBatchPanel(false);
-      showToast(`Updated ${selectedIds.size} alerts to "${status}"`, "success");
+      const statusLabel =
+        status === "resolved"
+          ? t("statusResolved")
+          : status === "false_positive"
+            ? t("statusFalsePositive")
+            : status === "investigating"
+              ? t("statusInvestigating")
+              : status;
+      showToast(t("batch.updated", { count, status: statusLabel }), "success");
     } catch (err) {
       showToast(
-        `Batch update failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+        `${t("batch.failed")}: ${err instanceof Error ? err.message : "Unknown error"}`,
         "error"
       );
     }
@@ -396,9 +415,9 @@ export default function AlertsPage() {
     if (deleteTargetId === null) return;
     try {
       await deleteAlert.mutateAsync(deleteTargetId);
-      showToast("Alert deleted", "success");
+      showToast(t("deleteSuccess"), "success");
     } catch {
-      showToast("Delete failed", "error");
+      showToast(t("deleteFailed"), "error");
     } finally {
       setDeleteTargetId(null);
     }
@@ -439,7 +458,7 @@ export default function AlertsPage() {
           <div className="min-w-0">
             <button
               onClick={() => router.push(`/alerts/${row.id}`)}
-              className="text-sm font-medium text-gray-900 dark:text-white hover:text-accent-600 dark:hover:text-accent-400 truncate block max-w-[320px] text-left transition-colors"
+              className="text-sm font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 hover:underline truncate block max-w-[360px] text-left transition-colors"
             >
               {row.title}
             </button>
@@ -547,13 +566,6 @@ export default function AlertsPage() {
         cell: (row) => (
           <div className="flex items-center gap-1 justify-end">
             <button
-              onClick={() => router.push(`/alerts/${row.id}`)}
-              className="p-1.5 text-text-muted hover:text-accent-600 dark:hover:text-accent-400 rounded-md hover:bg-surface-ground active:bg-surface-ground transition-colors"
-              title={tCommon("view")}
-            >
-              <Eye className="w-4 h-4" />
-            </button>
-            <button
               onClick={() => handleDelete(row.id)}
               className="p-1.5 text-text-muted hover:text-danger-600 dark:hover:text-danger-400 rounded-md hover:bg-danger-500/10 active:bg-danger-500/10 transition-colors"
               title={tCommon("delete")}
@@ -562,7 +574,7 @@ export default function AlertsPage() {
             </button>
           </div>
         ),
-        width: "80px",
+        width: "50px",
         align: "right",
       },
     ],
@@ -734,7 +746,7 @@ export default function AlertsPage() {
           className="sm:hidden flex items-center gap-2 px-3 py-2 text-xs font-medium border border-border-subtle rounded-lg bg-surface-card text-text-secondary"
         >
           <Filter className="w-3.5 h-3.5" />
-          Filters
+          {t("filterMobile")}
           {(statusFilter.length > 0 || severityFilter.length > 0) && (
             <span className="px-1.5 py-0.2 text-[11px] bg-accent-500/20 text-accent-600 rounded-full font-semibold">
               {statusFilter.length + severityFilter.length}
@@ -746,7 +758,7 @@ export default function AlertsPage() {
       {/* Mobile Filters Panel */}
       {showMobileFilters && (
         <div className="sm:hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Status</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t("status")}</h3>
           <div className="flex flex-wrap gap-2">
             {[
               { value: "new", label: t("statusNew") },
@@ -776,7 +788,9 @@ export default function AlertsPage() {
               </button>
             ))}
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Severity</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            {tCommon("severity")}
+          </h3>
           <div className="flex flex-wrap gap-2">
             {[
               { value: "critical", label: t("severityCritical") },
@@ -813,7 +827,7 @@ export default function AlertsPage() {
       {selectedIds.size > 0 && (
         <div className="bg-surface-card border border-accent-500/30 rounded-xl p-3 mb-4 flex items-center gap-3 flex-wrap shadow-subtle">
           <span className="text-xs font-semibold text-accent-600 dark:text-accent-400">
-            {selectedIds.size} selected
+            {t("batch.selected", { count: selectedIds.size })}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -823,17 +837,17 @@ export default function AlertsPage() {
               className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white"
               leftIcon={<CheckCircle className="w-3.5 h-3.5" />}
             >
-              Resolve
+              {t("batch.resolve")}
             </Button>
             <Button
               size="xs"
               variant="secondary"
               onClick={() => handleBatchStatus("false_positive")}
             >
-              False Positive
+              {t("batch.falsePositive")}
             </Button>
             <Button size="xs" variant="outline" onClick={() => handleBatchStatus("investigating")}>
-              Investigate
+              {t("batch.investigate")}
             </Button>
           </div>
           <button
@@ -882,7 +896,7 @@ export default function AlertsPage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
             >
-              ← Prev
+              {t("pagination.prev")}
             </Button>
             <span className="text-xs font-medium text-text-muted tabular-nums">
               {page} / {Math.ceil(total / PAGE_SIZE)}
@@ -893,7 +907,7 @@ export default function AlertsPage() {
               onClick={() => setPage((p) => Math.min(Math.ceil(total / PAGE_SIZE), p + 1))}
               disabled={page >= Math.ceil(total / PAGE_SIZE)}
             >
-              Next →
+              {t("pagination.next")}
             </Button>
           </div>
         )}
@@ -905,7 +919,10 @@ export default function AlertsPage() {
 
   return (
     <div className="min-h-screen bg-surface-ground">
-      <PageHeader title={t("title")} subtitle={total > 0 ? `${total} alerts` : t("subtitle")} />
+      <PageHeader
+        title={t("title")}
+        subtitle={total > 0 ? t("totalCount", { count: total }) : t("subtitle")}
+      />
 
       {/* Main Content */}
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -940,10 +957,11 @@ export default function AlertsPage() {
         open={deleteTargetId !== null}
         onCancel={() => setDeleteTargetId(null)}
         onConfirm={confirmDelete}
-        title="Delete Alert"
-        description="Are you sure you want to delete this alert permanently? This action cannot be undone."
+        title={t("deleteDialog.title")}
+        description={t("deleteDialog.description")}
         variant="danger"
-        confirmText="Delete"
+        confirmText={tCommon("delete")}
+        cancelText={tCommon("cancel")}
       />
     </div>
   );

@@ -290,9 +290,6 @@ export default function PlaybooksPage() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           {t("duration")}
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          {tCommon("actions")}
-                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -310,9 +307,13 @@ export default function PlaybooksPage() {
                             className="hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-700/50 transition-colors"
                           >
                             <td className="px-6 py-4">
-                              <div className="font-medium text-gray-900 dark:text-white">
+                              <button
+                                type="button"
+                                onClick={() => router.push(`/playbooks/${run.id}`)}
+                                className="font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 hover:underline text-left block transition-colors"
+                              >
                                 {playbooks[run.playbook_name]?.name || run.playbook_name}
-                              </div>
+                              </button>
                               <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                                 {run.id.slice(0, 8)}...
                               </div>
@@ -348,16 +349,6 @@ export default function PlaybooksPage() {
                               ) : (
                                 <span className="text-gray-400">-</span>
                               )}
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <button
-                                type="button"
-                                onClick={() => router.push(`/playbooks/${run.id}`)}
-                                className="inline-flex items-center gap-1 text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 text-sm font-medium transition-colors"
-                              >
-                                <Eye className="w-4 h-4" />
-                                <span>{tCommon("viewDetails")}</span>
-                              </button>
                             </td>
                           </tr>
                         );
@@ -459,7 +450,13 @@ export default function PlaybooksPage() {
                         className="hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-700/50 transition-colors"
                       >
                         <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                          {def.name}
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/playbooks/definitions/${def.id}`)}
+                            className="font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 hover:underline text-left block transition-colors"
+                          >
+                            {def.name}
+                          </button>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
                           {def.description || "-"}
@@ -480,13 +477,6 @@ export default function PlaybooksPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => router.push(`/playbooks/definitions/${def.id}`)}
-                              className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
-                              title={tCommon("viewDetails")}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
                             <button
                               onClick={() => router.push(`/playbooks/definitions/${def.id}/edit`)}
                               className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"

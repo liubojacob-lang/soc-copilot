@@ -17,6 +17,19 @@
     "assetRiskTop10": "Asset Risk Top 10",
     "iocStats": "IOC Hit Statistics",
     "days": "days",
-    "noData": "No data available"
+    "noData": "No data available",
+    "mitre": {
+      "tactics": "Tactics",
+      "techniques": "Techniques",
+      "alerts": "Alerts",
+      "noData": "No MITRE ATT&CK data available",
+      "breakdown": "Tactics Breakdown",
+      "noActivity": "No Activity",
+      "legendNoData": "No data",
+      "legendLow": "Low activity",
+      "legendHigh": "High activity",
+      "alertCount": "{count} alerts",
+      "techniqueCount": "{count} techniques"
+    }
   }
 }

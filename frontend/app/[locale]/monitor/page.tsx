@@ -126,11 +126,7 @@ export default function DashboardPage() {
     ? { buckets: toSeverityBuckets(stats), total: stats.alerts_total }
     : undefined;
   const assetData = stats ? { assets: toAssetRiskItems(stats) } : undefined;
-  const mitreChartData: {
-    tactic: string;
-    tactic_id: string;
-    techniques: { technique: string; technique_id: string; count: number }[];
-  }[] = [];
+  const mitreChartData = stats?.mitre_tactics ?? [];
   const iocStatsData = stats
     ? {
         total: stats.ioc_hits_today,

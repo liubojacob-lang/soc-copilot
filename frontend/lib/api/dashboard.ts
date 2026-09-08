@@ -53,6 +53,18 @@ export interface TopRiskyAsset {
   high_count: number;
 }
 
+export interface MITRETechniqueItem {
+  technique: string;
+  technique_id: string;
+  count: number;
+}
+
+export interface MITRETacticItem {
+  tactic: string;
+  tactic_id: string;
+  techniques: MITRETechniqueItem[];
+}
+
 export interface DashboardStats {
   alerts_total: number;
   alerts_unresolved: number;
@@ -67,6 +79,7 @@ export interface DashboardStats {
   top_risky_assets: TopRiskyAsset[];
   ioc_hits_today: number;
   playbook_runs_today: number;
+  mitre_tactics?: MITRETacticItem[];
 }
 
 // ── Chart adapter types (consumed by dashboard chart components) ──────

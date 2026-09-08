@@ -144,11 +144,34 @@ export async function listCases(filters: CaseFilters = {}): Promise<CaseListResp
   if (filters.page) params.set("page", String(filters.page));
   if (filters.page_size) params.set("page_size", String(filters.page_size));
   const query = params.toString();
-  return apiClient.get<CaseListResponse>(`/api/v1/cases/${query ? `?${query}` : ""}`);
+  const res = await apiClient.get<any>(`/api/v1/cases${query ? `?${query}` : ""}`);
+  const rawList: any[] = res?.cases || res?.items || [];
+  const cases: SecurityCase[] = rawList.map((item: any) => ({
+    ...item,
+    sla_deadline: item.sla_deadline ?? item.sla_due_at ?? null,
+    sla_due_at: item.sla_due_at ?? item.sla_deadline ?? null,
+    related_alert_count: item.related_alert_count ?? item.alert_count ?? 0,
+    comment_count: item.comment_count ?? 0,
+    tags: item.tags ?? [],
+  }));
+  return {
+    total: res?.total ?? cases.length,
+    cases,
+    page: res?.page ?? 1,
+    page_size: res?.page_size ?? 20,
+  };
 }
 
 export async function getCase(id: string): Promise<SecurityCase> {
-  return apiClient.get<SecurityCase>(`/api/v1/cases/${id}`);
+  const res = await apiClient.get<any>(`/api/v1/cases/${id}`);
+  return {
+    ...res,
+    sla_deadline: res.sla_deadline ?? res.sla_due_at ?? null,
+    sla_due_at: res.sla_due_at ?? res.sla_deadline ?? null,
+    related_alert_count: res.related_alert_count ?? res.alert_count ?? res.alerts?.length ?? 0,
+    comment_count: res.comment_count ?? res.comments?.length ?? 0,
+    tags: res.tags ?? [],
+  };
 }
 
 export async function createCase(payload: CaseCreatePayload): Promise<SecurityCase> {

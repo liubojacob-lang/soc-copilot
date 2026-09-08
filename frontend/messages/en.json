@@ -769,7 +769,27 @@
       "addNotePlaceholder": "Add a note..."
     },
     "importAlerts": "Import Alerts",
-    "info": "Info"
+    "info": "Info",
+    "batch": {
+      "selected": "{count} selected",
+      "resolve": "Resolve",
+      "falsePositive": "False Positive",
+      "investigate": "Investigate",
+      "updated": "Updated {count} alerts to \"{status}\"",
+      "failed": "Batch update failed"
+    },
+    "totalCount": "{count} alerts",
+    "deleteSuccess": "Alert deleted",
+    "deleteFailed": "Delete failed",
+    "deleteDialog": {
+      "title": "Delete Alert",
+      "description": "Are you sure you want to delete this alert permanently? This action cannot be undone."
+    },
+    "filterMobile": "Filters",
+    "pagination": {
+      "prev": "← Prev",
+      "next": "Next →"
+    }
   },
   "reports": {
     "title": "Reports",
@@ -1807,7 +1827,20 @@
       "evening": "Good evening"
     },
     "severityDistribution": "Severity Distribution",
-    "noData": "No data available"
+    "noData": "No data available",
+    "mitre": {
+      "tactics": "Tactics",
+      "techniques": "Techniques",
+      "alerts": "Alerts",
+      "noData": "No MITRE ATT&CK data available",
+      "breakdown": "Tactics Breakdown",
+      "noActivity": "No Activity",
+      "legendNoData": "No data",
+      "legendLow": "Low activity",
+      "legendHigh": "High activity",
+      "alertCount": "{count} alerts",
+      "techniqueCount": "{count} techniques"
+    }
   },
   "aiModels": {
     "title": "AI Models",
