@@ -2,12 +2,13 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
+from middleware.rate_limiter import rate_limit
 from models.user import UserModel
 from schemas.report import ReportGenerationRequest, ReportGenerationResponse
 from services.report_service import ReportService
@@ -17,15 +18,18 @@ router = APIRouter(tags=["report"])
 
 
 @router.post("/api/v1/generate-report", response_model=ReportGenerationResponse)
+@rate_limit(max_requests=10, window_seconds=60)
 async def generate_report(
-    request: ReportGenerationRequest,
+    payload: ReportGenerationRequest,
+    request: Request,
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ) -> ReportGenerationResponse:
     """Generate report templates from alert analysis.
 
     Args:
-        request: Report generation request
+        payload: Report generation request body
+        request: Raw request (consumed by the rate limiter)
         session: Database session
 
     Returns:
@@ -37,8 +41,8 @@ async def generate_report(
     try:
         service = ReportService(session=session)
         result = await service.generate(
-            request.alert_json,
-            request.additional_notes,
+            payload.alert_json,
+            payload.additional_notes,
         )
         return result
     except Exception as e:

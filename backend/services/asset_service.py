@@ -18,6 +18,10 @@ from schemas.asset import (
 logger = get_logger(__name__)
 
 
+class DuplicateAssetError(ValueError):
+    """Raised when an asset's hostname or IP already exists (HTTP 409)."""
+
+
 class AssetService:
     """Service for asset management."""
 
@@ -41,7 +45,7 @@ class AssetService:
 
         Raises:
             ValueError: If hostname and IP are both empty
-            ValueError: If hostname or IP already exists
+            DuplicateAssetError: If hostname or IP already exists
         """
         if not data.hostname and not data.ip:
             raise ValueError("At least one of hostname or ip must be provided")
@@ -52,7 +56,7 @@ class AssetService:
                 self.session, data.hostname
             )
             if existing:
-                raise ValueError(
+                raise DuplicateAssetError(
                     f"Asset with hostname '{data.hostname}' already exists"
                 )
 
@@ -60,7 +64,7 @@ class AssetService:
         if data.ip:
             existing = await self.repository.get_by_ip(self.session, data.ip)
             if existing:
-                raise ValueError(f"Asset with IP '{data.ip}' already exists")
+                raise DuplicateAssetError(f"Asset with IP '{data.ip}' already exists")
 
         asset = await self.repository.create(self.session, data)
         await self.session.commit()
@@ -120,7 +124,7 @@ class AssetService:
                 self.session, data.hostname
             )
             if existing and existing.id != asset_id:
-                raise ValueError(
+                raise DuplicateAssetError(
                     f"Asset with hostname '{data.hostname}' already exists"
                 )
 
@@ -128,7 +132,7 @@ class AssetService:
         if data.ip and data.ip != asset.ip:
             existing = await self.repository.get_by_ip(self.session, data.ip)
             if existing and existing.id != asset_id:
-                raise ValueError(f"Asset with IP '{data.ip}' already exists")
+                raise DuplicateAssetError(f"Asset with IP '{data.ip}' already exists")
 
         updated = await self.repository.update(self.session, asset, data)
         await self.session.commit()

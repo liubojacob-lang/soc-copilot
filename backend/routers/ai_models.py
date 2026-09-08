@@ -4,13 +4,14 @@ AI Model Management Router - API endpoints for model selection and testing
 
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user, require_admin
+from middleware.rate_limiter import rate_limit
 from models.user import UserModel
 from repositories.ai_model_repository import (
     AIModelRepository,
@@ -177,8 +178,10 @@ async def set_default_model(
 
 
 @router.post("/test", response_model=TestModelResponse)
+@rate_limit(max_requests=10, window_seconds=60)
 async def test_model(
-    request: TestModelRequest,
+    payload: TestModelRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -192,19 +195,19 @@ async def test_model(
         model_repo = AIModelRepository(db)
 
         # Get model
-        model = await model_repo.get_by_id(request.model_id)
+        model = await model_repo.get_by_id(payload.model_id)
         if not model:
             return TestModelResponse(
                 success=False,
-                model_id=request.model_id,
-                error_message=f"Model {request.model_id} not found",
+                model_id=payload.model_id,
+                error_message=f"Model {payload.model_id} not found",
             )
 
         if not model.enabled:
             return TestModelResponse(
                 success=False,
-                model_id=request.model_id,
-                error_message=f"Model {request.model_id} is not enabled",
+                model_id=payload.model_id,
+                error_message=f"Model {payload.model_id} is not enabled",
             )
 
         # Import here to avoid circular imports
@@ -247,7 +250,7 @@ async def test_model(
             if response_text and len(response_text.strip()) > 0:
                 return TestModelResponse(
                     success=True,
-                    model_id=request.model_id,
+                    model_id=payload.model_id,
                     latency_ms=round(latency_ms, 2),
                     provider_raw=provider_raw,
                     response=response_text[:100],
@@ -255,7 +258,7 @@ async def test_model(
             else:
                 return TestModelResponse(
                     success=False,
-                    model_id=request.model_id,
+                    model_id=payload.model_id,
                     latency_ms=round(latency_ms, 2),
                     error_message=f"Unexpected response: {response_text[:100]}",
                 )
@@ -263,11 +266,11 @@ async def test_model(
         except Exception as e:
             latency_ms = (time.time() - start_time) * 1000
             error_message = f"{type(e).__name__}: {e!s}"
-            logger.error(f"Error testing model {request.model_id}: {e}")
+            logger.error(f"Error testing model {payload.model_id}: {e}")
 
             return TestModelResponse(
                 success=False,
-                model_id=request.model_id,
+                model_id=payload.model_id,
                 latency_ms=round(latency_ms, 2),
                 error_message=error_message,
             )
@@ -276,7 +279,7 @@ async def test_model(
         logger.error(f"Error in test_model endpoint: {e}")
         return TestModelResponse(
             success=False,
-            model_id=request.model_id,
+            model_id=payload.model_id,
             error_message=f"Test failed: {e!s}",
         )
 
@@ -291,7 +294,9 @@ class RefreshModelsResponse(BaseModel):
 
 
 @router.post("/refresh", response_model=RefreshModelsResponse)
+@rate_limit(max_requests=2, window_seconds=60)
 async def refresh_models(
+    request: Request,
     current_user: UserModel = Depends(require_admin),
     db: AsyncSession = Depends(get_session),
 ):

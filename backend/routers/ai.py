@@ -132,8 +132,10 @@ class ReportGenerationRequest(BaseModel):
 
 @router.post("/analyze-alert", response_model=AlertAnalysisResponse)
 @observe_endpoint("ai_analyze_alert")
+@rate_limit(max_requests=30, window_seconds=60)
 async def analyze_alert(
-    request: AlertAnalysisRequest,
+    payload: AlertAnalysisRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -150,20 +152,20 @@ async def analyze_alert(
         ai_service = get_enhanced_ai_service()
 
         alert_data = {
-            "title": request.title,
-            "description": request.description,
-            "severity": request.severity,
-            "source": request.source,
-            "alert_type": request.alert_type,
-            "metadata": request.metadata,
+            "title": payload.title,
+            "description": payload.description,
+            "severity": payload.severity,
+            "source": payload.source,
+            "alert_type": payload.alert_type,
+            "metadata": payload.metadata,
         }
 
         analysis = await ai_service.analyze_alert_with_rag(
-            alert_data=alert_data, use_rag=request.use_rag
+            alert_data=alert_data, use_rag=payload.use_rag
         )
 
         return AlertAnalysisResponse(
-            alert_id=request.alert_id,
+            alert_id=payload.alert_id,
             analysis=analysis,
             processed_at=datetime.now().isoformat(),
         )
@@ -179,8 +181,11 @@ async def analyze_alert(
 
 
 @router.post("/query", response_model=NaturalLanguageQueryResponse)
+@observe_endpoint("ai_query")
+@rate_limit(max_requests=60, window_seconds=60)
 async def natural_language_query(
-    request: NaturalLanguageQueryRequest,
+    payload: NaturalLanguageQueryRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -202,11 +207,11 @@ async def natural_language_query(
         }
 
         result = await ai_service.natural_language_query(
-            query=request.query, user_context=user_context
+            query=payload.query, user_context=user_context
         )
 
         return NaturalLanguageQueryResponse(
-            query=request.query,
+            query=payload.query,
             intent=result.intent,
             parameters=result.parameters,
             filter_criteria=result.filter_criteria,
@@ -225,8 +230,11 @@ async def natural_language_query(
 
 
 @router.post("/recommend-playbooks", response_model=PlaybookRecommendationResponse)
+@observe_endpoint("ai_recommend_playbooks")
+@rate_limit(max_requests=30, window_seconds=60)
 async def recommend_playbooks(
-    request: PlaybookRecommendationRequest,
+    payload: PlaybookRecommendationRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -258,10 +266,10 @@ async def recommend_playbooks(
         ]
 
         alert_data = {
-            "title": request.title,
-            "description": request.description,
-            "severity": request.severity,
-            "alert_type": request.alert_type,
+            "title": payload.title,
+            "description": payload.description,
+            "severity": payload.severity,
+            "alert_type": payload.alert_type,
         }
 
         recommendations = await ai_service.recommend_playbooks(
@@ -269,7 +277,7 @@ async def recommend_playbooks(
         )
 
         return PlaybookRecommendationResponse(
-            alert_id=request.alert_id,
+            alert_id=payload.alert_id,
             recommendations=recommendations,
             generated_at=datetime.now().isoformat(),
         )
@@ -403,8 +411,10 @@ async def chat(
 
 
 @router.post("/generate-report")
+@rate_limit(max_requests=10, window_seconds=60)
 async def generate_report(
-    request: ReportGenerationRequest,
+    payload: ReportGenerationRequest,
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
 ):
     """
@@ -414,11 +424,11 @@ async def generate_report(
         ai_service = get_enhanced_ai_service()
 
         report = await ai_service.generate_investigation_report(
-            alert_id=request.alert_id, investigation_data=request.investigation_data
+            alert_id=payload.alert_id, investigation_data=payload.investigation_data
         )
 
         return {
-            "alert_id": request.alert_id,
+            "alert_id": payload.alert_id,
             "report": report,
             "format": "markdown",
             "generated_at": datetime.now().isoformat(),

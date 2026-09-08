@@ -19,7 +19,7 @@ from schemas.asset import (
     AssetResponse,
     AssetUpdate,
 )
-from services.asset_service import AssetService
+from services.asset_service import AssetService, DuplicateAssetError
 
 router = APIRouter(prefix="/api/v1/assets", tags=["assets"])
 logger = get_logger(__name__)
@@ -35,6 +35,9 @@ async def create_asset(
     try:
         service = AssetService(session)
         return await service.create(data)
+    except DuplicateAssetError as e:
+        logger.warning(f"Asset creation conflict: {e!s}")
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         logger.warning(f"Asset creation failed: {e!s}")
         raise HTTPException(status_code=400, detail="Bad request")
@@ -78,6 +81,9 @@ async def update_asset(
     try:
         service = AssetService(session)
         return await service.update(asset_id, data)
+    except DuplicateAssetError as e:
+        logger.warning(f"Asset update conflict: {e!s}")
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         logger.warning(f"Asset update failed: {e!s}")
         raise HTTPException(
