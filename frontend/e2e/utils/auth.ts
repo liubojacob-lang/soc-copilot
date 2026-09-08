@@ -1,10 +1,13 @@
 /**
  * E2E Test Authentication Utilities
  *
- * Provides helper functions for authentication in E2E tests.
+ * Session strategy: the backend rate-limits logins (5/min per IP), so the
+ * UI login is performed at most once per username per worker process and
+ * the resulting session cookies are replayed into every later test context.
+ * Login submission retries on 429 instead of failing the suite.
  */
 
-import { Page } from "@playwright/test";
+import { Cookie, Page } from "@playwright/test";
 
 export interface TestUser {
   username: string;
@@ -33,6 +36,9 @@ export const TEST_USERS: Record<string, TestUser> = {
   },
 };
 
+/** Per-username session cookies captured from the first successful UI login. */
+const sessionCache = new Map<string, Cookie[]>();
+
 /**
  * Get locale for E2E tests
  */
@@ -40,31 +46,51 @@ function getLocale(): string {
   return process.env.E2E_LOCALE || "en";
 }
 
+async function submitLoginForm(page: Page, username: string, password: string): Promise<void> {
+  const locale = getLocale();
+  await page.goto(`/${locale}/login`);
+  await page.waitForSelector("#username", { timeout: 15000 });
+
+  // 429 (login rate limit) surfaces as a failed submit; retry with a wait
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await page.fill("#username", username);
+    await page.fill("#password", password);
+    await page.click('button[type="submit"]');
+
+    try {
+      await page.waitForURL((url) => !url.pathname.includes("/login"), {
+        timeout: 15000,
+      });
+      return;
+    } catch {
+      if (attempt === 3) throw new Error("Login did not complete after 3 attempts");
+      // Stay on /login — likely rate limited; back off before retrying
+      await page.waitForTimeout(20000);
+      await page.goto(`/${locale}/login`);
+    }
+  }
+}
+
 /**
- * Perform login via the UI
+ * Perform login via the UI (once per username), then replay session cookies.
  */
 export async function login(page: Page, username: string, password: string): Promise<void> {
   const locale = getLocale();
+  const cached = sessionCache.get(username);
 
-  // Navigate to login page with locale
-  await page.goto(`/${locale}/login`);
+  if (cached) {
+    await page.context().addCookies(cached);
+    // The replayed cookie may have expired server-side; detect and re-login.
+    const probe = await page.request.get(`/api/v1/auth/me`);
+    if (probe.status() === 200) {
+      return;
+    }
+    sessionCache.delete(username);
+  }
 
-  // Wait for page to load
-  await page.waitForLoadState("networkidle");
-
-  // Fill in credentials using id selector
-  await page.fill("#username", username);
-  await page.fill("#password", password);
-
-  // Submit form
-  await page.click('button[type="submit"]');
-
-  // Wait for navigation - should redirect to home or dashboard
-  // The app redirects to /{locale} after login
-  await page.waitForURL(`**/${locale}/**`, { timeout: 10000 });
-
-  // Wait a bit for any additional loading
-  await page.waitForTimeout(1000);
+  await submitLoginForm(page, username, password);
+  sessionCache.set(username, await page.context().cookies());
+  await page.waitForTimeout(500);
 }
 
 /**
@@ -73,21 +99,15 @@ export async function login(page: Page, username: string, password: string): Pro
 export async function logout(page: Page): Promise<void> {
   const locale = getLocale();
 
-  // Navigate to a page that has logout functionality
-  // Since we don't have a logout button in the current UI, call API directly
   await page.evaluate(() => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user");
   });
+  await page.context().clearCookies();
 
-  // Also clear cookies
-  const context = page.context();
-  await context.clearCookies();
-
-  // Navigate to login page
   await page.goto(`/${locale}/login`);
-  await page.waitForLoadState("networkidle");
+  await page.waitForSelector("#username", { timeout: 15000 });
 }
 
 /**
@@ -95,13 +115,8 @@ export async function logout(page: Page): Promise<void> {
  */
 export async function isLoggedIn(page: Page): Promise<boolean> {
   try {
-    // Check if we have auth tokens
     const hasToken = await page.evaluate(() => {
-      return !!(
-        localStorage.getItem("access_token") ||
-        localStorage.getItem("refresh_token") ||
-        document.cookie.includes("access_token")
-      );
+      return !!document.cookie.includes("access_token");
     });
     return hasToken;
   } catch {

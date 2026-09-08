@@ -235,7 +235,9 @@
     "signingIn": "登录中...",
     "error": "凭据无效",
     "devMode": "开发模式",
-    "checkServerLogs": "检查服务器日志获取默认凭据"
+    "checkServerLogs": "检查服务器日志获取默认凭据",
+    "showPassword": "显示密码",
+    "hidePassword": "隐藏密码"
   },
   "changePassword": {
     "title": "修改你的密码",
@@ -412,7 +414,20 @@
     "notifications": "通知设置",
     "integrations": "集成设置",
     "advanced": "高级设置",
-    "settingsForm": "设置表单将在此处显示"
+    "timeouts": "API 超时配置",
+    "dynamicConfig": "动态参数",
+    "key": "键",
+    "currentValue": "当前值",
+    "defaultValue": "默认值",
+    "overridden": "已覆盖",
+    "edit": "编辑",
+    "reset": "恢复默认",
+    "resetDone": "已移除覆盖，恢复默认值",
+    "saved": "设置已保存",
+    "saveFailed": "设置保存失败",
+    "loadFailed": "设置加载失败",
+    "invalidNumber": "值必须是数字",
+    "noDynamic": "暂无动态配置项"
   },
   "adminAudit": {
     "title": "审计日志",
@@ -1411,7 +1426,8 @@
     "falcoSetupDesc": "将 Falco 运行时安全告警转发到 SOC Copilot：",
     "severity": "严重程度",
     "description": "描述",
-    "demoNotice": "演示数据提示：在配置集群/云集成之前，以下 Kubernetes 与云提供商数据为示例数据。容器镜像扫描（Trivy）与 Falco 告警为真实数据。"
+    "demoNotice": "演示数据提示：在配置集群/云集成之前，以下 Kubernetes 与云提供商数据为示例数据。容器镜像扫描（Trivy）与 Falco 告警为真实数据。",
+    "k8sScanRequiresCluster": "Kubernetes CIS 扫描需要先配置集群连接（kubeconfig 凭证）"
   },
   "actions": {
     "quickActions": "快速操作",

@@ -7,8 +7,7 @@ import { api, api_ai_models, type AIModel, type TestModelResponse } from "@/lib/
 import { loadAuthState } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useChatHistory, type ChatConversation } from "@/hooks/useChatHistory";
-import { ChatHistorySidebar } from "@/components/ChatHistorySidebar";
-import { ChatHeader, ChatInput, ChatMessages, HeroPrompts } from "./components";
+import { ChatHeader, ChatInput, ChatMessages, HeroPrompts, ChatHistoryPanel } from "./components";
 import { useAIChat } from "./hooks/useAIChat";
 import { getErrorMessage, convertToHistoryMessage } from "./utils";
 import { X } from "lucide-react";
@@ -31,7 +30,7 @@ export default function AIAssistantPage() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   // UI state
-  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(true);
   const skipAutoSaveRef = useRef(false);
   const [inputValue, setInputValue] = useState("");
 
@@ -99,6 +98,28 @@ export default function AIAssistantPage() {
     }
   }, [messages, historyLoaded, isStreaming, selectedModel, saveConversation]);
 
+  // Restore sidebar open preference on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("chatHistorySidebarOpen");
+      if (saved !== null) {
+        setShowHistoryPanel(saved === "true");
+      } else if (window.innerWidth < 1024) {
+        setShowHistoryPanel(false);
+      }
+    } catch {}
+  }, []);
+
+  const handleToggleHistory = useCallback(() => {
+    setShowHistoryPanel((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("chatHistorySidebarOpen", String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -108,16 +129,16 @@ export default function AIAssistantPage() {
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "/") {
         e.preventDefault();
-        setShowHistoryPanel((prev) => !prev);
+        handleToggleHistory();
       }
-      if (e.key === "Escape" && showHistoryPanel) {
+      if (e.key === "Escape" && showHistoryPanel && window.innerWidth < 768) {
         setShowHistoryPanel(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showHistoryPanel]);
+  }, [showHistoryPanel, handleToggleHistory]);
 
   // Load conversation handler
   const handleLoadConversation = useCallback(
@@ -130,7 +151,9 @@ export default function AIAssistantPage() {
         const model = models.find((m) => m.id === conv.modelId);
         if (model) setSelectedModel(model);
       }
-      setShowHistoryPanel(false);
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setShowHistoryPanel(false);
+      }
     },
     [models, loadConversation, loadChatConversation]
   );
@@ -257,13 +280,17 @@ export default function AIAssistantPage() {
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="min-h-screen bg-surface-ground flex flex-col">
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+    <div className="h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] bg-surface-ground flex flex-col overflow-hidden">
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        className="w-full flex-shrink-0 pt-3 sm:pt-4 pb-1"
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 flex-1 w-full flex flex-col">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-3 sm:pb-4 flex-1 min-h-0 w-full flex flex-col overflow-hidden">
         {/* Floating Error Toast */}
         {errorMessage && (
-          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50/95 dark:border-rose-900/60 dark:bg-rose-950/90 backdrop-blur px-4 py-2.5 text-xs text-rose-700 dark:text-rose-300 shadow-sm flex items-center justify-between">
+          <div className="mb-3 flex-shrink-0 rounded-xl border border-rose-200 bg-rose-50/95 dark:border-rose-900/60 dark:bg-rose-950/90 backdrop-blur px-4 py-2 text-xs text-rose-700 dark:text-rose-300 shadow-sm flex items-center justify-between">
             <span>{errorMessage}</span>
             <button
               onClick={() => setErrorMessage(null)}
@@ -274,79 +301,83 @@ export default function AIAssistantPage() {
           </div>
         )}
 
-        {/* AI Workspace Card */}
-        <div className="bg-white dark:bg-gray-850/90 border border-gray-200/80 dark:border-gray-700/80 rounded-2xl shadow-sm flex flex-col flex-1 h-[calc(100vh-13.5rem)] min-h-[580px] overflow-hidden relative">
-          {/* Card Top Chat Header */}
-          <ChatHeader
-            t={t}
-            tCommon={tCommon}
-            onClearChat={handleNewChat}
-            onToggleHistory={() => setShowHistoryPanel(!showHistoryPanel)}
-            loading={loading}
-            thinking={thinking}
-            isStreaming={isStreaming}
+        {/* AI Workspace Card (Embedded 2-Column Flex Container) */}
+        <div className="bg-white dark:bg-gray-850/90 border border-gray-200/80 dark:border-gray-700/80 rounded-2xl shadow-sm flex flex-1 min-h-0 h-full max-h-full overflow-hidden relative">
+          {/* Embedded Left History Sidebar */}
+          <ChatHistoryPanel
+            isOpen={showHistoryPanel}
+            onToggle={handleToggleHistory}
+            conversations={filteredConversations}
+            currentId={currentId}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSelect={handleLoadConversation}
+            onDelete={deleteConversation}
+            onRename={renameConversation}
+            onNewChat={handleNewChat}
+            formatTimeAgo={formatTimeAgo}
           />
 
-          {/* Dynamic Content: Empty State Hero vs Active Chat Thread */}
-          <div className="flex-1 overflow-hidden flex flex-col relative">
-            {!hasMessages ? (
-              <div className="flex-1 overflow-y-auto flex flex-col justify-center py-6">
-                <HeroPrompts
-                  onSelectPrompt={handleSelectPrompt}
-                  disabled={loading || thinking || isStreaming}
+          {/* Right Main Chat Column */}
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 h-full overflow-hidden relative">
+            {/* Card Top Chat Header */}
+            <ChatHeader
+              t={t}
+              tCommon={tCommon}
+              onClearChat={handleNewChat}
+              onToggleHistory={handleToggleHistory}
+              showHistory={showHistoryPanel}
+              loading={loading}
+              thinking={thinking}
+              isStreaming={isStreaming}
+            />
+
+            {/* Dynamic Content: Empty State Hero vs Active Chat Thread */}
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
+              {!hasMessages ? (
+                <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-center py-6">
+                  <HeroPrompts
+                    onSelectPrompt={handleSelectPrompt}
+                    disabled={loading || thinking || isStreaming}
+                  />
+                </div>
+              ) : (
+                <ChatMessages
+                  messages={messages}
+                  streamingMessage={streamingMessage}
+                  thinking={thinking}
+                  copiedIndex={copiedIndex}
+                  onCopy={copyToClipboard}
+                  t={t}
                 />
-              </div>
-            ) : (
-              <ChatMessages
-                messages={messages}
-                streamingMessage={streamingMessage}
-                thinking={thinking}
-                copiedIndex={copiedIndex}
-                onCopy={copyToClipboard}
-                t={t}
-              />
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Mainstream Floating Glassmorphic Input with integrated Model Selector */}
-          <ChatInput
-            input={inputValue}
-            setInput={setInputValue}
-            onSend={handleSubmit}
-            loading={loading}
-            thinking={thinking}
-            isStreaming={isStreaming}
-            t={t}
-            tCommon={tCommon}
-            selectedModel={selectedModel}
-            models={models}
-            defaultModel={defaultModel}
-            testResult={testResult}
-            testingModel={testingModel}
-            showModelPanel={showModelPanel}
-            setShowModelPanel={setShowModelPanel}
-            onModelSelect={handleModelSelect}
-            onTestModel={testModelConnectivity}
-            onSetDefault={setModelAsDefault}
-            onRefreshModels={loadModels}
-          />
+            {/* Mainstream Floating Glassmorphic Input with integrated Model Selector */}
+            <ChatInput
+              input={inputValue}
+              setInput={setInputValue}
+              onSend={handleSubmit}
+              loading={loading}
+              thinking={thinking}
+              isStreaming={isStreaming}
+              t={t}
+              tCommon={tCommon}
+              selectedModel={selectedModel}
+              models={models}
+              defaultModel={defaultModel}
+              testResult={testResult}
+              testingModel={testingModel}
+              showModelPanel={showModelPanel}
+              setShowModelPanel={setShowModelPanel}
+              onModelSelect={handleModelSelect}
+              onTestModel={testModelConnectivity}
+              onSetDefault={setModelAsDefault}
+              onRefreshModels={loadModels}
+            />
+          </div>
         </div>
       </main>
-
-      {/* Slide-over Chat History Sidebar */}
-      <ChatHistorySidebar
-        isOpen={showHistoryPanel}
-        onClose={() => setShowHistoryPanel(false)}
-        conversations={filteredConversations}
-        currentId={currentId}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onSelect={handleLoadConversation}
-        onDelete={deleteConversation}
-        onRename={renameConversation}
-        onNewChat={handleNewChat}
-        formatTimeAgo={formatTimeAgo}
-      />
     </div>
   );
 }

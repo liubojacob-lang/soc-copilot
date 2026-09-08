@@ -4,6 +4,8 @@
     "subtitle": "输入您的凭据",
     "username": "用户名",
     "password": "密码",
+    "showPassword": "显示密码",
+    "hidePassword": "隐藏密码",
     "signIn": "登录",
     "signingIn": "登录中...",
     "error": "凭据无效",

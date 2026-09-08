@@ -235,7 +235,9 @@
     "signingIn": "Signing in...",
     "error": "Invalid credentials",
     "devMode": "Dev Mode",
-    "checkServerLogs": "Check server logs for default credentials"
+    "checkServerLogs": "Check server logs for default credentials",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "changePassword": {
     "title": "Change Your Password",
@@ -412,7 +414,20 @@
     "notifications": "Notification Settings",
     "integrations": "Integration Settings",
     "advanced": "Advanced Settings",
-    "settingsForm": "Settings form will be displayed here"
+    "timeouts": "API Timeouts",
+    "dynamicConfig": "Dynamic Configuration",
+    "key": "Key",
+    "currentValue": "Current value",
+    "defaultValue": "Default",
+    "overridden": "overridden",
+    "edit": "Edit",
+    "reset": "Reset to default",
+    "resetDone": "Override removed — default restored",
+    "saved": "Setting saved",
+    "saveFailed": "Failed to save setting",
+    "loadFailed": "Failed to load settings",
+    "invalidNumber": "Value must be a number",
+    "noDynamic": "No dynamic configuration items"
   },
   "adminAudit": {
     "title": "Audit Logs",
@@ -1654,7 +1669,8 @@
     "falcoSetupDesc": "Forward Falco runtime security alerts to SOC Copilot:",
     "severity": "Severity",
     "description": "Description",
-    "demoNotice": "Demo data notice: Kubernetes and cloud provider insights below are sample data until cluster/cloud integrations are configured. Container image scans (Trivy) and Falco alerts use real data."
+    "demoNotice": "Demo data notice: Kubernetes and cloud provider insights below are sample data until cluster/cloud integrations are configured. Container image scans (Trivy) and Falco alerts use real data.",
+    "k8sScanRequiresCluster": "Kubernetes CIS scanning requires a cluster connection — configure kubeconfig credentials first"
   },
   "correlation": {
     "createRule": "Create Rule",

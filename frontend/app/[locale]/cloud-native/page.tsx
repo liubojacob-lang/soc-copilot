@@ -387,7 +387,7 @@ export default function CloudNativePage() {
                   </button>
 
                   <button
-                    onClick={() => showToast(t("k8sScanComingSoon"), "info")}
+                    onClick={() => showToast(t("k8sScanRequiresCluster"), "warning")}
                     className="p-4 border-2 border-dashed border-border-subtle rounded-xl hover:border-accent-500 hover:bg-accent-500/10 transition-colors text-left"
                   >
                     <Server className="w-8 h-8 text-green-500 mb-2" />

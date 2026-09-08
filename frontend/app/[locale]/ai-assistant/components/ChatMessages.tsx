@@ -111,13 +111,15 @@ export function ChatMessages({
   const format = useFormatter();
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages, streamingMessage, thinking]);
 
   return (
     <div
       ref={messagesContainerRef}
-      className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6 max-w-4xl mx-auto w-full"
+      className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 space-y-6 max-w-4xl mx-auto w-full"
     >
       {messages.map((message, index) => {
         const isUser = message.role === "user";

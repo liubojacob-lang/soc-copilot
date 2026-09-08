@@ -9,13 +9,14 @@ import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ShieldCheck, User, Lock, AlertCircle, Sparkles } from "lucide-react";
+import { ShieldCheck, User, Lock, Eye, EyeOff, AlertCircle, Sparkles } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const t = useTranslations("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   // The i18n router auto-prefixes the locale — a leading "/${locale}" here
@@ -123,6 +124,7 @@ export default function LoginPage() {
                 </label>
                 <Input
                   id="username"
+                  name="username"
                   type="text"
                   required
                   value={username}
@@ -145,7 +147,8 @@ export default function LoginPage() {
                 </label>
                 <Input
                   id="password"
-                  type="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -153,6 +156,18 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   placeholder="••••••••"
                   leftIcon={<Lock className="w-4 h-4 text-text-muted" />}
+                  rightIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      disabled={loading}
+                      aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+                      title={showPassword ? t("hidePassword") : t("showPassword")}
+                      className="text-text-muted hover:text-text-primary focus:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 rounded p-0.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  }
                   size="lg"
                 />
               </div>

@@ -107,7 +107,7 @@ export function ChatInput({
   const manualModels = enabledModels.filter((m) => m.id !== "auto" && m.provider !== "auto");
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 pb-4 pt-1">
+    <div className="w-full max-w-4xl mx-auto px-4 pb-4 pt-1 flex-shrink-0">
       {/* Floating Card Container */}
       <div className="relative bg-white/95 dark:bg-gray-850/95 backdrop-blur-xl border border-gray-200/90 dark:border-gray-750 shadow-xl hover:shadow-2xl focus-within:border-indigo-500/80 dark:focus-within:border-indigo-400/80 focus-within:ring-4 focus-within:ring-indigo-500/10 rounded-2xl transition-all p-3 flex flex-col gap-2">
         {/* Text Input */}
