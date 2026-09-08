@@ -2,10 +2,12 @@
 AI Service Router - API endpoints for SOC Copilot AI features
 """
 
+import json
 import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -442,6 +444,61 @@ async def generate_report(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate report. Check server logs for details.",
         )
+
+
+@router.post("/chat/stream")
+@rate_limit(max_requests=30, window_seconds=60)
+async def chat_stream(
+    payload: ChatRequest,
+    request: Request,
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Stream chat deltas over Server-Sent Events.
+
+    Frames: `data: {"meta": {routed_model, route_reason}}`, then
+    `data: {"delta": "..."}` repeatedly, then `data: {"done": true}`.
+    Falls back to a single delta when the provider cannot stream.
+    """
+    ai_service = get_enhanced_ai_service()
+
+    model_id = payload.model_id
+    model_provider = None
+    route_reason = None
+    if not model_id or model_id.lower() == "auto":
+        history = [
+            {"role": m.role, "content": m.content}
+            for m in (payload.conversation_history or [])[-20:]
+        ]
+        model_id, model_provider, route_reason = ai_service.resolve_auto_model(
+            payload.message, history
+        )
+
+    recent_history = [
+        {"role": m.role, "content": m.content}
+        for m in (payload.conversation_history or [])[-20:]
+    ]
+
+    async def sse():
+        meta = {"meta": {"routed_model": model_id, "route_reason": route_reason}}
+        yield f"data: {json.dumps(meta, ensure_ascii=False)}\n\n"
+        try:
+            async for delta in ai_service.chat_stream(
+                message=payload.message,
+                conversation_history=recent_history,
+                model_id=model_id,
+                model_provider=model_provider,
+            ):
+                yield f"data: {json.dumps({'delta': delta}, ensure_ascii=False)}\n\n"
+        except Exception as e:  # SSE 层兜底，连接不能半途断
+            logger.error(f"chat_stream error: {e}")
+            yield f"data: {json.dumps({'delta': 'Service unavailable, please retry.'})}\n\n"
+        yield f"data: {json.dumps({'done': True})}\n\n"
+
+    return StreamingResponse(
+        sse(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/status")

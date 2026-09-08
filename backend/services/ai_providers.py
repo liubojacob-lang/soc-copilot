@@ -3,6 +3,9 @@ AI Service Module - SOC Copilot AI Assistant
 Provides intelligent analysis and recommendations using LLM
 """
 
+import json
+from collections.abc import AsyncIterator
+
 import httpx
 
 from core.config import settings
@@ -545,3 +548,76 @@ class LLMFactory:
 
         logger.warning(f"No API key found for provider: {ai_provider}")
         return None
+
+
+async def stream_chat_completion(
+    provider: LLMProvider,
+    messages: list[dict[str, str]],
+    model: str | None = None,
+    temperature: float = 0.5,
+    max_tokens: int = 4096,
+    timeout: float | None = None,
+) -> AsyncIterator[str]:
+    """Yield content deltas for a chat completion.
+
+    Streams over SSE for OpenAI-compatible httpx providers. Providers with a
+    non-compatible endpoint (Anthropic native) or a failing stream fall back
+    to a one-shot completion yielded as a single chunk — callers need no
+    special casing.
+    """
+    api_key = getattr(provider, "api_key", "") or ""
+    base_url = getattr(provider, "base_url", "") or ""
+    model_id = model or getattr(provider, "model", None)
+
+    if not api_key or not base_url or "api.anthropic.com" in base_url:
+        text = await provider.chat_completion(
+            messages, model=model_id, temperature=temperature, max_tokens=max_tokens
+        )
+        yield text
+        return
+
+    client = provider.client
+    if timeout:
+        client = httpx.AsyncClient(timeout=timeout)
+
+    try:
+        async with client.stream(
+            "POST",
+            f"{base_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": model_id,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": True,
+            },
+        ) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                line = line.strip()
+                if not line.startswith("data:"):
+                    continue
+                payload = line[len("data:") :].strip()
+                if payload == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(payload)
+                except json.JSONDecodeError:
+                    continue
+                choices = chunk.get("choices") or [{}]
+                delta = (choices[0].get("delta") or {}).get("content")
+                if delta:
+                    yield delta
+    except Exception as e:
+        logger.warning(f"SSE stream failed ({e}); falling back to one-shot completion")
+        text = await provider.chat_completion(
+            messages, model=model_id, temperature=temperature, max_tokens=max_tokens
+        )
+        yield text
+    finally:
+        if timeout and client is not provider.client:
+            await client.aclose()

@@ -16,7 +16,7 @@ from core.prompt_sanitizer import (
     sanitize_json_for_prompt,
     sanitize_prompt_input,
 )
-from services.ai_providers import LLMFactory, LLMProvider
+from services.ai_providers import LLMFactory, LLMProvider, stream_chat_completion
 from services.ai_utils import clean_json_content
 from utils.circuit_breaker import CircuitBreaker
 
@@ -602,6 +602,55 @@ Be concise, professional, and helpful."""
                 "Upstream LLM chat unavailable, activating rule-based chat fallback"
             )
             return self._rule_based_chat_fallback(message, reason=str(e))
+
+    async def chat_stream(
+        self,
+        message: str,
+        conversation_history: list[dict[str, str]] | None = None,
+        model_id: str | None = None,
+        model_provider: str | None = None,
+    ):
+        """Yield streamed chat deltas; falls back to a one-shot delta when
+        the provider cannot stream. Never raises — LLM failures degrade to
+        the rule-based fallback text as a single delta."""
+        if not model_id or model_id.lower() == "auto":
+            model_id, model_provider, _ = self.resolve_auto_model(
+                message, conversation_history
+            )
+
+        llm = self.llm
+        if model_id and model_provider:
+            try:
+                llm = LLMFactory.create_provider_for_model(model_id, model_provider)
+            except Exception as e:
+                logger.error(f"Failed to create provider for model {model_id}: {e}")
+                llm = self.llm
+
+        if not llm:
+            yield self._rule_based_chat_fallback(message, reason="AI unavailable")
+            return
+
+        system_prompt = (
+            "You are SOC Copilot, an AI assistant for security operations.\n"
+            "Help SOC analysts with alert analysis, investigations, playbook "
+            "creation, and security questions.\nBe concise, professional, and helpful."
+        )
+        messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+        if conversation_history:
+            messages.extend(conversation_history[-10:])
+        messages.append({"role": "user", "content": message})
+
+        try:
+            collected: list[str] = []
+            async for delta in stream_chat_completion(
+                llm, messages, model=model_id, temperature=0.5, max_tokens=4096
+            ):
+                collected.append(delta)
+                yield delta
+            logger.info(f"Streamed chat response length: {sum(map(len, collected))} chars")
+        except Exception as e:
+            logger.error(f"Error in chat stream: {e}")
+            yield self._rule_based_chat_fallback(message, reason=str(e))
 
     def _rule_based_chat_fallback(self, message: str, reason: str = "") -> str:
         """Heuristic rule-based fallback response for chat when upstream LLM is unavailable."""
