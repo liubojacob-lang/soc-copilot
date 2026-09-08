@@ -427,7 +427,8 @@
     "saveFailed": "设置保存失败",
     "loadFailed": "设置加载失败",
     "invalidNumber": "值必须是数字",
-    "noDynamic": "暂无动态配置项"
+    "noDynamic": "暂无动态配置项",
+    "settingsForm": "设置表单将在此处显示"
   },
   "adminAudit": {
     "title": "审计日志",

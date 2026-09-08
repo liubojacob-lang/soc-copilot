@@ -427,7 +427,8 @@
     "saveFailed": "Failed to save setting",
     "loadFailed": "Failed to load settings",
     "invalidNumber": "Value must be a number",
-    "noDynamic": "No dynamic configuration items"
+    "noDynamic": "No dynamic configuration items",
+    "settingsForm": "Settings form will be displayed here"
   },
   "adminAudit": {
     "title": "Audit Logs",
