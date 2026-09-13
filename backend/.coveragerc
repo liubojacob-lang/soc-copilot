@@ -7,6 +7,19 @@ omit =
     migrate.py
     start_server.py
     import_phishing_playbook.py
+    init_ai_models.py
+    init_correlation_rules.py
+    verify_jwt_invalidation.py
+    # Ad-hoc root-level scripts (never collected by pytest, testpaths=tests)
+    test_ai_models_api.py
+    test_api_simple.py
+    test_enrichment.py
+    test_import.py
+    test_loki_integration.py
+    test_optimizations.py
+    test_security_alerts.py
+    # Example/doc code, imported by nothing
+    services/message_broker/example_usage.py
     conftest.py
     __pycache__/*
 
