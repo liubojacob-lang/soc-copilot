@@ -28,7 +28,7 @@ dependencies = [
     "numpy>=1.22.5,<2.0",
     "redis==7.2.1",
     "tenacity==8.2.3",
-    "requests==2.31.0",
+    "requests==2.34.2",
     # P0-4: removed passlib (unmaintained, incompatible with bcrypt>=4.0)
     # P0-5: removed python-jose (CVE) — migrated to PyJWT (sole JWT lib)
     "pyjwt==2.11.0",
