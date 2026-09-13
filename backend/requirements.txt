@@ -47,7 +47,7 @@ cryptography>=42.0.0  # Fernet encryption for secrets
 
 opentelemetry-api==1.36.0
 opentelemetry-sdk==1.36.0
-opentelemetry-exporter-otlp-proto-grpc==1.36.0
+opentelemetry-exporter-otlp-proto-grpc==1.44.0
 opentelemetry-instrumentation-fastapi==0.57b0
 opentelemetry-instrumentation-redis==0.57b0
 opentelemetry-instrumentation-logging==0.57b0
