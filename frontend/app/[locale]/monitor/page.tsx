@@ -62,7 +62,6 @@ export default function DashboardPage() {
   const format = useFormatter();
   const [mounted, setMounted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [trendsPeriod, setTrendsPeriod] = useState<"7d" | "30d">("7d");
 
   // Time-based greeting
   const [greeting, setGreeting] = useState("");
@@ -111,8 +110,13 @@ export default function DashboardPage() {
   };
 
   // ── Data Hook (single real endpoint; adapters shape it per chart) ──
-  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useDashboardStats();
 
+  const apiStatus: "healthy" | "checking" | "error" = statsLoading
+    ? "checking"
+    : statsError
+      ? "error"
+      : "healthy";
   const summaryLoading = statsLoading;
   const trendsLoading = statsLoading;
   const severityLoading = statsLoading;
@@ -127,15 +131,10 @@ export default function DashboardPage() {
     : undefined;
   const assetData = stats ? { assets: toAssetRiskItems(stats) } : undefined;
   const mitreChartData = stats?.mitre_tactics ?? [];
-  const iocStatsData = stats
-    ? {
-        total: stats.ioc_hits_today,
-        malicious: 0,
-        suspicious: 0,
-        benign: 0,
-        unknown: 0,
-      }
-    : { total: 0, malicious: 0, suspicious: 0, benign: 0, unknown: 0 };
+  // 后端目前只提供 ioc_hits_today 总量，不提供 malicious/suspicious/benign/unknown
+  // 声誉细分。此前这四个字段被写死为 0，导致饼图恒空、"威胁级别"恒显示 0.0%。
+  // 现在只传真实存在的 total，由 IOCStats 自行降级为"细分不可用"。
+  const iocStatsData = { total: stats?.ioc_hits_today ?? 0 };
 
   // Summary adapter for the metric cards (fields mirror the legacy shape).
   const summary = stats
@@ -149,13 +148,13 @@ export default function DashboardPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+      <div className="bg-surface-page">
         <PageHeader
           title={t("dashboard.title")}
           subtitle={t("dashboard.overview")}
           apiStatus="checking"
         />
-        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[1, 2, 3, 4].map((i) => (
@@ -170,28 +169,27 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="bg-surface-page">
       <PageHeader
         title={t("dashboard.title")}
-        subtitle={`${greeting}, ${loadAuthState()?.user?.username || t("dashboard.fallbackUser")}`}
-        apiStatus="healthy"
+        apiStatus={apiStatus}
         actions={
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] text-green-700 dark:text-green-300 font-medium">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-card border border-border-subtle shadow-subtle">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] text-text-secondary font-medium">
                 {t("monitor.live")}
               </span>
             </div>
             <button
               onClick={toggleFullscreen}
-              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
               title={isFullscreen ? t("monitor.exitFullscreen") : t("monitor.fullscreen")}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -200,7 +198,7 @@ export default function DashboardPage() {
         }
       />
 
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
           {/* ── Row 1: Real-time Metrics ───────────────── */}
           <section>
@@ -246,12 +244,9 @@ export default function DashboardPage() {
           {/* ── Row 2: Trends + Severity ──────────────── */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 min-w-0">
-              <AlertTrendsChart
-                data={trendsData?.points ?? []}
-                isLoading={trendsLoading}
-                currentPeriod={trendsPeriod}
-                onPeriodChange={setTrendsPeriod}
-              />
+              {/* 后端固定返回 7 天窗口，因此不再渲染 7d/30d 切换 —— 此前该控件
+                  只改本地 state 而数据不变，是一个会误导用户的假开关。 */}
+              <AlertTrendsChart data={trendsData?.points ?? []} isLoading={trendsLoading} />
             </div>
             <div className="min-w-0">
               <SeverityPieChart
@@ -299,7 +294,7 @@ export default function DashboardPage() {
             </div>
           </section>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

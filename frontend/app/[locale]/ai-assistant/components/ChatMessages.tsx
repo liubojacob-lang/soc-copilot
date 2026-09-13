@@ -159,8 +159,8 @@ export function ChatMessages({
               <div
                 className={`inline-block rounded-2xl px-4 py-3 shadow-sm ${
                   isUser
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm leading-relaxed text-left"
-                    : "bg-white dark:bg-gray-850 border border-gray-200/80 dark:border-gray-750 text-gray-900 dark:text-gray-100 w-full"
+                    ? "bg-gradient-to-r from-accent-600 to-indigo-600 text-white text-sm leading-relaxed text-left"
+                    : "bg-surface-card border border-border-subtle text-text-primary w-full"
                 }`}
               >
                 {isUser ? (
@@ -169,24 +169,24 @@ export function ChatMessages({
                   <div>
                     {/* Collapsible Thinking Process */}
                     {thinkingBlock && (
-                      <details className="mb-3 group rounded-xl border border-indigo-200/60 dark:border-indigo-900/50 bg-indigo-50/40 dark:bg-indigo-950/20 overflow-hidden text-xs">
-                        <summary className="px-3 py-2 cursor-pointer font-medium text-indigo-700 dark:text-indigo-300 flex items-center justify-between hover:bg-indigo-100/40 select-none">
+                      <details className="mb-3 group rounded-xl border border-ai/20 bg-ai/5 overflow-hidden text-xs">
+                        <summary className="px-3 py-2 cursor-pointer font-medium text-ai flex items-center justify-between hover:bg-ai/10 select-none transition-colors">
                           <span className="flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                            <Sparkles className="w-3.5 h-3.5 text-ai" />
                             <span>思考推演过程</span>
                           </span>
-                          <span className="text-[10px] text-indigo-400 group-open:rotate-180 transition-transform">
+                          <span className="text-[10px] text-ai/70 group-open:rotate-180 transition-transform">
                             ▼
                           </span>
                         </summary>
-                        <div className="p-3 border-t border-indigo-100 dark:border-indigo-900/30 text-gray-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-mono text-[11px] max-h-56 overflow-y-auto">
+                        <div className="p-3 border-t border-ai/15 text-text-secondary whitespace-pre-wrap leading-relaxed font-mono text-[11px] max-h-56 overflow-y-auto bg-surface-ground/40">
                           {thinkingBlock}
                         </div>
                       </details>
                     )}
 
                     {/* Markdown Body */}
-                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed">
+                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed text-text-primary">
                       <ReactMarkdown
                         components={{
                           // react-markdown v9+ removed the `inline` prop; block code arrives as <pre><code>
@@ -201,7 +201,7 @@ export function ChatMessages({
                           code({ className, children, ...props }: any) {
                             return (
                               <code
-                                className={`px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-purple-600 dark:text-purple-400 font-mono text-xs ${className ?? ""}`}
+                                className={`px-1.5 py-0.5 rounded bg-surface-hover border border-border-subtle text-ai font-mono text-xs ${className ?? ""}`}
                                 {...props}
                               >
                                 {children}
@@ -213,21 +213,21 @@ export function ChatMessages({
                           },
                           h1({ children }) {
                             return (
-                              <h1 className="text-base font-bold my-3 text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-1">
+                              <h1 className="text-base font-bold my-3 text-text-primary border-b border-border-subtle pb-1">
                                 {children}
                               </h1>
                             );
                           },
                           h2({ children }) {
                             return (
-                              <h2 className="text-sm font-bold my-2.5 text-gray-900 dark:text-white">
+                              <h2 className="text-sm font-bold my-2.5 text-text-primary">
                                 {children}
                               </h2>
                             );
                           },
                           h3({ children }) {
                             return (
-                              <h3 className="text-xs font-bold my-2 text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+                              <h3 className="text-xs font-bold my-2 text-text-secondary uppercase tracking-wide">
                                 {children}
                               </h3>
                             );
@@ -243,7 +243,7 @@ export function ChatMessages({
                           },
                           blockquote({ children }) {
                             return (
-                              <blockquote className="border-l-4 border-indigo-500 pl-3 my-2 text-gray-600 dark:text-gray-300 italic bg-indigo-50/20 dark:bg-indigo-950/20 py-1 rounded-r">
+                              <blockquote className="border-l-4 border-ai pl-3 my-2 text-text-secondary italic bg-ai/5 py-1 rounded-r">
                                 {children}
                               </blockquote>
                             );
@@ -260,7 +260,7 @@ export function ChatMessages({
               {/* Message Footer Info */}
               <div
                 className={`text-[11px] mt-1.5 flex items-center gap-2 ${
-                  isUser ? "justify-end text-gray-400" : "justify-start text-gray-400"
+                  isUser ? "justify-end text-text-muted" : "justify-start text-text-muted"
                 }`}
               >
                 <span>{format.dateTime(message.timestamp, { timeStyle: "medium" })}</span>
@@ -268,7 +268,7 @@ export function ChatMessages({
                 {/* Auto-routed Model Chip */}
                 {!isUser && message.routedModel && (
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-ai/10 text-ai border border-ai/20"
                     title={message.routeReason || undefined}
                   >
                     <span>⚡ 智能路由: {message.routedModel.split("/").pop()}</span>
@@ -279,7 +279,7 @@ export function ChatMessages({
                 {rawContent && (
                   <button
                     onClick={() => onCopy(rawContent, index)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-surface-hover rounded text-text-muted hover:text-text-primary"
                     title={t("actions.copy")}
                   >
                     {copiedIndex === index ? (
@@ -298,27 +298,25 @@ export function ChatMessages({
       {/* Thinking / Streaming Indicator */}
       {thinking && (
         <div className="flex gap-3.5 animate-fadeIn">
-          <div className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-sm">
+          <div className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-accent-600 to-indigo-600 flex items-center justify-center shadow-sm">
             <Brain className="w-4 h-4 text-white animate-pulse" />
           </div>
-          <div className="bg-white dark:bg-gray-850 rounded-2xl px-4 py-3 shadow-sm border border-gray-200/80 dark:border-gray-750 flex items-center gap-2.5">
+          <div className="bg-surface-card rounded-2xl px-4 py-3 shadow-sm border border-border-subtle flex items-center gap-2.5">
             <div className="flex gap-1">
               <span
-                className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"
+                className="w-2 h-2 bg-ai rounded-full animate-bounce"
                 style={{ animationDelay: "0ms" }}
               />
               <span
-                className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"
+                className="w-2 h-2 bg-ai rounded-full animate-bounce"
                 style={{ animationDelay: "150ms" }}
               />
               <span
-                className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"
+                className="w-2 h-2 bg-ai rounded-full animate-bounce"
                 style={{ animationDelay: "300ms" }}
               />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              正在研判与逻辑推演中...
-            </span>
+            <span className="text-xs text-text-muted font-medium">正在研判与逻辑推演中...</span>
           </div>
         </div>
       )}

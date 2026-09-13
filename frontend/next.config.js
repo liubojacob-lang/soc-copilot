@@ -10,12 +10,15 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   output: "standalone",
-  // Pin the Turbopack workspace root to the monorepo root (next is hoisted
-  // there). Without it, Next infers the root from stray lockfiles — e.g.
-  // ~/package-lock.json — and watches the entire home directory, pinning CPUs.
-  turbopack: {
-    root: path.join(__dirname, ".."),
-  },
+  // Pin the Turbopack workspace root to the monorepo root in development.
+  // In production builds, omitting this ensures output: standalone generates server.js at the project root.
+  ...(process.env.NODE_ENV !== "production"
+    ? {
+        turbopack: {
+          root: path.join(__dirname, ".."),
+        },
+      }
+    : {}),
   // Type errors now fail the build. Keep this off: it previously masked a
   // runtime crash (/cases), a broken endpoint and two build-breaking imports.
   typescript: {
@@ -59,10 +62,14 @@ const nextConfig = {
     return config;
   },
   async rewrites() {
+    const backendUrl = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8088").replace(
+      "localhost",
+      "127.0.0.1"
+    );
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/:path*`,
+        destination: `${backendUrl}/api/:path*`,
       },
     ];
   },
@@ -72,7 +79,7 @@ const nextConfig = {
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-      ...(process.env.NODE_ENV === "production"
+      ...(process.env.NODE_ENV === "production" && process.env.ENABLE_HSTS === "true"
         ? [
             {
               key: "Strict-Transport-Security",

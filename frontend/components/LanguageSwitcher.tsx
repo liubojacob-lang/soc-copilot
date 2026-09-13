@@ -48,7 +48,7 @@ export function LanguageSwitcher() {
 
   return (
     <div
-      className="inline-flex items-center p-0.5 rounded-lg bg-gray-100 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/80 text-xs font-medium select-none shadow-xs shrink-0 whitespace-nowrap"
+      className="inline-flex items-center p-0.5 rounded-lg bg-gray-100 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/80 text-xs font-medium select-none shadow-subtle shrink-0 whitespace-nowrap"
       role="radiogroup"
       aria-label={tLanguage("switch")}
     >
@@ -66,7 +66,7 @@ export function LanguageSwitcher() {
               relative inline-flex items-center justify-center min-w-[2.25rem] px-2.5 py-1 rounded-md text-xs transition-all duration-200 font-medium whitespace-nowrap shrink-0 leading-none
               ${
                 isActive
-                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-subtle font-semibold"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
               }
               ${isSwitching ? "opacity-60 cursor-wait" : "cursor-pointer"}

@@ -109,7 +109,7 @@ export function ChatInput({
   return (
     <div className="w-full max-w-4xl mx-auto px-4 pb-4 pt-1 flex-shrink-0">
       {/* Floating Card Container */}
-      <div className="relative bg-white/95 dark:bg-gray-850/95 backdrop-blur-xl border border-gray-200/90 dark:border-gray-750 shadow-xl hover:shadow-2xl focus-within:border-indigo-500/80 dark:focus-within:border-indigo-400/80 focus-within:ring-4 focus-within:ring-indigo-500/10 rounded-2xl transition-all p-3 flex flex-col gap-2">
+      <div className="relative bg-surface-card/90 backdrop-blur-xl border border-border-subtle shadow-xl hover:shadow-2xl focus-within:border-ai/80 focus-within:ring-4 focus-within:ring-ai/10 rounded-2xl transition-all p-3 flex flex-col gap-2">
         {/* Text Input */}
         <textarea
           ref={textareaRef}
@@ -120,25 +120,25 @@ export function ChatInput({
             t("inputPlaceholder") ||
             "输入安全告警、可疑IP/载荷、逆向代码或研判指令，按 Shift+Enter 换行..."
           }
-          className="w-full bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none resize-none min-h-[44px] max-h-[180px] leading-relaxed px-1"
+          className="w-full bg-transparent text-text-primary placeholder:text-text-muted text-sm focus:outline-none resize-none min-h-[44px] max-h-[180px] leading-relaxed px-1"
           disabled={isBusy}
           rows={1}
         />
 
         {/* Action & Status Row */}
-        <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800/80">
+        <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
           {/* Left: Model Pill & Key Hint */}
           <div className="flex items-center gap-2 relative" ref={modelPanelRef}>
             {/* Pop-up Model Selector Menu (Bottom to Top) */}
             {showModelPanel && (
-              <div className="absolute bottom-full mb-2 left-0 w-44 bg-white/95 dark:bg-[#181b24]/95 backdrop-blur-xl rounded-xl shadow-xl border border-gray-200/90 dark:border-gray-750 z-50 overflow-hidden animate-fadeIn p-1">
+              <div className="absolute bottom-full mb-2 left-0 w-48 bg-surface-card/95 backdrop-blur-xl rounded-xl shadow-2xl border border-border-subtle z-50 overflow-hidden animate-fadeIn p-1">
                 {/* Compact Menu Title */}
-                <div className="px-2 py-0.5 flex items-center justify-between text-[10px] font-medium text-gray-400 dark:text-gray-500">
+                <div className="px-2 py-0.5 flex items-center justify-between text-[10px] font-medium text-text-muted">
                   <span>研判模型</span>
                   <button
                     type="button"
                     onClick={onRefreshModels}
-                    className="p-0.5 hover:text-gray-700 dark:hover:text-gray-200 rounded transition-colors"
+                    className="p-0.5 hover:text-text-primary rounded transition-colors"
                     title={tCommon("refresh")}
                   >
                     <RefreshCw className="w-2.5 h-2.5" />
@@ -155,8 +155,8 @@ export function ChatInput({
                     }}
                     className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors ${
                       selectedModel?.id === autoModel.id
-                        ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-medium"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                        ? "bg-ai/10 text-ai font-medium"
+                        : "hover:bg-surface-hover text-text-secondary"
                     }`}
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -164,18 +164,18 @@ export function ChatInput({
                       <span className="font-semibold truncate">⚡ 自动分配</span>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0 ml-1">
-                      <span className="text-[10px] px-1 py-0.5 leading-none rounded bg-purple-100/80 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300">
+                      <span className="text-[10px] px-1 py-0.5 leading-none rounded bg-ai/15 text-ai">
                         推荐
                       </span>
                       {selectedModel?.id === autoModel.id && (
-                        <Check className="w-3 h-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                        <Check className="w-3 h-3 text-ai flex-shrink-0" />
                       )}
                     </div>
                   </button>
                 )}
 
                 {/* Divider */}
-                <div className="my-0.5 border-t border-gray-100 dark:border-gray-800" />
+                <div className="my-0.5 border-t border-border-subtle" />
 
                 {/* Manual Models Selection */}
                 <div className="space-y-0.5">
@@ -220,8 +220,8 @@ export function ChatInput({
                         }}
                         className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors ${
                           isSelected
-                            ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                            ? "bg-accent-500/15 text-accent-700 dark:text-accent-300 font-medium"
+                            : "hover:bg-surface-hover text-text-secondary"
                         }`}
                       >
                         <div className="flex items-center gap-1.5 min-w-0">
@@ -237,7 +237,7 @@ export function ChatInput({
                             </span>
                           )}
                           {isSelected && (
-                            <Check className="w-3 h-3 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                            <Check className="w-3 h-3 text-accent-600 dark:text-accent-400 flex-shrink-0" />
                           )}
                         </div>
                       </button>
@@ -246,16 +246,16 @@ export function ChatInput({
                 </div>
 
                 {/* Compact Micro-toolbar */}
-                <div className="pt-1 mt-1 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between px-1.5 text-[10px]">
+                <div className="pt-1 mt-1 border-t border-border-subtle flex items-center justify-between px-1.5 text-[10px]">
                   <button
                     type="button"
                     onClick={() => selectedModel && onTestModel(selectedModel)}
                     disabled={!selectedModel || testingModel !== null}
-                    className="inline-flex items-center gap-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors disabled:opacity-50"
                     title="测试当前模型网络延迟"
                   >
                     {testingModel ? (
-                      <Loader className="w-2.5 h-2.5 animate-spin text-blue-500" />
+                      <Loader className="w-2.5 h-2.5 animate-spin text-accent-500" />
                     ) : testResult?.model_id === selectedModel?.id ? (
                       testResult?.success ? (
                         <>
@@ -282,7 +282,7 @@ export function ChatInput({
                     type="button"
                     onClick={() => selectedModel && onSetDefault(selectedModel)}
                     disabled={!selectedModel || selectedModel.id === defaultModel?.id}
-                    className="inline-flex items-center gap-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors disabled:opacity-40 disabled:hover:text-gray-400"
+                    className="inline-flex items-center gap-1 text-text-muted hover:text-accent-600 dark:hover:text-accent-400 transition-colors disabled:opacity-40 disabled:hover:text-text-muted"
                     title="将当前选择设为默认"
                   >
                     <Settings className="w-2.5 h-2.5" />
@@ -296,10 +296,10 @@ export function ChatInput({
             <button
               type="button"
               onClick={() => setShowModelPanel(!showModelPanel)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all shadow-xs border ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all shadow-subtle border ${
                 selectedModel?.id === "auto"
-                  ? "bg-purple-50 hover:bg-purple-100/80 dark:bg-purple-950/50 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border-purple-200/80 dark:border-purple-800/60"
-                  : "bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800 dark:hover:bg-gray-750 text-gray-800 dark:text-gray-200 border-gray-200/80 dark:border-gray-750"
+                  ? "bg-ai/10 hover:bg-ai/15 text-ai border-ai/20"
+                  : "bg-surface-hover hover:bg-surface-active text-text-primary border-border-subtle"
               }`}
               title="切换 AI 研判模型"
             >
@@ -324,13 +324,13 @@ export function ChatInput({
                   : t("model.select")}
               </span>
               <ChevronUp
-                className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
+                className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${
                   showModelPanel ? "rotate-180" : ""
                 }`}
               />
             </button>
 
-            <span className="hidden sm:inline-block text-[11px] text-gray-400 dark:text-gray-500 select-none">
+            <span className="hidden sm:inline-block text-[11px] text-text-muted select-none">
               ↵ 发送 · Shift+↵ 换行
             </span>
           </div>
@@ -340,7 +340,7 @@ export function ChatInput({
             {input && !isBusy && (
               <button
                 type="button"
-                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                className="p-1.5 text-text-muted hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
                 title={tCommon("clear")}
                 onClick={() => setInput("")}
               >
@@ -352,7 +352,7 @@ export function ChatInput({
               type="button"
               onClick={onSend}
               disabled={isBusy || !input.trim()}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 text-xs font-medium active:scale-95"
+              className="px-4 py-2 bg-gradient-to-r from-accent-600 via-indigo-600 to-purple-600 hover:from-accent-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 text-xs font-medium active:scale-95"
             >
               {isBusy ? (
                 <>
@@ -371,7 +371,7 @@ export function ChatInput({
       </div>
 
       {/* Safety & Compliance Disclaimer */}
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-2 select-none">
+      <p className="text-[11px] text-text-muted text-center mt-2 select-none">
         AI 分析结论由大模型生成，涉及网络阻断等高危处置前请经 SOC 专家复核确认。
       </p>
     </div>

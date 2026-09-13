@@ -89,7 +89,7 @@ export function BackButton({
         type="button"
         onClick={handleBack}
         className={cn(
-          "group inline-flex items-center justify-center p-2 rounded-xl border border-border-subtle bg-surface-card hover:bg-surface-hover hover:border-border-default active:bg-surface-active text-text-secondary hover:text-text-primary shadow-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 select-none",
+          "group inline-flex items-center justify-center p-2 rounded-xl border border-border-subtle bg-surface-card hover:bg-surface-hover hover:border-border-default active:bg-surface-active text-text-secondary hover:text-text-primary shadow-subtle transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 select-none",
           className
         )}
         title={buttonText}
@@ -124,7 +124,7 @@ export function BackButton({
       type="button"
       onClick={handleBack}
       className={cn(
-        "group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-subtle bg-surface-card hover:bg-surface-hover hover:border-border-default active:bg-surface-active text-text-secondary hover:text-text-primary text-xs font-medium shadow-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 select-none",
+        "group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-subtle bg-surface-card hover:bg-surface-hover hover:border-border-default active:bg-surface-active text-text-secondary hover:text-text-primary text-xs font-medium shadow-subtle transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 select-none",
         size === "md" && "px-3.5 py-2 text-sm",
         className
       )}

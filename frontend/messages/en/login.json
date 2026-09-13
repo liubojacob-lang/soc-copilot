@@ -10,6 +10,16 @@
     "signingIn": "Signing in...",
     "error": "Invalid credentials",
     "devMode": "Dev Mode",
-    "checkServerLogs": "Check server logs for default credentials"
+    "checkServerLogs": "Check server logs for default credentials",
+    "twoFactorTitle": "Two-Factor Authentication",
+    "twoFactorSubtitle": "Enter the 6-digit code from your authenticator app or a recovery code",
+    "twoFactorCode": "Verification Code / Backup Code",
+    "twoFactorPlaceholder": "e.g. 123456 or 8-char recovery code",
+    "verifyAndSignIn": "Verify & Sign In",
+    "verifying": "Verifying...",
+    "backToLogin": "Back to login",
+    "invalidCode": "Invalid or expired verification code, please try again",
+    "devCredentials": "Dev Credentials: admin / Admin123!",
+    "fillDevCredentials": "Autofill default credentials"
   }
 }

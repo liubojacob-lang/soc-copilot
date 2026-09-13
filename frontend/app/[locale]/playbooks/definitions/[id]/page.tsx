@@ -216,7 +216,7 @@ export default function PlaybookDefinitionDetailPage() {
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Basic Info */}
-          <div className="bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-xs space-y-4">
+          <div className="bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
               <Info className="w-4 h-4 text-accent-600 dark:text-accent-400" />
               <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
@@ -288,7 +288,7 @@ export default function PlaybookDefinitionDetailPage() {
           </div>
 
           {/* DAG Topology */}
-          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle flex flex-col justify-between">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-4">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-accent-600 dark:text-accent-400" />
@@ -302,7 +302,7 @@ export default function PlaybookDefinitionDetailPage() {
                   onClick={() => setViewMode("visual")}
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
                     viewMode === "visual"
-                      ? "bg-surface-card text-text-primary shadow-xs"
+                      ? "bg-surface-card text-text-primary shadow-subtle"
                       : "text-text-tertiary hover:text-text-secondary"
                   }`}
                 >
@@ -314,7 +314,7 @@ export default function PlaybookDefinitionDetailPage() {
                   onClick={() => setViewMode("json")}
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
                     viewMode === "json"
-                      ? "bg-surface-card text-text-primary shadow-xs"
+                      ? "bg-surface-card text-text-primary shadow-subtle"
                       : "text-text-tertiary hover:text-text-secondary"
                   }`}
                 >

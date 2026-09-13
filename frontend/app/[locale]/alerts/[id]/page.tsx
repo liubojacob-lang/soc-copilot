@@ -48,6 +48,8 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/common/Button";
 import { Card, BackButton } from "@/components/common";
+import { AIAnalysisPanel } from "@/components/alerts/AIAnalysisPanel";
+import { RelatedAlertsPanel } from "@/components/alerts/RelatedAlertsPanel";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useToast } from "@/components/Toast";
 import {
@@ -103,12 +105,22 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
   false_positive: ["new"],
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  new: "New",
-  investigating: "Investigating",
-  resolved: "Resolved",
-  false_positive: "False Positive",
-  escalated: "Escalated",
+// 状态/严重度 → i18n 命名空间键（复用全局 status / severity，避免硬编码英文）
+const STATUS_I18N_KEY: Record<string, string> = {
+  new: "new",
+  investigating: "investigating",
+  resolved: "resolved",
+  false_positive: "falsePositive",
+  escalated: "escalated",
+};
+
+const SEVERITY_I18N_KEY: Record<string, string> = {
+  critical: "critical",
+  high: "high",
+  medium: "medium",
+  low: "low",
+  info: "info",
+  neutral: "neutral",
 };
 
 // ── IOC Display ────────────────────────────────────────
@@ -144,7 +156,7 @@ function IOCSection({ iocs }: { iocs?: SecurityAlertItem["iocs"] }) {
             {items.map((ioc, idx) => (
               <span
                 key={idx}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono bg-surface-ground text-text-primary rounded-lg border border-border-subtle shadow-xs"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono bg-surface-ground text-text-primary rounded-lg border border-border-subtle shadow-subtle"
               >
                 {ioc.value}
                 {ioc.reputation && (
@@ -189,13 +201,13 @@ function TimelineView({ events }: { events?: TimelineEventLocal[] }) {
   }
 
   const iconMap: Record<string, React.ReactNode> = {
-    created: <Activity className="w-3.5 h-3.5 text-accent-500" />,
-    status_changed: <RefreshCw className="w-3.5 h-3.5 text-amber-500" />,
-    assigned: <User className="w-3.5 h-3.5 text-purple-500" />,
-    enriched: <Shield className="w-3.5 h-3.5 text-emerald-500" />,
-    correlated: <Link className="w-3.5 h-3.5 text-indigo-500" />,
-    escalated: <AlertTriangle className="w-3.5 h-3.5 text-danger-500" />,
-    resolved: <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />,
+    created: <Activity className="w-3.5 h-3.5 text-text-link" />,
+    status_changed: <RefreshCw className="w-3.5 h-3.5 text-status-warning-fg" />,
+    assigned: <User className="w-3.5 h-3.5 text-ai" />,
+    enriched: <Shield className="w-3.5 h-3.5 text-status-success-fg" />,
+    correlated: <Link className="w-3.5 h-3.5 text-ai" />,
+    escalated: <AlertTriangle className="w-3.5 h-3.5 text-severity-critical-fg" />,
+    resolved: <CheckCircle className="w-3.5 h-3.5 text-status-success-fg" />,
     noted: <FileText className="w-3.5 h-3.5 text-text-muted" />,
   };
 
@@ -208,7 +220,7 @@ function TimelineView({ events }: { events?: TimelineEventLocal[] }) {
             <div className="absolute left-[13px] top-6 bottom-0 w-px bg-border-subtle" />
           )}
           {/* Icon */}
-          <div className="absolute left-0 top-1 flex items-center justify-center w-7 h-7 rounded-full bg-surface-ground border border-border-subtle shadow-xs">
+          <div className="absolute left-0 top-1 flex items-center justify-center w-7 h-7 rounded-full bg-surface-ground border border-border-subtle shadow-subtle">
             {iconMap[event.event_type] || <Info className="w-3.5 h-3.5 text-text-muted" />}
           </div>
           {/* Content */}
@@ -219,7 +231,9 @@ function TimelineView({ events }: { events?: TimelineEventLocal[] }) {
                 {formatDateTime(event.timestamp, format)}
               </span>
               {event.user && (
-                <span className="text-[11px] text-text-secondary">by {event.user}</span>
+                <span className="text-[11px] text-text-secondary">
+                  {t("timelineBy", { user: event.user })}
+                </span>
               )}
             </div>
           </div>
@@ -227,6 +241,109 @@ function TimelineView({ events }: { events?: TimelineEventLocal[] }) {
       ))}
     </div>
   );
+}
+
+// ── Entities ───────────────────────────────────────────
+
+/**
+ * 从真实告警字段推导「涉及哪些实体」。不做推断、不做补全：
+ * 字段为空即不展示该实体，全部为空则显示明确的空态。
+ */
+function EntitiesSection({ alert }: { alert: SecurityAlertItem }) {
+  const t = useTranslations("alerts.detail");
+
+  const groups: Array<{ kind: string; icon: React.ReactNode; items: string[] }> = [
+    {
+      kind: t("entityHost"),
+      icon: <Server className="w-3.5 h-3.5" />,
+      items: [alert.agent_name, alert.agent_id].filter(Boolean) as string[],
+    },
+    {
+      kind: t("entityIp"),
+      icon: <Globe className="w-3.5 h-3.5" />,
+      items: [alert.source_ip, alert.destination_ip, alert.agent_ip].filter(Boolean) as string[],
+    },
+    {
+      kind: t("entitySource"),
+      icon: <Activity className="w-3.5 h-3.5" />,
+      items: [alert.source].filter(Boolean) as string[],
+    },
+    {
+      kind: t("entityRule"),
+      icon: <Tag className="w-3.5 h-3.5" />,
+      items: [alert.rule_id].filter(Boolean) as string[],
+    },
+  ].filter((g) => g.items.length > 0);
+
+  if (groups.length === 0) {
+    return <p className="text-xs italic text-text-muted">{t("entityNone")}</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {groups.map((group) => (
+        <div key={group.kind}>
+          <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-text-secondary">
+            {group.icon} {group.kind}
+          </h4>
+          <div className="flex flex-wrap gap-1.5">
+            {group.items.map((value) => (
+              <span
+                key={value}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-surface-ground px-2.5 py-1 font-mono text-xs text-text-primary"
+              >
+                {value}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── MITRE ATT&CK ───────────────────────────────────────
+
+/**
+ * 优先渲染结构化的 mitre_tactics；缺失时退化为后端返回的 rule_mitre 原始字符串；
+ * 两者都缺失则不渲染该区块（而不是画一张空表）。
+ */
+function MitreSection({
+  tactics,
+  fallback,
+}: {
+  tactics?: SecurityAlertItem["mitre_tactics"];
+  fallback?: string | null;
+}) {
+  const t = useTranslations("alerts.detail");
+
+  if (tactics && tactics.length > 0) {
+    return (
+      <div className="space-y-3">
+        {tactics.map((m) => (
+          <div key={m.tactic}>
+            <p className="text-xs font-medium text-text-primary">{m.tactic}</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {(m.techniques ?? []).map((tech) => (
+                <span
+                  key={tech}
+                  className="rounded border border-border-subtle bg-surface-hover px-1.5 py-0.5 font-mono text-[11px] text-text-secondary"
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (fallback) {
+    return <p className="font-mono text-xs text-text-secondary">{fallback}</p>;
+  }
+
+  return null;
 }
 
 // ── Notes Section ──────────────────────────────────────
@@ -310,8 +427,10 @@ function TriagePanel({
   isUpdating: boolean;
 }) {
   const t = useTranslations("alerts.detail");
+  const tStatus = useTranslations("status");
   const status = currentStatus || "new";
   const transitions = STATUS_TRANSITIONS[status] || [];
+  const statusLabel = (s: string) => tStatus(STATUS_I18N_KEY[s] || "unknown");
 
   return (
     <Card className="p-4 sm:p-5">
@@ -323,7 +442,7 @@ function TriagePanel({
         <div className="flex items-center justify-between px-3 py-2 bg-surface-ground rounded-lg border border-border-subtle">
           <span className="text-xs font-medium text-text-muted">{t("currentStatus")}:</span>
           <Badge severity={mapStatusBadge(status)} variant="pill">
-            {STATUS_LABELS[status] || status}
+            {statusLabel(status)}
           </Badge>
         </div>
 
@@ -334,7 +453,7 @@ function TriagePanel({
             let customClass = "";
             if (nextStatus === "resolved") {
               variant = "primary";
-              customClass = "bg-emerald-600 hover:bg-emerald-700 text-white";
+              customClass = "bg-status-success text-text-inverse hover:opacity-90";
             } else if (nextStatus === "escalated") {
               variant = "danger";
             } else if (nextStatus === "false_positive") {
@@ -363,7 +482,7 @@ function TriagePanel({
                   )
                 }
               >
-                {STATUS_LABELS[nextStatus] || nextStatus}
+                {statusLabel(nextStatus)}
               </Button>
             );
           })}
@@ -379,10 +498,21 @@ export default function AlertDetailPage() {
   const format = useFormatter();
   const t = useTranslations("alerts.detail");
   const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
+  const tSeverity = useTranslations("severity");
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
   const alertId = params.id as string;
+
+  const statusLabel = useCallback(
+    (s?: string | null) => tStatus(STATUS_I18N_KEY[s || "new"] || "unknown"),
+    [tStatus]
+  );
+  const severityLabel = useCallback(
+    (s?: string | null) => tSeverity(SEVERITY_I18N_KEY[s || "neutral"] || "neutral"),
+    [tSeverity]
+  );
 
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "notes">("overview");
@@ -411,15 +541,15 @@ export default function AlertDetailPage() {
           id: alert.id,
           payload: { status: newStatus },
         });
-        showToast(`Status changed to "${STATUS_LABELS[newStatus] || newStatus}"`, "success");
+        showToast(t("statusChanged", { status: statusLabel(newStatus) }), "success");
       } catch (err) {
         showToast(
-          `Status change failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+          t("statusChangeFailed", { error: err instanceof Error ? err.message : "Unknown" }),
           "error"
         );
       }
     },
-    [alert?.id, updateAlert, showToast]
+    [alert?.id, updateAlert, showToast, t, statusLabel]
   );
 
   // Add note handler
@@ -428,12 +558,12 @@ export default function AlertDetailPage() {
       if (!alert?.id) return;
       try {
         await addNote.mutateAsync({ alertId: alert.id, content });
-        showToast("Note added", "success");
+        showToast(t("noteAdded"), "success");
       } catch {
-        showToast("Failed to add note", "error");
+        showToast(t("noteAddFailed"), "error");
       }
     },
-    [alert?.id, addNote, showToast]
+    [alert?.id, addNote, showToast, t]
   );
 
   if (!mounted) return null;
@@ -442,7 +572,7 @@ export default function AlertDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-surface-ground">
-        <div className="max-w-[1600px] mx-auto px-4 py-6">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <LoadingState isLoading={true} type="skeleton" skeletonType="card" />
         </div>
       </div>
@@ -453,7 +583,7 @@ export default function AlertDetailPage() {
   if (error || !alert) {
     return (
       <div className="min-h-screen bg-surface-ground">
-        <div className="max-w-[1600px] mx-auto px-4 py-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <LoadingState
             isLoading={false}
             error={error || "Alert not found"}
@@ -470,7 +600,7 @@ export default function AlertDetailPage() {
   return (
     <div className="min-h-screen bg-surface-ground pb-12">
       {/* Header */}
-      <div className="bg-surface-card border-b border-border-subtle shadow-xs">
+      <div className="bg-surface-card border-b border-border-subtle shadow-subtle">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-start gap-4">
             <BackButton fallbackUrl="/alerts" label={tCommon("back")} className="mt-0.5 shrink-0" />
@@ -478,10 +608,10 @@ export default function AlertDetailPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
                 <Badge severity={mapSeverityBadge(alert.severity)} variant="pill">
-                  {alert.severity?.toUpperCase()}
+                  {severityLabel(alert.severity)}
                 </Badge>
                 <Badge severity={mapStatusBadge(alert.status)} variant="pill">
-                  {STATUS_LABELS[alert.status] || alert.status}
+                  {statusLabel(alert.status)}
                 </Badge>
               </div>
               <h1 className="text-lg sm:text-xl font-bold tracking-tight text-text-primary">
@@ -490,7 +620,7 @@ export default function AlertDetailPage() {
               <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-text-muted">
                 <span className="flex items-center gap-1 font-mono">
                   <Server className="w-3.5 h-3.5" />
-                  {alert.source || "unknown"}
+                  {alert.source || t("unknownSource")}
                 </span>
                 <span>·</span>
                 <span className="flex items-center gap-1">
@@ -540,6 +670,17 @@ export default function AlertDetailPage() {
               </Card>
             )}
 
+            {/* AI Analysis — "AI 怎么看 / 我该做什么"（真实调用 analyze-alert，不预置结论） */}
+            <AIAnalysisPanel
+              alert={{
+                id: alert.id,
+                title: alert.title,
+                description: alert.description,
+                source: alert.source,
+                severity: alert.severity,
+              }}
+            />
+
             {/* Tabs: Overview / Timeline / Notes */}
             <Card className="overflow-hidden">
               {/* Tab Header */}
@@ -585,8 +726,50 @@ export default function AlertDetailPage() {
                         label={t("fieldRuleLevel")}
                         value={alert.rule_level?.toString()}
                       />
-                      <DetailItem label={t("fieldMITRE")} value={alert.rule_mitre || undefined} />
+                      {/* 有结构化 MITRE 时改由下方专门区块呈现，避免重复 */}
+                      {!alert.mitre_tactics?.length && (
+                        <DetailItem label={t("fieldMITRE")} value={alert.rule_mitre || undefined} />
+                      )}
                     </div>
+
+                    {/* Entities — 从真实字段推导的实体清单 */}
+                    <div className="pt-4 border-t border-border-subtle">
+                      <h4 className="text-sm font-semibold tracking-tight text-text-primary mb-3 flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-accent-500" />
+                        {t("entitiesTitle")}
+                      </h4>
+                      <EntitiesSection alert={alert} />
+                    </div>
+
+                    {/* MITRE ATT&CK — 结构化呈现（缺失时自动隐藏） */}
+                    {(alert.mitre_tactics?.length || alert.rule_mitre) && (
+                      <div className="pt-4 border-t border-border-subtle">
+                        <h4 className="text-sm font-semibold tracking-tight text-text-primary mb-3 flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-accent-500" />
+                          {t("mitreTitle")}
+                        </h4>
+                        <MitreSection
+                          tactics={alert.mitre_tactics}
+                          fallback={alert.rule_mitre || undefined}
+                        />
+                      </div>
+                    )}
+
+                    {/* Tags — 仅在后端提供时展示 */}
+                    {alert.tags && alert.tags.length > 0 && (
+                      <div className="pt-4 border-t border-border-subtle">
+                        <h4 className="text-xs font-semibold text-text-secondary uppercase mb-2">
+                          {t("tagsTitle")}
+                        </h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {alert.tags.map((tag) => (
+                            <Badge key={tag} severity="neutral" size="xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Source IP */}
                     {alert.source_ip && (
@@ -600,7 +783,7 @@ export default function AlertDetailPage() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-accent-600 dark:text-accent-400 hover:underline font-mono"
                         >
-                          Lookup {alert.source_ip} on VirusTotal
+                          {t("lookupVirusTotal", { ip: alert.source_ip })}
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       </div>
@@ -676,7 +859,7 @@ export default function AlertDetailPage() {
                   {t("threatScoreTitle")}
                 </h3>
                 <div className="flex items-center gap-3">
-                  <div className="text-2xl font-bold tracking-tight text-danger-600 dark:text-danger-400 tabular-nums">
+                  <div className="text-2xl font-bold tracking-tight text-severity-critical-fg tabular-nums">
                     {alert.threat_score}
                   </div>
                   <div className="flex-1 h-2 bg-surface-ground rounded-full overflow-hidden border border-border-subtle">
@@ -684,10 +867,10 @@ export default function AlertDetailPage() {
                       className={cn(
                         "h-full rounded-full transition-all",
                         alert.threat_score >= 80
-                          ? "bg-danger-500"
+                          ? "bg-severity-critical"
                           : alert.threat_score >= 50
-                            ? "bg-amber-500"
-                            : "bg-emerald-500"
+                            ? "bg-severity-medium"
+                            : "bg-status-success"
                       )}
                       style={{ width: `${Math.min(100, alert.threat_score)}%` }}
                     />
@@ -711,6 +894,14 @@ export default function AlertDetailPage() {
                 )}
               </Card>
             )}
+
+            {/* Related Alerts — 同一资产/源 IP 的其他告警（真实后端过滤，非编造关联度） */}
+            <RelatedAlertsPanel
+              alertId={alert.id}
+              agentName={alert.agent_name}
+              sourceIp={alert.source_ip}
+              severityOf={mapSeverityBadge}
+            />
           </div>
         </div>
       </div>

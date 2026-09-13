@@ -405,7 +405,7 @@ export default function PlaybooksPage() {
                 <p className="text-gray-500 dark:text-gray-400 mt-1">{t("definitions.subtitle")}</p>
               </div>
               <button
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-xl text-xs font-medium transition-colors shadow-xs"
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-xl text-xs font-medium transition-colors shadow-subtle"
                 onClick={() => router.push("/playbooks/create")}
               >
                 <Plus className="w-3.5 h-3.5" />

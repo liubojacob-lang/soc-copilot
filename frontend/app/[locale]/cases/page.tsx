@@ -19,7 +19,6 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import {
   Briefcase,
   Search,
-  Filter,
   X,
   ArrowUpDown,
   Trash2,
@@ -222,7 +221,6 @@ export default function CasesPage() {
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // ── Build filters ──────────────────────────────────
@@ -276,7 +274,7 @@ export default function CasesPage() {
     () => [
       {
         key: "title",
-        header: t("cases.title"),
+        header: t("cases.caseTitle"),
         width: "2fr",
         cell: (row) => (
           <div className="min-w-0">
@@ -517,25 +515,23 @@ export default function CasesPage() {
     <div className="min-h-screen bg-surface-ground">
       <PageHeader
         title={t("cases.title")}
-        subtitle={total > 0 ? `${total} ${t("cases.cases").toLowerCase()}` : t("cases.subtitle")}
-        actions={
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
-            <span className="hidden sm:inline">{t("cases.createCase")}</span>
-          </Button>
+        badge={
+          total > 0 ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-hover text-text-secondary border border-border-subtle shadow-subtle tabular-nums">
+              {total}
+            </span>
+          ) : undefined
         }
+        subtitle={t("cases.subtitle")}
+        className="pb-0"
       />
 
       {/* Main Content */}
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Search & Filter Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8">
+        {/* Search, Filter & Action Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
             <input
               type="text"
               value={search}
@@ -548,47 +544,54 @@ export default function CasesPage() {
             />
           </div>
 
-          {/* Status filter */}
-          <select
-            value={statusFilter[0] || ""}
-            onChange={(e) => {
-              setStatusFilter(e.target.value ? [e.target.value] : []);
-              setPage(1);
-            }}
-            className="px-3 py-2 text-xs sm:text-sm rounded-lg border border-border-subtle bg-surface-card text-text-secondary hover:border-border-default focus:ring-2 focus:ring-accent-500/20 transition-all"
-          >
-            <option value="">{t("cases.status")}</option>
-            <option value="new">{t("cases.statusNew")}</option>
-            <option value="investigating">{t("cases.statusInvestigating")}</option>
-            <option value="contained">{t("cases.statusContained")}</option>
-            <option value="remediated">{t("cases.statusRemediated")}</option>
-            <option value="closed">{t("cases.statusClosed")}</option>
-            <option value="false_positive">{t("cases.statusFalsePositive")}</option>
-          </select>
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 shrink-0">
+            {/* Status filter */}
+            <select
+              value={statusFilter[0] || ""}
+              onChange={(e) => {
+                setStatusFilter(e.target.value ? [e.target.value] : []);
+                setPage(1);
+              }}
+              aria-label={t("cases.status")}
+              className="w-full sm:w-auto px-3 py-2 text-xs sm:text-sm rounded-lg border border-border-subtle bg-surface-card text-text-secondary hover:border-border-default focus:ring-2 focus:ring-accent-500/20 transition-all cursor-pointer"
+            >
+              <option value="">{t("cases.status")}</option>
+              <option value="new">{t("cases.statusNew")}</option>
+              <option value="investigating">{t("cases.statusInvestigating")}</option>
+              <option value="contained">{t("cases.statusContained")}</option>
+              <option value="remediated">{t("cases.statusRemediated")}</option>
+              <option value="closed">{t("cases.statusClosed")}</option>
+              <option value="false_positive">{t("cases.statusFalsePositive")}</option>
+            </select>
 
-          {/* Severity filter */}
-          <select
-            value={severityFilter[0] || ""}
-            onChange={(e) => {
-              setSeverityFilter(e.target.value ? [e.target.value] : []);
-              setPage(1);
-            }}
-            className="px-3 py-2 text-xs sm:text-sm rounded-lg border border-border-subtle bg-surface-card text-text-secondary hover:border-border-default focus:ring-2 focus:ring-accent-500/20 transition-all"
-          >
-            <option value="">{t("cases.severity")}</option>
-            <option value="critical">{t("cases.severityCritical")}</option>
-            <option value="high">{t("cases.severityHigh")}</option>
-            <option value="medium">{t("cases.severityMedium")}</option>
-            <option value="low">{t("cases.severityLow")}</option>
-          </select>
+            {/* Severity filter */}
+            <select
+              value={severityFilter[0] || ""}
+              onChange={(e) => {
+                setSeverityFilter(e.target.value ? [e.target.value] : []);
+                setPage(1);
+              }}
+              aria-label={t("cases.severity")}
+              className="w-full sm:w-auto px-3 py-2 text-xs sm:text-sm rounded-lg border border-border-subtle bg-surface-card text-text-secondary hover:border-border-default focus:ring-2 focus:ring-accent-500/20 transition-all cursor-pointer"
+            >
+              <option value="">{t("cases.severity")}</option>
+              <option value="critical">{t("cases.severityCritical")}</option>
+              <option value="high">{t("cases.severityHigh")}</option>
+              <option value="medium">{t("cases.severityMedium")}</option>
+              <option value="low">{t("cases.severityLow")}</option>
+            </select>
 
-          <button
-            onClick={() => setShowMobileFilters(!showMobileFilters)}
-            className="sm:hidden px-3 py-2 rounded-lg border border-border-subtle bg-surface-card text-xs text-text-secondary flex items-center gap-1.5"
-          >
-            <Filter className="w-3.5 h-3.5" />
-            Filters
-          </button>
+            {/* Create Case Action Button */}
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              variant="primary"
+              size="sm"
+              className="col-span-2 sm:col-span-1 h-9 whitespace-nowrap shadow-subtle shrink-0 justify-center"
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              {t("cases.createCase")}
+            </Button>
+          </div>
         </div>
 
         {/* Loading State */}

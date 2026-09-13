@@ -46,8 +46,8 @@ export const useThemeStore = create<ThemeState>()(
       },
 
       toggleTheme: () => {
-        const current = get().getResolvedTheme();
-        const next = current === "light" ? "dark" : "light";
+        const current = get().theme;
+        const next: Theme = current === "light" ? "dark" : current === "dark" ? "system" : "light";
         set({ theme: next });
         applyThemeClass(next);
       },

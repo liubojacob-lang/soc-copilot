@@ -23,6 +23,10 @@ const config: Config = {
           800: "#1e293b",
           900: "#0f172a",
         },
+        gray: {
+          750: "#243247",
+          850: "#111827",
+        },
         // Accent 强调色：深蓝，用于交互强调（主按钮/链接/激活态/Focus/选中态）
         accent: {
           50: "#eff6ff",
@@ -90,17 +94,148 @@ const config: Config = {
           900: "#1e3a8a",
           950: "#172554",
         },
-        // Severity colors — 与语义色保持一致，同色系明度变化
+        // Severity colors — 语义化五档，禁止在组件里再裸写 red/orange/amber。
+        // 每个等级 4 槽位：DEFAULT(实色/圆点) bg(底) fg(文字) border(描边)
+        // 明暗两套值由 globals.css 的 CSS 变量承载，组件层不需要写 dark: 变体。
         severity: {
-          critical: "#dc2626",
-          high: "#ea580c",
-          medium: "#d97706",
-          low: "#059669",
-          info: "#2563eb",
+          critical: {
+            DEFAULT: "var(--sev-critical)",
+            bg: "var(--sev-critical-bg)",
+            fg: "var(--sev-critical-fg)",
+            border: "var(--sev-critical-border)",
+          },
+          high: {
+            DEFAULT: "var(--sev-high)",
+            bg: "var(--sev-high-bg)",
+            fg: "var(--sev-high-fg)",
+            border: "var(--sev-high-border)",
+          },
+          medium: {
+            DEFAULT: "var(--sev-medium)",
+            bg: "var(--sev-medium-bg)",
+            fg: "var(--sev-medium-fg)",
+            border: "var(--sev-medium-border)",
+          },
+          low: {
+            DEFAULT: "var(--sev-low)",
+            bg: "var(--sev-low-bg)",
+            fg: "var(--sev-low-fg)",
+            border: "var(--sev-low-border)",
+          },
+          info: {
+            DEFAULT: "var(--sev-info)",
+            bg: "var(--sev-info-bg)",
+            fg: "var(--sev-info-fg)",
+            border: "var(--sev-info-border)",
+          },
+          neutral: {
+            DEFAULT: "var(--sev-neutral)",
+            bg: "var(--sev-neutral-bg)",
+            fg: "var(--sev-neutral-fg)",
+            border: "var(--sev-neutral-border)",
+          },
+        },
+        // Status colors — 处置状态语义色
+        status: {
+          active: {
+            DEFAULT: "var(--status-active)",
+            bg: "var(--status-active-bg)",
+            fg: "var(--status-active-fg)",
+            border: "var(--status-active-border)",
+          },
+          resolved: {
+            DEFAULT: "var(--status-resolved)",
+            bg: "var(--status-resolved-bg)",
+            fg: "var(--status-resolved-fg)",
+            border: "var(--status-resolved-border)",
+          },
+          investigating: {
+            DEFAULT: "var(--status-investigating)",
+            bg: "var(--status-investigating-bg)",
+            fg: "var(--status-investigating-fg)",
+            border: "var(--status-investigating-border)",
+          },
+          pending: {
+            DEFAULT: "var(--status-pending)",
+            bg: "var(--status-pending-bg)",
+            fg: "var(--status-pending-fg)",
+            border: "var(--status-pending-border)",
+          },
+          failed: {
+            DEFAULT: "var(--status-failed)",
+            bg: "var(--status-failed-bg)",
+            fg: "var(--status-failed-fg)",
+            border: "var(--status-failed-border)",
+          },
+          success: {
+            DEFAULT: "var(--status-success)",
+            bg: "var(--status-success-bg)",
+            fg: "var(--status-success-fg)",
+            border: "var(--status-success-border)",
+          },
+          warning: {
+            DEFAULT: "var(--status-warning)",
+            bg: "var(--status-warning-bg)",
+            fg: "var(--status-warning-fg)",
+            border: "var(--status-warning-border)",
+          },
+          disabled: {
+            DEFAULT: "var(--status-disabled)",
+            bg: "var(--status-disabled-bg)",
+            fg: "var(--status-disabled-fg)",
+            border: "var(--status-disabled-border)",
+          },
+          unknown: {
+            DEFAULT: "var(--status-unknown)",
+            bg: "var(--status-unknown-bg)",
+            fg: "var(--status-unknown-fg)",
+            border: "var(--status-unknown-border)",
+          },
+        },
+        // AI colors — 克制的靛紫体系，与 severity(红橙) / 人工操作(accent 蓝) 三方可辨
+        ai: {
+          DEFAULT: "var(--ai)",
+          bg: "var(--ai-bg)",
+          fg: "var(--ai-fg)",
+          border: "var(--ai-border)",
+          running: {
+            DEFAULT: "var(--ai-running)",
+            bg: "var(--ai-running-bg)",
+            fg: "var(--ai-running-fg)",
+            border: "var(--ai-running-border)",
+          },
+          completed: {
+            DEFAULT: "var(--ai-completed)",
+            bg: "var(--ai-completed-bg)",
+            fg: "var(--ai-completed-fg)",
+            border: "var(--ai-completed-border)",
+          },
+          failed: {
+            DEFAULT: "var(--ai-failed)",
+            bg: "var(--ai-failed-bg)",
+            fg: "var(--ai-failed-fg)",
+            border: "var(--ai-failed-border)",
+          },
+          approval: {
+            DEFAULT: "var(--ai-approval)",
+            bg: "var(--ai-approval-bg)",
+            fg: "var(--ai-approval-fg)",
+            border: "var(--ai-approval-border)",
+          },
+          approved: {
+            DEFAULT: "var(--ai-approved)",
+            bg: "var(--ai-approved-bg)",
+            fg: "var(--ai-approved-fg)",
+            border: "var(--ai-approved-border)",
+          },
         },
         // Surface background layers (connected to dynamic CSS variables)
+        // ground / canvas 是历史别名，语义等同于 page，保留以兼容存量页面；
+        // 新代码统一使用 surface-page。
         surface: {
           page: "var(--color-bg-page)",
+          ground: "var(--color-bg-page)",
+          canvas: "var(--color-bg-page)",
           card: "var(--color-bg-card)",
           hover: "var(--color-bg-hover)",
           active: "var(--color-bg-active)",
@@ -111,6 +246,7 @@ const config: Config = {
           primary: "var(--color-text-primary)",
           secondary: "var(--color-text-secondary)",
           tertiary: "var(--color-text-tertiary)",
+          muted: "var(--color-text-muted)",
           disabled: "var(--color-text-disabled)",
           inverse: "var(--color-text-inverse)",
           link: "var(--color-text-link)",
@@ -120,12 +256,13 @@ const config: Config = {
         border: {
           subtle: "var(--color-border-subtle)",
           default: "var(--color-border-default)",
+          strong: "var(--color-border-strong)",
           focus: "var(--color-border-focus)",
         },
       },
       fontFamily: {
         sans: [
-          "var(--font-geist-sans)",
+          "var(--font-inter)",
           "Inter",
           "-apple-system",
           "BlinkMacSystemFont",
@@ -134,7 +271,7 @@ const config: Config = {
           "sans-serif",
         ],
         mono: [
-          "var(--font-geist-mono)",
+          "var(--font-jetbrains-mono)",
           "JetBrains Mono",
           "ui-monospace",
           "SFMono-Regular",
@@ -183,10 +320,11 @@ const config: Config = {
         md: "0 4px 6px -1px rgb(0 0 0 / 0.04), 0 2px 4px -2px rgb(0 0 0 / 0.03)",
         lg: "0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.03)",
         elevated: "0 8px 30px rgba(0, 0, 0, 0.12)",
-        glow: "0 0 20px -5px rgba(37, 99, 235, 0.25)",
       },
       animation: {
         "fade-in": "fadeIn 150ms ease-out",
+        // 驼峰别名：存量代码里 animate-fadeIn 曾静默失效，这里对齐后无需改调用方
+        fadeIn: "fadeIn 150ms ease-out",
         "fade-in-up": "fadeInUp 200ms ease-out",
         "fade-in-up-stagger-1": "fadeInUp 200ms ease-out 0.1s both",
         "fade-in-up-stagger-2": "fadeInUp 200ms ease-out 0.2s both",

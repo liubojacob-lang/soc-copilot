@@ -179,7 +179,7 @@ function FilterDropdown({ label, options, selected, onChange }: FilterDropdownPr
           "flex items-center gap-2 px-3 py-2 text-xs sm:text-sm rounded-lg border transition-all duration-150",
           selected.length > 0
             ? "border-accent-500/40 bg-accent-500/10 text-accent-700 dark:text-accent-300 font-medium"
-            : "border-border-subtle bg-surface-card text-text-secondary hover:border-border-default hover:text-text-primary shadow-xs"
+            : "border-border-subtle bg-surface-card text-text-secondary hover:border-border-default hover:text-text-primary shadow-subtle"
         )}
       >
         <Filter className="w-3.5 h-3.5 text-text-muted" />
@@ -921,11 +921,17 @@ export default function AlertsPage() {
     <div className="min-h-screen bg-surface-ground">
       <PageHeader
         title={t("title")}
-        subtitle={total > 0 ? t("totalCount", { count: total }) : t("subtitle")}
+        badge={
+          total > 0 ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-hover text-text-secondary border border-border-subtle shadow-subtle tabular-nums">
+              {total}
+            </span>
+          ) : undefined
+        }
       />
 
       {/* Main Content */}
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Loading State */}
         {isLoading && (
           <LoadingState
@@ -941,7 +947,7 @@ export default function AlertsPage() {
 
         {/* Content */}
         {!isLoading && !error && content}
-      </main>
+      </div>
 
       {/* Import Alert Modal */}
       <ImportAlertModal

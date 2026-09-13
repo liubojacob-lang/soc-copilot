@@ -19,7 +19,7 @@ const inputVariants = cva(
     variants: {
       variant: {
         default:
-          "border-border-default hover:border-text-disabled focus:ring-2 focus:ring-accent-500/30 focus:border-accent-600 dark:focus:border-accent-400",
+          "border-border-default hover:border-border-strong focus:ring-2 focus:ring-accent-500/30 focus:border-accent-600 dark:focus:border-accent-400",
         error:
           "border-danger-500 text-danger-900 dark:text-danger-100 focus:ring-2 focus:ring-danger-500/30 focus:border-danger-600",
         success:

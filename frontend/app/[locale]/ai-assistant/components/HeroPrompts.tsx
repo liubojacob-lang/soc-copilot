@@ -2,13 +2,14 @@
 
 import React from "react";
 import { ShieldAlert, Terminal, FileCheck2, Cpu, Sparkles, ArrowUpRight } from "lucide-react";
+import { useLocale } from "next-intl";
 
 interface HeroPromptsProps {
   onSelectPrompt: (prompt: string) => void;
   disabled?: boolean;
 }
 
-const PROMPT_SCENARIOS = [
+const PROMPT_SCENARIOS_ZH = [
   {
     icon: ShieldAlert,
     title: "高危网络告警排查",
@@ -55,7 +56,57 @@ const PROMPT_SCENARIOS = [
   },
 ];
 
+const PROMPT_SCENARIOS_EN = [
+  {
+    icon: ShieldAlert,
+    title: "Critical Network Alert Triage",
+    desc: "Analyze abnormal outbound connections and brute-force attempts",
+    prompt:
+      "High-frequency abnormal outbound connections to suspicious external IP detected. Please analyze threat level and provide containment recommendations.",
+    tag: "Alert Triage",
+    color:
+      "from-rose-500/10 to-orange-500/10 hover:border-rose-500/30 text-rose-600 dark:text-rose-400",
+    badgeColor: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+  },
+  {
+    icon: Terminal,
+    title: "Deobfuscation & Payload Analysis",
+    desc: "Decompile and decode PowerShell, Bash, or Base64 payloads",
+    prompt:
+      "Please analyze this suspicious command payload, reverse its execution intent and extract potential malicious C2/domains: powershell -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA...",
+    tag: "Reverse Analysis",
+    color:
+      "from-blue-500/10 to-cyan-500/10 hover:border-blue-500/30 text-blue-600 dark:text-blue-400",
+    badgeColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  },
+  {
+    icon: FileCheck2,
+    title: "ATT&CK Chain & Incident Report",
+    desc: "Map lateral movement to MITRE matrix and generate incident report",
+    prompt:
+      "Based on recent ransomware alert logs, map the attack chain to MITRE ATT&CK tactics and generate a standard incident response report.",
+    tag: "Attack Chain",
+    color:
+      "from-purple-500/10 to-indigo-500/10 hover:border-purple-500/30 text-purple-600 dark:text-purple-400",
+    badgeColor: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+  },
+  {
+    icon: Cpu,
+    title: "Automated Incident Playbook",
+    desc: "Recommend SOAR defensive playbooks for SQLi or WebShell attacks",
+    prompt:
+      "For widespread SQL injection attacks, recommend an automated incident response playbook including firewall blocking, WAF sync, and alerting.",
+    tag: "SOAR Playbook",
+    color:
+      "from-emerald-500/10 to-teal-500/10 hover:border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
+    badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+  },
+];
+
 export function HeroPrompts({ onSelectPrompt, disabled }: HeroPromptsProps) {
+  const locale = useLocale();
+  const isZh = locale.startsWith("zh");
+  const scenarios = isZh ? PROMPT_SCENARIOS_ZH : PROMPT_SCENARIOS_EN;
   return (
     <div className="flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto px-4 py-8 animate-fadeIn">
       {/* Hero Header */}
@@ -63,32 +114,34 @@ export function HeroPrompts({ onSelectPrompt, disabled }: HeroPromptsProps) {
         <div className="inline-flex items-center justify-center p-3.5 bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-xl shadow-indigo-500/20 ring-4 ring-indigo-500/10">
           <Sparkles className="w-7 h-7 text-white animate-pulse" />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 via-indigo-950 to-gray-900 dark:from-white dark:via-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
-          SOC Copilot · 智能安全分析助手
+        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary">
+          {isZh ? "SOC Copilot · 智能安全分析助手" : "SOC Copilot · AI Security Analyst"}
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xl mx-auto leading-relaxed">
-          已就绪{" "}
-          <span className="text-purple-600 dark:text-purple-400 font-medium">
-            ⚡ 动态智能自动分配
+        <p className="text-sm text-text-secondary max-w-xl mx-auto leading-relaxed">
+          {isZh ? "已就绪 " : "Ready "}
+          <span className="text-ai font-medium">
+            {isZh ? "⚡ 动态智能自动分配" : "⚡ Dynamic Smart Routing"}
           </span>{" "}
-          · 毫秒级极速响应 · 200K 超长日志深度推理
+          {isZh
+            ? "· 毫秒级极速响应 · 200K 超长日志深度推理"
+            : "· Sub-second Response · 200K Long-Context Reasoning"}
         </p>
       </div>
 
       {/* Scenario Cards Grid (2x2) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full">
-        {PROMPT_SCENARIOS.map((item, idx) => {
+        {scenarios.map((item, idx) => {
           const Icon = item.icon;
           return (
             <button
               key={idx}
               disabled={disabled}
               onClick={() => onSelectPrompt(item.prompt)}
-              className={`group text-left p-4 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 bg-gradient-to-br ${item.color} disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`group text-left p-4 rounded-xl border border-border-subtle bg-surface-card/80 backdrop-blur-md hover:shadow-lg hover:border-border-default transition-all duration-200 hover:-translate-y-0.5 bg-gradient-to-br ${item.color} disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 shadow-sm">
+                  <div className="p-2 rounded-lg bg-surface-ground/80 border border-border-subtle shadow-sm">
                     <Icon className="w-4 h-4" />
                   </div>
                   <span
@@ -97,12 +150,12 @@ export function HeroPrompts({ onSelectPrompt, disabled }: HeroPromptsProps) {
                     {item.tag}
                   </span>
                 </div>
-                <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                <ArrowUpRight className="w-4 h-4 text-text-muted group-hover:text-text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
               </div>
-              <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <h3 className="font-semibold text-sm text-text-primary mb-1 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors">
                 {item.title}
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+              <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed">
                 {item.desc}
               </p>
             </button>

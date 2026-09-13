@@ -113,18 +113,6 @@ export function DAGCanvas({
   onPaneClick,
   className = "",
 }: DAGCanvasProps) {
-  // Refs to track state
-  const initializedRef = useRef(false);
-  const isNotifyingParentRef = useRef(false);
-  const lastNotifiedNodesRef = useRef("");
-  const lastNotifiedEdgesRef = useRef("");
-  const readonlyDefinitionKeyRef = useRef("");
-  const editDefinitionKeyRef = useRef("");
-  const lastProcessedStatusHashRef = useRef("");
-
-  // P0-2: Update iteration counter for infinite loop protection
-  const updateIterationRef = useRef(0);
-
   // Create a stable key for the definition structure (ignoring statuses)
   const currentDefinitionKey = useMemo(() => {
     if (!definition) return "";
@@ -200,9 +188,26 @@ export function DAGCanvas({
     });
   }, [definition?.edges]); // Removed nodeStatuses from deps
 
-  // Initialize state
-  const [nodes, setNodes, onNodesChangeInternal] = useNodesState(readonly ? initialNodes : []);
-  const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(readonly ? initialEdges : []);
+  // Initialize state directly with initialNodes / initialEdges regardless of mode
+  const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
+
+  // Refs to track state
+  const initializedRef = useRef(true);
+  const isSyncingNodesFromParentRef = useRef(false);
+  const isSyncingEdgesFromParentRef = useRef(false);
+  const lastNotifiedNodesRef = useRef(
+    JSON.stringify(initialNodes.map((n) => ({ id: n.id, x: n.position.x, y: n.position.y })))
+  );
+  const lastNotifiedEdgesRef = useRef(
+    JSON.stringify(initialEdges.map((e) => ({ s: e.source, t: e.target })))
+  );
+  const readonlyDefinitionKeyRef = useRef(readonly ? currentDefinitionKey : "");
+  const editDefinitionKeyRef = useRef(readonly ? "" : currentDefinitionKey);
+  const lastProcessedStatusHashRef = useRef(nodeStatusesHash);
+
+  // P0-2: Update iteration counter for infinite loop protection
+  const updateIterationRef = useRef(0);
 
   // Sync from definition - ONLY when definition structure changes
   useLayoutEffect(() => {
@@ -212,7 +217,6 @@ export function DAGCanvas({
         readonlyDefinitionKeyRef.current = currentDefinitionKey;
         setNodes(initialNodes);
         setEdges(initialEdges);
-        initializedRef.current = true;
         lastProcessedStatusHashRef.current = nodeStatusesHash;
         // P0-2: Reset iteration counter on definition change
         updateIterationRef.current = 0;
@@ -223,8 +227,9 @@ export function DAGCanvas({
         editDefinitionKeyRef.current = currentDefinitionKey;
         setNodes(initialNodes);
         setEdges(initialEdges);
-        initializedRef.current = true;
-        // Store initial state for comparison
+        // Suppress notifications back to parent while syncing external props
+        isSyncingNodesFromParentRef.current = true;
+        isSyncingEdgesFromParentRef.current = true;
         lastNotifiedNodesRef.current = JSON.stringify(
           initialNodes.map((n) => ({ id: n.id, x: n.position.x, y: n.position.y }))
         );
@@ -358,39 +363,43 @@ export function DAGCanvas({
     });
   }, [readonly, nodeStatusesHash, setNodes, setEdges]); // Only depend on HASH, not nodeStatuses object
 
-  // Notify parent of nodes changes - only when actually changed
+  // Notify parent of nodes changes - only when actually changed by canvas interaction
   useLayoutEffect(() => {
-    if (readonly || !onNodesChange || isNotifyingParentRef.current || !initializedRef.current)
-      return;
+    if (readonly || !onNodesChange || !initializedRef.current) return;
 
     const nodesKey = JSON.stringify(
       nodes.map((n) => ({ id: n.id, x: n.position.x, y: n.position.y }))
     );
+
+    if (isSyncingNodesFromParentRef.current) {
+      if (nodesKey === lastNotifiedNodesRef.current) {
+        isSyncingNodesFromParentRef.current = false;
+      }
+      return;
+    }
+
     if (nodesKey !== lastNotifiedNodesRef.current) {
       lastNotifiedNodesRef.current = nodesKey;
-      isNotifyingParentRef.current = true;
       onNodesChange(nodes);
-      // Reset flag after a delay to prevent rapid updates
-      setTimeout(() => {
-        isNotifyingParentRef.current = false;
-      }, 100);
     }
   }, [nodes, onNodesChange, readonly]);
 
-  // Notify parent of edges changes - only when actually changed
+  // Notify parent of edges changes - only when actually changed by canvas interaction
   useLayoutEffect(() => {
-    if (readonly || !onEdgesChange || isNotifyingParentRef.current || !initializedRef.current)
-      return;
+    if (readonly || !onEdgesChange || !initializedRef.current) return;
 
     const edgesKey = JSON.stringify(edges.map((e) => ({ s: e.source, t: e.target })));
+
+    if (isSyncingEdgesFromParentRef.current) {
+      if (edgesKey === lastNotifiedEdgesRef.current) {
+        isSyncingEdgesFromParentRef.current = false;
+      }
+      return;
+    }
+
     if (edgesKey !== lastNotifiedEdgesRef.current) {
       lastNotifiedEdgesRef.current = edgesKey;
-      isNotifyingParentRef.current = true;
       onEdgesChange(edges);
-      // Reset flag after a delay to prevent rapid updates
-      setTimeout(() => {
-        isNotifyingParentRef.current = false;
-      }, 100);
     }
   }, [edges, onEdgesChange, readonly]);
 

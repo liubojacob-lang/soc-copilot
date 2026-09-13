@@ -389,8 +389,8 @@ export default function CaseDetailPage() {
   // ── Loading ────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-surface-ground">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <LoadingState isLoading={true} type="skeleton" skeletonType="card" />
         </div>
       </div>
@@ -400,8 +400,8 @@ export default function CaseDetailPage() {
   // ── Error ──────────────────────────────────────────
   if (error || !caseData) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-surface-ground">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <EmptyState
             icon="alert"
             title={t("cases.notFoundTitle")}
@@ -426,8 +426,8 @@ export default function CaseDetailPage() {
   return (
     <div className="min-h-screen bg-surface-ground pb-12">
       {/* Header */}
-      <div className="bg-surface-card border-b border-border-subtle shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="bg-surface-card border-b border-border-subtle shadow-subtle">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-3 mb-2">
             <BackButton fallbackUrl="/cases" label={t("common.back")} />
             <div className="p-2 bg-accent-500/10 border border-accent-500/20 rounded-lg">
@@ -467,7 +467,7 @@ export default function CaseDetailPage() {
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left column: Main content */}
           <div className="lg:col-span-2 space-y-6">

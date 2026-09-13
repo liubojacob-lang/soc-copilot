@@ -60,14 +60,14 @@ export async function getAIModel(id: string): Promise<AIModel> {
  * Test AI model connection
  */
 export async function testAIModel(id: string): Promise<TestModelResponse> {
-  return client.post<TestModelResponse>(`/api/ai/models/${id}/test`, {});
+  return client.post<TestModelResponse>("/api/ai/models/test", { model_id: id });
 }
 
 /**
  * Set default AI model
  */
-export async function setDefaultAIModel(id: string): Promise<void> {
-  return client.put(`/api/ai/models/${id}/default`, {});
+export async function setDefaultAIModel(id: string): Promise<SetDefaultModelResponse> {
+  return client.post<SetDefaultModelResponse>("/api/ai/models/default", { model_id: id });
 }
 
 /**

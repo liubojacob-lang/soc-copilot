@@ -17,7 +17,12 @@ interface UseAIChatResult {
   thinking: boolean;
   isStreaming: boolean;
   streamingMessage: string;
-  sendMessage: (message: string, conversationHistory: Message[]) => Promise<void>;
+  sendMessage: (
+    message: string,
+    conversationHistory: Message[],
+    /** 可选业务上下文（如当前调查的告警）。仅拼进发给模型的 payload，不进入聊天记录展示。 */
+    context?: string
+  ) => Promise<void>;
   setMessages: (messages: Message[]) => void;
   loadConversation: (
     conv: ChatConversation,
@@ -142,10 +147,13 @@ export function useAIChat({
   );
 
   const sendMessage = useCallback(
-    async (userMessage: string, conversationHistory: Message[]) => {
+    async (userMessage: string, conversationHistory: Message[], context?: string) => {
       if (!userMessage.trim() || loading || thinking || isStreaming) {
         return;
       }
+
+      // 上下文只进模型 payload：聊天记录保持用户原文，界面不出现机器前缀
+      const payloadMessage = context ? `${context}\n\n${userMessage}` : userMessage;
 
       const userEntry: Message = {
         role: "user",
@@ -201,7 +209,7 @@ export function useAIChat({
           ]);
 
           let streamed = "";
-          const meta = await streamChat(userMessage, history, (delta) => {
+          const meta = await streamChat(payloadMessage, history, (delta) => {
             streamed += delta;
             setStreamingMessage(streamed);
           });
@@ -224,7 +232,7 @@ export function useAIChat({
         // Fallback: one-shot request + typewriter effect
         setThinking(true);
         const chatResponse = (await api.post("/api/ai/chat", {
-          message: userMessage,
+          message: payloadMessage,
           ...(selectedModelId ? { model_id: selectedModelId } : {}),
           conversation_history: history,
         })) as unknown as AIChatResponse;

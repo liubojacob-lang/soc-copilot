@@ -12,7 +12,7 @@ interface Ripple {
 }
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center font-medium select-none transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-45 active:scale-[0.98]",
+  "relative inline-flex items-center justify-center whitespace-nowrap font-medium select-none transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-45 active:scale-[0.98]",
   {
     variants: {
       variant: {
@@ -85,7 +85,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
         {!isLoading && leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>}
-        {children && <span>{children}</span>}
+        {children && <span className="inline-flex items-center">{children}</span>}
         {!isLoading && rightIcon && <span className="inline-flex shrink-0">{rightIcon}</span>}
       </button>
     );

@@ -378,10 +378,7 @@ export function DataTable<T>({
       )}
     >
       {/* Header row */}
-      <div
-        role="row"
-        className="flex items-center border-b border-border-subtle dark:border-slate-700 bg-surface-secondary dark:bg-slate-800/60"
-      >
+      <div role="row" className="flex items-center border-b border-border-subtle bg-surface-hover">
         {columns.map((col) => (
           <div
             role="columnheader"

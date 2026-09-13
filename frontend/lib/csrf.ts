@@ -64,10 +64,27 @@ export async function refreshCSRFToken(): Promise<string | null> {
 }
 
 /**
- * Ensure a raw CSRF token exists before a state-changing request.
+ * Check if the csrf_token cookie exists in document.cookie.
+ * Since csrf_token is not HttpOnly, JavaScript can verify its presence.
+ */
+export function hasCSRFCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((c) => c.trim().startsWith("csrf_token="));
+}
+
+/**
+ * Ensure a fresh CSRF token pair exists before a state-changing request.
+ * If the raw token is missing from sessionStorage OR the csrf_token cookie
+ * has expired/missing from document.cookie, proactively fetches a fresh pair.
  */
 export async function ensureCSRFToken(): Promise<string | null> {
-  return getCSRFToken() ?? refreshCSRFToken();
+  const currentToken = getCSRFToken();
+  const cookiePresent = hasCSRFCookie();
+
+  if (!currentToken || !cookiePresent) {
+    return refreshCSRFToken();
+  }
+  return currentToken;
 }
 
 /**
@@ -94,15 +111,62 @@ export function addCSRFToken(options: RequestInit): RequestInit {
 }
 
 /**
- * Fetch wrapper with automatic CSRF protection
+ * Fetch wrapper with automatic CSRF protection and self-healing retry
  */
-export async function csrfFetch(url: string, options: RequestInit = {}): Promise<Response> {
+export async function csrfFetch(
+  url: string,
+  options: RequestInit = {},
+  maxRetries = 1
+): Promise<Response> {
+  const method = (options.method || "GET").toUpperCase();
+  if (CSRF_PROTECTED_METHODS.has(method)) {
+    await ensureCSRFToken();
+  }
+
   const optionsWithCSRF = addCSRFToken(options);
 
-  return fetch(url, {
+  const response = await fetch(url, {
     ...optionsWithCSRF,
     credentials: "include", // Include cookies for auth + CSRF validation
   });
+
+  // Self-healing CSRF: retry once if CSRF validation failed
+  if (response.status === 403 && CSRF_PROTECTED_METHODS.has(method) && maxRetries > 0) {
+    let isCsrfError = false;
+    try {
+      const cloned = response.clone();
+      const errData = await cloned.json();
+      if (
+        errData?.error === "csrf_validation_failed" ||
+        (typeof errData?.detail === "string" && errData.detail.toLowerCase().includes("csrf")) ||
+        (typeof errData?.message === "string" && errData.message.toLowerCase().includes("csrf"))
+      ) {
+        isCsrfError = true;
+      }
+    } catch {
+      // ignore
+    }
+
+    if (isCsrfError) {
+      const newToken = await refreshCSRFToken();
+      if (newToken) {
+        const retryHeaders = {
+          ...(options.headers as Record<string, string> | undefined),
+          [CSRF_HEADER_NAME]: newToken,
+        };
+        return csrfFetch(
+          url,
+          {
+            ...options,
+            headers: retryHeaders,
+          },
+          maxRetries - 1
+        );
+      }
+    }
+  }
+
+  return response;
 }
 
 /**

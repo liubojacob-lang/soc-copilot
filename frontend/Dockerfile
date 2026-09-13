@@ -29,8 +29,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Fix ownership so nextjs user can write to .next (prerender cache, etc.)
-RUN mkdir -p /app/.next/server/app && \
+# Fix ownership and support both root standalone and monorepo nested standalone
+RUN if [ -d /app/app ]; then \
+        cp -rn /app/app/* /app/ 2>/dev/null || true; \
+        rm -rf /app/app; \
+    fi && \
+    mkdir -p /app/.next/server/app && \
     chown -R nextjs:nodejs /app/.next && \
     chown -R nextjs:nodejs /app/public
 

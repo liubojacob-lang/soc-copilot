@@ -8,8 +8,18 @@
     "hidePassword": "隐藏密码",
     "signIn": "登录",
     "signingIn": "登录中...",
-    "error": "凭据无效",
+    "error": "用户名或密码错误",
     "devMode": "开发模式",
-    "checkServerLogs": "检查服务器日志获取默认凭据"
+    "checkServerLogs": "检查服务器日志获取默认凭据",
+    "twoFactorTitle": "双因素身份验证",
+    "twoFactorSubtitle": "请输入认证器 App 中的 6 位动态验证码或备用恢复码",
+    "twoFactorCode": "动态验证码 / 备用码",
+    "twoFactorPlaceholder": "例如 123456 或 8位恢复码",
+    "verifyAndSignIn": "验证并登录",
+    "verifying": "验证中...",
+    "backToLogin": "返回账号密码登录",
+    "invalidCode": "验证码无效或已过期，请重试",
+    "devCredentials": "开发账号：admin / Admin123!",
+    "fillDevCredentials": "一键填充默认账号密码"
   }
 }

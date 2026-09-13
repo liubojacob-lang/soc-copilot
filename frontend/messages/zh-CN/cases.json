@@ -1,6 +1,7 @@
 {
   "cases": {
     "title": "案例管理",
+    "caseTitle": "标题",
     "subtitle": "安全案例管理与调查跟踪",
     "emptyTitle": "暂无案例",
     "emptyDescription": "创建第一个案例以开始跟踪安全调查。",

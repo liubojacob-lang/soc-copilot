@@ -37,6 +37,122 @@
   --color-neutral-bg: #f8fafc;
   --color-neutral-text: #475569;
 
+  /* 文字层级补充：muted 与 tertiary 同值，保留独立变量以便后续微调 */
+  --color-text-muted: #64748b;
+
+  /* ==================== Severity 语义色 ====================
+     Critical 红 / High 橙 / Medium 黄 / Low 蓝 / Info 中性灰
+     每个等级提供 4 个槽位：实色(solid) / 前景(fg) / 背景(bg) / 边框(border)
+     dark 变体在 .dark 块中统一覆盖，组件层无需再写 dark: 前缀 */
+  --sev-critical: #dc2626;
+  --sev-critical-bg: #fef2f2;
+  --sev-critical-fg: #b91c1c;
+  --sev-critical-border: rgba(220, 38, 38, 0.22);
+
+  --sev-high: #ea580c;
+  --sev-high-bg: #fff7ed;
+  --sev-high-fg: #c2410c;
+  --sev-high-border: rgba(234, 88, 12, 0.22);
+
+  --sev-medium: #d97706;
+  --sev-medium-bg: #fffbeb;
+  --sev-medium-fg: #b45309;
+  --sev-medium-border: rgba(217, 119, 6, 0.24);
+
+  --sev-low: #2563eb;
+  --sev-low-bg: #eff6ff;
+  --sev-low-fg: #1d4ed8;
+  --sev-low-border: rgba(37, 99, 235, 0.22);
+
+  --sev-info: #475569;
+  --sev-info-bg: #f1f5f9;
+  --sev-info-fg: #334155;
+  --sev-info-border: rgba(71, 85, 105, 0.2);
+
+  --sev-neutral: #64748b;
+  --sev-neutral-bg: #f1f5f9;
+  --sev-neutral-fg: #334155;
+  --sev-neutral-border: rgba(100, 116, 139, 0.2);
+
+  /* ==================== Status 语义色 ==================== */
+  --status-active: #059669;
+  --status-active-bg: #ecfdf5;
+  --status-active-fg: #047857;
+  --status-active-border: rgba(5, 150, 105, 0.22);
+
+  --status-resolved: #059669;
+  --status-resolved-bg: #ecfdf5;
+  --status-resolved-fg: #047857;
+  --status-resolved-border: rgba(5, 150, 105, 0.22);
+
+  --status-investigating: #2563eb;
+  --status-investigating-bg: #eff6ff;
+  --status-investigating-fg: #1d4ed8;
+  --status-investigating-border: rgba(37, 99, 235, 0.22);
+
+  --status-pending: #d97706;
+  --status-pending-bg: #fffbeb;
+  --status-pending-fg: #b45309;
+  --status-pending-border: rgba(217, 119, 6, 0.24);
+
+  --status-failed: #dc2626;
+  --status-failed-bg: #fef2f2;
+  --status-failed-fg: #b91c1c;
+  --status-failed-border: rgba(220, 38, 38, 0.22);
+
+  --status-success: #059669;
+  --status-success-bg: #ecfdf5;
+  --status-success-fg: #047857;
+  --status-success-border: rgba(5, 150, 105, 0.22);
+
+  --status-warning: #d97706;
+  --status-warning-bg: #fffbeb;
+  --status-warning-fg: #b45309;
+  --status-warning-border: rgba(217, 119, 6, 0.24);
+
+  --status-disabled: #94a3b8;
+  --status-disabled-bg: #f1f5f9;
+  --status-disabled-fg: #64748b;
+  --status-disabled-border: rgba(148, 163, 184, 0.24);
+
+  --status-unknown: #64748b;
+  --status-unknown-bg: #f1f5f9;
+  --status-unknown-fg: #475569;
+  --status-unknown-border: rgba(100, 116, 139, 0.2);
+
+  /* ==================== AI 语义色 ====================
+     AI 使用克制的靛紫体系，与 severity 红橙体系明确区分，
+     与人工操作（accent 蓝）和系统事件（中性灰）形成三方可辨识 */
+  --ai: #6366f1;
+  --ai-bg: #eef2ff;
+  --ai-fg: #4338ca;
+  --ai-border: rgba(99, 102, 241, 0.24);
+
+  --ai-running: #2563eb;
+  --ai-running-bg: #eff6ff;
+  --ai-running-fg: #1d4ed8;
+  --ai-running-border: rgba(37, 99, 235, 0.22);
+
+  --ai-completed: #059669;
+  --ai-completed-bg: #ecfdf5;
+  --ai-completed-fg: #047857;
+  --ai-completed-border: rgba(5, 150, 105, 0.22);
+
+  --ai-failed: #dc2626;
+  --ai-failed-bg: #fef2f2;
+  --ai-failed-fg: #b91c1c;
+  --ai-failed-border: rgba(220, 38, 38, 0.22);
+
+  --ai-approval: #d97706;
+  --ai-approval-bg: #fffbeb;
+  --ai-approval-fg: #b45309;
+  --ai-approval-border: rgba(217, 119, 6, 0.24);
+
+  --ai-approved: #059669;
+  --ai-approved-bg: #ecfdf5;
+  --ai-approved-fg: #047857;
+  --ai-approved-border: rgba(5, 150, 105, 0.22);
+
   /* 背景层级 */
   --color-bg-page: #f8fafc;
   --color-bg-card: #ffffff;
@@ -56,6 +172,7 @@
   /* 边框 (现代微透明边框) */
   --color-border-subtle: rgba(15, 23, 42, 0.08);
   --color-border-default: rgba(15, 23, 42, 0.14);
+  --color-border-strong: rgba(15, 23, 42, 0.24);
   --color-border-focus: #2563eb;
 
   /* 阴影 */
@@ -86,11 +203,11 @@
   --radius-xl: 14px;
   --radius-full: 9999px;
 
-  /* 字体 */
+  /* 字体（--font-inter / --font-jetbrains-mono 由 app/[locale]/layout.tsx 的 next/font 注入） */
   --font-sans:
-    var(--font-geist-sans), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono:
-    var(--font-geist-mono), JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco,
+    var(--font-jetbrains-mono), JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco,
     "Cascadia Code", monospace;
 
   /* 字号 */
@@ -109,6 +226,13 @@
 
   /* 其他 */
   --touch-target-min: 44px;
+
+  /* ==================== Sidebar 宽度 ====================
+     折叠状态由 <html data-sidebar-collapsed> 驱动，在 layout.tsx 的
+     首屏内联脚本里设置，不经过 React state —— 因此不会出现 hydration 抖动。
+     移动端（< lg）侧栏变为抽屉，内容区不再预留左padding。 */
+  --sidebar-w: 200px;
+  --header-h: 56px;
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
@@ -136,6 +260,7 @@
   /* 边框 (细致的半透明边缘高光) */
   --color-border-subtle: rgba(255, 255, 255, 0.08);
   --color-border-default: rgba(255, 255, 255, 0.14);
+  --color-border-strong: rgba(255, 255, 255, 0.26);
   --color-border-focus: #38bdf8;
 
   /* 语义色深色映射 */
@@ -153,9 +278,147 @@
 
   --color-neutral-bg: rgba(148, 163, 184, 0.1);
   --color-neutral-text: #94a3b8;
+
+  --color-text-muted: #94a3b8;
+
+  /* Severity 深色映射（低透明度底 + 高亮前景，保证 WCAG 对比度） */
+  --sev-critical: #f87171;
+  --sev-critical-bg: rgba(239, 68, 68, 0.14);
+  --sev-critical-fg: #fca5a5;
+  --sev-critical-border: rgba(239, 68, 68, 0.32);
+
+  --sev-high: #fb923c;
+  --sev-high-bg: rgba(249, 115, 22, 0.14);
+  --sev-high-fg: #fdba74;
+  --sev-high-border: rgba(249, 115, 22, 0.32);
+
+  --sev-medium: #fbbf24;
+  --sev-medium-bg: rgba(245, 158, 11, 0.14);
+  --sev-medium-fg: #fcd34d;
+  --sev-medium-border: rgba(245, 158, 11, 0.32);
+
+  --sev-low: #60a5fa;
+  --sev-low-bg: rgba(59, 130, 246, 0.14);
+  --sev-low-fg: #93c5fd;
+  --sev-low-border: rgba(59, 130, 246, 0.32);
+
+  --sev-info: #94a3b8;
+  --sev-info-bg: rgba(148, 163, 184, 0.12);
+  --sev-info-fg: #cbd5e1;
+  --sev-info-border: rgba(148, 163, 184, 0.28);
+
+  --sev-neutral: #94a3b8;
+  --sev-neutral-bg: rgba(148, 163, 184, 0.12);
+  --sev-neutral-fg: #cbd5e1;
+  --sev-neutral-border: rgba(148, 163, 184, 0.28);
+
+  /* Status 深色映射 */
+  --status-active: #34d399;
+  --status-active-bg: rgba(16, 185, 129, 0.14);
+  --status-active-fg: #6ee7b7;
+  --status-active-border: rgba(16, 185, 129, 0.32);
+
+  --status-resolved: #34d399;
+  --status-resolved-bg: rgba(16, 185, 129, 0.14);
+  --status-resolved-fg: #6ee7b7;
+  --status-resolved-border: rgba(16, 185, 129, 0.32);
+
+  --status-investigating: #60a5fa;
+  --status-investigating-bg: rgba(59, 130, 246, 0.14);
+  --status-investigating-fg: #93c5fd;
+  --status-investigating-border: rgba(59, 130, 246, 0.32);
+
+  --status-pending: #fbbf24;
+  --status-pending-bg: rgba(245, 158, 11, 0.14);
+  --status-pending-fg: #fcd34d;
+  --status-pending-border: rgba(245, 158, 11, 0.32);
+
+  --status-failed: #f87171;
+  --status-failed-bg: rgba(239, 68, 68, 0.14);
+  --status-failed-fg: #fca5a5;
+  --status-failed-border: rgba(239, 68, 68, 0.32);
+
+  --status-success: #34d399;
+  --status-success-bg: rgba(16, 185, 129, 0.14);
+  --status-success-fg: #6ee7b7;
+  --status-success-border: rgba(16, 185, 129, 0.32);
+
+  --status-warning: #fbbf24;
+  --status-warning-bg: rgba(245, 158, 11, 0.14);
+  --status-warning-fg: #fcd34d;
+  --status-warning-border: rgba(245, 158, 11, 0.32);
+
+  --status-disabled: #475569;
+  --status-disabled-bg: rgba(71, 85, 105, 0.16);
+  --status-disabled-fg: #64748b;
+  --status-disabled-border: rgba(71, 85, 105, 0.28);
+
+  --status-unknown: #94a3b8;
+  --status-unknown-bg: rgba(148, 163, 184, 0.12);
+  --status-unknown-fg: #cbd5e1;
+  --status-unknown-border: rgba(148, 163, 184, 0.28);
+
+  /* AI 深色映射 —— 靛紫在深色下提亮，避免与 accent 蓝混淆 */
+  --ai: #818cf8;
+  --ai-bg: rgba(99, 102, 241, 0.16);
+  --ai-fg: #a5b4fc;
+  --ai-border: rgba(129, 140, 248, 0.34);
+
+  --ai-running: #60a5fa;
+  --ai-running-bg: rgba(59, 130, 246, 0.14);
+  --ai-running-fg: #93c5fd;
+  --ai-running-border: rgba(59, 130, 246, 0.32);
+
+  --ai-completed: #34d399;
+  --ai-completed-bg: rgba(16, 185, 129, 0.14);
+  --ai-completed-fg: #6ee7b7;
+  --ai-completed-border: rgba(16, 185, 129, 0.32);
+
+  --ai-failed: #f87171;
+  --ai-failed-bg: rgba(239, 68, 68, 0.14);
+  --ai-failed-fg: #fca5a5;
+  --ai-failed-border: rgba(239, 68, 68, 0.32);
+
+  --ai-approval: #fbbf24;
+  --ai-approval-bg: rgba(245, 158, 11, 0.14);
+  --ai-approval-fg: #fcd34d;
+  --ai-approval-border: rgba(245, 158, 11, 0.32);
+
+  --ai-approved: #34d399;
+  --ai-approved-bg: rgba(16, 185, 129, 0.14);
+  --ai-approved-fg: #6ee7b7;
+  --ai-approved-border: rgba(16, 185, 129, 0.32);
 }
 
 /* ==================== Base Styles ==================== */
+html[data-sidebar-collapsed="true"] {
+  --sidebar-w: 64px;
+}
+
+@media (max-width: 1023px) {
+  :root,
+  html[data-sidebar-collapsed="true"] {
+    --sidebar-w: 0px;
+  }
+}
+
+/* 折叠态隐藏侧栏文字标签，只留图标 */
+html[data-sidebar-collapsed="true"] .sidebar-label,
+html[data-sidebar-collapsed="true"] .sidebar-group-label {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   color: var(--color-text-primary);
   background: var(--color-bg-page);
@@ -269,42 +532,96 @@ body {
     border-color: rgba(255, 255, 255, 0.16);
   }
 
-  /* Scrollbar utilities */
+  /* ==========================================================================
+     Scrollbar utilities (主流现代设计：Notion / Linear / VS Code 风格)
+     ========================================================================== */
+  /* 彻底隐藏滚动条，保留滚动能力 */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-
   .scrollbar-hide::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    display: none;
+    width: 0;
+    height: 0;
   }
 
-  .scrollbar-hide::-webkit-scrollbar-track {
+  /* 侧边栏专属浮动感应滚动条 (Sidebar Overlay Scrollbar)
+     - 默认闲置：滑块 100% 透明，完全无视觉打扰，侧栏保持极致清爽
+     - 悬停侧栏：精致 5px 胶囊滑块平滑淡入 (0.2s 渐变)
+     - 悬停/拖拽滑块：高亮加深反馈
+     - 轨道：完全透明，不挤占任何内容布局
+     - 边缘呼吸感：使用 transparent border + background-clip: padding-box 留出 1px 呼吸间隙，不贴死边框
+     - 滚动隔离：overscroll-behavior-y: contain，触顶/触底不带动外层页面晃动
+  */
+  .sidebar-scrollbar {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Firefox 容器悬停触发 */
+  .sidebar-scrollbar:hover,
+  .group\/sidebar:hover .sidebar-scrollbar {
+    scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+  }
+  .dark .sidebar-scrollbar:hover,
+  .dark .group\/sidebar:hover .sidebar-scrollbar {
+    scrollbar-color: rgba(148, 163, 184, 0.26) transparent;
+  }
+
+  /* WebKit 浏览器 (Chrome, Edge, Safari, Arc, Brave) */
+  .sidebar-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  .scrollbar-hide::-webkit-scrollbar-thumb {
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
     background-color: transparent;
-    border-radius: 3px;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .scrollbar-hide:hover::-webkit-scrollbar-thumb {
-    background-color: rgba(148, 163, 184, 0.5);
+  /* 鼠标悬停在侧栏时平滑淡入显示 */
+  .sidebar-scrollbar:hover::-webkit-scrollbar-thumb,
+  .group\/sidebar:hover .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.32);
   }
 
-  .dark .scrollbar-hide:hover::-webkit-scrollbar-thumb {
-    background-color: rgba(71, 85, 105, 0.5);
+  /* 鼠标直接悬停或抓取滑块时加深视觉反馈 */
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover,
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:active {
+    background-color: rgba(71, 85, 105, 0.65);
   }
 
+  .dark .sidebar-scrollbar:hover::-webkit-scrollbar-thumb,
+  .dark .group\/sidebar:hover .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.26);
+  }
+
+  .dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover,
+  .dark .sidebar-scrollbar::-webkit-scrollbar-thumb:active {
+    background-color: rgba(203, 213, 225, 0.55);
+  }
+
+  /* 通用精致滚动条 (Custom Scrollbar - 适用于弹窗、数据面板、代码块等) */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
@@ -312,24 +629,27 @@ body {
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: rgba(148, 163, 184, 0.3);
-    border-radius: 2px;
+    background-color: rgba(148, 163, 184, 0.35);
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(148, 163, 184, 0.5);
+    background-color: rgba(100, 116, 139, 0.6);
   }
 
   .dark .custom-scrollbar {
-    scrollbar-color: rgba(71, 85, 105, 0.3) transparent;
+    scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: rgba(71, 85, 105, 0.3);
+    background-color: rgba(148, 163, 184, 0.25);
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(71, 85, 105, 0.5);
+    background-color: rgba(203, 213, 225, 0.5);
   }
 
   .touch-target {

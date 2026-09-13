@@ -324,7 +324,10 @@ export default function CloudNativePage() {
                           text: "text-accent-600 dark:text-accent-400",
                         },
                       ].map(({ key, labelKey, bg, text }) => (
-                        <div key={key} className={cn("text-center p-4 rounded-xl shadow-xs", bg)}>
+                        <div
+                          key={key}
+                          className={cn("text-center p-4 rounded-xl shadow-subtle", bg)}
+                        >
                           <p className={cn("text-2xl font-bold tracking-tight tabular-nums", text)}>
                             {(dashboard.security_summary as any)?.[key] ?? 0}
                           </p>

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { Brain, RefreshCw, PanelLeft, PanelLeftClose } from "lucide-react";
+import { Brain, Plus, PanelLeft, PanelLeftClose, Sparkles } from "lucide-react";
 
 interface ChatHeaderProps {
   t: (key: string) => string;
@@ -13,6 +13,8 @@ interface ChatHeaderProps {
   loading: boolean;
   thinking: boolean;
   isStreaming: boolean;
+  currentTitle?: string | null;
+  activeModelName?: string | null;
 }
 
 export function ChatHeader({
@@ -24,46 +26,59 @@ export function ChatHeader({
   loading,
   thinking,
   isStreaming,
+  currentTitle,
+  activeModelName,
 }: ChatHeaderProps) {
   const isBusy = loading || thinking || isStreaming;
 
   return (
-    <div className="h-14 px-3 sm:px-4 border-b border-gray-200/80 dark:border-gray-800/80 flex items-center justify-between bg-white/90 dark:bg-gray-850/90 backdrop-blur-md sticky top-0 z-20 flex-shrink-0">
-      <div className="flex items-center gap-2">
+    <div className="h-13 px-4 border-b border-border-subtle flex items-center justify-between bg-surface-card/80 backdrop-blur-xl sticky top-0 z-20 flex-shrink-0">
+      <div className="flex items-center gap-2.5 min-w-0">
         {/* Toggle History Sidebar Button (Claude/ChatGPT style) */}
         <button
           onClick={onToggleHistory}
-          className={`p-1.5 rounded-lg transition-colors ${
+          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
             showHistory
-              ? "text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/40"
-              : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              ? "text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-950/50"
+              : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
           }`}
-          title={showHistory ? "收起历史记录 (⌘+/)" : "展开历史记录 (⌘+/)"}
+          title={showHistory ? "收起研判历史 (⌘/)" : "展开研判历史 (⌘/)"}
+          aria-label={showHistory ? "收起研判历史" : "展开研判历史"}
         >
           {showHistory ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
         </button>
 
-        <div className="p-1.5 bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 rounded-lg shadow-sm text-white">
-          <Brain className="w-4 h-4 text-white" />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">SOC Copilot</span>
-          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60">
-            实战研判工作台
+        <div className="h-4 w-px bg-border-subtle" aria-hidden="true" />
+
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-ai/10 text-ai border border-ai/20">
+            <Brain className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-xs sm:text-sm font-semibold text-text-primary truncate max-w-[200px] sm:max-w-[320px]">
+            {currentTitle || t("title") || "安全研判会话"}
           </span>
+          {activeModelName && (
+            <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface-hover text-text-secondary border border-border-subtle">
+              <Sparkles className="w-2.5 h-2.5 text-ai" />
+              {activeModelName}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         {/* New Chat Button */}
         <button
           onClick={onClearChat}
           disabled={isBusy}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 text-xs font-medium text-gray-700 dark:text-gray-200 shadow-sm transition-all active:scale-95 disabled:opacity-50"
-          title="新建对话 (⌘+N)"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-border-subtle bg-surface-card hover:bg-surface-hover text-xs font-medium text-text-primary hover:border-border-default shadow-subtle transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+          title="新建研判对话 (⌘N)"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-gray-500 ${isBusy ? "animate-spin" : ""}`} />
-          <span className="hidden sm:inline">新对话</span>
+          <Plus className="w-3.5 h-3.5 text-text-secondary" />
+          <span className="hidden sm:inline">{t("history.newChat") || "新对话"}</span>
+          <kbd className="hidden lg:inline text-[9px] px-1 py-0.5 bg-surface-hover text-text-muted rounded border border-border-subtle font-mono">
+            ⌘N
+          </kbd>
         </button>
       </div>
     </div>

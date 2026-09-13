@@ -16,6 +16,7 @@ const SHORTCUTS: ShortcutItem[] = [
   { key: "Escape", descriptionKey: "items.closeDialog", categoryKey: "categories.general" },
   { key: "?", descriptionKey: "items.showHelp", categoryKey: "categories.general" },
   { key: "⌘/Ctrl + K", descriptionKey: "items.openSearch", categoryKey: "categories.general" },
+  { key: "⌘/Ctrl + B", descriptionKey: "items.toggleSidebar", categoryKey: "categories.general" },
   { key: "1", descriptionKey: "items.tabAlerts", categoryKey: "categories.home" },
   { key: "2", descriptionKey: "items.tabTimeline", categoryKey: "categories.home" },
   { key: "3", descriptionKey: "items.tabReports", categoryKey: "categories.home" },

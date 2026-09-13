@@ -154,6 +154,20 @@ export {
   type TestModelResponse,
 } from "./ai";
 
+// Threat Intelligence (v1, typed)
+export {
+  lookupIoc,
+  batchIocQuery,
+  getTICacheStats,
+  detectIocType,
+  type TIIOCType,
+  type TIVerdict,
+  type ThreatIntelLookupResponse,
+  type IOCBatchRequestItem,
+  type IOCBatchResultItem,
+  type IOCBatchResponse,
+} from "./threat-intel";
+
 // Legacy API objects (backward compatibility)
 export { api, api_v7, api_triggers, api_v74, api_v73, api_ai_models } from "./legacy";
 

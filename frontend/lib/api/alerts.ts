@@ -84,36 +84,111 @@ export interface ReportGenerationResponse extends ResponseMetadata {
   generated_at: string;
 }
 
+/**
+ * Timeline types — mirror backend schemas/timeline.py (schemas/impact.py, schemas/threat_intel.py).
+ * Endpoint: POST /api/v1/build-timeline (backend/routers/timeline.py).
+ */
 export interface TimelineRequest {
-  query: string;
-  time_range?: string;
-  sources?: string[];
+  /** Raw log content (min_length 1) */
+  raw_log: string;
+  /** Log type hint: sysmon / windows / linux / nginx; omit for auto-detection */
+  log_type?: "sysmon" | "windows" | "linux" | "nginx" | null;
 }
 
 export interface TimelineEvent {
   timestamp: string;
-  event_type: string;
+  type: string;
   description: string;
-  source: string;
-  severity?: string;
-  metadata?: Record<string, unknown>;
+  key_fields: Record<string, unknown>;
 }
 
 export interface SuspiciousEvent {
   timestamp: string;
-  event_type: string;
   description: string;
-  source: string;
+  reasoning: string;
+  severity: string;
+}
+
+export interface IOCsGrouped {
+  ips: string[];
+  domains: string[];
+  urls: string[];
+  hashes: string[];
+}
+
+export interface IOCCount {
+  ips: number;
+  domains: number;
+  urls: number;
+  hashes: number;
+  total: number;
+}
+
+export interface AffectedAsset {
+  asset_id: string;
+  hostname?: string | null;
+  ip?: string | null;
+  criticality: string;
+  reason: string;
+}
+
+export interface ContainmentPriority {
+  asset_id: string;
+  /** 1-10 */
+  priority: number;
+  reason: string;
+}
+
+export interface ImpactAnalysis {
+  affected_assets: AffectedAsset[];
+  business_impact: string;
+  /** 0-100 */
   risk_score: number;
-  indicators: string[];
+  severity: "low" | "medium" | "high" | "critical";
+  containment_priority: ContainmentPriority[];
+  recommended_next_queries: string[];
+}
+
+export interface ThreatIntelItemTL {
+  ioc_type: string;
+  ioc_value: string;
+  verdict: "benign" | "unknown" | "suspicious" | "malicious";
+  /** 0-100 */
+  score: number;
+  pulse_count?: number;
+  tags?: string[];
+  references?: string[];
+  cached?: boolean;
+  skipped?: boolean;
+  skipped_reason?: string | null;
+}
+
+export interface ThreatIntelAnalysisTL {
+  provider: string;
+  disabled: boolean;
+  degraded: boolean;
+  skipped: boolean;
+  items: ThreatIntelItemTL[];
+  /** IOCs filtered by compliance policy (not sent to external TI) */
+  filtered_items: ThreatIntelItemTL[];
+  error_reason?: string | null;
 }
 
 export interface TimelineResponse extends ResponseMetadata {
-  events: TimelineEvent[];
-  suspicious_events: SuspiciousEvent[];
-  summary: string;
-  time_range: string;
-  total_events: number;
+  timeline: TimelineEvent[];
+  suspicious_top5: SuspiciousEvent[];
+  next_steps: string[];
+  iocs: IOCsGrouped;
+  iocs_local: IOCsGrouped;
+  iocs_llm: IOCsGrouped;
+  ioc_count: IOCCount;
+  request_id?: string | null;
+  /** Whether the backend fell back to degraded mode (partial analysis) */
+  degraded?: boolean;
+  error_reason?: string | null;
+  history_id?: string | null;
+  impact_analysis: ImpactAnalysis;
+  threat_intel: ThreatIntelAnalysisTL;
 }
 
 export interface ThreatIntelItem {

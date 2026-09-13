@@ -56,3 +56,4 @@ export { TabTransition } from "./TabTransition";
 export { BackButton } from "./BackButton";
 export type { BackButtonProps } from "./BackButton";
 export { PageHeader } from "./PageHeader";
+export { OtpInput } from "./OtpInput";

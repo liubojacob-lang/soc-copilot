@@ -47,6 +47,8 @@ export interface User {
   created_at: string;
   updated_at: string;
   last_login_at?: string;
+  is_totp_enabled?: boolean;
+  totp_policy?: "sudo" | "login" | string;
 }
 
 /**

@@ -1,10 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { useHeader } from "@/components/providers/HeaderProvider";
 
-interface PageHeaderProps {
-  title?: string;
-  subtitle?: string;
+export interface PageHeaderProps {
+  title?: ReactNode;
+  subtitle?: ReactNode;
+  /** Optional badge or pill counter rendered next to the title */
+  badge?: ReactNode;
   /** Optional back button rendered to the left of the title */
   backButton?: ReactNode;
   /** Optional health chip: "healthy" | "checking" | "error" */
@@ -12,24 +15,53 @@ interface PageHeaderProps {
   /** Right-aligned slot for page-level actions */
   actions?: ReactNode;
   className?: string;
+  /** Force rendering inside page content instead of elevating to top navbar */
+  inline?: boolean;
 }
 
 /**
- * Page-level heading rendered below the global navigation bar.
+ * Page-level heading component.
  *
- * Replaces the per-page `<Navigation title=... />` pattern: the nav bar is
- * mounted once in ClientLayout, and each page renders its own title here.
- * Renders nothing when no content is provided.
+ * By default, PageHeader elevates the title, badge, apiStatus, actions and backButton
+ * directly into the top global navigation header (via HeaderProvider), eliminating
+ * double-headers and saving ~90px of vertical space across all pages.
+ *
+ * To force rendering inline in the page content, pass `inline={true}`.
  */
 export function PageHeader({
   title,
   subtitle,
+  badge,
   apiStatus,
   actions,
   backButton,
   className = "",
+  inline = false,
 }: PageHeaderProps) {
-  if (!title && !subtitle && !apiStatus && !actions && !backButton) {
+  const headerCtx = useHeader();
+
+  useEffect(() => {
+    if (inline || !headerCtx) return;
+
+    headerCtx.setHeaderData({
+      title,
+      subtitle,
+      badge,
+      apiStatus,
+      actions,
+      backButton,
+    });
+
+    return () => {
+      headerCtx.resetHeaderData();
+    };
+  }, [title, subtitle, badge, apiStatus, actions, backButton, inline, headerCtx]);
+
+  if (!inline) {
+    return null;
+  }
+
+  if (!title && !subtitle && !apiStatus && !actions && !backButton && !badge) {
     return null;
   }
 
@@ -37,15 +69,16 @@ export function PageHeader({
     <div className={`max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <div className="min-w-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {backButton}
             {title && (
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary truncate">
                 {title}
               </h1>
             )}
+            {badge}
             {apiStatus && (
-              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-card border border-border-subtle shadow-xs">
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-card border border-border-subtle shadow-subtle">
                 <span
                   className={`w-2 h-2 rounded-full ${
                     apiStatus === "healthy"

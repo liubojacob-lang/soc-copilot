@@ -132,23 +132,25 @@ export default function UsersPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <PageHeader
         title={t("title")}
-        subtitle={
-          pagination.total > 0
-            ? `${pagination.total} ${pagination.total === 1 ? "user" : "users"}`
-            : t("subtitle")
+        badge={
+          pagination.total > 0 ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-hover text-text-secondary border border-border-subtle shadow-subtle tabular-nums">
+              {pagination.total}
+            </span>
+          ) : undefined
         }
         actions={
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700 text-sm font-medium transition-colors shadow-sm"
+            className="h-8 px-3 bg-accent-600 hover:bg-accent-700 text-white rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors shadow-subtle"
           >
-            <UserPlus className="w-4 h-4" />
+            <UserPlus className="w-3.5 h-3.5" />
             <span>{t("createUser")}</span>
           </button>
         }
       />
 
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {error && (
           <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -270,8 +272,8 @@ export default function UsersPage() {
                     <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-accent-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+                            <span className="text-xs font-bold text-white">
                               {user.username.charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -295,12 +297,12 @@ export default function UsersPage() {
                         {user.is_active ? (
                           <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
                             <CheckCircle className="w-4 h-4" />
-                            Active
+                            {t("active")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
                             <XCircle className="w-4 h-4" />
-                            Inactive
+                            {t("inactive")}
                           </span>
                         )}
                       </td>
@@ -311,7 +313,7 @@ export default function UsersPage() {
                             timeStyle: "short",
                           })
                         ) : (
-                          <span className="text-gray-400">Never</span>
+                          <span className="text-gray-400">{t("neverLogin")}</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -348,9 +350,11 @@ export default function UsersPage() {
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-                    {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
-                    {pagination.total} results
+                    {t("showingResults", {
+                      from: (pagination.page - 1) * pagination.limit + 1,
+                      to: Math.min(pagination.page * pagination.limit, pagination.total),
+                      total: pagination.total,
+                    })}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -361,7 +365,7 @@ export default function UsersPage() {
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Page {pagination.page} of {pagination.totalPages}
+                      {t("pageOf", { page: pagination.page, totalPages: pagination.totalPages })}
                     </span>
                     <button
                       onClick={() => handlePageChange(pagination.page + 1)}
@@ -831,7 +835,7 @@ export default function UsersPage() {
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

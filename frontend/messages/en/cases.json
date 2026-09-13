@@ -1,6 +1,7 @@
 {
   "cases": {
     "title": "Cases",
+    "caseTitle": "Title",
     "subtitle": "Security case management and investigation tracking",
     "emptyTitle": "No cases found",
     "emptyDescription": "Create your first case to start tracking security investigations.",

@@ -10,11 +10,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardStats, type DashboardStats } from "@/lib/api/dashboard";
 
-export function useDashboardStats() {
+export function useDashboardStats(options?: { enabled?: boolean }) {
   return useQuery<DashboardStats>({
     queryKey: ["dashboard", "stats"],
     queryFn: getDashboardStats,
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000,
+    enabled: options?.enabled ?? true,
   });
 }

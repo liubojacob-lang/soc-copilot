@@ -6,7 +6,7 @@
  * All numbers come from GET /api/v1/dashboard/stats, which aggregates with a 60s server cache.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -23,24 +23,84 @@ import {
 } from "lucide-react";
 
 import { useDashboardStats } from "@/hooks/useDashboard";
-import type { SeverityDistribution } from "@/lib/api/dashboard";
+import type { DashboardStats, SeverityDistribution } from "@/lib/api/dashboard";
 import { loadAuthState } from "@/lib/auth";
-import { PageHeader } from "@/components/common/PageHeader";
 import { Card, LoadingSpinner, SkeletonCard } from "@/components/common";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Badge } from "@/components/ui/Badge";
+import { Badge, type Severity } from "@/components/ui/Badge";
 
-const SEVERITY_CONFIG: {
-  key: keyof SeverityDistribution;
-  dotColor: string;
-  barColor: string;
-}[] = [
-  { key: "critical", dotColor: "bg-danger-500", barColor: "bg-danger-500" },
-  { key: "high", dotColor: "bg-amber-500", barColor: "bg-amber-500" },
-  { key: "medium", dotColor: "bg-yellow-400", barColor: "bg-yellow-400" },
-  { key: "low", dotColor: "bg-emerald-500", barColor: "bg-emerald-500" },
-  { key: "info", dotColor: "bg-slate-400", barColor: "bg-slate-400" },
+// 严重程度统一走 severity-* 设计令牌，不再裸写 danger/amber/yellow/emerald。
+type SeverityLevel = Extract<Severity, "critical" | "high" | "medium" | "low" | "info">;
+
+const SEVERITY_CONFIG: { key: keyof SeverityDistribution; severity: SeverityLevel }[] = [
+  { key: "critical", severity: "critical" },
+  { key: "high", severity: "high" },
+  { key: "medium", severity: "medium" },
+  { key: "low", severity: "low" },
+  { key: "info", severity: "info" },
 ];
+
+const SEVERITY_TOKENS: Record<SeverityLevel, { dot: string; bar: string }> = {
+  critical: { dot: "bg-severity-critical", bar: "bg-severity-critical" },
+  high: { dot: "bg-severity-high", bar: "bg-severity-high" },
+  medium: { dot: "bg-severity-medium", bar: "bg-severity-medium" },
+  low: { dot: "bg-severity-low", bar: "bg-severity-low" },
+  info: { dot: "bg-severity-info", bar: "bg-severity-info" },
+};
+
+interface PriorityItem {
+  severity: Severity;
+  label: string;
+  href: string;
+}
+
+/**
+ * 由**真实统计数据**推导的优先级队列，回答 "What should I do next?"。
+ * 这里是首页唯一的数据驱动建议区 —— 静态快捷入口不回答这个问题。
+ */
+function buildPriorities(stats: DashboardStats | undefined, t: (k: string, v?: object) => string) {
+  if (!stats) return [];
+  const items: PriorityItem[] = [];
+
+  if (stats.alerts_by_severity.critical > 0) {
+    items.push({
+      severity: "critical",
+      label: t("priority.criticalAlerts", { count: stats.alerts_by_severity.critical }),
+      href: "/alerts",
+    });
+  }
+  if (stats.cases_overdue > 0) {
+    items.push({
+      severity: "high",
+      label: t("priority.overdueCases", { count: stats.cases_overdue }),
+      href: "/cases",
+    });
+  }
+  const topAsset = stats.top_risky_assets[0];
+  if (topAsset && topAsset.risk_score >= 70) {
+    items.push({
+      severity: "high",
+      label: t("priority.assetRisk", { asset: topAsset.asset, score: topAsset.risk_score }),
+      href: "/assets",
+    });
+  }
+  if (stats.alerts_by_severity.high > 0) {
+    items.push({
+      severity: "medium",
+      label: t("priority.highAlerts", { count: stats.alerts_by_severity.high }),
+      href: "/alerts",
+    });
+  }
+  if (stats.ioc_hits_today > 0) {
+    items.push({
+      severity: "low",
+      label: t("priority.iocHits", { count: stats.ioc_hits_today }),
+      href: "/threat-intel",
+    });
+  }
+
+  return items;
+}
 
 export default function HomePage() {
   const router = useRouter();
@@ -64,6 +124,19 @@ export default function HomePage() {
     }
   }, [router, isLoading, isError]);
 
+  const criticalHigh = stats
+    ? stats.alerts_by_severity.critical + stats.alerts_by_severity.high
+    : 0;
+  const trendMax = stats ? Math.max(1, ...stats.alerts_trend.map((p) => p.count)) : 1;
+  const totalSeverityCount = stats
+    ? Object.values(stats.alerts_by_severity).reduce((acc, n) => acc + n, 0)
+    : 0;
+
+  const priorities = useMemo(
+    () => buildPriorities(stats, (k, v) => t(k as never, v as never)),
+    [stats, t]
+  );
+
   if (!mounted) {
     return (
       <div className="min-h-screen bg-surface-ground">
@@ -74,22 +147,9 @@ export default function HomePage() {
     );
   }
 
-  const criticalHigh = stats
-    ? stats.alerts_by_severity.critical + stats.alerts_by_severity.high
-    : 0;
-  const trendMax = stats ? Math.max(1, ...stats.alerts_trend.map((p) => p.count)) : 1;
-  const totalSeverityCount = stats
-    ? Object.values(stats.alerts_by_severity).reduce((acc, n) => acc + n, 0)
-    : 0;
-
   return (
-    <div className="min-h-screen bg-surface-ground pb-12">
-      <PageHeader
-        title={t("securityOperations")}
-        subtitle={t("subtitle")}
-        apiStatus={apiStatus === "unhealthy" ? "error" : apiStatus}
-      />
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="pb-12 pt-4 sm:pt-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* ── Real-time stat cards ─────────────────────────── */}
         <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -135,14 +195,55 @@ export default function HomePage() {
         </div>
 
         {isError && (
-          <Card className="mb-6 p-4 border-danger-500/30 bg-danger-500/10">
-            <p className="text-sm font-medium text-danger-700 dark:text-danger-400">
-              {apiStatus === "unhealthy"
-                ? "API unreachable — please check the backend server status."
-                : "Failed to load dashboard statistics."}
+          <Card className="mb-6 p-4 border-severity-critical-border bg-severity-critical-bg">
+            <p className="text-sm font-medium text-severity-critical-fg">
+              {apiStatus === "unhealthy" ? t("apiUnreachable") : t("loadFailed")}
             </p>
           </Card>
         )}
+
+        {/* ── Priority Queue: What should I do next? ─────── */}
+        <Card className="mb-6 p-5 sm:p-6">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold tracking-tight text-text-primary">
+              {t("priority.title")}
+            </h2>
+            <p className="text-xs text-text-muted mt-0.5">{t("priority.subtitle")}</p>
+          </div>
+
+          {isLoading ? (
+            <SkeletonCard />
+          ) : priorities.length > 0 ? (
+            <ul className="divide-y divide-border-subtle">
+              {priorities.map((item) => (
+                <li key={`${item.severity}-${item.label}`}>
+                  <Link
+                    href={item.href}
+                    className="flex items-center justify-between gap-3 py-2.5 group rounded-lg px-1 -mx-1 hover:bg-surface-hover transition-colors"
+                  >
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <Badge severity={item.severity} size="xs" dot>
+                        {tAlerts(item.severity)}
+                      </Badge>
+                      <span className="truncate text-[13px] font-medium text-text-primary">
+                        {item.label}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400">
+                      {t("priority.investigate")}
+                      <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-sm font-medium text-text-secondary">{t("priority.empty")}</p>
+              <p className="text-xs text-text-muted mt-1">{t("priority.emptySub")}</p>
+            </div>
+          )}
+        </Card>
 
         <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-3">
           {/* ── 7-day trend ────────────────────────────────── */}
@@ -152,10 +253,10 @@ export default function HomePage() {
                 <h2 className="text-sm font-semibold tracking-tight text-text-primary">
                   {t("dashboard.trend7d")}
                 </h2>
-                <p className="text-xs text-text-muted mt-0.5">Daily incoming incident frequency</p>
+                <p className="text-xs text-text-muted mt-0.5">{t("trendSubtitle")}</p>
               </div>
               {stats && stats.mttr_minutes !== null && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-ground border border-border-subtle text-xs text-text-secondary">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-hover border border-border-subtle text-xs text-text-secondary">
                   <Timer className="w-3.5 h-3.5 text-accent-500" />
                   <span>
                     {t("dashboard.mttr")}:{" "}
@@ -180,11 +281,11 @@ export default function HomePage() {
                       <span className="text-[11px] font-semibold text-text-secondary tabular-nums opacity-0 group-hover:opacity-100 transition-opacity">
                         {point.count}
                       </span>
-                      <div className="w-full bg-surface-ground rounded-t-md overflow-hidden flex items-end h-full max-h-32">
+                      <div className="w-full bg-surface-hover rounded-t-md overflow-hidden flex items-end h-full max-h-32">
                         <div
-                          className="w-full rounded-t-md bg-gradient-to-t from-accent-600 to-accent-400 dark:from-accent-500 dark:to-accent-400/80 group-hover:from-accent-500 group-hover:to-accent-300 transition-all duration-200"
+                          className="w-full rounded-t-md bg-accent-500 group-hover:bg-accent-400 transition-colors duration-200"
                           style={{ height: `${percentage}%` }}
-                          title={`${point.date}: ${point.count} alerts`}
+                          title={`${point.date}: ${point.count}`}
                         />
                       </div>
                       <span className="text-[10px] font-medium text-text-muted">
@@ -195,9 +296,7 @@ export default function HomePage() {
                 })}
               </div>
             ) : (
-              <div className="py-12 text-center text-sm text-text-muted">
-                No alert history recorded for the last 7 days.
-              </div>
+              <div className="py-12 text-center text-sm text-text-muted">{t("noTrend")}</div>
             )}
           </Card>
 
@@ -209,30 +308,31 @@ export default function HomePage() {
                   {t("dashboard.severityDist")}
                 </h2>
                 <span className="text-xs text-text-muted tabular-nums">
-                  Total: {totalSeverityCount}
+                  {t("total")}: {totalSeverityCount}
                 </span>
               </div>
               {isLoading ? (
                 <SkeletonCard />
               ) : stats ? (
                 <ul className="space-y-3">
-                  {SEVERITY_CONFIG.map(({ key, dotColor, barColor }) => {
+                  {SEVERITY_CONFIG.map(({ key, severity }) => {
                     const count = stats.alerts_by_severity[key] || 0;
                     const pct = totalSeverityCount > 0 ? (count / totalSeverityCount) * 100 : 0;
+                    const token = SEVERITY_TOKENS[severity];
                     return (
                       <li key={key} className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="flex items-center gap-2 font-medium text-text-secondary">
-                            <span className={`w-2 h-2 rounded-full ${dotColor}`} />
+                            <span className={`w-2 h-2 rounded-full ${token.dot}`} />
                             {tAlerts(key)}
                           </span>
                           <span className="font-semibold text-text-primary tabular-nums">
                             {count}
                           </span>
                         </div>
-                        <div className="w-full h-1.5 bg-surface-ground rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-surface-hover rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${barColor}`}
+                            className={`h-full rounded-full ${token.bar}`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -252,11 +352,17 @@ export default function HomePage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 tabular-nums">
-                  <span>{stats.alerts_by_status.new || 0} new</span>
+                  <span>
+                    {stats.alerts_by_status.new || 0} {t("statusNew")}
+                  </span>
                   <span>·</span>
-                  <span>{stats.alerts_by_status.investigating || 0} inv</span>
+                  <span>
+                    {stats.alerts_by_status.investigating || 0} {t("statusInvestigating")}
+                  </span>
                   <span>·</span>
-                  <span>{stats.alerts_by_status.escalated || 0} esc</span>
+                  <span>
+                    {stats.alerts_by_status.escalated || 0} {t("statusEscalated")}
+                  </span>
                 </div>
               </div>
             )}
@@ -271,15 +377,13 @@ export default function HomePage() {
                 <h2 className="text-sm font-semibold tracking-tight text-text-primary">
                   {t("dashboard.topAssets")}
                 </h2>
-                <p className="text-xs text-text-muted mt-0.5">
-                  Assets with highest correlated threat scores
-                </p>
+                <p className="text-xs text-text-muted mt-0.5">{t("topAssetsSub")}</p>
               </div>
               <Link
                 href="/assets"
                 className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline"
               >
-                View all
+                {t("viewAll")}
                 <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
@@ -394,7 +498,7 @@ export default function HomePage() {
                   {stats.top_alert_sources.slice(0, 5).map((source) => (
                     <li key={source.source} className="flex items-center justify-between">
                       <span className="text-text-secondary truncate max-w-[180px]">
-                        {source.source || "unknown"}
+                        {source.source || t("unknownSource")}
                       </span>
                       <span className="tabular-nums font-medium text-text-muted">
                         {source.count}
@@ -406,7 +510,7 @@ export default function HomePage() {
             )}
           </Card>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

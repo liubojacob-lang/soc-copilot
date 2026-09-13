@@ -12,10 +12,15 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 
 interface IOCStats {
   total: number;
-  malicious: number;
-  suspicious: number;
-  benign: number;
-  unknown: number;
+  /**
+   * 声誉细分为可选。后端 /api/v1/dashboard/stats 目前只提供 ioc_hits_today 总量，
+   * 不返回 malicious/suspicious/benign/unknown。缺失时必须降级展示，
+   * **不允许用 0 填充后画出空饼图或算出 0.0% 威胁级别**。
+   */
+  malicious?: number;
+  suspicious?: number;
+  benign?: number;
+  unknown?: number;
 }
 
 interface IOCBreakdown {
@@ -116,23 +121,35 @@ export const IOCStats = React.memo(function IOCStats({
     [tReputation]
   );
 
+  // 四个细分字段齐全才认为声誉数据可用
+  const hasReputation =
+    typeof stats.malicious === "number" &&
+    typeof stats.suspicious === "number" &&
+    typeof stats.benign === "number" &&
+    typeof stats.unknown === "number";
+
   // 饼图数据
   const chartData = useMemo(() => {
+    if (!hasReputation) return [];
     return [
       {
         name: tReputation("malicious"),
-        value: stats.malicious,
+        value: stats.malicious ?? 0,
         color: REPUTATION_COLORS.malicious,
       },
       {
         name: tReputation("suspicious"),
-        value: stats.suspicious,
+        value: stats.suspicious ?? 0,
         color: REPUTATION_COLORS.suspicious,
       },
-      { name: tReputation("benign"), value: stats.benign, color: REPUTATION_COLORS.benign },
-      { name: tReputation("unknown"), value: stats.unknown, color: REPUTATION_COLORS.unknown },
+      { name: tReputation("benign"), value: stats.benign ?? 0, color: REPUTATION_COLORS.benign },
+      {
+        name: tReputation("unknown"),
+        value: stats.unknown ?? 0,
+        color: REPUTATION_COLORS.unknown,
+      },
     ].filter((item) => item.value > 0);
-  }, [stats, tReputation]);
+  }, [stats, tReputation, hasReputation]);
 
   // 自定义 Tooltip
   const CustomTooltip = ({
@@ -167,115 +184,136 @@ export const IOCStats = React.memo(function IOCStats({
     );
   };
 
-  // 计算威胁百分比
-  const threatPercentage = useMemo(() => {
-    return ((stats.malicious + stats.suspicious) / stats.total) * 100;
-  }, [stats]);
+  // 计算威胁百分比（细分缺失时返回 null，由渲染层决定降级展示）
+  const threatPercentage = useMemo<number | null>(() => {
+    if (!hasReputation || stats.total <= 0) return null;
+    return (((stats.malicious ?? 0) + (stats.suspicious ?? 0)) / stats.total) * 100;
+  }, [stats, hasReputation]);
 
   return (
     <div className="space-y-6">
-      {/* 总览卡片 */}
+      {/* 总览卡片：细分可用时展示四档，否则只展示真实存在的总量 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label={tIoc("totalIocs")} value={stats.total} icon={Shield} color="blue" />
-        <StatCard
-          label={tIoc("malicious")}
-          value={stats.malicious}
-          icon={AlertTriangle}
-          color="red"
-        />
-        <StatCard
-          label={tIoc("suspicious")}
-          value={stats.suspicious}
-          icon={Shield}
-          color="orange"
-        />
-        <StatCard label={tIoc("benign")} value={stats.benign} icon={CheckCircle} color="green" />
+        {hasReputation ? (
+          <>
+            <StatCard
+              label={tIoc("malicious")}
+              value={stats.malicious ?? 0}
+              icon={AlertTriangle}
+              color="red"
+            />
+            <StatCard
+              label={tIoc("suspicious")}
+              value={stats.suspicious ?? 0}
+              icon={Shield}
+              color="orange"
+            />
+            <StatCard
+              label={tIoc("benign")}
+              value={stats.benign ?? 0}
+              icon={CheckCircle}
+              color="green"
+            />
+          </>
+        ) : (
+          <div className="col-span-3 flex items-center rounded-lg border border-border-subtle bg-surface-hover px-4 py-3 text-xs text-text-tertiary">
+            <HelpCircle className="mr-2 h-4 w-4 shrink-0" />
+            {tIoc("reputationUnavailable")}
+          </div>
+        )}
       </div>
 
       {/* 威胁级别指示器 */}
-      <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-            {tMonitor("threatLevel")}
-          </h4>
-          <span
-            className={`text-2xl font-bold ${
-              threatPercentage >= 30
-                ? "text-red-600 dark:text-red-400"
-                : threatPercentage >= 15
-                  ? "text-orange-600 dark:text-orange-400"
-                  : "text-green-600 dark:text-green-400"
-            }`}
-          >
-            {threatPercentage.toFixed(1)}%
-          </span>
-        </div>
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              threatPercentage >= 30
-                ? "bg-red-500"
-                : threatPercentage >= 15
-                  ? "bg-orange-500"
-                  : "bg-green-500"
-            }`}
-            style={{ width: `${Math.min(threatPercentage, 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between mt-2 text-xs text-gray-600 dark:text-gray-400">
-          <span>{tMonitor("safe")}</span>
-          <span>{tMonitor("warning")}</span>
-          <span>{tSeverity("critical")}</span>
-        </div>
-      </div>
-
-      {/* 饼图和图例 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 饼图 */}
-        <div className="min-w-0">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-            {tMonitor("reputationDistribution")}
-          </h4>
-          <div className="w-full min-w-0 h-64">
-            <ResponsiveContainer width="100%" height={256} minWidth={0}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  iconType="circle"
-                  formatter={(value) => (
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{value}</span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+      {hasReputation && threatPercentage !== null && (
+        <div className="rounded-lg border border-border-subtle bg-surface-hover p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-text-primary">{tMonitor("threatLevel")}</h4>
+            <span
+              className={`text-2xl font-bold tabular-nums ${
+                threatPercentage >= 30
+                  ? "text-severity-critical-fg"
+                  : threatPercentage >= 15
+                    ? "text-severity-high-fg"
+                    : "text-status-success-fg"
+              }`}
+            >
+              {threatPercentage.toFixed(1)}%
+            </span>
+          </div>
+          <div className="h-3 bg-surface-active rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                threatPercentage >= 30
+                  ? "bg-severity-critical"
+                  : threatPercentage >= 15
+                    ? "bg-severity-high"
+                    : "bg-status-success"
+              }`}
+              style={{ width: `${Math.min(threatPercentage, 100)}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-text-tertiary">
+            <span>{tMonitor("safe")}</span>
+            <span>{tMonitor("warning")}</span>
+            <span>{tSeverity("critical")}</span>
           </div>
         </div>
+      )}
 
-        {/* 详细统计 */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-            {tMonitor("breakdownByType")}
-          </h4>
-          {breakdown?.map((item) => (
-            <IOCBreakdownCard key={item.type} data={item} showTrend={showTrend} />
-          ))}
+      {/* 饼图和图例：细分缺失时整块不渲染，避免出现一个空的甜甜圈 */}
+      {hasReputation && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 饼图 */}
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold text-text-primary mb-4">
+              {tMonitor("reputationDistribution")}
+            </h4>
+            <div className="w-full min-w-0 h-64">
+              <ResponsiveContainer width="100%" height={256} minWidth={0}>
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    iconType="circle"
+                    formatter={(value) => (
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{value}</span>
+                    )}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 详细统计 */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-text-primary mb-4">
+              {tMonitor("breakdownByType")}
+            </h4>
+            {breakdown && breakdown.length > 0 ? (
+              breakdown.map((item) => (
+                <IOCBreakdownCard key={item.type} data={item} showTrend={showTrend} />
+              ))
+            ) : (
+              <p className="text-xs text-text-tertiary">{tCommon("noData")}</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 });

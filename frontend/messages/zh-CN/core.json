@@ -34,6 +34,8 @@
     "clear": "清除",
     "reset": "重置",
     "apply": "应用",
+    "collapse": "收起",
+    "expand": "展开",
     "yes": "是",
     "no": "否",
     "autoRefresh": "自动刷新",

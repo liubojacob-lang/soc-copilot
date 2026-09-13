@@ -41,9 +41,30 @@ export function AlertWebSocket({
   const [connectionStatus, setConnectionStatus] = useState<
     "disconnected" | "connecting" | "connected"
   >("disconnected");
-  const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 5;
-  const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 30000); // 指数退避
+
+  // 频道、回调与重试计数经 ref 透传：父组件每次渲染传入的新数组/新函数
+  // 不能改变 connect 的身份，否则下方 effect 会让 WebSocket 反复断开重连。
+  const channelsRef = useRef(channels);
+  const retryCountRef = useRef(0);
+  const connectRef = useRef<() => void>(() => {});
+  const callbacksRef = useRef({
+    onAlert,
+    onPlaybookRun,
+    onSystemMessage,
+    onConnect,
+    onDisconnect,
+    onError,
+  });
+  channelsRef.current = channels;
+  callbacksRef.current = {
+    onAlert,
+    onPlaybookRun,
+    onSystemMessage,
+    onConnect,
+    onDisconnect,
+    onError,
+  };
 
   const connect = useCallback(() => {
     if (!enabled) {
@@ -71,7 +92,7 @@ export function AlertWebSocket({
       const wsBase = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
       const wsPath = process.env.NEXT_PUBLIC_WS_ALERTS_PATH || "/ws/alerts";
       const wsUrl = `${wsBase}${wsPath}`;
-      const channelParam = channels.join(",");
+      const channelParam = channelsRef.current.join(",");
 
       // Pass token via Sec-WebSocket-Protocol to avoid URL exposure in logs/history.
       // Backend must extract token from the Sec-WebSocket-Protocol header.
@@ -84,23 +105,24 @@ export function AlertWebSocket({
 
       ws.onopen = () => {
         setConnectionStatus("connected");
-        setRetryCount(0);
-        onConnect?.();
+        retryCountRef.current = 0;
+        callbacksRef.current.onConnect?.();
       };
 
       ws.onmessage = (event) => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
+          const cb = callbacksRef.current;
 
           switch (message.type) {
             case "alert":
-              onAlert?.(message.data);
+              cb.onAlert?.(message.data);
               break;
             case "playbook_run":
-              onPlaybookRun?.(message.data);
+              cb.onPlaybookRun?.(message.data);
               break;
             case "system":
-              onSystemMessage?.(message.data);
+              cb.onSystemMessage?.(message.data);
               break;
             case "ping":
               // 自动回复 pong
@@ -111,7 +133,7 @@ export function AlertWebSocket({
               break;
             case "error":
               console.error("[AlertWebSocket] Server error:", message.data);
-              onError?.(
+              cb.onError?.(
                 new Error(
                   ((message.data as Record<string, unknown>)?.message as string) ||
                     "WebSocket error"
@@ -126,19 +148,20 @@ export function AlertWebSocket({
 
       ws.onerror = (event) => {
         console.error("[AlertWebSocket] Error:", event);
-        onError?.(new Error("WebSocket connection error"));
+        callbacksRef.current.onError?.(new Error("WebSocket connection error"));
       };
 
       ws.onclose = (event) => {
         setConnectionStatus("disconnected");
         wsRef.current = null;
-        onDisconnect?.();
+        callbacksRef.current.onDisconnect?.();
 
-        // 自动重连
-        if (enabled && retryCount < maxRetries) {
+        // 自动重连（指数退避）
+        if (enabled && retryCountRef.current < maxRetries) {
+          const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 30000);
           reconnectTimeoutRef.current = setTimeout(() => {
-            setRetryCount((prev) => prev + 1);
-            connect();
+            retryCountRef.current += 1;
+            connectRef.current();
           }, retryDelay);
         }
       };
@@ -147,19 +170,11 @@ export function AlertWebSocket({
     } catch (error) {
       console.error("[AlertWebSocket] Failed to create WebSocket:", error);
       setConnectionStatus("disconnected");
-      onError?.(error as Error);
+      callbacksRef.current.onError?.(error as Error);
     }
-  }, [
-    enabled,
-    channels,
-    retryCount,
-    onConnect,
-    onDisconnect,
-    onError,
-    onAlert,
-    onPlaybookRun,
-    onSystemMessage,
-  ]);
+  }, [enabled]);
+
+  connectRef.current = connect;
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

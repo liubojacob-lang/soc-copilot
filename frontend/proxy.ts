@@ -28,7 +28,7 @@ function withCsp(request: NextRequest, locale: string): NextResponse {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' wss:",
+    "connect-src 'self' ws: wss: https:",
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",
@@ -64,7 +64,13 @@ export default function proxy(request: NextRequest) {
   const hasSession = Boolean(request.cookies.get("access_token")?.value);
 
   if (!hasSession && !(locale && isPublicPath(pathname, locale))) {
-    const loginUrl = new URL(`${locale ? `/${locale}` : "/en"}/login`, request.nextUrl.origin);
+    const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
+    const resolvedLocale =
+      locale ||
+      (cookieLocale && locales.includes(cookieLocale as (typeof locales)[number])
+        ? cookieLocale
+        : routing.defaultLocale);
+    const loginUrl = new URL(`/${resolvedLocale}/login`, request.nextUrl.origin);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
