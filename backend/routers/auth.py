@@ -1,6 +1,9 @@
 """Authentication API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+import json
+from datetime import timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
@@ -12,6 +15,12 @@ from core.cookie_auth import (
 )
 from core.csrf import generate_csrf_token, set_csrf_cookie
 from core.logger import get_logger
+from core.security import (
+    create_access_token,
+    create_pre_auth_token,
+    create_refresh_token,
+    decode_token,
+)
 from db.session import get_session
 from dependencies.auth import (
     get_current_user,
@@ -21,14 +30,18 @@ from dependencies.auth import (
 )
 from middleware.rate_limiter import rate_limit
 from models.user import UserModel
+from repositories.user_repository import UserRepository
 from schemas.user import (
     ChangePasswordRequest,
+    Login2FARequest,
     MeResponse,
     TokenRefresh,
     TokenResponse,
     UserLogin,
 )
 from services.auth_service import AuthService
+from services.security.secret_service import get_secret_service
+from services.totp_service import TOTPService
 
 logger = get_logger(__name__)
 
@@ -100,7 +113,10 @@ def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthServic
         423: {"description": "账户已被锁定"},
     },
 )
-@rate_limit(max_requests=5, window_seconds=60)
+@rate_limit(
+    max_requests=100 if settings.environment == "development" else 5,
+    window_seconds=60,
+)
 async def login(
     credentials: UserLogin,
     request: Request,
@@ -109,6 +125,17 @@ async def login(
 ):
     """Authenticate user and return tokens (stored in httpOnly cookies)."""
     user, access_token, refresh_token = await auth_service.authenticate(credentials)
+
+    # If user has 2FA enabled with login policy, issue temporary pre_auth_token instead
+    if getattr(user, "is_totp_enabled", False) and getattr(user, "totp_policy", "sudo") == "login":
+        pre_auth_token = create_pre_auth_token(user.id)
+        return TokenResponse(
+            access_token=None,
+            refresh_token=None,
+            user=user_to_response(user),
+            require_2fa=True,
+            pre_auth_token=pre_auth_token,
+        )
 
     # Set httpOnly cookies for XSS protection
     set_auth_cookies(response, access_token, refresh_token)
@@ -124,6 +151,82 @@ async def login(
         user=user_to_response(user),
         must_change_password=user.must_change_password,
         csrf_token=csrf_token,  # Include CSRF token for frontend use
+    )
+
+
+@router.post(
+    "/login-2fa",
+    response_model=TokenResponse,
+    summary="2FA 二次验证登录",
+    description="当用户启用登录 2FA 时，校验 pre_auth_token 和 6 位验证码以签发正式凭据。",
+)
+@rate_limit(max_requests=5, window_seconds=60)
+async def login_2fa(
+    data: Login2FARequest,
+    request: Request,
+    response: Response,
+    session: AsyncSession = Depends(get_session),
+) -> TokenResponse:
+    """Complete 2FA login challenge with TOTP code or backup recovery code."""
+    payload = decode_token(data.pre_auth_token)
+    if not payload or payload.get("type") != "pre_2fa":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="2FA 会话已过期或无效，请重新输入账号密码登录",
+        )
+
+    user_id = payload.get("sub")
+    user_repo = UserRepository(session)
+    user = await user_repo.get_by_id(user_id)
+    if not user or not user.is_active or not user.totp_secret:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="用户状态异常或未激活 2FA",
+        )
+
+    secret_service = get_secret_service()
+    plain_secret = secret_service.decrypt(user.totp_secret)
+    backup_codes: list[str] = []
+    if user.totp_backup_codes:
+        try:
+            backup_codes = json.loads(secret_service.decrypt(user.totp_backup_codes))
+        except Exception:
+            backup_codes = []
+
+    valid, used_backup, updated_backup = TOTPService.verify_code(
+        plain_secret, data.code, backup_codes=backup_codes
+    )
+    if not valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="动态验证码错误，请核对手机验证器或使用备用恢复码",
+        )
+
+    if used_backup and updated_backup is not None:
+        user.totp_backup_codes = secret_service.encrypt(json.dumps(updated_backup))
+        await session.commit()
+
+    # Issue full JWT tokens
+    role_str = user.role.value if hasattr(user.role, "value") else str(user.role)
+    access_token = create_access_token(
+        data={"sub": user.id, "role": role_str},
+        expires_delta=timedelta(minutes=settings.jwt_expire_minutes),
+    )
+    refresh_token = create_refresh_token(
+        data={"sub": user.id, "role": role_str},
+    )
+
+    set_auth_cookies(response, access_token, refresh_token)
+    csrf_token = generate_csrf_token()
+    set_csrf_cookie(response, csrf_token)
+
+    body_access, body_refresh = _body_tokens(access_token, refresh_token)
+    return TokenResponse(
+        access_token=body_access,
+        refresh_token=body_refresh,
+        user=user_to_response(user),
+        must_change_password=user.must_change_password,
+        csrf_token=csrf_token,
     )
 
 

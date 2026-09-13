@@ -3,6 +3,7 @@
 Refactored with lifecycle management for cleaner startup/shutdown.
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -76,6 +77,7 @@ from routers import (
     threat_intel,
     timeline,
     triggers,
+    two_factor,
     ueba,
     users,
     webhooks,
@@ -303,6 +305,15 @@ async def lifespan(app_instance: FastAPI):
 
     # Run migrations
     await run_migrations()
+
+    # Pre-flight schema compatibility check on startup
+    try:
+        from services.security.security_alert_schema import ensure_security_alerts_schema
+
+        async with AsyncSessionLocal() as startup_session:
+            await ensure_security_alerts_schema(startup_session)
+    except Exception as e:
+        logger.warning(f"Startup schema verification notice: {e}")
 
     # Validate security environment variables
     from middleware.env_validator import validate_cors_origins, validate_security_env
@@ -573,6 +584,7 @@ app.include_router(health.router)  # v0.8.2: Enhanced health check and metrics
 app.include_router(correlation.router)  # v0.8.0: Event correlation engine
 app.include_router(blocked_ips.router)  # IP/Domain blocking for threat response
 app.include_router(auth.router)
+app.include_router(two_factor.router)
 app.include_router(users.router)
 app.include_router(api_keys.router)
 app.include_router(audit.router)
@@ -697,7 +709,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",  # nosec B104 - container entrypoint, port published by compose
-        port=8000,
+        port=int(os.getenv("PORT", "8088")),
         reload=True,
         timeout_keep_alive=120,
         timeout_graceful_shutdown=30,

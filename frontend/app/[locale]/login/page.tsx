@@ -2,46 +2,72 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { locales } from "@/i18n/routing";
-import { login, saveAuthState } from "@/lib/auth";
+import { login, loginWith2FA, saveAuthState, loadAuthState } from "@/lib/auth";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
+import { OtpInput } from "@/components/common/OtpInput";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ShieldCheck, User, Lock, Eye, EyeOff, AlertCircle, Sparkles } from "lucide-react";
+import {
+  ShieldCheck,
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Sparkles,
+  KeyRound,
+  ArrowLeft,
+} from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  // The i18n router auto-prefixes the locale — a leading "/${locale}" here
-  // would double up into /en/en (404).
+  const [is2FA, setIs2FA] = useState(false);
+  const [preAuthToken, setPreAuthToken] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [useBackupCode, setUseBackupCode] = useState(false);
   const [redirectPath, setRedirectPath] = useState("/");
 
-  // Get redirect path from session storage (validate against open redirect)
+  const getDestinationUrl = (path: string) => {
+    let clean = (path || "").trim();
+    for (const l of locales) {
+      if (clean === `/${l}` || clean === `/${l}/`) {
+        clean = "/";
+        break;
+      }
+      if (clean.startsWith(`/${l}/`)) {
+        clean = clean.slice(`/${l}`.length);
+        break;
+      }
+    }
+    if (!clean || clean === "/" || clean === "/login" || clean.endsWith("/login")) {
+      return `/${locale}`;
+    }
+    return `/${locale}${clean.startsWith("/") ? clean : `/${clean}`}`;
+  };
+
+  // Get redirect path from session storage or query params
   useEffect(() => {
     const storedRedirect = sessionStorage.getItem("redirect_after_login");
-    // Server-side guard (proxy.ts) hands the intended destination via ?next=
     const searchNext = new URLSearchParams(window.location.search).get("next");
     const candidate = storedRedirect || searchNext;
     if (candidate && candidate.startsWith("/")) {
-      try {
-        const url = new URL(candidate, window.location.origin);
-        if (url.origin === window.location.origin) {
-          const segments = candidate.split("/");
-          const localeAt = locales.includes(segments[1] as (typeof locales)[number]) ? 1 : -1;
-          if (localeAt !== -1) segments.splice(1, 1);
-          setRedirectPath(segments.join("/") || "/");
-        }
-      } catch {
-        // Invalid URL, ignore
-      }
+      setRedirectPath(candidate);
       sessionStorage.removeItem("redirect_after_login");
+    }
+
+    const authState = loadAuthState();
+    if (authState?.isAuthenticated && !authState.require2FA) {
+      window.location.href = getDestinationUrl(candidate || "");
     }
   }, []);
 
@@ -52,20 +78,79 @@ export default function LoginPage() {
 
     try {
       const authState = await login(username, password);
-      saveAuthState(authState);
-      // Bootstrap/flagged accounts must set a new password before entering
-      // the app; the target page is preserved in sessionStorage by the guard.
-      if (authState.mustChangePassword) {
-        sessionStorage.setItem("redirect_after_login", redirectPath);
-        router.push("/change-password");
+      if (authState.require2FA && authState.preAuthToken) {
+        setIs2FA(true);
+        setPreAuthToken(authState.preAuthToken);
+        setTotpCode("");
         return;
       }
-      router.push(redirectPath);
+      saveAuthState(authState);
+      if (authState.mustChangePassword) {
+        sessionStorage.setItem("redirect_after_login", redirectPath);
+        window.location.href = `/${locale}/change-password`;
+        return;
+      }
+      window.location.href = getDestinationUrl(redirectPath);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("error"));
+      const rawMsg = err instanceof Error ? err.message : "";
+      if (
+        !rawMsg ||
+        rawMsg.includes("Incorrect username or password") ||
+        rawMsg.includes("401") ||
+        rawMsg.includes("Invalid credentials") ||
+        rawMsg.includes("UNAUTHORIZED") ||
+        rawMsg === "登录失败"
+      ) {
+        setError(t("error"));
+      } else if (
+        rawMsg.includes("locked") ||
+        rawMsg.includes("423") ||
+        rawMsg.includes("Too many failed login attempts")
+      ) {
+        setError(
+          locale.startsWith("zh")
+            ? "连续登录失败次数过多，账户已被临时锁定，请稍后再试或联系管理员"
+            : rawMsg
+        );
+      } else if (rawMsg.includes("DATABASE_ERROR") || rawMsg.includes("database error")) {
+        setError(locale.startsWith("zh") ? "服务暂时不可用，请稍后重试" : rawMsg);
+      } else {
+        setError(rawMsg);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handle2FASubmit = async (e?: React.FormEvent, customCode?: string) => {
+    if (e) e.preventDefault();
+    const code = (customCode || totpCode).trim();
+    if (!code) return;
+    setError("");
+    setLoading(true);
+
+    try {
+      const authState = await loginWith2FA(preAuthToken, code);
+      saveAuthState(authState);
+      if (authState.mustChangePassword) {
+        sessionStorage.setItem("redirect_after_login", redirectPath);
+        window.location.href = `/${locale}/change-password`;
+        return;
+      }
+      window.location.href = getDestinationUrl(redirectPath);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("invalidCode"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setIs2FA(false);
+    setPreAuthToken("");
+    setTotpCode("");
+    setUseBackupCode(false);
+    setError("");
   };
 
   return (
@@ -95,11 +180,19 @@ export default function LoginPage() {
           <div className="bg-surface-card border border-border-subtle rounded-2xl shadow-elevated p-7 sm:p-9 backdrop-blur-sm transition-all">
             {/* Brand Logo & Title */}
             <div className="text-center mb-7">
-              <div className="inline-flex items-center justify-center w-13 h-13 rounded-2xl bg-gradient-to-tr from-accent-600 to-indigo-600 text-white shadow-subtle shadow-accent-600/30 mb-4 ring-4 ring-accent-500/10">
-                <ShieldCheck className="w-7 h-7" strokeWidth={2} />
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-accent-600 to-indigo-600 text-white shadow-subtle shadow-accent-600/30 mb-4 ring-4 ring-accent-500/10">
+                {is2FA ? (
+                  <KeyRound className="w-7 h-7" strokeWidth={2} />
+                ) : (
+                  <ShieldCheck className="w-7 h-7" strokeWidth={2} />
+                )}
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-text-primary">SOC Copilot</h1>
-              <p className="text-sm text-text-secondary mt-1.5 leading-relaxed">{t("subtitle")}</p>
+              <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+                {is2FA ? t("twoFactorTitle") : "SOC Copilot"}
+              </h1>
+              <p className="text-sm text-text-secondary mt-1.5 leading-relaxed">
+                {is2FA ? t("twoFactorSubtitle") : t("subtitle")}
+              </p>
             </div>
 
             {/* Error Message Alert */}
@@ -113,87 +206,197 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="username"
-                  className="block text-xs font-medium text-text-secondary mb-1.5"
-                >
-                  {t("username")}
-                </label>
-                <Input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={loading}
-                  autoComplete="username"
-                  autoFocus
-                  placeholder="admin"
-                  leftIcon={<User className="w-4 h-4 text-text-muted" />}
-                  size="lg"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-xs font-medium text-text-secondary mb-1.5"
-                >
-                  {t("password")}
-                </label>
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  leftIcon={<Lock className="w-4 h-4 text-text-muted" />}
-                  rightIcon={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      disabled={loading}
-                      aria-label={showPassword ? t("hidePassword") : t("showPassword")}
-                      title={showPassword ? t("hidePassword") : t("showPassword")}
-                      className="text-text-muted hover:text-text-primary focus:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 rounded p-0.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            {is2FA ? (
+              /* Modern 2FA Challenge Form */
+              <form onSubmit={handle2FASubmit} className="space-y-4">
+                {useBackupCode ? (
+                  <div>
+                    <label
+                      htmlFor="totpCode"
+                      className="block text-xs font-medium text-text-secondary mb-1.5"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  }
-                  size="lg"
-                />
-              </div>
+                      {locale.startsWith("zh")
+                        ? "8 位紧急备用恢复码"
+                        : "8-character emergency backup code"}
+                    </label>
+                    <Input
+                      id="totpCode"
+                      name="totpCode"
+                      type="text"
+                      required
+                      value={totpCode}
+                      onChange={(e) => setTotpCode(e.target.value)}
+                      disabled={loading}
+                      autoFocus
+                      placeholder="ABC12345"
+                      leftIcon={<Lock className="w-4 h-4 text-text-muted" />}
+                      size="lg"
+                      className="font-mono tracking-widest text-center text-base uppercase"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-3 py-1">
+                    <label className="block text-xs font-semibold text-center text-text-secondary">
+                      {locale.startsWith("zh")
+                        ? "输入认证器 6 位实时验证码"
+                        : "Enter 6-digit authenticator code"}
+                    </label>
+                    <OtpInput
+                      value={totpCode}
+                      onChange={setTotpCode}
+                      onComplete={(code) => handle2FASubmit(undefined, code)}
+                      disabled={loading}
+                      autoFocus
+                      error={Boolean(error)}
+                    />
+                  </div>
+                )}
 
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  isLoading={loading}
-                  variant="primary"
-                  size="lg"
-                  className="w-full text-sm font-semibold tracking-wide shadow-subtle shadow-accent-600/20"
-                >
-                  {loading ? t("signingIn") : t("signIn")}
-                </Button>
-              </div>
-            </form>
+                {/* Switch between TOTP and Backup Code */}
+                <div className="text-center pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUseBackupCode(!useBackupCode);
+                      setTotpCode("");
+                      setError("");
+                    }}
+                    className="text-xs text-accent-600 hover:text-accent-700 dark:text-accent-400 font-medium transition-colors"
+                  >
+                    {useBackupCode
+                      ? locale.startsWith("zh")
+                        ? "使用 6 位动态口令验证码"
+                        : "Use 6-digit authenticator code"
+                      : locale.startsWith("zh")
+                        ? "无法获取验证码？使用备用恢复码"
+                        : "Can't access device? Use recovery code"}
+                  </button>
+                </div>
+
+                <div className="pt-2 space-y-2.5">
+                  <Button
+                    type="submit"
+                    disabled={loading || !totpCode.trim()}
+                    isLoading={loading}
+                    variant="primary"
+                    size="lg"
+                    className="w-full text-sm font-semibold tracking-wide shadow-subtle shadow-accent-600/20"
+                  >
+                    {loading ? t("verifying") : t("verifyAndSignIn")}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={handleBackToLogin}
+                    disabled={loading}
+                    variant="ghost"
+                    size="md"
+                    className="w-full text-xs text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    {t("backToLogin")}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              /* Normal Login Form */
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="username"
+                    className="block text-xs font-medium text-text-secondary mb-1.5"
+                  >
+                    {t("username")}
+                  </label>
+                  <Input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={loading}
+                    autoComplete="username"
+                    autoFocus
+                    placeholder="admin"
+                    leftIcon={<User className="w-4 h-4 text-text-muted" />}
+                    size="lg"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-xs font-medium text-text-secondary mb-1.5"
+                  >
+                    {t("password")}
+                  </label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    leftIcon={<Lock className="w-4 h-4 text-text-muted" />}
+                    rightIcon={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        disabled={loading}
+                        aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+                        title={showPassword ? t("hidePassword") : t("showPassword")}
+                        className="text-text-muted hover:text-text-primary focus:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 rounded p-0.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    }
+                    size="lg"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    isLoading={loading}
+                    variant="primary"
+                    size="lg"
+                    className="w-full text-sm font-semibold tracking-wide shadow-subtle shadow-accent-600/20"
+                  >
+                    {loading ? t("signingIn") : t("signIn")}
+                  </Button>
+                </div>
+              </form>
+            )}
 
             {/* Dev Mode Banner */}
-            {process.env.NODE_ENV === "development" && (
-              <div className="mt-6 pt-5 border-t border-border-subtle/80 flex items-center justify-center gap-1.5 text-xs text-text-muted">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span>
-                  <strong className="font-semibold text-text-secondary">{t("devMode")}</strong>:{" "}
-                  {t("checkServerLogs")}
-                </span>
+            {!is2FA && process.env.NODE_ENV === "development" && (
+              <div className="mt-6 pt-5 border-t border-border-subtle/80 flex flex-col items-center justify-center gap-2 text-xs text-text-muted">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>
+                    <strong className="font-semibold text-text-secondary">{t("devMode")}</strong>:{" "}
+                    {t("devCredentials")}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsername("admin");
+                    setPassword("Admin123!");
+                  }}
+                  className="text-xs text-accent-600 dark:text-accent-400 hover:underline cursor-pointer transition-colors"
+                >
+                  ⚡ {t("fillDevCredentials")}
+                </button>
               </div>
             )}
           </div>

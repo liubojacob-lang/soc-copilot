@@ -106,6 +106,10 @@ export interface AuthState {
   storageStrategy: StorageStrategy;
   /** Server requires this session's user to set a new password before proceeding. */
   mustChangePassword?: boolean;
+  /** Server requires 2FA verification code to complete login. */
+  require2FA?: boolean;
+  /** Short-lived pre-auth token to complete 2FA login challenge. */
+  preAuthToken?: string;
 }
 
 /**
@@ -125,11 +129,27 @@ export async function login(username: string, password: string): Promise<AuthSta
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || "Login failed");
+    const error = await response.json().catch(() => ({}));
+    const message =
+      error.message ||
+      error.detail ||
+      (response.status === 429 ? "请求过于频繁，请稍后再试" : "登录失败");
+    throw new Error(message);
   }
 
   const data = await response.json();
+
+  // If 2FA is required, return challenge state without persisting session
+  if (data.require_2fa) {
+    return {
+      isAuthenticated: false,
+      user: data.user,
+      tokens: null,
+      storageStrategy: "cookie",
+      require2FA: true,
+      preAuthToken: data.pre_auth_token,
+    };
+  }
 
   // Keep the raw CSRF token for state-changing requests (double-submit).
   if (data.csrf_token) {
@@ -147,6 +167,55 @@ export async function login(username: string, password: string): Promise<AuthSta
   saveAuthState(authState);
 
   return authState;
+}
+
+/**
+ * Complete 2FA login challenge with TOTP code or backup recovery code.
+ */
+export async function loginWith2FA(preAuthToken: string, code: string): Promise<AuthState> {
+  const response = await fetch(`/api/v1/auth/login-2fa`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ pre_auth_token: preAuthToken, code }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "2FA verification failed");
+  }
+
+  const data = await response.json();
+  if (data.csrf_token) {
+    setCSRFToken(data.csrf_token);
+  }
+
+  const authState: AuthState = {
+    isAuthenticated: true,
+    user: data.user,
+    tokens: null,
+    storageStrategy: "cookie",
+    mustChangePassword: data.must_change_password === true,
+  };
+
+  saveAuthState(authState);
+  return authState;
+}
+
+/**
+ * Verify TOTP code for Sudo Mode (sensitive operations).
+ * Returns a 10-minute temporary sudo token.
+ */
+export async function verifySudoMode(
+  code: string
+): Promise<{ valid: boolean; sudo_token: string; expires_in_seconds: number }> {
+  return authFetchJSON<{ valid: boolean; sudo_token: string; expires_in_seconds: number }>(
+    "/api/v1/auth/2fa/verify-sudo",
+    {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }
+  );
 }
 
 /**
@@ -198,6 +267,11 @@ export function logout(): void {
     localStorage.removeItem(USER_KEY);
     clearCSRFToken();
 
+    // Clear UI hint cookies used for SSR navigation alignment
+    document.cookie = "user_role=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "sidebar_collapsed=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "sidebar_collapsed_groups=; path=/; max-age=0; SameSite=Lax";
+
     // HttpOnly cookies are cleared by the backend logout endpoint
     fetch("/api/auth/logout", {
       method: "POST",
@@ -224,6 +298,8 @@ function loadStoredUser(): User | null {
  * ONLY the non-sensitive user object is persisted — it exists purely as a UI
  * hint (navigation, role-gated menus). Tokens live exclusively in HttpOnly
  * cookies, which JavaScript cannot read, so an XSS cannot steal a session.
+ * We also mirror the non-sensitive role into a Lax cookie so SSR can render
+ * identical role-gated navigation without any client-side layout shifts.
  */
 export function saveAuthState(authState: AuthState): void {
   if (typeof window !== "undefined") {
@@ -232,6 +308,9 @@ export function saveAuthState(authState: AuthState): void {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     if (authState.user) {
       localStorage.setItem(USER_KEY, JSON.stringify(authState.user));
+      if (authState.user.role) {
+        document.cookie = `user_role=${encodeURIComponent(authState.user.role)}; path=/; max-age=2592000; SameSite=Lax`;
+      }
     }
   }
 }
@@ -355,7 +434,12 @@ export function handleUnauthorized(): void {
 }
 
 const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const AUTH_EXEMPT_FRAGMENTS = ["/api/auth/login", "/api/auth/refresh", "/api/auth/logout"];
+const AUTH_EXEMPT_FRAGMENTS = [
+  "/api/auth/login",
+  "/api/auth/refresh",
+  "/api/auth/logout",
+  "/login-2fa",
+];
 
 function isAuthPath(path: string): boolean {
   return AUTH_EXEMPT_FRAGMENTS.some((fragment) => path.includes(fragment));
@@ -390,6 +474,43 @@ export async function authFetch(
     credentials: "include", // Always include cookies
     headers,
   });
+
+  // Self-healing CSRF: If request failed with 403 CSRF error, refresh token and retry once
+  if (response.status === 403 && !isAuthPath(url) && maxRetries > 0) {
+    let isCsrfError = false;
+    try {
+      const cloned = response.clone();
+      const errData = await cloned.json();
+      if (
+        errData?.error === "csrf_validation_failed" ||
+        (typeof errData?.detail === "string" && errData.detail.toLowerCase().includes("csrf")) ||
+        (typeof errData?.message === "string" && errData.message.toLowerCase().includes("csrf"))
+      ) {
+        isCsrfError = true;
+      }
+    } catch {
+      // non-JSON response or clone error
+    }
+
+    if (isCsrfError) {
+      const { refreshCSRFToken } = await import("./csrf");
+      const newToken = await refreshCSRFToken();
+      if (newToken) {
+        const retryHeaders = {
+          ...headers,
+          "X-CSRF-Token": newToken,
+        };
+        return authFetch(
+          url,
+          {
+            ...options,
+            headers: retryHeaders,
+          },
+          maxRetries - 1
+        );
+      }
+    }
+  }
 
   // If session expired, try to refresh via refresh_token cookie/localStorage
   if (response.status === 401 && !isAuthPath(url) && maxRetries > 0) {

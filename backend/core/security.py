@@ -104,6 +104,34 @@ def create_refresh_token(data: dict) -> str:
     return encoded_jwt
 
 
+def create_pre_auth_token(user_id: str, expires_delta: timedelta | None = None) -> str:
+    """Create a short-lived token for 2FA login challenge (5 min valid)."""
+    now = datetime.now(UTC)
+    expire = now + (expires_delta or timedelta(minutes=5))
+    to_encode = {
+        "sub": user_id,
+        "exp": expire,
+        "iat": now,
+        "jti": str(uuid.uuid4()),
+        "type": "pre_2fa",
+    }
+    return jwt.encode(to_encode, get_jwt_secret(), algorithm=JWT_ALGORITHM)
+
+
+def create_sudo_token(user_id: str, minutes: int = 10) -> str:
+    """Create a temporary ticket for sudo-mode sensitive operations."""
+    now = datetime.now(UTC)
+    expire = now + timedelta(minutes=minutes)
+    to_encode = {
+        "sub": user_id,
+        "exp": expire,
+        "iat": now,
+        "jti": str(uuid.uuid4()),
+        "type": "sudo",
+    }
+    return jwt.encode(to_encode, get_jwt_secret(), algorithm=JWT_ALGORITHM)
+
+
 def decode_token(token: str) -> dict | None:
     """Decode and validate a JWT token.
 

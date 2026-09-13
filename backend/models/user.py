@@ -70,5 +70,15 @@ class UserModel(Base):
         JSON, nullable=False, default=lambda: []
     )
 
+    # Two-Factor Authentication (TOTP)
+    totp_secret: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_totp_enabled: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    totp_policy: Mapped[str] = mapped_column(
+        String(32), default="sudo", nullable=False
+    )
+    totp_backup_codes: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
     # Composite indexes for common queries
     __table_args__ = (Index("ix_users_role_is_active", "role", "is_active"),)
