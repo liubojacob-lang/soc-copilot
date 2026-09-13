@@ -1,0 +1,101 @@
+# SOC Copilot 本地独立仿真编排 (与宿主机当前服务完全隔离)
+# 端口映射均已错开，不会与 5432 / 6379 / 8088 / 3003 产生冲突
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: soc-postgres-sim
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_sim_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${HOST_PORT_POSTGRES:-15432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soc-sim-net
+    restart: "no"
+
+  redis:
+    image: redis:7-alpine
+    container_name: soc-redis-sim
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_sim_data:/data
+    ports:
+      - "127.0.0.1:${HOST_PORT_REDIS:-16379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soc-sim-net
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: soc-copilot-backend:local-sim
+    container_name: soc-backend-sim
+    environment:
+      - "DB_USER=${DB_USER}"
+      - "DB_PASSWORD=${DB_PASSWORD}"
+      - "DB_NAME=${DB_NAME}"
+      - "DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}"
+      - "REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0"
+      - "REDIS_ENABLED=true"
+      - "REDIS_PASSWORD=${REDIS_PASSWORD}"
+      - "JWT_SECRET=${JWT_SECRET}"
+      - "BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD}"
+      - "BOOTSTRAP_ADMIN_USERNAME=${BOOTSTRAP_ADMIN_USERNAME}"
+      - "BOOTSTRAP_ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}"
+      - "SECRET_ENCRYPTION_KEY=${SECRET_ENCRYPTION_KEY}"
+      - "HTTP_ALLOWED_HOSTS=${HTTP_ALLOWED_HOSTS}"
+      - "CORS_ORIGINS=${CORS_ORIGINS}"
+      - "ENVIRONMENT=${ENVIRONMENT}"
+      - "COOKIE_SECURE=${COOKIE_SECURE:-false}"
+      - "STRICT_PRODUCTION_CHECKS=${STRICT_PRODUCTION_CHECKS}"
+      - "LOG_LEVEL=INFO"
+      - "WORKERS=2"
+    ports:
+      - "127.0.0.1:${HOST_PORT_BACKEND:-18088}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - soc-sim-net
+    restart: "no"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: soc-copilot-frontend:local-sim
+    container_name: soc-frontend-sim
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NODE_ENV=production
+    ports:
+      - "127.0.0.1:${HOST_PORT_FRONTEND:-13000}:3000"
+    depends_on:
+      - backend
+    networks:
+      - soc-sim-net
+    restart: "no"
+
+volumes:
+  postgres_sim_data:
+  redis_sim_data:
+
+networks:
+  soc-sim-net:
+    driver: bridge
