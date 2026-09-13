@@ -5,6 +5,34 @@ All notable changes to SOC Copilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-09-13
+
+### Added
+- **TOTP two-factor authentication** (RFC 6238): enroll/verify/disable, backup codes and a sudo-mode policy, so sensitive operations can require a second factor without forcing it on every login
+- Short-lived `pre_2fa` token (5 min) for the login challenge and `sudo` token (10 min) for sensitive operations
+- Migration `0005_user_2fa_totp`: `users` gains `totp_secret`, `is_totp_enabled`, `totp_policy`, `totp_backup_codes`
+- Frontend `OtpInput` component, settings 2FA panel and en/zh-CN catalogs
+- `get_bulk_counts` on the case repository: per-case alert and comment counts collapse from N+1 into 2 queries
+- Test suites for the playbook DAG, RBAC dependencies and the MISP/Trivy/VirusTotal clients
+
+### Fixed
+- **Secret leak**: `.gitignore` matches `.env.*` instead of enumerating names, closing the `.env.local-sim` gap (example templates stay whitelisted)
+- Cookie `Secure` flag is driven by the new `cookie_secure` setting (None = auto: on in production, off in development)
+- Timezone-aware timestamps: `history`, `ioc_hit` and `correlated_event` default to `datetime.now(UTC)`, and the dashboard derives its day boundary from the column's own tz-awareness
+- Account lockout parses `locked_until` as a datetime and reports the remaining minutes
+- Playbook DAG sends PENDING nodes through QUEUED before RUNNING
+- WebSocket manager tells "redis not supplied" apart from an explicit `None`, so pubsub no longer degrades silently
+- Lint gate restored: 4 ruff findings (F401/UP017) in `services/auth_service.py` cleared
+
+### Changed
+- Data-retention cleanup is composed from a job table and deletes child rows before parents
+- Coverage floor raised 30% → 47% (measured 49.6%)
+- Frontend: shared layout/header/timeline/navigation components, `UserMenu` extracted, design tokens consolidated in `tailwind.config.ts` against a committed baseline
+- AI assistant streams over real SSE with a fallback to the previous behaviour
+
+### Removed
+- `workers/alert_consumer.py`, unused alert components and the `/test` page (dead code)
+
 ## [0.9.2] - 2026-09-08
 
 ### Fixed
