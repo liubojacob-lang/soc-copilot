@@ -8,6 +8,7 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
+from core.config import settings
 from core.logger import get_logger
 from services.user.cookie_auth import validate_csrf_token
 
@@ -101,6 +102,19 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
         # Validate CSRF token
         if not await validate_csrf_token(request):
+            # Development grace: if running locally, allow request with a warning
+            # so local multi-port development isn't blocked by browser cookie quirks
+            if settings.environment == "development":
+                logger.warning(
+                    f"CSRF validation failed in development for {request.method} {path} - bypassing with dev grace",
+                    extra={
+                        "path": path,
+                        "method": request.method,
+                        "client_ip": request.client.host if request.client else None,
+                    },
+                )
+                return await call_next(request)
+
             logger.warning(
                 "CSRF validation failed",
                 extra={

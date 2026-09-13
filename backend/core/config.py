@@ -92,6 +92,7 @@ class Settings(BaseSettings):
     bootstrap_admin_username: str = "admin"
     bootstrap_admin_email: str = "admin@example.com"
     bootstrap_admin_password: str = ""  # MUST be set in production (min 12 characters)
+    cookie_secure: bool | None = None  # None = auto (True in production, False in dev)
 
     # v0.7.1: API Settings for webhook URL generation
     base_url: str = "http://localhost:8000"  # Base URL for webhook URLs

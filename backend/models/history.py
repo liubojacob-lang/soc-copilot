@@ -1,7 +1,7 @@
 """History model for storing analysis results."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,7 +20,7 @@ class HistoryModel(Base):
     module: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(),
+        default=lambda: datetime.now(UTC),
         index=True,
         nullable=False,
     )

@@ -185,17 +185,18 @@ class CaseService:
             sort_desc=sort_desc,
         )
 
-        # Enrich with counts
-        # NOTE: two point queries per case (bounded by page_size, FK-indexed).
-        # A grouped bulk-count variant was attempted but is deferred (see
-        # FUTURE_BACKLOG.md DB017) after the repository edit was blocked by
-        # a scanner false positive.
+        # Enrich with counts (optimized: eliminates N+1 queries via bulk counts)
+        case_ids = [c.id for c in items]
+        alert_counts, comment_counts = await self.repo.get_bulk_counts(
+            self.session, case_ids
+        )
         responses = []
         for case in items:
             resp = self._to_response(case)
-            resp.alert_count = await self.repo.count_alerts(self.session, case.id)
-            resp.related_alert_count = resp.alert_count
-            resp.comment_count = await self.repo.count_comments(self.session, case.id)
+            count = alert_counts.get(case.id, 0)
+            resp.alert_count = count
+            resp.related_alert_count = count
+            resp.comment_count = comment_counts.get(case.id, 0)
             responses.append(resp)
 
         return CaseListResponse(

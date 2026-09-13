@@ -19,6 +19,7 @@ to keep that table forever.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 
 from core.lifecycle import LifecycleService, ServicePriority
@@ -88,80 +89,128 @@ class DataRetentionService(LifecycleService):
                 logger.error(f"Data retention cycle failed: {e}")
             await asyncio.sleep(interval.total_seconds())
 
-    async def run_cleanup(self) -> dict[str, int]:
-        """Delete aged rows from all managed tables. Returns per-table counts."""
+    def _cleanup_jobs(
+        self, session, now: datetime, only: list[str]
+    ) -> dict[str, Awaitable[int]]:
+        """Aged-row cleanup tasks for the requested tables, child tables first.
+
+        The playbook_run_steps call passes no time column: its rows are
+        selected via the expired parent run.
+        """
         from core.config import settings
-        from db.session import AsyncSessionLocal
 
-        stats: dict[str, int] = {}
-        async with AsyncSessionLocal() as session:
-            now = datetime.now(UTC)
-
-            # Child tables first, then parents. The child call passes no time
-            # column: its rows are selected via the expired parent.
-            stats["playbook_run_steps"] = await self._delete_aged(
+        aged = self._delete_aged
+        d = settings
+        builders: dict[str, Callable[[], Awaitable[int]]] = {
+            "playbook_run_steps": lambda: aged(
                 session,
                 "playbook_run_steps",
                 None,
-                settings.playbook_run_retention_days,
+                d.playbook_run_retention_days,
                 now,
                 parent_table="playbook_runs",
                 parent_col="started_at",
-            )
-            stats["playbook_runs"] = await self._delete_aged(
-                session,
-                "playbook_runs",
-                "started_at",
-                settings.playbook_run_retention_days,
-                now,
-            )
-            stats["siem_logs"] = await self._delete_aged(
-                session,
-                "siem_logs",
-                "timestamp",
-                settings.siem_log_retention_days,
-                now,
-            )
-            stats["security_alerts"] = await self._delete_aged(
+            ),
+            "playbook_runs": lambda: aged(
+                session, "playbook_runs", "started_at", d.playbook_run_retention_days, now
+            ),
+            "siem_logs": lambda: aged(
+                session, "siem_logs", "timestamp", d.siem_log_retention_days, now
+            ),
+            "security_alerts": lambda: aged(
                 session,
                 "security_alerts",
                 "created_at",
-                settings.security_alert_retention_days,
+                d.security_alert_retention_days,
                 now,
-            )
-            stats["ioc_hits"] = await self._delete_aged(
-                session,
-                "ioc_hits",
-                "created_at",
-                settings.ioc_hit_retention_days,
-                now,
-            )
-            stats["history"] = await self._delete_aged(
-                session,
-                "history",
-                "created_at",
-                settings.history_retention_days,
-                now,
-            )
-            stats["correlated_events"] = await self._delete_aged(
+            ),
+            "ioc_hits": lambda: aged(
+                session, "ioc_hits", "created_at", d.ioc_hit_retention_days, now
+            ),
+            "history": lambda: aged(
+                session, "history", "created_at", d.history_retention_days, now
+            ),
+            "correlated_events": lambda: aged(
                 session,
                 "correlated_events",
                 "created_at",
-                settings.correlated_event_retention_days,
+                d.correlated_event_retention_days,
                 now,
-            )
+            ),
             # Threat-intel rows already past their TTL (previously manual-only).
-            stats["threat_intel_cache"] = await self._delete_expired_ti(
-                session,
-                now,
-                max_age_days=settings.threat_intel_cache_retention_days,
-            )
+            "threat_intel_cache": lambda: self._delete_expired_ti(
+                session, now, max_age_days=d.threat_intel_cache_retention_days
+            ),
             # Similarity cache rows whose TTL column was never enforced.
-            stats["event_similarities"] = await self._delete_expired_similarities(
+            "event_similarities": lambda: self._delete_expired_similarities(
                 session, now
-            )
-            await session.commit()
+            ),
+        }
+        return {table: builders[table]() for table in only}
+
+    async def run_cleanup(self) -> dict[str, int]:
+        """Delete aged rows from all managed tables. Returns per-table counts.
+
+        The happy path is a single transaction — on SQLite a mid-cycle
+        commit/release makes the next statement re-contend for the write lock
+        against live app writers, which deadlocked the cycle in tests.
+        Isolation is handled on the failure path instead: when a table's
+        cleanup raises, the pass is rolled back and every other table re-runs
+        in a fresh transaction, so one broken table never loses the others'
+        deletions — the broken table itself is skipped and logged.
+        """
+        from db.session import AsyncSessionLocal
+
+        stats: dict[str, int] = {}
+        pending = self._cleanup_table_order()
+        # Every pass either commits, or rolls back and permanently skips one
+        # table, so this loop is bounded.
+        for _ in range(len(self._cleanup_table_order()) + 1):
+            if not pending:
+                break
+            async with AsyncSessionLocal() as session:
+                now = datetime.now(UTC)
+                jobs = self._cleanup_jobs(session, now, only=pending)
+                pass_stats: dict[str, int] = {}
+                first_failure: int | None = None
+                for idx, table in enumerate(pending):
+                    try:
+                        pass_stats[table] = await jobs[table]
+                    except Exception as e:
+                        logger.error(
+                            f"Data retention cleanup failed for {table}: {e}"
+                        )
+                        first_failure = idx
+                        break
+                if first_failure is None:
+                    try:
+                        await session.commit()
+                    except Exception as e:
+                        logger.error(f"Data retention commit failed: {e}")
+                        continue  # nothing committed; retry the same tables
+                    stats.update(pass_stats)
+                    break
+                # A table failed mid-pass: discard this pass's work and re-run
+                # every other table in a fresh transaction.
+                await session.rollback()
+                skipped = pending[first_failure]
+                pending = [t for t in pending if t != skipped]
         return stats
+
+    @staticmethod
+    def _cleanup_table_order() -> list[str]:
+        """Child tables first, then parents, then TTL caches."""
+        return [
+            "playbook_run_steps",
+            "playbook_runs",
+            "siem_logs",
+            "security_alerts",
+            "ioc_hits",
+            "history",
+            "correlated_events",
+            "threat_intel_cache",
+            "event_similarities",
+        ]
 
     async def _delete_aged(
         self,
@@ -172,31 +221,25 @@ class DataRetentionService(LifecycleService):
         now: datetime,
         parent_table: str | None = None,
         parent_col: str | None = None,
-        string_column: bool = False,
     ) -> int:
         """Delete rows older than the retention window, in bounded batches.
 
         When parent_table is given, only rows whose parent is ALSO expired are
         removed (keeps child rows alive while the parent is still referenced).
 
-        DateTime columns get a space-separated cutoff — the exact format
-        SQLAlchemy's SQLite binder writes, and parseable by PostgreSQL.
-        String timestamp columns (correlated_events) keep isoformat, which
-        sorts correctly as text.
+        The cutoff is bound as a typed DateTime parameter so each dialect's
+        own binder applies (native datetime on PostgreSQL/asyncpg, its storage
+        format on SQLite) — hand-formatting the cutoff as a string fails
+        asyncpg's strict typing.
         """
-        from sqlalchemy import text
+        from sqlalchemy import DateTime, bindparam, text
 
         from core.config import settings
 
         if retention_days <= 0:
             return 0
 
-        cutoff_dt = now - timedelta(days=retention_days)
-        cutoff = (
-            cutoff_dt.isoformat()
-            if string_column
-            else cutoff_dt.strftime("%Y-%m-%d %H:%M:%S.%f")
-        )
+        cutoff = now - timedelta(days=retention_days)
         batch_size = settings.data_retention_batch_size
         total = 0
 
@@ -208,12 +251,12 @@ class DataRetentionService(LifecycleService):
                     f"SELECT {table}.id FROM {table} JOIN {parent_table}"
                     f" ON {table}.{child_fk} = {parent_table}.id"
                     f" WHERE {parent_table}.{parent_col} < :cutoff LIMIT :batch)"
-                )
+                ).bindparams(bindparam("cutoff", type_=DateTime(timezone=True)))
             else:
                 stmt = text(
                     f"DELETE FROM {table} WHERE {time_column} < :cutoff"  # nosec B608 - identifiers from internal policy constants
                     f" AND id IN (SELECT id FROM {table} WHERE {time_column} < :cutoff LIMIT :batch)"
-                )
+                ).bindparams(bindparam("cutoff", type_=DateTime(timezone=True)))
 
             result = await session.execute(
                 stmt, {"cutoff": cutoff, "batch": batch_size}
@@ -232,14 +275,16 @@ class DataRetentionService(LifecycleService):
     async def _delete_expired_ti(
         self, session, now: datetime, max_age_days: int
     ) -> int:
-        """Purge threat-intel cache rows past expires_at (and very old ones)."""
-        from sqlalchemy import text
+        """Purge threat-intel cache rows past expires_at (and very old ones).
+
+        The cache columns are naive DateTime, so the cutoffs are bound as
+        typed naive datetime params — hand-formatting them as strings fails
+        asyncpg's strict typing, same as in _delete_aged.
+        """
+        from sqlalchemy import DateTime, bindparam, text
 
         from core.config import settings
 
-        hard_cutoff = (now - timedelta(days=max_age_days)).strftime(
-            "%Y-%m-%d %H:%M:%S.%f"
-        )
         batch_size = settings.data_retention_batch_size
         total = 0
         while True:
@@ -248,10 +293,13 @@ class DataRetentionService(LifecycleService):
                     "DELETE FROM threat_intel_cache WHERE id IN ("
                     "SELECT id FROM threat_intel_cache WHERE expires_at < :now"
                     " OR updated_at < :hard LIMIT :batch)"
+                ).bindparams(
+                    bindparam("now", type_=DateTime()),
+                    bindparam("hard", type_=DateTime()),
                 ),
                 {
-                    "now": now.strftime("%Y-%m-%d %H:%M:%S.%f"),
-                    "hard": hard_cutoff,
+                    "now": now.replace(tzinfo=None),
+                    "hard": (now - timedelta(days=max_age_days)).replace(tzinfo=None),
                     "batch": batch_size,
                 },
             )
@@ -262,18 +310,44 @@ class DataRetentionService(LifecycleService):
         return total
 
     async def _delete_expired_similarities(self, session, now: datetime) -> int:
-        """Enforce event_similarities.ttl_seconds, which no job ever did."""
-        from sqlalchemy import text
+        """Enforce event_similarities.ttl_seconds, which no job ever did.
 
-        result = await session.execute(
-            text(
-                """
-                DELETE FROM event_similarities WHERE id IN (
-                    SELECT id FROM event_similarities
-                    WHERE datetime(created_at, '+' || ttl_seconds || ' seconds') < :now
-                )
-                """
-            ),
-            {"now": now.isoformat()},
-        )
-        return result.rowcount or 0
+        created_at is ISO text and ttl is per-row, so expiry is computed in
+        Python after a cheap text-range prefilter. The previous SQLite-only
+        datetime() expression was a hard error on PostgreSQL.
+        """
+        from sqlalchemy import bindparam, text
+
+        from core.config import settings
+
+        batch_size = settings.data_retention_batch_size
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT id, created_at, ttl_seconds FROM event_similarities"
+                    " WHERE created_at < :now"
+                ),
+                {"now": now.isoformat()},
+            )
+        ).all()
+
+        expired: list[str] = []
+        for row_id, created_at, ttl_seconds in rows:
+            try:
+                created = datetime.fromisoformat(created_at)
+                is_expired = created <= now - timedelta(seconds=ttl_seconds or 0)
+            except (TypeError, ValueError):
+                is_expired = True  # unparseable legacy row — purge it
+            if is_expired:
+                expired.append(row_id)
+
+        total = 0
+        for start in range(0, len(expired), batch_size):
+            result = await session.execute(
+                text("DELETE FROM event_similarities WHERE id IN :ids").bindparams(
+                    bindparam("ids", expanding=True)
+                ),
+                {"ids": expired[start : start + batch_size]},
+            )
+            total += result.rowcount or 0
+        return total

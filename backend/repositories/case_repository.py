@@ -246,6 +246,39 @@ class CaseRepository:
         )
         return result.scalar() or 0
 
+    async def get_bulk_counts(
+        self, session: AsyncSession, case_ids: list[str]
+    ) -> tuple[dict[str, int], dict[str, int]]:
+        """Get alert and comment counts for multiple cases in 2 bulk queries (avoids N+1)."""
+        if not case_ids:
+            return {}, {}
+
+        # 1. Bulk count alerts
+        alert_stmt = (
+            select(
+                CaseAlertAssociation.case_id,
+                func.count(CaseAlertAssociation.alert_id),
+            )
+            .where(CaseAlertAssociation.case_id.in_(case_ids))
+            .group_by(CaseAlertAssociation.case_id)
+        )
+        alert_res = await session.execute(alert_stmt)
+        alert_counts = {row[0]: int(row[1]) for row in alert_res.all()}
+
+        # 2. Bulk count comments
+        comment_stmt = (
+            select(
+                CaseComment.case_id,
+                func.count(CaseComment.id),
+            )
+            .where(CaseComment.case_id.in_(case_ids))
+            .group_by(CaseComment.case_id)
+        )
+        comment_res = await session.execute(comment_stmt)
+        comment_counts = {row[0]: int(row[1]) for row in comment_res.all()}
+
+        return alert_counts, comment_counts
+
     # ── Timeline ───────────────────────────────────────────────────
 
     async def add_timeline_entry(

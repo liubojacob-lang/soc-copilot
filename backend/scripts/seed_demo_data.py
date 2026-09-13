@@ -1539,12 +1539,18 @@ async def seed(session) -> dict:
         ("vuln-citrix-01", "admin", "NetScaler 升级窗口已排期今晚 23:00，升级后强制注销全部会话。"),
     ]
     new_notes = []
+    existing_note_ids = set(
+        (await session.scalars(
+            select(AlertNoteModel.id).where(AlertNoteModel.id.in_([uid("note", k, u) for k, u, _ in notes_spec]))
+        )).all()
+    )
     for key, username, content in notes_spec:
+        note_id = uid("note", key, username)
         alert = alerts_by_key.get(key)
-        if not alert:
+        if not alert or note_id in existing_note_ids:
             continue
         new_notes.append(AlertNoteModel(
-            id=uid("note", key, username), alert_id=alert.id,
+            id=note_id, alert_id=alert.id,
             user_id=ADMIN_ID if username == "admin" else uid("user", username),
             username=username, content=content,
             created_at=ago(hours=10), updated_at=ago(hours=10),

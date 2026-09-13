@@ -131,8 +131,8 @@ class CorrelatedEvent(Base):
         JSON, nullable=True, doc="List of affected user IDs"
     )
 
-    business_impact: Mapped[str] = mapped_column(
-        String(20), nullable=True, doc="high, medium, low, none"
+    business_impact: Mapped[str | None] = mapped_column(
+        Text, nullable=True, doc="Business impact description or high, medium, low"
     )
 
     # Metadata — real timestamps (were String(50) ISO text before v0.9.2)

@@ -23,12 +23,16 @@ REFRESH_TOKEN_COOKIE = "refresh_token"
 CSRF_TOKEN_COOKIE = "csrf_token"
 
 # Cookie settings
-COOKIE_MAX_AGE_ACCESS = 60 * 60  # 1 hour
-COOKIE_MAX_AGE_REFRESH = 60 * 60 * 24 * 7  # 7 days
-COOKIE_MAX_AGE_CSRF = 60 * 60  # 1 hour
+COOKIE_MAX_AGE_ACCESS = getattr(settings, "jwt_expire_minutes", 720) * 60
+COOKIE_MAX_AGE_REFRESH = getattr(settings, "jwt_refresh_expire_minutes", 10080) * 60
+COOKIE_MAX_AGE_CSRF = getattr(settings, "jwt_expire_minutes", 720) * 60
 
 # Security settings
-COOKIE_SECURE = settings.environment == "production"  # Only HTTPS in production
+COOKIE_SECURE = (
+    settings.cookie_secure
+    if getattr(settings, "cookie_secure", None) is not None
+    else (settings.environment == "production")
+)
 COOKIE_HTTPONLY = True
 COOKIE_SAMESITE = "lax"  # Protect against CSRF
 
@@ -121,7 +125,7 @@ def set_auth_cookies(
     # Set CSRF token cookie (NOT HttpOnly - needs JS access for headers)
     response.set_cookie(
         key=CSRF_TOKEN_COOKIE,
-        value=csrf_token,
+        value=hash_csrf_token(csrf_token),
         max_age=COOKIE_MAX_AGE_CSRF,
         domain=domain,
         secure=COOKIE_SECURE,

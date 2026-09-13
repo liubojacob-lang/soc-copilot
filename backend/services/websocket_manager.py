@@ -39,6 +39,9 @@ class WebSocketMessage(BaseModel):
     channel: str | None = None
 
 
+_REDIS_UNSET = object()
+
+
 class ConnectionManager:
     """Manages WebSocket connections and message broadcasting.
 
@@ -217,9 +220,11 @@ class ConnectionManager:
                 pass
             await self.disconnect(websocket, reason="send_error")
 
-    async def start_pubsub(self, redis_client: Any | None = None):
+    async def start_pubsub(self, redis_client: Any = _REDIS_UNSET):
         """Start Redis Pub/Sub listener for multi-instance broadcast bridging."""
-        if redis_client is not None:
+        if redis_client is None:
+            self._redis_client = None
+        elif redis_client is not _REDIS_UNSET:
             self._redis_client = redis_client
         else:
             try:

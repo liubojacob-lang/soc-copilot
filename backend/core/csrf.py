@@ -31,15 +31,21 @@ def hash_csrf_token(token: str) -> str:
 
 def set_csrf_cookie(response: Response, token: str) -> None:
     """Set CSRF cookie (not httpOnly so JavaScript can read it)."""
-    is_production = settings.environment == "production"
+    secure = (
+        settings.cookie_secure
+        if getattr(settings, "cookie_secure", None) is not None
+        else (settings.environment == "production")
+    )
+    expire_minutes = getattr(settings, "jwt_expire_minutes", 720)
+    max_age = int(expire_minutes * 60)
 
     response.set_cookie(
         key=CSRF_COOKIE_NAME,
         value=hash_csrf_token(token),
         httponly=False,  # Must be readable by JavaScript
-        secure=is_production,
-        samesite="strict",
-        max_age=3600,  # 1 hour
+        secure=secure,
+        samesite="lax",
+        max_age=max_age,
         path="/",
     )
 
@@ -58,6 +64,11 @@ async def validate_csrf(request: Request) -> None:
 
     # Skip CSRF for API key authentication (API keys are their own security)
     if "x-api-key" in request.headers:
+        return
+
+    # Skip Bearer token authenticated requests (CSRF is only needed for cookie-based auth)
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
         return
 
     # Get CSRF token from header
@@ -80,9 +91,12 @@ async def validate_csrf(request: Request) -> None:
             detail="CSRF cookie missing. Ensure cookies are enabled.",
         )
 
-    # Validate token matches hash
+    # Validate token matches hash (support both hashed cookie and raw cookie fallback)
     expected_hash = hash_csrf_token(csrf_token)
-    if not secrets.compare_digest(expected_hash, csrf_cookie):
+    if not (
+        secrets.compare_digest(expected_hash, csrf_cookie)
+        or secrets.compare_digest(csrf_token, csrf_cookie)
+    ):
         logger.warning(f"CSRF token mismatch for {request.method} {request.url.path}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -98,8 +112,13 @@ def get_csrf_middleware(exempt_paths: set[str] | None = None):
     """
     exempt_paths = exempt_paths or {
         "/api/auth/login",
+        "/api/v1/auth/login",
+        "/api/auth/login-2fa",
+        "/api/v1/auth/login-2fa",
         "/api/auth/refresh",
+        "/api/v1/auth/refresh",
         "/api/health",
+        "/api/v1/health",
         "/docs",
         "/openapi.json",
     }

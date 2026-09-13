@@ -230,7 +230,7 @@ class DAGExecutionEngine:
         if input_context_json is None:
             input_context_json = {}
 
-        from services.playbook_context_service import context_service
+        from services.playbook.playbook_context_service import context_service
 
         # Initialize run context
         run_context = context_service.initialize_run_context(
@@ -567,7 +567,9 @@ class DAGExecutionEngine:
         state_machine = self._node_states[node_id]
 
         async with self.semaphore:  # Limit concurrency
-            # Update state to running
+            # Update state to running (PENDING must pass through QUEUED first)
+            if state_machine.state == NodeState.PENDING:
+                state_machine.transition_to(NodeState.QUEUED)
             state_machine.transition_to(NodeState.RUNNING)
             await self._update_node_status(run_id, node_id, "running")
 
@@ -580,7 +582,7 @@ class DAGExecutionEngine:
                 step_impl = self.registry.get_step_implementation(node.step_id)
 
                 # v0.7.3: Build enriched input with context system
-                from services.playbook_context_service import context_service
+                from services.playbook.playbook_context_service import context_service
 
                 # Initialize context if not provided
                 if run_context is None:
@@ -731,7 +733,8 @@ class DAGExecutionEngine:
             node_run = PlaybookNodeRunModel(
                 run_id=run_id,
                 node_id=node_id,
-                step_id=node.step_id,
+                node_name=node.name,
+                node_type=node.step_id,
                 status="pending",
                 input_json={},
                 output_json={},
@@ -787,7 +790,7 @@ class DAGExecutionEngine:
                 node_run.output_json = {"result": output}
 
             if error:
-                node_run.error_message = error
+                node_run.last_error = error
 
             await self.session.flush()
 

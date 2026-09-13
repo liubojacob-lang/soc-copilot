@@ -12,11 +12,15 @@ COOKIE_REFRESH_TOKEN_NAME = "refresh_token"
 # Cookie security settings
 def get_cookie_settings() -> dict:
     """Get secure cookie settings based on environment."""
-    is_production = settings.environment == "production"
+    secure = (
+        settings.cookie_secure
+        if getattr(settings, "cookie_secure", None) is not None
+        else (settings.environment == "production")
+    )
 
     return {
         "httponly": True,  # Prevent JavaScript access (XSS protection)
-        "secure": is_production,  # Only send over HTTPS in production
+        "secure": secure,  # Only send over HTTPS in production (or when configured)
         "samesite": "lax",  # CSRF protection (lax allows navigation from external sites)
         "max_age": settings.jwt_expire_minutes * 60,  # Convert to seconds
     }
@@ -44,14 +48,18 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str) 
 
 def clear_auth_cookies(response: Response) -> None:
     """Clear authentication cookies."""
-    is_production = settings.environment == "production"
+    secure = (
+        settings.cookie_secure
+        if getattr(settings, "cookie_secure", None) is not None
+        else (settings.environment == "production")
+    )
 
     # Delete access token cookie
     response.delete_cookie(
         key=COOKIE_ACCESS_TOKEN_NAME,
         path="/",
         httponly=True,
-        secure=is_production,
+        secure=secure,
         samesite="lax",
     )
 
@@ -60,7 +68,7 @@ def clear_auth_cookies(response: Response) -> None:
         key=COOKIE_REFRESH_TOKEN_NAME,
         path="/",
         httponly=True,
-        secure=is_production,
+        secure=secure,
         samesite="lax",
     )
 

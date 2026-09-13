@@ -368,8 +368,13 @@ async def _compute_dashboard_stats(session: AsyncSession) -> DashboardStats:
     ]
 
     # ── IOC Hits Today ─────────────────────────────────────────────
+    ioc_filter_ts = (
+        today_start
+        if getattr(getattr(IOCHitModel.created_at, "type", None), "timezone", False)
+        else today_start.replace(tzinfo=None)
+    )
     ioc_result = await session.execute(
-        select(func.count(IOCHitModel.id)).where(IOCHitModel.created_at >= today_start)
+        select(func.count(IOCHitModel.id)).where(IOCHitModel.created_at >= ioc_filter_ts)
     )
     ioc_hits_today = ioc_result.scalar() or 0
 

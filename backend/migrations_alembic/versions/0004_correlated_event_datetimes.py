@@ -33,18 +33,21 @@ def upgrade() -> None:
             type_=sa.DateTime(timezone=True),
             existing_type=sa.String(50),
             existing_nullable=False,
+            postgresql_using="created_at::timestamp with time zone",
         )
         batch.alter_column(
             "updated_at",
             type_=sa.DateTime(timezone=True),
             existing_type=sa.String(50),
             existing_nullable=False,
+            postgresql_using="updated_at::timestamp with time zone",
         )
         batch.alter_column(
             "resolved_at",
             type_=sa.DateTime(timezone=True),
             existing_type=sa.String(50),
             existing_nullable=True,
+            postgresql_using="resolved_at::timestamp with time zone",
         )
 
 
@@ -55,16 +58,19 @@ def downgrade() -> None:
             type_=sa.String(50),
             existing_type=sa.DateTime(timezone=True),
             existing_nullable=True,
+            postgresql_using="resolved_at::text",
         )
         batch.alter_column(
             "updated_at",
             type_=sa.String(50),
             existing_type=sa.DateTime(timezone=True),
             existing_nullable=False,
+            postgresql_using="updated_at::text",
         )
         batch.alter_column(
             "created_at",
             type_=sa.String(50),
             existing_type=sa.DateTime(timezone=True),
             existing_nullable=False,
+            postgresql_using="created_at::text",
         )
