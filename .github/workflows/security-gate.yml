@@ -1,15 +1,15 @@
 # Security Gate — Required PR Check
 # S0-21: Consolidates pip-audit, npm audit, and bandit as a PR-blocking gate.
-# This workflow runs on every PR targeting main and is configured as a
+# This workflow runs on every PR targeting master and is configured as a
 # required status check in branch protection rules.
 
 name: Security Gate (Required)
 
 on:
   pull_request:
-    branches: [main, "release/*"]
+    branches: [master, "release/*"]
   push:
-    branches: [main]
+    branches: [master]
 
 permissions:
   contents: read
