@@ -53,15 +53,24 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
+      # pre-commit 的 identify 会把 README.png 同时标记为 binary 和 text，
+      # 所以 types: [text] 挡不住它 —— 必须按扩展名显式排除二进制文件，
+      # 否则下面这些"文本修复"钩子会重写 PNG/EXE 内容并损坏它们。
       - id: trailing-whitespace
+        exclude: &binary_files \.(png|jpe?g|gif|webp|ico|bmp|svgz|pdf|zip|gz|tgz|woff2?|ttf|otf|eot|mp[34]|mov|webm|so|dylib|dll|exe|bin|pyc|class|jar|db|sqlite)$
       - id: end-of-file-fixer
+        exclude: *binary_files
+      # k8s/*.yaml 是多文档 YAML，check-yaml 默认只接受单文档，
+      # 会报 "expected a single document in the stream"。
       - id: check-yaml
+        args: [--allow-multiple-documents]
       - id: check-added-large-files
         args: [--maxkb=1000]
       - id: check-json
       - id: check-merge-conflict
       - id: detect-private-key
       - id: mixed-line-ending
+        exclude: *binary_files
 
   # Branch naming validation (FR-001)
   - repo: local
