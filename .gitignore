@@ -80,9 +80,6 @@ out/
 dist/
 build/
 
-# Docker
-.dockerignore
-
 # Misc
 *.pid
 *.seed
