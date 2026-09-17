@@ -157,7 +157,7 @@ export default function TriggersPage() {
       case "cron":
         return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+        return "bg-surface-hover text-text-primary dark:bg-surface-active dark:text-text-muted";
     }
   };
 

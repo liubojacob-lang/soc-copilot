@@ -250,23 +250,23 @@ export default function MarketplacePage() {
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Search & Filter Bar */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6 space-y-3">
+        <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong p-4 mb-6 space-y-3">
           <div className="flex flex-col lg:flex-row gap-3">
             {/* Search Input */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("searchPlaceholder")}
-                className="w-full pl-10 pr-9 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white text-sm"
+                className="w-full pl-10 pr-9 py-2 border border-border-subtle dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-surface-active dark:text-white text-sm"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-full"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-text-secondary dark:hover:text-text-disabled p-0.5 rounded-full"
                   aria-label="Clear search"
                 >
                   <X className="w-4 h-4" />
@@ -279,7 +279,7 @@ export default function MarketplacePage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm font-medium"
+                className="px-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-surface-active dark:text-white text-xs sm:text-sm font-medium"
               >
                 <option value="">{t("allCategories")}</option>
                 {categories.map((cat) => (
@@ -292,7 +292,7 @@ export default function MarketplacePage() {
               <select
                 value={selectedDifficulty}
                 onChange={(e) => setSelectedDifficulty(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm font-medium"
+                className="px-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-surface-active dark:text-white text-xs sm:text-sm font-medium"
               >
                 <option value="all">{t("allDifficulties")}</option>
                 <option value="beginner">{t("difficulty.beginner")}</option>
@@ -303,7 +303,7 @@ export default function MarketplacePage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as "rating" | "downloads" | "newest")}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm font-medium"
+                className="px-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-surface-active dark:text-white text-xs sm:text-sm font-medium"
               >
                 <option value="rating">{t("sortRating")}</option>
                 <option value="downloads">{t("sortDownloads")}</option>
@@ -316,11 +316,11 @@ export default function MarketplacePage() {
                 className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors border ${
                   verifiedOnly
                     ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
-                    : "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-100"
+                    : "bg-surface-card text-text-secondary border-border-subtle dark:bg-surface-active dark:text-text-muted dark:border-gray-600 hover:bg-surface-hover"
                 }`}
               >
                 <CheckCircle
-                  className={`w-3.5 h-3.5 ${verifiedOnly ? "text-emerald-600" : "text-gray-400"}`}
+                  className={`w-3.5 h-3.5 ${verifiedOnly ? "text-emerald-600" : "text-text-muted"}`}
                 />
                 <span>{t("verifiedOnly")}</span>
               </button>
@@ -337,7 +337,7 @@ export default function MarketplacePage() {
               <button
                 type="button"
                 onClick={loadData}
-                className="px-3.5 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-xs sm:text-sm font-medium transition-colors"
+                className="px-3.5 py-2 bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-muted rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-xs sm:text-sm font-medium transition-colors"
               >
                 {t("refresh")}
               </button>
@@ -346,13 +346,13 @@ export default function MarketplacePage() {
 
           {/* Active Search & Filter Feedback Bar */}
           {isFiltered && (
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-700/60 text-xs">
-              <div className="flex items-center gap-2 flex-wrap text-gray-600 dark:text-gray-300">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-border-strong/60 text-xs">
+              <div className="flex items-center gap-2 flex-wrap text-text-secondary dark:text-text-muted">
                 <span className="font-semibold text-amber-600 dark:text-amber-400">
                   {t("searchResultsCount", { count: filteredPlaybooks.length })}
                 </span>
                 {searchQuery && (
-                  <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-mono">
+                  <span className="px-2 py-0.5 rounded bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-muted font-mono">
                     "{searchQuery}"
                   </span>
                 )}
@@ -372,7 +372,7 @@ export default function MarketplacePage() {
                 <button
                   type="button"
                   onClick={() => setShowRecommendations(!showRecommendations)}
-                  className="px-2.5 py-1 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 rounded border border-gray-200 dark:border-gray-700 flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="px-2.5 py-1 text-text-tertiary hover:text-text-primary dark:hover:text-text-disabled rounded border border-border-subtle dark:border-border-strong flex items-center gap-1 hover:bg-surface-card dark:hover:bg-surface-active transition-colors"
                 >
                   {showRecommendations ? (
                     <ChevronUp className="w-3.5 h-3.5" />
@@ -399,16 +399,16 @@ export default function MarketplacePage() {
         {(!isFiltered || showRecommendations) && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Featured */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong">
+              <div className="p-4 border-b border-border-subtle dark:border-border-strong">
+                <h2 className="text-lg font-semibold text-text-primary dark:text-white flex items-center gap-2">
                   <Award className="w-5 h-5 text-amber-500" />
                   {t("featured")}
                 </h2>
               </div>
               <div className="p-4 space-y-3">
                 {featured.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
+                  <p className="text-sm text-text-tertiary dark:text-text-muted py-2">
                     {t("noPlaybooks")}
                   </p>
                 ) : (
@@ -427,11 +427,11 @@ export default function MarketplacePage() {
                             >
                               {meta.standardName}
                             </span>
-                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                            <h3 className="font-semibold text-sm text-text-primary dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                               {pb.name}
                             </h3>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center gap-3 text-xs text-text-tertiary dark:text-text-muted">
                             <span className="truncate">
                               {pb.author_name || pb.author || "Community"}
                             </span>
@@ -439,7 +439,7 @@ export default function MarketplacePage() {
                               <Star className="w-3.5 h-3.5 fill-current" />
                               <span className="font-medium">{pb.rating_average}</span>
                             </div>
-                            <span className="text-gray-400 shrink-0">
+                            <span className="text-text-muted shrink-0">
                               {pb.download_count} {locale.startsWith("zh") ? "次下载" : "dl"}
                             </span>
                           </div>
@@ -452,7 +452,7 @@ export default function MarketplacePage() {
                               e.stopPropagation();
                               setSelectedPlaybookId(pb.id);
                             }}
-                            className="px-2.5 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors"
+                            className="px-2.5 py-1.5 bg-white dark:bg-surface-card text-text-secondary dark:text-text-muted border border-border-subtle dark:border-border-strong rounded-lg text-xs font-medium hover:bg-surface-card dark:hover:bg-surface-active flex items-center gap-1 transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>{t("viewDetails")}</span>
@@ -489,16 +489,16 @@ export default function MarketplacePage() {
             </div>
 
             {/* Trending */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong">
+              <div className="p-4 border-b border-border-subtle dark:border-border-strong">
+                <h2 className="text-lg font-semibold text-text-primary dark:text-white flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-green-500" />
                   {t("trending")}
                 </h2>
               </div>
               <div className="p-4 space-y-3">
                 {trending.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
+                  <p className="text-sm text-text-tertiary dark:text-text-muted py-2">
                     {t("noPlaybooks")}
                   </p>
                 ) : (
@@ -508,7 +508,7 @@ export default function MarketplacePage() {
                       <div
                         key={pb.id}
                         onClick={() => setSelectedPlaybookId(pb.id)}
-                        className="cursor-pointer flex items-center justify-between gap-4 p-3.5 bg-gray-50/80 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100/90 dark:hover:bg-gray-700/60 border border-gray-200/60 dark:border-gray-700/60 transition-all group"
+                        className="cursor-pointer flex items-center justify-between gap-4 p-3.5 bg-surface-card/80 dark:bg-surface-card/50 rounded-xl hover:bg-surface-hover/90 dark:hover:bg-surface-active/60 border border-border-subtle/60 dark:border-border-strong/60 transition-all group"
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -517,11 +517,11 @@ export default function MarketplacePage() {
                             >
                               {meta.standardName}
                             </span>
-                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                            <h3 className="font-semibold text-sm text-text-primary dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                               {pb.name}
                             </h3>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-text-tertiary dark:text-text-muted">
                             {t("downloads", { count: pb.download_count })}
                           </p>
                         </div>
@@ -533,7 +533,7 @@ export default function MarketplacePage() {
                               e.stopPropagation();
                               setSelectedPlaybookId(pb.id);
                             }}
-                            className="px-2.5 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors"
+                            className="px-2.5 py-1.5 bg-white dark:bg-surface-card text-text-secondary dark:text-text-muted border border-border-subtle dark:border-border-strong rounded-lg text-xs font-medium hover:bg-surface-card dark:hover:bg-surface-active flex items-center gap-1 transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>{t("viewDetails")}</span>
@@ -572,9 +572,9 @@ export default function MarketplacePage() {
         )}
 
         {/* All Playbooks Grid */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong">
+          <div className="p-4 border-b border-border-subtle dark:border-border-strong flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-text-primary dark:text-white">
               {isFiltered
                 ? t("searchResultsCount", { count: filteredPlaybooks.length })
                 : t("allPlaybooks", { count: filteredPlaybooks.length })}
@@ -594,7 +594,7 @@ export default function MarketplacePage() {
                     <div
                       key={playbook.id}
                       onClick={() => setSelectedPlaybookId(playbook.id)}
-                      className="cursor-pointer border border-gray-200 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-500/60 rounded-xl p-5 hover:shadow-lg transition-all bg-white dark:bg-gray-800 flex flex-col justify-between group"
+                      className="cursor-pointer border border-border-subtle dark:border-border-strong hover:border-amber-400 dark:hover:border-amber-500/60 rounded-xl p-5 hover:shadow-lg transition-all bg-white dark:bg-surface-card flex flex-col justify-between group"
                     >
                       <div>
                         {/* Top Bar: Standard Badge + Verified */}
@@ -616,12 +616,12 @@ export default function MarketplacePage() {
                         </div>
 
                         {/* Title */}
-                        <h3 className="font-bold text-base text-gray-900 dark:text-white mb-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                        <h3 className="font-bold text-base text-text-primary dark:text-white mb-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                           {playbook.name}
                         </h3>
 
                         {/* Description */}
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-4 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-text-secondary dark:text-text-muted mb-4 line-clamp-2 leading-relaxed">
                           {playbook.description}
                         </p>
 
@@ -643,7 +643,7 @@ export default function MarketplacePage() {
                                 : t("difficulty.advanced")}
                           </span>
 
-                          <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
+                          <span className="px-2 py-0.5 bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-muted rounded text-xs">
                             {playbook.category}
                           </span>
 
@@ -661,10 +661,10 @@ export default function MarketplacePage() {
 
                       <div>
                         {/* Rating & Downloads */}
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4 pt-3 border-t border-gray-100 dark:border-gray-700/60">
+                        <div className="flex items-center justify-between text-xs text-text-tertiary dark:text-text-muted mb-4 pt-3 border-t border-gray-100 dark:border-border-strong/60">
                           <div className="flex items-center gap-1">
                             <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">
+                            <span className="font-semibold text-text-secondary dark:text-text-muted">
                               {playbook.rating_average}
                             </span>
                             <span>({playbook.rating_count})</span>
@@ -685,7 +685,7 @@ export default function MarketplacePage() {
                               e.stopPropagation();
                               setSelectedPlaybookId(playbook.id);
                             }}
-                            className="w-full py-2 bg-gray-100 dark:bg-gray-700/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                            className="w-full py-2 bg-surface-hover dark:bg-surface-active/80 hover:bg-gray-200 dark:hover:bg-surface-active text-text-primary dark:text-text-disabled rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>{t("viewDetails")}</span>

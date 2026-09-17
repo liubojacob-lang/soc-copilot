@@ -83,10 +83,10 @@ function getStatusColor(status: string): string {
     investigating: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
     contained: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
     remediated: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-    closed: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+    closed: "bg-surface-hover text-text-primary dark:bg-surface-card dark:text-text-muted",
     false_positive: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
   };
-  return m[status] || "bg-gray-100 dark:bg-gray-800";
+  return m[status] || "bg-surface-hover dark:bg-surface-card";
 }
 
 function getTimelineIcon(eventType: string) {
@@ -98,9 +98,9 @@ function getTimelineIcon(eventType: string) {
     alert_linked: <LinkIcon className="w-3.5 h-3.5 text-green-500" />,
     alert_unlinked: <Unlink className="w-3.5 h-3.5 text-red-500" />,
     comment_added: <MessageSquare className="w-3.5 h-3.5 text-indigo-500" />,
-    updated: <Clock className="w-3.5 h-3.5 text-gray-500" />,
+    updated: <Clock className="w-3.5 h-3.5 text-text-tertiary" />,
   };
-  return icons[eventType] || <Clock className="w-3.5 h-3.5 text-gray-400" />;
+  return icons[eventType] || <Clock className="w-3.5 h-3.5 text-text-muted" />;
 }
 
 function getSlaInfo(slaDeadline: string | null): {
@@ -185,16 +185,16 @@ function StatusModal({
       }}
     >
       <div
-        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md p-6 animate-fade-in-up"
+        className="relative bg-white dark:bg-surface-card rounded-2xl shadow-xl border border-border-subtle dark:border-border-strong w-full max-w-md p-6 animate-fade-in-up"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-lg font-bold text-text-primary dark:text-white mb-4">
           {t("cases.transitionStatus")}
         </h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-text-secondary dark:text-text-muted mb-2">
               {t("cases.newStatus")}
             </label>
             <div className="flex flex-wrap gap-2">
@@ -206,7 +206,7 @@ function StatusModal({
                     "px-3 py-1.5 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 text-sm font-medium border transition-colors",
                     selectedStatus === status
                       ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
-                      : "border-gray-200 text-gray-600 dark:border-gray-600 dark:text-gray-400 hover:border-gray-300"
+                      : "border-border-subtle text-text-secondary dark:border-gray-600 dark:text-text-muted hover:border-border-subtle"
                   )}
                 >
                   {getStatusLabel(status, t)}
@@ -216,14 +216,14 @@ function StatusModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-text-secondary dark:text-text-muted mb-1">
               {t("cases.reason")}
             </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
+              className="w-full px-3 py-2 rounded-lg border border-border-subtle dark:border-gray-600 bg-white dark:bg-surface-active text-sm"
               placeholder={t("cases.reasonPlaceholder")}
             />
           </div>
@@ -232,7 +232,7 @@ function StatusModal({
         <div className="flex justify-end gap-2 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg"
+            className="px-4 py-2 text-sm text-text-secondary dark:text-text-muted hover:bg-surface-hover active:bg-surface-hover dark:hover:bg-surface-active active:bg-surface-active rounded-lg"
           >
             Cancel
           </button>
@@ -305,22 +305,22 @@ function LinkAlertModal({
       }}
     >
       <div
-        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-sm p-6 animate-fade-in-up"
+        className="relative bg-white dark:bg-surface-card rounded-2xl shadow-xl border border-border-subtle dark:border-border-strong w-full max-w-sm p-6 animate-fade-in-up"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-lg font-bold text-text-primary dark:text-white mb-4">
           {t("cases.linkAlert")}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-text-secondary dark:text-text-muted mb-1">
               {t("cases.alertId")}
             </label>
             <input
               type="number"
               value={alertId}
               onChange={(e) => setAlertId(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
+              className="w-full px-3 py-2 rounded-lg border border-border-subtle dark:border-gray-600 bg-white dark:bg-surface-active text-sm"
               placeholder="e.g. 1234"
               required
             />
@@ -329,7 +329,7 @@ function LinkAlertModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg"
+              className="px-4 py-2 text-sm text-text-secondary dark:text-text-muted hover:bg-surface-hover active:bg-surface-hover dark:hover:bg-surface-active active:bg-surface-active rounded-lg"
             >
               Cancel
             </button>
@@ -539,26 +539,34 @@ export default function CaseDetailPage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">{t("cases.severity")}</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                  <p className="text-xs text-text-tertiary dark:text-text-tertiary">
+                    {t("cases.severity")}
+                  </p>
+                  <p className="text-sm font-medium text-text-primary dark:text-white capitalize">
                     {c.severity}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">{t("cases.status")}</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-xs text-text-tertiary dark:text-text-tertiary">
+                    {t("cases.status")}
+                  </p>
+                  <p className="text-sm font-medium text-text-primary dark:text-white">
                     {getStatusLabel(c.status, t)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">{t("cases.assigned")}</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-gray-400" />
+                  <p className="text-xs text-text-tertiary dark:text-text-tertiary">
+                    {t("cases.assigned")}
+                  </p>
+                  <p className="text-sm font-medium text-text-primary dark:text-white flex items-center gap-1">
+                    <User className="w-3.5 h-3.5 text-text-muted" />
                     {c.assigned_analyst_name || c.assigned_to || "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">{t("cases.sla")}</p>
+                  <p className="text-xs text-text-tertiary dark:text-text-tertiary">
+                    {t("cases.sla")}
+                  </p>
                   <p
                     className={cn(
                       "text-sm font-medium",
@@ -566,33 +574,37 @@ export default function CaseDetailPage() {
                         ? "text-red-600"
                         : sla.urgent
                           ? "text-amber-600"
-                          : "text-gray-900 dark:text-white"
+                          : "text-text-primary dark:text-white"
                     )}
                   >
                     {sla.text}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">{t("cases.created")}</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-xs text-text-tertiary dark:text-text-tertiary">
+                    {t("cases.created")}
+                  </p>
+                  <p className="text-sm font-medium text-text-primary dark:text-white">
                     {formatDate(c.created_at, format)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">{t("cases.updated")}</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-xs text-text-tertiary dark:text-text-tertiary">
+                    {t("cases.updated")}
+                  </p>
+                  <p className="text-sm font-medium text-text-primary dark:text-white">
                     {formatDate(c.updated_at, format)}
                   </p>
                 </div>
               </div>
 
               {c.tags && c.tags.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-border-strong">
                   <div className="flex flex-wrap gap-1.5">
                     {c.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1"
+                        className="px-2 py-0.5 rounded-full bg-surface-hover dark:bg-surface-active text-xs text-text-secondary dark:text-text-muted flex items-center gap-1"
                       >
                         <Tag className="w-3 h-3" />
                         {tag}
@@ -604,8 +616,8 @@ export default function CaseDetailPage() {
             </section>
 
             {/* Status Action Bar */}
-            <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            <section className="bg-white dark:bg-surface-card rounded-xl border border-border-subtle dark:border-border-strong p-5">
+              <h2 className="text-sm font-semibold text-text-secondary dark:text-text-muted mb-3">
                 {t("cases.actions")}
               </h2>
               <div className="flex flex-wrap items-center gap-2">
@@ -633,27 +645,31 @@ export default function CaseDetailPage() {
                 </button>
               </div>
               {c.resolution_note && (
-                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <div className="mt-3 p-3 bg-surface-card dark:bg-surface-active/50 rounded-lg">
+                  <p className="text-xs font-medium text-text-tertiary dark:text-text-muted mb-1">
                     {t("cases.resolutionNote")}
                   </p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{c.resolution_note}</p>
+                  <p className="text-sm text-text-secondary dark:text-text-muted">
+                    {c.resolution_note}
+                  </p>
                 </div>
               )}
             </section>
 
             {/* Linked Alerts */}
-            <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            <section className="bg-white dark:bg-surface-card rounded-xl border border-border-subtle dark:border-border-strong p-5">
+              <h2 className="text-sm font-semibold text-text-secondary dark:text-text-muted mb-3">
                 {t("cases.linkedAlerts")} ({alerts?.length ?? 0})
               </h2>
               {!alerts || alerts.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t("cases.noAlerts")}</p>
+                <p className="text-sm text-text-tertiary dark:text-text-muted">
+                  {t("cases.noAlerts")}
+                </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                      <tr className="text-left text-xs text-text-tertiary dark:text-text-muted border-b border-gray-100 dark:border-border-strong">
                         <th className="pb-2 font-medium">{t("cases.alertId")}</th>
                         <th className="pb-2 font-medium">{t("cases.title")}</th>
                         <th className="pb-2 font-medium">{t("cases.severity")}</th>
@@ -665,10 +681,10 @@ export default function CaseDetailPage() {
                       {alerts.map((alert: CaseAlert) => (
                         <tr
                           key={alert.id}
-                          className="border-b border-gray-50 dark:border-gray-700/50"
+                          className="border-b border-gray-50 dark:border-border-strong/50"
                         >
-                          <td className="py-2.5 text-gray-900 dark:text-white">#{alert.id}</td>
-                          <td className="py-2.5 text-gray-700 dark:text-gray-300 max-w-[200px] truncate">
+                          <td className="py-2.5 text-text-primary dark:text-white">#{alert.id}</td>
+                          <td className="py-2.5 text-text-secondary dark:text-text-muted max-w-[200px] truncate">
                             {alert.title}
                           </td>
                           <td className="py-2.5 capitalize">{alert.severity}</td>
@@ -676,7 +692,7 @@ export default function CaseDetailPage() {
                           <td className="py-2.5 text-right">
                             <button
                               onClick={() => handleUnlinkAlert(alert.id)}
-                              className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 active:bg-red-50 dark:hover:bg-red-900 active:bg-red-900/20"
+                              className="p-1 rounded text-text-muted hover:text-red-500 hover:bg-red-50 active:bg-red-50 dark:hover:bg-red-900 active:bg-red-900/20"
                               title={t("cases.unlink")}
                             >
                               <Unlink className="w-4 h-4" />
@@ -691,8 +707,8 @@ export default function CaseDetailPage() {
             </section>
 
             {/* Comments */}
-            <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+            <section className="bg-white dark:bg-surface-card rounded-xl border border-border-subtle dark:border-border-strong p-5">
+              <h2 className="text-sm font-semibold text-text-secondary dark:text-text-muted mb-4">
                 {t("cases.comments")} ({comments?.length ?? 0})
               </h2>
 
@@ -704,7 +720,7 @@ export default function CaseDetailPage() {
                   onChange={(e) => setNewComment(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
                   placeholder={t("cases.commentPlaceholder")}
-                  className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-2 rounded-lg border border-border-subtle dark:border-gray-600 bg-white dark:bg-surface-active text-sm text-text-primary dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
                 <button
                   onClick={handleAddComment}
@@ -718,21 +734,24 @@ export default function CaseDetailPage() {
               {/* Comments list */}
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {!comments || comments.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-text-tertiary dark:text-text-muted">
                     {t("cases.noComments")}
                   </p>
                 ) : (
                   comments.map((comment: CaseComment) => (
-                    <div key={comment.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div
+                      key={comment.id}
+                      className="p-3 bg-surface-card dark:bg-surface-active/50 rounded-lg"
+                    >
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        <span className="text-xs font-medium text-text-secondary dark:text-text-muted">
                           {comment.username}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-text-muted">
                           {formatDate(comment.created_at, format)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                      <p className="text-sm text-text-secondary dark:text-text-muted whitespace-pre-wrap">
                         {comment.content}
                       </p>
                     </div>
@@ -744,34 +763,36 @@ export default function CaseDetailPage() {
 
           {/* Right column: Timeline / Activity */}
           <div className="space-y-6">
-            <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-                <History className="w-4 h-4 text-gray-400" />
+            <section className="bg-white dark:bg-surface-card rounded-xl border border-border-subtle dark:border-border-strong p-5">
+              <h2 className="text-sm font-semibold text-text-secondary dark:text-text-muted mb-4 flex items-center gap-2">
+                <History className="w-4 h-4 text-text-muted" />
                 {t("cases.timeline")}
               </h2>
 
               {!timeline || timeline.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t("cases.noEvents")}</p>
+                <p className="text-sm text-text-tertiary dark:text-text-muted">
+                  {t("cases.noEvents")}
+                </p>
               ) : (
                 <div className="space-y-0">
                   {timeline.map((event: CaseTimelineEvent) => (
                     <div
                       key={event.id}
-                      className="relative pl-5 pb-4 last:pb-0 border-l border-gray-200 dark:border-gray-700"
+                      className="relative pl-5 pb-4 last:pb-0 border-l border-border-subtle dark:border-border-strong"
                     >
-                      <div className="absolute left-0 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center">
+                      <div className="absolute left-0 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white dark:bg-surface-card border-2 border-border-subtle dark:border-border-strong flex items-center justify-center">
                         {getTimelineIcon(event.event_type)}
                       </div>
                       <div className="ml-1">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                        <p className="text-xs text-text-secondary dark:text-text-muted leading-relaxed">
                           {event.description}
                         </p>
                         {event.user && (
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                          <p className="text-xs text-text-muted dark:text-text-tertiary mt-0.5">
                             by {event.user}
                           </p>
                         )}
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                        <p className="text-[10px] text-text-muted dark:text-text-tertiary mt-0.5">
                           {formatDate(event.timestamp, format)}
                         </p>
                       </div>

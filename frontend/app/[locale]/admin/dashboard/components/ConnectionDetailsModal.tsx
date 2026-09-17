@@ -317,7 +317,7 @@ export function ConnectionDetailsModal({
         key: "cmd",
         header: t("lastCmd"),
         cell: (row) => (
-          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-primary-600 dark:text-primary-400">
+          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-surface-hover dark:bg-surface-card text-primary-600 dark:text-primary-400">
             {row.cmd}
           </span>
         ),
@@ -387,7 +387,7 @@ export function ConnectionDetailsModal({
           <button
             onClick={fetchConnections}
             disabled={loading}
-            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors"
+            className="px-3 py-1.5 bg-surface-hover hover:bg-gray-200 dark:bg-surface-card dark:hover:bg-surface-active text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             <span>{tCommon("refresh")}</span>
@@ -420,19 +420,19 @@ export function ConnectionDetailsModal({
           <div className="space-y-4">
             {/* Database Metric Badges */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default">
                 <Caption color="tertiary">{t("activeConns")}</Caption>
                 <div className="text-lg font-bold text-success-600 dark:text-success-400">
                   {dbSummary?.active || 0}
                 </div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default">
                 <Caption color="tertiary">{t("idleConns")}</Caption>
                 <div className="text-lg font-bold text-text-primary dark:text-white">
                   {dbSummary?.idle || 0}
                 </div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default">
                 <Caption color="tertiary">{t("idleInTx")}</Caption>
                 <div
                   className={`text-lg font-bold ${
@@ -444,13 +444,13 @@ export function ConnectionDetailsModal({
                   {dbSummary?.idle_in_transaction || 0}
                 </div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default">
                 <Caption color="tertiary">{t("poolSize")}</Caption>
                 <div className="text-lg font-bold text-text-primary dark:text-white">
                   {pool?.size || 0}
                 </div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default">
                 <Caption color="tertiary">{t("utilization")}</Caption>
                 <div className="text-lg font-bold text-primary-600 dark:text-primary-400">
                   {data.database.pool_utilization.toFixed(1)}%
@@ -460,7 +460,7 @@ export function ConnectionDetailsModal({
 
             {/* Pool Utilization Bar */}
             {pool && (
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-border-default space-y-2">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/40 rounded-lg border border-border-default space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-text-secondary">{t("poolSize")}</span>
                   <span className="font-mono font-medium">
@@ -468,7 +468,7 @@ export function ConnectionDetailsModal({
                     {data.database.pool_utilization.toFixed(1)}%)
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-surface-active rounded-full h-2">
                   <div
                     className="h-2 rounded-full bg-blue-600 transition-all duration-300"
                     style={{ width: `${Math.min(data.database.pool_utilization, 100)}%` }}
@@ -500,25 +500,25 @@ export function ConnectionDetailsModal({
           <div className="space-y-4">
             {/* Redis Summary Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default">
                 <Caption color="tertiary">{t("clients")}</Caption>
                 <div className="text-lg font-bold text-text-primary dark:text-white">
                   {redisSummary?.connected_clients || 0}
                 </div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default">
                 <Caption color="tertiary">{t("pubsubClients")}</Caption>
                 <div className="text-lg font-bold text-text-primary dark:text-white">
                   {redisSummary?.pubsub_clients || 0}
                 </div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default">
                 <Caption color="tertiary">{t("fragmentation")}</Caption>
                 <div className="text-lg font-bold text-primary-600 dark:text-primary-400">
                   {redisSummary?.fragmentation_ratio?.toFixed(2) || "1.00"}
                 </div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default">
+              <div className="p-3 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default">
                 <Caption color="tertiary">{t("hitRate")}</Caption>
                 <div className="text-lg font-bold text-success-600 dark:text-success-400">
                   {redisSummary?.hit_rate_percent?.toFixed(1) || "100.0"}%
@@ -527,7 +527,7 @@ export function ConnectionDetailsModal({
             </div>
 
             {/* Streams Queue Cards & DLQ */}
-            <div className="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-border-default space-y-3">
+            <div className="p-4 bg-surface-card dark:bg-surface-card/40 rounded-lg border border-border-default space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Layers className="w-4 h-4 text-primary-600" />
@@ -550,7 +550,7 @@ export function ConnectionDetailsModal({
                 {Object.entries(data.redis.queue.queues || {}).map(([key, q]) => (
                   <div
                     key={key}
-                    className="p-2.5 bg-white dark:bg-gray-800 rounded border border-gray-100 dark:border-gray-700/60"
+                    className="p-2.5 bg-white dark:bg-surface-card rounded border border-gray-100 dark:border-border-strong/60"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-mono font-medium text-text-primary dark:text-white capitalize">
@@ -593,7 +593,7 @@ export function ConnectionDetailsModal({
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* WebSocket Sessions */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default space-y-2">
+              <div className="p-4 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default space-y-2">
                 <div className="flex items-center gap-2">
                   <Radio className="w-4 h-4 text-blue-600" />
                   <span className="text-sm font-semibold text-text-primary dark:text-white">
@@ -609,7 +609,7 @@ export function ConnectionDetailsModal({
               </div>
 
               {/* Wazuh SIEM */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default space-y-2">
+              <div className="p-4 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-primary-600" />
@@ -627,7 +627,7 @@ export function ConnectionDetailsModal({
               </div>
 
               {/* Threat Intel Feeds */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-default space-y-3 sm:col-span-2">
+              <div className="p-4 bg-surface-card dark:bg-surface-card/50 rounded-lg border border-border-default space-y-3 sm:col-span-2">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-warning-600" />
                   <span className="text-sm font-semibold text-text-primary dark:text-white">
@@ -638,7 +638,7 @@ export function ConnectionDetailsModal({
                   {Object.entries(data.integrations.threat_intel).map(([feed, active]) => (
                     <div
                       key={feed}
-                      className="flex items-center justify-between p-2.5 bg-white dark:bg-gray-800 rounded border border-border-default"
+                      className="flex items-center justify-between p-2.5 bg-white dark:bg-surface-card rounded border border-border-default"
                     >
                       <span className="text-xs font-mono uppercase text-text-primary dark:text-white">
                         {feed}

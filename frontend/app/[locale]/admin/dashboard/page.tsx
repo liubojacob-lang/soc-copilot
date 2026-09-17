@@ -350,7 +350,7 @@ export default function SystemDashboardPage() {
                 <button
                   onClick={() => handleTestModel(row.id)}
                   disabled={!row.is_active}
-                  className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1 text-text-muted hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   title={t("retest")}
                 >
                   <RefreshCw className="w-3 h-3" />
@@ -362,7 +362,7 @@ export default function SystemDashboardPage() {
             <button
               onClick={() => handleTestModel(row.id)}
               disabled={!row.is_active}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-700 bg-white hover:bg-gray-50 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750 dark:text-gray-200 transition-colors shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-border-subtle dark:border-border-strong bg-white hover:bg-surface-card text-text-secondary dark:bg-surface-card dark:hover:bg-gray-750 dark:text-text-disabled transition-colors shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Zap className="w-3 h-3 text-warning-500 shrink-0" />
               <span>{t("testConnection")}</span>
@@ -423,7 +423,7 @@ export default function SystemDashboardPage() {
     if (!dashboard) return null;
     return (
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-mono">
+        <span className="text-xs px-2.5 py-1 rounded-full bg-surface-hover dark:bg-surface-card text-text-secondary dark:text-text-muted font-mono">
           v{dashboard.version} • {dashboard.environment}
         </span>
         {connSummary !== null && (
@@ -449,20 +449,22 @@ export default function SystemDashboardPage() {
             setConnModalTab("database");
             setConnModalOpen(true);
           }}
-          className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 flex items-center gap-2 text-sm font-medium transition-colors shadow-xs"
+          className="px-3 py-1.5 bg-white dark:bg-surface-card border border-border-subtle dark:border-border-strong text-text-secondary dark:text-text-disabled rounded-lg hover:bg-surface-card dark:hover:bg-gray-750 flex items-center gap-2 text-sm font-medium transition-colors shadow-xs"
         >
           <Database className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
           <span>{t("viewConnections")}</span>
         </button>
         <button
           onClick={() => setDiagModalOpen(true)}
-          className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 flex items-center gap-2 text-sm font-medium transition-colors shadow-xs"
+          className="px-3 py-1.5 bg-white dark:bg-surface-card border border-border-subtle dark:border-border-strong text-text-secondary dark:text-text-disabled rounded-lg hover:bg-surface-card dark:hover:bg-gray-750 flex items-center gap-2 text-sm font-medium transition-colors shadow-xs"
         >
           <Zap className="w-3.5 h-3.5 text-warning-500" />
           <span>{t("runDiagnostics")}</span>
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 dark:text-gray-400">{t("autoRefresh")}</span>
+          <span className="text-xs text-text-tertiary dark:text-text-muted">
+            {t("autoRefresh")}
+          </span>
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
@@ -492,11 +494,11 @@ export default function SystemDashboardPage() {
 
   if (loading && !dashboard) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-surface-card dark:bg-gray-900">
         <PageHeader title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[50vh]">
-            <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
+            <RefreshCw className="w-8 h-8 animate-spin text-text-muted" />
           </div>
         </main>
       </div>
@@ -505,7 +507,7 @@ export default function SystemDashboardPage() {
 
   if (error && !dashboard) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-surface-card dark:bg-gray-900">
         <PageHeader title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <EmptyState
@@ -533,7 +535,7 @@ export default function SystemDashboardPage() {
   const diskTrend = dashboard.system.disk.percent_used > 80 ? "up" : "neutral";
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-card dark:bg-gray-900">
       <PageHeader title={t("title")} subtitle={t("subtitle")} actions={headerActions} />
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -626,7 +628,7 @@ export default function SystemDashboardPage() {
           {/* Service Status ChartCard */}
           <ChartCard title={t("serviceStatus")} subtitle={t("serviceStatusSubtitle")}>
             <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-surface-card dark:bg-surface-active/40 border border-gray-100 dark:border-border-strong/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                     <Database className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -652,7 +654,7 @@ export default function SystemDashboardPage() {
                       setConnModalTab("database");
                       setConnModalOpen(true);
                     }}
-                    className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-700 bg-white hover:bg-gray-50 text-primary-600 dark:bg-gray-800 dark:hover:bg-gray-750 dark:text-primary-400 transition-colors flex items-center gap-1 shadow-xs"
+                    className="px-2.5 py-1 text-xs font-medium rounded-md border border-border-subtle dark:border-border-strong bg-white hover:bg-surface-card text-primary-600 dark:bg-surface-card dark:hover:bg-gray-750 dark:text-primary-400 transition-colors flex items-center gap-1 shadow-xs"
                     title={t("viewConnections")}
                   >
                     <span>{t("viewConnections")}</span>
@@ -661,7 +663,7 @@ export default function SystemDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-surface-card dark:bg-surface-active/40 border border-gray-100 dark:border-border-strong/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                     <Server className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -689,7 +691,7 @@ export default function SystemDashboardPage() {
                       setConnModalTab("redis");
                       setConnModalOpen(true);
                     }}
-                    className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-700 bg-white hover:bg-gray-50 text-primary-600 dark:bg-gray-800 dark:hover:bg-gray-750 dark:text-primary-400 transition-colors flex items-center gap-1 shadow-xs"
+                    className="px-2.5 py-1 text-xs font-medium rounded-md border border-border-subtle dark:border-border-strong bg-white hover:bg-surface-card text-primary-600 dark:bg-surface-card dark:hover:bg-gray-750 dark:text-primary-400 transition-colors flex items-center gap-1 shadow-xs"
                     title={t("viewConnections")}
                   >
                     <span>{t("viewConnections")}</span>
@@ -713,7 +715,7 @@ export default function SystemDashboardPage() {
                   </Text>
                   <Caption color="tertiary">{dashboard.system.cpu_percent.toFixed(1)}%</Caption>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-surface-active rounded-full h-2">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${
                       dashboard.system.cpu_percent > 80
@@ -738,7 +740,7 @@ export default function SystemDashboardPage() {
                     {dashboard.system.memory.total_gb.toFixed(1)} GB
                   </Caption>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-surface-active rounded-full h-2">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${
                       dashboard.system.memory.percent_used > 80
@@ -763,7 +765,7 @@ export default function SystemDashboardPage() {
                     {dashboard.system.disk.total_gb.toFixed(1)} GB
                   </Caption>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-surface-active rounded-full h-2">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${
                       dashboard.system.disk.percent_used > 80
@@ -788,7 +790,7 @@ export default function SystemDashboardPage() {
                       {dashboard.database.pool.checked_out} / {dashboard.database.pool.size} active
                     </Caption>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="w-full bg-gray-200 dark:bg-surface-active rounded-full h-2">
                     <div
                       className="h-2 rounded-full bg-info-500 transition-all duration-500"
                       style={{
@@ -842,7 +844,7 @@ export default function SystemDashboardPage() {
             {Object.entries(dashboard.features).map(([key, value]) => (
               <div
                 key={key}
-                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 rounded-lg"
+                className="flex items-center gap-3 p-3 bg-surface-card dark:bg-surface-active/40 border border-gray-100 dark:border-border-strong/50 rounded-lg"
               >
                 {value ? (
                   <CheckCircle className="w-5 h-5 text-success-500 shrink-0" />

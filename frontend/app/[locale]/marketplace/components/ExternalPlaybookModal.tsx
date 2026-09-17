@@ -234,13 +234,13 @@ export function ExternalPlaybookModal({
                   className="flex gap-2"
                 >
                   <div className="flex-1 relative">
-                    <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={t("searchExternalPlaceholder")}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm"
+                      className="w-full pl-10 pr-4 py-2 border border-border-subtle dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-surface-active dark:text-white text-xs sm:text-sm"
                     />
                   </div>
                   <button
@@ -367,7 +367,7 @@ export function ExternalPlaybookModal({
                 <select
                   value={sourcePlatform}
                   onChange={(e) => setSourcePlatform(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg text-xs dark:bg-surface-active dark:text-white"
                 >
                   <option value="Cortex XSOAR">Cortex XSOAR (YAML)</option>
                   <option value="Splunk SOAR">Splunk SOAR / Phantom (Python/JSON)</option>
@@ -382,13 +382,13 @@ export function ExternalPlaybookModal({
                   {t("inputUrlLabel")}
                 </label>
                 <div className="relative">
-                  <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
                   <input
                     type="url"
                     value={directUrl}
                     onChange={(e) => setDirectUrl(e.target.value)}
                     placeholder="https://raw.githubusercontent.com/demisto/content/.../playbook.yml"
-                    className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs dark:bg-gray-700 dark:text-white"
+                    className="w-full pl-9 pr-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg text-xs dark:bg-surface-active dark:text-white"
                   />
                 </div>
               </div>
@@ -410,7 +410,7 @@ tasks:
     type: virustotal
   - id: block_ip
     type: firewall_acl`}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg font-mono text-xs leading-relaxed dark:bg-gray-700 dark:text-white"
+                  className="w-full p-3 border border-border-subtle dark:border-gray-600 rounded-lg font-mono text-xs leading-relaxed dark:bg-surface-active dark:text-white"
                 />
               </div>
 
@@ -423,7 +423,7 @@ tasks:
                   value={directTitle}
                   onChange={(e) => setDirectTitle(e.target.value)}
                   placeholder="例如：Log4Shell 应急处置自动化响应"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg text-xs dark:bg-surface-active dark:text-white"
                 />
               </div>
 

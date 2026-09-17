@@ -53,7 +53,7 @@ const STATUS_COLORS = {
   open: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   investigating: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
   resolved: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  closed: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400",
+  closed: "bg-surface-hover text-text-secondary dark:bg-surface-active dark:text-text-muted",
 };
 
 export default function CorrelationPage() {
@@ -263,9 +263,9 @@ export default function CorrelationPage() {
         <PageHeader title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse space-y-3">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
-            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-8 bg-gray-200 dark:bg-surface-active rounded w-1/3" />
+            <div className="h-32 bg-gray-200 dark:bg-surface-active rounded" />
+            <div className="h-32 bg-gray-200 dark:bg-surface-active rounded" />
           </div>
         </main>
       </div>

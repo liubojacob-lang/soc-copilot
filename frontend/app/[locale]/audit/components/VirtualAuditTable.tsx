@@ -21,23 +21,23 @@ function AuditLogRow({ log, style }: { log: AuditLog; style: React.CSSProperties
   return (
     <div
       style={style}
-      className="flex items-center border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 w-full overflow-hidden"
+      className="flex items-center border-b border-border-subtle dark:border-border-strong hover:bg-surface-card dark:hover:bg-surface-active w-full overflow-hidden"
     >
       {/* Time */}
-      <div className="w-36 lg:w-40 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+      <div className="w-36 lg:w-40 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-sm text-text-tertiary dark:text-text-muted">
         {format.dateTime(new Date(log.created_at), { dateStyle: "medium", timeStyle: "medium" })}
       </div>
       {/* User */}
-      <div className="hidden sm:block w-24 lg:w-28 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white truncate">
-        {log.username || <span className="text-gray-400 italic">System</span>}
+      <div className="hidden sm:block w-24 lg:w-28 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-sm text-text-primary dark:text-white truncate">
+        {log.username || <span className="text-text-muted italic">System</span>}
       </div>
       {/* Client IP */}
-      <div className="hidden md:block w-28 lg:w-32 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 font-mono truncate">
-        {log.ip_address || <span className="text-gray-400 italic">—</span>}
+      <div className="hidden md:block w-28 lg:w-32 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-text-tertiary dark:text-text-muted font-mono truncate">
+        {log.ip_address || <span className="text-text-muted italic">—</span>}
       </div>
       {/* Action */}
-      <div className="w-40 lg:w-48 shrink-0 px-3 lg:px-4 py-3 text-sm text-gray-900 dark:text-white truncate">
-        <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded font-mono truncate inline-block max-w-full">
+      <div className="w-40 lg:w-48 shrink-0 px-3 lg:px-4 py-3 text-sm text-text-primary dark:text-white truncate">
+        <code className="text-xs bg-surface-hover dark:bg-surface-active px-2 py-0.5 rounded font-mono truncate inline-block max-w-full">
           {log.action}
         </code>
       </div>
@@ -48,7 +48,7 @@ function AuditLogRow({ log, style }: { log: AuditLog; style: React.CSSProperties
         </span>
       </div>
       {/* Path */}
-      <div className="flex-1 min-w-[220px] px-3 lg:px-4 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">
+      <div className="flex-1 min-w-[220px] px-3 lg:px-4 py-3 text-sm text-text-secondary dark:text-text-muted font-mono">
         <div className="truncate" title={log.path}>
           {log.path}
         </div>
@@ -62,24 +62,24 @@ function AuditLogRow({ log, style }: { log: AuditLog; style: React.CSSProperties
         </span>
       </div>
       {/* Duration */}
-      <div className="hidden md:block w-16 lg:w-20 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 text-right font-mono">
+      <div className="hidden md:block w-16 lg:w-20 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-text-tertiary dark:text-text-muted text-right font-mono">
         {log.duration_ms !== null ? (
           `${log.duration_ms}ms`
         ) : (
-          <span className="text-gray-400">—</span>
+          <span className="text-text-muted">—</span>
         )}
       </div>
       {/* Target */}
-      <div className="hidden lg:block w-28 lg:w-36 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400 truncate">
+      <div className="hidden lg:block w-28 lg:w-36 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-text-secondary dark:text-text-muted truncate">
         {log.target_type ? (
           <span
-            className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 font-mono text-[11px]"
+            className="px-1.5 py-0.5 rounded bg-surface-hover dark:bg-surface-active font-mono text-[11px]"
             title={`${log.target_type}:${log.target_id}`}
           >
             {log.target_type}:{log.target_id}
           </span>
         ) : (
-          <span className="text-gray-400 dark:text-gray-500">—</span>
+          <span className="text-text-muted dark:text-text-tertiary">—</span>
         )}
       </div>
     </div>
@@ -99,7 +99,7 @@ export function VirtualAuditTable({
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col relative transition-opacity duration-150 ${
+      className={`bg-white dark:bg-surface-card rounded-lg shadow overflow-hidden flex flex-col relative transition-opacity duration-150 ${
         isFetching ? "opacity-75" : "opacity-100"
       }`}
       style={{ minHeight: height, height }}
@@ -110,34 +110,34 @@ export function VirtualAuditTable({
       <div className="overflow-hidden flex-1 flex flex-col">
         {/* Table Header */}
         <div
-          className="flex items-center bg-gray-50 dark:bg-gray-700 sticky top-0 z-10 shrink-0 border-b border-gray-200 dark:border-gray-600"
+          className="flex items-center bg-surface-card dark:bg-surface-active sticky top-0 z-10 shrink-0 border-b border-border-subtle dark:border-gray-600"
           style={{ height: HEADER_HEIGHT }}
         >
-          <div className="w-36 lg:w-40 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="w-36 lg:w-40 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
             Time
           </div>
-          <div className="hidden sm:block w-24 lg:w-28 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="hidden sm:block w-24 lg:w-28 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
             User
           </div>
-          <div className="hidden md:block w-28 lg:w-32 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="hidden md:block w-28 lg:w-32 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
             IP
           </div>
-          <div className="w-40 lg:w-48 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="w-40 lg:w-48 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
             Action
           </div>
-          <div className="w-16 lg:w-20 shrink-0 px-2 lg:px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="w-16 lg:w-20 shrink-0 px-2 lg:px-3 py-3 text-center text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
             Method
           </div>
-          <div className="flex-1 min-w-[220px] px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="flex-1 min-w-[220px] px-3 lg:px-4 py-3 text-left text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
             Path
           </div>
-          <div className="w-16 lg:w-20 shrink-0 px-2 lg:px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="w-16 lg:w-20 shrink-0 px-2 lg:px-3 py-3 text-center text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
             Status
           </div>
-          <div className="hidden md:block w-16 lg:w-20 shrink-0 px-3 lg:px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="hidden md:block w-16 lg:w-20 shrink-0 px-3 lg:px-4 py-3 text-right text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
             Duration
           </div>
-          <div className="hidden lg:block w-28 lg:w-36 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="hidden lg:block w-28 lg:w-36 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
             Target
           </div>
         </div>
@@ -145,7 +145,7 @@ export function VirtualAuditTable({
         {/* Virtual List or Centered Empty State */}
         {logs.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-8 text-center">
-            <p className="text-gray-500 dark:text-gray-400">No audit logs found.</p>
+            <p className="text-text-tertiary dark:text-text-muted">No audit logs found.</p>
           </div>
         ) : (
           <FixedSizeList

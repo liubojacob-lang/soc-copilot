@@ -1,5 +1,5 @@
 {
-  "hardcodedColorCount": 5942,
-  "updatedAt": "2026-09-11",
+  "hardcodedColorCount": 5016,
+  "updatedAt": "2026-09-17",
   "note": "Ratchet baseline. This number must only decrease. Run with --update only after a deliberate token migration."
 }

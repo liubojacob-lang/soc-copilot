@@ -576,7 +576,7 @@ export default function CloudNativePage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-card dark:bg-gray-900">
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -592,15 +592,15 @@ export default function CloudNativePage() {
             {/* 1. Connected Clusters */}
             <div
               onClick={() => openClusterModal()}
-              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-surface-card rounded-xl p-4 shadow-sm border border-border-subtle dark:border-border-strong hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary dark:text-text-muted">
                   {t("connectedClusters")}
                 </span>
                 <Server className="w-5 h-5 text-blue-500 group-hover:scale-110 transition-transform" />
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-text-primary dark:text-white">
                 {dashboard.overview?.connected_clusters ?? 2}
               </p>
               <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-1 group-hover:underline">
@@ -614,15 +614,15 @@ export default function CloudNativePage() {
                 setActiveTab("containers");
                 loadContainers({ page: 1 });
               }}
-              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-surface-card rounded-xl p-4 shadow-sm border border-border-subtle dark:border-border-strong hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary dark:text-text-muted">
                   {t("totalContainers")}
                 </span>
                 <Container className="w-5 h-5 text-emerald-500 group-hover:scale-110 transition-transform" />
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-text-primary dark:text-white">
                 {dashboard.overview?.total_containers ?? 45}
               </p>
               <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1 group-hover:underline">
@@ -633,10 +633,10 @@ export default function CloudNativePage() {
             {/* 3. Vulnerable Images */}
             <div
               onClick={() => setActiveTab("trivy")}
-              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-surface-card rounded-xl p-4 shadow-sm border border-border-subtle dark:border-border-strong hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary dark:text-text-muted">
                   {t("vulnerableImages")}
                 </span>
                 <AlertTriangle className="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform" />
@@ -652,10 +652,10 @@ export default function CloudNativePage() {
             {/* 4. Cloud Providers */}
             <div
               onClick={() => openCloudModal("aws")}
-              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-sky-500 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-surface-card rounded-xl p-4 shadow-sm border border-border-subtle dark:border-border-strong hover:border-sky-500 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary dark:text-text-muted">
                   {t("cloudProviders")}
                 </span>
                 <Cloud className="w-5 h-5 text-sky-500 group-hover:scale-110 transition-transform" />
@@ -671,15 +671,15 @@ export default function CloudNativePage() {
             {/* 5. Falco Today Stats */}
             <div
               onClick={() => setActiveTab("falco")}
-              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-purple-500 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-surface-card rounded-xl p-4 shadow-sm border border-border-subtle dark:border-border-strong hover:border-purple-500 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary dark:text-text-muted">
                   {t("falcoAlertsToday")}
                 </span>
                 <Activity className="w-5 h-5 text-purple-500 group-hover:scale-110 transition-transform" />
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-text-primary dark:text-white">
                 {falcoStats?.today_total ?? "—"}
               </p>
               <p className="text-xs text-purple-600 dark:text-purple-400 mt-2 flex items-center gap-1 group-hover:underline">
@@ -690,10 +690,10 @@ export default function CloudNativePage() {
             {/* 6. Falco High/Critical */}
             <div
               onClick={() => setActiveTab("falco")}
-              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-red-500 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-surface-card rounded-xl p-4 shadow-sm border border-border-subtle dark:border-border-strong hover:border-red-500 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary dark:text-text-muted">
                   {t("falcoHighCritical")}
                 </span>
                 <AlertTriangle className="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform" />
@@ -709,7 +709,7 @@ export default function CloudNativePage() {
         )}
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+        <div className="flex gap-2 mb-6 border-b border-border-subtle dark:border-border-strong overflow-x-auto">
           {(["overview", "containers", "trivy", "falco"] as const).map((tab) => (
             <button
               key={tab}
@@ -722,7 +722,7 @@ export default function CloudNativePage() {
               className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
                 activeTab === tab
                   ? "border-blue-500 text-blue-600 dark:text-blue-400 font-semibold"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  : "border-transparent text-text-tertiary hover:text-text-secondary dark:text-text-muted dark:hover:text-text-muted"
               }`}
             >
               {tab === "overview" && <Shield className="w-4 h-4" />}
@@ -745,9 +745,9 @@ export default function CloudNativePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               {dashboard && (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong mb-6">
+                  <div className="p-4 border-b border-border-subtle dark:border-border-strong">
+                    <h2 className="text-lg font-semibold text-text-primary dark:text-white flex items-center gap-2">
                       <Shield className="w-5 h-5 text-blue-500" />
                       {t("securityOverview")}
                     </h2>
@@ -800,7 +800,7 @@ export default function CloudNativePage() {
                           >
                             {t(labelKey)}
                           </p>
-                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-[10px] text-text-muted dark:text-text-tertiary mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {t("clickToViewDetails")}
                           </p>
                         </div>
@@ -810,11 +810,11 @@ export default function CloudNativePage() {
                     {/* Clickable CIS Compliance Section */}
                     <div
                       onClick={() => openComplianceModal()}
-                      className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/60 rounded-xl border border-transparent hover:border-green-400/50 cursor-pointer transition-all group"
+                      className="mt-6 p-4 bg-surface-card dark:bg-surface-active/60 rounded-xl border border-transparent hover:border-green-400/50 cursor-pointer transition-all group"
                       title={t("clickToViewReport")}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                        <span className="font-medium text-text-primary dark:text-white flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-500" />
                           {t("cisCompliance")}
                         </span>
@@ -833,7 +833,7 @@ export default function CloudNativePage() {
                           style={{ width: `${dashboard.compliance?.cis_benchmark ?? 0}%` }}
                         ></div>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1.5 flex items-center justify-between">
+                      <p className="text-xs text-text-tertiary mt-1.5 flex items-center justify-between">
                         <span>
                           {t("lastScan")}:{" "}
                           {dashboard.compliance?.last_scan
@@ -843,7 +843,7 @@ export default function CloudNativePage() {
                               })
                             : "-"}
                         </span>
-                        <span className="text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors text-[11px]">
+                        <span className="text-text-muted group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors text-[11px]">
                           100项基准已审计 (85通过 / 10未通过)
                         </span>
                       </p>
@@ -853,23 +853,23 @@ export default function CloudNativePage() {
               )}
 
               {/* Quick Actions */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong">
+                <div className="p-4 border-b border-border-subtle dark:border-border-strong">
+                  <h2 className="text-lg font-semibold text-text-primary dark:text-white">
                     {t("quickActions")}
                   </h2>
                 </div>
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
                     onClick={() => setActiveTab("trivy")}
-                    className="p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-left group"
+                    className="p-4 border-2 border-dashed border-border-subtle dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-left group"
                   >
                     <Scan className="w-8 h-8 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
-                    <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
+                    <h3 className="font-medium text-text-primary dark:text-white flex items-center gap-1">
                       {t("scanImage")}{" "}
                       <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </h3>
-                    <p className="text-sm text-gray-500">{t("detectVulnerabilities")}</p>
+                    <p className="text-sm text-text-tertiary">{t("detectVulnerabilities")}</p>
                   </button>
 
                   <button
@@ -877,11 +877,13 @@ export default function CloudNativePage() {
                     className="p-4 border-2 border-dashed border-border-subtle rounded-xl hover:border-accent-500 hover:bg-accent-500/10 transition-colors text-left group"
                   >
                     <Server className="w-8 h-8 text-green-500 mb-2 group-hover:scale-110 transition-transform" />
-                    <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
+                    <h3 className="font-medium text-text-primary dark:text-white flex items-center gap-1">
                       {t("scanKubernetes")}{" "}
                       <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </h3>
-                    <p className="text-sm text-gray-500">{t("cisBenchmark")} — 点击打开集群审计</p>
+                    <p className="text-sm text-text-tertiary">
+                      {t("cisBenchmark")} — 点击打开集群审计
+                    </p>
                   </button>
                 </div>
               </div>
@@ -889,8 +891,8 @@ export default function CloudNativePage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+              <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong p-4">
+                <h3 className="font-semibold text-text-primary dark:text-white mb-4">
                   {t("cloudConnectionStatus")}
                 </h3>
                 <div className="space-y-2">
@@ -905,10 +907,10 @@ export default function CloudNativePage() {
                       <div
                         key={provider.key}
                         onClick={() => openCloudModal(provider.key)}
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors group"
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-card dark:hover:bg-surface-active/50 cursor-pointer transition-colors group"
                         title={t("clickToViewDetails")}
                       >
-                        <span className="text-gray-700 dark:text-gray-300 font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <span className="text-text-secondary dark:text-text-muted font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {provider.name}
                         </span>
                         {connected ? (
@@ -917,7 +919,7 @@ export default function CloudNativePage() {
                             {t("connected")}
                           </span>
                         ) : (
-                          <span className="text-gray-400 text-xs flex items-center gap-1">
+                          <span className="text-text-muted text-xs flex items-center gap-1">
                             {t("notConfigured")}
                             <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </span>
@@ -929,10 +931,10 @@ export default function CloudNativePage() {
               </div>
 
               {dashboard && dashboard.recent_vulnerabilities.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center justify-between">
+                <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong p-4">
+                  <h3 className="font-semibold text-text-primary dark:text-white mb-4 flex items-center justify-between">
                     <span>{t("recentVulnerabilities")}</span>
-                    <span className="text-xs text-gray-400 font-normal">点击重新扫描</span>
+                    <span className="text-xs text-text-muted font-normal">点击重新扫描</span>
                   </h3>
                   <div className="space-y-3">
                     {dashboard.recent_vulnerabilities.map((vuln, index) => (
@@ -992,19 +994,19 @@ export default function CloudNativePage() {
                 className={`p-3.5 rounded-xl border text-left transition-all ${
                   containerStatusFilter === "all"
                     ? "bg-blue-50/80 border-blue-500 dark:bg-blue-900/30 dark:border-blue-400 ring-2 ring-blue-500/20"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                    : "bg-white dark:bg-surface-card border-border-subtle dark:border-border-strong hover:border-border-subtle"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
                     全部容器资产
                   </span>
                   <Container className="w-4 h-4 text-blue-500" />
                 </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                <p className="text-2xl font-bold text-text-primary dark:text-white mt-1">
                   {containersStats.total}
                 </p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-[11px] text-text-tertiary dark:text-text-muted mt-0.5">
                   跨 2 集群 / 6 命名空间
                 </p>
               </button>
@@ -1018,11 +1020,11 @@ export default function CloudNativePage() {
                 className={`p-3.5 rounded-xl border text-left transition-all ${
                   containerStatusFilter === "running"
                     ? "bg-emerald-50/80 border-emerald-500 dark:bg-emerald-900/30 dark:border-emerald-400 ring-2 ring-emerald-500/20"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                    : "bg-white dark:bg-surface-card border-border-subtle dark:border-border-strong hover:border-border-subtle"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
                     运行正常
                   </span>
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
@@ -1044,11 +1046,11 @@ export default function CloudNativePage() {
                 className={`p-3.5 rounded-xl border text-left transition-all ${
                   containerStatusFilter === "warning"
                     ? "bg-amber-50/80 border-amber-500 dark:bg-amber-900/30 dark:border-amber-400 ring-2 ring-amber-500/20"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                    : "bg-white dark:bg-surface-card border-border-subtle dark:border-border-strong hover:border-border-subtle"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
                     异常 / 警告
                   </span>
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -1069,20 +1071,20 @@ export default function CloudNativePage() {
                 }}
                 className={`p-3.5 rounded-xl border text-left transition-all ${
                   containerStatusFilter === "terminated"
-                    ? "bg-gray-100 border-gray-500 dark:bg-gray-700/50 dark:border-gray-400 ring-2 ring-gray-500/20"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                    ? "bg-surface-hover border-gray-500 dark:bg-surface-active/50 dark:border-gray-400 ring-2 ring-gray-500/20"
+                    : "bg-white dark:bg-surface-card border-border-subtle dark:border-border-strong hover:border-border-subtle"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
                     已结束 / 停止
                   </span>
-                  <XCircle className="w-4 h-4 text-gray-400" />
+                  <XCircle className="w-4 h-4 text-text-muted" />
                 </div>
-                <p className="text-2xl font-bold text-gray-700 dark:text-gray-300 mt-1">
+                <p className="text-2xl font-bold text-text-secondary dark:text-text-muted mt-1">
                   {containersStats.terminated}
                 </p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-[11px] text-text-tertiary dark:text-text-muted mt-0.5">
                   已完成的批处理任务
                 </p>
               </button>
@@ -1093,10 +1095,10 @@ export default function CloudNativePage() {
                   setContainerPage(1);
                   loadContainers({ search: "vuln", page: 1 });
                 }}
-                className="p-3.5 rounded-xl border text-left transition-all bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-red-400 group"
+                className="p-3.5 rounded-xl border text-left transition-all bg-white dark:bg-surface-card border-border-subtle dark:border-border-strong hover:border-red-400 group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
                     含已知漏洞
                   </span>
                   <Shield className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" />
@@ -1111,11 +1113,11 @@ export default function CloudNativePage() {
             </div>
 
             {/* 2. Search & Filters Bar */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong p-4">
               <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
                 {/* Search input */}
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={containerSearch}
@@ -1125,7 +1127,7 @@ export default function CloudNativePage() {
                       loadContainers({ search: e.target.value, page: 1 });
                     }}
                     placeholder={t("searchContainers")}
-                    className="w-full pl-10 pr-9 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full pl-10 pr-9 py-2 bg-surface-card dark:bg-surface-active border border-border-subtle dark:border-gray-600 rounded-lg text-sm text-text-primary dark:text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                   {containerSearch && (
                     <button
@@ -1134,7 +1136,7 @@ export default function CloudNativePage() {
                         setContainerPage(1);
                         loadContainers({ search: "", page: 1 });
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1151,7 +1153,7 @@ export default function CloudNativePage() {
                       setContainerPage(1);
                       loadContainers({ status: e.target.value, page: 1 });
                     }}
-                    className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:border-blue-500"
+                    className="px-3 py-2 bg-surface-card dark:bg-surface-active border border-border-subtle dark:border-gray-600 rounded-lg text-xs text-text-secondary dark:text-text-disabled focus:outline-none focus:border-blue-500"
                   >
                     <option value="all">{t("allStatuses")}</option>
                     <option value="running">{t("running")}</option>
@@ -1167,7 +1169,7 @@ export default function CloudNativePage() {
                       setContainerPage(1);
                       loadContainers({ namespace: e.target.value, page: 1 });
                     }}
-                    className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:border-blue-500"
+                    className="px-3 py-2 bg-surface-card dark:bg-surface-active border border-border-subtle dark:border-gray-600 rounded-lg text-xs text-text-secondary dark:text-text-disabled focus:outline-none focus:border-blue-500"
                   >
                     <option value="">{t("allNamespaces")}</option>
                     <option value="production">production</option>
@@ -1186,7 +1188,7 @@ export default function CloudNativePage() {
                       setContainerPage(1);
                       loadContainers({ cluster: e.target.value, page: 1 });
                     }}
-                    className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:border-blue-500"
+                    className="px-3 py-2 bg-surface-card dark:bg-surface-active border border-border-subtle dark:border-gray-600 rounded-lg text-xs text-text-secondary dark:text-text-disabled focus:outline-none focus:border-blue-500"
                   >
                     <option value="">全部集群</option>
                     <option value="k8s-prod-cluster">k8s-prod-cluster (36)</option>
@@ -1197,7 +1199,7 @@ export default function CloudNativePage() {
                   <button
                     onClick={() => loadContainers({ page: containerPage })}
                     disabled={loadingContainers}
-                    className="p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
+                    className="p-2 border border-border-subtle dark:border-gray-600 rounded-lg hover:bg-surface-card dark:hover:bg-surface-active text-text-secondary dark:text-text-muted transition-colors"
                     title="刷新列表"
                   >
                     <RefreshCw
@@ -1209,18 +1211,18 @@ export default function CloudNativePage() {
             </div>
 
             {/* 3. Containers Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong overflow-hidden">
+              <div className="px-6 py-4 border-b border-border-subtle dark:border-border-strong flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Container className="w-5 h-5 text-emerald-500" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                  <h3 className="font-semibold text-text-primary dark:text-white">
                     {t("containersList")}
                   </h3>
                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-full text-xs font-semibold">
                     {containers.length} 个实例
                   </span>
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-text-muted">
                   点击任意容器行查看端口映射、挂载卷、环境与安全上下文
                 </span>
               </div>
@@ -1229,8 +1231,8 @@ export default function CloudNativePage() {
               <div className="relative min-h-[420px]">
                 {/* Overlay loading indicator during pagination or filter refresh */}
                 {loadingContainers && containers.length > 0 && (
-                  <div className="absolute inset-0 bg-white/60 dark:bg-gray-800/60 z-10 flex items-center justify-center backdrop-blur-[1px] transition-all">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md rounded-lg text-xs font-medium text-gray-700 dark:text-gray-200">
+                  <div className="absolute inset-0 bg-white/60 dark:bg-surface-card/60 z-10 flex items-center justify-center backdrop-blur-[1px] transition-all">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-card border border-border-subtle dark:border-border-strong shadow-md rounded-lg text-xs font-medium text-text-secondary dark:text-text-disabled">
                       <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                       <span>正在加载第 {containerPage} 页数据...</span>
                     </div>
@@ -1238,20 +1240,20 @@ export default function CloudNativePage() {
                 )}
 
                 {loadingContainers && containers.length === 0 ? (
-                  <div className="py-24 text-center text-sm text-gray-400 flex items-center justify-center gap-2">
+                  <div className="py-24 text-center text-sm text-text-muted flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                     正在加载容器资产列表...
                   </div>
                 ) : containers.length === 0 ? (
-                  <div className="py-20 text-center text-sm text-gray-400 space-y-2">
-                    <Container className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto" />
+                  <div className="py-20 text-center text-sm text-text-muted space-y-2">
+                    <Container className="w-8 h-8 text-text-muted dark:text-text-secondary mx-auto" />
                     <p>{t("noContainersFound")}</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-gray-50/80 dark:bg-gray-750/80 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                        <tr className="bg-surface-card/80 dark:bg-gray-750/80 text-text-tertiary dark:text-text-muted border-b border-border-subtle dark:border-border-strong">
                           <th className="py-3 px-4 font-semibold">{t("containerName")}</th>
                           <th className="py-3 px-3 font-semibold">{t("status")}</th>
                           <th className="py-3 px-3 font-semibold">集群 / 命名空间</th>
@@ -1272,11 +1274,11 @@ export default function CloudNativePage() {
                             {/* Container Name & ID */}
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                <span className="font-semibold text-text-primary dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                   {cnt.name}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1.5 mt-0.5 text-gray-400 font-mono text-[11px]">
+                              <div className="flex items-center gap-1.5 mt-0.5 text-text-muted font-mono text-[11px]">
                                 <span>ID: {cnt.id}</span>
                                 <span>·</span>
                                 <span>Pod: {cnt.pod_name}</span>
@@ -1296,7 +1298,7 @@ export default function CloudNativePage() {
                                   {cnt.state_reason || t("warning")}
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface-hover text-text-secondary dark:bg-surface-active dark:text-text-muted">
                                   <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
                                   {cnt.state_reason || t("terminated")}
                                 </span>
@@ -1305,7 +1307,7 @@ export default function CloudNativePage() {
 
                             {/* Cluster & Namespace */}
                             <td className="py-3 px-3 whitespace-nowrap">
-                              <div className="text-gray-900 dark:text-gray-200 font-medium text-[11px]">
+                              <div className="text-text-primary dark:text-text-disabled font-medium text-[11px]">
                                 {cnt.cluster_name}
                               </div>
                               <span className="inline-block mt-0.5 px-2 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-mono">
@@ -1316,17 +1318,17 @@ export default function CloudNativePage() {
                             {/* Image */}
                             <td className="py-3 px-4">
                               <div
-                                className="font-mono text-gray-800 dark:text-gray-200 text-[11px] max-w-[220px] truncate"
+                                className="font-mono text-text-primary dark:text-text-disabled text-[11px] max-w-[220px] truncate"
                                 title={cnt.image}
                               >
                                 {cnt.image}
                               </div>
                               {cnt.ports && cnt.ports.length > 0 ? (
-                                <div className="text-gray-400 text-[10px] font-mono mt-0.5">
+                                <div className="text-text-muted text-[10px] font-mono mt-0.5">
                                   Ports: {cnt.ports.join(", ")}
                                 </div>
                               ) : (
-                                <div className="text-gray-400 text-[10px] mt-0.5">无暴露端口</div>
+                                <div className="text-text-muted text-[10px] mt-0.5">无暴露端口</div>
                               )}
                             </td>
 
@@ -1338,7 +1340,7 @@ export default function CloudNativePage() {
                                     <AlertTriangle className="w-2.5 h-2.5" /> 特权容器
                                   </span>
                                 ) : (
-                                  <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-[10px]">
+                                  <span className="px-1.5 py-0.5 rounded bg-surface-hover text-text-secondary dark:bg-surface-active dark:text-text-muted text-[10px]">
                                     非特权
                                   </span>
                                 )}
@@ -1384,7 +1386,7 @@ export default function CloudNativePage() {
                             </td>
 
                             {/* Resources */}
-                            <td className="py-3 px-3 whitespace-nowrap font-mono text-gray-600 dark:text-gray-400 text-[11px]">
+                            <td className="py-3 px-3 whitespace-nowrap font-mono text-text-secondary dark:text-text-muted text-[11px]">
                               <div>CPU: {cnt.cpu_usage}</div>
                               <div>MEM: {cnt.memory_usage}</div>
                             </td>
@@ -1397,7 +1399,7 @@ export default function CloudNativePage() {
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => openContainerInspector(cnt.id)}
-                                  className="px-2.5 py-1 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                                  className="px-2.5 py-1 bg-surface-hover hover:bg-blue-50 text-text-secondary hover:text-blue-600 dark:bg-surface-active dark:hover:bg-gray-600 dark:text-text-disabled rounded text-xs font-medium transition-colors flex items-center gap-1"
                                 >
                                   <Info className="w-3 h-3" />
                                   {t("viewDetails")}
@@ -1421,7 +1423,7 @@ export default function CloudNativePage() {
               </div>
 
               {/* Pagination Controls */}
-              <div className="px-6 py-3.5 border-t border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+              <div className="px-6 py-3.5 border-t border-border-subtle dark:border-border-strong bg-surface-card/70 dark:bg-surface-card/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-secondary dark:text-text-muted">
                 <div className="flex items-center gap-3">
                   <span>
                     {t("showingPagination", {
@@ -1433,14 +1435,14 @@ export default function CloudNativePage() {
                       total: containerFilteredTotal,
                     })}
                     {containerFilteredTotal !== containersStats.total && (
-                      <span className="text-gray-400 ml-1">
+                      <span className="text-text-muted ml-1">
                         {t("filteredFromTotal", { total: containersStats.total })}
                       </span>
                     )}
                   </span>
 
-                  <div className="flex items-center gap-1.5 border-l border-gray-200 dark:border-gray-700 pl-3">
-                    <span className="text-gray-500">{t("perPage")}:</span>
+                  <div className="flex items-center gap-1.5 border-l border-border-subtle dark:border-border-strong pl-3">
+                    <span className="text-text-tertiary">{t("perPage")}:</span>
                     <select
                       value={containerPageSize}
                       onChange={(e) => {
@@ -1449,7 +1451,7 @@ export default function CloudNativePage() {
                         setContainerPage(1);
                         loadContainers({ page: 1, pageSize: newSize });
                       }}
-                      className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                      className="px-2 py-1 bg-white dark:bg-surface-active border border-border-subtle dark:border-gray-600 rounded text-xs text-text-secondary dark:text-text-disabled focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
                       <option value={10}>10 条/页</option>
                       <option value={20}>20 条/页</option>
@@ -1470,7 +1472,7 @@ export default function CloudNativePage() {
                       }
                     }}
                     disabled={containerPage <= 1 || loadingContainers}
-                    className="px-2.5 py-1.5 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                    className="px-2.5 py-1.5 rounded border border-border-subtle dark:border-gray-600 bg-white dark:bg-surface-active text-text-secondary dark:text-text-disabled hover:bg-surface-card dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
                     title={t("prevPage")}
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
@@ -1487,7 +1489,7 @@ export default function CloudNativePage() {
                       ) {
                         if (p === 2 || p === containerTotalPages - 1) {
                           return (
-                            <span key={p} className="px-1 text-gray-400">
+                            <span key={p} className="px-1 text-text-muted">
                               ...
                             </span>
                           );
@@ -1510,7 +1512,7 @@ export default function CloudNativePage() {
                           className={`min-w-[28px] h-7 px-2 rounded text-xs font-medium transition-colors ${
                             containerPage === p
                               ? "bg-blue-600 text-white font-semibold shadow-sm"
-                              : "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+                              : "bg-white dark:bg-surface-active border border-border-subtle dark:border-gray-600 text-text-secondary dark:text-text-disabled hover:bg-surface-card dark:hover:bg-gray-600"
                           }`}
                         >
                           {p}
@@ -1530,7 +1532,7 @@ export default function CloudNativePage() {
                       }
                     }}
                     disabled={containerPage >= containerTotalPages || loadingContainers}
-                    className="px-2.5 py-1.5 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                    className="px-2.5 py-1.5 rounded border border-border-subtle dark:border-gray-600 bg-white dark:bg-surface-active text-text-secondary dark:text-text-disabled hover:bg-surface-card dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
                     title={t("nextPage")}
                   >
                     <span>{t("nextPage")}</span>
@@ -1546,8 +1548,8 @@ export default function CloudNativePage() {
         {activeTab === "trivy" && (
           <div className="space-y-6">
             {/* Scan Input */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong p-6">
+              <h2 className="text-lg font-semibold text-text-primary dark:text-white mb-4 flex items-center gap-2">
                 <Scan className="w-5 h-5 text-blue-500" />
                 {t("imageScanning")} — Trivy
               </h2>
@@ -1558,7 +1560,7 @@ export default function CloudNativePage() {
                     value={imageInput}
                     onChange={(e) => setImageInput(e.target.value)}
                     placeholder="nginx:1.21, alpine:latest, python:3.11-slim..."
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2.5 border border-border-subtle dark:border-gray-600 rounded-lg bg-white dark:bg-surface-active text-text-primary dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     onKeyDown={(e) => e.key === "Enter" && scanContainer()}
                   />
                 </div>
@@ -1614,23 +1616,25 @@ export default function CloudNativePage() {
                   ].map(({ label, count, color }) => (
                     <div
                       key={label}
-                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-${color}-200 dark:border-${color}-800 text-center`}
+                      className={`bg-white dark:bg-surface-card rounded-lg p-4 shadow-sm border border-${color}-200 dark:border-${color}-800 text-center`}
                     >
                       <p className={`text-2xl font-bold text-${color}-600 dark:text-${color}-400`}>
                         {count}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{label}</p>
+                      <p className="text-xs text-text-tertiary dark:text-text-muted mt-1">
+                        {label}
+                      </p>
                     </div>
                   ))}
                 </div>
 
                 {/* CVE Table */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong overflow-hidden">
+                  <div className="p-4 border-b border-border-subtle dark:border-border-strong">
+                    <h3 className="font-semibold text-text-primary dark:text-white">
                       {t("vulnerabilityDetails")} — {scanResult.image}
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-text-tertiary mt-1">
                       {t("scannedAt")}:{" "}
                       {format.dateTime(new Date(scanResult.scan_time), {
                         dateStyle: "medium",
@@ -1641,30 +1645,30 @@ export default function CloudNativePage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-gray-50 dark:bg-gray-700 text-left">
-                          <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+                        <tr className="bg-surface-card dark:bg-surface-active text-left">
+                          <th className="px-4 py-3 font-medium text-text-secondary dark:text-text-muted">
                             CVE ID
                           </th>
-                          <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+                          <th className="px-4 py-3 font-medium text-text-secondary dark:text-text-muted">
                             {t("severity")}
                           </th>
-                          <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+                          <th className="px-4 py-3 font-medium text-text-secondary dark:text-text-muted">
                             {t("packageName")}
                           </th>
-                          <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+                          <th className="px-4 py-3 font-medium text-text-secondary dark:text-text-muted">
                             {t("installedVersion")}
                           </th>
-                          <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+                          <th className="px-4 py-3 font-medium text-text-secondary dark:text-text-muted">
                             {t("fixedVersion")}
                           </th>
-                          <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+                          <th className="px-4 py-3 font-medium text-text-secondary dark:text-text-muted">
                             {t("description")}
                           </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                         {scanResult.vulnerabilities.map((vuln, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                          <tr key={idx} className="hover:bg-surface-card dark:hover:bg-gray-750">
                             <td className="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
                               <a
                                 href={vuln.url || `https://nvd.nist.gov/vuln/detail/${vuln.cve_id}`}
@@ -1680,10 +1684,10 @@ export default function CloudNativePage() {
                                 {vuln.severity}
                               </span>
                             </td>
-                            <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">
+                            <td className="px-4 py-3 font-mono text-xs text-text-secondary dark:text-text-muted">
                               {vuln.package_name}
                             </td>
-                            <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">
+                            <td className="px-4 py-3 font-mono text-xs text-text-tertiary dark:text-text-muted">
                               {vuln.installed_version}
                             </td>
                             <td className="px-4 py-3 font-mono text-xs">
@@ -1692,10 +1696,10 @@ export default function CloudNativePage() {
                                   {vuln.fixed_version}
                                 </span>
                               ) : (
-                                <span className="text-gray-400">—</span>
+                                <span className="text-text-muted">—</span>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400 max-w-xs truncate">
+                            <td className="px-4 py-3 text-xs text-text-secondary dark:text-text-muted max-w-xs truncate">
                               {vuln.description || vuln.title}
                             </td>
                           </tr>
@@ -1708,10 +1712,10 @@ export default function CloudNativePage() {
             )}
 
             {!scanResult && !scanError && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-                <Search className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">{t("enterImageToScan")}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong p-12 text-center">
+                <Search className="w-12 h-12 text-text-muted dark:text-text-secondary mx-auto mb-4" />
+                <p className="text-text-tertiary dark:text-text-muted">{t("enterImageToScan")}</p>
+                <p className="text-xs text-text-muted dark:text-text-tertiary mt-1">
                   {t("scanExamples")}: nginx:1.21, alpine:3.18, python:3.11-slim
                 </p>
               </div>
@@ -1725,29 +1729,29 @@ export default function CloudNativePage() {
             {/* Falco Stats Cards */}
             {falcoStats && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 text-center">
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                <div className="bg-white dark:bg-surface-card rounded-xl p-6 shadow-sm border border-border-subtle dark:border-border-strong text-center">
+                  <p className="text-3xl font-bold text-text-primary dark:text-white">
                     {falcoStats.total_alerts}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">{t("totalAlerts24h")}</p>
+                  <p className="text-sm text-text-tertiary mt-1">{t("totalAlerts24h")}</p>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-red-200 dark:border-red-800 text-center">
+                <div className="bg-white dark:bg-surface-card rounded-xl p-6 shadow-sm border border-red-200 dark:border-red-800 text-center">
                   <p className="text-3xl font-bold text-red-600">
                     {falcoStats.severity_breakdown?.critical ?? 0}
                   </p>
                   <p className="text-sm text-red-500 mt-1">{t("critical")}</p>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-orange-200 dark:border-orange-800 text-center">
+                <div className="bg-white dark:bg-surface-card rounded-xl p-6 shadow-sm border border-orange-200 dark:border-orange-800 text-center">
                   <p className="text-3xl font-bold text-orange-600">
                     {falcoStats.severity_breakdown?.high ?? 0}
                   </p>
                   <p className="text-sm text-orange-500 mt-1">{t("high")}</p>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 text-center">
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                <div className="bg-white dark:bg-surface-card rounded-xl p-6 shadow-sm border border-border-subtle dark:border-border-strong text-center">
+                  <p className="text-3xl font-bold text-text-primary dark:text-white">
                     {falcoStats.today_total}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">{t("today")}</p>
+                  <p className="text-sm text-text-tertiary mt-1">{t("today")}</p>
                 </div>
               </div>
             )}
@@ -1755,9 +1759,9 @@ export default function CloudNativePage() {
             {/* Top Falco Rules */}
             {falcoStats && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong">
+                  <div className="p-4 border-b border-border-subtle dark:border-border-strong">
+                    <h3 className="font-semibold text-text-primary dark:text-white flex items-center gap-2">
                       <Activity className="w-5 h-5 text-purple-500" />
                       {t("topFalcoRules")}
                     </h3>
@@ -1767,15 +1771,17 @@ export default function CloudNativePage() {
                       {falcoStats.top_rules?.map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700 last:border-0"
+                          className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-border-strong last:border-0"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <span className="text-xs font-mono text-gray-400 w-5">#{idx + 1}</span>
-                            <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                            <span className="text-xs font-mono text-text-muted w-5">
+                              #{idx + 1}
+                            </span>
+                            <span className="text-sm text-text-secondary dark:text-text-muted truncate">
                               {item.rule}
                             </span>
                           </div>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white ml-4">
+                          <span className="text-sm font-semibold text-text-primary dark:text-white ml-4">
                             {item.count}
                           </span>
                         </div>
@@ -1784,9 +1790,9 @@ export default function CloudNativePage() {
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong">
+                  <div className="p-4 border-b border-border-subtle dark:border-border-strong">
+                    <h3 className="font-semibold text-text-primary dark:text-white flex items-center gap-2">
                       <Server className="w-5 h-5 text-green-500" />
                       {t("topFalcoHosts")}
                     </h3>
@@ -1796,15 +1802,17 @@ export default function CloudNativePage() {
                       {falcoStats.top_hosts?.map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700 last:border-0"
+                          className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-border-strong last:border-0"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <span className="text-xs font-mono text-gray-400 w-5">#{idx + 1}</span>
-                            <span className="text-sm text-gray-700 dark:text-gray-300 font-mono truncate">
+                            <span className="text-xs font-mono text-text-muted w-5">
+                              #{idx + 1}
+                            </span>
+                            <span className="text-sm text-text-secondary dark:text-text-muted font-mono truncate">
                               {item.hostname}
                             </span>
                           </div>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white ml-4">
+                          <span className="text-sm font-semibold text-text-primary dark:text-white ml-4">
                             {item.count}
                           </span>
                         </div>
@@ -1817,10 +1825,10 @@ export default function CloudNativePage() {
 
             {/* Falco Config Info */}
             {!falcoStats && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-                <Activity className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">{t("falcoNotConfigured")}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-md mx-auto">
+              <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong p-12 text-center">
+                <Activity className="w-12 h-12 text-text-muted dark:text-text-secondary mx-auto mb-4" />
+                <p className="text-text-tertiary dark:text-text-muted">{t("falcoNotConfigured")}</p>
+                <p className="text-xs text-text-muted dark:text-text-tertiary mt-1 max-w-md mx-auto">
                   {t("falcoSetupHint")}
                 </p>
               </div>
@@ -1847,25 +1855,25 @@ export default function CloudNativePage() {
         {/* ══════════════════════════════════════════════════════════════ */}
         {clusterModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white dark:bg-surface-card rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-border-subtle dark:border-border-strong overflow-hidden">
               {/* Modal Header */}
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-750">
+              <div className="p-6 border-b border-border-subtle dark:border-border-strong flex items-center justify-between bg-surface-card/50 dark:bg-gray-750">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-blue-100 dark:bg-blue-900/40 rounded-xl text-blue-600 dark:text-blue-400">
                     <Server className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    <h2 className="text-xl font-bold text-text-primary dark:text-white">
                       {t("clusterDetails")}
                     </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-text-tertiary mt-0.5">
                       查看集群拓扑、资源详情及执行 CIS 基准安全扫描
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setClusterModalOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-2 text-text-muted hover:text-text-secondary dark:hover:text-text-disabled rounded-lg hover:bg-surface-hover dark:hover:bg-surface-active transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1875,7 +1883,7 @@ export default function CloudNativePage() {
               <div className="p-6 overflow-y-auto space-y-6 flex-1">
                 {/* Cluster Selectors */}
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-text-tertiary dark:text-text-muted block mb-2">
                     {t("clusterList")} ({clusters.length})
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1892,12 +1900,12 @@ export default function CloudNativePage() {
                             "p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between",
                             isSelected
                               ? "border-blue-500 bg-blue-50/40 dark:bg-blue-900/20 shadow-sm"
-                              : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                              : "border-border-subtle dark:border-border-strong hover:border-border-subtle dark:hover:border-gray-600"
                           )}
                         >
                           <div className="space-y-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-900 dark:text-white truncate">
+                              <span className="font-semibold text-text-primary dark:text-white truncate">
                                 {cluster.name}
                               </span>
                               <span
@@ -1911,12 +1919,12 @@ export default function CloudNativePage() {
                                 {cluster.status === "healthy" ? t("healthy") : t("warning")}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                            <p className="text-xs text-text-tertiary dark:text-text-muted">
                               {cluster.provider} • {cluster.region} • {cluster.version}
                             </p>
                           </div>
                           <div className="text-right flex-shrink-0 pl-3">
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">
+                            <p className="text-sm font-bold text-text-primary dark:text-white">
                               {cluster.nodes_count} {t("nodes")} / {cluster.pods_count} Pods
                             </p>
                           </div>
@@ -1928,9 +1936,9 @@ export default function CloudNativePage() {
 
                 {/* Selected Cluster Toolbar & Actions */}
                 {selectedCluster && (
-                  <div className="bg-gray-50 dark:bg-gray-750 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
+                  <div className="bg-surface-card dark:bg-gray-750 p-4 rounded-xl border border-border-subtle dark:border-border-strong flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">
                         {t("namespace")}:
                       </span>
                       <select
@@ -1939,7 +1947,7 @@ export default function CloudNativePage() {
                           setSelectedNamespace(e.target.value);
                           loadResources(selectedCluster.name, activeResourceType, e.target.value);
                         }}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        className="text-xs px-3 py-1.5 rounded-lg border border-border-subtle dark:border-gray-600 bg-white dark:bg-surface-card text-text-primary dark:text-white"
                       >
                         <option value="">{t("allNamespaces")}</option>
                         {selectedCluster.namespaces.map((ns) => (
@@ -1978,21 +1986,21 @@ export default function CloudNativePage() {
                         <AlertTriangle className="w-4 h-4 text-amber-600" />
                         安全扫描发现 ({k8sScanFindings.length} 项隐患)
                       </h3>
-                      <span className="text-xs text-gray-500">已完成 CIS 基准比对</span>
+                      <span className="text-xs text-text-tertiary">已完成 CIS 基准比对</span>
                     </div>
                     <div className="space-y-2">
                       {k8sScanFindings.map((f, idx) => (
                         <div
                           key={idx}
-                          className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-xs space-y-1.5"
+                          className="p-3 bg-white dark:bg-surface-card rounded-lg border border-border-subtle dark:border-border-strong text-xs space-y-1.5"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-gray-900 dark:text-white">
+                            <span className="font-semibold text-text-primary dark:text-white">
                               [{f.category}] {f.title}
                             </span>
                             <span className={getSeverityBadge(f.severity)}>{f.severity}</span>
                           </div>
-                          <p className="text-gray-600 dark:text-gray-400">
+                          <p className="text-text-secondary dark:text-text-muted">
                             资源:{" "}
                             <code className="font-mono text-blue-600 dark:text-blue-400">
                               {f.kind}/{f.resource_name}
@@ -2011,11 +2019,11 @@ export default function CloudNativePage() {
                 {/* K8s Resource Explorer Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-text-primary dark:text-white flex items-center gap-2">
                       <Layers className="w-4 h-4 text-blue-500" />
                       {t("resourceViewer")}
                     </h3>
-                    <div className="flex gap-1 bg-gray-100 dark:bg-gray-700/60 p-1 rounded-lg">
+                    <div className="flex gap-1 bg-surface-hover dark:bg-surface-active/60 p-1 rounded-lg">
                       {(["pods", "deployments", "services", "secrets", "configmaps"] as const).map(
                         (rtype) => (
                           <button
@@ -2029,8 +2037,8 @@ export default function CloudNativePage() {
                             className={cn(
                               "px-2.5 py-1 text-xs font-medium rounded-md transition-all capitalize",
                               activeResourceType === rtype
-                                ? "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm"
-                                : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                                ? "bg-white dark:bg-surface-card text-blue-600 dark:text-blue-400 shadow-sm"
+                                : "text-text-secondary dark:text-text-muted hover:text-text-primary"
                             )}
                           >
                             {rtype}
@@ -2041,19 +2049,19 @@ export default function CloudNativePage() {
                   </div>
 
                   {/* Resources Table */}
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                  <div className="border border-border-subtle dark:border-border-strong rounded-xl overflow-hidden">
                     {loadingResources ? (
-                      <div className="p-8 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
+                      <div className="p-8 text-center text-xs text-text-muted flex items-center justify-center gap-2">
                         <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                         正在加载集群资源...
                       </div>
                     ) : clusterResources.length === 0 ? (
-                      <div className="p-8 text-center text-xs text-gray-400">
+                      <div className="p-8 text-center text-xs text-text-muted">
                         当前命名空间下未找到 {activeResourceType} 资源
                       </div>
                     ) : (
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-gray-50 dark:bg-gray-750 text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                        <thead className="bg-surface-card dark:bg-gray-750 text-text-secondary dark:text-text-muted border-b border-border-subtle dark:border-border-strong">
                           <tr>
                             <th className="px-4 py-2.5 font-medium">{t("resourceName")}</th>
                             <th className="px-4 py-2.5 font-medium">{t("namespace")}</th>
@@ -2063,13 +2071,16 @@ export default function CloudNativePage() {
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60 font-mono">
                           {clusterResources.map((res, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-750/50">
-                              <td className="px-4 py-2.5 text-gray-900 dark:text-white font-medium">
+                            <tr
+                              key={idx}
+                              className="hover:bg-surface-card dark:hover:bg-gray-750/50"
+                            >
+                              <td className="px-4 py-2.5 text-text-primary dark:text-white font-medium">
                                 {res.name}
                               </td>
-                              <td className="px-4 py-2.5 text-gray-500">{res.namespace}</td>
+                              <td className="px-4 py-2.5 text-text-tertiary">{res.namespace}</td>
                               <td className="px-4 py-2.5">
-                                <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-[11px] text-gray-700 dark:text-gray-300">
+                                <span className="px-1.5 py-0.5 rounded bg-surface-hover dark:bg-surface-active text-[11px] text-text-secondary dark:text-text-muted">
                                   {res.kind}
                                 </span>
                               </td>
@@ -2092,10 +2103,10 @@ export default function CloudNativePage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-750">
+              <div className="p-4 border-t border-border-subtle dark:border-border-strong flex justify-end bg-surface-card dark:bg-gray-750">
                 <button
                   onClick={() => setClusterModalOpen(false)}
-                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg text-xs font-medium transition-colors"
+                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-surface-active dark:hover:bg-gray-600 text-text-primary dark:text-white rounded-lg text-xs font-medium transition-colors"
                 >
                   {t("close")}
                 </button>
@@ -2109,24 +2120,24 @@ export default function CloudNativePage() {
         {/* ══════════════════════════════════════════════════════════════ */}
         {complianceModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-750">
+            <div className="bg-white dark:bg-surface-card rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-border-subtle dark:border-border-strong overflow-hidden">
+              <div className="p-6 border-b border-border-subtle dark:border-border-strong flex items-center justify-between bg-surface-card/50 dark:bg-gray-750">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-green-100 dark:bg-green-900/40 rounded-xl text-green-600 dark:text-green-400">
                     <CheckCircle className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    <h2 className="text-xl font-bold text-text-primary dark:text-white">
                       {t("cisComplianceReport")}
                     </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-text-tertiary mt-0.5">
                       CIS Kubernetes Benchmark 100 项安全合规基线检查详情
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setComplianceModalOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-2 text-text-muted hover:text-text-secondary dark:hover:text-text-disabled rounded-lg hover:bg-surface-hover dark:hover:bg-surface-active transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2134,7 +2145,7 @@ export default function CloudNativePage() {
 
               <div className="p-6 overflow-y-auto space-y-6 flex-1">
                 {loadingCompliance ? (
-                  <div className="py-16 text-center text-sm text-gray-400 flex items-center justify-center gap-2">
+                  <div className="py-16 text-center text-sm text-text-muted flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
                     正在生成 CIS 合规审计报告...
                   </div>
@@ -2142,11 +2153,11 @@ export default function CloudNativePage() {
                   <>
                     {/* Compliance Stats Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="p-4 bg-gray-50 dark:bg-gray-750 rounded-xl text-center border border-gray-200 dark:border-gray-700">
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <div className="p-4 bg-surface-card dark:bg-gray-750 rounded-xl text-center border border-border-subtle dark:border-border-strong">
+                        <p className="text-2xl font-bold text-text-primary dark:text-white">
                           {complianceReport?.cis_compliance?.total_checks ?? 100}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">{t("totalChecks")}</p>
+                        <p className="text-xs text-text-tertiary mt-1">{t("totalChecks")}</p>
                       </div>
                       <div className="p-4 bg-green-50/60 dark:bg-green-900/20 rounded-xl text-center border border-green-200 dark:border-green-800">
                         <p className="text-2xl font-bold text-green-600">
@@ -2174,26 +2185,26 @@ export default function CloudNativePage() {
 
                     {/* Failed Items & Remediation */}
                     <div className="space-y-3">
-                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                      <h3 className="text-sm font-bold text-text-primary dark:text-white">
                         {t("failedChecksAndRemediation")}
                       </h3>
                       <div className="space-y-2">
                         {complianceReport?.findings?.map((item) => (
                           <div
                             key={item.id}
-                            className="p-4 bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-xl text-xs space-y-2"
+                            className="p-4 bg-surface-card dark:bg-gray-750 border border-border-subtle dark:border-border-strong rounded-xl text-xs space-y-2"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                              <span className="font-semibold text-text-primary dark:text-white text-sm">
                                 [{item.category}] {item.title}
                               </span>
                               <span className={getSeverityBadge(item.severity)}>
                                 {item.severity}
                               </span>
                             </div>
-                            <p className="text-gray-500">
+                            <p className="text-text-tertiary">
                               受影响资源:{" "}
-                              <code className="font-mono text-gray-800 dark:text-gray-200">
+                              <code className="font-mono text-text-primary dark:text-text-disabled">
                                 {item.resource}
                               </code>{" "}
                               (namespace: {item.namespace})
@@ -2209,10 +2220,10 @@ export default function CloudNativePage() {
                 )}
               </div>
 
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-750">
+              <div className="p-4 border-t border-border-subtle dark:border-border-strong flex justify-end bg-surface-card dark:bg-gray-750">
                 <button
                   onClick={() => setComplianceModalOpen(false)}
-                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg text-xs font-medium transition-colors"
+                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-surface-active dark:hover:bg-gray-600 text-text-primary dark:text-white rounded-lg text-xs font-medium transition-colors"
                 >
                   {t("close")}
                 </button>
@@ -2226,32 +2237,32 @@ export default function CloudNativePage() {
         {/* ══════════════════════════════════════════════════════════════ */}
         {findingsModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-750">
+            <div className="bg-white dark:bg-surface-card rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-border-subtle dark:border-border-strong overflow-hidden">
+              <div className="p-6 border-b border-border-subtle dark:border-border-strong flex items-center justify-between bg-surface-card/50 dark:bg-gray-750">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-red-100 dark:bg-red-900/40 rounded-xl text-red-600 dark:text-red-400">
                     <Shield className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    <h2 className="text-xl font-bold text-text-primary dark:text-white">
                       {t("securityFindings")}
                     </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-text-tertiary mt-0.5">
                       按严重程度筛选查看云原生与容器安全风险细节
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setFindingsModalOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-2 text-text-muted hover:text-text-secondary dark:hover:text-text-disabled rounded-lg hover:bg-surface-hover dark:hover:bg-surface-active transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Filter Tabs */}
-              <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 bg-gray-50/30">
-                <span className="text-xs font-semibold text-gray-500">
+              <div className="px-6 py-3 border-b border-border-subtle dark:border-border-strong flex items-center gap-2 bg-surface-card/30">
+                <span className="text-xs font-semibold text-text-tertiary">
                   {t("filterBySeverity")}:
                 </span>
                 {(["all", "critical", "high", "medium", "low"] as const).map((sev) => (
@@ -2262,7 +2273,7 @@ export default function CloudNativePage() {
                       "px-3 py-1 rounded-lg text-xs font-medium transition-all capitalize",
                       findingsFilter === sev
                         ? "bg-blue-600 text-white shadow-sm"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                        : "bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-muted hover:bg-gray-200"
                     )}
                   >
                     {sev}
@@ -2278,22 +2289,22 @@ export default function CloudNativePage() {
                   .map((f, idx) => (
                     <div
                       key={idx}
-                      className="p-4 bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-xl text-xs space-y-2"
+                      className="p-4 bg-surface-card dark:bg-gray-750 border border-border-subtle dark:border-border-strong rounded-xl text-xs space-y-2"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                        <span className="font-semibold text-text-primary dark:text-white text-sm">
                           [{f.category}] {f.title}
                         </span>
                         <span className={getSeverityBadge(f.severity)}>{f.severity}</span>
                       </div>
-                      <p className="text-gray-500">
+                      <p className="text-text-tertiary">
                         涉及资源:{" "}
                         <code className="font-mono text-blue-600 dark:text-blue-400">
                           {f.resource_name}
                         </code>{" "}
                         (namespace: {f.namespace})
                       </p>
-                      <p className="text-gray-600 dark:text-gray-300">{f.description}</p>
+                      <p className="text-text-secondary dark:text-text-muted">{f.description}</p>
                       <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 rounded-lg">
                         <strong>加固方案:</strong> {f.remediation}
                       </div>
@@ -2301,10 +2312,10 @@ export default function CloudNativePage() {
                   ))}
               </div>
 
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-750">
+              <div className="p-4 border-t border-border-subtle dark:border-border-strong flex justify-end bg-surface-card dark:bg-gray-750">
                 <button
                   onClick={() => setFindingsModalOpen(false)}
-                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg text-xs font-medium transition-colors"
+                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-surface-active dark:hover:bg-gray-600 text-text-primary dark:text-white rounded-lg text-xs font-medium transition-colors"
                 >
                   {t("close")}
                 </button>
@@ -2318,24 +2329,24 @@ export default function CloudNativePage() {
         {/* ══════════════════════════════════════════════════════════════ */}
         {cloudModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-750">
+            <div className="bg-white dark:bg-surface-card rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-border-subtle dark:border-border-strong overflow-hidden">
+              <div className="p-6 border-b border-border-subtle dark:border-border-strong flex items-center justify-between bg-surface-card/50 dark:bg-gray-750">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-sky-100 dark:bg-sky-900/40 rounded-xl text-sky-600 dark:text-sky-400">
                     <Cloud className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    <h2 className="text-xl font-bold text-text-primary dark:text-white">
                       {t("cloudProviderDetails")} — {selectedCloudProvider?.toUpperCase()}
                     </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-text-tertiary mt-0.5">
                       多云环境凭据配置与云端安全事件监控
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setCloudModalOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-2 text-text-muted hover:text-text-secondary dark:hover:text-text-disabled rounded-lg hover:bg-surface-hover dark:hover:bg-surface-active transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2364,19 +2375,19 @@ export default function CloudNativePage() {
 
                 {/* Cloud security events list */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-text-primary dark:text-white flex items-center justify-between">
                     <span>云安全审计事件 (近 24 小时)</span>
-                    <span className="text-xs text-gray-400 font-normal">
+                    <span className="text-xs text-text-muted font-normal">
                       CloudTrail / Activity Logs
                     </span>
                   </h3>
                   {loadingCloudEvents ? (
-                    <div className="py-8 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
+                    <div className="py-8 text-center text-xs text-text-muted flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
                       正在加载云端事件...
                     </div>
                   ) : cloudEvents.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-gray-400 bg-gray-50 dark:bg-gray-750 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                    <div className="p-8 text-center text-xs text-text-muted bg-surface-card dark:bg-gray-750 rounded-xl border border-dashed border-border-subtle dark:border-border-strong">
                       暂无未处理的云安全事件。连接凭证配置后将自动实时同步。
                     </div>
                   ) : (
@@ -2384,16 +2395,18 @@ export default function CloudNativePage() {
                       {cloudEvents.map((evt, idx) => (
                         <div
                           key={idx}
-                          className="p-3 bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-lg text-xs space-y-1"
+                          className="p-3 bg-surface-card dark:bg-gray-750 border border-border-subtle dark:border-border-strong rounded-lg text-xs space-y-1"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-gray-900 dark:text-white">
+                            <span className="font-semibold text-text-primary dark:text-white">
                               [{evt.service}] {evt.event_type}
                             </span>
                             <span className={getSeverityBadge(evt.severity)}>{evt.severity}</span>
                           </div>
-                          <p className="text-gray-600 dark:text-gray-300">{evt.description}</p>
-                          <p className="text-gray-400 text-[11px] font-mono">
+                          <p className="text-text-secondary dark:text-text-muted">
+                            {evt.description}
+                          </p>
+                          <p className="text-text-muted text-[11px] font-mono">
                             Resource: {evt.resource_id}
                           </p>
                         </div>
@@ -2403,10 +2416,10 @@ export default function CloudNativePage() {
                 </div>
               </div>
 
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-750">
+              <div className="p-4 border-t border-border-subtle dark:border-border-strong flex justify-end bg-surface-card dark:bg-gray-750">
                 <button
                   onClick={() => setCloudModalOpen(false)}
-                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg text-xs font-medium transition-colors"
+                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-surface-active dark:hover:bg-gray-600 text-text-primary dark:text-white rounded-lg text-xs font-medium transition-colors"
                 >
                   {t("close")}
                 </button>
@@ -2420,15 +2433,15 @@ export default function CloudNativePage() {
         {/* ══════════════════════════════════════════════════════════════ */}
         {containerDetailModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white dark:bg-surface-card rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-border-subtle dark:border-border-strong overflow-hidden">
               {/* Modal Header */}
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-750">
+              <div className="p-6 border-b border-border-subtle dark:border-border-strong flex items-center justify-between bg-surface-card/50 dark:bg-gray-750">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/40 rounded-xl text-emerald-600 dark:text-emerald-400">
                     <Container className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-text-primary dark:text-white flex items-center gap-2">
                       {selectedContainer?.name || t("containerDetails")}
                       {selectedContainer && (
                         <span
@@ -2437,14 +2450,14 @@ export default function CloudNativePage() {
                               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
                               : selectedContainer.status === "warning"
                                 ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-                                : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                                : "bg-surface-hover text-text-primary dark:bg-surface-active dark:text-text-muted"
                           }`}
                         >
                           {selectedContainer.status}
                         </span>
                       )}
                     </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-text-tertiary mt-0.5">
                       {selectedContainer?.cluster_name} · 命名空间: {selectedContainer?.namespace} ·
                       Pod: {selectedContainer?.pod_name}
                     </p>
@@ -2452,7 +2465,7 @@ export default function CloudNativePage() {
                 </div>
                 <button
                   onClick={() => setContainerDetailModalOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-2 text-text-muted hover:text-text-secondary dark:hover:text-text-disabled rounded-lg hover:bg-surface-hover dark:hover:bg-surface-active transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2461,15 +2474,15 @@ export default function CloudNativePage() {
               {/* Modal Body */}
               <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
                 {loadingContainerDetail ? (
-                  <div className="py-20 text-center text-sm text-gray-400 flex items-center justify-center gap-2">
+                  <div className="py-20 text-center text-sm text-text-muted flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                     正在拉取容器配置与安全详情...
                   </div>
                 ) : selectedContainer ? (
                   <>
                     {/* Security Context & Compliance Warnings */}
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-750 dark:to-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-bold text-gray-900 dark:text-white">
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-750 dark:to-gray-800 p-4 rounded-xl border border-border-subtle dark:border-border-strong space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-text-primary dark:text-white">
                         <Shield className="w-4 h-4 text-blue-500" />
                         安全上下文与合规策略核查
                       </div>
@@ -2508,7 +2521,7 @@ export default function CloudNativePage() {
                           className={`p-3 rounded-lg border ${
                             selectedContainer.readonly_rootfs
                               ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
-                              : "bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300"
+                              : "bg-surface-card border-border-subtle text-text-secondary dark:bg-surface-active/50 dark:border-gray-600 dark:text-text-muted"
                           }`}
                         >
                           <div className="font-semibold">只读根文件系统</div>
@@ -2534,45 +2547,45 @@ export default function CloudNativePage() {
                     {/* Basic & Runtime Specs Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Left: General Info */}
-                      <div className="bg-gray-50 dark:bg-gray-750 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2.5">
-                        <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5 text-xs">
+                      <div className="bg-surface-card dark:bg-gray-750 p-4 rounded-xl border border-border-subtle dark:border-border-strong space-y-2.5">
+                        <h4 className="font-bold text-text-primary dark:text-white flex items-center gap-1.5 text-xs">
                           <HardDrive className="w-4 h-4 text-indigo-500" />
                           基础运行时规格
                         </h4>
                         <div className="grid grid-cols-2 gap-2 text-[11px]">
                           <div>
-                            <span className="text-gray-400">容器 ID:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                            <span className="text-text-muted">容器 ID:</span>
+                            <p className="font-mono text-text-primary dark:text-text-disabled mt-0.5">
                               {selectedContainer.id}
                             </p>
                           </div>
                           <div>
-                            <span className="text-gray-400">内部 IP:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                            <span className="text-text-muted">内部 IP:</span>
+                            <p className="font-mono text-text-primary dark:text-text-disabled mt-0.5">
                               {selectedContainer.ip_address}
                             </p>
                           </div>
                           <div>
-                            <span className="text-gray-400">工作节点:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                            <span className="text-text-muted">工作节点:</span>
+                            <p className="font-mono text-text-primary dark:text-text-disabled mt-0.5">
                               {selectedContainer.node_name || "node-worker-01"}
                             </p>
                           </div>
                           <div>
-                            <span className="text-gray-400">重启次数:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                            <span className="text-text-muted">重启次数:</span>
+                            <p className="font-mono text-text-primary dark:text-text-disabled mt-0.5">
                               {selectedContainer.restart_count} 次
                             </p>
                           </div>
                           <div>
-                            <span className="text-gray-400">CPU 占用:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                            <span className="text-text-muted">CPU 占用:</span>
+                            <p className="font-mono text-text-primary dark:text-text-disabled mt-0.5">
                               {selectedContainer.cpu_usage}
                             </p>
                           </div>
                           <div>
-                            <span className="text-gray-400">内存占用:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                            <span className="text-text-muted">内存占用:</span>
+                            <p className="font-mono text-text-primary dark:text-text-disabled mt-0.5">
                               {selectedContainer.memory_usage}
                             </p>
                           </div>
@@ -2580,19 +2593,19 @@ export default function CloudNativePage() {
                       </div>
 
                       {/* Right: Network Ports & Image */}
-                      <div className="bg-gray-50 dark:bg-gray-750 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2.5">
-                        <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5 text-xs">
+                      <div className="bg-surface-card dark:bg-gray-750 p-4 rounded-xl border border-border-subtle dark:border-border-strong space-y-2.5">
+                        <h4 className="font-bold text-text-primary dark:text-white flex items-center gap-1.5 text-xs">
                           <Scan className="w-4 h-4 text-emerald-500" />
                           镜像与网络端口
                         </h4>
                         <div>
-                          <span className="text-gray-400 text-[11px]">容器镜像:</span>
-                          <p className="font-mono text-gray-900 dark:text-white text-xs font-semibold mt-0.5 break-all">
+                          <span className="text-text-muted text-[11px]">容器镜像:</span>
+                          <p className="font-mono text-text-primary dark:text-white text-xs font-semibold mt-0.5 break-all">
                             {selectedContainer.image}
                           </p>
                         </div>
                         <div>
-                          <span className="text-gray-400 text-[11px]">暴露端口:</span>
+                          <span className="text-text-muted text-[11px]">暴露端口:</span>
                           <div className="flex flex-wrap gap-1.5 mt-1">
                             {selectedContainer.ports && selectedContainer.ports.length > 0 ? (
                               selectedContainer.ports.map((p, idx) => (
@@ -2604,12 +2617,12 @@ export default function CloudNativePage() {
                                 </span>
                               ))
                             ) : (
-                              <span className="text-gray-400 text-xs">无端口映射</span>
+                              <span className="text-text-muted text-xs">无端口映射</span>
                             )}
                           </div>
                         </div>
                         <div>
-                          <span className="text-gray-400 text-[11px]">已知漏洞状态:</span>
+                          <span className="text-text-muted text-[11px]">已知漏洞状态:</span>
                           <p className="mt-0.5">
                             {selectedContainer.vulnerabilities_count > 0 ? (
                               <span className="text-red-600 dark:text-red-400 font-semibold">
@@ -2629,8 +2642,8 @@ export default function CloudNativePage() {
                     {/* Entrypoint Command */}
                     {selectedContainer.command && selectedContainer.command.length > 0 && (
                       <div>
-                        <h4 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5 text-xs">
-                          <Terminal className="w-4 h-4 text-gray-500" />
+                        <h4 className="font-bold text-text-primary dark:text-white mb-2 flex items-center gap-1.5 text-xs">
+                          <Terminal className="w-4 h-4 text-text-tertiary" />
                           启动命令 (Entrypoint / Command)
                         </h4>
                         <div className="bg-gray-900 text-emerald-400 p-3 rounded-xl font-mono text-xs overflow-x-auto">
@@ -2642,7 +2655,7 @@ export default function CloudNativePage() {
                     {/* Mounts */}
                     {selectedContainer.mounts && selectedContainer.mounts.length > 0 && (
                       <div>
-                        <h4 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5 text-xs">
+                        <h4 className="font-bold text-text-primary dark:text-white mb-2 flex items-center gap-1.5 text-xs">
                           <HardDrive className="w-4 h-4 text-purple-500" />
                           存储卷挂载 (Volume Mounts)
                         </h4>
@@ -2650,7 +2663,7 @@ export default function CloudNativePage() {
                           {selectedContainer.mounts.map((m, idx) => (
                             <div
                               key={idx}
-                              className="p-2 bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-lg font-mono text-[11px] text-gray-700 dark:text-gray-300"
+                              className="p-2 bg-surface-card dark:bg-gray-750 border border-border-subtle dark:border-border-strong rounded-lg font-mono text-[11px] text-text-secondary dark:text-text-muted"
                             >
                               📂 {m}
                             </div>
@@ -2663,19 +2676,19 @@ export default function CloudNativePage() {
                     {selectedContainer.env_vars &&
                       Object.keys(selectedContainer.env_vars).length > 0 && (
                         <div>
-                          <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-xs">
+                          <h4 className="font-bold text-text-primary dark:text-white mb-2 text-xs">
                             环境变量 (Environment Variables)
                           </h4>
-                          <div className="bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden divide-y divide-gray-200 dark:divide-gray-700">
+                          <div className="bg-surface-card dark:bg-gray-750 border border-border-subtle dark:border-border-strong rounded-xl overflow-hidden divide-y divide-gray-200 dark:divide-gray-700">
                             {Object.entries(selectedContainer.env_vars).map(([k, v]) => (
                               <div
                                 key={k}
                                 className="p-2.5 flex items-center justify-between text-[11px] font-mono"
                               >
-                                <span className="text-gray-500 dark:text-gray-400 font-semibold">
+                                <span className="text-text-tertiary dark:text-text-muted font-semibold">
                                   {k}
                                 </span>
-                                <span className="text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">
+                                <span className="text-text-primary dark:text-text-disabled bg-white dark:bg-surface-card px-2 py-0.5 rounded border border-border-subtle dark:border-border-strong">
                                   {v}
                                 </span>
                               </div>
@@ -2688,7 +2701,7 @@ export default function CloudNativePage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-750">
+              <div className="p-4 border-t border-border-subtle dark:border-border-strong flex items-center justify-between bg-surface-card dark:bg-gray-750">
                 {selectedContainer && (
                   <button
                     onClick={() => scanContainerFromList(selectedContainer.image)}
@@ -2700,7 +2713,7 @@ export default function CloudNativePage() {
                 )}
                 <button
                   onClick={() => setContainerDetailModalOpen(false)}
-                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg text-xs font-medium transition-colors ml-auto"
+                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-surface-active dark:hover:bg-gray-600 text-text-primary dark:text-white rounded-lg text-xs font-medium transition-colors ml-auto"
                 >
                   {t("close")}
                 </button>

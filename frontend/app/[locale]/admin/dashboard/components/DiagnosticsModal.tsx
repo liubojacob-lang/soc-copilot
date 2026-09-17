@@ -133,7 +133,7 @@ export function DiagnosticsModal({ open, onClose }: DiagnosticsModalProps) {
               {data.items.map((item, idx) => (
                 <div
                   key={idx}
-                  className="p-3.5 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-border-default flex items-center justify-between gap-3"
+                  className="p-3.5 bg-surface-card dark:bg-surface-card/40 rounded-lg border border-border-default flex items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {getStatusIcon(item.status)}
