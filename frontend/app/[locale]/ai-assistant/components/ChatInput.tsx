@@ -146,39 +146,41 @@ export function ChatInput({
                 </div>
 
                 {/* Auto-Route Option */}
-                {autoModel && (() => {
-                  const isAutoSelected =
-                    selectedModel?.id === autoModel.id || (!selectedModel && autoModel.id === "auto");
-                  return (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onModelSelect(autoModel);
-                        setShowModelPanel(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer group ${
-                        isAutoSelected
-                          ? "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-medium"
-                          : "hover:bg-surface-hover text-text-secondary hover:text-text-primary"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shrink-0" />
-                        <span className="truncate">自动分配</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-[10px] px-1.5 py-0.5 leading-none rounded font-medium bg-purple-100/80 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300">
-                          推荐
-                        </span>
-                        <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
-                          {isAutoSelected && (
-                            <Check className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                          )}
+                {autoModel &&
+                  (() => {
+                    const isAutoSelected =
+                      selectedModel?.id === autoModel.id ||
+                      (!selectedModel && autoModel.id === "auto");
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onModelSelect(autoModel);
+                          setShowModelPanel(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer group ${
+                          isAutoSelected
+                            ? "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-medium"
+                            : "hover:bg-surface-hover text-text-secondary hover:text-text-primary"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shrink-0" />
+                          <span className="truncate">自动分配</span>
                         </div>
-                      </div>
-                    </button>
-                  );
-                })()}
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span className="text-[10px] px-1.5 py-0.5 leading-none rounded font-medium bg-purple-100/80 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300">
+                            推荐
+                          </span>
+                          <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                            {isAutoSelected && (
+                              <Check className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })()}
 
                 {/* Divider */}
                 <div className="my-1 border-t border-border-subtle" />

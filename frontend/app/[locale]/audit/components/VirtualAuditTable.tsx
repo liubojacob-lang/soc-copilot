@@ -63,7 +63,11 @@ function AuditLogRow({ log, style }: { log: AuditLog; style: React.CSSProperties
       </div>
       {/* Duration */}
       <div className="hidden md:block w-16 lg:w-20 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 text-right font-mono">
-        {log.duration_ms !== null ? `${log.duration_ms}ms` : <span className="text-gray-400">—</span>}
+        {log.duration_ms !== null ? (
+          `${log.duration_ms}ms`
+        ) : (
+          <span className="text-gray-400">—</span>
+        )}
       </div>
       {/* Target */}
       <div className="hidden lg:block w-28 lg:w-36 shrink-0 px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400 truncate">

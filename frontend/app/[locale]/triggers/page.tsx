@@ -287,7 +287,11 @@ export default function TriggersPage() {
                         <span
                           className={`px-2 py-0.5 text-xs font-medium rounded-full ${getTriggerTypeBadge(trigger.type)}`}
                         >
-                          {trigger.type === "webhook" ? "Webhook" : trigger.type === "cron" ? "Cron" : trigger.type}
+                          {trigger.type === "webhook"
+                            ? "Webhook"
+                            : trigger.type === "cron"
+                              ? "Cron"
+                              : trigger.type}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium text-text-primary">

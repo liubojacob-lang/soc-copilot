@@ -319,7 +319,9 @@ export default function MarketplacePage() {
                     : "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-100"
                 }`}
               >
-                <CheckCircle className={`w-3.5 h-3.5 ${verifiedOnly ? "text-emerald-600" : "text-gray-400"}`} />
+                <CheckCircle
+                  className={`w-3.5 h-3.5 ${verifiedOnly ? "text-emerald-600" : "text-gray-400"}`}
+                />
                 <span>{t("verifiedOnly")}</span>
               </button>
 
@@ -372,8 +374,14 @@ export default function MarketplacePage() {
                   onClick={() => setShowRecommendations(!showRecommendations)}
                   className="px-2.5 py-1 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 rounded border border-gray-200 dark:border-gray-700 flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  {showRecommendations ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  <span>{showRecommendations ? t("hideRecommendations") : t("showRecommendations")}</span>
+                  {showRecommendations ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                  <span>
+                    {showRecommendations ? t("hideRecommendations") : t("showRecommendations")}
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -389,172 +397,178 @@ export default function MarketplacePage() {
 
         {/* Featured & Trending (Collapsible when filtering) */}
         {(!isFiltered || showRecommendations) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Featured */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Award className="w-5 h-5 text-amber-500" />
-                {t("featured")}
-              </h2>
-            </div>
-            <div className="p-4 space-y-3">
-              {featured.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 py-2">{t("noPlaybooks")}</p>
-              ) : (
-                featured.map((pb) => {
-                  const meta = parsePlaybookSource(pb);
-                  return (
-                    <div
-                      key={pb.id}
-                      onClick={() => setSelectedPlaybookId(pb.id)}
-                      className="cursor-pointer flex items-center justify-between gap-4 p-3.5 bg-amber-50/70 dark:bg-amber-950/20 rounded-xl hover:bg-amber-100/70 dark:hover:bg-amber-900/30 border border-amber-200/50 dark:border-amber-800/30 transition-all group"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span
-                            className={`inline-flex items-center px-1.5 py-0.2 rounded text-[11px] font-semibold border ${meta.badgeClass} ${meta.badgeBorderClass}`}
-                          >
-                            {meta.standardName}
-                          </span>
-                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                            {pb.name}
-                          </h3>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                          <span className="truncate">{pb.author_name || pb.author || "Community"}</span>
-                          <div className="flex items-center gap-1 text-amber-500 shrink-0">
-                            <Star className="w-3.5 h-3.5 fill-current" />
-                            <span className="font-medium">{pb.rating_average}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Featured */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Award className="w-5 h-5 text-amber-500" />
+                  {t("featured")}
+                </h2>
+              </div>
+              <div className="p-4 space-y-3">
+                {featured.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
+                    {t("noPlaybooks")}
+                  </p>
+                ) : (
+                  featured.map((pb) => {
+                    const meta = parsePlaybookSource(pb);
+                    return (
+                      <div
+                        key={pb.id}
+                        onClick={() => setSelectedPlaybookId(pb.id)}
+                        className="cursor-pointer flex items-center justify-between gap-4 p-3.5 bg-amber-50/70 dark:bg-amber-950/20 rounded-xl hover:bg-amber-100/70 dark:hover:bg-amber-900/30 border border-amber-200/50 dark:border-amber-800/30 transition-all group"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.2 rounded text-[11px] font-semibold border ${meta.badgeClass} ${meta.badgeBorderClass}`}
+                            >
+                              {meta.standardName}
+                            </span>
+                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                              {pb.name}
+                            </h3>
                           </div>
-                          <span className="text-gray-400 shrink-0">
-                            {pb.download_count} {locale.startsWith("zh") ? "次下载" : "dl"}
-                          </span>
+                          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                            <span className="truncate">
+                              {pb.author_name || pb.author || "Community"}
+                            </span>
+                            <div className="flex items-center gap-1 text-amber-500 shrink-0">
+                              <Star className="w-3.5 h-3.5 fill-current" />
+                              <span className="font-medium">{pb.rating_average}</span>
+                            </div>
+                            <span className="text-gray-400 shrink-0">
+                              {pb.download_count} {locale.startsWith("zh") ? "次下载" : "dl"}
+                            </span>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPlaybookId(pb.id);
-                          }}
-                          className="px-2.5 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>{t("viewDetails")}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            downloadPlaybook(pb.id);
-                          }}
-                          disabled={downloading === pb.id}
-                          title={tCommon("download")}
-                          aria-label={`${tCommon("download")} ${pb.name}`}
-                          className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
-                        >
-                          {downloading === pb.id ? (
-                            <>
-                              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              <span>{t("downloading")}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Download className="w-3.5 h-3.5" />
-                              <span>{tCommon("download")}</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Trending */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-500" />
-                {t("trending")}
-              </h2>
-            </div>
-            <div className="p-4 space-y-3">
-              {trending.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 py-2">{t("noPlaybooks")}</p>
-              ) : (
-                trending.map((pb) => {
-                  const meta = parsePlaybookSource(pb);
-                  return (
-                    <div
-                      key={pb.id}
-                      onClick={() => setSelectedPlaybookId(pb.id)}
-                      className="cursor-pointer flex items-center justify-between gap-4 p-3.5 bg-gray-50/80 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100/90 dark:hover:bg-gray-700/60 border border-gray-200/60 dark:border-gray-700/60 transition-all group"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span
-                            className={`inline-flex items-center px-1.5 py-0.2 rounded text-[11px] font-semibold border ${meta.badgeClass} ${meta.badgeBorderClass}`}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPlaybookId(pb.id);
+                            }}
+                            className="px-2.5 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors"
                           >
-                            {meta.standardName}
-                          </span>
-                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                            {pb.name}
-                          </h3>
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{t("viewDetails")}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadPlaybook(pb.id);
+                            }}
+                            disabled={downloading === pb.id}
+                            title={tCommon("download")}
+                            aria-label={`${tCommon("download")} ${pb.name}`}
+                            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
+                          >
+                            {downloading === pb.id ? (
+                              <>
+                                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span>{t("downloading")}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-3.5 h-3.5" />
+                                <span>{tCommon("download")}</span>
+                              </>
+                            )}
+                          </button>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {t("downloads", { count: pb.download_count })}
-                        </p>
                       </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPlaybookId(pb.id);
-                          }}
-                          className="px-2.5 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>{t("viewDetails")}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            downloadPlaybook(pb.id);
-                          }}
-                          disabled={downloading === pb.id}
-                          title={tCommon("download")}
-                          aria-label={`${tCommon("download")} ${pb.name}`}
-                          className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
-                        >
-                          {downloading === pb.id ? (
-                            <>
-                              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              <span>{t("downloading")}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Download className="w-3.5 h-3.5" />
-                              <span>{tCommon("download")}</span>
-                            </>
-                          )}
-                        </button>
+            {/* Trending */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  {t("trending")}
+                </h2>
+              </div>
+              <div className="p-4 space-y-3">
+                {trending.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
+                    {t("noPlaybooks")}
+                  </p>
+                ) : (
+                  trending.map((pb) => {
+                    const meta = parsePlaybookSource(pb);
+                    return (
+                      <div
+                        key={pb.id}
+                        onClick={() => setSelectedPlaybookId(pb.id)}
+                        className="cursor-pointer flex items-center justify-between gap-4 p-3.5 bg-gray-50/80 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100/90 dark:hover:bg-gray-700/60 border border-gray-200/60 dark:border-gray-700/60 transition-all group"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.2 rounded text-[11px] font-semibold border ${meta.badgeClass} ${meta.badgeBorderClass}`}
+                            >
+                              {meta.standardName}
+                            </span>
+                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                              {pb.name}
+                            </h3>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {t("downloads", { count: pb.download_count })}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPlaybookId(pb.id);
+                            }}
+                            className="px-2.5 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{t("viewDetails")}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadPlaybook(pb.id);
+                            }}
+                            disabled={downloading === pb.id}
+                            title={tCommon("download")}
+                            aria-label={`${tCommon("download")} ${pb.name}`}
+                            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
+                          >
+                            {downloading === pb.id ? (
+                              <>
+                                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span>{t("downloading")}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-3.5 h-3.5" />
+                                <span>{tCommon("download")}</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
-              )}
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
-        </div>
         )}
 
         {/* All Playbooks Grid */}
@@ -657,7 +671,9 @@ export default function MarketplacePage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <Download className="w-3.5 h-3.5" />
-                            <span>{playbook.download_count} {locale.startsWith("zh") ? "次下载" : "dl"}</span>
+                            <span>
+                              {playbook.download_count} {locale.startsWith("zh") ? "次下载" : "dl"}
+                            </span>
                           </div>
                         </div>
 

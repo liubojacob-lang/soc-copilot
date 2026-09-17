@@ -113,7 +113,9 @@ export function EdgeInspectorDrawer({
             type="text"
             value={condition}
             onChange={(e) => handleConditionChange(e.target.value)}
-            placeholder={isZh ? "留空代表无条件直接流转，或输入条件表达式" : "e.g. $.output.threat_score >= 80"}
+            placeholder={
+              isZh ? "留空代表无条件直接流转，或输入条件表达式" : "e.g. $.output.threat_score >= 80"
+            }
             className="w-full px-3 py-1.5 font-mono text-[11px] rounded-xl border border-border-default bg-surface-ground text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-500"
           />
           <p className="text-[10px] text-text-tertiary leading-relaxed">
@@ -144,7 +146,11 @@ export function EdgeInspectorDrawer({
               >
                 <Sparkles className="w-3 h-3 shrink-0 opacity-70" />
                 <span className="truncate">
-                  {snippet ? snippet : isZh ? "（清空条件 · 设为默认无条件流转）" : "(Unconditional default flow)"}
+                  {snippet
+                    ? snippet
+                    : isZh
+                      ? "（清空条件 · 设为默认无条件流转）"
+                      : "(Unconditional default flow)"}
                 </span>
               </button>
             ))}

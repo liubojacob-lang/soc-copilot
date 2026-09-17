@@ -97,7 +97,11 @@ export function AuditTable({ logs }: AuditTableProps) {
                   </span>
                 </td>
                 <td className="hidden md:table-cell px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 text-right font-mono">
-                  {log.duration_ms !== null ? `${log.duration_ms}ms` : <span className="text-gray-400">—</span>}
+                  {log.duration_ms !== null ? (
+                    `${log.duration_ms}ms`
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </td>
                 <td className="hidden lg:table-cell px-3 lg:px-4 py-3 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400 truncate">
                   {log.target_type ? (

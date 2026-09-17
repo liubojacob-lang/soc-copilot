@@ -71,7 +71,7 @@ export function NodeInspectorDrawer({
     const mergedInputs = {
       ...(ACTION_TYPE_META[normalizedType]?.defaultInputs || {}),
       ...(node.inputs || {}),
-      ...((node as unknown as Record<string, unknown>).config as Record<string, unknown> || {}),
+      ...(((node as unknown as Record<string, unknown>).config as Record<string, unknown>) || {}),
     };
     setInputs(mergedInputs);
     setRawJsonText(JSON.stringify(mergedInputs, null, 2));
@@ -221,22 +221,40 @@ export function NodeInspectorDrawer({
             className="w-full px-3 py-1.5 rounded-xl border border-border-default bg-surface-ground text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-500"
           >
             <optgroup label={isZh ? "威胁情报 (Intel)" : "Threat Intel"}>
-              <option value="extract_iocs">{isZh ? "提取 IOC 实体 (extract_iocs)" : "Extract IOCs"}</option>
-              <option value="ti_lookup_otx">{isZh ? "OTX 威胁情报比对 (ti_lookup_otx)" : "OTX TI Lookup"}</option>
-              <option value="asset_enrich">{isZh ? "资产信誉富化 (asset_enrich)" : "Asset Enrichment"}</option>
+              <option value="extract_iocs">
+                {isZh ? "提取 IOC 实体 (extract_iocs)" : "Extract IOCs"}
+              </option>
+              <option value="ti_lookup_otx">
+                {isZh ? "OTX 威胁情报比对 (ti_lookup_otx)" : "OTX TI Lookup"}
+              </option>
+              <option value="asset_enrich">
+                {isZh ? "资产信誉富化 (asset_enrich)" : "Asset Enrichment"}
+              </option>
             </optgroup>
             <optgroup label={isZh ? "控制分支 (Control Flow)" : "Control Flow"}>
-              <option value="decision">{isZh ? "条件分支决策 (decision)" : "Decision Branch"}</option>
-              <option value="human_approval">{isZh ? "人工复核审批 (human_approval)" : "Human Approval"}</option>
+              <option value="decision">
+                {isZh ? "条件分支决策 (decision)" : "Decision Branch"}
+              </option>
+              <option value="human_approval">
+                {isZh ? "人工复核审批 (human_approval)" : "Human Approval"}
+              </option>
               <option value="sleep">{isZh ? "延时等待 (sleep)" : "Delay / Sleep"}</option>
             </optgroup>
             <optgroup label={isZh ? "响应动作 (Actions)" : "Actions"}>
-              <option value="http_request">{isZh ? "执行 HTTP / API 请求 (http_request)" : "HTTP Request"}</option>
-              <option value="slack_notify">{isZh ? "即时协同通知 (slack_notify)" : "Alert Notification"}</option>
-              <option value="generate_report">{isZh ? "生成处置报告 (generate_report)" : "Generate Report"}</option>
+              <option value="http_request">
+                {isZh ? "执行 HTTP / API 请求 (http_request)" : "HTTP Request"}
+              </option>
+              <option value="slack_notify">
+                {isZh ? "即时协同通知 (slack_notify)" : "Alert Notification"}
+              </option>
+              <option value="generate_report">
+                {isZh ? "生成处置报告 (generate_report)" : "Generate Report"}
+              </option>
             </optgroup>
             <optgroup label={isZh ? "数据解析 (Data)" : "Data"}>
-              <option value="parse_json">{isZh ? "结构化数据解析 (parse_json)" : "Parse JSON"}</option>
+              <option value="parse_json">
+                {isZh ? "结构化数据解析 (parse_json)" : "Parse JSON"}
+              </option>
             </optgroup>
           </select>
           <p className="mt-1 text-[10px] text-text-tertiary leading-normal">
@@ -411,7 +429,9 @@ export function NodeInspectorDrawer({
                 <input
                   type="number"
                   value={Number(inputs.pulse_expiration_days ?? 180)}
-                  onChange={(e) => handleFieldChange("pulse_expiration_days", Number(e.target.value))}
+                  onChange={(e) =>
+                    handleFieldChange("pulse_expiration_days", Number(e.target.value))
+                  }
                   min={1}
                   max={365}
                   className="w-full px-2.5 py-1.5 font-mono text-[11px] rounded-xl border border-border-default bg-surface-ground text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-500"
@@ -482,7 +502,10 @@ export function NodeInspectorDrawer({
                   onChange={(e) =>
                     handleFieldChange(
                       "approvers",
-                      e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
+                      e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean)
                     )
                   }
                   placeholder="admin, sec-duty"

@@ -48,11 +48,7 @@ const CATEGORY_META = {
   },
 };
 
-export function ActionPaletteModal({
-  isOpen,
-  onClose,
-  onSelectAction,
-}: ActionPaletteModalProps) {
+export function ActionPaletteModal({ isOpen, onClose, onSelectAction }: ActionPaletteModalProps) {
   const locale = useLocale();
   const isZh = locale !== "en";
   const [query, setQuery] = useState("");
@@ -130,7 +126,11 @@ export function ActionPaletteModal({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={isZh ? "搜索动作类型或关键词（如: 封禁、OTX、决策、审批）..." : "Search action types..."}
+              placeholder={
+                isZh
+                  ? "搜索动作类型或关键词（如: 封禁、OTX、决策、审批）..."
+                  : "Search action types..."
+              }
               className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-500"
               autoFocus
             />
@@ -171,7 +171,9 @@ export function ActionPaletteModal({
                           <span className="text-xs font-semibold text-text-primary group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors">
                             {isZh ? action.nameZh : action.nameEn}
                           </span>
-                          <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-md border ${cat.badge}`}>
+                          <span
+                            className={`text-[9px] font-mono px-1.5 py-0.5 rounded-md border ${cat.badge}`}
+                          >
                             {action.type}
                           </span>
                         </div>

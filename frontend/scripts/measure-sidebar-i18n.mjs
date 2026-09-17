@@ -81,9 +81,7 @@ const zh = JSON.parse(readFileSync("messages/zh-CN.json", "utf-8")).navigation;
 const en = JSON.parse(readFileSync("messages/en.json", "utf-8")).navigation;
 const cssHref = resolveCssHref();
 if (!cssHref) {
-  console.warn(
-    "[warn] 未指定 --css：使用内联最小样式，只能复核文案宽度（字体以 Inter 为准），"
-  );
+  console.warn("[warn] 未指定 --css：使用内联最小样式，只能复核文案宽度（字体以 Inter 为准），");
   console.warn(
     "       padding-left 与真实可用宽度无法复核。要完整校验请传 --css <编译后的 layout.css>。"
   );
@@ -170,13 +168,19 @@ for (const tag of ["en", "zh-CN"]) {
 
   console.log(`\n=== ${tag} ===`);
   console.log(`侧栏宽度 ${r.asideW}px | 内容区 padding-left ${r.contentPadLeft}`);
-  console.log(`最宽标签 "${worst.text}" ${worst.textW}px / 可用 ${worst.avail}px -> 富余 ${(worst.avail - worst.textW).toFixed(1)}px`);
-  console.log(`被截断标签: ${overflow.length} 个${overflow.length ? " -> " + overflow.map((o) => o.text).join(", ") : ""}`);
+  console.log(
+    `最宽标签 "${worst.text}" ${worst.textW}px / 可用 ${worst.avail}px -> 富余 ${(worst.avail - worst.textW).toFixed(1)}px`
+  );
+  console.log(
+    `被截断标签: ${overflow.length} 个${overflow.length ? " -> " + overflow.map((o) => o.text).join(", ") : ""}`
+  );
 }
 
 const [a, b] = [results["en"], results["zh-CN"]];
 const noShift = a.asideW === b.asideW && a.contentPadLeft === b.contentPadLeft;
-console.log(`\n零位移: 侧栏 ${a.asideW} -> ${b.asideW} | padding ${a.contentPadLeft} -> ${b.contentPadLeft} ${noShift ? "✅" : "❌"}`);
+console.log(
+  `\n零位移: 侧栏 ${a.asideW} -> ${b.asideW} | padding ${a.contentPadLeft} -> ${b.contentPadLeft} ${noShift ? "✅" : "❌"}`
+);
 if (!noShift || failed) failed = true;
 console.log(failed ? "\n❌ 复核未通过" : "\n✅ 全部标签容纳且两语系零位移");
 

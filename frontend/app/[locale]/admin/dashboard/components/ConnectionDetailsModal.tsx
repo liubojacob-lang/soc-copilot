@@ -161,10 +161,13 @@ export function ConnectionDetailsModal({
   const handleReplayDlq = async () => {
     try {
       setReplayingDlq(true);
-      const res = await apiClient.post<{ replayed_count: number }>("/api/v1/system/queue/dlq/replay", {
-        target_stream: "events:medium",
-        limit: 100,
-      });
+      const res = await apiClient.post<{ replayed_count: number }>(
+        "/api/v1/system/queue/dlq/replay",
+        {
+          target_stream: "events:medium",
+          limit: 100,
+        }
+      );
       setActionMessage(t("replayedSuccess", { count: res.replayed_count }));
       await fetchConnections();
     } catch (err) {

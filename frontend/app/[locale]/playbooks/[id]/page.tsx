@@ -342,7 +342,9 @@ export default function PlaybookRunDetailPage() {
     return map;
   }, [nodeRuns]);
 
-  const backButton = <BackButton fallbackUrl="/playbooks" label={tCommon("back")} variant="ghost" />;
+  const backButton = (
+    <BackButton fallbackUrl="/playbooks" label={tCommon("back")} variant="ghost" />
+  );
 
   const refreshButton = (
     <button

@@ -6,14 +6,7 @@ import { Modal } from "@/components/common/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { Text, Caption } from "@/components/ui/Typography";
 import { apiClient } from "@/lib/api/client";
-import {
-  Activity,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  RefreshCw,
-  Clock,
-} from "lucide-react";
+import { Activity, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Clock } from "lucide-react";
 
 export interface DiagnosticItem {
   name: string;

@@ -134,7 +134,9 @@ export default function SystemDashboardPage() {
 
   // Modals state
   const [connModalOpen, setConnModalOpen] = useState(false);
-  const [connModalTab, setConnModalTab] = useState<"database" | "redis" | "integrations">("database");
+  const [connModalTab, setConnModalTab] = useState<"database" | "redis" | "integrations">(
+    "database"
+  );
   const [diagModalOpen, setDiagModalOpen] = useState(false);
 
   // AI Models test state
@@ -279,7 +281,9 @@ export default function SystemDashboardPage() {
         cell: (row) => (
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-warning-600 shrink-0" />
-            <span className="font-medium text-text-primary dark:text-white truncate">{row.name}</span>
+            <span className="font-medium text-text-primary dark:text-white truncate">
+              {row.name}
+            </span>
           </div>
         ),
         width: "24%",
@@ -530,11 +534,7 @@ export default function SystemDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <PageHeader
-        title={t("title")}
-        subtitle={t("subtitle")}
-        actions={headerActions}
-      />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} actions={headerActions} />
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Warnings Banner */}
@@ -868,10 +868,7 @@ export default function SystemDashboardPage() {
         initialTab={connModalTab}
       />
 
-      <DiagnosticsModal
-        open={diagModalOpen}
-        onClose={() => setDiagModalOpen(false)}
-      />
+      <DiagnosticsModal open={diagModalOpen} onClose={() => setDiagModalOpen(false)} />
     </div>
   );
 }

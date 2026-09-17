@@ -167,15 +167,16 @@ export function ExternalPlaybookModal({
               <Globe className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="external-modal-title" className="text-lg font-bold text-content-primary flex items-center gap-2">
+              <h2
+                id="external-modal-title"
+                className="text-lg font-bold text-content-primary flex items-center gap-2"
+              >
                 <span>{t("externalModalTitle")}</span>
                 <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
                   AI Powered
                 </span>
               </h2>
-              <p className="text-xs text-content-muted mt-0.5">
-                {t("externalModalSubtitle")}
-              </p>
+              <p className="text-xs text-content-muted mt-0.5">{t("externalModalSubtitle")}</p>
             </div>
           </div>
 
@@ -247,7 +248,11 @@ export function ExternalPlaybookModal({
                     disabled={isSearching}
                     className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
                   >
-                    {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                    {isSearching ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Search className="w-3.5 h-3.5" />
+                    )}
                     <span>{t("searchExternalButton")}</span>
                   </button>
                 </form>

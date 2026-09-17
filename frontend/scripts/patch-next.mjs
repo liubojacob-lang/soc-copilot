@@ -29,8 +29,7 @@ const RELATIVE_TARGETS = [
 ];
 
 const TARGET_SNIPPET = "        action.resolve(nextState);\n    }";
-const PATCHED_SNIPPET =
-  "        action.resolve(nextState);\n        setState(nextState);\n    }";
+const PATCHED_SNIPPET = "        action.resolve(nextState);\n        setState(nextState);\n    }";
 
 function fail(message) {
   console.error(`[patch-next] ${message}`);
@@ -101,7 +100,9 @@ for (const relative of RELATIVE_TARGETS) {
 }
 
 if (patchedCount === 0 && alreadyCount === 0) {
-  fail(`no patchable router files found under ${nextDir} (looked for: ${RELATIVE_TARGETS.join(", ")})`);
+  fail(
+    `no patchable router files found under ${nextDir} (looked for: ${RELATIVE_TARGETS.join(", ")})`
+  );
 }
 
 console.log(

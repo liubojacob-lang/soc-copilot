@@ -280,7 +280,10 @@ export default function PlaybookDefinitionDetailPage() {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-xs text-text-tertiary shrink-0">{t("definitionId")}</span>
-                <span className="text-sm text-text-secondary font-mono truncate" title={definition.id}>
+                <span
+                  className="text-sm text-text-secondary font-mono truncate"
+                  title={definition.id}
+                >
                   {definition.id}
                 </span>
               </div>

@@ -31,10 +31,7 @@ import {
 } from "lucide-react";
 import { RuleDetailsDrawer, CorrelationRule } from "./components/RuleDetailsDrawer";
 import { RuleFormModal } from "./components/RuleFormModal";
-import {
-  IncidentDetailsDrawer,
-  type Incident,
-} from "./components/IncidentDetailsDrawer";
+import { IncidentDetailsDrawer, type Incident } from "./components/IncidentDetailsDrawer";
 
 interface Stats {
   total_incidents: number;

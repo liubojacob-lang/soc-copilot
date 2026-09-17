@@ -197,7 +197,8 @@ export default function PlaybookApprovalsPage() {
 
   const STATUS_COLORS: Record<string, string> = {
     pending: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30",
-    approved: "bg-success-500/15 text-success-700 dark:text-success-400 border border-success-500/30",
+    approved:
+      "bg-success-500/15 text-success-700 dark:text-success-400 border border-success-500/30",
     rejected: "bg-danger-500/15 text-danger-700 dark:text-danger-400 border border-danger-500/30",
     expired: "bg-surface-hover text-text-tertiary border border-border-subtle",
   };
@@ -296,14 +297,9 @@ export default function PlaybookApprovalsPage() {
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
                   {filteredApprovals.map((approval) => (
-                    <tr
-                      key={approval.id}
-                      className="hover:bg-surface-hover/50 transition-colors"
-                    >
+                    <tr key={approval.id} className="hover:bg-surface-hover/50 transition-colors">
                       <td className="px-4 py-2.5">
-                        <div className="font-medium text-text-primary">
-                          {approval.title}
-                        </div>
+                        <div className="font-medium text-text-primary">{approval.title}</div>
                         {approval.message && (
                           <div className="text-xs text-text-tertiary mt-0.5">
                             {approval.message}

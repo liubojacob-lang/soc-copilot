@@ -119,9 +119,10 @@ test.describe("Internationalization (i18n)", () => {
     const after = await measureLayout();
 
     for (const key of ["sidebar", "content", "contentBox", "viewportClientWidth"] as const) {
-      expect(after[key], `切语言后 ${key} 的几何发生了变化：${JSON.stringify(before[key])} -> ${JSON.stringify(after[key])}`).toEqual(
-        before[key]
-      );
+      expect(
+        after[key],
+        `切语言后 ${key} 的几何发生了变化：${JSON.stringify(before[key])} -> ${JSON.stringify(after[key])}`
+      ).toEqual(before[key]);
     }
   });
 

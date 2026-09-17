@@ -66,7 +66,11 @@ export function parsePlaybookSource(playbook: {
     standardName = "NIST SP 800-207 (Zero Trust)";
     standardType = "nist";
     referenceUrl = "https://csrc.nist.gov/pubs/sp/800/207/final";
-  } else if (searchStr.includes("mitre att&ck") || searchStr.includes("att&ck") || mitreTechniques.length > 0) {
+  } else if (
+    searchStr.includes("mitre att&ck") ||
+    searchStr.includes("att&ck") ||
+    mitreTechniques.length > 0
+  ) {
     standardName = "MITRE ATT&CK® Matrix";
     standardType = "mitre";
     referenceUrl = "https://attack.mitre.org/";
@@ -82,7 +86,11 @@ export function parsePlaybookSource(playbook: {
     standardName = "CISA Cyber Defense Advisory";
     standardType = "cisa";
     referenceUrl = "https://www.cisa.gov/news-events/cybersecurity-advisories";
-  } else if (searchStr.includes("cis ") || searchStr.includes("cis-") || searchStr.includes("benchmark")) {
+  } else if (
+    searchStr.includes("cis ") ||
+    searchStr.includes("cis-") ||
+    searchStr.includes("benchmark")
+  ) {
     standardName = "CIS Benchmarks";
     standardType = "cis";
     referenceUrl = "https://www.cisecurity.org/cis-benchmarks";
@@ -90,7 +98,11 @@ export function parsePlaybookSource(playbook: {
     standardName = "PCI-DSS 4.0 Standard";
     standardType = "iso";
     referenceUrl = "https://www.pcisecuritystandards.org/";
-  } else if (searchStr.includes("gdpr") || searchStr.includes("iso 27035") || searchStr.includes("iso 27001")) {
+  } else if (
+    searchStr.includes("gdpr") ||
+    searchStr.includes("iso 27035") ||
+    searchStr.includes("iso 27001")
+  ) {
     standardName = "ISO/IEC 27035 & GDPR";
     standardType = "iso";
     referenceUrl = "https://www.iso.org/standard/60803.html";

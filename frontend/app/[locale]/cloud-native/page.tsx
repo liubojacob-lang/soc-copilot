@@ -212,7 +212,9 @@ export default function CloudNativePage() {
 
   // ── Falco state ──
   const [falcoStats, setFalcoStats] = useState<FalcoStats | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "containers" | "trivy" | "falco">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "containers" | "trivy" | "falco">(
+    "overview"
+  );
 
   // ── Containers state ──
   const [containers, setContainers] = useState<ContainerItem[]>([]);
@@ -276,7 +278,9 @@ export default function CloudNativePage() {
       const [dashRes, connRes, falcoRes] = await Promise.all([
         apiClient.get<CloudDashboard>("/api/cloud-native/dashboard"),
         apiClient.get<{ connections: CloudConnection[] }>("/api/cloud-native/cloud/connections"),
-        apiClient.get<FalcoStats>("/api/cloud-native/falco-alerts/stats?hours=24").catch(() => null),
+        apiClient
+          .get<FalcoStats>("/api/cloud-native/falco-alerts/stats?hours=24")
+          .catch(() => null),
       ]);
 
       setDashboard(dashRes);
@@ -367,10 +371,13 @@ export default function CloudNativePage() {
     setScanResult(null);
 
     try {
-      const response = await apiClient.post<TrivyScanResult>("/api/cloud-native/containers/trivy-scan", {
-        image: imageInput.trim(),
-        force_rescan: false,
-      });
+      const response = await apiClient.post<TrivyScanResult>(
+        "/api/cloud-native/containers/trivy-scan",
+        {
+          image: imageInput.trim(),
+          force_rescan: false,
+        }
+      );
       setScanResult(response);
     } catch (e: any) {
       setScanError(e?.message || t("scanFailed"));
@@ -383,7 +390,9 @@ export default function CloudNativePage() {
   const openClusterModal = async (clusterName?: string) => {
     setClusterModalOpen(true);
     try {
-      const res = await apiClient.get<{ clusters: K8sCluster[] }>("/api/cloud-native/kubernetes/clusters");
+      const res = await apiClient.get<{ clusters: K8sCluster[] }>(
+        "/api/cloud-native/kubernetes/clusters"
+      );
       if (res?.clusters?.length) {
         setClusters(res.clusters);
         const target = clusterName
@@ -445,10 +454,13 @@ export default function CloudNativePage() {
     setK8sScanning(true);
     setK8sScanFindings(null);
     try {
-      const res = await apiClient.post<{ findings: K8sFinding[] }>("/api/cloud-native/kubernetes/scan", {
-        cluster_name: clusterName,
-        namespace: ns || undefined,
-      });
+      const res = await apiClient.post<{ findings: K8sFinding[] }>(
+        "/api/cloud-native/kubernetes/scan",
+        {
+          cluster_name: clusterName,
+          namespace: ns || undefined,
+        }
+      );
       setK8sScanFindings(res?.findings || []);
       showToast(t("scanClusterSuccess"), "success");
     } catch (e) {
@@ -519,10 +531,13 @@ export default function CloudNativePage() {
   const scanContainerLegacy = async () => {
     setScanning(true);
     try {
-      const response = await apiClient.post<{ total_vulnerabilities: number }>("/api/cloud-native/containers/scan", {
-        image: "nginx",
-        tag: "1.21",
-      });
+      const response = await apiClient.post<{ total_vulnerabilities: number }>(
+        "/api/cloud-native/containers/scan",
+        {
+          image: "nginx",
+          tag: "1.21",
+        }
+      );
       const vulnCount = response?.total_vulnerabilities || 0;
       showToast(
         `${t("scanComplete")} - ${t("foundVulnerabilities", { count: vulnCount })}`,
@@ -851,7 +866,8 @@ export default function CloudNativePage() {
                   >
                     <Scan className="w-8 h-8 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
                     <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
-                      {t("scanImage")} <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {t("scanImage")}{" "}
+                      <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </h3>
                     <p className="text-sm text-gray-500">{t("detectVulnerabilities")}</p>
                   </button>
@@ -862,7 +878,8 @@ export default function CloudNativePage() {
                   >
                     <Server className="w-8 h-8 text-green-500 mb-2 group-hover:scale-110 transition-transform" />
                     <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
-                      {t("scanKubernetes")} <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {t("scanKubernetes")}{" "}
+                      <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </h3>
                     <p className="text-sm text-gray-500">{t("cisBenchmark")} — 点击打开集群审计</p>
                   </button>
@@ -979,13 +996,17 @@ export default function CloudNativePage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">全部容器资产</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    全部容器资产
+                  </span>
                   <Container className="w-4 h-4 text-blue-500" />
                 </div>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   {containersStats.total}
                 </p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">跨 2 集群 / 6 命名空间</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  跨 2 集群 / 6 命名空间
+                </p>
               </button>
 
               <button
@@ -1001,13 +1022,17 @@ export default function CloudNativePage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">运行正常</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    运行正常
+                  </span>
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
                 </div>
                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                   {containersStats.running}
                 </p>
-                <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">健康率 93.3%</p>
+                <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
+                  健康率 93.3%
+                </p>
               </button>
 
               <button
@@ -1023,13 +1048,17 @@ export default function CloudNativePage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">异常 / 警告</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    异常 / 警告
+                  </span>
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
                 </div>
                 <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
                   {containersStats.warning}
                 </p>
-                <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5">重启或安全策略违规</p>
+                <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5">
+                  重启或安全策略违规
+                </p>
               </button>
 
               <button
@@ -1045,13 +1074,17 @@ export default function CloudNativePage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">已结束 / 停止</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    已结束 / 停止
+                  </span>
                   <XCircle className="w-4 h-4 text-gray-400" />
                 </div>
                 <p className="text-2xl font-bold text-gray-700 dark:text-gray-300 mt-1">
                   {containersStats.terminated}
                 </p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">已完成的批处理任务</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  已完成的批处理任务
+                </p>
               </button>
 
               <button
@@ -1063,13 +1096,17 @@ export default function CloudNativePage() {
                 className="p-3.5 rounded-xl border text-left transition-all bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-red-400 group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">含已知漏洞</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    含已知漏洞
+                  </span>
                   <Shield className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" />
                 </div>
                 <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">
                   {containersStats.vulnerable}
                 </p>
-                <p className="text-[11px] text-red-500/80 dark:text-red-400/80 mt-0.5">建议执行 Trivy 漏洞加固</p>
+                <p className="text-[11px] text-red-500/80 dark:text-red-400/80 mt-0.5">
+                  建议执行 Trivy 漏洞加固
+                </p>
               </button>
             </div>
 
@@ -1163,7 +1200,9 @@ export default function CloudNativePage() {
                     className="p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
                     title="刷新列表"
                   >
-                    <RefreshCw className={`w-4 h-4 ${loadingContainers ? "animate-spin text-blue-500" : ""}`} />
+                    <RefreshCw
+                      className={`w-4 h-4 ${loadingContainers ? "animate-spin text-blue-500" : ""}`}
+                    />
                   </button>
                 </div>
               </div>
@@ -1211,168 +1250,174 @@ export default function CloudNativePage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-gray-50/80 dark:bg-gray-750/80 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                        <th className="py-3 px-4 font-semibold">{t("containerName")}</th>
-                        <th className="py-3 px-3 font-semibold">{t("status")}</th>
-                        <th className="py-3 px-3 font-semibold">集群 / 命名空间</th>
-                        <th className="py-3 px-4 font-semibold">{t("image")}</th>
-                        <th className="py-3 px-3 font-semibold">{t("securityContext")}</th>
-                        <th className="py-3 px-3 font-semibold">已知漏洞</th>
-                        <th className="py-3 px-3 font-semibold">资源配额</th>
-                        <th className="py-3 px-4 font-semibold text-right">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">
-                      {containers.map((cnt) => (
-                        <tr
-                          key={cnt.id}
-                          className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors group cursor-pointer"
-                          onClick={() => openContainerInspector(cnt.id)}
-                        >
-                          {/* Container Name & ID */}
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                {cnt.name}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-0.5 text-gray-400 font-mono text-[11px]">
-                              <span>ID: {cnt.id}</span>
-                              <span>·</span>
-                              <span>Pod: {cnt.pod_name}</span>
-                            </div>
-                          </td>
-
-                          {/* Status */}
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            {cnt.status === "running" ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                {t("running")}
-                              </span>
-                            ) : cnt.status === "warning" ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                                <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                                {cnt.state_reason || t("warning")}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                                {cnt.state_reason || t("terminated")}
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Cluster & Namespace */}
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <div className="text-gray-900 dark:text-gray-200 font-medium text-[11px]">
-                              {cnt.cluster_name}
-                            </div>
-                            <span className="inline-block mt-0.5 px-2 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-mono">
-                              {cnt.namespace}
-                            </span>
-                          </td>
-
-                          {/* Image */}
-                          <td className="py-3 px-4">
-                            <div className="font-mono text-gray-800 dark:text-gray-200 text-[11px] max-w-[220px] truncate" title={cnt.image}>
-                              {cnt.image}
-                            </div>
-                            {cnt.ports && cnt.ports.length > 0 ? (
-                              <div className="text-gray-400 text-[10px] font-mono mt-0.5">
-                                Ports: {cnt.ports.join(", ")}
-                              </div>
-                            ) : (
-                              <div className="text-gray-400 text-[10px] mt-0.5">无暴露端口</div>
-                            )}
-                          </td>
-
-                          {/* Security Context Badges */}
-                          <td className="py-3 px-3">
-                            <div className="flex flex-wrap gap-1">
-                              {cnt.privileged ? (
-                                <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 text-[10px] font-semibold flex items-center gap-0.5">
-                                  <AlertTriangle className="w-2.5 h-2.5" /> 特权容器
-                                </span>
-                              ) : (
-                                <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-[10px]">
-                                  非特权
-                                </span>
-                              )}
-
-                              {cnt.run_as_root ? (
-                                <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 text-[10px] font-medium">
-                                  Root运行
-                                </span>
-                              ) : (
-                                <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">
-                                  非Root
-                                </span>
-                              )}
-
-                              {cnt.readonly_rootfs && (
-                                <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-[10px]">
-                                  只读FS
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Vulnerabilities */}
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            {cnt.vulnerabilities_count > 0 ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  scanContainerFromList(cnt.image);
-                                }}
-                                className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 hover:bg-red-200 transition-colors flex items-center gap-1"
-                                title="点击直接进入 Trivy 扫描该镜像"
-                              >
-                                <AlertTriangle className="w-3 h-3" />
-                                {cnt.vulnerabilities_count} 个已知漏洞
-                              </button>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-[11px]">
-                                <CheckCircle className="w-3 h-3" />
-                                安全
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Resources */}
-                          <td className="py-3 px-3 whitespace-nowrap font-mono text-gray-600 dark:text-gray-400 text-[11px]">
-                            <div>CPU: {cnt.cpu_usage}</div>
-                            <div>MEM: {cnt.memory_usage}</div>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => openContainerInspector(cnt.id)}
-                                className="px-2.5 py-1 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 rounded text-xs font-medium transition-colors flex items-center gap-1"
-                              >
-                                <Info className="w-3 h-3" />
-                                {t("viewDetails")}
-                              </button>
-                              <button
-                                onClick={() => scanContainerFromList(cnt.image)}
-                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 dark:text-emerald-300 rounded text-xs font-medium transition-colors flex items-center gap-1"
-                                title={t("scanImageAction")}
-                              >
-                                <Scan className="w-3 h-3" />
-                                扫描
-                              </button>
-                            </div>
-                          </td>
+                      <thead>
+                        <tr className="bg-gray-50/80 dark:bg-gray-750/80 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                          <th className="py-3 px-4 font-semibold">{t("containerName")}</th>
+                          <th className="py-3 px-3 font-semibold">{t("status")}</th>
+                          <th className="py-3 px-3 font-semibold">集群 / 命名空间</th>
+                          <th className="py-3 px-4 font-semibold">{t("image")}</th>
+                          <th className="py-3 px-3 font-semibold">{t("securityContext")}</th>
+                          <th className="py-3 px-3 font-semibold">已知漏洞</th>
+                          <th className="py-3 px-3 font-semibold">资源配额</th>
+                          <th className="py-3 px-4 font-semibold text-right">操作</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">
+                        {containers.map((cnt) => (
+                          <tr
+                            key={cnt.id}
+                            className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors group cursor-pointer"
+                            onClick={() => openContainerInspector(cnt.id)}
+                          >
+                            {/* Container Name & ID */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                  {cnt.name}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5 text-gray-400 font-mono text-[11px]">
+                                <span>ID: {cnt.id}</span>
+                                <span>·</span>
+                                <span>Pod: {cnt.pod_name}</span>
+                              </div>
+                            </td>
+
+                            {/* Status */}
+                            <td className="py-3 px-3 whitespace-nowrap">
+                              {cnt.status === "running" ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  {t("running")}
+                                </span>
+                              ) : cnt.status === "warning" ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                  <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                  {cnt.state_reason || t("warning")}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                                  {cnt.state_reason || t("terminated")}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Cluster & Namespace */}
+                            <td className="py-3 px-3 whitespace-nowrap">
+                              <div className="text-gray-900 dark:text-gray-200 font-medium text-[11px]">
+                                {cnt.cluster_name}
+                              </div>
+                              <span className="inline-block mt-0.5 px-2 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-mono">
+                                {cnt.namespace}
+                              </span>
+                            </td>
+
+                            {/* Image */}
+                            <td className="py-3 px-4">
+                              <div
+                                className="font-mono text-gray-800 dark:text-gray-200 text-[11px] max-w-[220px] truncate"
+                                title={cnt.image}
+                              >
+                                {cnt.image}
+                              </div>
+                              {cnt.ports && cnt.ports.length > 0 ? (
+                                <div className="text-gray-400 text-[10px] font-mono mt-0.5">
+                                  Ports: {cnt.ports.join(", ")}
+                                </div>
+                              ) : (
+                                <div className="text-gray-400 text-[10px] mt-0.5">无暴露端口</div>
+                              )}
+                            </td>
+
+                            {/* Security Context Badges */}
+                            <td className="py-3 px-3">
+                              <div className="flex flex-wrap gap-1">
+                                {cnt.privileged ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 text-[10px] font-semibold flex items-center gap-0.5">
+                                    <AlertTriangle className="w-2.5 h-2.5" /> 特权容器
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-[10px]">
+                                    非特权
+                                  </span>
+                                )}
+
+                                {cnt.run_as_root ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 text-[10px] font-medium">
+                                    Root运行
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">
+                                    非Root
+                                  </span>
+                                )}
+
+                                {cnt.readonly_rootfs && (
+                                  <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-[10px]">
+                                    只读FS
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Vulnerabilities */}
+                            <td className="py-3 px-3 whitespace-nowrap">
+                              {cnt.vulnerabilities_count > 0 ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    scanContainerFromList(cnt.image);
+                                  }}
+                                  className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 hover:bg-red-200 transition-colors flex items-center gap-1"
+                                  title="点击直接进入 Trivy 扫描该镜像"
+                                >
+                                  <AlertTriangle className="w-3 h-3" />
+                                  {cnt.vulnerabilities_count} 个已知漏洞
+                                </button>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-[11px]">
+                                  <CheckCircle className="w-3 h-3" />
+                                  安全
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Resources */}
+                            <td className="py-3 px-3 whitespace-nowrap font-mono text-gray-600 dark:text-gray-400 text-[11px]">
+                              <div>CPU: {cnt.cpu_usage}</div>
+                              <div>MEM: {cnt.memory_usage}</div>
+                            </td>
+
+                            {/* Actions */}
+                            <td
+                              className="py-3 px-4 text-right whitespace-nowrap"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => openContainerInspector(cnt.id)}
+                                  className="px-2.5 py-1 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                                >
+                                  <Info className="w-3 h-3" />
+                                  {t("viewDetails")}
+                                </button>
+                                <button
+                                  onClick={() => scanContainerFromList(cnt.image)}
+                                  className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 dark:text-emerald-300 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                                  title={t("scanImageAction")}
+                                >
+                                  <Scan className="w-3 h-3" />
+                                  扫描
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               {/* Pagination Controls */}
@@ -1380,7 +1425,10 @@ export default function CloudNativePage() {
                 <div className="flex items-center gap-3">
                   <span>
                     {t("showingPagination", {
-                      start: containerFilteredTotal > 0 ? (containerPage - 1) * containerPageSize + 1 : 0,
+                      start:
+                        containerFilteredTotal > 0
+                          ? (containerPage - 1) * containerPageSize + 1
+                          : 0,
                       end: Math.min(containerPage * containerPageSize, containerFilteredTotal),
                       total: containerFilteredTotal,
                     })}
@@ -1945,7 +1993,11 @@ export default function CloudNativePage() {
                             <span className={getSeverityBadge(f.severity)}>{f.severity}</span>
                           </div>
                           <p className="text-gray-600 dark:text-gray-400">
-                            资源: <code className="font-mono text-blue-600 dark:text-blue-400">{f.kind}/{f.resource_name}</code> (ns: {f.namespace})
+                            资源:{" "}
+                            <code className="font-mono text-blue-600 dark:text-blue-400">
+                              {f.kind}/{f.resource_name}
+                            </code>{" "}
+                            (ns: {f.namespace})
                           </p>
                           <p className="text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded">
                             <strong>加固建议:</strong> {f.remediation}
@@ -2024,7 +2076,10 @@ export default function CloudNativePage() {
                               <td className="px-4 py-2.5">
                                 <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  {res.status?.phase || (res.status?.readyReplicas ? `${res.status.readyReplicas} Ready` : "Active")}
+                                  {res.status?.phase ||
+                                    (res.status?.readyReplicas
+                                      ? `${res.status.readyReplicas} Ready`
+                                      : "Active")}
                                 </span>
                               </td>
                             </tr>
@@ -2097,7 +2152,9 @@ export default function CloudNativePage() {
                         <p className="text-2xl font-bold text-green-600">
                           {complianceReport?.cis_compliance?.passed ?? 85}
                         </p>
-                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t("passed")}</p>
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          {t("passed")}
+                        </p>
                       </div>
                       <div className="p-4 bg-red-50/60 dark:bg-red-900/20 rounded-xl text-center border border-red-200 dark:border-red-800">
                         <p className="text-2xl font-bold text-red-600">
@@ -2130,9 +2187,17 @@ export default function CloudNativePage() {
                               <span className="font-semibold text-gray-900 dark:text-white text-sm">
                                 [{item.category}] {item.title}
                               </span>
-                              <span className={getSeverityBadge(item.severity)}>{item.severity}</span>
+                              <span className={getSeverityBadge(item.severity)}>
+                                {item.severity}
+                              </span>
                             </div>
-                            <p className="text-gray-500">受影响资源: <code className="font-mono text-gray-800 dark:text-gray-200">{item.resource}</code> (namespace: {item.namespace})</p>
+                            <p className="text-gray-500">
+                              受影响资源:{" "}
+                              <code className="font-mono text-gray-800 dark:text-gray-200">
+                                {item.resource}
+                              </code>{" "}
+                              (namespace: {item.namespace})
+                            </p>
                             <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 rounded-lg">
                               <strong>加固指导:</strong> {item.remediation}
                             </div>
@@ -2186,7 +2251,9 @@ export default function CloudNativePage() {
 
               {/* Filter Tabs */}
               <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 bg-gray-50/30">
-                <span className="text-xs font-semibold text-gray-500">{t("filterBySeverity")}:</span>
+                <span className="text-xs font-semibold text-gray-500">
+                  {t("filterBySeverity")}:
+                </span>
                 {(["all", "critical", "high", "medium", "low"] as const).map((sev) => (
                   <button
                     key={sev}
@@ -2220,7 +2287,11 @@ export default function CloudNativePage() {
                         <span className={getSeverityBadge(f.severity)}>{f.severity}</span>
                       </div>
                       <p className="text-gray-500">
-                        涉及资源: <code className="font-mono text-blue-600 dark:text-blue-400">{f.resource_name}</code> (namespace: {f.namespace})
+                        涉及资源:{" "}
+                        <code className="font-mono text-blue-600 dark:text-blue-400">
+                          {f.resource_name}
+                        </code>{" "}
+                        (namespace: {f.namespace})
                       </p>
                       <p className="text-gray-600 dark:text-gray-300">{f.description}</p>
                       <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 rounded-lg">
@@ -2281,10 +2352,13 @@ export default function CloudNativePage() {
                     在后端运行环境或 Docker compose 文件中设置以下环境变量以点亮此连接：
                   </p>
                   <code className="block p-2.5 bg-sky-100/60 dark:bg-sky-950/40 rounded text-sky-900 dark:text-sky-200 font-mono text-[11px]">
-                    {selectedCloudProvider === "aws" && "AWS_ACCESS_KEY_ID=your-key\nAWS_SECRET_ACCESS_KEY=your-secret"}
-                    {selectedCloudProvider === "alicloud" && "ALICLOUD_ACCESS_KEY=your-key\nALICLOUD_SECRET_KEY=your-secret"}
+                    {selectedCloudProvider === "aws" &&
+                      "AWS_ACCESS_KEY_ID=your-key\nAWS_SECRET_ACCESS_KEY=your-secret"}
+                    {selectedCloudProvider === "alicloud" &&
+                      "ALICLOUD_ACCESS_KEY=your-key\nALICLOUD_SECRET_KEY=your-secret"}
                     {selectedCloudProvider === "azure" && "AZURE_SUBSCRIPTION_ID=your-sub-id"}
-                    {selectedCloudProvider === "gcp" && "GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json"}
+                    {selectedCloudProvider === "gcp" &&
+                      "GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json"}
                   </code>
                 </div>
 
@@ -2292,7 +2366,9 @@ export default function CloudNativePage() {
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center justify-between">
                     <span>云安全审计事件 (近 24 小时)</span>
-                    <span className="text-xs text-gray-400 font-normal">CloudTrail / Activity Logs</span>
+                    <span className="text-xs text-gray-400 font-normal">
+                      CloudTrail / Activity Logs
+                    </span>
                   </h3>
                   {loadingCloudEvents ? (
                     <div className="py-8 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
@@ -2317,7 +2393,9 @@ export default function CloudNativePage() {
                             <span className={getSeverityBadge(evt.severity)}>{evt.severity}</span>
                           </div>
                           <p className="text-gray-600 dark:text-gray-300">{evt.description}</p>
-                          <p className="text-gray-400 text-[11px] font-mono">Resource: {evt.resource_id}</p>
+                          <p className="text-gray-400 text-[11px] font-mono">
+                            Resource: {evt.resource_id}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -2353,19 +2431,22 @@ export default function CloudNativePage() {
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                       {selectedContainer?.name || t("containerDetails")}
                       {selectedContainer && (
-                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
-                          selectedContainer.status === "running"
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                            : selectedContainer.status === "warning"
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                        }`}>
+                        <span
+                          className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                            selectedContainer.status === "running"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                              : selectedContainer.status === "warning"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                                : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                          }`}
+                        >
                           {selectedContainer.status}
                         </span>
                       )}
                     </h2>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {selectedContainer?.cluster_name} · 命名空间: {selectedContainer?.namespace} · Pod: {selectedContainer?.pod_name}
+                      {selectedContainer?.cluster_name} · 命名空间: {selectedContainer?.namespace} ·
+                      Pod: {selectedContainer?.pod_name}
                     </p>
                   </div>
                 </div>
@@ -2393,36 +2474,48 @@ export default function CloudNativePage() {
                         安全上下文与合规策略核查
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className={`p-3 rounded-lg border ${
-                          selectedContainer.privileged
-                            ? "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300"
-                            : "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
-                        }`}>
+                        <div
+                          className={`p-3 rounded-lg border ${
+                            selectedContainer.privileged
+                              ? "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300"
+                              : "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
+                          }`}
+                        >
                           <div className="font-semibold">特权容器 (Privileged)</div>
                           <div className="mt-1 text-xs">
-                            {selectedContainer.privileged ? "⚠️ 允许特权模式 (存在逃逸风险)" : "✓ 已禁用 (合规)"}
+                            {selectedContainer.privileged
+                              ? "⚠️ 允许特权模式 (存在逃逸风险)"
+                              : "✓ 已禁用 (合规)"}
                           </div>
                         </div>
 
-                        <div className={`p-3 rounded-lg border ${
-                          selectedContainer.run_as_root
-                            ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300"
-                            : "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
-                        }`}>
+                        <div
+                          className={`p-3 rounded-lg border ${
+                            selectedContainer.run_as_root
+                              ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300"
+                              : "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
+                          }`}
+                        >
                           <div className="font-semibold">用户权限 (RunAsUser)</div>
                           <div className="mt-1 text-xs">
-                            {selectedContainer.run_as_root ? "⚠️ 以 Root 身份执行" : "✓ 非 Root 用户执行 (合规)"}
+                            {selectedContainer.run_as_root
+                              ? "⚠️ 以 Root 身份执行"
+                              : "✓ 非 Root 用户执行 (合规)"}
                           </div>
                         </div>
 
-                        <div className={`p-3 rounded-lg border ${
-                          selectedContainer.readonly_rootfs
-                            ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
-                            : "bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300"
-                        }`}>
+                        <div
+                          className={`p-3 rounded-lg border ${
+                            selectedContainer.readonly_rootfs
+                              ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
+                              : "bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300"
+                          }`}
+                        >
                           <div className="font-semibold">只读根文件系统</div>
                           <div className="mt-1 text-xs">
-                            {selectedContainer.readonly_rootfs ? "✓ ReadOnlyRootFS 已开启" : "未开启 (建议加固开启)"}
+                            {selectedContainer.readonly_rootfs
+                              ? "✓ ReadOnlyRootFS 已开启"
+                              : "未开启 (建议加固开启)"}
                           </div>
                         </div>
                       </div>
@@ -2449,27 +2542,39 @@ export default function CloudNativePage() {
                         <div className="grid grid-cols-2 gap-2 text-[11px]">
                           <div>
                             <span className="text-gray-400">容器 ID:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">{selectedContainer.id}</p>
+                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                              {selectedContainer.id}
+                            </p>
                           </div>
                           <div>
                             <span className="text-gray-400">内部 IP:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">{selectedContainer.ip_address}</p>
+                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                              {selectedContainer.ip_address}
+                            </p>
                           </div>
                           <div>
                             <span className="text-gray-400">工作节点:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">{selectedContainer.node_name || "node-worker-01"}</p>
+                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                              {selectedContainer.node_name || "node-worker-01"}
+                            </p>
                           </div>
                           <div>
                             <span className="text-gray-400">重启次数:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">{selectedContainer.restart_count} 次</p>
+                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                              {selectedContainer.restart_count} 次
+                            </p>
                           </div>
                           <div>
                             <span className="text-gray-400">CPU 占用:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">{selectedContainer.cpu_usage}</p>
+                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                              {selectedContainer.cpu_usage}
+                            </p>
                           </div>
                           <div>
                             <span className="text-gray-400">内存占用:</span>
-                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">{selectedContainer.memory_usage}</p>
+                            <p className="font-mono text-gray-800 dark:text-gray-200 mt-0.5">
+                              {selectedContainer.memory_usage}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -2491,7 +2596,10 @@ export default function CloudNativePage() {
                           <div className="flex flex-wrap gap-1.5 mt-1">
                             {selectedContainer.ports && selectedContainer.ports.length > 0 ? (
                               selectedContainer.ports.map((p, idx) => (
-                                <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 rounded font-mono text-[11px]">
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 rounded font-mono text-[11px]"
+                                >
                                   {p}
                                 </span>
                               ))
@@ -2505,7 +2613,8 @@ export default function CloudNativePage() {
                           <p className="mt-0.5">
                             {selectedContainer.vulnerabilities_count > 0 ? (
                               <span className="text-red-600 dark:text-red-400 font-semibold">
-                                检测到 {selectedContainer.vulnerabilities_count} 个漏洞 (含高危: {selectedContainer.high_vulns})
+                                检测到 {selectedContainer.vulnerabilities_count} 个漏洞 (含高危:{" "}
+                                {selectedContainer.high_vulns})
                               </span>
                             ) : (
                               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -2539,7 +2648,10 @@ export default function CloudNativePage() {
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {selectedContainer.mounts.map((m, idx) => (
-                            <div key={idx} className="p-2 bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-lg font-mono text-[11px] text-gray-700 dark:text-gray-300">
+                            <div
+                              key={idx}
+                              className="p-2 bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-lg font-mono text-[11px] text-gray-700 dark:text-gray-300"
+                            >
                               📂 {m}
                             </div>
                           ))}
@@ -2548,21 +2660,29 @@ export default function CloudNativePage() {
                     )}
 
                     {/* Environment Variables */}
-                    {selectedContainer.env_vars && Object.keys(selectedContainer.env_vars).length > 0 && (
-                      <div>
-                        <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-xs">
-                          环境变量 (Environment Variables)
-                        </h4>
-                        <div className="bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden divide-y divide-gray-200 dark:divide-gray-700">
-                          {Object.entries(selectedContainer.env_vars).map(([k, v]) => (
-                            <div key={k} className="p-2.5 flex items-center justify-between text-[11px] font-mono">
-                              <span className="text-gray-500 dark:text-gray-400 font-semibold">{k}</span>
-                              <span className="text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">{v}</span>
-                            </div>
-                          ))}
+                    {selectedContainer.env_vars &&
+                      Object.keys(selectedContainer.env_vars).length > 0 && (
+                        <div>
+                          <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-xs">
+                            环境变量 (Environment Variables)
+                          </h4>
+                          <div className="bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden divide-y divide-gray-200 dark:divide-gray-700">
+                            {Object.entries(selectedContainer.env_vars).map(([k, v]) => (
+                              <div
+                                key={k}
+                                className="p-2.5 flex items-center justify-between text-[11px] font-mono"
+                              >
+                                <span className="text-gray-500 dark:text-gray-400 font-semibold">
+                                  {k}
+                                </span>
+                                <span className="text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">
+                                  {v}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </>
                 ) : null}
               </div>

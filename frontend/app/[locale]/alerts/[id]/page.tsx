@@ -510,7 +510,13 @@ function RelatedCasesPanel({
   cases,
   onCreateCase,
 }: {
-  cases?: Array<{ id: string; title: string; severity: string; status: string; created_at?: string | null }>;
+  cases?: Array<{
+    id: string;
+    title: string;
+    severity: string;
+    status: string;
+    created_at?: string | null;
+  }>;
   onCreateCase: () => void;
 }) {
   const t = useTranslations("alerts.detail");
@@ -526,7 +532,12 @@ function RelatedCasesPanel({
             </span>
           )}
         </h3>
-        <Button size="xs" variant="outline" onClick={onCreateCase} leftIcon={<Plus className="w-3.5 h-3.5" />}>
+        <Button
+          size="xs"
+          variant="outline"
+          onClick={onCreateCase}
+          leftIcon={<Plus className="w-3.5 h-3.5" />}
+        >
           {t("createCase") || "新建工单"}
         </Button>
       </div>
@@ -593,7 +604,8 @@ function CreateCaseModal({ open, onClose, alert, onSuccess }: CreateCaseModalPro
     if (open) {
       setTitle(`[Alert #${alert.id}] ${alert.title}`);
       setDescription(
-        alert.description || `Escalated from security alert #${alert.id} (${alert.source || "unknown"})`
+        alert.description ||
+          `Escalated from security alert #${alert.id} (${alert.source || "unknown"})`
       );
       setSeverity(
         (["critical", "high", "medium", "low"].includes((alert.severity || "").toLowerCase())
@@ -816,7 +828,12 @@ export default function AlertDetailPage() {
       <div className="bg-surface-card border-b border-border-subtle shadow-subtle">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-4">
           {/* Ghost breadcrumb back link */}
-          <BackButton fallbackUrl="/alerts" label={tCommon("back")} variant="ghost" className="mb-2 -ml-1" />
+          <BackButton
+            fallbackUrl="/alerts"
+            label={tCommon("back")}
+            variant="ghost"
+            className="mb-2 -ml-1"
+          />
 
           {/* Title + badges + refresh */}
           <div className="flex items-start gap-3">

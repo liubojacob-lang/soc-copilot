@@ -270,9 +270,7 @@ export function IncidentDetailsDrawer({
           {/* Top KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl border border-border-subtle bg-surface-ground">
-              <span className="text-xs text-text-muted font-medium block">
-                {t("riskScore")}
-              </span>
+              <span className="text-xs text-text-muted font-medium block">{t("riskScore")}</span>
               <div className="mt-1.5 flex items-baseline gap-1.5">
                 <span
                   className={`text-xl font-bold tabular-nums ${
@@ -301,9 +299,7 @@ export function IncidentDetailsDrawer({
             </div>
 
             <div className="p-3.5 rounded-xl border border-border-subtle bg-surface-ground">
-              <span className="text-xs text-text-muted font-medium block">
-                {t("events")}
-              </span>
+              <span className="text-xs text-text-muted font-medium block">{t("events")}</span>
               <div className="mt-1.5 flex items-center gap-1.5">
                 <Layers className="w-4 h-4 text-text-muted shrink-0" />
                 <span className="text-xl font-bold text-text-primary tabular-nums">
@@ -313,9 +309,7 @@ export function IncidentDetailsDrawer({
             </div>
 
             <div className="p-3.5 rounded-xl border border-border-subtle bg-surface-ground">
-              <span className="text-xs text-text-muted font-medium block">
-                {t("duration")}
-              </span>
+              <span className="text-xs text-text-muted font-medium block">{t("duration")}</span>
               <div className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-text-primary">
                 <Clock className="w-3.5 h-3.5 text-text-muted shrink-0" />
                 <span className="truncate">{durationText}</span>

@@ -220,9 +220,7 @@ export default function EditPlaybookDefinitionPage() {
   // ── Edge inspector handlers ─────────────────────────────
   const handleUpdateEdge = useCallback((updated: DagEdgeDef) => {
     setEdges((prev) =>
-      prev.map((e) =>
-        e.source === updated.source && e.target === updated.target ? updated : e
-      )
+      prev.map((e) => (e.source === updated.source && e.target === updated.target ? updated : e))
     );
     setSelectedEdge(updated);
   }, []);
@@ -626,9 +624,7 @@ export default function EditPlaybookDefinitionPage() {
               </div>
               <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                 {nodes.length === 0 && (
-                  <p className="text-xs text-text-tertiary italic px-2 py-1.5">
-                    {t("noSteps")}
-                  </p>
+                  <p className="text-xs text-text-tertiary italic px-2 py-1.5">{t("noSteps")}</p>
                 )}
                 {nodes.map((n, idx) => (
                   <button

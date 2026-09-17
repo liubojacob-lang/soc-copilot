@@ -127,17 +127,18 @@ export function PlaybookDetailsDrawer({
 
   if (!isOpen || !targetId) return null;
 
-  const currentData: MarketplacePlaybookDetailFull = detail || (playbook as MarketplacePlaybookDetailFull) || {
-    id: targetId,
-    name: "Playbook",
-    description: "",
-    category: "",
-    difficulty: "intermediate",
-    rating_average: 5.0,
-    rating_count: 1,
-    download_count: 0,
-    verified: false,
-  };
+  const currentData: MarketplacePlaybookDetailFull = detail ||
+    (playbook as MarketplacePlaybookDetailFull) || {
+      id: targetId,
+      name: "Playbook",
+      description: "",
+      category: "",
+      difficulty: "intermediate",
+      rating_average: 5.0,
+      rating_count: 1,
+      download_count: 0,
+      verified: false,
+    };
   const nodes = currentData.dag_json?.nodes || [];
   const requiredPlugins = currentData.required_plugins || [];
   const tags = currentData.tags || [];
@@ -188,7 +189,10 @@ export function PlaybookDetailsDrawer({
               )}
             </div>
 
-            <h2 id="marketplace-drawer-title" className="text-xl font-bold text-content-primary leading-snug">
+            <h2
+              id="marketplace-drawer-title"
+              className="text-xl font-bold text-content-primary leading-snug"
+            >
               {currentData.name}
             </h2>
           </div>
@@ -243,7 +247,9 @@ export function PlaybookDetailsDrawer({
               </div>
               <div className="font-semibold text-content-primary flex items-center gap-1">
                 <span>{currentData.rating_average || "5.0"}</span>
-                <span className="text-content-muted text-[11px]">({currentData.rating_count || 1})</span>
+                <span className="text-content-muted text-[11px]">
+                  ({currentData.rating_count || 1})
+                </span>
               </div>
             </div>
           </div>

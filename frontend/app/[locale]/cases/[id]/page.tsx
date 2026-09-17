@@ -477,7 +477,12 @@ export default function CaseDetailPage() {
       <div className="bg-surface-card border-b border-border-subtle shadow-subtle">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-4">
           {/* Ghost breadcrumb back link */}
-          <BackButton fallbackUrl="/cases" label={t("common.back")} variant="ghost" className="mb-2 -ml-1" />
+          <BackButton
+            fallbackUrl="/cases"
+            label={t("common.back")}
+            variant="ghost"
+            className="mb-2 -ml-1"
+          />
 
           {/* Title + badges */}
           <div className="flex items-center gap-2 flex-wrap">
