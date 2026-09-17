@@ -26,7 +26,7 @@ croniter==3.0.3
 alembic==1.14.0
 
 # Phase 2: AI enhancements (optional)
-chromadb==1.5.2
+# chromadb removed: zero references + CVE-2026-45829/45833 (pre-auth code injection, no fix available)
 
 # Phase 3: Advanced Analytics
 scikit-learn==1.4.0
@@ -43,7 +43,7 @@ aiohttp==3.13.3  # Async HTTP client for notifications
 backoff==2.2.1  # Exponential backoff for retry logic
 
 # v1.0.0: Wazuh Integration + P0-5: now the sole JWT library (auth + Wazuh)
-pyjwt==2.11.0  # JWT encode/decode for app auth and Wazuh API
+pyjwt>=2.13.0  # JWT encode/decode for app auth and Wazuh API (upgraded from 2.11.0, G4/F-032)
 cryptography>=42.0.0  # Fernet encryption for secrets
 
 opentelemetry-api==1.36.0
