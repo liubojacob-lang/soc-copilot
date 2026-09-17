@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.logger import get_logger
 from integrations.otx_client import OTXClient
+from repositories.ioc_hit_repository import IOCHitRepository
 from repositories.threat_intel_repository import ThreatIntelRepository
 from schemas.threat_intel import (
     BulkThreatIntelResponse,
@@ -141,7 +142,27 @@ class ThreatIntelService:
                 skipped_reason=filter_decision.reason,
             )
 
-        # 1. Check cache first (always accessible, even if external provider is disabled)
+        # 1. Check if external TI provider is enabled — short-circuit before any DB/cache I/O
+        enabled, error_reason = await self.is_enabled()
+        if not enabled:
+            return ThreatIntelResponse(
+                request_id=request_id,
+                provider="otx",
+                disabled=True,
+                cached=False,
+                degraded=False,
+                ioc_type=ioc_type,
+                ioc_value=ioc_value,
+                verdict=Verdict.unknown,
+                score=0,
+                pulse_count=0,
+                tags=[],
+                references=[],
+                raw={},
+                error_reason=error_reason,
+            )
+
+        # 2. Check cache (OTX result cache — only queried when TI is enabled)
         cached = await self.repository.get_by_ioc(
             self.session, "otx", ioc_type, ioc_value
         )
@@ -167,9 +188,7 @@ class ThreatIntelService:
                 raw=raw_data,
             )
 
-        # 2. Check internal IOC hits if recorded by system detections
-        from repositories.ioc_hit_repository import IOCHitRepository
-
+        # 3. Check internal IOC hits if recorded by system detections
         ioc_hits = await IOCHitRepository().list_by_ioc(self.session, ioc_value, limit=5)
         if ioc_hits:
             top_hit = ioc_hits[0]
@@ -202,25 +221,6 @@ class ThreatIntelService:
                 tags=tags,
                 references=[],
                 raw=raw_data,
-            )
-
-        # 3. Check if external TI provider is enabled
-        enabled, error_reason = await self.is_enabled()
-        if not enabled:
-            return ThreatIntelResponse(
-                request_id=request_id,
-                provider="otx",
-                disabled=True,
-                degraded=False,
-                ioc_type=ioc_type,
-                ioc_value=ioc_value,
-                verdict=Verdict.unknown,
-                score=0,
-                pulse_count=0,
-                tags=[],
-                references=[],
-                raw={},
-                error_reason=error_reason,
             )
 
         # Query OTX

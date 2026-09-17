@@ -145,26 +145,32 @@ class TestThreatIntelServiceLookup:
                 service.repository.get_by_ioc = AsyncMock(return_value=None)
                 service.repository.create = AsyncMock()
 
-                mock_client = MagicMock()
-                with patch.object(service, "_get_otx_client", return_value=mock_client):
-                    with patch.object(
-                        service,
-                        "_lookup_otx",
-                        AsyncMock(return_value={
-                            "verdict": "suspicious",
-                            "score": 65,
-                            "pulse_count": 2,
-                            "tags": ["phishing"],
-                            "references": ["https://otx.alienvault.com"],
-                            "raw": {},
-                        }),
-                    ):
-                        resp = await service.lookup("domain", "suspicious-bank.com")
-                        assert resp.cached is False
-                        assert resp.verdict == Verdict.suspicious
-                        assert resp.score == 65
-                        assert resp.tags == ["phishing"]
-                        service.repository.create.assert_awaited_once()
+                # Patch IOCHitRepository so internal-hit DB path doesn't touch the mock session
+                with patch(
+                    "services.threat_intel_service.IOCHitRepository"
+                ) as mock_ioc_hit_repo_cls:
+                    mock_ioc_hit_repo_cls.return_value.list_by_ioc = AsyncMock(return_value=[])
+
+                    mock_client = MagicMock()
+                    with patch.object(service, "_get_otx_client", return_value=mock_client):
+                        with patch.object(
+                            service,
+                            "_lookup_otx",
+                            AsyncMock(return_value={
+                                "verdict": "suspicious",
+                                "score": 65,
+                                "pulse_count": 2,
+                                "tags": ["phishing"],
+                                "references": ["https://otx.alienvault.com"],
+                                "raw": {},
+                            }),
+                        ):
+                            resp = await service.lookup("domain", "suspicious-bank.com")
+                            assert resp.cached is False
+                            assert resp.verdict == Verdict.suspicious
+                            assert resp.score == 65
+                            assert resp.tags == ["phishing"]
+                            service.repository.create.assert_awaited_once()
 
     async def test_lookup_otx_exception_degraded(self, mock_session):
         service = ThreatIntelService(mock_session)
@@ -175,16 +181,23 @@ class TestThreatIntelServiceLookup:
                 mock_filter.return_value = mock_decision
 
                 service.repository.get_by_ioc = AsyncMock(return_value=None)
-                mock_client = MagicMock()
-                with patch.object(service, "_get_otx_client", return_value=mock_client):
-                    with patch.object(
-                        service,
-                        "_lookup_otx",
-                        AsyncMock(side_effect=RuntimeError("OTX API 503 Service Unavailable")),
-                    ):
-                        resp = await service.lookup("hash", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-                        assert resp.degraded is True
-                        assert "503" in resp.error_reason
+
+                # Patch IOCHitRepository so internal-hit DB path doesn't touch the mock session
+                with patch(
+                    "services.threat_intel_service.IOCHitRepository"
+                ) as mock_ioc_hit_repo_cls:
+                    mock_ioc_hit_repo_cls.return_value.list_by_ioc = AsyncMock(return_value=[])
+
+                    mock_client = MagicMock()
+                    with patch.object(service, "_get_otx_client", return_value=mock_client):
+                        with patch.object(
+                            service,
+                            "_lookup_otx",
+                            AsyncMock(side_effect=RuntimeError("OTX API 503 Service Unavailable")),
+                        ):
+                            resp = await service.lookup("hash", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+                            assert resp.degraded is True
+                            assert "503" in resp.error_reason
 
 
 @pytest.mark.asyncio
