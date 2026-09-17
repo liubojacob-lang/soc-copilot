@@ -22,27 +22,32 @@ DATA_DIR.mkdir(exist_ok=True)
 # Check if using test database (for testing)
 IS_TEST_ENV = os.getenv("ENVIRONMENT") == "test"
 
-# 统一数据库：默认直连独立仿真 PostgreSQL 数据库 (15432 端口)
-SIM_POSTGRES_URL = (
-    "postgresql+asyncpg://soc_sim_user:soc_sim_password_123456@127.0.0.1:15432/soc_sim_db"
-)
+# 数据库连接串必须由 DATABASE_URL 显式提供。
+#
+# 这里曾经在 DATABASE_URL 缺失时回退到一个硬编码的仿真库连接串（含口令），
+# 已按安全审计 F-003 移除。原因是回退方向恰好是"生产漏配 → 静默连到本地
+# 仿真库"，alembic 迁移也会跟着打错库 —— 宁可启动就失败，也不要静默连错。
+_database_url = os.getenv("DATABASE_URL")
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    DATABASE_URL = SIM_POSTGRES_URL
+if IS_TEST_ENV:
+    # Use separate test database in test environment (fast isolated pytest unit tests)
+    TEST_DB_PATH = os.getenv(
+        "TEST_DB_PATH", "/tmp/soc_copilot_test.db"
+    )  # nosec B108 - test-only path
+    _database_url = f"sqlite+aiosqlite:///{TEST_DB_PATH}"
+
+if not _database_url:
+    raise RuntimeError(
+        "DATABASE_URL is not set. Refusing to fall back to a hardcoded connection "
+        "string (security audit F-003). Set DATABASE_URL explicitly, or start the "
+        "local sim via ./Scripts/sim.sh, which injects it from .env.local-sim."
+    )
+
+DATABASE_URL: str = _database_url
 
 # Determine database type
 IS_POSTGRESQL = DATABASE_URL.startswith("postgresql")
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
-
-# Use separate test database in test environment (for fast isolated pytest unit tests)
-if IS_TEST_ENV:
-    TEST_DB_PATH = os.getenv(
-        "TEST_DB_PATH", "/tmp/soc_copilot_test.db"
-    )  # nosec B108 - test-only path
-    DATABASE_URL = f"sqlite+aiosqlite:///{TEST_DB_PATH}"
-    IS_SQLITE = True
-    IS_POSTGRESQL = False
 
 # Create engine with appropriate settings based on database type
 if IS_SQLITE or (IS_TEST_ENV):
