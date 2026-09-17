@@ -263,9 +263,9 @@ async def search_external(
 @router.post("/external/adapt", response_model=dict)
 async def adapt_external(
     req: ExternalPlaybookAdaptRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_admin),
 ):
-    """Fetch external playbook content and adapt it into standard DAG using AI."""
+    """Fetch external playbook content and adapt it into standard DAG using AI (admin only)."""
     if not req.url and not req.content:
         raise HTTPException(
             status_code=400, detail="Either 'url' or 'content' must be provided"
@@ -275,6 +275,8 @@ async def adapt_external(
     if req.url:
         try:
             raw_content = await fetch_source_content(req.url, title_hint=req.title_hint)
+        except ValueError as ssrf_exc:
+            raise HTTPException(status_code=400, detail=f"URL blocked by security policy: {ssrf_exc}")
         except Exception as e:
             logger.warning(f"Error fetching external URL {req.url}: {e}, using synthesized fallback")
             raw_content = f"# Playbook: {req.title_hint or 'External Playbook'}\n# Source: {req.url}"
@@ -295,14 +297,33 @@ async def import_external(
     req: ExternalPlaybookImportRequest,
     playbook_repo: PlaybookDefinitionRepository = Depends(get_playbook_repo),
     marketplace_repo: MarketplaceRepository = Depends(get_marketplace_repo),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_admin),
 ):
-    """Import adapted playbook into local playbook definitions or community marketplace."""
+    """Import adapted playbook into local definitions or community marketplace (admin only).
+
+    Security (G7): When target is 'marketplace', the entry is created with
+    status=PENDING and verified=False so it must pass admin review before
+    becoming publicly visible.
+    """
     data = req.playbook_data
     name = data.get("name") or "Adapted Playbook"
     description = data.get("description")
-    dag_json = data.get("dag_json") or {"nodes": [], "edges": []}
     version = data.get("version") or "1.0.0"
+
+    # Validate DAG structure before persisting
+    dag_json = data.get("dag_json") or {}
+    if not isinstance(dag_json, dict):
+        raise HTTPException(status_code=400, detail="playbook_data.dag_json must be an object")
+    nodes = dag_json.get("nodes")
+    edges = dag_json.get("edges")
+    if not isinstance(nodes, list) or not isinstance(edges, list):
+        raise HTTPException(
+            status_code=400,
+            detail="playbook_data.dag_json must contain 'nodes' and 'edges' lists",
+        )
+    # Guard against suspiciously large payloads
+    if len(nodes) > 200 or len(edges) > 500:
+        raise HTTPException(status_code=400, detail="DAG exceeds allowed node/edge limits")
 
     # 1. Always save to local definitions so user can immediately view, edit, and run
     imported_def = await playbook_repo.create(
@@ -315,7 +336,7 @@ async def import_external(
     )
     await playbook_repo.session.commit()
 
-    # 2. If target is marketplace, also publish to marketplace
+    # 2. If target is marketplace, publish as PENDING (requires admin review)
     marketplace_id = None
     if req.target == "marketplace":
         mp_playbook = MarketplacePlaybookModel(
@@ -331,20 +352,26 @@ async def import_external(
             source_definition_id=imported_def.id,
             dag_json=dag_json,
             documentation=data.get("documentation"),
-            status=MarketplacePlaybookStatus.APPROVED,
+            # G7: Force PENDING + unverified — admin review required before public visibility
+            status=MarketplacePlaybookStatus.PENDING,
+            verified=False,
             required_plugins=data.get("required_plugins", []),
             compatible_versions=["1.0.0"],
-            verified=True,
         )
         marketplace_repo.session.add(mp_playbook)
         await marketplace_repo.session.commit()
         marketplace_id = mp_playbook.id
+        logger.info(
+            f"Admin {current_user.id} imported external playbook {marketplace_id} "
+            f"into marketplace as PENDING (requires review)"
+        )
 
     return {
         "success": True,
         "message": "Playbook imported successfully",
         "local_definition_id": imported_def.id,
         "marketplace_id": marketplace_id,
+        "marketplace_status": "pending_review" if marketplace_id else None,
         "playbook_name": imported_def.name,
     }
 

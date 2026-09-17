@@ -5,8 +5,10 @@ Shuffle, Sentinel, CISA) and adapting heterogeneous playbooks (YAML/JSON/Markdow
 into native SOC Copilot DAG definitions.
 """
 
+import ipaddress
 import json
 import re
+import socket
 import urllib.parse
 import uuid
 from datetime import UTC, datetime
@@ -28,7 +30,66 @@ from services.ai_providers import LLMFactory
 
 logger = get_logger(__name__)
 
-# Curated online repositories index for instant, highly reliable matching
+# ---------------------------------------------------------------------------
+# SSRF Protection (G6)
+# ---------------------------------------------------------------------------
+_MAX_RESPONSE_BYTES = 1 * 1024 * 1024  # 1 MB hard cap
+
+# Allowed URL schemes — block file://, ftp://, gopher://, etc.
+_ALLOWED_SCHEMES = {"http", "https"}
+
+# Private / reserved IPv4 networks that must never be reached
+_PRIVATE_NETWORKS = [
+    ipaddress.ip_network("127.0.0.0/8"),      # loopback
+    ipaddress.ip_network("10.0.0.0/8"),        # RFC-1918
+    ipaddress.ip_network("172.16.0.0/12"),     # RFC-1918
+    ipaddress.ip_network("192.168.0.0/16"),    # RFC-1918
+    ipaddress.ip_network("169.254.0.0/16"),    # link-local / cloud metadata
+    ipaddress.ip_network("100.64.0.0/10"),     # carrier-grade NAT
+    ipaddress.ip_network("::1/128"),            # IPv6 loopback
+    ipaddress.ip_network("fc00::/7"),           # IPv6 unique-local
+    ipaddress.ip_network("fe80::/10"),          # IPv6 link-local
+]
+
+
+def _is_private_host(host: str) -> bool:
+    """Return True if *host* resolves to a private / reserved address."""
+    try:
+        addr = ipaddress.ip_address(host)
+        return any(addr in net for net in _PRIVATE_NETWORKS)
+    except ValueError:
+        pass  # host is a hostname — resolve it
+    try:
+        resolved = socket.getaddrinfo(host, None)
+        for _family, _type, _proto, _canonname, sockaddr in resolved:
+            addr = ipaddress.ip_address(sockaddr[0])
+            if any(addr in net for net in _PRIVATE_NETWORKS):
+                return True
+    except (socket.gaierror, OSError):
+        # Cannot resolve → treat as unsafe
+        return True
+    return False
+
+
+def _assert_safe_url(url: str) -> None:
+    """Raise ValueError if *url* is not safe to fetch (SSRF guard).
+
+    Checks:
+    - Scheme is http or https.
+    - Host does not resolve to a private / reserved address.
+    """
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in _ALLOWED_SCHEMES:
+        raise ValueError(f"Disallowed URL scheme: {parsed.scheme!r}")
+    host = parsed.hostname or ""
+    if not host:
+        raise ValueError("URL has no hostname")
+    if _is_private_host(host):
+        raise ValueError(f"URL resolves to a private/reserved address: {host!r}")
+
+
+# ---------------------------------------------------------------------------
+
 CURATED_EXTERNAL_PLAYBOOKS: list[dict[str, Any]] = [
     {
         "id": "ext-xsoar-001",
@@ -338,10 +399,24 @@ def handle_log4j_exploit(container):
 
 
 async def fetch_source_content(url_or_raw: str, title_hint: str | None = None) -> str:
-    """Fetch content from an external URL or return curated / provided raw text with fallback."""
+    """Fetch content from an external URL or return curated / provided raw text with fallback.
+
+    Security (G6): performs SSRF pre-flight checks before any network I/O:
+    - Only http/https schemes are permitted.
+    - Target host must not resolve to a private/reserved/cloud-metadata address.
+    - Redirects are followed manually with per-hop re-validation.
+    - Response body is capped at _MAX_RESPONSE_BYTES (1 MB).
+    """
     target = url_or_raw.strip()
     if not (target.startswith("http://") or target.startswith("https://")):
         return target
+
+    # Pre-flight SSRF guard on the user-supplied URL
+    try:
+        _assert_safe_url(target)
+    except ValueError as exc:
+        logger.warning(f"SSRF guard blocked URL {target!r}: {exc}")
+        raise  # propagate so the router can return 400
 
     # Convert GitHub blob URLs to raw usercontent URLs
     raw_url = re.sub(
@@ -350,15 +425,49 @@ async def fetch_source_content(url_or_raw: str, title_hint: str | None = None) -
         target,
     )
 
+    # Re-validate after GitHub → raw transformation (host may differ)
+    if raw_url != target:
+        try:
+            _assert_safe_url(raw_url)
+        except ValueError as exc:
+            logger.warning(f"SSRF guard blocked transformed URL {raw_url!r}: {exc}")
+            raise
+
     headers = {"User-Agent": "SOC-Copilot-Playbook-Adapter/1.0"}
     try:
-        async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as client:
-            res = await client.get(raw_url, headers=headers)
-            if res.status_code == 200 and res.text.strip():
-                return res.text
-            logger.warning(
-                f"External fetch returned status {res.status_code} for {raw_url}, applying fallback"
-            )
+        # follow_redirects=False — we handle each hop manually to re-validate
+        async with httpx.AsyncClient(timeout=4.0, follow_redirects=False) as client:
+            current_url = raw_url
+            for _hop in range(5):  # max 5 redirects
+                res = await client.get(current_url, headers=headers)
+                if res.is_redirect:
+                    location = res.headers.get("location", "")
+                    if not location:
+                        break
+                    # Resolve relative redirects
+                    location = urllib.parse.urljoin(current_url, location)
+                    try:
+                        _assert_safe_url(location)
+                    except ValueError as exc:
+                        logger.warning(
+                            f"SSRF guard blocked redirect to {location!r}: {exc}"
+                        )
+                        raise
+                    current_url = location
+                    continue
+                # Non-redirect response
+                if res.status_code == 200:
+                    # Enforce size cap
+                    body = res.content[:_MAX_RESPONSE_BYTES]
+                    text = body.decode("utf-8", errors="replace").strip()
+                    if text:
+                        return text
+                logger.warning(
+                    f"External fetch returned status {res.status_code} for {current_url}, applying fallback"
+                )
+                break
+    except ValueError:
+        raise  # SSRF blocks should propagate
     except Exception as e:
         logger.warning(f"External fetch connection failed for {raw_url}: {e}, applying fallback")
 
