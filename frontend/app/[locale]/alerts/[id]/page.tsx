@@ -42,12 +42,16 @@ import {
   Tag,
   Info,
   Calendar,
+  Briefcase,
+  Plus,
 } from "lucide-react";
 import { loadAuthState } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/common/Button";
 import { Card, BackButton } from "@/components/common";
+import { Modal } from "@/components/common/Modal";
+import { createCase } from "@/lib/api/cases";
 import { AIAnalysisPanel } from "@/components/alerts/AIAnalysisPanel";
 import { RelatedAlertsPanel } from "@/components/alerts/RelatedAlertsPanel";
 import { LoadingState } from "@/components/common/LoadingState";
@@ -420,10 +424,12 @@ function NotesSection({
 function TriagePanel({
   currentStatus,
   onStatusChange,
+  onCreateCase,
   isUpdating,
 }: {
   currentStatus?: string;
   onStatusChange: (status: string) => void;
+  onCreateCase?: () => void;
   isUpdating: boolean;
 }) {
   const t = useTranslations("alerts.detail");
@@ -463,7 +469,13 @@ function TriagePanel({
             return (
               <Button
                 key={nextStatus}
-                onClick={() => onStatusChange(nextStatus)}
+                onClick={() => {
+                  if (nextStatus === "escalated" && onCreateCase) {
+                    onCreateCase();
+                  } else {
+                    onStatusChange(nextStatus);
+                  }
+                }}
                 disabled={isUpdating}
                 size="sm"
                 variant={variant}
@@ -492,6 +504,206 @@ function TriagePanel({
   );
 }
 
+// ── Related Cases Panel ────────────────────────────────
+
+function RelatedCasesPanel({
+  cases,
+  onCreateCase,
+}: {
+  cases?: Array<{ id: string; title: string; severity: string; status: string; created_at?: string | null }>;
+  onCreateCase: () => void;
+}) {
+  const t = useTranslations("alerts.detail");
+  return (
+    <Card className="p-4 sm:p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold tracking-tight text-text-primary flex items-center gap-2">
+          <Briefcase className="w-4 h-4 text-accent-600 dark:text-accent-400" />
+          <span>{t("relatedCasesTitle") || "关联事件工单"}</span>
+          {cases && cases.length > 0 && (
+            <span className="px-1.5 py-0.2 text-[11px] bg-accent-500/20 text-accent-600 rounded-full font-semibold">
+              {cases.length}
+            </span>
+          )}
+        </h3>
+        <Button size="xs" variant="outline" onClick={onCreateCase} leftIcon={<Plus className="w-3.5 h-3.5" />}>
+          {t("createCase") || "新建工单"}
+        </Button>
+      </div>
+      {!cases || cases.length === 0 ? (
+        <p className="text-xs text-text-muted italic py-2">
+          {t("noRelatedCases") || "当前告警暂未关联任何事件工单"}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {cases.map((c) => (
+            <a
+              key={c.id}
+              href={`/cases/${c.id}`}
+              className="block p-2.5 rounded-lg border border-border-subtle bg-surface-ground hover:border-accent-500/50 hover:bg-surface-hover transition-colors"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-text-primary truncate">{c.title}</span>
+                <Badge size="xs" severity={c.severity as any}>
+                  {c.severity}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 mt-1 text-[11px] text-text-muted">
+                <span className="capitalize">{c.status}</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ── Create Case Modal ──────────────────────────────────
+
+interface CreateCaseModalProps {
+  open: boolean;
+  onClose: () => void;
+  alert: {
+    id: number | string;
+    title: string;
+    description?: string | null;
+    severity?: string | null;
+    source?: string | null;
+  };
+  onSuccess: (caseId: string) => void;
+}
+
+function CreateCaseModal({ open, onClose, alert, onSuccess }: CreateCaseModalProps) {
+  const t = useTranslations("alerts.detail");
+  const tCommon = useTranslations("common");
+  const [title, setTitle] = useState(`[Alert #${alert.id}] ${alert.title}`);
+  const [description, setDescription] = useState(
+    alert.description || `Escalated from security alert #${alert.id} (${alert.source || "unknown"})`
+  );
+  const [severity, setSeverity] = useState<"critical" | "high" | "medium" | "low">(
+    (["critical", "high", "medium", "low"].includes((alert.severity || "").toLowerCase())
+      ? (alert.severity || "").toLowerCase()
+      : "medium") as any
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTitle(`[Alert #${alert.id}] ${alert.title}`);
+      setDescription(
+        alert.description || `Escalated from security alert #${alert.id} (${alert.source || "unknown"})`
+      );
+      setSeverity(
+        (["critical", "high", "medium", "low"].includes((alert.severity || "").toLowerCase())
+          ? (alert.severity || "").toLowerCase()
+          : "medium") as any
+      );
+      setError(null);
+    }
+  }, [open, alert]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const created = await createCase({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        severity,
+        alert_ids: [alert.id],
+      });
+      onSuccess(created.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create case");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={
+        <div className="flex items-center gap-2">
+          <Briefcase className="w-5 h-5 text-accent-600 dark:text-accent-400" />
+          <span>{t("createCaseModalTitle") || "升级为事件调查工单"}</span>
+        </div>
+      }
+      size="lg"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 dark:bg-rose-900/20 dark:border-rose-800 dark:text-rose-300 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-xs font-semibold text-text-secondary mb-1">
+            {tCommon("title") || "工单标题"} *
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-text-secondary mb-1">
+            {tCommon("severity") || "严重级别"}
+          </label>
+          <select
+            value={severity}
+            onChange={(e) => setSeverity(e.target.value as any)}
+            className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-text-secondary mb-1">
+            {tCommon("description") || "调查描述"}
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600"
+          />
+        </div>
+
+        <div className="p-3 bg-surface-ground rounded-lg border border-border-subtle text-xs text-text-muted flex items-center gap-2">
+          <Info className="w-4 h-4 text-accent-500 shrink-0" />
+          <span>
+            {t("createCaseHint") || `此工单将自动关联告警 #${alert.id}，并录入事件调查时间线。`}
+          </span>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
+          <Button variant="secondary" size="sm" type="button" onClick={onClose} disabled={loading}>
+            {tCommon("cancel") || "取消"}
+          </Button>
+          <Button variant="primary" size="sm" type="submit" isLoading={loading}>
+            {t("createCaseConfirm") || "确认升级工单"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 // ── Page Component ──────────────────────────────────────
 
 export default function AlertDetailPage() {
@@ -516,6 +728,7 @@ export default function AlertDetailPage() {
 
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "notes">("overview");
+  const [showCreateCaseModal, setShowCreateCaseModal] = useState(false);
 
   // Auth
   useEffect(() => {
@@ -599,14 +812,20 @@ export default function AlertDetailPage() {
 
   return (
     <div className="min-h-screen bg-surface-ground pb-12">
-      {/* Header */}
+      {/* Header — Linear/Vercel style */}
       <div className="bg-surface-card border-b border-border-subtle shadow-subtle">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-start gap-4">
-            <BackButton fallbackUrl="/alerts" label={tCommon("back")} className="mt-0.5 shrink-0" />
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-4">
+          {/* Ghost breadcrumb back link */}
+          <BackButton fallbackUrl="/alerts" label={tCommon("back")} variant="ghost" className="mb-2 -ml-1" />
 
+          {/* Title + badges + refresh */}
+          <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
+              {/* Title inline with severity/status badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-text-primary leading-snug">
+                  {alert.title}
+                </h1>
                 <Badge severity={mapSeverityBadge(alert.severity)} variant="pill">
                   {severityLabel(alert.severity)}
                 </Badge>
@@ -614,9 +833,7 @@ export default function AlertDetailPage() {
                   {statusLabel(alert.status)}
                 </Badge>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-text-primary">
-                {alert.title}
-              </h1>
+              {/* Meta info row */}
               <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-text-muted">
                 <span className="flex items-center gap-1 font-mono">
                   <Server className="w-3.5 h-3.5" />
@@ -639,15 +856,27 @@ export default function AlertDetailPage() {
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => refetch()}
-              title={tCommon("refresh")}
-              aria-label={tCommon("refresh")}
-            >
-              <RefreshCw className="w-4 h-4 text-text-muted" />
-            </Button>
+            {/* Actions — top-right, aligned with title row */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setShowCreateCaseModal(true)}
+                leftIcon={<Briefcase className="w-4 h-4" />}
+                className="bg-accent-600 hover:bg-accent-700 text-white"
+              >
+                <span>{t("createCase") || "升级为工单"}</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => refetch()}
+                title={tCommon("refresh")}
+                aria-label={tCommon("refresh")}
+              >
+                <RefreshCw className="w-4 h-4 text-text-muted" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -678,7 +907,9 @@ export default function AlertDetailPage() {
                 description: alert.description,
                 source: alert.source,
                 severity: alert.severity,
+                raw_log: (alert as any).raw_log || (alert as any).raw_data || null,
               }}
+              onAddNote={handleAddNote}
             />
 
             {/* Tabs: Overview / Timeline / Notes */}
@@ -819,6 +1050,7 @@ export default function AlertDetailPage() {
             <TriagePanel
               currentStatus={alert.status}
               onStatusChange={handleStatusChange}
+              onCreateCase={() => setShowCreateCaseModal(true)}
               isUpdating={updateAlert.isPending}
             />
 
@@ -895,6 +1127,12 @@ export default function AlertDetailPage() {
               </Card>
             )}
 
+            {/* Related Cases — 关联事件调查工单 */}
+            <RelatedCasesPanel
+              cases={lifecycle?.related_cases}
+              onCreateCase={() => setShowCreateCaseModal(true)}
+            />
+
             {/* Related Alerts — 同一资产/源 IP 的其他告警（真实后端过滤，非编造关联度） */}
             <RelatedAlertsPanel
               alertId={alert.id}
@@ -905,6 +1143,26 @@ export default function AlertDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Case Modal */}
+      {alert && (
+        <CreateCaseModal
+          open={showCreateCaseModal}
+          onClose={() => setShowCreateCaseModal(false)}
+          alert={{
+            id: alert.id,
+            title: alert.title,
+            description: alert.description,
+            severity: alert.severity,
+            source: alert.source,
+          }}
+          onSuccess={(newCaseId) => {
+            setShowCreateCaseModal(false);
+            showToast(t("caseCreatedSuccess") || "已成功创建并升级为事件调查工单", "success");
+            router.push(`/cases/${newCaseId}`);
+          }}
+        />
+      )}
     </div>
   );
 }

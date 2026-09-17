@@ -22,20 +22,27 @@ DATA_DIR.mkdir(exist_ok=True)
 # Check if using test database (for testing)
 IS_TEST_ENV = os.getenv("ENVIRONMENT") == "test"
 
-# Check if using PostgreSQL (from environment or docker-compose)
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DATA_DIR / 'app.db'}")
+# 统一数据库：默认直连独立仿真 PostgreSQL 数据库 (15432 端口)
+SIM_POSTGRES_URL = (
+    "postgresql+asyncpg://soc_sim_user:soc_sim_password_123456@127.0.0.1:15432/soc_sim_db"
+)
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    DATABASE_URL = SIM_POSTGRES_URL
 
 # Determine database type
 IS_POSTGRESQL = DATABASE_URL.startswith("postgresql")
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
 
-# Use separate test database in test environment
-if IS_TEST_ENV and IS_SQLITE:
-    # Use in-memory database for tests (faster and isolated)
+# Use separate test database in test environment (for fast isolated pytest unit tests)
+if IS_TEST_ENV:
     TEST_DB_PATH = os.getenv(
         "TEST_DB_PATH", "/tmp/soc_copilot_test.db"
     )  # nosec B108 - test-only path
     DATABASE_URL = f"sqlite+aiosqlite:///{TEST_DB_PATH}"
+    IS_SQLITE = True
+    IS_POSTGRESQL = False
 
 # Create engine with appropriate settings based on database type
 if IS_SQLITE or (IS_TEST_ENV):

@@ -59,6 +59,8 @@ export interface AlertAnalysisResponse {
   model_used: string;
   raw_response?: string;
   trace_id?: string;
+  degraded?: boolean;
+  error_reason?: string | null;
 }
 
 export interface ResponseMetadata {

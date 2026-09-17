@@ -184,10 +184,10 @@ async def seed_ai_models(session: AsyncSession) -> tuple[int, int]:
 
     # Ensure 'auto' is marked as default
     await session.execute(
-        text("UPDATE ai_models SET is_default = 0")
+        text("UPDATE ai_models SET is_default = FALSE")
     )
     await session.execute(
-        text("UPDATE ai_models SET is_default = 1 WHERE id = 'auto'")
+        text("UPDATE ai_models SET is_default = TRUE WHERE id = 'auto'")
     )
 
     # Reset user settings only when the referenced model no longer exists;

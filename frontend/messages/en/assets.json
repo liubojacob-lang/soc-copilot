@@ -2,6 +2,9 @@
   "assets": {
     "title": "Assets Management",
     "management": "Assets Management",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing...",
+    "refreshSuccess": "Asset list refreshed",
     "addAsset": "Add Asset",
     "importJson": "Import JSON",
     "searchPlaceholder": "Search by hostname, IP, owner, business...",

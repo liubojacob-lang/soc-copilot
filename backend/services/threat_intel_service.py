@@ -141,33 +141,13 @@ class ThreatIntelService:
                 skipped_reason=filter_decision.reason,
             )
 
-        # Check if enabled
-        enabled, error_reason = await self.is_enabled()
-        if not enabled:
-            return ThreatIntelResponse(
-                request_id=request_id,
-                provider="otx",
-                disabled=True,
-                degraded=False,
-                ioc_type=ioc_type,
-                ioc_value=ioc_value,
-                verdict=Verdict.unknown,
-                score=0,
-                pulse_count=0,
-                tags=[],
-                references=[],
-                raw={},
-                error_reason=error_reason,
-            )
-
-        # Check cache first
+        # 1. Check cache first (always accessible, even if external provider is disabled)
         cached = await self.repository.get_by_ioc(
             self.session, "otx", ioc_type, ioc_value
         )
         if cached:
             import json
 
-            # Parse verdict from cached response (not from status field)
             raw_data = json.loads(cached.response_json) if cached.response_json else {}
             cached_verdict = raw_data.get("verdict", Verdict.unknown)
 
@@ -185,6 +165,62 @@ class ThreatIntelService:
                 tags=json.loads(cached.tags) if cached.tags else [],
                 references=[],
                 raw=raw_data,
+            )
+
+        # 2. Check internal IOC hits if recorded by system detections
+        from repositories.ioc_hit_repository import IOCHitRepository
+
+        ioc_hits = await IOCHitRepository().list_by_ioc(self.session, ioc_value, limit=5)
+        if ioc_hits:
+            top_hit = ioc_hits[0]
+            confidence = top_hit.confidence or 75
+            verdict = (
+                Verdict.malicious
+                if confidence >= 80
+                else (Verdict.suspicious if confidence >= 50 else Verdict.benign)
+            )
+            tags = [top_hit.source, top_hit.ioc_type]
+            if top_hit.notes:
+                tags.append(top_hit.notes)
+            raw_data = {
+                "source": top_hit.source,
+                "confidence": confidence,
+                "context": top_hit.context_snippet,
+                "notes": top_hit.notes,
+            }
+            return ThreatIntelResponse(
+                request_id=request_id,
+                provider=top_hit.source,
+                disabled=False,
+                cached=True,
+                degraded=False,
+                ioc_type=ioc_type,
+                ioc_value=ioc_value,
+                verdict=verdict,
+                score=confidence,
+                pulse_count=len(ioc_hits),
+                tags=tags,
+                references=[],
+                raw=raw_data,
+            )
+
+        # 3. Check if external TI provider is enabled
+        enabled, error_reason = await self.is_enabled()
+        if not enabled:
+            return ThreatIntelResponse(
+                request_id=request_id,
+                provider="otx",
+                disabled=True,
+                degraded=False,
+                ioc_type=ioc_type,
+                ioc_value=ioc_value,
+                verdict=Verdict.unknown,
+                score=0,
+                pulse_count=0,
+                tags=[],
+                references=[],
+                raw={},
+                error_reason=error_reason,
             )
 
         # Query OTX

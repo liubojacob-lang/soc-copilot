@@ -29,13 +29,6 @@ export interface AuditFilters {
   dateTo: string;
 }
 
-export interface DatePreset {
-  id: string;
-  name: string;
-  label: string;
-  getRange: () => { from: string; to: string; display: string };
-}
-
 export interface QuickFilter {
   name: string;
   icon: string;

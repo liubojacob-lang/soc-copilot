@@ -7,6 +7,9 @@
  * - Loads an existing definition and prefills the metadata form + DAG editor
  * - Edits name/version/description/is_active and the DAG (visual canvas or JSON source)
  * - Canvas edits sync back to state via DAGCanvas change callbacks
+ * - Node click → NodeInspectorDrawer (update, delete, duplicate)
+ * - Edge click → EdgeInspectorDrawer (condition editing, delete)
+ * - Add Step button → ActionPaletteModal
  * - Submits PATCH to /api/v1/playbook-definitions/{id} with legacy endpoint fallback
  */
 
@@ -20,10 +23,23 @@ import { authFetch, loadAuthState } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState } from "@/components/common/LoadingState";
 import { BackButton } from "@/components/common";
-import { Save, Play, Layers, Code2, CheckCircle2, AlertTriangle, Info } from "lucide-react";
+import {
+  Save,
+  Play,
+  Layers,
+  Code2,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+  Plus,
+  MousePointerClick,
+} from "lucide-react";
 import type { DagNodeDef, DagEdgeDef, DagDefinition } from "../../../constants";
-import { parseDagDefinition, normalizeNodeType } from "../../../constants";
+import { parseDagDefinition, normalizeNodeType, ACTION_TYPE_META } from "../../../constants";
 import type { NodeData } from "@/components/dag/DAGNode";
+import { NodeInspectorDrawer } from "../../../components/NodeInspectorDrawer";
+import { EdgeInspectorDrawer } from "../../../components/EdgeInspectorDrawer";
+import { ActionPaletteModal } from "../../../components/ActionPaletteModal";
 
 // Dynamically import DAGCanvas to prevent SSR issues with ReactFlow
 const DAGCanvas = dynamic(() => import("@/components/dag/DAGCanvas").then((mod) => mod.DAGCanvas), {
@@ -60,6 +76,11 @@ export default function EditPlaybookDefinitionPage() {
   const [viewMode, setViewMode] = useState<"visual" | "json">("visual");
   const [jsonText, setJsonText] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
+
+  // Inspector / Palette State
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<DagEdgeDef | null>(null);
+  const [isActionPaletteOpen, setIsActionPaletteOpen] = useState(false);
 
   // Submission State
   const [submitting, setSubmitting] = useState(false);
@@ -132,6 +153,106 @@ export default function EditPlaybookDefinitionPage() {
     }
     loadDefinition();
   }, [router, loadDefinition]);
+
+  // ── Node inspector handlers ─────────────────────────────
+  const selectedNode = useMemo(
+    () => nodes.find((n) => n.id === selectedNodeId) ?? null,
+    [nodes, selectedNodeId]
+  );
+
+  const handleNodeClick = useCallback((rfNode: Node) => {
+    setSelectedEdge(null);
+    setSelectedNodeId(rfNode.id);
+  }, []);
+
+  const handleEdgeClick = useCallback(
+    (rfEdge: Edge) => {
+      setSelectedNodeId(null);
+      const src = rfEdge.source;
+      const tgt = rfEdge.target;
+      const existing = edges.find((e) => e.source === src && e.target === tgt);
+      setSelectedEdge(
+        existing ?? {
+          source: src,
+          target: tgt,
+          condition: typeof rfEdge.label === "string" ? rfEdge.label : undefined,
+        }
+      );
+    },
+    [edges]
+  );
+
+  const handlePaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+    setSelectedEdge(null);
+  }, []);
+
+  const handleUpdateNode = useCallback((updated: DagNodeDef) => {
+    setNodes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
+    setSelectedNodeId(updated.id);
+  }, []);
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    setNodes((prev) => prev.filter((n) => n.id !== nodeId));
+    setEdges((prev) => prev.filter((e) => e.source !== nodeId && e.target !== nodeId));
+    setSelectedNodeId(null);
+  }, []);
+
+  const handleDuplicateNode = useCallback(
+    (nodeId: string) => {
+      const original = nodes.find((n) => n.id === nodeId);
+      if (!original) return;
+      const newId = `${original.id}_copy_${Date.now().toString(36)}`;
+      const cloned: DagNodeDef = {
+        ...original,
+        id: newId,
+        step_id: `${original.step_id}_copy`,
+        name: `${original.name} (副本)`,
+        position_x: (original.position_x ?? 0) + 30,
+        position_y: (original.position_y ?? 0) + 30,
+      };
+      setNodes((prev) => [...prev, cloned]);
+      setSelectedNodeId(newId);
+    },
+    [nodes]
+  );
+
+  // ── Edge inspector handlers ─────────────────────────────
+  const handleUpdateEdge = useCallback((updated: DagEdgeDef) => {
+    setEdges((prev) =>
+      prev.map((e) =>
+        e.source === updated.source && e.target === updated.target ? updated : e
+      )
+    );
+    setSelectedEdge(updated);
+  }, []);
+
+  const handleDeleteEdge = useCallback((source: string, target: string) => {
+    setEdges((prev) => prev.filter((e) => !(e.source === source && e.target === target)));
+    setSelectedEdge(null);
+  }, []);
+
+  // ── Action palette ─────────────────────────────────────
+  const handleSelectNewAction = useCallback(
+    (type: string, actionName: string) => {
+      const meta = ACTION_TYPE_META[type];
+      const idx = nodes.length;
+      const newNode: DagNodeDef = {
+        id: `${type}_${Date.now().toString(36)}`,
+        type: normalizeNodeType(type),
+        step_id: `${type}_${idx + 1}`,
+        name: actionName,
+        position_x: 60 + (idx % 4) * 280,
+        position_y: 80 + Math.floor(idx / 4) * 180,
+        action: type,
+        inputs: meta?.defaultInputs ?? {},
+      };
+      setNodes((prev) => [...prev, newNode]);
+      setIsActionPaletteOpen(false);
+      setSelectedNodeId(newNode.id);
+    },
+    [nodes.length]
+  );
 
   // Sync JSON Text Changes
   const handleJsonChange = (text: string) => {
@@ -322,7 +443,7 @@ export default function EditPlaybookDefinitionPage() {
   // ── Loading ─────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-canvas transition-colors">
+      <div className="min-h-screen bg-surface-page transition-colors">
         <PageHeader
           title={t("title")}
           subtitle={t("subtitle")}
@@ -330,6 +451,7 @@ export default function EditPlaybookDefinitionPage() {
             <BackButton
               fallbackUrl={`/playbooks/definitions/${definitionId}`}
               label={tCommon("back")}
+              variant="ghost"
             />
           }
         />
@@ -343,7 +465,7 @@ export default function EditPlaybookDefinitionPage() {
   // ── Error / Not Found ───────────────────────────────────
   if (loadError) {
     return (
-      <div className="min-h-screen bg-surface-canvas transition-colors">
+      <div className="min-h-screen bg-surface-page transition-colors">
         <PageHeader
           title={t("title")}
           subtitle={t("subtitle")}
@@ -351,6 +473,7 @@ export default function EditPlaybookDefinitionPage() {
             <BackButton
               fallbackUrl={`/playbooks/definitions/${definitionId}`}
               label={tCommon("back")}
+              variant="ghost"
             />
           }
         />
@@ -366,7 +489,7 @@ export default function EditPlaybookDefinitionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-canvas transition-colors pb-16">
+    <div className="min-h-screen bg-surface-page transition-colors pb-16">
       {/* Header */}
       <PageHeader
         title={t("title")}
@@ -375,6 +498,7 @@ export default function EditPlaybookDefinitionPage() {
           <BackButton
             fallbackUrl={`/playbooks/definitions/${definitionId}`}
             label={tCommon("back")}
+            variant="ghost"
           />
         }
         actions={
@@ -383,9 +507,9 @@ export default function EditPlaybookDefinitionPage() {
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-accent-600 hover:bg-accent-700 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-600 hover:bg-accent-700 text-white text-sm font-medium shadow-subtle transition-all disabled:opacity-50"
             >
-              <Save className="w-3.5 h-3.5" />
+              <Save className="w-4 h-4" />
               <span>{submitting ? t("saving") : t("save")}</span>
             </button>
           </div>
@@ -396,7 +520,7 @@ export default function EditPlaybookDefinitionPage() {
         {/* Feedback Alert */}
         {feedback && (
           <div
-            className={`p-4 rounded-2xl border flex items-center gap-3 animate-fade-in ${
+            className={`p-4 rounded-xl border flex items-center gap-3 animate-fade-in ${
               feedback.type === "success"
                 ? "bg-success-500/10 border-success-500/30 text-success-700 dark:text-success-300"
                 : "bg-danger-500/10 border-danger-500/30 text-danger-700 dark:text-danger-300"
@@ -407,22 +531,22 @@ export default function EditPlaybookDefinitionPage() {
             ) : (
               <AlertTriangle className="w-5 h-5 shrink-0" />
             )}
-            <span className="text-xs font-medium">{feedback.message}</span>
+            <span className="text-sm font-medium">{feedback.message}</span>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Metadata Config */}
-          <div className="bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle space-y-4">
+          <div className="bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
               <Info className="w-4 h-4 text-accent-600 dark:text-accent-400" />
-              <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
+              <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
                 {t("basicConfig")}
               </h3>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1.5">
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
                 {t("name")} <span className="text-danger-500">*</span>
               </label>
               <input
@@ -431,13 +555,13 @@ export default function EditPlaybookDefinitionPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("namePlaceholder")}
                 required
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
+                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   {t("version")}
                 </label>
                 <input
@@ -445,18 +569,18 @@ export default function EditPlaybookDefinitionPage() {
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
                   placeholder="1.0.0"
-                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
+                  className="w-full px-3.5 py-2 text-sm font-mono rounded-lg border border-border-default bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   {t("isActive")}
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsActive(!isActive)}
-                  className={`w-full py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-colors ${
+                  className={`w-full py-2 px-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                     isActive
                       ? "bg-success-500/15 border-success-500/30 text-success-700 dark:text-success-400"
                       : "bg-surface-hover border-border-subtle text-text-tertiary"
@@ -473,7 +597,7 @@ export default function EditPlaybookDefinitionPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1.5">
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
                 {t("description")}
               </label>
               <textarea
@@ -481,79 +605,151 @@ export default function EditPlaybookDefinitionPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={t("descriptionPlaceholder")}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors resize-none"
+                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors resize-none"
               />
             </div>
 
             {/* Step Summary */}
             <div className="pt-2 border-t border-border-subtle">
-              <h4 className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider mb-2">
-                {t("stepSummary", { count: nodes.length })}
-              </h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+                  {t("stepSummary", { count: nodes.length })}
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setIsActionPaletteOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-500/10 hover:bg-accent-500/20 text-accent-700 dark:text-accent-300 text-xs font-medium transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {t("addAction")}
+                </button>
+              </div>
               <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                {nodes.length === 0 && (
+                  <p className="text-xs text-text-tertiary italic px-2 py-1.5">
+                    {t("noSteps")}
+                  </p>
+                )}
                 {nodes.map((n, idx) => (
-                  <div
+                  <button
                     key={n.id}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-hover/60 text-xs"
+                    type="button"
+                    onClick={() => {
+                      setSelectedEdge(null);
+                      setSelectedNodeId(n.id);
+                    }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-colors text-left ${
+                      selectedNodeId === n.id
+                        ? "bg-accent-500/15 border border-accent-500/30"
+                        : "bg-surface-hover/60 hover:bg-surface-hover border border-transparent"
+                    }`}
                   >
-                    <span className="w-4 h-4 rounded-full bg-accent-500/10 text-accent-700 dark:text-accent-300 flex items-center justify-center text-[10px] font-mono shrink-0">
+                    <span className="w-4 h-4 rounded-full bg-accent-500/10 text-accent-700 dark:text-accent-300 flex items-center justify-center text-xs font-mono shrink-0">
                       {idx + 1}
                     </span>
                     <span className="text-text-primary truncate flex-1">{n.name}</span>
-                    <span className="text-[10px] font-mono text-text-tertiary">{n.step_id}</span>
-                  </div>
+                    <span className="text-xs font-mono text-text-tertiary">{n.step_id}</span>
+                  </button>
                 ))}
               </div>
             </div>
           </div>
 
           {/* Flow Editor */}
-          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle flex flex-col justify-between">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-4">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-accent-600 dark:text-accent-400" />
-                <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
+                <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
                   {t("dagTitle")}
                 </h3>
               </div>
-              <div className="flex items-center gap-1 p-0.5 rounded-xl bg-surface-hover border border-border-subtle text-xs">
+              <div className="flex items-center gap-2">
+                {/* Add action button in toolbar */}
                 <button
                   type="button"
-                  onClick={() => switchToView("visual")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
-                    viewMode === "visual"
-                      ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
-                  }`}
+                  onClick={() => setIsActionPaletteOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-600 hover:bg-accent-700 text-white text-xs font-medium transition-colors"
                 >
-                  <Play className="w-3 h-3" />
-                  <span>{t("canvasView")}</span>
+                  <Plus className="w-3.5 h-3.5" />
+                  {t("addAction")}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => switchToView("json")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
-                    viewMode === "json"
-                      ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
-                  }`}
-                >
-                  <Code2 className="w-3 h-3" />
-                  <span>{t("jsonView")}</span>
-                </button>
+
+                {/* View mode toggle */}
+                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-hover border border-border-subtle text-xs">
+                  <button
+                    type="button"
+                    onClick={() => switchToView("visual")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                      viewMode === "visual"
+                        ? "bg-surface-card text-text-primary shadow-subtle"
+                        : "text-text-tertiary hover:text-text-secondary"
+                    }`}
+                  >
+                    <Play className="w-3 h-3" />
+                    <span>{t("canvasView")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchToView("json")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                      viewMode === "json"
+                        ? "bg-surface-card text-text-primary shadow-subtle"
+                        : "text-text-tertiary hover:text-text-secondary"
+                    }`}
+                  >
+                    <Code2 className="w-3 h-3" />
+                    <span>{t("jsonView")}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Canvas / JSON Area */}
-            <div className="flex-1 min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-canvas/50 relative">
+            <div className="flex-1 min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-page relative">
               {viewMode === "visual" ? (
-                <DAGCanvas
-                  definition={dagDefinition}
-                  readonly={false}
-                  onNodesChange={handleCanvasNodesChange}
-                  onEdgesChange={handleCanvasEdgesChange}
-                  className="w-full h-[460px]"
-                />
+                <>
+                  <DAGCanvas
+                    definition={dagDefinition}
+                    readonly={false}
+                    onNodesChange={handleCanvasNodesChange}
+                    onEdgesChange={handleCanvasEdgesChange}
+                    onNodeClick={handleNodeClick}
+                    onEdgeClick={handleEdgeClick}
+                    onPaneClick={handlePaneClick}
+                    className="w-full h-[460px]"
+                  />
+
+                  {/* Node Inspector Drawer */}
+                  <NodeInspectorDrawer
+                    node={selectedNode}
+                    isOpen={selectedNodeId !== null}
+                    onClose={() => setSelectedNodeId(null)}
+                    onUpdateNode={handleUpdateNode}
+                    onDeleteNode={handleDeleteNode}
+                    onDuplicateNode={handleDuplicateNode}
+                  />
+
+                  {/* Edge Inspector Drawer */}
+                  <EdgeInspectorDrawer
+                    edge={selectedEdge}
+                    nodes={nodes}
+                    isOpen={selectedEdge !== null}
+                    onClose={() => setSelectedEdge(null)}
+                    onUpdateEdge={handleUpdateEdge}
+                    onDeleteEdge={handleDeleteEdge}
+                  />
+
+                  {/* Empty canvas hint */}
+                  {nodes.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="flex flex-col items-center gap-2 text-text-tertiary">
+                        <MousePointerClick className="w-8 h-8 opacity-40" />
+                        <p className="text-xs">{t("noSteps")}</p>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="h-[460px] flex flex-col p-2">
                   {jsonError && (
@@ -579,6 +775,13 @@ export default function EditPlaybookDefinitionPage() {
           </div>
         </div>
       </main>
+
+      {/* Action Palette Modal (portal-like, outside the grid) */}
+      <ActionPaletteModal
+        isOpen={isActionPaletteOpen}
+        onClose={() => setIsActionPaletteOpen(false)}
+        onSelectAction={handleSelectNewAction}
+      />
     </div>
   );
 }

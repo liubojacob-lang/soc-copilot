@@ -10,6 +10,7 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, ".."),
   // Pin the Turbopack workspace root to the monorepo root in development.
   // In production builds, omitting this ensures output: standalone generates server.js at the project root.
   ...(process.env.NODE_ENV !== "production"
@@ -35,6 +36,7 @@ const nextConfig = {
     // node workers on every cold start and can exhaust memory. Prod only.
     optimizeCss: process.env.NODE_ENV === "production",
     optimizePackageImports: ["lucide-react", "recharts", "reactflow"],
+    proxyTimeout: 120_000,
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,

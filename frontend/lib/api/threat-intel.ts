@@ -80,10 +80,38 @@ export async function batchIocQuery(items: IOCBatchRequestItem[]): Promise<IOCBa
 
 /** Threat-intel cache statistics. */
 export async function getTICacheStats(): Promise<{
-  cache_stats: Record<string, unknown>;
+  cache_stats: {
+    total?: number;
+    active?: number;
+    expired?: number;
+    by_provider?: Record<string, number>;
+  };
   config: Record<string, unknown>;
 }> {
   return client.get("/api/v1/ti/stats");
+}
+
+export interface IOCHitItem {
+  id: string;
+  created_at: string;
+  history_id: string | null;
+  asset_id: string | null;
+  ioc_type: string;
+  ioc_value: string;
+  confidence: number;
+  source: string;
+  context_snippet: string | null;
+  notes: string | null;
+}
+
+export interface IOCHitListResponse {
+  items: IOCHitItem[];
+  total: number;
+}
+
+/** Get recent active IOC detections/hits from database. */
+export async function getRecentIocHits(limit = 100): Promise<IOCHitListResponse> {
+  return client.get(`/api/v1/ioc-hits?limit=${limit}`);
 }
 
 /** Heuristic IOC type detection for pasted/free-form input. */

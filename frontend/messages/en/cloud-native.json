@@ -33,6 +33,12 @@
     "recentVulnerabilities": "Recent Vulnerabilities",
     "supportedCloudProviders": "Supported Cloud Providers",
     "severity": "Severity",
-    "description": "Description"
+    "description": "Description",
+    "showingPagination": "Showing {start} to {end} of {total} containers",
+    "filteredFromTotal": "(filtered from {total} total)",
+    "page": "Page {page} of {totalPages}",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "perPage": "Per page"
   }
 }

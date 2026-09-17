@@ -1,7 +1,7 @@
 {
   "dashboard": {
-    "title": "运营大屏",
-    "overview": "实时安全运营监控与指标",
+    "title": "安全态势大屏",
+    "overview": "实时安全攻防态势、MITRE ATT&CK 战术与威胁指标投屏",
     "realTimeMetrics": "实时指标",
     "totalAlerts": "告警总数",
     "unresolvedAlerts": "未处理",

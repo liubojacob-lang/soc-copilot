@@ -8,12 +8,14 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { useToast } from "@/components/Toast";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useTranslations } from "next-intl";
+import { RefreshCw } from "lucide-react";
 
 export default function AssetsPage() {
   const t = useTranslations("assets");
   const tCommon = useTranslations("common");
   const [assets, setAssets] = useState<AssetResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [criticalityFilter, setCriticalityFilter] = useState("all");
@@ -43,8 +45,8 @@ export default function AssetsPage() {
     loadAssets();
   }, []);
 
-  const loadAssets = async () => {
-    setLoading(true);
+  const loadAssets = async (silent = false) => {
+    if (!silent) setLoading(true);
     setLoadError(null);
     try {
       const result = await api.listAssets({ query: search || undefined, limit: 100 });
@@ -53,8 +55,19 @@ export default function AssetsPage() {
       console.error("Failed to load assets:", error);
       setLoadError(error instanceof Error ? error.message : String(error));
       setAssets([]);
+    } finally {
+      if (!silent) setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadAssets(true);
+      showToast(t("refreshSuccess"), "success");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const { showToast } = useToast();
@@ -130,6 +143,15 @@ export default function AssetsPage() {
         actions={
           <div className="flex items-center gap-2">
             <button
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="px-3.5 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/60 text-sm font-medium transition-colors inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              title={t("refresh")}
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-blue-500" : ""}`} />
+              <span>{t("refresh")}</span>
+            </button>
+            <button
               onClick={() => setShowForm(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
             >
@@ -188,7 +210,7 @@ export default function AssetsPage() {
               {t("loadFailed")}：{loadError}
             </span>
             <button
-              onClick={loadAssets}
+              onClick={() => loadAssets()}
               className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
             >
               {tCommon("retry")}

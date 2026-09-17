@@ -83,32 +83,33 @@
     "delete": "删除"
   },
   "triggersPage": {
-    "title": "触发器管理",
-    "subtitle": "管理 Webhook 和 Cron 触发器",
+    "title": "触发器",
+    "subtitle": "管理自动化 Webhook 与 Cron 计划任务触发器",
     "pageHeader": "触发器管理",
     "pageDescription": "管理自动化触发器",
     "all": "全部",
-    "webhooks": "Webhooks",
-    "cron": "Cron",
+    "webhooks": "Webhook 触发器",
+    "cron": "Cron 计划任务",
     "type": "类型",
     "name": "名称",
     "unnamed": "未命名",
-    "playbook": "剧本",
-    "details": "详情",
+    "playbook": "关联剧本",
+    "details": "配置详情",
     "status": "状态",
-    "lastTriggered": "最后触发",
+    "lastTriggered": "最近触发",
     "actions": "操作",
     "test": "测试",
     "enable": "启用",
     "disable": "禁用",
     "delete": "删除",
     "noTriggers": "暂无触发器",
-    "never": "从未",
+    "noTriggersType": "暂无 {type} 类型的触发器",
+    "never": "从未触发",
     "infoBox": {
-      "title": "信息",
-      "logs": "日志",
-      "cron": "Cron",
-      "webhook": "Webhook"
+      "title": "触发器机制说明",
+      "webhook": "Webhook 触发器：外部告警源（SIEM、EDR、云监控等）通过向专属 URL 发送 HTTP POST 请求即可触发剧本执行。",
+      "cron": "Cron 计划任务：基于标准 Cron 时间表达式周期性定时调度剧本，适用于自动化巡检与定期防护任务。",
+      "logs": "审计与追踪：所有触发请求与自动化执行流水均会自动留痕在剧本运行与系统审计日志中，便于随时复盘追踪。"
     }
   }
 }

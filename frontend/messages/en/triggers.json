@@ -86,8 +86,8 @@
     "pageHeader": "Trigger Management",
     "pageDescription": "Manage automated triggers",
     "all": "All",
-    "webhooks": "Webhooks",
-    "cron": "Cron",
+    "webhooks": "Webhook Triggers",
+    "cron": "Cron Tasks",
     "type": "Type",
     "name": "Name",
     "unnamed": "Unnamed",
@@ -101,14 +101,15 @@
     "disable": "Disable",
     "delete": "Delete",
     "noTriggers": "No triggers found",
+    "noTriggersType": "No {type} triggers found",
     "never": "Never",
     "infoBox": {
-      "title": "Info",
-      "logs": "Logs",
-      "cron": "Cron",
-      "webhook": "Webhook"
+      "title": "Trigger Architecture & Guide",
+      "webhook": "Webhook Triggers: External alert sources (SIEM, EDR, cloud alerts) invoke playbooks via HTTP POST requests to a designated URL.",
+      "cron": "Cron Tasks: Periodically schedule and automate playbooks using standard cron expressions for recurring sweeps.",
+      "logs": "Audit & Tracking: Every trigger invocation and automated execution is recorded in playbook logs and system audit trails."
     },
-    "subtitle": "Manage webhook and cron triggers",
-    "title": "Trigger Management"
+    "subtitle": "Manage automated Webhook and Cron triggers",
+    "title": "Triggers"
   }
 }

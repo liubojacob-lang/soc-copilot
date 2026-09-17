@@ -4,6 +4,9 @@
 
 /* ==================== CSS Variables (Design Tokens) ==================== */
 :root {
+  /* 让原生表单控件（date/datetime-local 日历、下拉、滚动条）跟随主题 */
+  color-scheme: light;
+
   /* Slate 主色 */
   --color-primary-50: #f8fafc;
   --color-primary-100: #f1f5f9;
@@ -203,11 +206,13 @@
   --radius-xl: 14px;
   --radius-full: 9999px;
 
-  /* 字体（--font-inter / --font-jetbrains-mono 由 app/[locale]/layout.tsx 的 next/font 注入） */
+  /* 字体与字体栈 */
+  --font-inter: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-jetbrains-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Code", monospace;
   --font-sans:
     var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono:
-    var(--font-jetbrains-mono), JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco,
+    var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
     "Cascadia Code", monospace;
 
   /* 字号 */
@@ -230,8 +235,17 @@
   /* ==================== Sidebar 宽度 ====================
      折叠状态由 <html data-sidebar-collapsed> 驱动，在 layout.tsx 的
      首屏内联脚本里设置，不经过 React state —— 因此不会出现 hydration 抖动。
-     移动端（< lg）侧栏变为抽屉，内容区不再预留左padding。 */
-  --sidebar-w: 200px;
+     移动端（< lg）侧栏变为抽屉，内容区不再预留左padding。
+
+     ⚠️ 宽度必须与界面语言无关，全语系统一 216px。
+     历史上这里按 html[lang^="zh"] 分过 216px / 256px 两档，导致切换语言时
+     侧栏与内容区 padding 一起做 200ms 位移。语言相关的差异只能作用于
+     文字本身（字体栈/字距/换行），绝不允许驱动盒子尺寸或布局几何。
+     216px 的依据（用 Tailwind 全量样式表实测的真实 DOM）：
+     条目行留给标签 142px、分组标题行留给标签 163px；
+     最宽英文条目 "Playbook Runs" 89.1px、最宽中文条目 "用户行为分析" 79.6px，
+     两侧均有 50px 以上富余，不会出现截断，且中英富余量已基本对称。 */
+  --sidebar-w: 216px;
   --header-h: 56px;
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
@@ -241,6 +255,9 @@
 
 /* ==================== Dark Mode Mapping ==================== */
 .dark {
+  /* 深色下原生表单控件自动反色（日历图标、下拉面板、滚动条） */
+  color-scheme: dark;
+
   /* 背景层级 (深邃精致的现代 Midnight Navy) */
   --color-bg-page: #090d16;
   --color-bg-card: #0f172a;
@@ -391,6 +408,16 @@
 }
 
 /* ==================== Base Styles ==================== */
+
+/* 语言相关差异只允许作用于文字本身，禁止驱动盒子尺寸。
+   中文加极轻字距让方块字视觉更饱满（7 字约 +1.8px，不会造成截断），
+   这样既回应"中文侧栏显得空"，又完全不影响布局几何。 */
+html[lang^="zh"] .sidebar-label,
+html[lang^="zh"] .sidebar-group-label {
+  letter-spacing: 0.02em;
+}
+
+/* 折叠态优先级最高，各语系统一为 64px 图标宽度 */
 html[data-sidebar-collapsed="true"] {
   --sidebar-w: 64px;
 }
@@ -885,4 +912,68 @@ body {
     transform: translateZ(0);
     backface-visibility: hidden;
   }
+}
+
+/* ==================== 原生日期/时间控件美化 ====================
+   统一日历指示器图标观感：默认低调、悬停点亮，深色下反色显示 */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 0.15s ease;
+}
+
+input[type="date"]:hover::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator,
+input[type="time"]:hover::-webkit-calendar-picker-indicator {
+  opacity: 0.85;
+}
+
+/* ==================== react-day-picker 主题映射 ====================
+   日期范围联动日历（审计筛选面板等）继承全站 accent / surface token，
+   不直接沿用库默认蓝，保证深浅两套主题一致 */
+:root .rdp-root {
+  --rdp-accent-color: #2563eb; /* accent-600：选中/区间端点底色 */
+  --rdp-accent-background-color: rgba(37, 99, 235, 0.12); /* 区间中间底色 */
+  --rdp-today-color: #1d4ed8; /* accent-700 */
+  --rdp-day-height: 32px;
+  --rdp-day-width: 32px;
+  --rdp-day_button-height: 32px;
+  --rdp-day_button-width: 32px;
+  --rdp-day_button-border-radius: 8px;
+  --rdp-months-gap: 1.25rem;
+  --rdp-nav_button-height: 1.4rem;
+  --rdp-nav_button-width: 1.4rem;
+  --rdp-weekday-padding: 2px 0 4px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.dark .rdp-root {
+  --rdp-accent-color: #3b82f6; /* accent-500：深色底上更亮 */
+  --rdp-accent-background-color: rgba(59, 130, 246, 0.2);
+  --rdp-today-color: #93c5fd; /* accent-300 */
+}
+
+.rdp-root .rdp-months {
+  justify-content: center;
+  flex-wrap: wrap; /* 窄屏自动降为单月 */
+}
+
+.rdp-root .rdp-day_button:hover:not(.rdp-outside):not(.rdp-selected) {
+  background-color: var(--color-bg-hover);
+}
+
+.rdp-root .rdp-dropdown {
+  background-color: var(--color-bg-input);
+  border-color: var(--color-border-default);
+  color: inherit;
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.rdp-root .rdp-dropdown option {
+  background-color: var(--color-bg-card);
+  color: var(--color-text-primary);
 }

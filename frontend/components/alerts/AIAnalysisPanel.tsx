@@ -22,6 +22,9 @@ import {
   AlertTriangle,
   ShieldCheck,
   MessageCircleQuestion,
+  PlusCircle,
+  PlayCircle,
+  Info,
 } from "lucide-react";
 
 import { analyzeAlert, type AlertAnalysisResponse } from "@/lib/api/alerts";
@@ -37,7 +40,9 @@ interface AIAnalysisPanelProps {
     description?: string | null;
     source?: string | null;
     severity?: string | null;
+    raw_log?: string | null;
   };
+  onAddNote?: (note: string) => void;
 }
 
 const PRIORITY_TO_SEVERITY: Record<string, Severity> = {
@@ -47,17 +52,30 @@ const PRIORITY_TO_SEVERITY: Record<string, Severity> = {
   low: "low",
 };
 
-export function AIAnalysisPanel({ alert }: AIAnalysisPanelProps) {
+export function AIAnalysisPanel({ alert, onAddNote }: AIAnalysisPanelProps) {
   const t = useTranslations("alerts.detail.ai");
 
   const mutation = useMutation<AlertAnalysisResponse, Error>({
-    mutationFn: () =>
-      analyzeAlert({
+    mutationFn: () => {
+      const rawLog =
+        alert.raw_log ||
+        [
+          alert.title ? `Alert: ${alert.title}` : "",
+          alert.severity ? `Severity: ${alert.severity}` : "",
+          alert.source ? `Source: ${alert.source}` : "",
+          alert.description ? `Description: ${alert.description}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+      return analyzeAlert({
         title: alert.title ?? "",
         description: alert.description ?? "",
         source: alert.source ?? undefined,
         severity: alert.severity ?? undefined,
-      }),
+        raw_log: rawLog,
+      });
+    },
   });
 
   const data = mutation.data;
@@ -135,11 +153,32 @@ export function AIAnalysisPanel({ alert }: AIAnalysisPanelProps) {
 
         {data && (
           <div className="space-y-5">
+            {/* ── API / Mode Notification Banner ─────────────── */}
+            {data.degraded ? (
+              <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-800 dark:text-amber-300">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div className="space-y-0.5">
+                  <span className="font-semibold">{t("degradedNoticeTitle")}</span>
+                  <p className="leading-relaxed text-amber-700/90 dark:text-amber-400/90">
+                    {t("degradedNoticeDesc")}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-800 dark:text-emerald-300">
+                <Sparkles className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span className="font-medium">{t("llmSuccessNotice")}</span>
+              </div>
+            )}
+
             {/* ── Assessment：AI 判定的严重程度 ───────────── */}
             <div className="flex flex-wrap items-center gap-2">
               <AIBadge state="analysis" label={t("title")} size="xs" />
               <Badge severity={PRIORITY_TO_SEVERITY[data.severity] ?? "neutral"} size="xs" dot>
                 {data.severity}
+              </Badge>
+              <Badge severity={data.degraded ? "medium" : "low"} size="xs">
+                {data.degraded ? t("modeHeuristic") : t("modeLLM")}
               </Badge>
               {data.model_used && (
                 <span className="text-[11px] text-text-muted">
@@ -230,11 +269,34 @@ export function AIAnalysisPanel({ alert }: AIAnalysisPanelProps) {
                             <AIBadge state="analysis" label={t("manual")} size="xs" />
                           )}
                         </div>
-                        {action.description && (
+                        {(action.description || (action as any).details) && (
                           <p className="mt-0.5 text-xs leading-relaxed text-text-tertiary">
-                            {action.description}
+                            {action.description || (action as any).details}
                           </p>
                         )}
+                        <div className="mt-2 flex items-center gap-2">
+                          {onAddNote && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onAddNote(`[AI建议] ${action.action}: ${action.description || ""}`)
+                              }
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-text-secondary hover:text-accent-600 bg-surface-hover hover:bg-surface-active px-2 py-0.5 rounded border border-border-subtle transition-colors"
+                              title={t("addToNotes")}
+                            >
+                              <PlusCircle className="h-3 w-3" />
+                              {t("addToNotes")}
+                            </button>
+                          )}
+                          <Link
+                            href={`/playbooks`}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-accent-600 hover:text-accent-700 bg-accent-500/10 hover:bg-accent-500/20 px-2 py-0.5 rounded transition-colors"
+                            title={t("executePlaybook")}
+                          >
+                            <PlayCircle className="h-3 w-3" />
+                            {t("executePlaybook")}
+                          </Link>
+                        </div>
                       </div>
                     </li>
                   ))}

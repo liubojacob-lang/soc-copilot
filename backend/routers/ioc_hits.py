@@ -25,12 +25,12 @@ async def list_ioc_hits(
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ) -> IOCHitListResponse:
-    """List IOC hits with optional IOC filter."""
-    if not ioc:
-        raise HTTPException(status_code=400, detail="IOC parameter is required")
-
+    """List IOC hits with optional IOC filter. If ioc is omitted, returns recent hits."""
     service = IOCHitsService(session)
-    hits, total = await service.list_by_ioc(ioc, limit)
+    if ioc:
+        hits, total = await service.list_by_ioc(ioc, limit)
+    else:
+        hits, total = await service.list_recent(limit)
     return IOCHitListResponse(items=hits, total=total)
 
 

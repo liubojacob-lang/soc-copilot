@@ -48,6 +48,7 @@ export function LanguageSwitcher() {
 
   return (
     <div
+      data-testid="lang-switcher"
       className="inline-flex items-center p-0.5 rounded-lg bg-gray-100 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/80 text-xs font-medium select-none shadow-subtle shrink-0 whitespace-nowrap"
       role="radiogroup"
       aria-label={tLanguage("switch")}

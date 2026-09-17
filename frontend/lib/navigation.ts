@@ -33,10 +33,10 @@ import {
   Settings,
   Users,
   Cpu,
-  KeyRound,
   HeartPulse,
   Lock,
   SlidersHorizontal,
+  Tv,
 } from "lucide-react";
 
 /** 路由可见性门槛。null = 所有已登录用户可见。 */
@@ -48,6 +48,7 @@ export interface NavItem {
   path: string;
   icon: LucideIcon;
   permission?: NavPermission;
+  badge?: string;
   /** 布尔开关：隐藏该分组内的全部项目（用于"管理"整组权限） */
   children?: NavItem[];
 }
@@ -65,7 +66,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: LayoutDashboard,
     items: [
       { key: "home", path: "/", icon: LayoutDashboard },
-      { key: "monitor", path: "/monitor", icon: Activity },
+      { key: "monitor", path: "/monitor", icon: Tv },
     ],
   },
   {
@@ -91,7 +92,7 @@ export const NAV_GROUPS: NavGroup[] = [
     key: "groupAutomation",
     icon: Workflow,
     items: [
-      { key: "playbooks", path: "/playbooks", icon: Workflow },
+      { key: "runs", path: "/playbooks", icon: Workflow },
       { key: "definitions", path: "/playbooks/definitions", icon: FileStack },
       { key: "approvals", path: "/playbooks/approvals", icon: CheckCircle },
       { key: "triggers", path: "/triggers", icon: Zap },
@@ -102,7 +103,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: Server,
     items: [
       { key: "assets", path: "/assets", icon: Server },
-      { key: "cloudNative", path: "/cloud-native", icon: Cloud },
+      { key: "cloudNative", path: "/cloud-native", icon: Cloud, badge: "Beta" },
       { key: "marketplace", path: "/marketplace", icon: Store },
     ],
   },
@@ -123,11 +124,10 @@ export const NAV_GROUPS: NavGroup[] = [
     key: "groupAdministration",
     icon: Settings,
     items: [
-      { key: "dashboard", path: "/admin/dashboard", icon: LayoutDashboard, permission: "admin" },
+      { key: "dashboard", path: "/admin/dashboard", icon: Activity, permission: "admin" },
       { key: "users", path: "/admin/users", icon: Users, permission: "admin" },
       { key: "settings", path: "/settings", icon: SlidersHorizontal, permission: "admin" },
       { key: "aiModels", path: "/settings/ai-models", icon: Cpu },
-      { key: "apiKeys", path: "/settings/api-keys", icon: KeyRound },
       { key: "notifications", path: "/settings/notifications", icon: BellRing },
       { key: "systemHealth", path: "/admin/health", icon: HeartPulse, permission: "admin" },
       { key: "secrets", path: "/admin/secrets", icon: Lock, permission: "admin" },

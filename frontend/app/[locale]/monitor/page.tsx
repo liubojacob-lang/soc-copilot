@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * SOC Operations Dashboard
+ * SOC Security Operations Wallboard (安全态势大屏)
  *
- * Layout:
- * [Real-time metrics row: 4 cols]
- * [Alert trends chart (2/3 width) | Severity pie (1/3 width)]
- * [MITRE ATT&CK heatmap (full width)]
- * [Asset risk Top 10 (1/2 width) | IOC stats (1/2 width)]
+ * Designed for command centers and full-screen threat posture monitoring:
+ * - Real-time metrics row
+ * - Alert trends chart & Severity distribution
+ * - MITRE ATT&CK tactics coverage heatmap
+ * - Asset risk Top 10 & IOC threat indicators
  */
 
 import { useState, useEffect } from "react";
@@ -56,7 +56,7 @@ const IOCStats = dynamicImport(
   }
 );
 
-export default function DashboardPage() {
+export default function SecurityWallboardPage() {
   const router = useRouter();
   const t = useTranslations();
   const format = useFormatter();
@@ -178,6 +178,7 @@ export default function DashboardPage() {
     <div className="bg-surface-page">
       <PageHeader
         title={t("dashboard.title")}
+        subtitle={t("dashboard.overview")}
         apiStatus={apiStatus}
         actions={
           <div className="flex items-center gap-2">

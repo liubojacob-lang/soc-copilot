@@ -66,7 +66,7 @@ export function LoadingState({
             onClick={onRetry}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
-            Retry
+            {tCommon("retry")}
           </button>
         )}
       </div>
@@ -141,8 +141,9 @@ export function LoadingState({
             />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Data</h3>
-        <p className="text-gray-600 dark:text-gray-400">{emptyMessage ?? tCommon("noData")}</p>
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {emptyMessage || tCommon("noData")}
+        </h3>
       </div>
     );
   }

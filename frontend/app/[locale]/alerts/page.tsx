@@ -32,9 +32,10 @@ import {
   Server,
   RefreshCw,
   Upload,
+  Download,
 } from "lucide-react";
 import ImportAlertModal from "./components/ImportAlertModal";
-import { loadAuthState } from "@/lib/auth";
+import { loadAuthState, authFetch } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -423,6 +424,37 @@ export default function AlertsPage() {
     }
   };
 
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async (formatType: "csv" | "json" = "csv") => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      params.append("format", formatType);
+      if (severityFilter.length === 1) params.append("severity", severityFilter[0]);
+      if (statusFilter.length === 1) params.append("status", statusFilter[0]);
+      const res = await authFetch(`/api/v1/export/alerts?${params.toString()}`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `alerts-${new Date().toISOString().split("T")[0]}.${formatType}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        showToast(t("exportSuccess") || "告警数据导出成功", "success");
+      } else {
+        showToast(t("exportFailed") || "导出失败", "error");
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "导出异常", "error");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Reset page on filter change
   useEffect(() => setPage(1), [debouncedSearch, statusFilter, severityFilter, sourceFilter]);
 
@@ -727,6 +759,17 @@ export default function AlertsPage() {
             title={t("importAlerts")}
           >
             <span className="hidden sm:inline">{tCommon("import")}</span>
+          </Button>
+
+          <Button
+            onClick={() => handleExport("csv")}
+            variant="outline"
+            size="sm"
+            isLoading={exporting}
+            leftIcon={<Download className="w-4 h-4 text-text-muted" />}
+            title={tCommon("export") || "导出 CSV"}
+          >
+            <span className="hidden sm:inline">{tCommon("export") || "导出"}</span>
           </Button>
 
           <Button

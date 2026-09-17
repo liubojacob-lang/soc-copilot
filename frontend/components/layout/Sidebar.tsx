@@ -111,7 +111,7 @@ function SidebarLink({
       href={item.path}
       onClick={handleClick}
       aria-current={active ? "page" : undefined}
-      title={collapsed ? label : undefined}
+      title={label}
       className={cn(
         "group relative flex items-center gap-2.5 rounded-lg text-[13px] transition-colors duration-150",
         collapsed ? "justify-center h-9 w-9 mx-auto" : "h-9 px-2.5",
@@ -132,7 +132,12 @@ function SidebarLink({
           active ? "text-accent-600 dark:text-accent-400" : "text-text-tertiary"
         )}
       />
-      <span className="sidebar-label truncate">{label}</span>
+      <span className="sidebar-label truncate flex-1 min-w-0">{label}</span>
+      {!collapsed && item.badge && (
+        <span className="sidebar-label shrink-0 ml-auto px-1.5 py-0.2 text-[10px] font-semibold tracking-wider uppercase rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          {item.badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -216,6 +221,7 @@ function NavContent({
                 onClick={() => toggleGroup(group.key)}
                 aria-expanded={!isGroupCollapsed}
                 aria-controls={`sidebar-group-${group.key}`}
+                title={group.label}
                 className={cn(
                   "group/btn flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors duration-150 cursor-pointer select-none",
                   hasActiveItem && isGroupCollapsed
@@ -234,7 +240,7 @@ function NavContent({
                       )}
                     />
                   )}
-                  <span className="truncate">{group.label}</span>
+                  <span className="sidebar-group-label truncate">{group.label}</span>
                 </div>
                 <ChevronDown
                   className={cn(
@@ -257,7 +263,7 @@ function NavContent({
               <div
                 className={cn(
                   "overflow-hidden space-y-0.5 pt-0.5",
-                  !collapsed && "ml-3.5 pl-2.5 border-l border-border-subtle/80"
+                  !collapsed && "ml-3 pl-2 border-l border-border-subtle/80"
                 )}
               >
                 {group.items.map((item) => (
@@ -467,7 +473,7 @@ export function MobileNavDrawer({
         aria-label={tCommon("mainMenu")}
         tabIndex={-1}
         className={cn(
-          "group/sidebar fixed inset-y-0 left-0 z-[201] flex w-[240px] max-w-[85vw] flex-col border-r border-border-subtle bg-surface-page dark:bg-surface-card transition-transform duration-200 ease-out lg:hidden",
+          "group/sidebar fixed inset-y-0 left-0 z-[201] flex w-[260px] max-w-[85vw] flex-col border-r border-border-subtle bg-surface-page dark:bg-surface-card transition-transform duration-200 ease-out lg:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

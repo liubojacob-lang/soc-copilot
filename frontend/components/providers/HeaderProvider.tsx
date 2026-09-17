@@ -40,7 +40,14 @@ export function HeaderProvider({ children }: { children: ReactNode }) {
 
   const resetHeaderData = useCallback(() => {
     setHeaderDataState((prev) => {
-      if (!prev.title && !prev.actions && !prev.badge && !prev.apiStatus && !prev.backButton) {
+      if (
+        !prev.title &&
+        !prev.actions &&
+        !prev.badge &&
+        !prev.apiStatus &&
+        !prev.backButton &&
+        !prev.subtitle
+      ) {
         return prev;
       }
       return {};

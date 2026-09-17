@@ -148,13 +148,13 @@ export default function PlaybookDefinitionsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-page transition-colors">
       <PageHeader
         title={t("definitions.title")}
         subtitle={t("definitions.subtitle")}
         actions={
           <button
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-lg text-sm font-medium transition-colors shadow-subtle"
             onClick={() => router.push("/playbooks/create")}
           >
             <Plus className="w-4 h-4" />
@@ -163,134 +163,130 @@ export default function PlaybookDefinitionsPage() {
         }
       />
 
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t("definitions.searchPlaceholder") || "Search definitions..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-              {refreshing ? tCommon("loading") : tCommon("refresh")}
-            </button>
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3.5">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <input
+              type="text"
+              placeholder={t("definitions.searchPlaceholder") || "Search definitions..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors h-9"
+            />
           </div>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="h-9 px-3 bg-accent-600 hover:bg-accent-700 text-white rounded-lg disabled:opacity-50 flex items-center gap-1.5 transition-colors text-sm font-medium shadow-subtle self-start sm:self-auto"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            {refreshing ? tCommon("loading") : tCommon("refresh")}
+          </button>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+          <div className="mb-3.5 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-sm">
+            <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
             <span className="text-red-700 dark:text-red-300">{error}</span>
           </div>
         )}
 
         {/* Content */}
         {loading ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+          <div className="bg-surface-card rounded-xl p-4 border border-border-subtle">
             <SkeletonTable rows={5} columns={5} />
           </div>
         ) : filteredDefinitions.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-gray-400" />
+          <div className="text-center py-12 bg-surface-card rounded-xl border border-border-subtle">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-surface-hover flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-text-muted" />
             </div>
-            <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">
+            <p className="text-text-primary font-medium text-base mb-1">
               {t("definitions.noDefinitions")}
             </p>
-            <p className="text-gray-400 dark:text-gray-500 text-sm mb-4">
+            <p className="text-text-muted text-xs mb-3">
               {t("definitions.createFirst")}
             </p>
             <button
               onClick={() => router.push("/playbooks/create")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 hover:bg-blue-700 active:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent-600 text-white rounded-lg hover:bg-accent-700 active:bg-accent-700 transition-colors text-sm font-medium shadow-subtle"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               {t("definitions.createNew")}
             </button>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-surface-card rounded-xl shadow-subtle border border-border-subtle overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+                <thead className="bg-surface-hover/50 border-b border-border-subtle text-xs uppercase text-text-muted">
                   <tr>
-                    <th className="px-6 py-3">{t("definitions.name")}</th>
-                    <th className="px-6 py-3">{t("definitions.version")}</th>
-                    <th className="px-6 py-3">{t("definitions.status")}</th>
-                    <th className="px-6 py-3">{t("definitions.updated")}</th>
-                    <th className="px-6 py-3 text-right">{t("definitions.actions")}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">{t("definitions.name")}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">{t("definitions.version")}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">{t("definitions.status")}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">{t("definitions.updated")}</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-text-muted uppercase tracking-wider">{t("definitions.actions")}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-border-subtle">
                   {filteredDefinitions.map((def) => (
                     <tr
                       key={def.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      className="hover:bg-surface-hover/50 transition-colors"
                     >
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                        <div className="flex items-center gap-3">
-                          <BookOpen className="w-5 h-5 text-gray-400 shrink-0" />
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <BookOpen className="w-4 h-4 text-text-muted shrink-0" />
                           <div>
                             <button
                               type="button"
                               onClick={() => router.push(`/playbooks/definitions/${def.id}`)}
-                              className="font-semibold text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 hover:underline text-left block transition-colors"
+                              className="font-semibold text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 hover:underline text-left block text-sm transition-colors"
                             >
                               {def.name}
                             </button>
                             {def.description && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              <div className="text-xs text-text-muted mt-0.5 max-w-sm truncate">
                                 {def.description}
                               </div>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono">
+                      <td className="px-4 py-2.5 text-sm text-text-secondary font-mono">
                         v{def.version}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-2.5">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                             def.status === "published"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
-                              : def.status === "draft"
-                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
-                                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                           }`}
                         >
                           {def.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      <td className="px-4 py-2.5 text-sm text-text-secondary">
                         {format.dateTime(new Date(def.updated_at), { dateStyle: "medium" })}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-4 py-2.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
-                            className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
+                            className="p-1.5 text-text-muted hover:text-accent-600 hover:bg-surface-hover rounded-lg transition-colors"
                             title={tCommon("edit")}
                             onClick={() => router.push(`/playbooks/definitions/${def.id}/edit`)}
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-600/50 transition-colors"
+                            className="p-1.5 text-text-muted hover:text-red-600 hover:bg-surface-hover rounded-lg transition-colors"
                             title={tCommon("delete")}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -301,27 +297,27 @@ export default function PlaybookDefinitionsPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center justify-between px-4 py-2.5 border-t border-border-subtle">
+                  <div className="text-xs text-text-muted">
                     Showing {(pagination.currentPage - 1) * pagination.pageSize + 1} to{" "}
                     {Math.min(pagination.currentPage * pagination.pageSize, pagination.total)} of{" "}
                     {pagination.total} results
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handlePageChange(pagination.currentPage - 1)}
                       disabled={pagination.currentPage === 1}
-                      className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1.5 border border-border-default rounded-lg hover:bg-surface-hover active:bg-surface-active text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-xs text-text-secondary px-1">
                       Page {pagination.currentPage} of {totalPages}
                     </span>
                     <button
                       onClick={() => handlePageChange(pagination.currentPage + 1)}
                       disabled={pagination.currentPage === totalPages}
-                      className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1.5 border border-border-default rounded-lg hover:bg-surface-hover active:bg-surface-active text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>

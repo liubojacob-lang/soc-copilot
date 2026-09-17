@@ -104,3 +104,37 @@ class MarketplaceStats(BaseModel):
     verified: int
     total_downloads: int
     total_reviews: int
+
+
+class ExternalPlaybookSearchItem(BaseModel):
+    """External playbook search result item from online sources."""
+
+    id: str
+    title: str
+    repository: str
+    source_platform: str  # "Cortex XSOAR", "Splunk SOAR", "Shuffle SOAR", "Microsoft Sentinel", "CISA"
+    description: str
+    stars: int = 0
+    url: str
+    raw_url: str | None = None
+    category: str = "malware_response"
+    difficulty: str = "intermediate"
+    tags: list[str] = Field(default_factory=list)
+    standard: str | None = None
+
+
+class ExternalPlaybookAdaptRequest(BaseModel):
+    """Request to adapt an external playbook by URL or raw content."""
+
+    url: str | None = None
+    content: str | None = None
+    title_hint: str | None = None
+    source_platform: str | None = None
+
+
+class ExternalPlaybookImportRequest(BaseModel):
+    """Request to import an adapted playbook into local definitions or marketplace."""
+
+    playbook_data: dict[str, Any]
+    target: str = "local"  # "local" | "marketplace"
+

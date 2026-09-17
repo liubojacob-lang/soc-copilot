@@ -8,7 +8,6 @@ import {
   ChevronRight,
   LogOut,
   Settings,
-  KeyRound,
   Lock,
   Users,
   ScrollText,
@@ -241,20 +240,6 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
                   <span>{isZh ? "偏好与系统设置" : tNav("settings")}</span>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-              </Link>
-
-              <Link
-                href="/settings/api-keys"
-                onClick={closeMenu}
-                className="flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/90 dark:hover:bg-gray-800/90 rounded-xl transition-all group cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <KeyRound className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
-                  <span>{tNav("apiKeys")}</span>
-                </div>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200/80 dark:border-gray-700">
-                  API
-                </span>
               </Link>
 
               <Link

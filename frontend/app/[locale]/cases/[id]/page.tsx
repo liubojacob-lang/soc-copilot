@@ -12,7 +12,7 @@
  * - Activity log
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { useFormatter, useTranslations } from "next-intl";
@@ -158,12 +158,36 @@ function StatusModal({
     }
   };
 
+  // Lock background scroll and listen for ESC key when open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md mx-4 p-6 animate-fade-in-up">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md p-6 animate-fade-in-up"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
           {t("cases.transitionStatus")}
         </h3>
@@ -254,12 +278,36 @@ function LinkAlertModal({
     }
   };
 
+  // Lock background scroll and listen for ESC key when open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-sm mx-4 p-6 animate-fade-in-up">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-sm p-6 animate-fade-in-up"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
           {t("cases.linkAlert")}
         </h3>
@@ -425,21 +473,20 @@ export default function CaseDetailPage() {
 
   return (
     <div className="min-h-screen bg-surface-ground pb-12">
-      {/* Header */}
+      {/* Header — Linear/Vercel style */}
       <div className="bg-surface-card border-b border-border-subtle shadow-subtle">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-3 mb-2">
-            <BackButton fallbackUrl="/cases" label={t("common.back")} />
-            <div className="p-2 bg-accent-500/10 border border-accent-500/20 rounded-lg">
-              <Briefcase className="w-5 h-5 text-accent-600 dark:text-accent-400" />
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-4">
+          {/* Ghost breadcrumb back link */}
+          <BackButton fallbackUrl="/cases" label={t("common.back")} variant="ghost" className="mb-2 -ml-1" />
+
+          {/* Title + badges */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="p-1.5 bg-accent-500/10 border border-accent-500/20 rounded-lg shrink-0">
+              <Briefcase className="w-4 h-4 text-accent-600 dark:text-accent-400" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-text-primary flex-1 min-w-0 truncate">
+            <h1 className="text-xl font-bold tracking-tight text-text-primary leading-snug">
               {c.title}
             </h1>
-          </div>
-
-          {/* Meta badges */}
-          <div className="flex flex-wrap items-center gap-2 ml-11">
             <Badge severity={mapCaseSeverity(c.severity) as any} variant="pill">
               {c.severity}
             </Badge>

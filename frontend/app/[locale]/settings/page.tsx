@@ -5,7 +5,7 @@ import { useRouter, Link } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { loadAuthState, isAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
-import { Settings as SettingsIcon, KeyRound, ScrollText, ChevronRight } from "lucide-react";
+import { Settings as SettingsIcon, Brain, ScrollText, ChevronRight } from "lucide-react";
 import { TwoFactorSettings } from "./components/TwoFactorSettings";
 
 export default function SettingsPage() {
@@ -14,10 +14,8 @@ export default function SettingsPage() {
   const isZh = locale.startsWith("zh");
   const t = useTranslations("settings");
   const [error, setError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const authState = loadAuthState();
     if (!authState?.isAuthenticated) {
       router.push("/login");
@@ -28,10 +26,6 @@ export default function SettingsPage() {
       return;
     }
   }, [router, t]);
-
-  if (!mounted) {
-    return null;
-  }
 
   if (error) {
     return (
@@ -52,8 +46,8 @@ export default function SettingsPage() {
         title={t("title")}
         subtitle={
           isZh
-            ? "管理系统身份安全、双因素认证策略与外部 API 访问凭据"
-            : "Manage identity security, two-factor authentication policies, and API credentials"
+            ? "管理系统身份安全、双因素认证策略与 AI 模型配置"
+            : "Manage identity security, two-factor authentication policies, and AI model configurations"
         }
       />
 
@@ -73,39 +67,41 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* API Keys Card */}
+            {/* AI Models Card */}
             <Link
-              href="/settings/api-keys"
-              className="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-subtle hover:shadow-md hover:border-accent-500/50 dark:hover:border-accent-500/50 transition-all flex items-start justify-between gap-4"
+              href="/settings/ai-models"
+              className="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-subtle hover:shadow-md hover:border-accent-500/50 dark:hover:border-accent-500/50 transition-colors duration-150 flex items-start justify-between gap-4"
             >
               <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-accent-50 dark:bg-accent-950/40 text-accent-600 dark:text-accent-400 border border-accent-200/80 dark:border-accent-800/60 flex items-center justify-center shrink-0 transition-all group-hover:scale-105 group-hover:bg-accent-600 group-hover:text-white group-hover:border-accent-600">
-                  <KeyRound className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-accent-50 dark:bg-accent-950/40 text-accent-600 dark:text-accent-400 border border-accent-200/80 dark:border-accent-800/60 flex items-center justify-center shrink-0 transition-[transform,background-color,color] duration-150 group-hover:scale-105 group-hover:bg-accent-600 group-hover:text-white group-hover:border-accent-600">
+                  <Brain className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors">
-                      {t("apiKeysSection")}
+                      {isZh ? "AI 模型与引擎配置" : "AI Models & Providers"}
                     </h3>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200/80 dark:border-gray-700/80">
-                      REST API
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-accent-50 dark:bg-accent-950/40 text-accent-700 dark:text-accent-300 border border-accent-200/80 dark:border-accent-800/50">
+                      LLM
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-                    {t("apiKeysDescription")}
+                    {isZh
+                      ? "管理大语言模型接入、联通性检测与默认推理引擎"
+                      : "Manage LLM providers, test connection latency, and select default reasoning engine"}
                   </p>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-accent-600 dark:group-hover:text-accent-400 group-hover:translate-x-0.5 transition-all shrink-0 mt-3" />
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-accent-600 dark:group-hover:text-accent-400 group-hover:translate-x-0.5 transition-transform duration-150 shrink-0 mt-3" />
             </Link>
 
             {/* Audit Logs Quick Link */}
             <Link
               href="/audit"
-              className="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-subtle hover:shadow-md hover:border-purple-500/50 dark:hover:border-purple-500/50 transition-all flex items-start justify-between gap-4"
+              className="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-subtle hover:shadow-md hover:border-purple-500/50 dark:hover:border-purple-500/50 transition-colors duration-150 flex items-start justify-between gap-4"
             >
               <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/60 flex items-center justify-center shrink-0 transition-all group-hover:scale-105 group-hover:bg-purple-600 group-hover:text-white group-hover:border-purple-600">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/60 flex items-center justify-center shrink-0 transition-[transform,background-color,color] duration-150 group-hover:scale-105 group-hover:bg-purple-600 group-hover:text-white group-hover:border-purple-600">
                   <ScrollText className="w-5 h-5" />
                 </div>
                 <div>
@@ -124,7 +120,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all shrink-0 mt-3" />
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:translate-x-0.5 transition-transform duration-150 shrink-0 mt-3" />
             </Link>
           </div>
         </section>

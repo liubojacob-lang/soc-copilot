@@ -127,6 +127,7 @@ Provide structured analysis including:
         result, model_used, degraded = await self.llm_service.generate_structured(
             prompt=prompt,
             response_class=AlertAnalysisResponse,
+            extracted_iocs=local_iocs.to_dict(),
         )
 
         # Step 4: Merge IOCs - local takes precedence, LLM supplements

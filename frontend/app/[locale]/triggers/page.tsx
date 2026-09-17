@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState } from "@/components/common/LoadingState";
 import { ConfirmDialog } from "@/components/common";
 import { useToast } from "@/components/Toast";
+import { Zap, Clock, Info, CheckCircle2, XCircle } from "lucide-react";
 
 interface Trigger {
   id: string;
@@ -137,7 +138,12 @@ export default function TriggersPage() {
     } catch (err: unknown) {
       setTestResult({
         success: false,
-        message: err instanceof Error ? err.message : "Test failed",
+        message:
+          err instanceof Error
+            ? err.message
+            : locale.startsWith("zh")
+              ? "测试触发器请求失败"
+              : "Test failed",
       });
     } finally {
       setTestingWebhook(null);
@@ -158,7 +164,7 @@ export default function TriggersPage() {
   const filteredTriggers = triggers.filter((t) => filterType === "all" || t.type === filterType);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-surface-page transition-colors">
       <PageHeader
         title={t("title")}
         subtitle={t("subtitle")}
@@ -166,70 +172,68 @@ export default function TriggersPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/triggers/webhook/new")}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-xs h-9"
             >
-              + {t("webhookTrigger")}
+              <Zap className="w-3.5 h-3.5" />
+              <span>{t("webhookTrigger")}</span>
             </button>
             <button
               onClick={() => router.push("/triggers/cron/new")}
-              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors shadow-xs h-9"
             >
-              + {t("cronTrigger")}
+              <Clock className="w-3.5 h-3.5" />
+              <span>{t("cronTrigger")}</span>
             </button>
           </div>
         }
       />
 
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-3.5">
         {/* Error Message */}
         {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-600 dark:text-red-400">
+            {error}
           </div>
         )}
 
         {/* Test Result */}
         {testResult && (
           <div
-            className={`p-4 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"}`}
+            className={`p-3 rounded-lg border text-xs ${testResult.success ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400"}`}
           >
-            <p
-              className={`text-sm ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
-            >
-              {testResult.success ? "✓ " : "✗ "}
-              {testResult.message}
-            </p>
+            {testResult.success ? "✓ " : "✗ "}
+            {testResult.message}
           </div>
         )}
 
         {/* Filters */}
-        <div className="mb-4 flex space-x-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setFilterType("all")}
-            className={`px-3 py-1 text-sm rounded-md ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors h-8 ${
               filterType === "all"
-                ? "bg-gray-800 text-white dark:bg-gray-700"
-                : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                ? "bg-accent-600 text-white shadow-xs"
+                : "bg-surface-card border border-border-default text-text-secondary hover:bg-surface-hover"
             }`}
           >
             {tPage("all")}
           </button>
           <button
             onClick={() => setFilterType("webhook")}
-            className={`px-3 py-1 text-sm rounded-md ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors h-8 ${
               filterType === "webhook"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "bg-surface-card border border-border-default text-text-secondary hover:bg-surface-hover"
             }`}
           >
             {tPage("webhooks")}
           </button>
           <button
             onClick={() => setFilterType("cron")}
-            className={`px-3 py-1 text-sm rounded-md ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors h-8 ${
               filterType === "cron"
-                ? "bg-purple-600 text-white"
-                : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                ? "bg-purple-600 text-white shadow-xs"
+                : "bg-surface-card border border-border-default text-text-secondary hover:bg-surface-hover"
             }`}
           >
             {tPage("cron")}
@@ -237,95 +241,97 @@ export default function TriggersPage() {
         </div>
 
         {/* Triggers List */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="bg-surface-card rounded-xl border border-border-subtle shadow-subtle overflow-hidden">
           <LoadingState
             isLoading={loading}
             empty={!loading && filteredTriggers.length === 0}
             emptyMessage={
               filterType === "all"
                 ? tPage("noTriggers")
-                : tPage("noTriggersType", { type: filterType })
+                : tPage("noTriggersType", { type: filterType === "webhook" ? "Webhook" : "Cron" })
             }
             skeletonType="table"
             skeletonProps={{ rows: 5, columns: 7 }}
           >
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+              <table className="min-w-full divide-y divide-border-subtle text-sm">
+                <thead className="bg-surface-hover/50 border-b border-border-subtle text-xs uppercase text-text-muted">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                       {tPage("type")}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                       {tPage("name")}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t("playbook")}
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                      {tPage("playbook")}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                       {tPage("details")}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t("status")}
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                      {tPage("status")}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t("lastTriggered")}
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                      {tPage("lastTriggered")}
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {tCommon("actions")}
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-text-muted uppercase tracking-wider">
+                      {tPage("actions")}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-border-subtle">
                   {filteredTriggers.map((trigger) => (
-                    <tr key={trigger.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <tr key={trigger.id} className="hover:bg-surface-hover/50 transition-colors">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${getTriggerTypeBadge(trigger.type)}`}
+                          className={`px-2 py-0.5 text-xs font-medium rounded-full ${getTriggerTypeBadge(trigger.type)}`}
                         >
-                          {trigger.type}
+                          {trigger.type === "webhook" ? "Webhook" : trigger.type === "cron" ? "Cron" : trigger.type}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium text-text-primary">
                         {trigger.name || (
-                          <span className="text-gray-400 italic">{tPage("unnamed")}</span>
+                          <span className="text-text-disabled italic">{tPage("unnamed")}</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-4 py-2.5 whitespace-nowrap text-sm text-text-secondary">
                         {definitions[trigger.definition_id] || trigger.definition_id}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-4 py-2.5 text-sm text-text-secondary">
                         {trigger.type === "webhook" && trigger.webhook_url && (
-                          <div className="flex items-center space-x-2">
-                            <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                          <div className="flex items-center gap-1.5">
+                            <code className="text-xs bg-surface-hover px-2 py-0.5 rounded font-mono text-text-secondary border border-border-subtle">
                               {trigger.webhook_url}
                             </code>
                             <button
                               onClick={() => handleCopyWebhookUrl(trigger.webhook_url!)}
-                              className="text-blue-600 hover:text-blue-700 text-xs"
+                              className="text-accent-600 hover:text-accent-700 text-xs font-medium"
                             >
                               {tCommon("copy")}
                             </button>
                           </div>
                         )}
                         {trigger.type === "cron" && trigger.cron_expr && (
-                          <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                          <code className="text-xs bg-surface-hover px-2 py-0.5 rounded font-mono text-text-secondary border border-border-subtle">
                             {trigger.cron_expr}
                           </code>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
                         {trigger.is_active ? (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          <span className="px-2 py-0.5 inline-flex items-center gap-1 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                            <CheckCircle2 className="w-3 h-3" />
                             {t("active")}
                           </span>
                         ) : (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                          <span className="px-2 py-0.5 inline-flex items-center gap-1 text-xs font-medium rounded-full bg-surface-hover text-text-muted">
+                            <XCircle className="w-3 h-3" />
                             {t("inactive")}
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-4 py-2.5 whitespace-nowrap text-xs text-text-secondary">
                         {trigger.last_triggered_at
                           ? format.dateTime(new Date(trigger.last_triggered_at), {
                               dateStyle: "medium",
@@ -333,32 +339,34 @@ export default function TriggersPage() {
                             })
                           : tPage("never")}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {trigger.type === "webhook" && (
+                      <td className="px-4 py-2.5 whitespace-nowrap text-right text-xs font-medium">
+                        <div className="flex items-center justify-end gap-2.5">
+                          {trigger.type === "webhook" && (
+                            <button
+                              onClick={() => handleTestWebhook(trigger)}
+                              disabled={testingWebhook === trigger.id}
+                              className="text-xs text-green-600 hover:text-green-700 dark:text-green-400 font-medium disabled:opacity-50"
+                            >
+                              {testingWebhook === trigger.id ? "..." : tPage("test")}
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleTestWebhook(trigger)}
-                            disabled={testingWebhook === trigger.id}
-                            className="text-green-600 hover:text-green-900 mr-3 disabled:opacity-50"
+                            onClick={() => handleToggleActive(trigger.id, trigger.is_active)}
+                            className={`text-xs font-medium ${
+                              trigger.is_active
+                                ? "text-amber-600 hover:text-amber-700 dark:text-amber-400"
+                                : "text-accent-600 hover:text-accent-700 dark:text-accent-400"
+                            }`}
                           >
-                            {testingWebhook === trigger.id ? "..." : tPage("test")}
+                            {trigger.is_active ? tPage("disable") : tPage("enable")}
                           </button>
-                        )}
-                        <button
-                          onClick={() => handleToggleActive(trigger.id, trigger.is_active)}
-                          className={`${
-                            trigger.is_active
-                              ? "text-orange-600 hover:text-orange-900"
-                              : "text-green-600 hover:text-green-900"
-                          } mr-3`}
-                        >
-                          {trigger.is_active ? tPage("disable") : tPage("enable")}
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(trigger)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          {t("delete")}
-                        </button>
+                          <button
+                            onClick={() => setDeleteTarget(trigger)}
+                            className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 font-medium"
+                          >
+                            {t("delete")}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -369,17 +377,14 @@ export default function TriggersPage() {
         </div>
 
         {/* Info Box */}
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
-            {tPage("infoBox.title")}
+        <div className="p-4 bg-surface-card rounded-xl border border-border-subtle shadow-subtle">
+          <h3 className="text-xs font-semibold text-text-primary mb-2 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 text-accent-600 dark:text-accent-400" />
+            <span>{tPage("infoBox.title")}</span>
           </h3>
-          <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
-            <li>
-              <strong>{tPage("infoBox.webhook")}</strong>
-            </li>
-            <li>
-              <strong>{tPage("infoBox.cron")}</strong>
-            </li>
+          <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
+            <li>{tPage("infoBox.webhook")}</li>
+            <li>{tPage("infoBox.cron")}</li>
             <li>{tPage("infoBox.logs")}</li>
           </ul>
         </div>

@@ -84,7 +84,7 @@ export default function Navigation({ apiStatus, actions, onOpenMobileNav }: Navi
         : "bg-rose-500";
 
   return (
-    <header className="sticky top-0 z-40 h-[var(--header-h)] border-b border-border-subtle bg-surface-card/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 h-[var(--header-h)] border-b border-border-subtle bg-surface-card">
       <div className="flex h-full items-center gap-3 px-4 sm:px-6">
         <button
           type="button"

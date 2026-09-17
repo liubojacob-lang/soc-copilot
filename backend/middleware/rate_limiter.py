@@ -13,7 +13,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from functools import wraps
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -475,9 +475,11 @@ def rate_limit(max_requests: int = 10, window_seconds: int = 60):
             if settings.environment == "test":
                 return await func(*args, **kwargs)
 
-            # Extract request from kwargs
+            # Extract request from kwargs or args
             request = kwargs.get("request")
-            if not request:
+            if not isinstance(request, Request):
+                request = next((v for v in kwargs.values() if isinstance(v, Request)), None)
+            if not request or not isinstance(request, Request):
                 return await func(*args, **kwargs)
 
             # Get identifier (real client IP behind proxy, or API key)

@@ -342,15 +342,16 @@ export default function PlaybookRunDetailPage() {
     return map;
   }, [nodeRuns]);
 
-  const backButton = <BackButton fallbackUrl="/playbooks?tab=runs" label={tCommon("back")} />;
+  const backButton = <BackButton fallbackUrl="/playbooks" label={tCommon("back")} variant="ghost" />;
 
   const refreshButton = (
     <button
       type="button"
       onClick={handleRetry}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-subtle bg-surface-card hover:bg-surface-hover text-text-secondary text-xs font-medium transition-colors"
+      className="inline-flex items-center justify-center p-2 rounded-lg border border-border-subtle bg-surface-card hover:bg-surface-hover text-text-secondary text-sm font-medium transition-colors"
+      title={tCommon("refresh")}
     >
-      <RefreshCw className="w-3.5 h-3.5" />
+      <RefreshCw className="w-4 h-4" />
     </button>
   );
 
@@ -359,7 +360,7 @@ export default function PlaybookRunDetailPage() {
   // ── Loading ─────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-canvas transition-colors">
+      <div className="min-h-screen bg-surface-page transition-colors">
         <PageHeader title={t("title")} subtitle={t("subtitle")} backButton={backButton} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <LoadingState isLoading={true} type="skeleton" skeletonType="card" />
@@ -371,7 +372,7 @@ export default function PlaybookRunDetailPage() {
   // ── Error / Not Found ───────────────────────────────────
   if (error || !run) {
     return (
-      <div className="min-h-screen bg-surface-canvas transition-colors">
+      <div className="min-h-screen bg-surface-page transition-colors">
         <PageHeader title={t("title")} subtitle={t("subtitle")} backButton={backButton} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <LoadingState
@@ -387,7 +388,7 @@ export default function PlaybookRunDetailPage() {
   const runStatusPill = RUN_STATUS_PILL[run.status] || RUN_STATUS_PILL.pending;
 
   return (
-    <div className="min-h-screen bg-surface-canvas transition-colors pb-16">
+    <div className="min-h-screen bg-surface-page transition-colors pb-16">
       {/* Header */}
       <PageHeader
         backButton={backButton}
@@ -401,9 +402,9 @@ export default function PlaybookRunDetailPage() {
                 type="button"
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium shadow-subtle transition-all disabled:opacity-50"
               >
-                <Ban className="w-3.5 h-3.5" />
+                <Ban className="w-4 h-4" />
                 <span>{cancelling ? t("cancelling") : t("cancel")}</span>
               </button>
             )}
@@ -413,7 +414,7 @@ export default function PlaybookRunDetailPage() {
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         {/* Status & Node Progress */}
-        <div className="bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle">
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle">
           <div className="flex flex-wrap items-center gap-3 pb-4 border-b border-border-subtle">
             <span
               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${runStatusPill}`}
@@ -430,8 +431,8 @@ export default function PlaybookRunDetailPage() {
               {run.mode}
             </span>
             {isActiveRun && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
-                <RefreshCw className="w-3 h-3 animate-spin text-accent-500" />
+              <span className="inline-flex items-center gap-1.5 text-xs text-text-tertiary">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-accent-500" />
                 {t("autoRefreshHint")}
               </span>
             )}
@@ -444,9 +445,9 @@ export default function PlaybookRunDetailPage() {
               { label: t("running"), value: run.running_nodes },
               { label: t("pending"), value: run.pending_nodes },
             ].map((item) => (
-              <div key={item.label} className="px-3 py-2.5 rounded-xl bg-surface-hover/60">
-                <div className="text-[10px] text-text-tertiary">{item.label}</div>
-                <div className="text-sm font-mono font-semibold text-text-primary mt-0.5">
+              <div key={item.label} className="px-3 py-2.5 rounded-lg bg-surface-hover/60">
+                <div className="text-xs text-text-tertiary">{item.label}</div>
+                <div className="text-base font-mono font-semibold text-text-primary mt-0.5">
                   {item.value}
                 </div>
               </div>
@@ -456,15 +457,15 @@ export default function PlaybookRunDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Run Info */}
-          <div className="bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle space-y-4">
+          <div className="bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
               <Info className="w-4 h-4 text-accent-600 dark:text-accent-400" />
-              <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
+              <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
                 {t("runInfo")}
               </h3>
             </div>
 
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2.5 text-sm">
               {[
                 { label: t("version"), value: run.playbook_version, mono: true },
                 { label: t("engineVersion"), value: run.engine_version || "-", mono: true },
@@ -489,9 +490,9 @@ export default function PlaybookRunDetailPage() {
                 { label: t("definitionId"), value: run.definition_id || "-", mono: true },
               ].map((row) => (
                 <div key={row.label} className="flex items-center justify-between gap-3">
-                  <span className="text-text-tertiary shrink-0">{row.label}</span>
+                  <span className="text-xs text-text-tertiary shrink-0">{row.label}</span>
                   <span
-                    className={`text-text-secondary truncate ${row.mono ? "font-mono" : ""}`}
+                    className={`text-sm text-text-secondary truncate ${row.mono ? "font-mono" : ""}`}
                     title={row.value}
                   >
                     {row.value}
@@ -502,10 +503,10 @@ export default function PlaybookRunDetailPage() {
 
             {run.error_message && (
               <div className="pt-2 border-t border-border-subtle">
-                <div className="text-[11px] font-semibold text-danger-600 dark:text-danger-400 mb-1">
+                <div className="text-xs font-semibold text-danger-600 dark:text-danger-400 mb-1">
                   {t("errorMessage")}
                 </div>
-                <pre className="px-3 py-2 rounded-lg bg-danger-500/10 border border-danger-500/30 text-danger-700 dark:text-danger-300 text-[11px] font-mono whitespace-pre-wrap break-all max-h-32 overflow-auto">
+                <pre className="px-3 py-2 rounded-lg bg-danger-500/10 border border-danger-500/30 text-danger-700 dark:text-danger-300 text-xs font-mono whitespace-pre-wrap break-all max-h-32 overflow-auto">
                   {run.error_message}
                 </pre>
               </div>
@@ -513,15 +514,15 @@ export default function PlaybookRunDetailPage() {
           </div>
 
           {/* DAG Execution Topology */}
-          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle flex flex-col justify-between">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-4">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-accent-600 dark:text-accent-400" />
-                <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
+                <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
                   {t("dagTitle")}
                 </h3>
               </div>
-              <div className="flex items-center gap-1 p-0.5 rounded-xl bg-surface-hover border border-border-subtle text-xs">
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-hover border border-border-subtle text-xs">
                 <button
                   type="button"
                   onClick={() => setViewMode("visual")}
@@ -549,7 +550,7 @@ export default function PlaybookRunDetailPage() {
               </div>
             </div>
 
-            <div className="min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-canvas/50 relative">
+            <div className="min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-page relative">
               {viewMode === "visual" ? (
                 <DAGCanvas
                   definition={dagDefinition}
@@ -567,75 +568,75 @@ export default function PlaybookRunDetailPage() {
         </div>
 
         {/* Node Execution Detail */}
-        <div className="bg-surface-card border border-border-subtle rounded-2xl shadow-subtle overflow-hidden">
+        <div className="bg-surface-card border border-border-subtle rounded-xl shadow-subtle overflow-hidden">
           <div className="px-5 py-3.5 border-b border-border-subtle flex items-center gap-2">
             <Layers className="w-4 h-4 text-accent-600 dark:text-accent-400" />
-            <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
+            <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
               {t("nodeList")}
             </h3>
           </div>
 
           {nodeRuns.length === 0 ? (
-            <div className="px-5 py-8 text-center text-xs text-text-muted italic">
+            <div className="px-5 py-8 text-center text-sm text-text-muted italic">
               {t("noNodes")}
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border-subtle">
+              <table className="w-full text-left text-sm divide-y divide-border-subtle">
                 <thead>
                   <tr className="bg-surface-hover/50">
-                    <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                       {t("node")}
                     </th>
-                    <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                       {t("type")}
                     </th>
-                    <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                       {t("nodeStatus")}
                     </th>
-                    <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                       {t("attempts")}
                     </th>
-                    <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                       {t("duration")}
                     </th>
-                    <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
                       {t("error")}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
                   {nodeRuns.map((nr) => (
-                    <tr key={nr.node_id} className="hover:bg-surface-hover/40 transition-colors">
-                      <td className="px-5 py-2.5 text-xs text-text-primary">
+                    <tr key={nr.node_id} className="hover:bg-surface-hover/50 transition-colors">
+                      <td className="px-5 py-3 text-sm text-text-primary">
                         <div className="font-medium truncate max-w-[220px]">{nr.node_name}</div>
-                        <div className="text-[10px] font-mono text-text-tertiary">{nr.node_id}</div>
+                        <div className="text-xs font-mono text-text-muted">{nr.node_id}</div>
                       </td>
-                      <td className="px-5 py-2.5 text-xs font-mono text-text-secondary">
+                      <td className="px-5 py-3 text-sm font-mono text-text-secondary">
                         {nr.node_type}
                       </td>
-                      <td className="px-5 py-2.5">
+                      <td className="px-5 py-3">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             NODE_STATUS_PILL[nr.status] || NODE_STATUS_PILL.pending
                           }`}
                         >
                           {tNodeStatus(nr.status)}
                         </span>
                       </td>
-                      <td className="px-5 py-2.5 text-xs font-mono text-text-secondary">
+                      <td className="px-5 py-3 text-sm font-mono text-text-secondary">
                         {nr.attempt_count}
                       </td>
-                      <td className="px-5 py-2.5 text-xs font-mono text-text-secondary">
+                      <td className="px-5 py-3 text-sm font-mono text-text-secondary">
                         {formatDurationSec(nr.started_at, nr.finished_at)}
                       </td>
-                      <td className="px-5 py-2.5 text-xs text-danger-600 dark:text-danger-400 max-w-[240px]">
+                      <td className="px-5 py-3 text-sm text-danger-600 dark:text-danger-400 max-w-[240px]">
                         {nr.last_error ? (
                           <span className="line-clamp-2" title={nr.last_error}>
                             {nr.last_error}
                           </span>
                         ) : (
-                          <span className="text-text-tertiary">-</span>
+                          <span className="text-text-muted">-</span>
                         )}
                       </td>
                     </tr>

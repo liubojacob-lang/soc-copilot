@@ -25,7 +25,7 @@ import { Input } from "@/components/common/Input";
 import { Modal } from "@/components/common/Modal";
 import { OtpInput } from "@/components/common/OtpInput";
 import { useToast } from "@/components/Toast";
-import { authFetchJSON } from "@/lib/auth";
+import { authFetchJSON, loadAuthState } from "@/lib/auth";
 
 interface TOTPStatus {
   is_enabled: boolean;
@@ -45,8 +45,19 @@ export function TwoFactorSettings() {
   const t = useTranslations("twoFactor");
   const { showToast } = useToast();
 
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<TOTPStatus>({ is_enabled: false, policy: "sudo" });
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<TOTPStatus>(() => {
+    if (typeof window !== "undefined") {
+      const authUser = loadAuthState()?.user;
+      if (authUser) {
+        return {
+          is_enabled: Boolean(authUser.is_totp_enabled),
+          policy: (authUser.totp_policy as "sudo" | "login") || "sudo",
+        };
+      }
+    }
+    return { is_enabled: false, policy: "sudo" };
+  });
 
   // Setup Modal Wizard State
   const [showSetupModal, setShowSetupModal] = useState(false);
@@ -76,7 +87,6 @@ export function TwoFactorSettings() {
 
   const fetchStatus = async () => {
     try {
-      setLoading(true);
       const data = await authFetchJSON<TOTPStatus>("/api/v1/auth/2fa/status");
       setStatus(data);
     } catch (err: unknown) {
@@ -261,7 +271,7 @@ export function TwoFactorSettings() {
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden transition-all duration-200">
+    <div className="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden transition-colors duration-150">
       {/* 2FA Main Banner */}
       {!status.is_enabled ? (
         /* ================= UNPROTECTED / DISABLED STATE ================= */

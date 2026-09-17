@@ -82,6 +82,56 @@ export default function UsersPage() {
 
   const [refreshing, setRefreshing] = useState(false);
 
+  const isAnyModalOpen =
+    showCreateModal || showEditModal || showDeleteModal || showResetModal || !!successData;
+
+  // Lock background scroll and listen for ESC key when any modal is open
+  useEffect(() => {
+    if (!isAnyModalOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (showCreateModal) {
+          setShowCreateModal(false);
+          resetForm();
+        } else if (showEditModal) {
+          setShowEditModal(false);
+          setSelectedUser(null);
+        } else if (showDeleteModal) {
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+        } else if (showResetModal) {
+          setShowResetModal(false);
+          setSelectedUser(null);
+        } else if (successData) {
+          closeSuccess();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    isAnyModalOpen,
+    showCreateModal,
+    showEditModal,
+    showDeleteModal,
+    showResetModal,
+    successData,
+    setShowCreateModal,
+    setShowEditModal,
+    setShowDeleteModal,
+    setShowResetModal,
+    setSelectedUser,
+    resetForm,
+    closeSuccess,
+  ]);
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchUsers(pagination.page);
@@ -383,8 +433,19 @@ export default function UsersPage() {
 
         {/* Create User Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowCreateModal(false);
+                resetForm();
+              }
+            }}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {t("createUser")}
@@ -557,8 +618,19 @@ export default function UsersPage() {
 
         {/* Edit User Modal */}
         {showEditModal && selectedUser && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowEditModal(false);
+                setSelectedUser(null);
+              }
+            }}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edit User</h2>
                 <button
@@ -675,8 +747,19 @@ export default function UsersPage() {
 
         {/* Reset Password Modal */}
         {showResetModal && selectedUser && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowResetModal(false);
+                setSelectedUser(null);
+              }
+            }}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {t("resetPasswordTitle")}
@@ -773,8 +856,18 @@ export default function UsersPage() {
 
         {/* Success Modal */}
         {successData && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) {
+                closeSuccess();
+              }
+            }}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
                 <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
