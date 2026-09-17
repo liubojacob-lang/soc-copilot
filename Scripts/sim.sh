@@ -12,6 +12,71 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/docker-compose.local-sim.yml"
 COMPOSE_DEV_FILE="$ROOT_DIR/docker-compose.local-sim.dev.yml"
 
+# ======================== 仿真环境变量注入 ========================
+# composer 文件里的敏感值全部写成 ${VAR:?} 强制注入、不再带默认值
+# （此前用 ":-默认值" 会把真实密钥提交进 git 历史）。
+# 这里把 .env.local-sim（优先）或 .env 通过 --env-file 交给 compose 做插值，
+# 不用 source，避免密码里的 # / ! 被 shell 解析破坏。
+SIM_ENV_FILE="$ROOT_DIR/.env.local-sim"
+if [ ! -f "$SIM_ENV_FILE" ]; then
+    SIM_ENV_FILE="$ROOT_DIR/.env"
+fi
+
+# 统一入口：所有 docker compose 调用都走这里，确保带上 env 文件。
+# 只有真正要起服务/构建的动作才做变量预检 —— stop / logs / ps 等即使
+# 变量缺失也必须能执行，否则环境一旦配置不全就停不下来。
+compose_sim() {
+    case " $* " in
+        *" up "* | *" build "* | *" restart "* | *" start "* | *" run "*)
+            check_sim_env || return 1
+            ;;
+    esac
+    docker compose -f "$COMPOSE_FILE" --env-file "$SIM_ENV_FILE" "$@"
+}
+
+# 预检：缺失的必需变量直接给出可执行的补救提示，而不是让 compose 抛一句
+# "required variable is missing" 就退出
+REQUIRED_SIM_VARS=(
+    SIM_DB_PASSWORD
+    SIM_REDIS_PASSWORD
+    JWT_SECRET
+    SECRET_ENCRYPTION_KEY
+    BOOTSTRAP_ADMIN_PASSWORD
+    ZHIPU_API_KEY
+    NVIDIA_API_KEY
+)
+
+check_sim_env() {
+    local missing=()
+    local key
+
+    if [ ! -f "$SIM_ENV_FILE" ]; then
+        error "未找到环境变量文件：$SIM_ENV_FILE"
+        info  "请复制模板后填入真实值：cp .env.local-sim.example .env.local-sim"
+        return 1
+    fi
+
+    for key in "${REQUIRED_SIM_VARS[@]}"; do
+        # 只看键是否存在，不打印值
+        if ! grep -qE "^[[:space:]]*${key}=." "$SIM_ENV_FILE"; then
+            missing+=("$key")
+        fi
+    done
+
+    if [ ${#missing[@]} -gt 0 ]; then
+        error "仿真环境缺少必需变量，已停止（不会使用任何内置默认值）"
+        for key in "${missing[@]}"; do
+            echo -e "  ${YELLOW}缺${NC} $key"
+        done
+        info "请补进 $SIM_ENV_FILE，模板见 .env.local-sim.example"
+        info "生成密钥：openssl rand -hex 32（JWT_SECRET）"
+        info "生成 Fernet 键：python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+        return 1
+    fi
+
+    return 0
+}
+
 # 颜色输出
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -93,7 +158,7 @@ cmd_start() {
     check_docker
     info "正在启动 SOC Copilot 仿真环境 (标准生产模式)..."
     cd "$ROOT_DIR"
-    docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+    compose_sim up -d --remove-orphans
     cmd_status
     success "仿真环境已成功启动！"
 }
@@ -104,7 +169,7 @@ cmd_dev() {
     info "正在以【全栈热重载挂载模式】启动仿真环境..."
     info "提示: 前端 (Next.js Fast Refresh) 与后端 (FastAPI uvicorn --reload) 均已直接挂载宿主机源码，保存文件即秒级生效！"
     cd "$ROOT_DIR"
-    docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_DEV_FILE" up -d --remove-orphans
+    compose_sim -f "$COMPOSE_DEV_FILE" up -d --remove-orphans
     cmd_status
     success "全栈热重载仿真环境已就绪！"
 }
@@ -114,7 +179,7 @@ cmd_stop() {
     check_docker
     info "正在停止仿真环境容器..."
     cd "$ROOT_DIR"
-    docker compose -f "$COMPOSE_FILE" stop
+    compose_sim stop
     success "仿真容器已停止。"
 }
 
@@ -123,7 +188,7 @@ cmd_restart() {
     check_docker
     info "正在重启仿真环境容器..."
     cd "$ROOT_DIR"
-    docker compose -f "$COMPOSE_FILE" restart
+    compose_sim restart
     success "重启完成。"
     cmd_status
 }
@@ -201,7 +266,7 @@ fast_update_frontend() {
 fast_update_backend() {
     info "正在平滑更新后端容器 soc-backend-sim..."
     cd "$ROOT_DIR"
-    docker compose -f "$COMPOSE_FILE" up -d --force-recreate --no-deps backend
+    compose_sim up -d --force-recreate --no-deps backend
     success "后端容器已平滑重启上线！(http://127.0.0.1:18088)"
 }
 
@@ -244,19 +309,19 @@ cmd_build() {
 
     case "$target" in
         frontend)
-            docker compose -f "$COMPOSE_FILE" build frontend
+            compose_sim build frontend
             docker rm -f soc-frontend-sim 2>/dev/null || true
-            docker compose -f "$COMPOSE_FILE" up -d --no-deps frontend
+            compose_sim up -d --no-deps frontend
             ;;
         backend)
-            docker compose -f "$COMPOSE_FILE" build backend
+            compose_sim build backend
             docker rm -f soc-backend-sim 2>/dev/null || true
-            docker compose -f "$COMPOSE_FILE" up -d --no-deps backend
+            compose_sim up -d --no-deps backend
             ;;
         all)
-            docker compose -f "$COMPOSE_FILE" build
+            compose_sim build
             docker rm -f soc-frontend-sim soc-backend-sim 2>/dev/null || true
-            docker compose -f "$COMPOSE_FILE" up -d
+            compose_sim up -d
             ;;
         *)
             warn "未知构建目标: $target"
@@ -287,7 +352,7 @@ cmd_logs() {
             docker logs -f soc-redis-sim
             ;;
         *)
-            docker compose -f "$COMPOSE_FILE" logs -f --tail 50
+            compose_sim logs -f --tail 50
             ;;
     esac
 }

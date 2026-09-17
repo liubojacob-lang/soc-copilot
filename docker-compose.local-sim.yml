@@ -1,12 +1,18 @@
 # SOC Copilot 本地独立仿真编排 (与宿主机当前服务完全隔离)
 # 端口映射均已错开，不会与 5432 / 6379 / 8088 / 3003 产生冲突
+#
+# 安全约定（2026-09-17 修复凭据明文入库后生效）：
+#   本文件所有敏感值一律通过 ${VAR:?} 强制外部注入，**不得再写入任何默认值**。
+#   原因：本文件受版本控制，`:?` 之前的 `:-默认值` 写法会把真实密钥提交进 git 历史。
+#   注入方式：./Scripts/sim.sh 会自动加载 .env.local-sim（不存在则回退 .env）。
+#   需要哪些变量见仓库根的 .env.local-sim.example。
 services:
   postgres:
     image: postgres:15-alpine
     container_name: soc-postgres-sim
     environment:
       POSTGRES_USER: ${SIM_DB_USER:-soc_sim_user}
-      POSTGRES_PASSWORD: ${SIM_DB_PASSWORD:-soc_sim_password_123456}
+      POSTGRES_PASSWORD: ${SIM_DB_PASSWORD:?SIM_DB_PASSWORD is required (see .env.local-sim.example)}
       POSTGRES_DB: ${SIM_DB_NAME:-soc_sim_db}
     volumes:
       - postgres_sim_data:/var/lib/postgresql/data
@@ -23,14 +29,13 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: soc-redis-sim
-    command: redis-server --appendonly yes --requirepass ${SIM_REDIS_PASSWORD:-soc_sim_redis_123456}
+    command: redis-server --appendonly yes --requirepass ${SIM_REDIS_PASSWORD:?SIM_REDIS_PASSWORD is required (see .env.local-sim.example)}
     volumes:
       - redis_sim_data:/data
     ports:
       - "127.0.0.1:${HOST_PORT_REDIS:-16379}:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${SIM_REDIS_PASSWORD:-soc_sim_redis_123456}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${SIM_REDIS_PASSWORD:?SIM_REDIS_PASSWORD is required}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,28 +51,31 @@ services:
     container_name: soc-backend-sim
     environment:
       - "DB_USER=${SIM_DB_USER:-soc_sim_user}"
-      - "DB_PASSWORD=${SIM_DB_PASSWORD:-soc_sim_password_123456}"
+      - "DB_PASSWORD=${SIM_DB_PASSWORD:?SIM_DB_PASSWORD is required}"
       - "DB_NAME=${SIM_DB_NAME:-soc_sim_db}"
-      - "DATABASE_URL=postgresql+asyncpg://${SIM_DB_USER:-soc_sim_user}:${SIM_DB_PASSWORD:-soc_sim_password_123456}@postgres:5432/${SIM_DB_NAME:-soc_sim_db}"
-      - "REDIS_URL=redis://:${SIM_REDIS_PASSWORD:-soc_sim_redis_123456}@redis:6379/0"
+      - "DATABASE_URL=postgresql+asyncpg://${SIM_DB_USER:-soc_sim_user}:${SIM_DB_PASSWORD:?SIM_DB_PASSWORD is required}@postgres:5432/${SIM_DB_NAME:-soc_sim_db}"
+      - "REDIS_URL=redis://:${SIM_REDIS_PASSWORD:?SIM_REDIS_PASSWORD is required}@redis:6379/0"
       - "REDIS_ENABLED=true"
-      - "REDIS_PASSWORD=${SIM_REDIS_PASSWORD:-soc_sim_redis_123456}"
-      - "JWT_SECRET=${JWT_SECRET:-sim_jwt_secret_must_be_32_characters_long_soc_copilot}"
-      - "BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:-K9#mX2_vL8!qZ5*wR7}"
+      - "REDIS_PASSWORD=${SIM_REDIS_PASSWORD:?SIM_REDIS_PASSWORD is required}"
+      - "JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required (generate: openssl rand -hex 32)}"
+      - "BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD is required}"
       - "BOOTSTRAP_ADMIN_USERNAME=${BOOTSTRAP_ADMIN_USERNAME:-admin}"
       - "BOOTSTRAP_ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}"
-      - "SECRET_ENCRYPTION_KEY=${SECRET_ENCRYPTION_KEY:-e3Zq5lV7x1r9p2m4k6j8h0f3d5s7a1c9b2e4g6i8k0m=}"
-      - "HTTP_ALLOWED_HOSTS=${HTTP_ALLOWED_HOSTS:-*}"
-      - "CORS_ORIGINS=${CORS_ORIGINS:-*}"
+      - "SECRET_ENCRYPTION_KEY=${SECRET_ENCRYPTION_KEY:?SECRET_ENCRYPTION_KEY is required (generate: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\")}"
+      # 仿真环境仅在 127.0.0.1 暴露，但仍不用通配值：
+      # CORS 通配 + allow_credentials 会让任何站点跨站读取本服务响应，故收窄到本地端口。
+      - "HTTP_ALLOWED_HOSTS=${HTTP_ALLOWED_HOSTS:-localhost,127.0.0.1,backend,frontend}"
+      - "CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:13000,http://127.0.0.1:13000,http://localhost:3003,http://127.0.0.1:3003}"
       - "ENVIRONMENT=${ENVIRONMENT:-development}"
       - "COOKIE_SECURE=${COOKIE_SECURE:-false}"
       - "STRICT_PRODUCTION_CHECKS=${STRICT_PRODUCTION_CHECKS:-false}"
       - "LOG_LEVEL=INFO"
       - "WORKERS=2"
       - "AI_PROVIDER=${AI_PROVIDER:-zhipu}"
-      - "ZHIPU_API_KEY=${ZHIPU_API_KEY:-3c3bf3d16aa54b45a80d176af5b42ff9.QLEMk5ivt6jq8UQy}"
+      # LLM Key 是本文件本次泄漏的真实凭据，绝不允许有默认值。
+      - "ZHIPU_API_KEY=${ZHIPU_API_KEY:?ZHIPU_API_KEY is required}"
       - "ZHIPU_MODEL=${ZHIPU_MODEL:-glm-4-flash}"
-      - "NVIDIA_API_KEY=${NVIDIA_API_KEY:-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}"
+      - "NVIDIA_API_KEY=${NVIDIA_API_KEY:?NVIDIA_API_KEY is required}"
       - "NVIDIA_MODEL=${NVIDIA_MODEL:-meta/llama-3.2-11b-vision-instruct}"
       - "AI_TIMEOUT=${AI_TIMEOUT:-90}"
     ports:
