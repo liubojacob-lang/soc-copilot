@@ -216,6 +216,18 @@ class AITaskQueueService:
                         "degraded": degraded,
                     }
                     task.completed_at = datetime.now(UTC)
+
+                    # T2.5: Backfill AI triage result into alert.raw_data
+                    if (
+                        task.task_type
+                        in (AITaskType.ALERT_ANALYSIS.value, "alert_analysis")
+                        and task.input_data
+                        and task.input_data.get("alert_id")
+                    ):
+                        await self._backfill_alert_triage(
+                            session, task, result, model_used, degraded
+                        )
+
                     await session.commit()
                     logger.info(f"Completed AI task {task_id}")
 
@@ -231,6 +243,78 @@ class AITaskQueueService:
             await self._handle_task_error(task_id, str(e))
             # Retry if possible
             await self._maybe_retry_task(task_id)
+
+    async def _backfill_alert_triage(
+        self,
+        session,
+        task: AITaskModel,
+        result: Any,
+        model_used: str,
+        degraded: bool,
+    ) -> None:
+        """T2.5: Write AI triage result back to the associated SecurityAlert."""
+        try:
+            import re
+
+            from sqlalchemy.orm.attributes import flag_modified
+
+            from models.security_alert import SecurityAlert
+
+            raw_alert_id = task.input_data.get("alert_id")
+            try:
+                alert_id = int(raw_alert_id)
+            except (ValueError, TypeError):
+                alert_id = raw_alert_id
+
+            stmt = select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            res = await session.execute(stmt)
+            alert = res.scalar_one_or_none()
+            if not alert:
+                logger.warning(
+                    f"T2.5: Alert {alert_id} not found for AI task {task.id}"
+                )
+                return
+
+            raw = dict(alert.raw_data or {})
+            pipeline = dict(raw.get("pipeline") or {})
+
+            summary_text = ""
+            if isinstance(result, dict):
+                summary_text = (
+                    result.get("summary")
+                    or result.get("content")
+                    or ""
+                )
+            elif isinstance(result, str):
+                summary_text = result[:1000]
+
+            pipeline["ai_triage"] = {
+                "summary": summary_text,
+                "completed_at": datetime.now(UTC).isoformat(),
+                "task_id": task.id,
+                "model_used": model_used,
+                "degraded": degraded,
+            }
+
+            # Attempt to extract suggested severity
+            if isinstance(result, dict) and result.get("severity"):
+                pipeline["ai_suggested_severity"] = str(result["severity"]).lower()
+            elif isinstance(result, str):
+                m = re.search(
+                    r"\b(?:severity|建议严重度|严重度|级别)\s*[:=：]\s*(critical|high|medium|low)\b",
+                    result,
+                    re.IGNORECASE,
+                )
+                if m:
+                    pipeline["ai_suggested_severity"] = m.group(1).lower()
+
+            raw["pipeline"] = pipeline
+            alert.raw_data = raw
+            flag_modified(alert, "raw_data")
+            logger.info(f"T2.5: Backfilled AI triage result to alert {alert_id}")
+        except Exception as e:
+            logger.error(f"T2.5: Failed to backfill alert triage: {e}", exc_info=True)
+
 
     async def _handle_task_error(
         self, task_id: str, error_message: str, is_timeout: bool = False

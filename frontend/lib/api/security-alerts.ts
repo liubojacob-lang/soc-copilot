@@ -31,6 +31,7 @@ export interface SecurityAlertItem extends Omit<SecurityAlert, "severity" | "sta
   resolution_note?: string | null;
   resolved_at?: string | null;
   resolved_by?: string | null;
+  raw_data?: Record<string, any> | null;
 }
 
 export interface AlertNoteItem {

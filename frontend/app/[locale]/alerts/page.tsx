@@ -33,6 +33,7 @@ import {
   RefreshCw,
   Upload,
   Download,
+  Sparkles,
 } from "lucide-react";
 import ImportAlertModal from "./components/ImportAlertModal";
 import { loadAuthState, authFetch } from "@/lib/auth";
@@ -40,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, type ColumnDef, type TableSeverity } from "@/components/ui/DataTable";
+import { SeverityBreakdown } from "@/components/ui/SeverityBreakdown";
 import { LoadingState } from "@/components/common/LoadingState";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Button } from "@/components/common/Button";
@@ -51,7 +53,7 @@ import type { SecurityAlertItem, AlertListFilters, AlertStatus, AlertSeverity } 
 
 const PAGE_SIZE = 20;
 
-type SortField = "created_at" | "severity" | "status";
+type SortField = "created_at" | "severity" | "status" | "title" | "source";
 type SortDir = "asc" | "desc";
 
 const SEVERITY_ORDER: Record<string, number> = {
@@ -112,6 +114,51 @@ function formatTime(ts: string | null, format: ReturnType<typeof useFormatter>):
   } catch {
     return "-";
   }
+}
+
+// ── Sortable Header ────────────────────────────────────
+//
+// 之前只有"严重级别 / 状态 / 时间"三列带排序箭头，而且箭头只在**已激活**时才出现，
+// 未激活的列完全看不出能不能排；"标题 / 来源"干脆没有排序入口。
+// 现在所有可排序列统一：未激活显示淡色双向箭头（暗示"可排序"），
+// 激活后换成明确的方向箭头并提高对比度。
+
+function SortHeader({
+  label,
+  field,
+  sortField,
+  sortDir,
+  onSort,
+}: {
+  label: string;
+  field: SortField;
+  sortField: SortField;
+  sortDir: SortDir;
+  onSort: (field: SortField, defaultDir: SortDir) => void;
+}) {
+  const active = sortField === field;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(field, field === "created_at" ? "desc" : "asc")}
+      aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+      className={cn(
+        "-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 font-semibold transition-colors",
+        active ? "text-text-primary" : "text-text-tertiary hover:text-text-primary"
+      )}
+    >
+      {label}
+      {active ? (
+        sortDir === "asc" ? (
+          <ChevronUp className="w-3 h-3" />
+        ) : (
+          <ChevronDown className="w-3 h-3" />
+        )
+      ) : (
+        <ArrowUpDown className="w-3 h-3 opacity-50" />
+      )}
+    </button>
+  );
 }
 
 // ── Severity Badge ─────────────────────────────────────
@@ -177,7 +224,9 @@ function FilterDropdown({ label, options, selected, onChange }: FilterDropdownPr
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex items-center gap-2 px-3 py-2 text-xs sm:text-sm rounded-lg border transition-all duration-150",
+          // h-9 与同排的搜索框（h-9）和次级按钮（Button size=md）对齐到同一基线，
+          // 此前用 py-2 + text-sm 会算出 38px，比左右邻居各高 2px。
+          "flex h-9 items-center gap-2 px-3 text-xs sm:text-sm rounded-lg border transition-all duration-150",
           selected.length > 0
             ? "border-accent-500/40 bg-accent-500/10 text-accent-700 dark:text-accent-300 font-medium"
             : "border-border-subtle bg-surface-card text-text-secondary hover:border-border-default hover:text-text-primary shadow-subtle"
@@ -224,7 +273,34 @@ function FilterDropdown({ label, options, selected, onChange }: FilterDropdownPr
   );
 }
 
+// ── Filter Chip ────────────────────────────────────────
+//
+// 当前生效筛选条件的可移除回显。之前界面上完全没有这个信息，
+// 用户筛选后只看到"结果变少了"，不知道是哪一条条件在起作用。
+
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  const tCommon = useTranslations("common");
+  return (
+    <span className="inline-flex h-7 items-center gap-1 rounded-full border border-accent-500/40 bg-accent-500/10 pl-2.5 pr-1 text-xs font-medium text-accent-700 dark:text-accent-300">
+      <span className="max-w-[12rem] truncate">{label}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={tCommon("cancel")}
+        className="flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:bg-accent-500/20"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
+
 // ── Stats Bar ───────────────────────────────────────────
+//
+// 之前这里直接 Object.entries(by_severity) 遍历，顺序完全取决于 API 返回的
+// 对象键序，实测渲染成「中 → 信息 → 高 → 严重 → 低」这种无逻辑排列；
+// 而且只有文字 + ×N，没有任何量级编码，必须逐个读数字才能建立分布印象。
+// 现在与仪表盘共用 SeverityBreakdown —— 同一维度、同一排序、同一视觉语言。
 
 function StatsBar({
   total,
@@ -234,32 +310,15 @@ function StatsBar({
   stats?: { by_severity?: Record<string, number>; by_status?: Record<string, number> };
 }) {
   const t = useTranslations("alerts");
-  const tSev = useTranslations("severity");
-  if (!stats) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-4">
-      <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-2">
-        {t("totalCount", { count: total })}
-      </span>
-      {stats.by_severity &&
-        Object.entries(stats.by_severity).map(([sev, count]) => {
-          let label = sev;
-          try {
-            label = tSev(sev.toLowerCase() as any) || sev;
-          } catch {
-            label = sev;
-          }
-          return (
-            <span
-              key={sev}
-              className="text-xs text-gray-400 dark:text-gray-500 inline-flex items-center gap-1"
-            >
-              <Badge severity={mapSeverity(sev)}>{label}</Badge>
-              <span>×{count}</span>
-            </span>
-          );
-        })}
+    <div className="mb-4 rounded-xl border border-border-subtle bg-surface-card px-4 py-3.5">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <span className="text-sm font-medium text-text-secondary">
+          {t("totalCount", { count: total })}
+        </span>
+      </div>
+      <SeverityBreakdown counts={stats?.by_severity} layout="grid" />
     </div>
   );
 }
@@ -311,6 +370,56 @@ export default function AlertsPage() {
     };
   }, [search]);
 
+  // ── 筛选回显 ─────────────────────────────────────────
+  // 当前生效条件的数量与标签。用于工具栏徽标、"清除全部"入口与条件 chip。
+  const activeFilterCount =
+    (debouncedSearch ? 1 : 0) +
+    statusFilter.length +
+    severityFilter.length +
+    (sourceFilter ? 1 : 0);
+
+  const statusFilterLabels: Record<string, string> = useMemo(
+    () => ({
+      new: t("statusNew"),
+      investigating: t("statusInvestigating"),
+      resolved: t("statusResolved"),
+      false_positive: t("statusFalsePositive"),
+      escalated: t("statusEscalated"),
+    }),
+    [t]
+  );
+
+  const severityFilterLabels: Record<string, string> = useMemo(
+    () => ({
+      critical: t("severityCritical"),
+      high: t("severityHigh"),
+      medium: t("severityMedium"),
+      low: t("severityLow"),
+      info: t("severityInfo"),
+    }),
+    [t]
+  );
+
+  const clearAllFilters = useCallback(() => {
+    setSearch("");
+    setStatusFilter([]);
+    setSeverityFilter([]);
+    setSourceFilter("");
+    setPage(1);
+  }, []);
+
+  const handleSort = useCallback(
+    (field: SortField, defaultDir: SortDir) => {
+      if (sortField === field) {
+        setSortDir(sortDir === "asc" ? "desc" : "asc");
+      } else {
+        setSortField(field);
+        setSortDir(defaultDir);
+      }
+    },
+    [sortField, sortDir]
+  );
+
   // ── Build Filters ────────────────────────────────────
   const filters: AlertListFilters = useMemo(() => {
     const f: AlertListFilters = {
@@ -354,6 +463,10 @@ export default function AlertsPage() {
         cmp = (SEVERITY_ORDER[a.severity] || 0) - (SEVERITY_ORDER[b.severity] || 0);
       } else if (sortField === "status") {
         cmp = (STATUS_ORDER[a.status] || 0) - (STATUS_ORDER[b.status] || 0);
+      } else if (sortField === "title") {
+        cmp = (a.title || "").localeCompare(b.title || "");
+      } else if (sortField === "source") {
+        cmp = (a.source || "").localeCompare(b.source || "");
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -485,17 +598,50 @@ export default function AlertsPage() {
       },
       {
         key: "title",
-        header: t("list.title"),
+        // max-w-0 + w-full 是"自适应列里做截断"的标准写法：
+        // 单元格的 max-content 贡献被压成 0，于是它只吃表格的剩余宽度，
+        // 不再被内容反过来撑大（实测：注入超长标题时列宽从 925 涨到 2100，
+        // 整张表被推出视口）。配上单元格内的 max-w-full，长标题会在真实
+        // 可用宽度处出省略号，而不是被封在 600px 里、右侧空出 300px。
+        className: "w-full max-w-0",
+        header: (
+          <SortHeader
+            label={t("list.title")}
+            field="title"
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+          />
+        ),
         cell: (row) => (
           <div className="min-w-0">
-            <button
-              onClick={() => router.push(`/alerts/${row.id}`)}
-              className="text-sm font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 hover:underline truncate block max-w-[360px] text-left transition-colors"
-            >
-              {row.title}
-            </button>
+            {/* 标题是告警队列里唯一的识别依据，被截断后相似告警无法区分，
+                因此必须把完整文本挂在 title 属性上供悬停查看。
+                宽度用 max-w-full 而不是具体像素：<button> 在本布局下按 max-content
+                定宽，原先的 max-w-[600px] 会在 925px 的列里留下 300px 死区
+                （正是审查里"标题列留出大片空白"那条）；而完全不设上限又会让
+                超长标题撑破单元格。max-w-full 等于"最多占满本列"，
+                省略号由 truncate 按真实可用宽度触发。 */}
+            <div className="flex items-center gap-2 max-w-full">
+              <button
+                onClick={() => router.push(`/alerts/${row.id}`)}
+                title={row.title}
+                className="text-sm font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 hover:underline truncate block text-left transition-colors"
+              >
+                {row.title}
+              </button>
+              {(row.raw_data as any)?.pipeline?.ai_triage && (
+                <span
+                  title={`AI 预分诊: ${(row.raw_data as any).pipeline.ai_triage.summary || ""}`}
+                  className="inline-flex shrink-0 items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50"
+                >
+                  <Sparkles className="w-2.5 h-2.5" />
+                  AI 已分诊
+                </span>
+              )}
+            </div>
             {row.description && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[320px] mt-0.5">
+              <p title={row.description} className="text-xs text-text-tertiary line-clamp-1 mt-0.5">
                 {row.description}
               </p>
             )}
@@ -505,108 +651,88 @@ export default function AlertsPage() {
       {
         key: "severity",
         header: (
-          <button
-            type="button"
-            onClick={() => {
-              if (sortField === "severity") setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-              else {
-                setSortField("severity");
-                setSortDir("desc");
-              }
-            }}
-            className="flex items-center gap-1 text-body font-semibold text-text-tertiary select-none"
-          >
-            {tCommon("severity")}
-            {sortField === "severity" &&
-              (sortDir === "asc" ? (
-                <ChevronUp className="w-3 h-3" />
-              ) : (
-                <ChevronDown className="w-3 h-3" />
-              ))}
-          </button>
+          <SortHeader
+            label={tCommon("severity")}
+            field="severity"
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+          />
         ),
         cell: (row) => <SeverityTag severity={row.severity} />,
-        width: "100px",
+        width: "120px",
       },
       {
         key: "status",
         header: (
-          <button
-            type="button"
-            onClick={() => {
-              if (sortField === "status") setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-              else {
-                setSortField("status");
-                setSortDir("asc");
-              }
-            }}
-            className="flex items-center gap-1 text-body font-semibold text-text-tertiary select-none"
-          >
-            {t("list.status")}
-            {sortField === "status" &&
-              (sortDir === "asc" ? (
-                <ChevronUp className="w-3 h-3" />
-              ) : (
-                <ChevronDown className="w-3 h-3" />
-              ))}
-          </button>
+          <SortHeader
+            label={t("list.status")}
+            field="status"
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+          />
         ),
         cell: (row) => <StatusTag status={row.status} />,
-        width: "120px",
+        width: "130px",
       },
       {
         key: "source",
-        header: t("list.source"),
-        cell: (row) => (
-          <span className="text-sm text-gray-600 dark:text-gray-400">{row.source || "-"}</span>
+        // 宽度由 100px 提到 140px：`api-key-pipeline` 这类来源标识此前会被折成两行
+        header: (
+          <SortHeader
+            label={t("list.source")}
+            field="source"
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+          />
         ),
-        width: "100px",
+        cell: (row) => (
+          <span
+            title={row.source || undefined}
+            className="block max-w-[140px] truncate text-sm text-text-secondary"
+          >
+            {row.source || "-"}
+          </span>
+        ),
+        width: "140px",
       },
       {
         key: "time",
         header: (
-          <button
-            type="button"
-            onClick={() => {
-              if (sortField === "created_at") setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-              else {
-                setSortField("created_at");
-                setSortDir("desc");
-              }
-            }}
-            className="flex items-center gap-1 text-body font-semibold text-text-tertiary select-none"
-          >
-            {t("list.time")}
-            {sortField === "created_at" &&
-              (sortDir === "asc" ? (
-                <ChevronUp className="w-3 h-3" />
-              ) : (
-                <ChevronDown className="w-3 h-3" />
-              ))}
-          </button>
+          <SortHeader
+            label={t("list.time")}
+            field="created_at"
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+          />
         ),
         cell: (row) => (
-          <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+          <span className="text-sm text-text-tertiary whitespace-nowrap">
             {formatTime(row.event_timestamp || row.created_at, format)}
           </span>
         ),
-        width: "100px",
+        width: "110px",
       },
       {
         key: "actions",
         header: "",
         cell: (row) => (
           <div className="flex items-center gap-1 justify-end">
+            {/* 删除常驻但视觉极弱，既容易误点也容易被忽略 —— 已有二次确认弹窗兜底 */}
             <button
               onClick={() => handleDelete(row.id)}
-              className="p-1.5 text-text-muted hover:text-danger-600 dark:hover:text-danger-400 rounded-md hover:bg-danger-500/10 active:bg-danger-500/10 transition-colors"
+              className="flex h-8 w-8 items-center justify-center text-text-muted hover:text-danger-600 dark:hover:text-danger-400 rounded-md hover:bg-danger-500/10 active:bg-danger-500/10 transition-colors"
               title={tCommon("delete")}
+              aria-label={tCommon("delete")}
             >
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ),
-        width: "50px",
+        width: "56px",
         align: "right",
       },
     ],
@@ -621,6 +747,7 @@ export default function AlertsPage() {
       toggleSelect,
       sortField,
       sortDir,
+      handleSort,
     ]
   );
 
@@ -655,6 +782,12 @@ export default function AlertsPage() {
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <SeverityTag severity={alert.severity} />
             <StatusTag status={alert.status} />
+            {(alert.raw_data as any)?.pipeline?.ai_triage && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50">
+                <Sparkles className="w-2.5 h-2.5" />
+                AI 已分诊
+              </span>
+            )}
             <span className="text-xs text-text-muted">{alert.source}</span>
           </div>
           <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
@@ -693,78 +826,98 @@ export default function AlertsPage() {
       {/* Stats Bar */}
       {statsData && <StatsBar total={total} stats={statsData} />}
 
-      {/* Toolbar: Search + Filters + Refresh */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("list.searchPlaceholder")}
-            className="w-full pl-9 pr-8 py-2 text-sm bg-surface-input border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 text-text-primary placeholder:text-text-disabled transition-all"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+      {/* Toolbar —— 左边"查询区"、右边"数据管理区"，两组之间用分隔线隔开。
+          之前"导入"是本行唯一的实心主按钮，抢走了本该属于查询的注意力，
+          而且紧贴"严重级别"下拉、无任何分组间隔，读起来像筛选器的一部分。 */}
+      <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center">
+        {/* 查询区 */}
+        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("list.searchPlaceholder")}
+              className="h-9 w-full pl-9 pr-8 text-sm bg-surface-input border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 text-text-primary placeholder:text-text-tertiary transition-all"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                aria-label={tCommon("clear") || "清除"}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-        {/* Desktop Filters */}
-        <div className="hidden sm:flex items-center gap-2">
-          <FilterDropdown
-            label={t("list.status")}
-            options={[
-              { value: "new", label: t("statusNew") },
-              { value: "investigating", label: t("statusInvestigating") },
-              { value: "resolved", label: t("statusResolved") },
-              { value: "false_positive", label: t("statusFalsePositive") },
-              { value: "escalated", label: t("statusEscalated") },
-            ]}
-            selected={statusFilter}
-            onChange={(v) => {
-              setStatusFilter(v);
-              setPage(1);
-            }}
-          />
-          <FilterDropdown
-            label={tCommon("severity")}
-            options={[
-              { value: "critical", label: t("severityCritical") },
-              { value: "high", label: t("severityHigh") },
-              { value: "medium", label: t("severityMedium") },
-              { value: "low", label: t("severityLow") },
-              { value: "info", label: t("severityInfo") },
-            ]}
-            selected={severityFilter}
-            onChange={(v) => {
-              setSeverityFilter(v);
-              setPage(1);
-            }}
-          />
-        </div>
+          {/* Desktop Filters */}
+          <div className="hidden sm:flex items-center gap-2">
+            <FilterDropdown
+              label={t("list.status")}
+              options={[
+                { value: "new", label: t("statusNew") },
+                { value: "investigating", label: t("statusInvestigating") },
+                { value: "resolved", label: t("statusResolved") },
+                { value: "false_positive", label: t("statusFalsePositive") },
+                { value: "escalated", label: t("statusEscalated") },
+              ]}
+              selected={statusFilter}
+              onChange={(v) => {
+                setStatusFilter(v);
+                setPage(1);
+              }}
+            />
+            <FilterDropdown
+              label={tCommon("severity")}
+              options={[
+                { value: "critical", label: t("severityCritical") },
+                { value: "high", label: t("severityHigh") },
+                { value: "medium", label: t("severityMedium") },
+                { value: "low", label: t("severityLow") },
+                { value: "info", label: t("severityInfo") },
+              ]}
+              selected={severityFilter}
+              onChange={(v) => {
+                setSeverityFilter(v);
+                setPage(1);
+              }}
+            />
+          </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setShowImportModal(true)}
-            variant="primary"
-            size="sm"
-            leftIcon={<Upload className="w-4 h-4" />}
-            title={t("importAlerts")}
+          {/* Mobile Filter Toggle */}
+          <button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="sm:hidden flex h-9 items-center gap-2 px-3 text-xs font-medium border border-border-subtle rounded-lg bg-surface-card text-text-secondary"
           >
-            <span className="hidden sm:inline">{tCommon("import")}</span>
+            <Filter className="w-3.5 h-3.5" />
+            {t("filterMobile")}
+            {activeFilterCount > 0 && (
+              <span className="px-1.5 py-0.2 text-[11px] bg-accent-500/20 text-accent-600 rounded-full font-semibold">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* 数据管理区 —— 全部次级权重；"导入"不再是实心主按钮 */}
+        <div className="flex items-center gap-2 lg:border-l lg:border-border-subtle lg:pl-3">
+          <Button
+            onClick={() => refetch()}
+            variant="outline"
+            size="md"
+            title={tCommon("refresh")}
+            aria-label={tCommon("refresh")}
+            className="px-2.5"
+          >
+            <RefreshCw className="w-4 h-4 text-text-muted" />
           </Button>
 
           <Button
             onClick={() => handleExport("csv")}
             variant="outline"
-            size="sm"
+            size="md"
             isLoading={exporting}
             leftIcon={<Download className="w-4 h-4 text-text-muted" />}
             title={tCommon("export") || "导出 CSV"}
@@ -773,30 +926,52 @@ export default function AlertsPage() {
           </Button>
 
           <Button
-            onClick={() => refetch()}
+            onClick={() => setShowImportModal(true)}
             variant="outline"
-            size="sm"
-            title={tCommon("refresh")}
-            aria-label={tCommon("refresh")}
+            size="md"
+            leftIcon={<Upload className="w-4 h-4 text-text-muted" />}
+            title={t("importAlerts")}
           >
-            <RefreshCw className="w-4 h-4 text-text-muted" />
+            <span className="hidden sm:inline">{tCommon("import")}</span>
           </Button>
         </div>
-
-        {/* Mobile Filter Toggle */}
-        <button
-          onClick={() => setShowMobileFilters(!showMobileFilters)}
-          className="sm:hidden flex items-center gap-2 px-3 py-2 text-xs font-medium border border-border-subtle rounded-lg bg-surface-card text-text-secondary"
-        >
-          <Filter className="w-3.5 h-3.5" />
-          {t("filterMobile")}
-          {(statusFilter.length > 0 || severityFilter.length > 0) && (
-            <span className="px-1.5 py-0.2 text-[11px] bg-accent-500/20 text-accent-600 rounded-full font-semibold">
-              {statusFilter.length + severityFilter.length}
-            </span>
-          )}
-        </button>
       </div>
+
+      {/* 当前筛选回显 —— 之前应用筛选后界面没有任何回显，也没有"清除全部"入口，
+          用户会陷入"为什么只有 3 条结果"的困惑。 */}
+      {activeFilterCount > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-text-muted">{t("list.activeFilters")}</span>
+          {debouncedSearch && (
+            <FilterChip
+              label={`${t("list.search")}: ${debouncedSearch}`}
+              onRemove={() => setSearch("")}
+            />
+          )}
+          {statusFilter.map((s) => (
+            <FilterChip
+              key={`st-${s}`}
+              label={statusFilterLabels[s] || s}
+              onRemove={() => setStatusFilter(statusFilter.filter((v) => v !== s))}
+            />
+          ))}
+          {severityFilter.map((s) => (
+            <FilterChip
+              key={`sev-${s}`}
+              label={severityFilterLabels[s] || s}
+              onRemove={() => setSeverityFilter(severityFilter.filter((v) => v !== s))}
+            />
+          ))}
+          {sourceFilter && <FilterChip label={sourceFilter} onRemove={() => setSourceFilter("")} />}
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="ml-1 font-medium text-accent-600 hover:underline dark:text-accent-400"
+          >
+            {t("list.clearFilters")}
+          </button>
+        </div>
+      )}
 
       {/* Mobile Filters Panel */}
       {showMobileFilters && (
