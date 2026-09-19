@@ -1,6 +1,6 @@
 {
   "name": "soc-copilot-frontend",
-  "version": "0.9.0",
+  "version": "0.9.4",
   "private": true,
   "scripts": {
     "predev": "node scripts/patch-next.mjs && node scripts/sync-i18n.mjs",
@@ -10,9 +10,10 @@
     "prebuild": "node scripts/patch-next.mjs && node scripts/sync-i18n.mjs && node scripts/check-i18n-keys.mjs",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "tsc --noEmit && node scripts/check-i18n-keys.mjs && node scripts/check-design-tokens.mjs && prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "lint": "tsc --noEmit && node scripts/check-i18n-keys.mjs && node scripts/check-design-tokens.mjs && node scripts/check-contrast.mjs && prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "tokens:check": "node scripts/check-design-tokens.mjs",
     "tokens:baseline": "node scripts/check-design-tokens.mjs --update",
+    "contrast:check": "node scripts/check-contrast.mjs",
     "lint:fix": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
@@ -25,6 +26,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:a11y": "playwright test e2e/a11y --workers=1",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
@@ -50,7 +52,8 @@
     "reactflow": "^11.11.4",
     "recharts": "^3.7.0",
     "tailwind-merge": "^3.5.0",
-    "web-vitals": "^5.1.0"
+    "web-vitals": "^5.1.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
