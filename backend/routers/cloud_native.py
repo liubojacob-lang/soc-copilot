@@ -665,7 +665,7 @@ async def scan_with_trivy(
     structured CVE data. Results are cached for 24 hours unless
     force_rescan is set to true.
     """
-    from services.integration.trivy_service import get_trivy_service
+    from services.integration.trivy_service import TrivyNotInstalledError, get_trivy_service
 
     try:
         trivy = get_trivy_service(db)
@@ -679,6 +679,16 @@ async def scan_with_trivy(
             vulnerabilities=result["vulnerabilities"],
         )
 
+    except TrivyNotInstalledError as e:
+        logger.warning(f"Trivy scanner not installed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "SCANNER_NOT_INSTALLED",
+                "message": "Trivy vulnerability scanner is not installed on this host.",
+                "hint": "Install via: brew install trivy  (macOS)  or  apt-get install trivy  (Linux)",
+            },
+        )
     except RuntimeError as e:
         logger.error(f"Trivy scan failed: {e}")
         raise HTTPException(
@@ -689,8 +699,9 @@ async def scan_with_trivy(
         logger.error(f"Unexpected Trivy scan error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Scan error: {e!s}",
+            detail="Scan error: an unexpected error occurred.",
         )
+
 
 
 # ── Container Inventory & Detail Endpoints ─────────────────────────────

@@ -95,24 +95,8 @@ class AuthService(BaseService):
                     user.locked_until = None
                     user.failed_login_attempts = 0
 
-        # Verify password
+        # Verify password - single code path, no development backdoors (T2.1)
         password_valid = verify_password(credentials.password, user.hashed_password)
-        if not password_valid:
-            # Development fallback for admin default dev credentials
-            dev_passwords = {
-                "Admin123!",
-                "Admin123456!",
-                getattr(settings, "bootstrap_admin_password", ""),
-            }
-            if (
-                settings.environment == "development"
-                and user.username == "admin"
-                and credentials.password in dev_passwords
-            ):
-                user.hashed_password = get_password_hash(credentials.password)
-                user.failed_login_attempts = 0
-                user.locked_until = None
-                password_valid = True
 
         if not password_valid:
             # Increment failed login attempts

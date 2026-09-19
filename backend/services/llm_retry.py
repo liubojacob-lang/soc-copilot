@@ -84,290 +84,12 @@ Previous attempt was:
 
 Please provide the corrected JSON response:"""
 
-    def _build_heuristic_alert_response(
-        self, prompt: str, error_reason: str
-    ) -> dict[str, Any]:
-        """Generate an expert-grade heuristic analysis from the alert context when LLM is unavailable."""
-        import re
-
-        lower_prompt = prompt.lower()
-
-        # Extract entities from prompt
-        hosts: list[str] = []
-        host_patterns = [
-            r"\b([a-zA-Z0-9_-]+-(?:laptop|bastion|server|srv|host|node|worker|dc|jump))\b",
-            r"\b(it-[a-zA-Z0-9_-]+)\b",
-            r"\b(jump-[a-zA-Z0-9_-]+)\b",
-        ]
-        for pat in host_patterns:
-            for match in re.findall(pat, prompt, re.IGNORECASE):
-                if match not in hosts:
-                    hosts.append(match)
-
-        users: list[str] = []
-        user_patterns = [
-            r"user\s*[:=]\s*([a-zA-Z0-9_-]+)",
-            r"username\s*[:=]\s*([a-zA-Z0-9_-]+)",
-            r"for\s+user\s+([a-zA-Z0-9_-]+)",
-            r"user\s+([a-zA-Z0-9_-]+)\s+from",
-        ]
-        for pat in user_patterns:
-            for match in re.findall(pat, prompt, re.IGNORECASE):
-                if match.lower() not in ["none", "null", "unknown"] and match not in users:
-                    users.append(match)
-        if not users and "zhang" in lower_prompt:
-            users.append("zhang")
-
-        processes: list[str] = []
-        known_procs = ["sshd", "zeek", "nginx", "powershell", "cmd.exe", "curl", "bash", "wazuh", "snort"]
-        for p in known_procs:
-            if p in lower_prompt and p not in processes:
-                processes.append(p)
-
-        # Extract IPs and Domains
-        ips = list(set(re.findall(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b", prompt)))
-        ips = [ip for ip in ips if not ip.endswith(".255") and ip not in ["0.0.0.0", "255.255.255.255"]]
-
-        raw_domains = list(
-            set(re.findall(r"\b([a-zA-Z0-9-]+\.(?:tech|com|cn|net|org|io|xyz|ru|top|cc|info))\b", prompt, re.IGNORECASE))
-        )
-        domains = [d for d in raw_domains if not d.endswith(".py") and not d.endswith(".ts")]
-
-        # Determine Scenario & MITRE ATT&CK
-        if any(k in lower_prompt for k in ["dns", "tunnel", "entropy", "txt quer", "0xcd10e1", "c2"]):
-            event_type = "c2"
-            severity = "high"
-            confidence = 88
-            attack_pattern = "T1071.004 - Application Layer Protocol: DNS / T1048 - Exfiltration Over Alternative Protocol"
-            summary = (
-                "检测到高熵值 DNS 隧道隐蔽通信与可疑数据外传行为。监测表明源主机持续产生高频、"
-                "且子域名香农熵值异常的 TXT 记录解析请求，特征高度符合基于 DNS 协议的 C2 远控通信或隐蔽数据渗漏（Data Exfiltration）。"
-            )
-            evidence_points = [
-                "内网终端产生异常高频的 DNS TXT 记录解析请求（约 8-12 次/秒），明显偏离常规终端网络基线",
-                "查询子域名呈现明显的香农熵值异常（达到 4.2），表明载荷包含高密度编码/加密数据",
-                f"通信目标域名包含可疑外部域名: {', '.join(domains) if domains else '0xcd10e1.tech'}",
-            ]
-            recommended_actions = [
-                {
-                    "action": "阻断恶意域名 DNS 解析与出向通信",
-                    "priority": "high",
-                    "details": "在内部 DNS 解析服务器及边界安全网关立即配置针对涉事域名及其泛域名的解析阻断与 Sinkhole 策略。",
-                    "description": "在内部 DNS 解析服务器及边界安全网关立即配置针对涉事域名及其泛域名的解析阻断与 Sinkhole 策略。",
-                    "verification": "在内网终端进行解析测试，确认返回 NXDOMAIN 或拦截应答，监控流量中请求归零。",
-                    "automated": True,
-                },
-                {
-                    "action": "隔离受影响终端主机",
-                    "priority": "high",
-                    "details": "对发生异常高频 DNS 隧道查询的内网终端下发网络微隔离策略，防止潜在木马在内网横向渗透。",
-                    "description": "对发生异常高频 DNS 隧道查询的内网终端下发网络微隔离策略，防止潜在木马在内网横向渗透。",
-                    "verification": "确认终端安全管理控制台已标记主机为已隔离，所有非管控通信端口已被阻断。",
-                    "automated": False,
-                },
-                {
-                    "action": "审查终端进程树与网络连接",
-                    "priority": "high",
-                    "details": "使用 EDR 或系统诊断工具排查发起该高频 DNS 解析的具体进程 PID、对应二进制可执行文件及父进程。",
-                    "description": "使用 EDR 或系统诊断工具排查发起该高频 DNS 解析的具体进程 PID、对应二进制可执行文件及父进程。",
-                    "verification": "定位并提取涉事恶意二进制程序及内存 dump，排查持久化驻留机制（注册表、服务、计划任务）。",
-                    "automated": False,
-                },
-                {
-                    "action": "回溯历史全流量评估外发数据体积",
-                    "priority": "medium",
-                    "details": "在 Zeek DNS 日志及网络全流量留存中检索该域名历史请求，统计传输数据包总量以评估可能泄露的资产范围。",
-                    "description": "在 Zeek DNS 日志及网络全流量留存中检索该域名历史请求，统计传输数据包总量以评估可能泄露的资产范围。",
-                    "verification": "形成事件专项分析报告并出具数据外传影响范围评估。",
-                    "automated": False,
-                },
-            ]
-            escalation_needed = True
-
-        elif any(k in lower_prompt for k in ["brute", "login", "failed", "sshd", "auth", "password", "4625", "尝试"]):
-            event_type = "bruteforce"
-            severity = "medium"
-            confidence = 92
-            attack_pattern = "T1110.001 - Brute Force: Password Guessing"
-            summary = (
-                "检测到针对主机系统远程管理服务的密码暴力破解与非法认证探测。攻击源在短时间内对多个目标账户"
-                "发起密集的凭据认证尝试，存在自动化字典爆破或凭据填充风险。"
-            )
-            evidence_points = [
-                "短时间内集中触发大量连续的凭据验证失败审计事件",
-                "探测目标涉及不存在的无效用户账户或系统常见默认高权限账户",
-                f"攻击源集中于外部/非授信 IP 地址: {', '.join(ips) if ips else '异常 IP 源'}",
-            ]
-            recommended_actions = [
-                {
-                    "action": "下发防火墙阻断攻击源 IP",
-                    "priority": "high",
-                    "details": "在边界防护网关与主机安全组中将恶意攻击源 IP 加入黑名单，禁止其建立任何入站连接。",
-                    "description": "在边界防护网关与主机安全组中将恶意攻击源 IP 加入黑名单，禁止其建立任何入站连接。",
-                    "verification": "核查防火墙命中拦截日志，确认来自该 IP 的 SYN 包已被 DROP 丢弃。",
-                    "automated": True,
-                },
-                {
-                    "action": "排查是否存在认证成功记录",
-                    "priority": "high",
-                    "details": "在集中日志平台检索该攻击源在同一时间窗口内是否曾有认证成功 (Accepted/4624) 的事件记录。",
-                    "description": "在集中日志平台检索该攻击源在同一时间窗口内是否曾有认证成功 (Accepted/4624) 的事件记录。",
-                    "verification": "确认无成功会话；若发现存在成功登录，须立即提升响应级别并断网封锁对应账号。",
-                    "automated": False,
-                },
-                {
-                    "action": "加固远程访问服务安全基线",
-                    "priority": "medium",
-                    "details": "禁用密码直接认证改用公钥认证，启用 Fail2ban 防爆破机制，并将管理端口收敛至内网堡垒机访问。",
-                    "description": "禁用密码直接认证改用公钥认证，启用 Fail2ban 防爆破机制，并将管理端口收敛至内网堡垒机访问。",
-                    "verification": "重新测试管理服务登录接口，验证密码方式已无法直接连接。",
-                    "automated": False,
-                },
-            ]
-            escalation_needed = False
-
-        elif any(k in lower_prompt for k in ["scan", "recon", "probe", "nmap", "discovery", "syn"]):
-            event_type = "scan"
-            severity = "low"
-            confidence = 85
-            attack_pattern = "T1046 - Network Service Discovery"
-            summary = (
-                "检测到针对网络资产的主动端口扫描与服务指纹探测。探测源正批量发送探测数据包以枚举目标开放端口及服务版本信息。"
-            )
-            evidence_points = [
-                "短时间内连续命中目标主机的多个不同端口",
-                "符合网络侦察工具无握手连接扫描特征",
-            ]
-            recommended_actions = [
-                {
-                    "action": "对源 IP 配置限速或临时黑名单",
-                    "priority": "medium",
-                    "details": "在边界安全防护系统对扫描源下发限频或 24 小时动态阻断策略。",
-                    "description": "在边界安全防护系统对扫描源下发限频或 24 小时动态阻断策略。",
-                    "verification": "监控该 IP 的探测流量已被安全设备拦截。",
-                    "automated": True,
-                },
-                {
-                    "action": "审查受影响资产的外部暴露面",
-                    "priority": "low",
-                    "details": "梳理目标资产开放端口，关闭非业务必需的调试及内部管理端口。",
-                    "description": "梳理目标资产开放端口，关闭非业务必需的调试及内部管理端口。",
-                    "verification": "再次执行外部验证扫描确认非必要端口已关闭。",
-                    "automated": False,
-                },
-            ]
-            escalation_needed = False
-
-        elif any(
-            k in lower_prompt
-            for k in [
-                "malware", "webshell", "sqli", "injection", "rce", "exploit",
-                "upload", "xss", "eval", "trojan", "cve-"
-            ]
-        ):
-            event_type = "malware"
-            severity = "high"
-            confidence = 90
-            attack_pattern = "T1190 - Exploit Public-Facing Application"
-            summary = (
-                "检测到针对 Web 应用或系统的远程漏洞利用与恶意代码执行尝试。载荷中包含明显恶意特征字符或命令注入模式。"
-            )
-            evidence_points = [
-                "请求载荷中包含可疑命令注入或动态代码执行语法",
-                "命中安全规则库的高危已知利用指纹",
-            ]
-            recommended_actions = [
-                {
-                    "action": "在 WAF 与 API 网关下发拦截规则",
-                    "priority": "high",
-                    "details": "在反向代理或 WAF 设备上增加该恶意特征指纹及源 IP 的实时拦截规则。",
-                    "description": "在反向代理或 WAF 设备上增加该恶意特征指纹及源 IP 的实时拦截规则。",
-                    "verification": "回放请求验证 WAF 能够稳定返回 403 阻断。",
-                    "automated": True,
-                },
-                {
-                    "action": "检查应用系统文件完整性与日志",
-                    "priority": "high",
-                    "details": "排查受影响应用目录是否有新增 Webshell 或临时脚本，审查服务进程树。",
-                    "description": "排查受影响应用目录是否有新增 Webshell 或临时脚本，审查服务进程树。",
-                    "verification": "确认无未知脚本落地，应用未产生异常子进程。",
-                    "automated": False,
-                },
-            ]
-            escalation_needed = True
-
-        else:
-            event_type = "unknown"
-            severity = "medium"
-            confidence = 80
-            attack_pattern = "T1059 - Command and Scripting Interpreter"
-            summary = (
-                "安全专家启发式分析引擎已完成对该告警日志的上下文研判与特征关联分析。建议结合业务资产日志进行进一步排查处置。"
-            )
-            evidence_points = [
-                "事件已命中内部安全规则并生成告警记录",
-                "已完成主体网络实体与威胁指标关联",
-            ]
-            recommended_actions = [
-                {
-                    "action": "排查涉事资产日志上下文",
-                    "priority": "medium",
-                    "details": "检查告警发生前后 10 分钟内该资产的系统与网络日志，确认行为上下文。",
-                    "description": "检查告警发生前后 10 分钟内该资产的系统与网络日志，确认行为上下文。",
-                    "verification": "形成事件排查日志记录并更新告警处置状态。",
-                    "automated": False,
-                }
-            ]
-            escalation_needed = False
-
-        ioc_dict = {
-            "ips": ips,
-            "domains": domains,
-            "urls": [],
-            "hashes": [],
-        }
-
-        return {
-            "event_type": event_type,
-            "severity": severity,
-            "attack_pattern": attack_pattern,
-            "confidence": confidence,
-            "iocs": ioc_dict,
-            "iocs_local": ioc_dict,
-            "iocs_llm": {"ips": [], "domains": [], "urls": [], "hashes": []},
-            "ioc_count": {
-                "ips": len(ips),
-                "domains": len(domains),
-                "urls": 0,
-                "hashes": 0,
-                "total": len(ips) + len(domains),
-            },
-            "entities": {
-                "users": users,
-                "hosts": hosts,
-                "processes": processes,
-            },
-            "summary": summary,
-            "evidence_points": evidence_points,
-            "recommended_actions": recommended_actions,
-            "escalation_needed": escalation_needed,
-            "impact_analysis": {
-                "affected_assets": [],
-                "business_impact": f"已由安全专家规则引擎完成深度分析（{summary[:40]}...）",
-                "risk_score": confidence,
-                "severity": severity,
-                "containment_priority": [],
-                "recommended_next_queries": [f"domain == \"{domains[0]}\""] if domains else [],
-            },
-            "threat_intel": {
-                "provider": "otx",
-                "disabled": False,
-                "degraded": True,
-                "skipped": False,
-                "items": [],
-                "error_reason": None,
-            },
-        }
+    # NOTE: _build_heuristic_alert_response() was removed (T1.1).
+    # It generated fabricated forensic evidence (DNS rate "8-12/s", entropy 4.2,
+    # hardcoded domain "0xcd10e1.tech", confidence 88-92) that was
+    # indistinguishable from real AI analysis output, creating a patient-safety
+    # class risk for SOC analysts acting on false data.
+    # Degraded mode now uses the minimal response defined in _create_degraded_response().
 
     def _create_degraded_response(
         self, response_class: type[T], error_reason: str, prompt: str = ""
@@ -392,56 +114,56 @@ Please provide the corrected JSON response:"""
         class_name = response_class.__name__
 
         if "Alert" in class_name or "Analyzer" in class_name:
-            if prompt:
-                heuristic_data = self._build_heuristic_alert_response(prompt, error_reason)
-                base_response.update(heuristic_data)
-            else:
-                base_response.update(
-                    {
-                        "event_type": "unknown",
-                        "severity": "low",
-                        "confidence": 75,
-                        "iocs": {"ips": [], "domains": [], "urls": [], "hashes": []},
-                        "iocs_local": {"ips": [], "domains": [], "urls": [], "hashes": []},
-                        "iocs_llm": {"ips": [], "domains": [], "urls": [], "hashes": []},
-                        "ioc_count": {
-                            "ips": 0,
-                            "domains": 0,
-                            "urls": 0,
-                            "hashes": 0,
-                            "total": 0,
-                        },
-                        "entities": {"users": [], "hosts": [], "processes": []},
-                        "summary": "安全规则引擎完成基础研判。建议人工审查上下文日志。",
-                        "evidence_points": ["安全规则触发"],
-                        "recommended_actions": [
-                            {
-                                "action": "检查告警日志",
-                                "priority": "medium",
-                                "details": "人工核对原始日志。",
-                                "description": "人工核对原始日志。",
-                                "verification": "确认告警性质。",
-                            }
-                        ],
-                        "escalation_needed": False,
-                        "impact_analysis": {
-                            "affected_assets": [],
-                            "business_impact": "已完成基础启发式研判",
-                            "risk_score": 50,
-                            "severity": "low",
-                            "containment_priority": [],
-                            "recommended_next_queries": [],
-                        },
-                        "threat_intel": {
-                            "provider": "otx",
-                            "disabled": False,
-                            "degraded": True,
-                            "skipped": False,
-                            "items": [],
-                            "error_reason": None,
-                        },
-                    }
-                )
+            # T1.1: Always use minimal degraded response. No fabricated evidence.
+            # The prompt parameter is intentionally ignored here to prevent
+            # heuristic hallucination of forensic data.
+            base_response.update(
+                {
+                    "event_type": "unknown",
+                    "severity": "unknown",
+                    "confidence": None,
+                    "attack_pattern": None,
+                    "iocs": {"ips": [], "domains": [], "urls": [], "hashes": []},
+                    "iocs_local": {"ips": [], "domains": [], "urls": [], "hashes": []},
+                    "iocs_llm": {"ips": [], "domains": [], "urls": [], "hashes": []},
+                    "ioc_count": {
+                        "ips": 0,
+                        "domains": 0,
+                        "urls": 0,
+                        "hashes": 0,
+                        "total": 0,
+                    },
+                    "entities": {"users": [], "hosts": [], "processes": []},
+                    "summary": "[AI 分析不可用] AI 服务暂时不可用，无法完成本次研判。请人工审查原始告警日志并进行人工处置。",
+                    "evidence_points": [],
+                    "recommended_actions": [
+                        {
+                            "action": "人工审查告警",
+                            "priority": "medium",
+                            "details": "AI 分析服务当前不可用，请人工核对原始日志并进行处置。",
+                            "description": "AI 分析服务当前不可用，请人工核对原始日志并进行处置。",
+                            "verification": "完成人工研判后更新告警状态。",
+                        }
+                    ],
+                    "escalation_needed": False,
+                    "impact_analysis": {
+                        "affected_assets": [],
+                        "business_impact": None,
+                        "risk_score": None,
+                        "severity": "unknown",
+                        "containment_priority": [],
+                        "recommended_next_queries": [],
+                    },
+                    "threat_intel": {
+                        "provider": "otx",
+                        "disabled": False,
+                        "degraded": True,
+                        "skipped": True,
+                        "items": [],
+                        "error_reason": "AI provider unavailable",
+                    },
+                }
+            )
 
         elif "Timeline" in class_name:
             base_response.update(
@@ -528,8 +250,7 @@ Please provide the corrected JSON response:"""
         extracted_iocs: dict[str, list[str]] | None = None,
     ) -> Any:
         """Assemble a full AlertAnalysisResponse from concise LLM extraction."""
-        from datetime import datetime, timezone
-        from schemas.alert import EventType, Severity, RecommendedAction
+        from schemas.alert import EventType, RecommendedAction, Severity
 
         raw_event_type = (extracted.event_type or "unknown").lower()
         try:

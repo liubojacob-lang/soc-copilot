@@ -168,26 +168,28 @@ fi
 log_info "📦 Backing up configuration files..."
 
 if [ "$DRY_RUN" = false ]; then
-    # 备份环境变量文件
-    for env_file in .env .env.local .env.production backend/.env frontend/.env.local; do
-        if [ -f "$PROJECT_DIR/$env_file" ]; then
-            cp "$PROJECT_DIR/$env_file" "$BACKUP_PATH/env_$(basename $env_file)"
-        fi
-    done
+    # T1.3 SECURITY: .env files are EXCLUDED from backups.
+    # They contain plaintext API keys / credentials.
+    # Use a secrets manager or encrypted store for credentials.
+    # Manifest records this intentional exclusion:
+    echo "secrets_excluded_by_design=true" >> "$BACKUP_PATH/MANIFEST.txt"
+    echo "excluded_files=.env .env.local .env.production backend/.env frontend/.env.local" >> "$BACKUP_PATH/MANIFEST.txt"
 
-    # 备份 Docker Compose 文件
+    # 备份 Docker Compose 文件（不含任何 .env）
     cp "$PROJECT_DIR"/docker-compose*.yml "$BACKUP_PATH/" 2>/dev/null || true
 
-    # 打包配置
+    # 打包配置（严格排除所有 .env* 文件）
     tar czf "$BACKUP_PATH/config.tar.gz" -C "$PROJECT_DIR" \
-        docker-compose*.yml \
-        backend/.env* frontend/.env* 2>/dev/null || true
+        --exclude="*.env" \
+        --exclude=".env*" \
+        docker-compose*.yml 2>/dev/null || true
 
     CONFIG_SIZE=$(du -h "$BACKUP_PATH/config.tar.gz" | cut -f1)
-    log_success "  Configuration backup completed: $CONFIG_SIZE"
+    log_success "  Configuration backup completed: $CONFIG_SIZE (secrets excluded by design)"
 else
-    log_info "  [DRY-RUN] Would backup configuration files"
+    log_info "  [DRY-RUN] Would backup configuration files (secrets excluded by design)"
 fi
+
 
 # 4. 数据库迁移文件备份
 log_info "📦 Backing up database migrations..."

@@ -33,6 +33,7 @@ from models.rbac import Permission, Role
 from models.root_cause_analysis import RootCauseAnalysis
 from models.secret import SecretModel
 from models.security_alert import SecurityAlert
+from models.security_vulnerability import SecurityVulnerability, VulnerabilityNote
 from models.siem_log import SIEMLog
 from models.threat_intel_cache import ThreatIntelCacheModel
 from models.trigger import TriggerInvocationModel
@@ -81,8 +82,11 @@ __all__ = [
     "SIEMLog",
     "SecretModel",
     "SecurityAlert",
+    "SecurityVulnerability",
     "ThreatIntelCacheModel",
     "TriggerInvocationModel",
+    "UEBABaselineModel",
     "UserModel",
     "UserRole",
+    "VulnerabilityNote",
 ]
