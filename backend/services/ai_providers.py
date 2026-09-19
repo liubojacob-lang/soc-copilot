@@ -12,8 +12,36 @@ import httpx
 from core.config import settings
 from core.http_client import get_http_client
 from core.logger import get_logger
+from observability.metrics import llm_requests_total, llm_tokens_total
 
 logger = get_logger(__name__)
+
+
+def _record_llm_usage(tag: str, model: str, usage: dict | None) -> None:
+    """Record token usage from a provider response (T3.3).
+
+    Handles both OpenAI-style keys (prompt_tokens/completion_tokens) and
+    Anthropic-style keys (input_tokens/output_tokens). Counters are cheap
+    and thread-safe; recording must never break the response path, so all
+    failures are swallowed.
+    """
+    try:
+        if not isinstance(usage, dict):
+            usage = {}
+        model = model or "unknown"
+        prompt = usage.get("prompt_tokens") or usage.get("input_tokens")
+        completion = usage.get("completion_tokens") or usage.get("output_tokens")
+        if prompt:
+            llm_tokens_total.labels(
+                provider=tag, model=model, direction="prompt"
+            ).inc(int(prompt))
+        if completion:
+            llm_tokens_total.labels(
+                provider=tag, model=model, direction="completion"
+            ).inc(int(completion))
+        llm_requests_total.labels(provider=tag, model=model).inc()
+    except Exception:  # metrics must never break an AI response
+        logger.debug("Failed to record LLM usage metrics", exc_info=True)
 
 
 class LLMProvider:
@@ -89,6 +117,7 @@ class ZhipuAIProvider(LLMProvider):
                     )
                     response.raise_for_status()
                     data = response.json()
+                    _record_llm_usage("zhipu", actual_model, data.get("usage"))
                     choice = data["choices"][0]
                     msg = choice.get("message", {})
                     return msg.get("content") or msg.get("reasoning_content") or ""
@@ -170,6 +199,7 @@ class ClaudeProvider(LLMProvider):
             )
             response.raise_for_status()
             data = response.json()
+            _record_llm_usage("claude", model, data.get("usage"))
             return data["content"][0]["text"]
         except Exception as e:
             logger.error(f"Claude API error: {e}")
@@ -216,6 +246,7 @@ class OpenAIProvider(LLMProvider):
             )
             response.raise_for_status()
             data = response.json()
+            _record_llm_usage("openai", model, data.get("usage"))
             return data["choices"][0]["message"]["content"]
         except Exception as e:
             logger.error(f"OpenAI API error: {e}")
@@ -283,6 +314,7 @@ class OpenRouterProvider(LLMProvider):
             )
             response.raise_for_status()
             data = response.json()
+            _record_llm_usage("openrouter", actual_model, data.get("usage"))
             return data["choices"][0]["message"]["content"]
         except Exception as e:
             logger.error(f"OpenRouter API error: {e}")
@@ -350,6 +382,7 @@ class MoonshotAIProvider(LLMProvider):
             )
             response.raise_for_status()
             data = response.json()
+            _record_llm_usage("moonshot", actual_model, data.get("usage"))
             return data["choices"][0]["message"]["content"]
         except Exception as e:
             logger.error(f"Moonshot AI API error: {e}")
@@ -422,6 +455,7 @@ class NVIDIAProvider(LLMProvider):
                     )
                     response.raise_for_status()
                     data = response.json()
+                    _record_llm_usage("nvidia", actual_model, data.get("usage"))
                     choice = data["choices"][0]
                     msg = choice.get("message", {})
                     return msg.get("content") or msg.get("reasoning_content") or ""
