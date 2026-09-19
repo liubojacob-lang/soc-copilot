@@ -221,8 +221,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Note**: This gate is configured as a required PR check. All three scans must pass before merging." >> $GITHUB_STEP_SUMMARY
 
-          # Fail the summary if any check failed
-          if [ "${{ needs.pip-audit.result }}" != "success" ] ||              [ "${{ needs.npm-audit.result }}" != "success" ] ||              [ "${{ needs.bandit.result }}" != "success" ]; then
+          # Fail the summary only when a scan actually ran and failed.
+          # Path-filtered runs skip the audit jobs (result: "skipped") when
+          # no backend/frontend files changed — that is a pass, not a failure.
+          if [ "${{ needs.pip-audit.result }}" = "failure" ] ||             [ "${{ needs.pip-audit.result }}" = "cancelled" ] ||             [ "${{ needs.npm-audit.result }}" = "failure" ] ||             [ "${{ needs.npm-audit.result }}" = "cancelled" ] ||             [ "${{ needs.bandit.result }}" = "failure" ] ||             [ "${{ needs.bandit.result }}" = "cancelled" ]; then
             echo "❌ Security gate FAILED — please fix the issues above before merging."
             exit 1
           fi
