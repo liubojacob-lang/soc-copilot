@@ -178,6 +178,13 @@ function SingleResult({ result }: { result: ThreatIntelLookupResponse }) {
         </div>
       )}
 
+      {result.provider_status === "unconfigured" && (
+        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-850 dark:text-amber-300 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <span>外部情报源未配置 (OTX_API_KEY 未设置)，返回默认空态结果。</span>
+        </div>
+      )}
+
       {result.skipped_reason && (
         <div className="p-3 rounded-lg bg-surface-hover border border-border-subtle text-xs text-text-muted flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-status-warning-fg shrink-0 mt-0.5" />
@@ -1053,6 +1060,23 @@ export default function ThreatIntelPage() {
       />
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* T2.8: Unconfigured / Disabled External TI Warning Banner */}
+        {statsData?.config && (statsData.config as any).enabled === false && (
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-amber-900 dark:text-amber-200 text-sm">
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium">外部威胁情报源（Alienvault OTX）未配置或已禁用</p>
+              <p className="text-xs text-amber-700 dark:text-amber-300/80 mt-0.5">
+                当前系统仅显示本地缓存与已知命中记录。如需实时联网查询全球威胁情报，请在系统配置中填入有效的{" "}
+                <code className="px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 font-mono text-[11px]">
+                  OTX_API_KEY
+                </code>
+                。
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* KPI Strip */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="p-4 flex items-center gap-3">

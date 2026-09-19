@@ -75,6 +75,10 @@ class ThreatIntelResponse(BaseModel):
     skipped_reason: str | None = Field(
         None, description="Reason for skipping (e.g., 'private_ip', 'internal_domain')"
     )
+    provider_status: str | None = Field(
+        default="configured",
+        description="Provider configuration status ('configured' or 'unconfigured')",
+    )
 
 
 class BulkThreatIntelRequestItem(BaseModel):
@@ -121,6 +125,11 @@ class BulkThreatIntelResponse(BaseModel):
     request_id: str = Field(..., description="Request ID for tracing")
     provider: str = Field(default="otx", description="TI provider name")
     disabled: bool = Field(default=False, description="Whether external TI is disabled")
+    provider_status: str | None = Field(
+        default="configured",
+        description="Provider configuration status ('configured' or 'unconfigured')",
+    )
+    error_reason: str | None = Field(None, description="Reason if external TI disabled")
     results: list[ThreatIntelResponse] = Field(
         default_factory=list, description="List of lookup results"
     )
@@ -138,6 +147,7 @@ class BulkThreatIntelResponse(BaseModel):
         default_factory=list,
         description="List of IOCs filtered by compliance policy (not sent to external TI)",
     )
+
 
 
 class ThreatIntelAnalysis(BaseModel):

@@ -30,6 +30,7 @@ export interface ThreatIntelLookupResponse {
   raw: Record<string, unknown>;
   error_reason: string | null;
   skipped_reason: string | null;
+  provider_status?: string | null;
 }
 
 /** POST /api/v1/ti/batch request item. */

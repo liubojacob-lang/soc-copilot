@@ -160,7 +160,9 @@ class ThreatIntelService:
                 references=[],
                 raw={},
                 error_reason=error_reason,
+                provider_status="unconfigured" if not settings.otx_api_key else "disabled",
             )
+
 
         # 2. Check cache (OTX result cache — only queried when TI is enabled)
         cached = await self.repository.get_by_ioc(
@@ -319,12 +321,15 @@ class ThreatIntelService:
                 request_id=request_id,
                 provider="otx",
                 disabled=True,
+                provider_status="unconfigured" if not settings.otx_api_key else "disabled",
+                error_reason=error_reason,
                 results=[],
                 skipped_count=0,
                 skipped_items=[],
                 filtered_count=0,
                 filtered_items=[],
             )
+
 
         # v0.4.1: Apply compliance filter first
         allowed_items = []
