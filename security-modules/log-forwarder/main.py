@@ -27,14 +27,29 @@ class WazuhLogForwarder:
         # 配置
         self.wazuh_api_url = os.getenv('WAZUH_API_URL', 'http://wazuh-manager:55000')
         self.wazuh_username = os.getenv('WAZUH_API_USERNAME', 'wazuh-wui')
-        self.wazuh_password = os.getenv('WAZUH_API_PASSWORD', 'wazuh-wui')
+        # 凭据必须显式注入：'wazuh-wui' 是 Wazuh 出厂默认口令，静默使用它
+        # 等于带着默认弱口令去连生产 API。
+        self.wazuh_password = os.getenv('WAZUH_API_PASSWORD')
+        if not self.wazuh_password:
+            raise SystemExit(
+                "WAZUH_API_PASSWORD is not set. Refusing to start with "
+                "default/empty credentials."
+            )
 
         self.soc_api_url = os.getenv('SOC_COPILOT_API_URL', 'http://soc-copilot-backend:8000')
         self.soc_api_key = os.getenv('SOC_COPILOT_API_KEY', '')
 
         self.es_url = os.getenv('ELASTICSEARCH_URL', 'http://elasticsearch:9200')
         self.es_username = os.getenv('ELASTICSEARCH_USERNAME', 'elastic')
-        self.es_password = os.getenv('ELASTICSEARCH_PASSWORD', 'changeme')
+        # 凭据必须显式注入：默认 'changeme' 会让误配静默地用弱口令打生产 ES。
+        self.es_password = os.getenv('ELASTICSEARCH_PASSWORD')
+        if not self.es_password:
+            raise SystemExit(
+                "ELASTICSEARCH_PASSWORD is not set. Refusing to start with "
+                "default/empty credentials."
+            )
+        # TLS 校验默认开启；仅在内网自签环境显式设置 ES_VERIFY_CERTS=false 关闭
+        self.es_verify_certs = os.getenv('ES_VERIFY_CERTS', 'true').lower() == 'true'
 
         # 客户端
         self.http_client = httpx.AsyncClient(timeout=30.0)
@@ -61,7 +76,7 @@ class WazuhLogForwarder:
             self.es_client = AsyncElasticsearch(
                 [self.es_url],
                 basic_auth=(self.es_username, self.es_password),
-                verify_ssl=False,
+                verify_ssl=self.es_verify_certs,
                 request_timeout=30
             )
 
