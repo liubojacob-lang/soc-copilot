@@ -126,3 +126,8 @@ backups/
 .workbuddy/
 .zcode/
 deliverables/
+
+# Playwright generated artifacts
+frontend/playwright-report/
+frontend/test-results/
+frontend/blob-report/
