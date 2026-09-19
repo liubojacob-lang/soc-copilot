@@ -268,6 +268,33 @@ def register_lifecycle_services():
     return manager
 
 
+def _init_sentry(app_instance: FastAPI) -> None:
+    """Initialise Sentry for the backend when SENTRY_DSN is configured (T4.1).
+
+    Frontend errors have had Sentry wiring since v0.9.0; the backend had
+    none, so production exceptions were only visible in logs. The import is
+    conditional so environments without the package (or without a DSN)
+    start unchanged.
+    """
+    dsn = os.getenv("SENTRY_DSN", "").strip()
+    if not dsn:
+        return
+    try:
+        import sentry_sdk  # noqa: PLC0415 — optional dependency
+    except ImportError:
+        logger.warning("SENTRY_DSN set but sentry-sdk is not installed; skipping")
+        return
+
+    sentry_sdk.init(
+        dsn=dsn,
+        environment=settings.environment,
+        release=settings.app_version,
+        traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.05")),
+        send_default_pii=False,
+    )
+    logger.info(f"Sentry initialised (release={settings.app_version})")
+
+
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
     """Application lifespan manager using lifecycle services.
@@ -278,6 +305,7 @@ async def lifespan(app_instance: FastAPI):
     # Startup
     logger.info(f"Initializing SOC Copilot API v{settings.app_version}")
     logger.info(f"Environment: {settings.environment}")
+    _init_sentry(app_instance)
     logger.info("Playbook Engine: ENABLED (DAG-based with Node Plugin System)")
     logger.info("Trigger System: ENABLED (webhook + cron)")
     logger.info(f"Run Queue: ENABLED (max_concurrent={settings.run_queue_max})")

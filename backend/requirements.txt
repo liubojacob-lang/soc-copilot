@@ -65,3 +65,6 @@ WeasyPrint==63.1  # PDF generation from HTML (optional - requires system libs)
 # Two-Factor Authentication (TOTP - RFC 6238)
 pyotp>=2.9.0
 qrcode[pil]>=8.0
+
+# Error tracking (T4.1) — main.py imports it conditionally when SENTRY_DSN is set
+sentry-sdk[fastapi]>=2.19.0

@@ -25,6 +25,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     networks:
       - soc-copilot-prod
     restart: always
@@ -42,6 +50,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # Container limit sits above maxmemory so AOF rewrite buffers still fit
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 768M
     networks:
       - soc-copilot-prod
     restart: always
@@ -110,6 +124,14 @@ services:
     depends_on:
       - frontend
       - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     networks:
       - soc-copilot-prod
     restart: always
