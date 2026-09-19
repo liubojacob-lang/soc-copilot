@@ -339,6 +339,17 @@ async def lifespan(app_instance: FastAPI):
     except Exception as e:
         logger.warning(f"Failed to auto-seed AI models on startup: {e}")
 
+    # Ensure RBAC system roles and permissions exist (T3.6)
+    try:
+        from services.rbac_service import seed_rbac
+
+        async with AsyncSessionLocal() as session:
+            await seed_rbac(session)
+        logger.info("RBAC system roles and permissions initialized/verified")
+    except Exception as e:
+        logger.warning(f"Failed to auto-seed RBAC on startup: {e}")
+
+
     # Load node plugins
     from pathlib import Path
 
