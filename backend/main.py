@@ -68,6 +68,7 @@ from routers import (
     playbook_definitions,
     prompt_registry,
     report,
+    root_cause,
     secrets,
     security_alerts,
     security_vulnerabilities,
@@ -605,6 +606,7 @@ app.include_router(api_keys.router)
 app.include_router(audit.router)
 app.include_router(alert.router)
 app.include_router(report.router)
+app.include_router(root_cause.router)  # T2.4: AI root cause analysis
 app.include_router(ai_models.router)  # AI model management
 app.include_router(timeline.router)
 app.include_router(history.router)

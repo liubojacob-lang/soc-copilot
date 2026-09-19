@@ -53,6 +53,7 @@ import { Card, BackButton } from "@/components/common";
 import { Modal } from "@/components/common/Modal";
 import { createCase } from "@/lib/api/cases";
 import { AIAnalysisPanel } from "@/components/alerts/AIAnalysisPanel";
+import { RootCauseSection } from "@/components/alerts/RootCauseSection";
 import { RelatedAlertsPanel } from "@/components/alerts/RelatedAlertsPanel";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useToast } from "@/components/Toast";
@@ -826,7 +827,9 @@ export default function AlertDetailPage() {
   );
 
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "notes">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "notes" | "rootCause">(
+    "overview"
+  );
   const [showCreateCaseModal, setShowCreateCaseModal] = useState(false);
 
   // Auth
@@ -1083,6 +1086,7 @@ export default function AlertDetailPage() {
                   { key: "overview", label: t("tabOverview") },
                   { key: "timeline", label: t("tabTimeline") },
                   { key: "notes", label: t("tabNotes") },
+                  { key: "rootCause", label: t("tabRootCause") },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -1209,6 +1213,8 @@ export default function AlertDetailPage() {
                     isAdding={addNote.isPending}
                   />
                 )}
+
+                {activeTab === "rootCause" && <RootCauseSection alertId={alert.id} />}
               </div>
             </Card>
           </div>
