@@ -515,34 +515,22 @@ test.describe("运行时对比度与主题适配闸", () => {
     }> = [];
     const skipped: string[] = [];
 
-    // ---------- 一、静止态：明暗双主题 ----------
+    // ---------- 一、静止态：明暗双主题（深色轮顺带采浅色表面，不重复访问） ----------
     for (const theme of THEMES) {
       await useTheme(page, theme);
       let count = 0;
       for (const target of targets) {
-        const f = await audit(page, base, target.label, target.path, admin);
-        count += f.length;
-        failures.push(...f);
+        const result = await audit(page, base, target.label, target.path, admin, {
+          collectSurfaces: theme === "dark",
+        });
+        count += result.failures.length;
+        failures.push(...result.failures);
+        lightSurfaces.push(...result.surfaces);
       }
       console.log(`[静止态·${theme}] 审计 ${targets.length} 个页面，不达标 ${count} 处`);
     }
 
-    // ---------- 二、深色下的大面积近白表面（同页同轮，省一次遍历） ----------
-    {
-      await useTheme(page, "dark");
-      for (const target of targets) {
-        await gotoAuthed(page, base, target.path, admin);
-        await page.mouse.move(1, 1);
-        await waitForStable(page);
-        await sweep(page);
-        const hits = await page.evaluate(collectLightSurfaces, DARK_SURFACE_ALLOWLIST);
-        lightSurfaces.push(
-          ...hits.map((s) => ({ ...s, className: `[${target.label}] ${s.className}` }))
-        );
-      }
-    }
-
-    // ---------- 三、交互后才出现的状态 ----------
+    // ---------- 二、交互后才出现的状态 ----------
     for (const probe of INTERACTION_PROBES) {
       await useTheme(page, probe.theme);
 
