@@ -30,10 +30,8 @@ import {
   Sparkles,
   FileText,
   ScrollText,
-  Settings,
   Users,
   Cpu,
-  HeartPulse,
   Lock,
   SlidersHorizontal,
   Tv,
@@ -56,14 +54,25 @@ export interface NavItem {
 export interface NavGroup {
   /** i18n key，取 `navigation.*` 命名空间 */
   key: string;
-  icon: LucideIcon;
+  /**
+   * 分组**没有**图标，这是刻意的。
+   *
+   * 此前每个分组都带一个图标，而它和该组第一个子项的图标往往是同一个
+   * （概览↔首页同为 LayoutDashboard、情报↔情报看板同为 Radar、自动化↔执行记录同为 Workflow、
+   * 基础设施↔资产同为 Server、AI↔助手同为 Sparkles、报表↔报告同为 FileText，
+   * 运营↔事件同为 ShieldAlert —— 8 组中 7 组重复）。
+   * 同一个图形在相邻两行出现，等于告诉用户"这两个是同一个东西"。
+   *
+   * 分组是**容器**、子项是**内容**，两者不该共用一套视觉语汇。
+   * 因此分组改用纯排版层级表达（小字号 + 字距 + 次级色），
+   * 把图标语汇完整让给子项。
+   */
   items: NavItem[];
 }
 
 export const NAV_GROUPS: NavGroup[] = [
   {
     key: "groupOverview",
-    icon: LayoutDashboard,
     items: [
       { key: "home", path: "/", icon: LayoutDashboard },
       { key: "monitor", path: "/monitor", icon: Tv },
@@ -71,7 +80,6 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     key: "groupOperations",
-    icon: ShieldAlert,
     items: [
       { key: "alerts", path: "/alerts", icon: BellRing },
       { key: "incidents", path: "/cases", icon: ShieldAlert },
@@ -81,7 +89,6 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     key: "groupIntelligence",
-    icon: Radar,
     items: [
       { key: "threatIntel", path: "/threat-intel", icon: Globe },
       { key: "threatIntelDashboard", path: "/threat-intel/dashboard", icon: Radar },
@@ -90,7 +97,6 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     key: "groupAutomation",
-    icon: Workflow,
     items: [
       { key: "runs", path: "/playbooks", icon: Workflow },
       { key: "definitions", path: "/playbooks/definitions", icon: FileStack },
@@ -100,21 +106,18 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     key: "groupInfrastructure",
-    icon: Server,
     items: [
       { key: "assets", path: "/assets", icon: Server },
-      { key: "cloudNative", path: "/cloud-native", icon: Cloud, badge: "Beta" },
+      { key: "cloudNative", path: "/cloud-native", icon: Cloud, badge: "Demo" },
       { key: "marketplace", path: "/marketplace", icon: Store },
     ],
   },
   {
     key: "groupAI",
-    icon: Sparkles,
     items: [{ key: "aiCopilot", path: "/ai-assistant", icon: Sparkles }],
   },
   {
     key: "groupReporting",
-    icon: FileText,
     items: [
       { key: "reports", path: "/reports", icon: FileText },
       { key: "auditLogs", path: "/audit", icon: ScrollText, permission: "analystOrAdmin" },
@@ -122,14 +125,12 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     key: "groupAdministration",
-    icon: Settings,
     items: [
       { key: "dashboard", path: "/admin/dashboard", icon: Activity, permission: "admin" },
       { key: "users", path: "/admin/users", icon: Users, permission: "admin" },
       { key: "settings", path: "/settings", icon: SlidersHorizontal, permission: "admin" },
       { key: "aiModels", path: "/settings/ai-models", icon: Cpu },
       { key: "notifications", path: "/settings/notifications", icon: BellRing },
-      { key: "systemHealth", path: "/admin/health", icon: HeartPulse, permission: "admin" },
       { key: "secrets", path: "/admin/secrets", icon: Lock, permission: "admin" },
     ],
   },

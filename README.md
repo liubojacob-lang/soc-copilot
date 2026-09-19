@@ -109,6 +109,13 @@ SOC Copilot is an intelligent analysis workbench designed for Security Operation
   - **Control**: Manual approval, delay
 - Execution modes: `dry_run` (simulation) / `apply` (actual execution)
 
+### 7. Cloud-Native Security (Demo / Connector Roadmap)
+
+- Container and Kubernetes security management dashboard
+- Integrations: Trivy image vulnerability scanner (real host CLI integration)
+- Falco alert ingestion endpoint
+- Multi-cloud and Kubernetes cluster inventory (currently sample connector data; production live-connector integration planned on roadmap)
+
 ---
 
 ## Quick Start
