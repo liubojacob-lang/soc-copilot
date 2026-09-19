@@ -8,11 +8,6 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-try:
-    from playbook_engine.triggers.alert_triggers import AlertTriggerConfig
-except ImportError:
-    AlertTriggerConfig = None
-
 
 class EventCategory(str, Enum):
     INITIAL_ACCESS = "initial_access"

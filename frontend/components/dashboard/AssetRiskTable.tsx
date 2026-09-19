@@ -48,7 +48,7 @@ export function AssetRiskTable({
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                 {row.asset_name}
               </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500">{row.asset_type}</p>
+              <p className="text-xs text-text-tertiary">{row.asset_type}</p>
             </div>
           </div>
         ),
@@ -114,12 +114,14 @@ export function AssetRiskTable({
               {(critical > 0 || high > 0) && (
                 <span className="flex items-center gap-0.5 ml-1">
                   {critical > 0 && (
-                    <span className="text-[10px] px-1 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-semibold">
+                    // 原为 bg-red-100 + text-red-600（3.95:1）。改用 severity 语义槽位：
+                    // critical-fg on critical-bg = 5.91:1，且明暗两套值由 token 自带。
+                    <span className="text-[10px] px-1 rounded bg-severity-critical-bg text-severity-critical-fg font-semibold">
                       {critical}C
                     </span>
                   )}
                   {high > 0 && (
-                    <span className="text-[10px] px-1 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 font-semibold">
+                    <span className="text-[10px] px-1 rounded bg-severity-high-bg text-severity-high-fg font-semibold">
                       {high}H
                     </span>
                   )}

@@ -40,7 +40,9 @@ class AlertAnalysisRequest(BaseModel):
     source: str = "unknown"
     alert_type: str = "security"
     metadata: dict = Field(default_factory=dict)
-    use_rag: bool = True
+    # Accepted for API compatibility only. Vector retrieval is not wired
+    # (services/vector_store.py has no callers), so this changes nothing.
+    use_rag: bool = Field(default=True, deprecated=True)
 
 
 class AlertAnalysisResponse(BaseModel):
@@ -162,9 +164,7 @@ async def analyze_alert(
             "metadata": payload.metadata,
         }
 
-        analysis = await ai_service.analyze_alert_with_rag(
-            alert_data=alert_data, use_rag=payload.use_rag
-        )
+        analysis = await ai_service.analyze_alert(alert_data=alert_data)
 
         return AlertAnalysisResponse(
             alert_id=payload.alert_id,

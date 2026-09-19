@@ -18,8 +18,12 @@ class PlaybookApprovalModel(Base):
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     run_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("playbook_runs.id", ondelete="CASCADE"), nullable=False
+        String(36),
+        ForeignKey("playbook_runs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
+
     node_id: Mapped[str] = mapped_column(String(100), nullable=False)
     requested_by_user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True

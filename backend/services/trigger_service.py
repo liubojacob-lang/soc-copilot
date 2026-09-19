@@ -216,7 +216,7 @@ class TriggerService:
                 raise ValueError(f"Definition not found: {trigger.definition_id}")
 
             # Validate and compile DAG
-            from services.playbook_dag_compiler import DAGCompiler, DAGValidationError
+            from services.playbook.playbook_dag_compiler import DAGCompiler, DAGValidationError
 
             try:
                 compiled = await DAGCompiler.validate_and_compile(
@@ -241,7 +241,7 @@ class TriggerService:
 
             # Execute DAG (for now, mark as success immediately)
             # In production, this would be an async background task
-            from services.playbook_dag_scheduler import DAGScheduler
+            from services.playbook.playbook_dag_scheduler import DAGScheduler
 
             scheduler = DAGScheduler(
                 session=self.session,
@@ -416,7 +416,7 @@ class TriggerService:
                 return None
 
             # Validate and compile DAG
-            from services.playbook_dag_compiler import DAGCompiler, DAGValidationError
+            from services.playbook.playbook_dag_compiler import DAGCompiler, DAGValidationError
 
             try:
                 compiled = await DAGCompiler.validate_and_compile(
@@ -444,7 +444,7 @@ class TriggerService:
             )
 
             # Execute DAG
-            from services.playbook_dag_scheduler import DAGScheduler
+            from services.playbook.playbook_dag_scheduler import DAGScheduler
 
             scheduler = DAGScheduler(
                 session=self.session,

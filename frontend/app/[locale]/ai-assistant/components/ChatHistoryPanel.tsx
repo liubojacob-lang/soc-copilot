@@ -159,8 +159,8 @@ export function ChatHistoryPanel({
         <button
           onClick={onToggle}
           className="p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-          title="收起历史列表 (⌘/)"
-          aria-label="收起历史列表"
+          title={`${t("collapse") || "收起"} (⌘/)`}
+          aria-label={t("collapse") || "收起"}
         >
           <PanelLeftClose className="w-4 h-4" />
         </button>

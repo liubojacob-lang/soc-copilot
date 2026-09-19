@@ -110,3 +110,19 @@ class IOCHitRepository:
             .limit(limit)
         )
         return list(result.scalars().all())
+
+    async def list_recent(
+        self, session: AsyncSession, limit: int = 100
+    ) -> list[IOCHitDB]:
+        """List recent IOC hits."""
+        result = await session.execute(
+            select(IOCHitDB).order_by(IOCHitDB.created_at.desc()).limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def count_all(self, session: AsyncSession) -> int:
+        """Count total IOC hits."""
+        from sqlalchemy import func
+
+        result = await session.execute(select(func.count()).select_from(IOCHitDB))
+        return result.scalar() or 0

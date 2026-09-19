@@ -146,6 +146,41 @@ class CaseService:
             summary=f"Case created with status '{data.status.value}' and severity '{data.severity.value}'",
             performed_by=user_id,
         )
+
+        # Link initial alerts if provided
+        if data.alert_ids:
+            int_alert_ids = []
+            for a_id in data.alert_ids:
+                try:
+                    int_alert_ids.append(int(a_id))
+                except (ValueError, TypeError):
+                    pass
+            if int_alert_ids:
+                from sqlalchemy import select
+
+                from models.security_alert import SecurityAlert
+
+                existing_alerts_res = await self.session.execute(
+                    select(SecurityAlert.id).where(SecurityAlert.id.in_(int_alert_ids))
+                )
+                valid_ids = list(existing_alerts_res.scalars().all())
+
+                if valid_ids:
+                    linked = await self.repo.link_alerts(
+                        self.session,
+                        case_id=case.id,
+                        alert_ids=valid_ids,
+                        added_by=user_id,
+                    )
+                    if linked > 0:
+                        await self.repo.add_timeline_entry(
+                            self.session,
+                            case_id=case.id,
+                            entry_type="alert",
+                            summary=f"Linked {linked} alert(s) on case creation (IDs: {valid_ids})",
+                            performed_by=user_id,
+                        )
+
         await self.session.commit()
 
         logger.info(f"Case created: {case.id} - {case.title}")
@@ -372,10 +407,17 @@ class CaseService:
         if not case:
             raise ValueError(f"Case not found: {case_id}")
 
+        int_alert_ids = []
+        for a in data.alert_ids:
+            try:
+                int_alert_ids.append(int(a))
+            except (ValueError, TypeError):
+                pass
+
         linked = await self.repo.link_alerts(
             self.session,
             case_id=case_id,
-            alert_ids=data.alert_ids,
+            alert_ids=int_alert_ids,
             added_by=user_id,
         )
 
@@ -384,7 +426,7 @@ class CaseService:
                 self.session,
                 case_id=case.id,
                 entry_type="alert",
-                summary=f"Linked {linked} alert(s) to case (IDs: {data.alert_ids})",
+                summary=f"Linked {linked} alert(s) to case (IDs: {int_alert_ids})",
                 performed_by=user_id,
             )
         await self.session.commit()

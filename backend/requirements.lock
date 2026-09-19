@@ -16,7 +16,7 @@ build==1.4.2
 certifi==2026.2.25
 cffi==2.0.0
 charset-normalizer==3.4.7
-chromadb==1.5.2
+# chromadb removed — zero references, CVE-2026-45829/45833 (pre-auth code injection, no fix)
 click==8.3.2
 coverage==7.13.5
 croniter==3.0.3
@@ -89,7 +89,7 @@ pydantic==2.9.2
 pydantic-settings==2.13.1
 pydantic_core==2.23.4
 Pygments==2.20.0
-PyJWT==2.11.0
+PyJWT==2.13.0
 PyPika==0.51.1
 pyproject_hooks==1.2.0
 pytest==9.0.3

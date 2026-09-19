@@ -8,6 +8,7 @@ from collections.abc import Callable
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from middleware.tenant_middleware import resolve_tenant_id
 from observability.metrics import observe_api_request
 
 
@@ -18,9 +19,7 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         start = time.perf_counter()
         path = request.url.path
         method = request.method
-        tenant_id = getattr(
-            request.state, "tenant_id", request.headers.get("x-tenant-id", "default")
-        )
+        tenant_id = resolve_tenant_id(request)
 
         try:
             response = await call_next(request)

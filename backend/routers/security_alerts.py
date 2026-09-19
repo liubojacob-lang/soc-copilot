@@ -218,9 +218,9 @@ async def ingest_alert(
         logger.error(f"Validation error: {e!s}")
         raise HTTPException(status_code=422, detail="Invalid request")
     except Exception as e:
-        logger.error(f"Error ingesting alert: {e!s}")
+        logger.exception("Error ingesting alert")
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to ingest alert: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to ingest alert")
 
 
 @router.get("", response_model=SecurityAlertListResponse)

@@ -6,6 +6,7 @@
  */
 
 import React, { useMemo, useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { PieChart as PieChartIcon } from "lucide-react";
 import { severityChartColors, getTooltipProps, getLegendProps } from "@/lib/chartThemeAdapter";
@@ -29,20 +30,14 @@ interface SeverityDistributionProps {
   height?: number;
 }
 
-const SEVERITY_LABELS = {
-  critical: "Critical",
-  high: "High",
-  medium: "Medium",
-  low: "Low",
-  info: "Info",
-};
-
 export function SeverityDistribution({
   data,
   type = "donut",
   showLegend = true,
   height = 300,
 }: SeverityDistributionProps) {
+  const tSeverity = useTranslations("severity");
+  const t = useTranslations("threatIntel.dashboard");
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -62,17 +57,25 @@ export function SeverityDistribution({
   const themeTooltip = getTooltipProps(mode);
   const themeLegend = getLegendProps(mode);
 
+  const getSeverityName = (key: string) => {
+    try {
+      return tSeverity(key) || key;
+    } catch {
+      return key;
+    }
+  };
+
   // 转换数据格式
   const chartData = useMemo(() => {
     return Object.entries(data)
       .filter(([_, value]) => value > 0)
       .map(([key, value]) => ({
-        name: SEVERITY_LABELS[key as keyof typeof SEVERITY_LABELS],
+        name: getSeverityName(key),
         value,
         color: severityChartColors[key as keyof typeof severityChartColors],
       }))
       .sort((a, b) => b.value - a.value);
-  }, [data]);
+  }, [data, tSeverity]);
 
   // 计算总数
   const total = useMemo(() => {
@@ -99,11 +102,11 @@ export function SeverityDistribution({
           <span style={{ fontWeight: 500, fontSize: 14 }}>{data.name}</span>
         </div>
         <div className="flex justify-between gap-4 text-xs">
-          <span style={{ color: themeTooltip.labelStyle.color }}>Count:</span>
+          <span style={{ color: themeTooltip.labelStyle.color }}>{t("count")}:</span>
           <span style={{ fontWeight: 600 }}>{data.value}</span>
         </div>
         <div className="flex justify-between gap-4 text-xs">
-          <span style={{ color: themeTooltip.labelStyle.color }}>Percentage:</span>
+          <span style={{ color: themeTooltip.labelStyle.color }}>{t("percentage")}:</span>
           <span style={{ fontWeight: 600 }}>{percentage}%</span>
         </div>
       </div>
@@ -163,7 +166,7 @@ export function SeverityDistribution({
       <div className="flex items-center justify-center h-64 bg-surface-hover dark:bg-slate-800/50 rounded-lg border border-dashed border-border-subtle dark:border-slate-700">
         <div className="text-center">
           <PieChartIcon className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
-          <p className="text-sm text-text-tertiary">No severity data available</p>
+          <p className="text-sm text-text-tertiary">{t("noSeverityData")}</p>
         </div>
       </div>
     );
@@ -210,7 +213,7 @@ export function SeverityDistribution({
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             <div className="text-3xl font-bold text-text-primary dark:text-white">{total}</div>
-            <div className="text-xs text-text-tertiary">Total Alerts</div>
+            <div className="text-xs text-text-tertiary">{t("totalAlerts")}</div>
           </div>
         </div>
       )}
@@ -226,17 +229,18 @@ export function SeverityBars({
   data: SeverityDistributionProps["data"];
   limit?: number;
 }) {
+  const tSeverity = useTranslations("severity");
   const chartData = useMemo(() => {
     return Object.entries(data)
       .filter(([_, value]) => value > 0)
       .map(([key, value]) => ({
-        name: SEVERITY_LABELS[key as keyof typeof SEVERITY_LABELS],
+        name: tSeverity(key) || key,
         value,
         color: severityChartColors[key as keyof typeof severityChartColors],
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, limit);
-  }, [data, limit]);
+  }, [data, limit, tSeverity]);
 
   const maxValue = Math.max(...chartData.map((d) => d.value));
 
@@ -273,17 +277,18 @@ export function SeverityBars({
 
 // 紧凑版：仅显示统计卡片
 export function SeverityCards({ data }: { data: SeverityDistributionProps["data"] }) {
+  const tSeverity = useTranslations("severity");
   const cards = useMemo(() => {
     return Object.entries(data)
       .filter(([_, value]) => value > 0)
       .map(([key, value]) => ({
         key,
-        label: SEVERITY_LABELS[key as keyof typeof SEVERITY_LABELS],
+        label: tSeverity(key) || key,
         value,
         color: severityChartColors[key as keyof typeof severityChartColors],
       }))
       .sort((a, b) => b.value - a.value);
-  }, [data]);
+  }, [data, tSeverity]);
 
   if (cards.length === 0) {
     return null;

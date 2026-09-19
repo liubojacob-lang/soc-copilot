@@ -26,13 +26,14 @@ croniter==3.0.3
 alembic==1.14.0
 
 # Phase 2: AI enhancements (optional)
-chromadb==1.5.2
+# chromadb removed: zero references + CVE-2026-45829/45833 (pre-auth code injection, no fix available)
 
 # Phase 3: Advanced Analytics
 scikit-learn==1.4.0
 
 # Phase 4: Observability
 prometheus-fastapi-instrumentator==7.0.0  # v0.8.2: Metrics
+psutil>=5.9.0  # System metrics monitoring (CPU, memory)
 
 # P1-24: LLM tracing (optional)
 langfuse>=2.0
@@ -42,7 +43,7 @@ aiohttp==3.13.3  # Async HTTP client for notifications
 backoff==2.2.1  # Exponential backoff for retry logic
 
 # v1.0.0: Wazuh Integration + P0-5: now the sole JWT library (auth + Wazuh)
-pyjwt==2.11.0  # JWT encode/decode for app auth and Wazuh API
+pyjwt>=2.13.0  # JWT encode/decode for app auth and Wazuh API (upgraded from 2.11.0, G4/F-032)
 cryptography>=42.0.0  # Fernet encryption for secrets
 
 opentelemetry-api==1.36.0
@@ -56,7 +57,7 @@ opentelemetry-instrumentation-logging==0.57b0
 python-nmap==0.7.1  # NMAP integration for asset discovery
 
 # Phase 3: Report Export (F3-6, F3-7)
-Jinja2==3.1.4  # HTML template rendering
+Jinja2>=3.1.6  # HTML template rendering (security upgrade)
 WeasyPrint==63.1  # PDF generation from HTML (optional - requires system libs)
 # WeasyPrint system deps (macOS): brew install pango gdk-pixbuf libffi
 # WeasyPrint system deps (Linux): apt install libpango-1.0-0 libgdk-pixbuf2.0-0 libffi-dev
@@ -64,3 +65,6 @@ WeasyPrint==63.1  # PDF generation from HTML (optional - requires system libs)
 # Two-Factor Authentication (TOTP - RFC 6238)
 pyotp>=2.9.0
 qrcode[pil]>=8.0
+
+# Error tracking (T4.1) — main.py imports it conditionally when SENTRY_DSN is set
+sentry-sdk[fastapi]>=2.19.0

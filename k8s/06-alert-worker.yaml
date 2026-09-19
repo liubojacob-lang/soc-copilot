@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: alert-worker
-          image: soc-copilot-backend:0.9.0 # 与 backend 使用同一镜像（workers/ 内置）
+          image: soc-copilot-backend:0.9.4 # 与 backend 使用同一镜像（workers/ 内置）
           imagePullPolicy: IfNotPresent
           command: ["python", "workers/alert_worker.py"]
           envFrom:

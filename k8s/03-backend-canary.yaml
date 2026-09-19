@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: soc-copilot-backend:0.9.0
+          image: soc-copilot-backend:0.9.4
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000

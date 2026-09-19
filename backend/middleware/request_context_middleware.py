@@ -9,6 +9,7 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from core.logger import clear_request_context, set_request_context
+from middleware.tenant_middleware import resolve_tenant_id
 from middleware.trace_middleware import get_trace_id
 from observability.context import clear_context, set_context
 
@@ -26,9 +27,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             or get_trace_id()
             or ""
         )
-        tenant_id = getattr(request.state, "tenant_id", None) or request.headers.get(
-            "x-tenant-id", "default"
-        )
+        tenant_id = resolve_tenant_id(request)
 
         user_id = getattr(request.state, "user_id", "")
         user_role = getattr(request.state, "user_role", "")

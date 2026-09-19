@@ -2,12 +2,17 @@
 
 This service provides:
 - Async task creation and submission
+- Priority-ordered background processing (higher priority first, FIFO
+  within the same priority)
+- Crash recovery: on startup, pending tasks left in the DB by a previous
+  process are re-enqueued and stale "processing" rows are marked failed
 - Background task processing with timeout handling
 - Status polling for long-running AI operations
 - Automatic retry on transient failures
 """
 
 import asyncio
+import itertools
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -20,9 +25,16 @@ from services.llm_retry import get_llm_retry_service
 
 logger = get_logger(__name__)
 
-# Global task queue
-_task_queue: asyncio.Queue = asyncio.Queue()
+# Priority queue: items are (-priority, seq, task_id) so higher priority
+# pops first and the unique seq keeps ordering FIFO within a priority
+# (and stops heapq from ever comparing task_id strings).
+_task_queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
+_task_seq = itertools.count()
 _background_processor: asyncio.Task | None = None
+
+
+def _queue_item(task_id: str, priority: int) -> tuple[int, int, str]:
+    return (-priority, next(_task_seq), task_id)
 
 
 class AITaskQueueService:
@@ -84,7 +96,7 @@ class AITaskQueueService:
             await session.commit()
 
         # Add to processing queue
-        await _task_queue.put((task_id, priority))
+        await _task_queue.put(_queue_item(task_id, priority))
         logger.info(f"Submitted AI task {task_id} type={task_type.value}")
 
         return task_id
@@ -216,6 +228,18 @@ class AITaskQueueService:
                         "degraded": degraded,
                     }
                     task.completed_at = datetime.now(UTC)
+
+                    # T2.5: Backfill AI triage result into alert.raw_data
+                    if (
+                        task.task_type
+                        in (AITaskType.ALERT_ANALYSIS.value, "alert_analysis")
+                        and task.input_data
+                        and task.input_data.get("alert_id")
+                    ):
+                        await self._backfill_alert_triage(
+                            session, task, result, model_used, degraded
+                        )
+
                     await session.commit()
                     logger.info(f"Completed AI task {task_id}")
 
@@ -231,6 +255,78 @@ class AITaskQueueService:
             await self._handle_task_error(task_id, str(e))
             # Retry if possible
             await self._maybe_retry_task(task_id)
+
+    async def _backfill_alert_triage(
+        self,
+        session,
+        task: AITaskModel,
+        result: Any,
+        model_used: str,
+        degraded: bool,
+    ) -> None:
+        """T2.5: Write AI triage result back to the associated SecurityAlert."""
+        try:
+            import re
+
+            from sqlalchemy.orm.attributes import flag_modified
+
+            from models.security_alert import SecurityAlert
+
+            raw_alert_id = task.input_data.get("alert_id")
+            try:
+                alert_id = int(raw_alert_id)
+            except (ValueError, TypeError):
+                alert_id = raw_alert_id
+
+            stmt = select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            res = await session.execute(stmt)
+            alert = res.scalar_one_or_none()
+            if not alert:
+                logger.warning(
+                    f"T2.5: Alert {alert_id} not found for AI task {task.id}"
+                )
+                return
+
+            raw = dict(alert.raw_data or {})
+            pipeline = dict(raw.get("pipeline") or {})
+
+            summary_text = ""
+            if isinstance(result, dict):
+                summary_text = (
+                    result.get("summary")
+                    or result.get("content")
+                    or ""
+                )
+            elif isinstance(result, str):
+                summary_text = result[:1000]
+
+            pipeline["ai_triage"] = {
+                "summary": summary_text,
+                "completed_at": datetime.now(UTC).isoformat(),
+                "task_id": task.id,
+                "model_used": model_used,
+                "degraded": degraded,
+            }
+
+            # Attempt to extract suggested severity
+            if isinstance(result, dict) and result.get("severity"):
+                pipeline["ai_suggested_severity"] = str(result["severity"]).lower()
+            elif isinstance(result, str):
+                m = re.search(
+                    r"\b(?:severity|建议严重度|严重度|级别)\s*[:=：]\s*(critical|high|medium|low)\b",
+                    result,
+                    re.IGNORECASE,
+                )
+                if m:
+                    pipeline["ai_suggested_severity"] = m.group(1).lower()
+
+            raw["pipeline"] = pipeline
+            alert.raw_data = raw
+            flag_modified(alert, "raw_data")
+            logger.info(f"T2.5: Backfilled AI triage result to alert {alert_id}")
+        except Exception as e:
+            logger.error(f"T2.5: Failed to backfill alert triage: {e}", exc_info=True)
+
 
     async def _handle_task_error(
         self, task_id: str, error_message: str, is_timeout: bool = False
@@ -268,16 +364,64 @@ class AITaskQueueService:
                 await session.commit()
 
                 # Re-queue
-                await _task_queue.put((task_id, task.priority))
+                await _task_queue.put(_queue_item(task_id, task.priority))
                 logger.info(
                     f"Retrying AI task {task_id} (attempt {task.retry_count}/{task.max_retries})"
                 )
 
+    async def recover_orphaned_tasks(self) -> tuple[int, int]:
+        """Recover tasks orphaned by a previous process crash/restart.
+
+        The in-memory queue dies with the process, so at startup any DB row
+        still pending/processing belongs to a previous lifetime:
+
+        - ``pending``    → re-enqueued with its original priority
+        - ``processing`` → the worker died mid-run; mark failed so the row
+          does not sit as a zombie forever (callers can resubmit)
+
+        Returns:
+            (requeued, failed) counts.
+        """
+        requeued = failed = 0
+        async with self.session_factory() as session:
+            stmt = select(AITaskModel).where(
+                AITaskModel.status.in_(
+                    [AITaskStatus.PENDING.value, AITaskStatus.PROCESSING.value]
+                )
+            )
+            result = await session.execute(stmt)
+            orphans = list(result.scalars().all())
+
+            for task in orphans:
+                if task.status == AITaskStatus.PENDING.value:
+                    await _task_queue.put(_queue_item(task.id, task.priority))
+                    requeued += 1
+                else:
+                    task.status = AITaskStatus.FAILED.value
+                    task.error_message = (
+                        "orphaned by restart: worker exited before completion; "
+                        "resubmit if still needed"
+                    )
+                    task.completed_at = datetime.now(UTC)
+                    failed += 1
+                    logger.warning(
+                        f"AI task {task.id} orphaned in 'processing' by a restart; "
+                        "marked failed"
+                    )
+            await session.commit()
+
+        if requeued or failed:
+            logger.info(
+                f"AI task crash recovery: requeued={requeued}, marked failed={failed}"
+            )
+        return requeued, failed
+
     async def start_background_processor(self) -> None:
-        """Start the background task processor."""
+        """Start the background task processor (with crash recovery)."""
         if self._processor_task and not self._processor_task.done():
             return
 
+        await self.recover_orphaned_tasks()
         self._processor_task = asyncio.create_task(self._processor_loop())
         logger.info("AI task background processor started")
 
@@ -296,8 +440,9 @@ class AITaskQueueService:
         """Main processor loop."""
         while True:
             try:
-                # Get next task from queue
-                task_id, priority = await _task_queue.get()
+                # Get next task from the priority queue (highest priority
+                # first; FIFO within one priority level via the sequence).
+                _, _, task_id = await _task_queue.get()
 
                 # Wait if at max concurrent
                 while len(self._running_tasks) >= self._max_concurrent:

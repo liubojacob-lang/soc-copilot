@@ -405,7 +405,7 @@ export default function CreatePlaybookPage() {
           message: "剧本定义发布成功！正在返回剧本工作区...",
         });
         setTimeout(() => {
-          router.push("/playbooks?tab=definitions");
+          router.push("/playbooks/definitions");
         }, 1200);
       } else {
         let errMsg = "提交剧本定义失败，请检查数据格式";
@@ -442,7 +442,7 @@ export default function CreatePlaybookPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-canvas transition-colors pb-16">
+    <div className="min-h-screen bg-surface-page transition-colors pb-16">
       {/* Header */}
       <PageHeader
         title="新建安全剧本"
@@ -451,8 +451,8 @@ export default function CreatePlaybookPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => router.push("/playbooks?tab=definitions")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-subtle bg-surface-card hover:bg-surface-hover text-text-secondary text-xs font-medium transition-colors"
+              onClick={() => router.push("/playbooks/definitions")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border-default bg-surface-card hover:bg-surface-hover text-text-secondary text-sm font-medium transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>返回列表</span>
@@ -461,7 +461,7 @@ export default function CreatePlaybookPage() {
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-accent-600 hover:bg-accent-700 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent-600 hover:bg-accent-700 text-white text-sm font-medium shadow-subtle transition-all disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{submitting ? "正在保存..." : "发布剧本"}</span>
@@ -474,7 +474,7 @@ export default function CreatePlaybookPage() {
         {/* Feedback Alert */}
         {feedback && (
           <div
-            className={`p-4 rounded-2xl border flex items-center gap-3 animate-fade-in ${
+            className={`p-4 rounded-xl border flex items-center gap-3 animate-fade-in ${
               feedback.type === "success"
                 ? "bg-success-500/10 border-success-500/30 text-success-700 dark:text-success-300"
                 : "bg-danger-500/10 border-danger-500/30 text-danger-700 dark:text-danger-300"
@@ -485,7 +485,7 @@ export default function CreatePlaybookPage() {
             ) : (
               <AlertTriangle className="w-5 h-5 shrink-0" />
             )}
-            <span className="text-xs font-medium">{feedback.message}</span>
+            <span className="text-sm font-medium">{feedback.message}</span>
           </div>
         )}
 
@@ -494,7 +494,7 @@ export default function CreatePlaybookPage() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="text-sm font-semibold text-text-primary">选择预置模板或空白起步</h2>
-              <p className="text-xs text-text-tertiary">
+              <p className="text-xs text-text-muted mt-0.5">
                 快速应用经安全验证的编排模版，支持在画布上二次微调
               </p>
             </div>
@@ -508,7 +508,7 @@ export default function CreatePlaybookPage() {
                   key={tmpl.id}
                   type="button"
                   onClick={() => handleSelectTemplate(tmpl)}
-                  className={`p-4 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between group ${
+                  className={`p-4 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between group ${
                     isSelected
                       ? "bg-accent-50/70 dark:bg-accent-950/40 border-accent-500/40 shadow-subtle ring-1 ring-accent-500/30"
                       : "bg-surface-card border-border-subtle hover:bg-surface-hover hover:border-border-default"
@@ -517,7 +517,7 @@ export default function CreatePlaybookPage() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                           isSelected
                             ? "bg-accent-600 text-white"
                             : "bg-surface-hover text-text-secondary group-hover:text-accent-600"
@@ -531,12 +531,12 @@ export default function CreatePlaybookPage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="text-xs font-semibold text-text-primary mb-1">{tmpl.name}</h3>
-                    <p className="text-[11px] text-text-tertiary line-clamp-2 leading-relaxed">
+                    <h3 className="text-sm font-semibold text-text-primary mb-1">{tmpl.name}</h3>
+                    <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed">
                       {tmpl.description}
                     </p>
                   </div>
-                  <div className="mt-3 pt-2 border-t border-border-subtle/50 flex items-center justify-between text-[10px] text-text-tertiary font-mono">
+                  <div className="mt-3 pt-2 border-t border-border-subtle/50 flex items-center justify-between text-[11px] text-text-muted font-mono">
                     <span>{tmpl.nodes.length} 个节点</span>
                     <span>{tmpl.edges.length} 条边</span>
                   </div>
@@ -549,7 +549,7 @@ export default function CreatePlaybookPage() {
         {/* Section 2: Metadata Form & Flow Canvas */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Metadata Config */}
-          <div className="bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle space-y-4">
+          <div className="bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
               <Info className="w-4 h-4 text-accent-600 dark:text-accent-400" />
               <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
@@ -558,7 +558,7 @@ export default function CreatePlaybookPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1.5">
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
                 剧本名称 <span className="text-danger-500">*</span>
               </label>
               <input
@@ -567,13 +567,13 @@ export default function CreatePlaybookPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="例如: 自动化 IP 封禁响应"
                 required
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
+                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   版本号
                 </label>
                 <input
@@ -581,21 +581,21 @@ export default function CreatePlaybookPage() {
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
                   placeholder="1.0.0"
-                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
+                  className="w-full px-3.5 py-2 text-sm font-mono rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   立即激活
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsActive(!isActive)}
-                  className={`w-full py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-colors ${
+                  className={`w-full py-2 px-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                     isActive
                       ? "bg-success-500/15 border-success-500/30 text-success-700 dark:text-success-400"
-                      : "bg-surface-hover border-border-subtle text-text-tertiary"
+                      : "bg-surface-hover border-border-subtle text-text-secondary"
                   }`}
                 >
                   <div
@@ -609,7 +609,7 @@ export default function CreatePlaybookPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1.5">
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
                 功能描述
               </label>
               <textarea
@@ -617,13 +617,13 @@ export default function CreatePlaybookPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="简明描述该剧本的触发条件、执行逻辑与应急响应目的..."
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors resize-none"
+                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors resize-none"
               />
             </div>
 
             {/* Step Summary */}
             <div className="pt-2 border-t border-border-subtle">
-              <h4 className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider mb-2">
+              <h4 className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">
                 步骤概要清单 ({nodes.length})
               </h4>
               <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
@@ -644,7 +644,7 @@ export default function CreatePlaybookPage() {
           </div>
 
           {/* Flow Preview & Editor */}
-          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle flex flex-col justify-between">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-4">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-accent-600 dark:text-accent-400" />
@@ -652,14 +652,19 @@ export default function CreatePlaybookPage() {
                   DAG 流程拓扑可视化
                 </h3>
               </div>
-              <div className="flex items-center gap-1 p-0.5 rounded-xl bg-surface-hover border border-border-subtle text-xs">
+              {/* 分段控件：轨道用 bg-surface-hover，激活项是白色浮起的 pill。
+                  未激活文字必须用 secondary —— tertiary 落在 surface-hover 上
+                  浅色只有 4.34:1（低于 AA），正是 check-contrast.mjs 按根因登记的
+                  "弱文本层级放在 hover/active 背景上" 那一类。
+                  两个按钮的圆角也要一致（原为 rounded-md / rounded-lg 混用）。 */}
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-hover border border-border-subtle text-xs">
                 <button
                   type="button"
                   onClick={() => setViewMode("visual")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors font-medium ${
                     viewMode === "visual"
                       ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
+                      : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
                   <Play className="w-3 h-3" />
@@ -668,10 +673,10 @@ export default function CreatePlaybookPage() {
                 <button
                   type="button"
                   onClick={() => setViewMode("json")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors font-medium ${
                     viewMode === "json"
                       ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
+                      : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
                   <Code2 className="w-3 h-3" />
@@ -681,7 +686,7 @@ export default function CreatePlaybookPage() {
             </div>
 
             {/* Canvas / JSON Area */}
-            <div className="flex-1 min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-canvas/50 relative">
+            <div className="flex-1 min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-page relative">
               {viewMode === "visual" ? (
                 <DAGCanvas
                   definition={dagDefinition}

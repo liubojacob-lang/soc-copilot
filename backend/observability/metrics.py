@@ -193,3 +193,21 @@ def set_security_alerts_by_status(
     status: str, count: int, tenant_id: str = "default"
 ) -> None:
     security_alerts_by_status.labels(status, tenant_id).set(count)
+
+
+# ── LLM usage (T3.3) ─────────────────────────────────────────────────────
+# Token accounting per provider/model. The providers' chat_completion()
+# previously discarded the API `usage` payload entirely; these counters make
+# consumption visible in Prometheus/Grafana without changing call signatures.
+
+llm_tokens_total = Counter(
+    "soc_llm_tokens_total",
+    "Tokens consumed by LLM calls",
+    ["provider", "model", "direction"],
+)
+
+llm_requests_total = Counter(
+    "soc_llm_requests_total",
+    "Successful LLM requests by provider/model",
+    ["provider", "model"],
+)

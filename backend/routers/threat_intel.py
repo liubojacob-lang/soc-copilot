@@ -6,6 +6,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
 from dependencies.auth import get_current_user
@@ -86,7 +87,7 @@ async def get_threat_intel_stats(
             "config": {
                 "provider": "otx",
                 "enabled": service._get_otx_client() is not None,
-                "cache_ttl_hours": service.repository.__class__.__dict__,
+                "cache_ttl_hours": settings.ti_cache_ttl_hours,
             },
         }
     except Exception as e:

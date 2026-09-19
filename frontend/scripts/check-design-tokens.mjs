@@ -120,6 +120,110 @@ if (update) {
   process.exit(0);
 }
 
+// ---------------------------------------------------------------- check 3
+// Semantic aliasing guard.
+//
+// The palette is deliberately over-specified: several tokens hold the same hex on
+// purpose (status-active / status-resolved / status-success are all "go green";
+// sev-critical and status-failed are both "red"). Those are fine.
+//
+// What is NOT fine is collapsing two tokens whose *meaning* an operator must be
+// able to tell apart at a glance. That already happened once: --sev-low held the
+// same blue as accent / info / status-investigating / ai-running, so a "low
+// severity" badge looked identical to a clickable primary button. Five distinct
+// meanings shared one hue. It was fixed by moving sev-low to cyan, and this check
+// exists so it cannot come back.
+const CSS_FILE = join(ROOT, "app", "globals.css");
+const TW_CONFIG = join(ROOT, "tailwind.config.ts");
+
+/** Custom properties declared in a top-level selector block. */
+function readTokenBlock(css, selector) {
+  const start = css.indexOf(selector + " {");
+  if (start === -1) return {};
+  let depth = 0;
+  let end = start;
+  for (let i = css.indexOf("{", start); i < css.length; i++) {
+    if (css[i] === "{") depth++;
+    else if (css[i] === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+  const vars = {};
+  for (const line of css.slice(start, end).split("\n")) {
+    const m = line.match(/^\s*(--[\w-]+)\s*:\s*([^;]+);/);
+    if (m) vars[m[1]] = m[2].trim();
+  }
+  return vars;
+}
+
+const cssSrc = readFileSync(CSS_FILE, "utf-8");
+const tokenThemes = {
+  light: readTokenBlock(cssSrc, ":root"),
+  dark: readTokenBlock(cssSrc, ".dark"),
+};
+
+// accent lives in the Tailwind palette, not in a CSS variable.
+const accentBlock = readFileSync(TW_CONFIG, "utf-8").match(/accent:\s*\{([\s\S]*?)\}/);
+const accent600 = accentBlock ? (accentBlock[1].match(/600:\s*"([^"]+)"/) ?? [])[1] : null;
+
+const SEVERITY_LEVELS = ["critical", "high", "medium", "low", "info"];
+const INTERACTIVE_BLUE = [
+  ["--color-info", "info 语义色"],
+  ["--status-investigating", "status-investigating（进行中）"],
+  ["--ai-running", "ai-running（AI 运行中）"],
+];
+
+const aliasFailures = [];
+const aliasNotes = [];
+
+for (const [theme, vars] of Object.entries(tokenThemes)) {
+  // Rule A — severity levels are an ORDERED scale; two levels sharing a color makes
+  // the ordering unreadable.
+  const seen = new Map();
+  for (const lvl of SEVERITY_LEVELS) {
+    const val = vars[`--sev-${lvl}`];
+    if (!val) continue;
+    const key = val.toLowerCase();
+    if (seen.has(key)) {
+      aliasFailures.push(
+        `[${theme}] --sev-${lvl} === --sev-${seen.get(key)} (${val}) — 两个严重度等级同色，排序语义丢失`
+      );
+    } else {
+      seen.set(key, lvl);
+    }
+  }
+
+  // Rule B — sev-low must stay out of the interactive blue family. Blue means
+  // "clickable" in this product; a severity badge must never look clickable.
+  const low = vars["--sev-low"];
+  if (low) {
+    for (const [token, label] of INTERACTIVE_BLUE) {
+      if (vars[token] && vars[token].toLowerCase() === low.toLowerCase()) {
+        aliasFailures.push(
+          `[${theme}] --sev-low === ${token} (${low}) — 低危徽章与「${label}」同色，无法与"可交互"区分`
+        );
+      }
+    }
+    if (accent600 && accent600.toLowerCase() === low.toLowerCase()) {
+      aliasFailures.push(
+        `[${theme}] --sev-low === accent-600 (${low}) — 低危徽章与主按钮/链接同色`
+      );
+    }
+  }
+
+  // Informational — fully redundant token pairs (same value in every slot).
+  for (const [a, b, label] of [["--sev-info", "--sev-neutral", "severity: info / neutral"]]) {
+    const slots = ["", "-fg", "-bg", "-border"];
+    if (slots.every((s) => vars[a + s] && vars[a + s] === vars[b + s])) {
+      aliasNotes.push(`[${theme}] ${label} — 4 个槽位全部同值，是冗余 token`);
+    }
+  }
+}
+
 // ---------------------------------------------------------------- report
 const topHardcoded = [...hardcoded.entries()]
   .sort((a, b) => b[1] - a[1])
@@ -143,6 +247,26 @@ if (deadClasses.length > 0) {
   console.error("\n     Add them to tailwind.config.ts or stop using them.\n");
 } else {
   console.log("  ✅ All semantic token classes resolve to real CSS\n");
+}
+
+if (aliasFailures.length > 0) {
+  failed = true;
+  console.error(`  ❌ ${aliasFailures.length} semantic alias collision(s):`);
+  console.error(aliasFailures.map((a) => `      ${a}`).join("\n"));
+  console.error(
+    "\n     Two tokens with different meanings must not share a value.\n" +
+      "     Pick a hue from a different family (see the sev-low comment in globals.css).\n"
+  );
+} else {
+  console.log(
+    `  ✅ Severity levels distinct (${SEVERITY_LEVELS.length}) · sev-low clear of the interactive blue family\n`
+  );
+}
+
+if (aliasNotes.length > 0) {
+  console.log("  ℹ️  Redundant tokens (informational):");
+  console.log(aliasNotes.map((n) => `      ${n}`).join("\n"));
+  console.log("");
 }
 
 if (baseline && hardcodedTotal > baseline.hardcodedColorCount) {

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
  * Input 组件变体配置
  */
 const inputVariants = cva(
-  "w-full rounded-md border bg-surface-input text-text-primary placeholder:text-text-disabled transition-all duration-150 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation",
+  "w-full rounded-md border bg-surface-input text-text-primary placeholder:text-text-tertiary transition-all duration-150 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation",
   {
     variants: {
       variant: {

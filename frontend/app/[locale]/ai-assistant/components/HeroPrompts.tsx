@@ -137,11 +137,11 @@ export function HeroPrompts({ onSelectPrompt, disabled }: HeroPromptsProps) {
               key={idx}
               disabled={disabled}
               onClick={() => onSelectPrompt(item.prompt)}
-              className={`group text-left p-4 rounded-xl border border-border-subtle bg-surface-card/80 backdrop-blur-md hover:shadow-lg hover:border-border-default transition-all duration-200 hover:-translate-y-0.5 bg-gradient-to-br ${item.color} disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`group text-left p-4 rounded-xl border border-border-subtle bg-surface-card hover:shadow-lg hover:border-border-default transition-all duration-200 hover:-translate-y-0.5 bg-gradient-to-br ${item.color} disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-surface-ground/80 border border-border-subtle shadow-sm">
+                  <div className="p-2 rounded-lg bg-surface-ground border border-border-subtle shadow-sm">
                     <Icon className="w-4 h-4" />
                   </div>
                   <span

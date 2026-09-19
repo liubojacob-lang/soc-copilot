@@ -20,6 +20,7 @@ from . import (
     playbook,
     playbook_definitions,
     report,
+    root_cause,
     secrets,
     security_alerts,  # v0.9.0: External security alert ingestion
     threat_hunting,
@@ -51,6 +52,7 @@ __all__ = [
     "playbook",
     "playbook_definitions",
     "report",
+    "root_cause",
     "secrets",
     "security_alerts",  # v0.9.0: External security alert ingestion
     "threat_hunting",

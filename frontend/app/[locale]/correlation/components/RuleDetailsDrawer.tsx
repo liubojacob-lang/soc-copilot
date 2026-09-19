@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations, useLocale, useFormatter } from "next-intl";
 import {
   X,
@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { getLocalizedRule } from "@/lib/correlationRulesI18n";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export interface CorrelationRule {
   id: string;
@@ -66,6 +67,20 @@ export function RuleDetailsDrawer({
   const format = useFormatter();
   const [copiedId, setCopiedId] = useState(false);
 
+  // Lock background scroll when drawer is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
+  // Escape-to-close + focus trap, aligned with the shared Modal component
+  const drawerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(isOpen && !!rule, onClose, drawerRef);
+
   if (!isOpen || !rule) return null;
 
   const { displayName, displayDescription, displayCategory } = getLocalizedRule(rule, locale);
@@ -86,11 +101,21 @@ export function RuleDetailsDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      onMouseDown={(e) => {
+        // 仅点击遮罩本身(非内容)时关闭
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
+        ref={drawerRef}
         className="w-full max-w-xl bg-surface-card border-l border-border-subtle shadow-2xl h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-250"
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
+        // 阻止 mousedown 冒泡到遮罩(避免误关闭)
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-6 py-5 border-b border-border-subtle flex items-start justify-between gap-4 bg-surface-ground/50">

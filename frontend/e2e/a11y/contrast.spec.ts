@@ -1,0 +1,701 @@
+/**
+ * 运行时对比度闸（WCAG 2.1 AA）
+ * ============================================================================
+ * 为什么需要这一道，而不是只靠 scripts/check-contrast.mjs：
+ *
+ * check-contrast.mjs 在 **token 层**做笛卡尔积（文本层 × 表面层），它能守住
+ * "某个 token 被改坏了"，但有三类问题它从结构上就看不见：
+ *
+ *   1. **第三方组件的样式**。reactflow 的 attribution 写死 `color:#999`，
+ *      不经过我们的任何 token —— token 级闸永远发现不了它。（C 批次实测 2.72:1）
+ *   2. **组件把弱文本层级放在了非标准的底上**。比如分段控件的轨道用
+ *      bg-surface-hover，未激活文字用 text-text-tertiary，浅色只有 4.34:1。
+ *      token 级闸会把这类记为"已知债务"（因为它分不清是取值错还是用法错），
+ *      于是真实实例一直存在却不拦构建。
+ *   3. **只在特定数据形态下才渲染的分支**。cases 详情的 SLA 字段只有
+ *      `expired` 时才套红色，换个数据集就查不到；`urgent` 分支更是长期没数据命中，
+ *      浅色下 3.19:1 的 text-amber-600 一直躺在那里。
+ *
+ * 所以这道闸在**真实渲染结果**上做断言：遍历页面上每一个可见文本节点，
+ * 用它的 computed color 与逐层求出的有效背景色算对比度。这与人工审计用的是同一套
+ * 算法，只是搬进了测试里 —— 从此不必每次手写一遍审计脚本。
+ *
+ * 判定规则（WCAG 2.1 AA，1.4.3）：
+ *   - 正文（< 24px，或 < 18.66px 的非粗体）≥ 4.5:1
+ *   - 大字（≥ 24px，或 ≥ 18.66px 且 bold）≥ 3:1
+ *   - 非激活控件（disabled / aria-disabled）按规范豁免，直接跳过
+ *   - aria-hidden、不可见、opacity:0 的元素跳过
+ *
+ * 失败时输出：文本片段 / 实测值 / 要求值 / computed color / className，
+ * 足以直接定位到组件。
+ * ============================================================================
+ */
+
+import { test, expect, type Page } from "@playwright/test";
+import { login, TEST_USERS } from "../utils/auth";
+
+/** 待审计的页面。列表页 + 新建类页面是静态的；详情页的 ID 在运行时发现。 */
+const STATIC_PAGES: Array<{ label: string; path: string }> = [
+  { label: "仪表盘", path: "/" },
+  { label: "告警列表", path: "/alerts" },
+  { label: "工单列表", path: "/cases" },
+  { label: "剧本列表", path: "/playbooks" },
+  { label: "剧本定义", path: "/playbooks/definitions" },
+  { label: "剧本审批", path: "/playbooks/approvals" },
+  { label: "剧本新建", path: "/playbooks/create" },
+  { label: "威胁狩猎", path: "/threat-hunting" },
+  { label: "触发器", path: "/triggers" },
+  { label: "监控总览", path: "/monitor" },
+];
+
+const THEMES = ["light", "dark"] as const;
+type ThemeName = (typeof THEMES)[number];
+
+interface Failure {
+  text: string;
+  ratio: number;
+  required: number;
+  color: string;
+  background: string;
+  fontSize: string;
+  className: string;
+  path: string;
+}
+
+/** 浏览器侧：遍历可见文本节点并按 AA 判定。 */
+function collectFailures(): Failure[] {
+  type RGB = { r: number; g: number; b: number; a: number };
+
+  const parse = (value: string): RGB | null => {
+    const m = String(value).match(/rgba?\(([^)]+)\)/);
+    if (!m) return null;
+    const p = m[1]
+      .split(/[,\s/]+/)
+      .filter(Boolean)
+      .map(parseFloat);
+    return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+  };
+
+  const lum = (c: RGB): number => {
+    const f = (v: number) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+  };
+
+  const composite = (fg: RGB, bg: RGB): RGB => ({
+    r: fg.r * fg.a + bg.r * (1 - fg.a),
+    g: fg.g * fg.a + bg.g * (1 - fg.a),
+    b: fg.b * fg.a + bg.b * (1 - fg.a),
+    a: 1,
+  });
+
+  const ratioOf = (a: RGB, b: RGB): number => {
+    const la = lum(a);
+    const lb = lum(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  };
+
+  const isDark = document.documentElement.classList.contains("dark");
+
+  /** 逐层向上找到第一个不透明背景；找不到就用主题兜底色。 */
+  const effectiveBg = (el: Element): RGB => {
+    let n: Element | null = el;
+    while (n && n !== document.documentElement) {
+      const p = parse(getComputedStyle(n).backgroundColor);
+      if (p && p.a > 0.9) return p;
+      n = n.parentElement;
+    }
+    return isDark ? { r: 9, g: 13, b: 22, a: 1 } : { r: 248, g: 250, b: 252, a: 1 };
+  };
+
+  const out: Failure[] = [];
+  const nodes = document.querySelectorAll(
+    "p,span,h1,h2,h3,h4,h5,h6,a,button,label,td,th,li,dt,dd,code,figcaption,legend,summary"
+  );
+
+  for (let i = 0; i < nodes.length; i++) {
+    const el = nodes[i];
+    // 只看承载文本的叶子节点，避免把容器自身的 color 重复计入
+    if (el.children.length > 0) continue;
+
+    const text = (el.textContent || "").trim();
+    if (text.length < 2) continue;
+
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) continue;
+
+    const style = getComputedStyle(el);
+    if (style.visibility === "hidden" || style.display === "none") continue;
+    if (parseFloat(style.opacity) === 0) continue;
+
+    // WCAG 豁免：非激活控件；装饰性内容
+    if (el.closest('[disabled],[aria-disabled="true"],[aria-hidden="true"]')) continue;
+
+    const rawFg = parse(style.color);
+    if (!rawFg) continue;
+
+    const bg = effectiveBg(el);
+    const fg = rawFg.a < 1 ? composite(rawFg, bg) : rawFg;
+
+    const size = parseFloat(style.fontSize);
+    const weight = parseInt(style.fontWeight, 10) || 400;
+    const isLarge = size >= 24 || (size >= 18.66 && weight >= 700);
+    const required = isLarge ? 3 : 4.5;
+
+    const ratio = ratioOf(fg, bg);
+    if (ratio >= required) continue;
+
+    out.push({
+      text: text.slice(0, 40),
+      ratio: Math.round(ratio * 100) / 100,
+      required,
+      color: style.color,
+      background: `rgb(${Math.round(bg.r)}, ${Math.round(bg.g)}, ${Math.round(bg.b)})`,
+      fontSize: `${Math.round(size)}px`,
+      className: String(el.className).slice(0, 80),
+      path: `${location.pathname}#${i}`,
+    });
+  }
+
+  return out;
+}
+
+/** 设主题：注入 zustand persist 的存储值，在页面脚本执行前生效。 */
+async function useTheme(page: Page, theme: ThemeName): Promise<void> {
+  await page.addInitScript((t: string) => {
+    window.localStorage.setItem(
+      "theme-storage",
+      JSON.stringify({ state: { theme: t }, version: 0 })
+    );
+  }, theme);
+}
+
+/**
+ * 带鉴权保证的跳转。
+ *
+ * 为什么必须有这一层：整批跑（约 2 分钟、几十次登录复用）到末尾时会话会失效，
+ * 页面被重定向到 /login。**在登录页上做对比度审计是静默通过**——登录页本身没有对比度
+ * 问题，闸会报绿，看起来一切正常。这比"跳过"危险得多，所以这里把它变成**显式失败**。
+ *
+ * （第一次踩到时的现场：跳过消息里带着 url=/en/login —— 是加在跳过信息里的"现场诊断"
+ * 救了一次。教训：闸的跳过/失败信息必须能自证"它真的跑在了目标页面上"。）
+ */
+async function gotoAuthed(
+  page: Page,
+  base: string,
+  path: string,
+  admin: { username: string; password: string }
+): Promise<void> {
+  let lastUrl = "";
+  // 最多两轮：第一轮用当前会话，失败就清 cookie 走一次真实登录再来
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    await page.goto(`${base}${path}`, { waitUntil: "domcontentloaded" });
+    // ⚠️ 不能 goto 后立刻查 URL：本站的鉴权重定向发生在**客户端**（hydrate 之后），
+    // 刚 domcontentloaded 时还在目标页，约 1s 后才跳到 /login。
+    // 只查一次会漏判，接着审计就跑在登录页上并**静默通过**（这是最危险的失败模式）。
+    await page.waitForTimeout(2000);
+    lastUrl = page.url();
+    if (!/\/login/.test(lastUrl)) return;
+
+    await page.context().clearCookies();
+    await login(page, admin.username, admin.password);
+  }
+
+  throw new Error(
+    `鉴权失败：${path} 最终停在 ${lastUrl}。若继续，审计会跑在登录页上并静默通过，因此直接失败。`
+  );
+}
+
+/**
+ * 等页面文本量稳定下来。
+ *
+ * ⚠️ 这是本闸修过的最严重的一个自身缺陷：**固定等待会造成假通过**。
+ * `monitor` 页在数据到达前几乎是空的，`waitForTimeout(1800)` 时它只有骨架、
+ * 没有文字，于是审计"通过"；等数据渲染出来后实测是 **132（浅）/147（深）处不达标**。
+ * 也就是说：闸报了绿，而页面是全仓最坏的一页。
+ *
+ * 做法：轮询 `document.body.innerText.length`，连续两次变化 ≤2 即认为稳定（最多等 8s）。
+ * 比 `waitUntil:"networkidle"` 可靠 —— 本站有常驻 WebSocket，networkidle 永不达成。
+ */
+async function waitForStable(page: Page, timeoutMs = 8000): Promise<void> {
+  let prev = -1;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const len = await page.evaluate(() => document.body.innerText.length);
+    if (prev >= 0 && Math.abs(len - prev) <= 2) return;
+    prev = len;
+    await page.waitForTimeout(500);
+  }
+}
+
+/** 滚动一遍以 materialize 折叠/懒渲染内容，再回到顶部。 */
+async function sweep(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const step = window.innerHeight * 0.8;
+    for (let y = 0; y < document.body.scrollHeight && y < step * 12; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((r) => setTimeout(r, 60));
+    }
+    window.scrollTo(0, 0);
+  });
+  await page.waitForTimeout(400);
+}
+
+/** 一次访问里同时取两样东西：文本对比度失败 + 深色下的大面积浅色表面。 */
+interface PageAudit {
+  failures: Failure[];
+  surfaces: Array<{ tag: string; className: string; background: string; size: string }>;
+}
+
+/**
+ * 访问并审计一个页面。
+ *
+ * 之所以把「浅色表面」和「文本对比度」合在同一次访问里：早期版本在深色轮次跑完之后，
+ * 又**完整重访了一遍全部 12 个页面**去采浅色表面。那是纯粹的重复成本 —— 每次
+ * `gotoAuthed` 都要等 2s 的客户端鉴权重定向判定，12 个页面就是 24s 的固定开销，
+ * 再加上 sweep 与等待稳定，整轮直接翻倍。实测曾因此跑到 20.9 分钟而撞上超时。
+ * 同一个页面、同一个 DOM 状态，两次 evaluate 就够了，不需要两次访问。
+ */
+async function audit(
+  page: Page,
+  baseUrl: string,
+  label: string,
+  path: string,
+  admin: { username: string; password: string },
+  opts: { collectSurfaces?: boolean } = {}
+): Promise<PageAudit> {
+  await gotoAuthed(page, baseUrl, path, admin);
+  await waitForStable(page);
+  await sweep(page);
+  await waitForStable(page);
+  // ⚠️ 鼠标归位必须在**内容渲染完成之后**再派发一次：
+  // 登录时点过按钮，指针停在屏幕中部；若那里恰好是表格行，行上的
+  // `hover:bg-surface-hover` 会被激活 —— 实测让告警列表多出 2 处、工单列表多出 1 处。
+  // 浏览器不会因为"后来才有内容出现在指针下"而重算 :hover，只有新的鼠标事件才会，
+  // 所以只在 goto 之后归位一次是不够的。
+  await page.mouse.move(2, 2);
+  await page.waitForTimeout(250);
+
+  const failures = await page.evaluate(collectFailures);
+  for (const f of failures) f.text = `[${label}] ${f.text}`;
+
+  // 浅色表面只在深色主题下有意义（判的是"深色界面上出现浅色大块"），
+  // 所以仅在深色轮次采集，顺带省掉浅色轮次里的这次 evaluate。
+  const surfaces = opts.collectSurfaces
+    ? (await page.evaluate(collectLightSurfaces, DARK_SURFACE_ALLOWLIST)).map((s) => ({
+        ...s,
+        className: `[${label}] ${s.className}`,
+      }))
+    : [];
+
+  return { failures, surfaces };
+}
+
+/** 运行时发现详情页 ID —— 否则这类页面根本进不了闸的覆盖面。 */
+async function discoverIds(page: Page, baseUrl: string): Promise<Record<string, string>> {
+  const ids: Record<string, string> = {};
+  try {
+    const casesRes = await page.request.get(`${baseUrl}/api/v1/cases?page=1&page_size=5`);
+    if (casesRes.ok()) {
+      const body = await casesRes.json();
+      const list = body?.cases || body?.items || [];
+      if (list.length > 0) ids.caseId = list[0].id;
+    }
+  } catch {
+    /* 单页发现失败不应让整道闸失败 */
+  }
+  try {
+    const pbRes = await page.request.get(`${baseUrl}/api/playbook-definitions`);
+    if (pbRes.ok()) {
+      const body = await pbRes.json();
+      const list = Array.isArray(body) ? body : body?.items || [];
+      if (list.length > 0) ids.playbookId = list[0].id;
+    }
+  } catch {
+    /* 同上 */
+  }
+  return ids;
+}
+
+/**
+ * 深色主题下的「大面积近白表面」判据
+ * ============================================================================
+ * WCAG 1.4.11 只约束非文本元素的对比度，管不了"第三方组件完全没做主题适配"这种问题。
+ * 但这类缺陷的表现高度一致：深色界面上出现一块大面积的浅色矩形 ——
+ * 本次就是 reactflow 的 MiniMap（`.react-flow__minimap { background: #fff }`）
+ * 在画布右下角留了一块 200×150 的纯白方块。文字审计看不见它，因为那里面没有文字。
+ *
+ * 阈值是量出来的，不是拍的：在 10 个页面 × 深色下扫「面积 ≥ 4000px²、宽 ≥ 60、高 ≥ 40、
+ * 不透明度 ≥ 0.5、相对亮度 ≥ 0.55」的元素，全站恰好命中 1 处（就是那个 MiniMap），
+ * 零假阳性 —— 所以可以放心断言。
+ *
+ * 误报时怎么办：先确认它是不是真的没适配主题。若确有正当理由（例如某处刻意用白底
+ * 承载深色插画），把它加进下面的 DARK_SURFACE_ALLOWLIST 并写明原因，不要放宽阈值。
+ */
+const DARK_SURFACE_ALLOWLIST: string[] = [];
+
+// 注意：allowlist 必须作为参数传入。page.evaluate 只序列化函数本身，
+// 闭包里的模块级变量在浏览器侧是取不到的（会直接 ReferenceError）。
+function collectLightSurfaces(
+  allowlist: string[]
+): Array<{ tag: string; className: string; background: string; size: string }> {
+  const parse = (value: string) => {
+    const m = String(value).match(/rgba?\(([^)]+)\)/);
+    if (!m) return null;
+    const p = m[1]
+      .split(/[,\s/]+/)
+      .filter(Boolean)
+      .map(parseFloat);
+    return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+  };
+  const luminance = (c: { r: number; g: number; b: number }) => {
+    const f = (v: number) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+  };
+
+  const out: Array<{ tag: string; className: string; background: string; size: string }> = [];
+  const all = document.querySelectorAll("*");
+  for (let i = 0; i < all.length; i++) {
+    const el = all[i];
+    const r = el.getBoundingClientRect();
+    if (r.width < 60 || r.height < 40 || r.width * r.height < 4000) continue;
+    const style = getComputedStyle(el);
+    if (style.visibility === "hidden" || style.display === "none") continue;
+    if (parseFloat(style.opacity) === 0) continue;
+    const bg = parse(style.backgroundColor);
+    if (!bg || bg.a < 0.5) continue;
+    if (luminance(bg) < 0.55) continue;
+    const className = String(el.className).slice(0, 80);
+    if (allowlist.some((s) => className.includes(s))) continue;
+    out.push({
+      tag: el.tagName,
+      className,
+      background: style.backgroundColor,
+      size: `${Math.round(r.width)}×${Math.round(r.height)}`,
+    });
+  }
+  return out;
+}
+
+/**
+ * 交互后才出现的状态
+ * ============================================================================
+ * 静止态遍历看不到这类状态。三条实测来源：
+ *
+ *   · **切换按钮的非默认面**。`playbooks/create` 与 `definitions/[id]/edit` 的
+ *     "立即激活"按钮默认渲染 `已激活`，失败分支 `草稿` 用
+ *     `bg-surface-hover … text-text-tertiary`（浅色 4.34:1）—— 只有点一下才出现。
+ *   · **数据形态依赖**。`cases/[id]` 的 SLA `urgent` 分支（浅色 3.19:1）要靠特定数据才渲染。
+ *   · **折叠面板展开后的内容、多步向导的后几步、条件渲染的提示条**。
+ *
+ * 这类状态没法用通用遍历覆盖（不能对任意页面乱点按钮），所以用**显式探针**登记：
+ * 每条写明页面、主题、就绪锚点、以及让目标状态出现的那一次点击。
+ */
+interface InteractionProbe {
+  label: string;
+  /** 支持 {playbookId} 占位，由运行时发现的数据填充 */
+  path: string;
+  theme: ThemeName;
+  /** "表单已加载完成"的标志。编辑页的定义是异步拉的，先等它出现再找目标按钮。 */
+  ready: RegExp;
+  /** 点它，让目标状态出现 */
+  click: RegExp;
+}
+
+const INTERACTION_PROBES: InteractionProbe[] = [
+  // 正则写成双语：`playbooks/create` 把 "已激活 (Active)" 写死在代码里，
+  // 而 `definitions/[id]/edit` 走 t()，跟随语言变化。
+  // 注意本文件的页面路径都不带 locale 前缀，会被重定向到**默认语言 en** ——
+  // 所以 i18n 化的文案实际渲染成英文（这也是 i18n 泄漏能被发现的原因）。
+  {
+    label: "剧本新建·草稿态",
+    path: "/playbooks/create",
+    theme: "light",
+    ready: /JSON 源码|JSON Source/,
+    click: /已激活|Active/,
+  },
+  {
+    label: "剧本新建·草稿态",
+    path: "/playbooks/create",
+    theme: "dark",
+    ready: /JSON 源码|JSON Source/,
+    click: /已激活|Active/,
+  },
+  {
+    label: "剧本编辑·草稿态",
+    path: "/playbooks/definitions/{playbookId}/edit",
+    theme: "light",
+    ready: /保存修改|Save Changes/,
+    click: /已激活|草稿|Active|Draft/,
+  },
+  {
+    label: "剧本编辑·草稿态",
+    path: "/playbooks/definitions/{playbookId}/edit",
+    theme: "dark",
+    ready: /保存修改|Save Changes/,
+    click: /已激活|草稿|Active|Draft/,
+  },
+];
+
+/**
+ * 运行时对比度债务棘轮
+ * ============================================================================
+ * 登记在册的存量：按 **(页面, 前景色, 背景色, 字号) 这一「色对」** 分组，
+ * 每类给一个 max 上限 —— 命中且数量 ≤ max 则记为已知债务、不阻断；
+ * 未命中或超出 max 则阻断构建。
+ *
+ * **当前为空**：`监控总览` 的 284 处 / 39 类存量已在同批次全部清零
+ * （见 优化实施方案.md §16.11–16.12，以及下面这份已归档的清单）。
+ * 空表意味着**任何一处新的不达标都会直接阻断** —— 这是这道闸最严的状态。
+ *
+ * 若将来确需登记新的存量，务必带上：页面、前景、背景、字号、上限、根因，
+ * 并把「为什么容忍」和「修复归属」写清楚。**不要放宽全局阈值**，
+ * 也不要把不同形状的问题混进同一条（逐条白名单会让新问题也被放过）。
+ *
+ * ── 已归档：监控总览 284 处 / 39 类（2026-09-19 清零）────────────────────
+ * 根因一 · 白字压在 500 级实色胶囊上（MITRE 技术标签）        88 处，最低 1.92:1
+ *   → 规则：500 级色只做填充/描边，不做文字底色；文字一律走语义文本色。
+ *   → 注：500 级实色存在「亮度死区」（如 #8b5cf6 相对亮度 0.198），
+ *     黑白两色文字都无法达到 4.5:1 —— 靠换字色修不好，必须改填充策略。
+ * 根因二 · 灰阶微文案未走语义 token（gray-400/500）         102 处，最低 2.54:1
+ *   → 改 text-text-tertiary / secondary；承载它们的 bg-gray-* 一并换成 bg-surface-*。
+ * 根因三 · 图表内联颜色（blue-400 次级文字、recharts 图例）   38 处，最低 3.19:1
+ *   → recharts 默认把系列描边色当图例字色，必须显式传 formatter 覆盖。
+ * 根因四 · 徽章色对（red-600 on red-100 等）                  8 处，最低 3.11:1
+ *   → 换 severity/status 的 -fg / -bg 槽位。
+ * 另：用元素 opacity 表达强度会把文字一起淡掉（本页曾因此掉到 1.92:1），
+ *     强度必须走「填充 alpha + 同色描边」。
+ * ────────────────────────────────────────────────────────────────────
+ */
+interface RuntimeDebt {
+  page: string;
+  fg: string;
+  bg: string;
+  fs: string;
+  max: number;
+  reason: string;
+}
+
+const KNOWN_RUNTIME_DEBT: RuntimeDebt[] = [];
+/**
+ * 用例划分：**整个闸就是一个 test，只登录一次。**
+ *
+ * 为什么不用 Playwright 惯常的"一页一 test"：本仓库的登录限流是 **5 次/分钟/IP**。
+ * 实测把闸展开成 30+ 个用例后，跑到后半段会出现"login() 报告成功、页面却仍被重定向到
+ * /login"，于是要么**静默审计登录页并报绿**（最危险），要么整批失败。
+ * 收敛成一次登录后，这一类问题从根上消失，总耗时也更短。
+ *
+ * 代价：一处页面崩溃会中断整轮。所以**先收集完所有页面的失败，最后断言一次**，
+ * 每条失败都带 `[页面名]` 前缀，报告仍可直接定位。
+ */
+test.describe("运行时对比度与主题适配闸", () => {
+  const admin = TEST_USERS.admin;
+
+  test("全部页面 · 明暗双主题 · 含交互态与浅色表面", async ({ page, baseURL }) => {
+    test.setTimeout(20 * 60 * 1000);
+    const base = baseURL || "http://localhost:3003";
+    await login(page, admin.username, admin.password);
+
+    const ids = await discoverIds(page, base);
+    const targets = [...STATIC_PAGES];
+    if (ids.caseId) targets.push({ label: "工单详情", path: `/cases/${ids.caseId}` });
+    if (ids.playbookId) targets.push({ label: "剧本详情", path: `/playbooks/${ids.playbookId}` });
+
+    const failures: Failure[] = [];
+    const lightSurfaces: Array<{
+      tag: string;
+      className: string;
+      background: string;
+      size: string;
+    }> = [];
+    const skipped: string[] = [];
+
+    // ---------- 一、静止态：明暗双主题（深色轮顺带采浅色表面，不重复访问） ----------
+    for (const theme of THEMES) {
+      await useTheme(page, theme);
+      let count = 0;
+      for (const target of targets) {
+        const result = await audit(page, base, target.label, target.path, admin, {
+          collectSurfaces: theme === "dark",
+        });
+        count += result.failures.length;
+        failures.push(...result.failures);
+        lightSurfaces.push(...result.surfaces);
+      }
+      console.log(`[静止态·${theme}] 审计 ${targets.length} 个页面，不达标 ${count} 处`);
+    }
+
+    // ---------- 二、交互后才出现的状态 ----------
+    for (const probe of INTERACTION_PROBES) {
+      await useTheme(page, probe.theme);
+
+      let path = probe.path;
+      if (path.includes("{playbookId}")) {
+        if (!ids.playbookId) {
+          skipped.push(`${probe.label}[${probe.theme}]：剧本数据为空`);
+          continue;
+        }
+        path = path.replace("{playbookId}", ids.playbookId);
+      }
+
+      await gotoAuthed(page, base, path, admin);
+      await page.mouse.move(1, 1);
+
+      const ready = page.getByRole("button", { name: probe.ready }).filter({ visible: true });
+      try {
+        await ready.first().waitFor({ state: "visible", timeout: 20000 });
+      } catch {
+        skipped.push(`${probe.label}[${probe.theme}]：未渲染出就绪标志 ${probe.ready}`);
+        continue;
+      }
+
+      await sweep(page);
+
+      // filter({visible:true}) 是必须的：同文案的按钮在侧栏/移动抽屉里有隐藏副本。
+      const target = page
+        .getByRole("button", { name: probe.click })
+        .filter({ visible: true })
+        .first();
+      try {
+        await target.waitFor({ state: "visible", timeout: 15000 });
+      } catch {
+        skipped.push(`${probe.label}[${probe.theme}]：找不到可见的 ${probe.click}`);
+        continue;
+      }
+
+      await target.click();
+      await waitForStable(page);
+
+      const f = await page.evaluate(collectFailures);
+      for (const item of f) item.text = `[${probe.label}·${probe.theme}] ${item.text}`;
+      failures.push(...f);
+    }
+
+    if (skipped.length) console.log("跳过：" + skipped.join("；"));
+
+    // ---------- 断言一：深色下的浅色表面（第三方组件未适配主题） ----------
+    const surfaceReport =
+      lightSurfaces.length === 0
+        ? "无未适配主题的浅色表面"
+        : `${lightSurfaces.length} 处大面积浅色表面出现在深色主题下\n` +
+          lightSurfaces
+            .map((s) => `  · <${s.tag}> ${s.size} ${s.background}\n      ${s.className}`)
+            .join("\n") +
+          `\n\n多为第三方组件未做主题适配。优先在 app/globals.css 用语义 token 覆盖写死的颜色。`;
+    console.log("浅色表面探针：" + surfaceReport.split("\n")[0]);
+    expect.soft(lightSurfaces, surfaceReport).toEqual([]);
+
+    // ---------- 断言二：对比度（含债务棘轮） ----------
+    const { unexpected, tolerated } = applyDebtRatchet(failures);
+
+    if (tolerated.length) {
+      const total = tolerated.reduce((a, t) => a + t.count, 0);
+      console.log(
+        `已知债务（不阻断）：${total} 处 / ${tolerated.length} 类，全部在 ` +
+          `${[...new Set(tolerated.map((t) => t.page))].join("、")}`
+      );
+      for (const t of tolerated) {
+        console.log(
+          `  ×${t.count}/${t.max} ${t.sample.ratio}:1  ${t.fg} on ${t.bg} @ ${t.fs}  [${t.page}]`
+        );
+      }
+    }
+
+    expect(unexpected, formatFailures("运行时对比度（新增/超出债务上限）", unexpected)).toEqual([]);
+  });
+});
+
+interface DebtGroup {
+  page: string;
+  fg: string;
+  bg: string;
+  fs: string;
+  count: number;
+  sample: Failure;
+  max: number;
+  reason: string;
+}
+
+/**
+ * 债务棘轮：把失败按 (页面, 前景, 背景, 字号) 这一"色对"分组，与 KNOWN_RUNTIME_DEBT 比对。
+ *
+ * - 命中且数量 ≤ max → 记为已知债务，**不阻断**（存量允许存在）
+ * - 未命中，或数量 > max → 归入 unexpected，**阻断构建**（新增的问题不许溜过去）
+ *
+ * 这样闸在"存量还没清完"的情况下依然可用，同时把存量钉住只降不升。
+ */
+function applyDebtRatchet(failures: Failure[]): { unexpected: Failure[]; tolerated: DebtGroup[] } {
+  const groups = new Map<
+    string,
+    { items: Failure[]; page: string; fg: string; bg: string; fs: string }
+  >();
+  for (const f of failures) {
+    const page = (f.text.match(/^\[([^\]]+)\]/) || [, "?"])[1] as string;
+    const key = `${page}|${f.color}|${f.background}|${f.fontSize}`;
+    const g = groups.get(key);
+    if (g) g.items.push(f);
+    else groups.set(key, { items: [f], page, fg: f.color, bg: f.background, fs: f.fontSize });
+  }
+
+  const unexpected: Failure[] = [];
+  const tolerated: DebtGroup[] = [];
+
+  for (const g of groups.values()) {
+    const debt = KNOWN_RUNTIME_DEBT.find(
+      (d) => d.page === g.page && d.fg === g.fg && d.bg === g.bg && d.fs === g.fs
+    );
+    if (debt && g.items.length <= debt.max) {
+      tolerated.push({
+        page: g.page,
+        fg: g.fg,
+        bg: g.bg,
+        fs: g.fs,
+        count: g.items.length,
+        sample: g.items[0],
+        max: debt.max,
+        reason: debt.reason,
+      });
+    } else {
+      unexpected.push(...g.items);
+    }
+  }
+
+  tolerated.sort((a, b) => b.count - a.count);
+  return { unexpected, tolerated };
+}
+
+function formatFailures(scope: string, failures: Failure[]): string {
+  if (failures.length === 0) return `${scope}：无低于 AA 的文本`;
+
+  // 同类合并：同一 (页面, 前景, 背景, 字号) 只列一条 + 次数，
+  // 否则几十类并排会刷屏，反而看不清"到底要修哪几个色"。
+  const byKind = new Map<string, { count: number; sample: Failure }>();
+  for (const f of failures) {
+    const page = (f.text.match(/^\[([^\]]+)\]/) || [, "?"])[1] as string;
+    const key = `${page}|${f.color}|${f.background}|${f.fontSize}|${f.required}`;
+    const hit = byKind.get(key);
+    if (hit) hit.count++;
+    else byKind.set(key, { count: 1, sample: f });
+  }
+
+  const lines = [...byKind.entries()].map(([, { count, sample }]) => {
+    return (
+      `  · ×${count} ${sample.ratio}:1（要求 ${sample.required}:1）\n` +
+      `      color ${sample.color} on ${sample.background} @ ${sample.fontSize}\n` +
+      `      例："${sample.text}"\n` +
+      `      class: ${sample.className}`
+    );
+  });
+
+  return (
+    `${scope}：${failures.length} 处文本低于 WCAG AA（合并为 ${byKind.size} 类）\n` +
+    lines.join("\n") +
+    `\n\n若确属"存量债务"，按 (页面, 前景, 背景, 字号) 加进 KNOWN_RUNTIME_DEBT 并写明根因与上限；` +
+    `\n不要去放宽全局阈值，也不要把不同形状的问题混进同一条。`
+  );
+}

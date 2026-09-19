@@ -5,7 +5,48 @@ All notable changes to SOC Copilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2026-09-19
+
+### Security
+- **Eliminate AI heuristic hallucination**: Remove fake alert triage synthesis (`_build_heuristic_alert_response`) with simulated metrics, entropy and domains; enforce honest degraded state with clear `[AI 分析不可用]` status
+- **Trivy mock removal**: Disable mock vulnerability generation in `TrivyService.scan_image()`; raise `TrivyNotInstalledError` (503 `SCANNER_NOT_INSTALLED`) when scanner CLI is missing
+- **Dev admin backdoor removal**: Remove hardcoded backdoor credentials in `auth_service.py`
+- **Backup script hardening**: Exclude `.env*` from automated filesystem and tarball backups to prevent plaintext secret leaks; document secret exclusion by design
+- **Audit middleware fix**: Prefix `/api/v1/` to login/auth exclusion paths preventing plaintext credential leaks in audit logs
+
+### Fixed & Database
+- **Database constraints (0006)**: Add UniqueConstraint on `blocked_ips (value, type)` and `trigger_invocations.idempotency_key`; add timestamp indexes on `correlated_events` and run_id index on `playbook_approvals`
+- **Model exports**: Export `SecurityVulnerability` and `VulnerabilityNote` in `models.__init__` and `__all__`
+- **AI triage pipeline feedback loop**: Backfill asynchronous AI triage conclusions into `alert.raw_data.pipeline.ai_triage` and extract suggested severity
+- **API path alignment**: Correct broken unversioned `/api/ai/*` routes in `lib/api/ai.ts` to `/api/v1/ai/*`
+- **Schema-valid degraded payload**: Degraded alert responses used invalid enum/None values that failed `AlertAnalysisResponse` validation — turning "LLM down" into an HTTP 500 instead of a graceful degraded response; placeholders are now schema-valid (severity=medium, confidence=0) and the dead re-validating fallback raises an explicit programming-error signal
+- **Error redaction**: `security_alerts` ingest and `system_dashboard` terminate-connection no longer echo internal exception text to clients (logged with traceback instead)
+
+### Added & UI
+- **Frontend triage indicators**: Add "AI 已分诊" badge in alert lists and dedicated automated triage conclusions card in alert detail view
+- **External TI status**: Explicitly surface `provider_status: unconfigured` when OTX is not configured, displaying alert banner in UI
+- **Cases E2E test suite**: Add Playwright test coverage for security cases management flow with CI trigger workflow
+- **Cloud-Native roadmap freeze**: Freeze cloud-native features with "Demo" navigation badge and roadmap documentation
+- **Root cause analysis closed loop (T2.4)**: Wire the previously orphaned `root_cause_analyses` table and CoT prompt into an end-to-end flow — `POST /api/v1/alerts/{id}/root-cause-analysis` (refuses with 503 when the LLM is degraded instead of fabricating), history listing, analyst verdict feedback; new Root Cause tab on the alert detail page with reasoning/evidence/verification rendering (en/zh-CN)
+- **Prompt registry runtime wiring (T3.2)**: `resolve_prompt()` consults the active registry row for the mapped environment and falls back to builtins on any miss/outage; the four runtime templates (alert analysis, auto triage, report, timeline) now resolve through it, plus an idempotent seed script into dev/staging (`make db-seed`)
+- **LLM token usage metrics (T3.3)**: All six providers record `soc_llm_tokens_total{provider,model,direction}` and `soc_llm_requests_total` from API `usage` payloads that were previously discarded
+- **AI task queue hardening (T3.4)**: PriorityQueue consumption honours the persisted `priority` column (FIFO within a level); startup crash recovery re-enqueues orphaned `pending` rows and fails stale `processing` rows with an explicit reason
+- **Backend Sentry (T4.1)**: conditional `sentry-sdk` init when `SENTRY_DSN` is set, aligned with the frontend's release tag
+- **RBAC system-role seeding (T3.6)**: idempotent startup seeding of roles/permissions/role_permissions with `is_system=True`, matching the hardcoded permission matrix
+
+### Infrastructure
+- **E2E backend URL**: `global.setup.ts` honours `E2E_BACKEND_URL` instead of assuming the backend shares the frontend host on :8000; e2e workflow triggers on `release/**` push/PR
+- **Version alignment**: docker-compose `IMAGE_TAG`, k8s image tags/labels and Sentry release fallbacks unified to 0.9.4; README dead links (`MANUAL_TEST.md`/`TEST_CASES.md`) removed
+- **Prod compose limits (T4.5)**: every non-profile service now carries `deploy.resources` limits (postgres 2CPU/2G, redis 1CPU/768M above its maxmemory, nginx 1CPU/512M); full render validated with all `${VAR:?}` secret gates intact
+- **Coverage floor**: 47% → 50% (measured 51%)
+
+### Removed
+- Remove opaque binary `Scripts/email_validator.exe`
+- Remove unused components (`QuickActions.tsx`, `authStore.ts`, `notificationStore.ts`, `MonitoringDashboard.tsx`, `FilterConfig.tsx`, `PlaceholderPage.tsx`)
+- **Dead code sweep (T3.5, migration 0007)**: drop tables `event_similarities`, `on_call_schedules`, `playbook_nodes`, `playbook_edges` (zero producers/readers, downgrade recreates bare schemas); remove `kafka_broker` stub (MESSAGE_BROKER=kafka now raises a clear error), `tenant_mixin`/`tenant_query` (multi-tenant prep with no adopters), unmounted `IdempotencyMiddleware`, zero-caller resource-ownership helpers, sigma engine's fabricated-event generator, 7 never-collected backend-root test files, legacy `backend/migrations/` SQL and stray server logs
+
 ## [0.9.3] - 2026-09-13
+
 
 ### Added
 - **TOTP two-factor authentication** (RFC 6238): enroll/verify/disable, backup codes and a sudo-mode policy, so sensitive operations can require a second factor without forcing it on every login

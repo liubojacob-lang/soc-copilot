@@ -64,7 +64,8 @@ export function ClientLayout({
             initialRole={initialRole}
             initialCollapsedGroups={initialCollapsedGroups}
           />
-          {/* 内容区左 padding 跟随 --sidebar-w：展开 240px / 折叠 64px / 移动端 0。
+          {/* 内容区左 padding 跟随 --sidebar-w：展开 216px（全语系统一）/ 折叠 64px / 移动端 0。
+              注意该值不得随语言变化，否则切换语言时整块布局会平移。
               首屏加载前禁用 transition，避免从默认 padding 动画滑入引起抖动 */}
           <div
             className={cn(

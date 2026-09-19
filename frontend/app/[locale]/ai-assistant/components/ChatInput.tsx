@@ -109,7 +109,7 @@ export function ChatInput({
   return (
     <div className="w-full max-w-4xl mx-auto px-4 pb-4 pt-1 flex-shrink-0">
       {/* Floating Card Container */}
-      <div className="relative bg-surface-card/90 backdrop-blur-xl border border-border-subtle shadow-xl hover:shadow-2xl focus-within:border-ai/80 focus-within:ring-4 focus-within:ring-ai/10 rounded-2xl transition-all p-3 flex flex-col gap-2">
+      <div className="relative bg-surface-card border border-border-subtle shadow-xl hover:shadow-2xl focus-within:border-ai/80 focus-within:ring-4 focus-within:ring-ai/10 rounded-2xl transition-all p-3 flex flex-col gap-2">
         {/* Text Input */}
         <textarea
           ref={textareaRef}
@@ -131,7 +131,7 @@ export function ChatInput({
           <div className="flex items-center gap-2 relative" ref={modelPanelRef}>
             {/* Pop-up Model Selector Menu (Bottom to Top) */}
             {showModelPanel && (
-              <div className="absolute bottom-full mb-2 left-0 w-48 bg-surface-card/95 backdrop-blur-xl rounded-xl shadow-2xl border border-border-subtle z-50 overflow-hidden animate-fadeIn p-1">
+              <div className="absolute bottom-full mb-2 left-0 w-56 bg-surface-card rounded-xl shadow-2xl border border-border-default shadow-slate-900/15 dark:shadow-black/60 z-50 overflow-hidden animate-fadeIn p-1.5">
                 {/* Compact Menu Title */}
                 <div className="px-2 py-0.5 flex items-center justify-between text-[10px] font-medium text-text-muted">
                   <span>研判模型</span>
@@ -146,36 +146,44 @@ export function ChatInput({
                 </div>
 
                 {/* Auto-Route Option */}
-                {autoModel && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onModelSelect(autoModel);
-                      setShowModelPanel(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors ${
-                      selectedModel?.id === autoModel.id
-                        ? "bg-ai/10 text-ai font-medium"
-                        : "hover:bg-surface-hover text-text-secondary"
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse flex-shrink-0" />
-                      <span className="font-semibold truncate">⚡ 自动分配</span>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0 ml-1">
-                      <span className="text-[10px] px-1 py-0.5 leading-none rounded bg-ai/15 text-ai">
-                        推荐
-                      </span>
-                      {selectedModel?.id === autoModel.id && (
-                        <Check className="w-3 h-3 text-ai flex-shrink-0" />
-                      )}
-                    </div>
-                  </button>
-                )}
+                {autoModel &&
+                  (() => {
+                    const isAutoSelected =
+                      selectedModel?.id === autoModel.id ||
+                      (!selectedModel && autoModel.id === "auto");
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onModelSelect(autoModel);
+                          setShowModelPanel(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer group ${
+                          isAutoSelected
+                            ? "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-medium"
+                            : "hover:bg-surface-hover text-text-secondary hover:text-text-primary"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shrink-0" />
+                          <span className="truncate">自动分配</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span className="text-[10px] px-1.5 py-0.5 leading-none rounded font-medium bg-purple-100/80 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300">
+                            推荐
+                          </span>
+                          <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                            {isAutoSelected && (
+                              <Check className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })()}
 
                 {/* Divider */}
-                <div className="my-0.5 border-t border-border-subtle" />
+                <div className="my-1 border-t border-border-subtle" />
 
                 {/* Manual Models Selection */}
                 <div className="space-y-0.5">
@@ -184,26 +192,26 @@ export function ChatInput({
                     let shortName = "Llama 3.2 11B";
                     let tagText = "极速";
                     let tagColor =
-                      "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50";
+                      "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60";
                     let dotColor = "bg-emerald-500";
 
                     if (model.id.includes("llama-3.2")) {
                       shortName = "Llama 3.2 11B";
                       tagText = "极速";
                       tagColor =
-                        "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50";
+                        "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60";
                       dotColor = "bg-emerald-500";
                     } else if (model.id.includes("nemotron")) {
                       shortName = "Nemotron 30B";
                       tagText = "推理";
                       tagColor =
-                        "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50";
+                        "text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60";
                       dotColor = "bg-indigo-500";
                     } else if (model.id.includes("glm-4")) {
                       shortName = "GLM-4.7 Flash";
                       tagText = "长文";
                       tagColor =
-                        "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50";
+                        "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60";
                       dotColor = "bg-amber-500";
                     } else {
                       shortName = cleanModelName(model.display_name, model.provider);
@@ -218,27 +226,29 @@ export function ChatInput({
                           onModelSelect(model);
                           setShowModelPanel(false);
                         }}
-                        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors ${
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer group ${
                           isSelected
-                            ? "bg-accent-500/15 text-accent-700 dark:text-accent-300 font-medium"
-                            : "hover:bg-surface-hover text-text-secondary"
+                            ? "bg-accent-50 dark:bg-accent-950/50 text-accent-700 dark:text-accent-300 font-medium"
+                            : "hover:bg-surface-hover text-text-secondary hover:text-text-primary"
                         }`}
                       >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className={`w-1.5 h-1.5 rounded-full ${dotColor} flex-shrink-0`} />
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className={`w-2 h-2 rounded-full ${dotColor} shrink-0`} />
                           <span className="truncate">{shortName}</span>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
                           {tagText && (
                             <span
-                              className={`text-[10px] px-1 py-0.5 leading-none rounded ${tagColor}`}
+                              className={`text-[10px] px-1.5 py-0.5 leading-none rounded font-medium ${tagColor}`}
                             >
                               {tagText}
                             </span>
                           )}
-                          {isSelected && (
-                            <Check className="w-3 h-3 text-accent-600 dark:text-accent-400 flex-shrink-0" />
-                          )}
+                          <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-accent-600 dark:text-accent-400" />
+                            )}
+                          </div>
                         </div>
                       </button>
                     );
@@ -307,7 +317,11 @@ export function ChatInput({
                 className={`w-2 h-2 rounded-full ${
                   selectedModel?.id === "auto"
                     ? "bg-purple-500 animate-pulse"
-                    : "bg-emerald-500 animate-pulse"
+                    : selectedModel?.id.includes("nemotron")
+                      ? "bg-indigo-500"
+                      : selectedModel?.id.includes("glm")
+                        ? "bg-amber-500"
+                        : "bg-emerald-500"
                 }`}
               />
               <span className="max-w-[120px] truncate">

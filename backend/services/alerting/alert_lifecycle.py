@@ -49,13 +49,24 @@ class AlertLifecycleService:
         }
         return mapping.get((raw_status or "").lower(), AlertStatus.NEW)
 
+    @staticmethod
+    def _parse_alert_id(alert_id: Any) -> int | None:
+        try:
+            return int(alert_id)
+        except (ValueError, TypeError):
+            return None
+
     async def get_alert_lifecycle(self, alert_id: str) -> AlertLifecycleResponse | None:
         """获取告警生命周期信息"""
         from models.alert_note import AlertNoteModel
         from models.security_alert import SecurityAlert
 
+        parsed_id = self._parse_alert_id(alert_id)
+        if parsed_id is None:
+            return None
+
         result = await self.db.execute(
-            select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            select(SecurityAlert).where(SecurityAlert.id == parsed_id)
         )
         alert = result.scalar_one_or_none()
 
@@ -68,7 +79,7 @@ class AlertLifecycleService:
         # 获取告警备注
         notes_result = await self.db.execute(
             select(AlertNoteModel)
-            .where(AlertNoteModel.alert_id == alert_id)
+            .where(AlertNoteModel.alert_id == parsed_id)
             .order_by(AlertNoteModel.created_at.desc())
         )
         note_models = notes_result.scalars().all()
@@ -93,6 +104,27 @@ class AlertLifecycleService:
                 escalated_at=alert.escalated_at or alert.updated_at or alert.created_at,
             )
 
+        # 获取关联事件工单 (related cases)
+        from models.case import CaseAlertAssociation, CaseModel
+
+        cases_stmt = (
+            select(CaseModel)
+            .join(CaseAlertAssociation, CaseAlertAssociation.case_id == CaseModel.id)
+            .where(CaseAlertAssociation.alert_id == parsed_id)
+            .where(CaseModel.deleted_at.is_(None))
+        )
+        cases_res = await self.db.execute(cases_stmt)
+        related_cases = [
+            {
+                "id": c.id,
+                "title": c.title,
+                "severity": c.severity,
+                "status": c.status,
+                "created_at": c.created_at.isoformat() if getattr(c, "created_at", None) else None,
+            }
+            for c in cases_res.scalars().all()
+        ]
+
         return AlertLifecycleResponse(
             alert_id=str(alert.id),
             status=self._normalize_status(alert.status),
@@ -113,6 +145,7 @@ class AlertLifecycleService:
             first_seen=alert.created_at,
             last_seen=alert.updated_at,
             timeline=timeline,
+            related_cases=related_cases,
         )
 
     async def _build_timeline(self, alert) -> list[dict[str, Any]]:
@@ -173,8 +206,12 @@ class AlertLifecycleService:
         """更新告警状态"""
         from models.security_alert import SecurityAlert
 
+        parsed_id = self._parse_alert_id(alert_id)
+        if parsed_id is None:
+            return None
+
         result = await self.db.execute(
-            select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            select(SecurityAlert).where(SecurityAlert.id == parsed_id)
         )
         alert = result.scalar_one_or_none()
 
@@ -229,8 +266,12 @@ class AlertLifecycleService:
         """分配告警"""
         from models.security_alert import SecurityAlert
 
+        parsed_id = self._parse_alert_id(alert_id)
+        if parsed_id is None:
+            return None
+
         result = await self.db.execute(
-            select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            select(SecurityAlert).where(SecurityAlert.id == parsed_id)
         )
         alert = result.scalar_one_or_none()
 
@@ -256,8 +297,12 @@ class AlertLifecycleService:
         """解决告警"""
         from models.security_alert import SecurityAlert
 
+        parsed_id = self._parse_alert_id(alert_id)
+        if parsed_id is None:
+            return None
+
         result = await self.db.execute(
-            select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            select(SecurityAlert).where(SecurityAlert.id == parsed_id)
         )
         alert = result.scalar_one_or_none()
 
@@ -285,8 +330,12 @@ class AlertLifecycleService:
         """升级告警"""
         from models.security_alert import SecurityAlert
 
+        parsed_id = self._parse_alert_id(alert_id)
+        if parsed_id is None:
+            return None
+
         result = await self.db.execute(
-            select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            select(SecurityAlert).where(SecurityAlert.id == parsed_id)
         )
         alert = result.scalar_one_or_none()
 
@@ -313,9 +362,13 @@ class AlertLifecycleService:
         from models.alert_note import AlertNoteModel
         from models.security_alert import SecurityAlert
 
+        parsed_id = self._parse_alert_id(alert_id)
+        if parsed_id is None:
+            raise ValueError(f"Alert {alert_id} not found")
+
         # Verify alert exists
         result = await self.db.execute(
-            select(SecurityAlert).where(SecurityAlert.id == alert_id)
+            select(SecurityAlert).where(SecurityAlert.id == parsed_id)
         )
         alert = result.scalar_one_or_none()
 
@@ -324,7 +377,7 @@ class AlertLifecycleService:
 
         # Create note in database
         note_model = AlertNoteModel(
-            alert_id=alert_id,
+            alert_id=parsed_id,
             user_id=user_id,
             username=username,
             content=note.content,

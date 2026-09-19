@@ -199,15 +199,12 @@ Respond with JSON that matches the schema above:"""
 
         raise RuntimeError("Unexpected end of generate_structured")
 
-    async def analyze_alert_with_rag(
-        self, alert_data: dict[str, Any], use_rag: bool = True
-    ) -> AIAnalysisResult:
+    async def analyze_alert(self, alert_data: dict[str, Any]) -> AIAnalysisResult:
         """
-        Analyze alert using AI with optional RAG enhancement.
+        Analyze an alert with the configured LLM, falling back to heuristics.
 
         Args:
             alert_data: Alert information
-            use_rag: Whether to use RAG for context enhancement
 
         Returns:
             AI analysis result
@@ -228,10 +225,6 @@ Source: {safe_alert.get("source", "N/A")}
 Type: {safe_alert.get("alert_type", "N/A")}
 """
 
-            # RAG context: vector search is not yet wired (see roadmap);
-            # keep the placeholder so the prompt template stays intact.
-            rag_context = ""
-
             system_prompt = """You are an expert SOC analyst. Analyze this security alert and provide:
 1. Concise summary
 2. Root cause analysis
@@ -241,8 +234,6 @@ Type: {safe_alert.get("alert_type", "N/A")}
 6. MITRE ATT&CK techniques (if applicable)"""
 
             user_prompt = f"""{alert_summary}
-
-{rag_context}
 
 Respond in JSON format with these fields:
 - summary (string)
@@ -822,43 +813,3 @@ def get_enhanced_ai_service() -> EnhancedAIService:
     if _enhanced_ai_service is None:
         _enhanced_ai_service = EnhancedAIService()
     return _enhanced_ai_service
-
-
-# -------- Extension Interfaces --------
-
-
-class IncidentAnalysisRequest(BaseModel):
-    incident_id: str
-    title: str
-    summary: str
-    indicators: list[str] = []
-    raw_events: list[dict] = []
-
-
-class IncidentAnalysisResult(BaseModel):
-    incident_id: str
-    risk_score: float
-    root_cause: str
-    recommendations: list[str] = []
-    confidence: float = 0.0
-
-
-class AIIncidentAnalyzer:
-    """Adapter interface for future LLM-backed incident analysis providers."""
-
-    async def analyze_incident(
-        self, request: IncidentAnalysisRequest
-    ) -> IncidentAnalysisResult:
-        raise NotImplementedError
-
-
-class VectorStoreProvider:
-    """Extension point for vector DB integrations (pgvector/milvus/faiss/etc)."""
-
-    async def upsert_documents(self, namespace: str, documents: list[dict]) -> None:
-        raise NotImplementedError
-
-    async def similarity_search(
-        self, namespace: str, query: str, top_k: int = 5
-    ) -> list[dict]:
-        raise NotImplementedError

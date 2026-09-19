@@ -48,6 +48,7 @@ export function LanguageSwitcher() {
 
   return (
     <div
+      data-testid="lang-switcher"
       className="inline-flex items-center p-0.5 rounded-lg bg-gray-100 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/80 text-xs font-medium select-none shadow-subtle shrink-0 whitespace-nowrap"
       role="radiogroup"
       aria-label={tLanguage("switch")}
@@ -67,7 +68,11 @@ export function LanguageSwitcher() {
               ${
                 isActive
                   ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-subtle font-semibold"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                  : // 未激活态的 text-gray-500 落在 bg-gray-100 底上只有 4.39:1（低于 AA）。
+                    // 这个组件出现在每一个页面顶部，是全站影响面最大的一处不达标。
+                    // 改用 text-text-secondary：与该底色 9.45:1，且在深色下自动切到对应的次级色。
+                    // 与激活态的区分不靠"颜色更淡"，而靠白底 + font-semibold（视觉层级更稳）。
+                    "text-text-secondary hover:text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
               }
               ${isSwitching ? "opacity-60 cursor-wait" : "cursor-pointer"}
             `}

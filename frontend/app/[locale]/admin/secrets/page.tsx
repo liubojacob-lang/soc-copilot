@@ -49,6 +49,17 @@ export default function SecretsPage() {
     fetchSecrets();
   }, [router]);
 
+  // Lock background scroll when any modal is open
+  useEffect(() => {
+    if (showCreateModal || showDeleteModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [showCreateModal, showDeleteModal]);
+
   const fetchSecrets = async () => {
     try {
       const data = await authFetchJSON<{ items: Secret[]; total: number }>("/api/secrets");
@@ -259,8 +270,16 @@ export default function SecretsPage() {
 
       {/* Create Secret Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowCreateModal(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               {t("createNewSecret")}
             </h3>

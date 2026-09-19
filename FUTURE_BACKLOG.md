@@ -33,3 +33,5 @@
 - [ ] 用户级 AI 配额与成本看板
 - [ ] 修复 test_websocket_pubsub_bridge 环境依赖型失败（加 Redis 前置条件）
 - [ ] chat 路径接入熔断器（与结构化生成一致）
+- [ ] 真实 K8s/容器数据源接入：替换 cloud-native 模块中的示例连接器，对接生产环境集群 API 与真实事件流
+

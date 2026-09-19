@@ -11,13 +11,9 @@ import {
   Lock,
   AlertCircle,
   Download,
-  Smartphone,
-  ChevronRight,
   ArrowLeft,
   ArrowRight,
   ShieldAlert,
-  Sparkles,
-  QrCode,
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
@@ -25,7 +21,7 @@ import { Input } from "@/components/common/Input";
 import { Modal } from "@/components/common/Modal";
 import { OtpInput } from "@/components/common/OtpInput";
 import { useToast } from "@/components/Toast";
-import { authFetchJSON } from "@/lib/auth";
+import { authFetchJSON, loadAuthState } from "@/lib/auth";
 
 interface TOTPStatus {
   is_enabled: boolean;
@@ -45,8 +41,19 @@ export function TwoFactorSettings() {
   const t = useTranslations("twoFactor");
   const { showToast } = useToast();
 
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<TOTPStatus>({ is_enabled: false, policy: "sudo" });
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<TOTPStatus>(() => {
+    if (typeof window !== "undefined") {
+      const authUser = loadAuthState()?.user;
+      if (authUser) {
+        return {
+          is_enabled: Boolean(authUser.is_totp_enabled),
+          policy: (authUser.totp_policy as "sudo" | "login") || "sudo",
+        };
+      }
+    }
+    return { is_enabled: false, policy: "sudo" };
+  });
 
   // Setup Modal Wizard State
   const [showSetupModal, setShowSetupModal] = useState(false);
@@ -76,7 +83,6 @@ export function TwoFactorSettings() {
 
   const fetchStatus = async () => {
     try {
-      setLoading(true);
       const data = await authFetchJSON<TOTPStatus>("/api/v1/auth/2fa/status");
       setStatus(data);
     } catch (err: unknown) {
@@ -261,176 +267,79 @@ export function TwoFactorSettings() {
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden transition-all duration-200">
+    <div className="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden transition-colors duration-150">
       {/* 2FA Main Banner */}
       {!status.is_enabled ? (
         /* ================= UNPROTECTED / DISABLED STATE ================= */
         <div className="divide-y divide-gray-100 dark:divide-gray-800/80">
           {/* Top Hero Banner */}
-          <div className="p-6 sm:p-8 bg-gradient-to-r from-amber-500/[0.06] via-amber-500/[0.02] to-transparent dark:from-amber-500/[0.08] dark:via-transparent dark:to-transparent flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="flex items-start gap-4 sm:gap-5">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 shadow-subtle">
-                <Shield className="w-7 h-7" />
+          <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5 min-w-0">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60">
+                <Shield className="w-5 h-5" />
               </div>
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                     {t("badgeSecurity")}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100/90 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/80">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100/90 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/80">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                     {t("statusDisabled")}
                   </span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
                   {t("title")}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl pt-0.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   {t("description")}
                 </p>
               </div>
             </div>
 
             {/* Primary Action Button */}
-            <div className="shrink-0 flex flex-col items-start lg:items-end justify-center gap-2.5">
-              <button
-                type="button"
-                onClick={handleStartSetup}
-                disabled={setupLoading}
-                className="group relative inline-flex items-center justify-center gap-3 px-6 h-12 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-accent-600 via-indigo-600 to-accent-600 bg-[length:200%_auto] hover:bg-right transition-all duration-300 shadow-md shadow-accent-600/25 hover:shadow-lg hover:shadow-accent-600/35 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer border border-white/15 dark:border-white/10"
-              >
-                {setupLoading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                ) : (
-                  <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center transition-transform group-hover:scale-110">
-                    <KeyRound className="w-3.5 h-3.5 text-white transition-transform group-hover:rotate-12" />
-                  </div>
-                )}
-                <span className="tracking-tight font-semibold">
-                  {setupLoading ? (isZh ? "正在初始化..." : "Initializing...") : t("enableButton")}
-                </span>
-                {!setupLoading && (
-                  <ArrowRight className="w-4 h-4 text-white/70 transition-transform group-hover:translate-x-1 group-hover:text-white" />
-                )}
-              </button>
-
-              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-medium px-1">
-                <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span>
-                  {isZh
-                    ? "推荐所有管理员启用 · 增强账户防线"
-                    : "Recommended for all admins · RFC 6238"}
-                </span>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={handleStartSetup}
+              disabled={setupLoading}
+              className="shrink-0 inline-flex items-center justify-center gap-2 px-4 h-10 rounded-lg text-sm font-semibold text-white bg-accent-600 hover:bg-accent-700 transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
+            >
+              {setupLoading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <KeyRound className="w-4 h-4" />
+              )}
+              <span className="whitespace-nowrap">
+                {setupLoading ? (isZh ? "正在初始化..." : "Initializing...") : t("enableButton")}
+              </span>
+            </button>
           </div>
 
-          {/* Feature Highlights Grid */}
-          <div className="p-6 sm:p-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-              {/* Feature 1: Compatibility */}
-              <div className="p-4.5 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 flex flex-col justify-between">
-                <div className="space-y-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/70 dark:border-blue-900/50 flex items-center justify-center shadow-subtle">
-                    <Smartphone className="w-4.5 h-4.5" />
-                  </div>
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                    {t("feature1Title")}
-                  </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                    {t("feature1Desc")}
-                  </p>
-                </div>
-                <div className="pt-3.5 mt-3.5 border-t border-gray-200/60 dark:border-gray-800 flex flex-wrap gap-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700">
-                    Google Auth
-                  </span>
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700">
-                    Microsoft
-                  </span>
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700">
-                    1Password
-                  </span>
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700">
-                    Bitwarden
-                  </span>
-                </div>
-              </div>
-
-              {/* Feature 2: Policy */}
-              <div className="p-4.5 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 flex flex-col justify-between">
-                <div className="space-y-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-900/50 flex items-center justify-center shadow-subtle">
-                    <ShieldCheck className="w-4.5 h-4.5" />
-                  </div>
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                    {t("feature2Title")}
-                  </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                    {t("feature2Desc")}
-                  </p>
-                </div>
-                <div className="pt-3.5 mt-3.5 border-t border-gray-200/60 dark:border-gray-800 flex flex-wrap gap-1.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
-                  <span className="px-2 py-0.5 rounded bg-emerald-50/80 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800">
-                    Sudo Mode
-                  </span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-50/80 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800">
-                    Login Protection
-                  </span>
-                </div>
-              </div>
-
-              {/* Feature 3: Recovery */}
-              <div className="p-4.5 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 flex flex-col justify-between">
-                <div className="space-y-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/70 dark:border-amber-900/50 flex items-center justify-center shadow-subtle">
-                    <Lock className="w-4.5 h-4.5" />
-                  </div>
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                    {t("feature3Title")}
-                  </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                    {t("feature3Desc")}
-                  </p>
-                </div>
-                <div className="pt-3.5 mt-3.5 border-t border-gray-200/60 dark:border-gray-800 flex flex-wrap gap-1.5 text-[10px] font-medium text-amber-800 dark:text-amber-300">
-                  <span className="px-2 py-0.5 rounded bg-amber-50/80 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800">
-                    {isZh ? "8 组一次性离线凭证" : "8 Single-Use Codes"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Tip Banner */}
-            <div className="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 flex items-start gap-3 text-xs text-amber-800 dark:text-amber-300">
-              <Sparkles className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span className="leading-relaxed">{t("securityTip")}</span>
-            </div>
-          </div>
+          {/* Feature highlights now live inside the setup wizard to keep this surface compact */}
         </div>
       ) : (
         /* ================= ACTIVE / ENABLED STATE ================= */
         <div className="divide-y divide-gray-100 dark:divide-gray-800/80">
           {/* Top Hero Banner */}
-          <div className="p-6 sm:p-8 bg-gradient-to-r from-emerald-500/[0.06] via-emerald-500/[0.02] to-transparent dark:from-emerald-500/[0.08] dark:via-transparent dark:to-transparent flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="flex items-start gap-4 sm:gap-5">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 shadow-subtle">
-                <ShieldCheck className="w-7 h-7" />
+          <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5 min-w-0">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60">
+                <ShieldCheck className="w-5 h-5" />
               </div>
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                     {t("badgeSecurity")}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     {t("statusProtected")}
                   </span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
                   {t("title")}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl pt-0.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   {t("description")}
                 </p>
               </div>
@@ -463,10 +372,7 @@ export function TwoFactorSettings() {
                   <span>{t("disableButton")}</span>
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium px-1">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{isZh ? "双因素防护实时在线" : "Protection active and healthy"}</span>
-              </div>
+              {/* 运行状态已由标题旁的徽章表达，不再重复占位 */}
             </div>
           </div>
 

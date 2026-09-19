@@ -31,6 +31,7 @@ export interface SecurityAlertItem extends Omit<SecurityAlert, "severity" | "sta
   resolution_note?: string | null;
   resolved_at?: string | null;
   resolved_by?: string | null;
+  raw_data?: Record<string, any> | null;
 }
 
 export interface AlertNoteItem {
@@ -135,11 +136,20 @@ export async function getAlertStats(): Promise<SecurityAlertStats> {
   return apiClient.get<SecurityAlertStats>("/api/v1/security-alerts/stats/summary");
 }
 
+export interface RelatedCaseItem {
+  id: string;
+  title: string;
+  severity: string;
+  status: string;
+  created_at: string | null;
+}
+
 export async function getAlertLifecycle(id: string | number): Promise<{
   notes: AlertNoteItem[];
   timeline: TimelineEvent[];
   status?: string;
   assigned_to?: string;
+  related_cases?: RelatedCaseItem[];
 }> {
   return apiClient.get(`/api/v1/alerts/${id}/lifecycle`);
 }

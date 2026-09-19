@@ -484,6 +484,10 @@ export function DAGCanvas({
       >
         <Background color="#94a3b8" gap={16} />
         <Controls showZoom={true} showFitView={true} showInteractive={!readonly} />
+        {/* MiniMap 的底色与蒙版不走 props —— reactflow 默认写死白底，
+            在深色主题下会是一块纯白方块。统一由 app/globals.css 的
+            .react-flow__minimap / .react-flow__minimap-mask 规则按语义 token 接管，
+            避免同一件事有两个来源。 */}
         <MiniMap
           nodeColor={(node) => {
             const data = node.data as NodeData;
@@ -502,7 +506,6 @@ export function DAGCanvas({
                 return "#cbd5e1";
             }
           }}
-          maskColor="rgba(0, 0, 0, 0.1)"
         />
       </ReactFlow>
     </div>

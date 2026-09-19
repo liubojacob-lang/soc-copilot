@@ -9,6 +9,7 @@ from services.history_service import HistoryService
 from services.impact_service import ImpactAnalysisService, get_degraded_impact
 from services.ioc_hits_service import IOCHitsService
 from services.llm_retry import get_llm_retry_service
+from services.prompt_resolution import resolve_prompt
 from services.threat_intel_service import ThreatIntelService, get_degraded_threat_intel
 from utils.ioc_extract import IOCs, extract_iocs
 
@@ -27,6 +28,34 @@ IOC HANDLING RULES:
 - DO NOT fabricate IOCs that don't exist in the input
 - DO NOT output hashes or IPs that are not present in the raw log
 - The iocs field should merge your findings with iocs_local"""
+
+
+# Builtin user-prompt template (T3.2): overridable via an active
+# "timeline_reconstruction" row in the prompt registry. Keep placeholders stable.
+_TIMELINE_USER_PROMPT_BUILTIN = """Parse this log and create a security timeline:
+{type_hint}
+
+Raw Log:
+{raw_log}
+
+Pre-extracted IOCs (Local Regex):
+- IPs: {ips_str}
+- Domains: {domains_str}
+- URLs: {urls_str}
+- Hashes: {hashes_str}
+
+IMPORTANT: These IOCs are pre-extracted from the input. You may only add NEW IOCs that are actually present in the raw log text above.
+
+Provide:
+1. timeline: ordered events with timestamp, type, description, key_fields
+2. suspicious_top5: 5 most suspicious events with reasoning
+3. next_steps: investigation recommendations
+
+For suspicious events, include:
+- timestamp
+- description
+- reasoning: why this event is suspicious
+- severity: high/medium/low"""
 
 
 class TimelineService:
@@ -73,30 +102,27 @@ class TimelineService:
 
         type_hint = f"\nLog Type: {log_type}" if log_type else "\nLog Type: Auto-detect"
 
-        prompt = f"""Parse this log and create a security timeline:
-{type_hint}
-
-Raw Log:
-{raw_log}
-
-Pre-extracted IOCs (Local Regex):
-- IPs: {', '.join(local_iocs.ips) if local_iocs.ips else 'None'}
-- Domains: {', '.join(local_iocs.domains) if local_iocs.domains else 'None'}
-- URLs: {', '.join(local_iocs.urls[:5])}{'...' if len(local_iocs.urls) > 5 else '' if local_iocs.urls else 'None'}
-- Hashes: {', '.join(local_iocs.hashes[:3])}{'...' if len(local_iocs.hashes) > 3 else '' if local_iocs.hashes else 'None'}
-
-IMPORTANT: These IOCs are pre-extracted from the input. You may only add NEW IOCs that are actually present in the raw log text above.
-
-Provide:
-1. timeline: ordered events with timestamp, type, description, key_fields
-2. suspicious_top5: 5 most suspicious events with reasoning
-3. next_steps: investigation recommendations
-
-For suspicious events, include:
-- timestamp
-- description
-- reasoning: why this event is suspicious
-- severity: high/medium/low"""
+        # T3.2: the template is overridable via an active
+        # "timeline_reconstruction" row in the prompt registry.
+        template = await resolve_prompt(
+            "timeline_reconstruction", _TIMELINE_USER_PROMPT_BUILTIN
+        )
+        prompt = template.format(
+            type_hint=type_hint,
+            raw_log=raw_log,
+            ips_str=", ".join(local_iocs.ips) if local_iocs.ips else "None",
+            domains_str=", ".join(local_iocs.domains)
+            if local_iocs.domains
+            else "None",
+            urls_str=", ".join(local_iocs.urls[:5])
+            + ("..." if len(local_iocs.urls) > 5 else "")
+            if local_iocs.urls
+            else "None",
+            hashes_str=", ".join(local_iocs.hashes[:3])
+            + ("..." if len(local_iocs.hashes) > 3 else "")
+            if local_iocs.hashes
+            else "None",
+        )
 
         result, model_used, degraded = await self.llm_service.generate_structured(
             prompt=prompt,

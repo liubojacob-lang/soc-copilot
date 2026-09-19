@@ -20,6 +20,7 @@
     },
     "mitre": "MITRE",
     "recentResults": "Recent Results",
+    "recentResultsEmpty": "No hunt runs yet",
     "run": "Run",
     "running": "Running",
     "severity": {

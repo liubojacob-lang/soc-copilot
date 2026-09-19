@@ -39,11 +39,13 @@ export function PageHeader({
   inline = false,
 }: PageHeaderProps) {
   const headerCtx = useHeader();
+  const setHeaderData = headerCtx?.setHeaderData;
+  const resetHeaderData = headerCtx?.resetHeaderData;
 
   useEffect(() => {
-    if (inline || !headerCtx) return;
+    if (inline || !setHeaderData) return;
 
-    headerCtx.setHeaderData({
+    setHeaderData({
       title,
       subtitle,
       badge,
@@ -51,11 +53,15 @@ export function PageHeader({
       actions,
       backButton,
     });
+  }, [title, subtitle, badge, apiStatus, actions, backButton, inline, setHeaderData]);
 
+  // Reset header data ONLY when unmounting
+  useEffect(() => {
+    if (inline || !resetHeaderData) return;
     return () => {
-      headerCtx.resetHeaderData();
+      resetHeaderData();
     };
-  }, [title, subtitle, badge, apiStatus, actions, backButton, inline, headerCtx]);
+  }, [inline, resetHeaderData]);
 
   if (!inline) {
     return null;

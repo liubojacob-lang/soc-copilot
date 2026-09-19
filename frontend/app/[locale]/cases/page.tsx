@@ -540,7 +540,7 @@ export default function CasesPage() {
                 setPage(1);
               }}
               placeholder={t("cases.searchPlaceholder")}
-              className="w-full pl-9 pr-4 py-2 text-sm bg-surface-input border border-border-default rounded-lg text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all"
+              className="w-full pl-9 pr-4 py-2 text-sm bg-surface-input border border-border-default rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all"
             />
           </div>
 

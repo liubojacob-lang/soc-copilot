@@ -1,6 +1,6 @@
 # SOC Copilot - Security Operations Center Intelligent Analysis Platform
 
-[![Version](https://img.shields.io/badge/version-v0.9.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.9.4-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/node.js-20+-green.svg)](https://nodejs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
@@ -108,6 +108,13 @@ SOC Copilot is an intelligent analysis workbench designed for Security Operation
   - **Action**: HTTP requests, Slack notifications
   - **Control**: Manual approval, delay
 - Execution modes: `dry_run` (simulation) / `apply` (actual execution)
+
+### 7. Cloud-Native Security (Demo / Connector Roadmap)
+
+- Container and Kubernetes security management dashboard
+- Integrations: Trivy image vulnerability scanner (real host CLI integration)
+- Falco alert ingestion endpoint
+- Multi-cloud and Kubernetes cluster inventory (currently sample connector data; production live-connector integration planned on roadmap)
 
 ---
 
@@ -356,8 +363,6 @@ soc-copilot/
 │   └── package.json
 ├── data/                       # Dev SQLite database (prod uses PostgreSQL)
 ├── docs/                       # Documentation
-├── MANUAL_TEST.md              # Manual Test Documentation
-├── TEST_CASES.md               # Test Cases
 └── README.md                   # Project Description
 ```
 
@@ -527,8 +532,7 @@ This project has undergone comprehensive security optimization. [View Full Repor
 
 ## Related Documentation
 
-- [MANUAL_TEST.md](./MANUAL_TEST.md) - Manual Test Documentation
-- [TEST_CASES.md](./TEST_CASES.md) - Test Cases
+- [CHANGELOG.md](./CHANGELOG.md) - Version history
 - [API Documentation](http://localhost:8000/docs) - Interactive API Documentation (backend must be running)
 - [`openapi.json`](./openapi.json) - Full machine-readable spec (269 paths / 314 operations)
 - [docs/api-retry-policy.md](./docs/api-retry-policy.md) - Rate limits & retry policy

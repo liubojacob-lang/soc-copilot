@@ -42,13 +42,18 @@ import {
   Tag,
   Info,
   Calendar,
+  Briefcase,
+  Sparkles,
 } from "lucide-react";
 import { loadAuthState } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/common/Button";
 import { Card, BackButton } from "@/components/common";
+import { Modal } from "@/components/common/Modal";
+import { createCase } from "@/lib/api/cases";
 import { AIAnalysisPanel } from "@/components/alerts/AIAnalysisPanel";
+import { RootCauseSection } from "@/components/alerts/RootCauseSection";
 import { RelatedAlertsPanel } from "@/components/alerts/RelatedAlertsPanel";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useToast } from "@/components/Toast";
@@ -377,7 +382,7 @@ function NotesSection({
           onChange={(e) => setNewNote(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           placeholder={t("addNotePlaceholder")}
-          className="flex-1 px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all"
+          className="flex-1 px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all"
         />
         <Button
           onClick={handleSubmit}
@@ -416,21 +421,93 @@ function NotesSection({
 }
 
 // ── Triage Panel ───────────────────────────────────────
+//
+// 设计规则（对应 UI设计优化方案 P0-2）：
+//
+//  1. 全屏只保留 **一个实心主按钮** —— 状态机的"前进"动作，也就是最高频操作。
+//     主按钮统一用 accent（蓝），因为蓝色在本产品里的语义是"可操作"，
+//     不承载任何严重度含义；状态语义由上方 Badge 承载。
+//
+//  2. "升级"是正常的、负责任的分诊动作，**绝不复用 danger 红**。
+//     红色在全站只代表"严重/失败"（与 --sev-critical 同值），
+//     把它涂在"升级"上等于告诉操作员"别点这个"——压制的正是应当鼓励的行为。
+//
+//  3. 次级操作一律中性描边。语义色只上图标与文字，不上整块填色，
+//     避免多个彩色按钮互相争夺注意力、把权重与操作频次弄反。
+//
+//  4. 终态动作（已解决 / 误报）单击不可逆，统一走二次确认后才提交。
+
+/** 状态机里唯一的"前进"动作：每个状态至多一个 */
+const ADVANCE_ACTION: Record<string, string | undefined> = {
+  new: "investigating",
+  investigating: "resolved",
+  escalated: "resolved",
+};
+
+/** 动作文案 —— 用动词短语描述"点了会发生什么"，不复述状态名 */
+const ACTION_I18N_KEY: Record<string, string> = {
+  investigating: "actionInvestigating",
+  resolved: "actionResolved",
+  false_positive: "actionFalsePositive",
+  escalated: "actionEscalated",
+  new: "actionReopen",
+};
+
+/** 终态动作：不可逆，需二次确认 */
+const TERMINAL_STATUSES = new Set(["resolved", "false_positive"]);
+
+function actionIcon(status: string, className: string): React.ReactNode {
+  switch (status) {
+    case "investigating":
+      return <Activity className={className} />;
+    case "resolved":
+      return <CheckCircle className={className} />;
+    case "false_positive":
+      return <XCircle className={className} />;
+    // 升级 = 呈报/转派，是正向流转，用 Send 而不是警告三角
+    case "escalated":
+      return <Send className={className} />;
+    default:
+      return <RotateCcw className={className} />;
+  }
+}
 
 function TriagePanel({
   currentStatus,
   onStatusChange,
+  onCreateCase,
   isUpdating,
 }: {
   currentStatus?: string;
   onStatusChange: (status: string) => void;
+  onCreateCase?: () => void;
   isUpdating: boolean;
 }) {
   const t = useTranslations("alerts.detail");
+  const tCommon = useTranslations("common");
   const tStatus = useTranslations("status");
   const status = currentStatus || "new";
   const transitions = STATUS_TRANSITIONS[status] || [];
   const statusLabel = (s: string) => tStatus(STATUS_I18N_KEY[s] || "unknown");
+  const actionLabel = (s: string) => t(ACTION_I18N_KEY[s] as never) as string;
+
+  const [pendingConfirm, setPendingConfirm] = useState<string | null>(null);
+
+  const advance = ADVANCE_ACTION[status];
+  const secondaries = transitions.filter((s) => s !== advance);
+
+  const run = (next: string) => {
+    if (next === "escalated" && onCreateCase) {
+      onCreateCase();
+    } else {
+      onStatusChange(next);
+    }
+  };
+
+  const request = (next: string) => {
+    if (TERMINAL_STATUSES.has(next)) setPendingConfirm(next);
+    else run(next);
+  };
 
   return (
     <Card className="p-4 sm:p-5">
@@ -446,49 +523,284 @@ function TriagePanel({
           </Badge>
         </div>
 
-        {/* Transition buttons */}
-        <div className="grid grid-cols-2 gap-2">
-          {transitions.map((nextStatus) => {
-            let variant: "primary" | "secondary" | "outline" | "danger" = "secondary";
-            let customClass = "";
-            if (nextStatus === "resolved") {
-              variant = "primary";
-              customClass = "bg-status-success text-text-inverse hover:opacity-90";
-            } else if (nextStatus === "escalated") {
-              variant = "danger";
-            } else if (nextStatus === "false_positive") {
-              variant = "outline";
-            }
+        {/* 唯一主操作 —— 状态机的"前进"动作 */}
+        {advance && (
+          <Button
+            onClick={() => request(advance)}
+            disabled={isUpdating}
+            size="md"
+            variant="primary"
+            className="w-full justify-center text-xs font-semibold"
+            leftIcon={actionIcon(advance, "w-4 h-4")}
+          >
+            {actionLabel(advance)}
+          </Button>
+        )}
 
-            return (
+        {/* 次级操作 —— 中性描边，不做彩色填充 */}
+        {secondaries.length > 0 && (
+          <div className={cn("grid gap-2", secondaries.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
+            {secondaries.map((nextStatus) => (
               <Button
                 key={nextStatus}
-                onClick={() => onStatusChange(nextStatus)}
+                onClick={() => request(nextStatus)}
                 disabled={isUpdating}
                 size="sm"
-                variant={variant}
-                className={cn("w-full text-xs font-medium justify-center", customClass)}
-                leftIcon={
-                  nextStatus === "resolved" ? (
-                    <CheckCircle className="w-3.5 h-3.5" />
-                  ) : nextStatus === "false_positive" ? (
-                    <XCircle className="w-3.5 h-3.5" />
-                  ) : nextStatus === "investigating" ? (
-                    <Activity className="w-3.5 h-3.5" />
-                  ) : nextStatus === "escalated" ? (
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                  ) : (
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  )
-                }
+                variant="outline"
+                className="w-full justify-center text-xs font-medium text-text-secondary"
+                leftIcon={actionIcon(nextStatus, "w-3.5 h-3.5 text-text-tertiary")}
               >
-                {statusLabel(nextStatus)}
+                {actionLabel(nextStatus)}
               </Button>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {/* 状态机说明 —— 降低"该点哪个"的决策成本 */}
+        <p className="text-[11px] leading-relaxed text-text-tertiary">{t("triageHint")}</p>
       </div>
+
+      {/* 终态动作二次确认 */}
+      <Modal
+        open={pendingConfirm !== null}
+        onClose={() => setPendingConfirm(null)}
+        title={t("confirmStatusTitle")}
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setPendingConfirm(null)}>
+              {tCommon("cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              isLoading={isUpdating}
+              onClick={() => {
+                const next = pendingConfirm;
+                setPendingConfirm(null);
+                if (next) run(next);
+              }}
+            >
+              {tCommon("confirm")}
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-text-secondary">
+          {t("confirmStatusBody", { status: pendingConfirm ? statusLabel(pendingConfirm) : "" })}
+        </p>
+      </Modal>
     </Card>
+  );
+}
+
+// ── Related Cases Panel ────────────────────────────────
+
+function RelatedCasesPanel({
+  cases,
+}: {
+  cases?: Array<{
+    id: string;
+    title: string;
+    severity: string;
+    status: string;
+    created_at?: string | null;
+  }>;
+}) {
+  const t = useTranslations("alerts.detail");
+  return (
+    <Card className="p-4 sm:p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold tracking-tight text-text-primary flex items-center gap-2">
+          <Briefcase className="w-4 h-4 text-accent-600 dark:text-accent-400" />
+          <span>{t("relatedCasesTitle") || "关联事件工单"}</span>
+          {cases && cases.length > 0 && (
+            <span className="px-1.5 py-0.2 text-[11px] bg-accent-500/20 text-accent-600 rounded-full font-semibold">
+              {cases.length}
+            </span>
+          )}
+        </h3>
+      </div>
+
+      {/* 这里此前还有一个「升级为工单」按钮，与页头那个是**同一个动作**，
+          却用了两种权重（页头实心主按钮 / 卡片描边小按钮）。
+          同一动作在同一屏出现两次、且主次不一，用户会以为它们是两件事。
+          现在卡片只做"结果展示"，唯一入口收敛到页头。 */}
+      {!cases || cases.length === 0 ? (
+        <div className="py-2">
+          <p className="text-xs text-text-tertiary">
+            {t("noRelatedCases") || "当前告警暂未关联任何事件工单"}
+          </p>
+          <p className="mt-1 text-[11px] text-text-muted">{t("noRelatedCasesHint")}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {cases.map((c) => (
+            <a
+              key={c.id}
+              href={`/cases/${c.id}`}
+              className="block p-2.5 rounded-lg border border-border-subtle bg-surface-ground hover:border-accent-500/50 hover:bg-surface-hover transition-colors"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-text-primary truncate">{c.title}</span>
+                <Badge size="xs" severity={c.severity as any}>
+                  {c.severity}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 mt-1 text-[11px] text-text-muted">
+                <span className="capitalize">{c.status}</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ── Create Case Modal ──────────────────────────────────
+
+interface CreateCaseModalProps {
+  open: boolean;
+  onClose: () => void;
+  alert: {
+    id: number | string;
+    title: string;
+    description?: string | null;
+    severity?: string | null;
+    source?: string | null;
+  };
+  onSuccess: (caseId: string) => void;
+}
+
+function CreateCaseModal({ open, onClose, alert, onSuccess }: CreateCaseModalProps) {
+  const t = useTranslations("alerts.detail");
+  const tCommon = useTranslations("common");
+  const [title, setTitle] = useState(`[Alert #${alert.id}] ${alert.title}`);
+  const [description, setDescription] = useState(
+    alert.description || `Escalated from security alert #${alert.id} (${alert.source || "unknown"})`
+  );
+  const [severity, setSeverity] = useState<"critical" | "high" | "medium" | "low">(
+    (["critical", "high", "medium", "low"].includes((alert.severity || "").toLowerCase())
+      ? (alert.severity || "").toLowerCase()
+      : "medium") as any
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTitle(`[Alert #${alert.id}] ${alert.title}`);
+      setDescription(
+        alert.description ||
+          `Escalated from security alert #${alert.id} (${alert.source || "unknown"})`
+      );
+      setSeverity(
+        (["critical", "high", "medium", "low"].includes((alert.severity || "").toLowerCase())
+          ? (alert.severity || "").toLowerCase()
+          : "medium") as any
+      );
+      setError(null);
+    }
+  }, [open, alert]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const created = await createCase({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        severity,
+        alert_ids: [alert.id],
+      });
+      onSuccess(created.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create case");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={
+        <div className="flex items-center gap-2">
+          <Briefcase className="w-5 h-5 text-accent-600 dark:text-accent-400" />
+          <span>{t("createCaseModalTitle") || "升级为事件调查工单"}</span>
+        </div>
+      }
+      size="lg"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 dark:bg-rose-900/20 dark:border-rose-800 dark:text-rose-300 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-xs font-semibold text-text-secondary mb-1">
+            {tCommon("title") || "工单标题"} *
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-text-secondary mb-1">
+            {tCommon("severity") || "严重级别"}
+          </label>
+          <select
+            value={severity}
+            onChange={(e) => setSeverity(e.target.value as any)}
+            className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-text-secondary mb-1">
+            {tCommon("description") || "调查描述"}
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600"
+          />
+        </div>
+
+        <div className="p-3 bg-surface-ground rounded-lg border border-border-subtle text-xs text-text-muted flex items-center gap-2">
+          <Info className="w-4 h-4 text-accent-500 shrink-0" />
+          <span>
+            {t("createCaseHint") || `此工单将自动关联告警 #${alert.id}，并录入事件调查时间线。`}
+          </span>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
+          <Button variant="secondary" size="sm" type="button" onClick={onClose} disabled={loading}>
+            {tCommon("cancel") || "取消"}
+          </Button>
+          <Button variant="primary" size="sm" type="submit" isLoading={loading}>
+            {t("createCaseConfirm") || "确认升级工单"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -515,7 +827,10 @@ export default function AlertDetailPage() {
   );
 
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "notes">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "notes" | "rootCause">(
+    "overview"
+  );
+  const [showCreateCaseModal, setShowCreateCaseModal] = useState(false);
 
   // Auth
   useEffect(() => {
@@ -531,6 +846,24 @@ export default function AlertDetailPage() {
   const { data: lifecycle } = useAlertLifecycle(alertId);
   const updateAlert = useUpdateAlert();
   const addNote = useAddAlertNote();
+
+  // ── 概览字段清单 ─────────────────────────────────────
+  // 先把字段声明成数据再渲染，才能把"有值/无值"分开处理：
+  // 有值的进网格，无值的折叠为一行计数，不再各占一个等宽槽位。
+  const overviewFields = [
+    { label: t("fieldSourceIP"), value: alert?.source_ip, mono: true },
+    { label: t("fieldDestIP"), value: alert?.destination_ip, mono: true },
+    { label: t("fieldAgent"), value: alert?.agent_name },
+    { label: t("fieldRuleID"), value: alert?.rule_id, mono: true },
+    { label: t("fieldEventType"), value: alert?.event_type },
+    { label: t("fieldProtocol"), value: alert?.protocol },
+    { label: t("fieldRuleLevel"), value: alert?.rule_level?.toString() },
+    // 有结构化 MITRE 时改由下方专门区块呈现，避免重复
+    ...(alert && !alert.mitre_tactics?.length
+      ? [{ label: t("fieldMITRE"), value: alert.rule_mitre || undefined, mono: false }]
+      : []),
+  ];
+  const overviewEmptyCount = overviewFields.filter((f) => !f.value).length;
 
   // Status change handler
   const handleStatusChange = useCallback(
@@ -599,14 +932,25 @@ export default function AlertDetailPage() {
 
   return (
     <div className="min-h-screen bg-surface-ground pb-12">
-      {/* Header */}
+      {/* Header — Linear/Vercel style */}
       <div className="bg-surface-card border-b border-border-subtle shadow-subtle">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-start gap-4">
-            <BackButton fallbackUrl="/alerts" label={tCommon("back")} className="mt-0.5 shrink-0" />
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-4">
+          {/* Ghost breadcrumb back link */}
+          <BackButton
+            fallbackUrl="/alerts"
+            label={tCommon("back")}
+            variant="ghost"
+            className="mb-2 -ml-1"
+          />
 
+          {/* Title + badges + refresh */}
+          <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
+              {/* Title inline with severity/status badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-text-primary leading-snug">
+                  {alert.title}
+                </h1>
                 <Badge severity={mapSeverityBadge(alert.severity)} variant="pill">
                   {severityLabel(alert.severity)}
                 </Badge>
@@ -614,9 +958,7 @@ export default function AlertDetailPage() {
                   {statusLabel(alert.status)}
                 </Badge>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-text-primary">
-                {alert.title}
-              </h1>
+              {/* Meta info row */}
               <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-text-muted">
                 <span className="flex items-center gap-1 font-mono">
                   <Server className="w-3.5 h-3.5" />
@@ -639,15 +981,27 @@ export default function AlertDetailPage() {
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => refetch()}
-              title={tCommon("refresh")}
-              aria-label={tCommon("refresh")}
-            >
-              <RefreshCw className="w-4 h-4 text-text-muted" />
-            </Button>
+            {/* Actions — top-right, aligned with title row */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setShowCreateCaseModal(true)}
+                leftIcon={<Briefcase className="w-4 h-4" />}
+                className="bg-accent-600 hover:bg-accent-700 text-white"
+              >
+                <span>{t("createCase") || "升级为工单"}</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => refetch()}
+                title={tCommon("refresh")}
+                aria-label={tCommon("refresh")}
+              >
+                <RefreshCw className="w-4 h-4 text-text-muted" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -670,6 +1024,47 @@ export default function AlertDetailPage() {
               </Card>
             )}
 
+            {/* AI Pre-triage Card (T2.5) */}
+            {Boolean((alert.raw_data as any)?.pipeline?.ai_triage) && (
+              <Card className="p-5 border-purple-200 dark:border-purple-900/50 bg-gradient-to-r from-purple-50/50 to-transparent dark:from-purple-950/20">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <h3 className="text-sm font-semibold tracking-tight text-text-primary">
+                      AI 自动化分诊结论
+                    </h3>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200">
+                      后台预分诊
+                    </span>
+                  </div>
+                  {Boolean((alert.raw_data as any)?.pipeline?.ai_suggested_severity) && (
+                    <span className="text-xs text-text-muted">
+                      建议严重度:{" "}
+                      <span className="font-semibold uppercase text-purple-700 dark:text-purple-300">
+                        {(alert.raw_data as any).pipeline.ai_suggested_severity}
+                      </span>
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs sm:text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
+                  {(alert.raw_data as any)?.pipeline?.ai_triage?.summary}
+                </p>
+                <div className="flex items-center gap-4 mt-3 text-[11px] text-text-muted">
+                  {Boolean((alert.raw_data as any)?.pipeline?.ai_triage?.completed_at) && (
+                    <span>
+                      分诊时间:{" "}
+                      {new Date(
+                        (alert.raw_data as any).pipeline.ai_triage.completed_at
+                      ).toLocaleString()}
+                    </span>
+                  )}
+                  {Boolean((alert.raw_data as any)?.pipeline?.ai_triage?.model_used) && (
+                    <span>模型: {(alert.raw_data as any).pipeline.ai_triage.model_used}</span>
+                  )}
+                </div>
+              </Card>
+            )}
+
             {/* AI Analysis — "AI 怎么看 / 我该做什么"（真实调用 analyze-alert，不预置结论） */}
             <AIAnalysisPanel
               alert={{
@@ -678,7 +1073,9 @@ export default function AlertDetailPage() {
                 description: alert.description,
                 source: alert.source,
                 severity: alert.severity,
+                raw_log: (alert as any).raw_log || (alert as any).raw_data || null,
               }}
+              onAddNote={handleAddNote}
             />
 
             {/* Tabs: Overview / Timeline / Notes */}
@@ -689,6 +1086,7 @@ export default function AlertDetailPage() {
                   { key: "overview", label: t("tabOverview") },
                   { key: "timeline", label: t("tabTimeline") },
                   { key: "notes", label: t("tabNotes") },
+                  { key: "rootCause", label: t("tabRootCause") },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -714,21 +1112,27 @@ export default function AlertDetailPage() {
               <div className="p-5 sm:p-6">
                 {activeTab === "overview" && (
                   <div className="space-y-6">
-                    {/* Technical Details Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
-                      <DetailItem label={t("fieldSourceIP")} value={alert.source_ip} mono />
-                      <DetailItem label={t("fieldDestIP")} value={alert.destination_ip} mono />
-                      <DetailItem label={t("fieldAgent")} value={alert.agent_name} />
-                      <DetailItem label={t("fieldRuleID")} value={alert.rule_id} mono />
-                      <DetailItem label={t("fieldEventType")} value={alert.event_type} />
-                      <DetailItem label={t("fieldProtocol")} value={alert.protocol} />
-                      <DetailItem
-                        label={t("fieldRuleLevel")}
-                        value={alert.rule_level?.toString()}
-                      />
-                      {/* 有结构化 MITRE 时改由下方专门区块呈现，避免重复 */}
-                      {!alert.mitre_tactics?.length && (
-                        <DetailItem label={t("fieldMITRE")} value={alert.rule_mitre || undefined} />
+                    {/* Technical Details Grid
+                        此前 8 个字段**全部**渲染，其中 5 个是 N/A，却仍各占一个等宽槽位
+                        —— 用户必须"扫过 5 个 N/A 才能找到 3 个真值"。
+                        现在只渲有值的字段，空字段折叠成一行"另有 N 项无数据"。 */}
+                    <div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+                        {overviewFields
+                          .filter((f) => f.value)
+                          .map((f) => (
+                            <DetailItem
+                              key={f.label}
+                              label={f.label}
+                              value={f.value}
+                              mono={f.mono}
+                            />
+                          ))}
+                      </div>
+                      {overviewEmptyCount > 0 && (
+                        <p className="mt-3 text-[11px] text-text-muted">
+                          {t("overviewEmptyFields", { count: overviewEmptyCount })}
+                        </p>
                       )}
                     </div>
 
@@ -809,6 +1213,8 @@ export default function AlertDetailPage() {
                     isAdding={addNote.isPending}
                   />
                 )}
+
+                {activeTab === "rootCause" && <RootCauseSection alertId={alert.id} />}
               </div>
             </Card>
           </div>
@@ -819,6 +1225,7 @@ export default function AlertDetailPage() {
             <TriagePanel
               currentStatus={alert.status}
               onStatusChange={handleStatusChange}
+              onCreateCase={() => setShowCreateCaseModal(true)}
               isUpdating={updateAlert.isPending}
             />
 
@@ -895,6 +1302,9 @@ export default function AlertDetailPage() {
               </Card>
             )}
 
+            {/* Related Cases — 关联事件调查工单（纯展示；创建入口在页头唯一一处） */}
+            <RelatedCasesPanel cases={lifecycle?.related_cases} />
+
             {/* Related Alerts — 同一资产/源 IP 的其他告警（真实后端过滤，非编造关联度） */}
             <RelatedAlertsPanel
               alertId={alert.id}
@@ -905,6 +1315,26 @@ export default function AlertDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Case Modal */}
+      {alert && (
+        <CreateCaseModal
+          open={showCreateCaseModal}
+          onClose={() => setShowCreateCaseModal(false)}
+          alert={{
+            id: alert.id,
+            title: alert.title,
+            description: alert.description,
+            severity: alert.severity,
+            source: alert.source,
+          }}
+          onSuccess={(newCaseId) => {
+            setShowCreateCaseModal(false);
+            showToast(t("caseCreatedSuccess") || "已成功创建并升级为事件调查工单", "success");
+            router.push(`/cases/${newCaseId}`);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -925,9 +1355,14 @@ function DetailItem({
       <span className="text-text-muted text-xs">{label}</span>
       <p
         className={cn(
+          // 尺寸统一交给父容器的 text-xs sm:text-sm —— 值一律同字号。
+          // （此前 mono 分支额外加了 text-xs，导致同一网格里 IP 是 12px、
+          //   其他值是 14px，视觉上像是两级信息。）
           "mt-0.5 text-text-primary font-medium",
-          mono && "font-mono text-xs",
-          !value && "text-text-disabled italic font-normal"
+          // 技术标识符（IP / 哈希 / 规则 ID）用等宽 + 等宽数字，
+          // 逐位比对时字形宽度一致才数得清楚。
+          mono && "font-mono tabular-nums",
+          !value && "text-text-tertiary font-normal"
         )}
       >
         {value || "N/A"}
@@ -940,7 +1375,11 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-start gap-2">
       <span className="text-text-muted text-xs whitespace-nowrap">{label}</span>
-      <span className="text-text-primary font-medium text-xs text-right break-all">{value}</span>
+      {/* break-all 会在任意字符处断行（把日期、ID 切得看不出结构）；
+          overflow-wrap:anywhere 只在放不下时才断，且配合 tabular-nums 让数字列对齐 */}
+      <span className="text-right text-xs font-medium tabular-nums text-text-primary [overflow-wrap:anywhere]">
+        {value}
+      </span>
     </div>
   );
 }

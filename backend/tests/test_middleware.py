@@ -1,14 +1,12 @@
 """Unit tests for Middleware components."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from fastapi import Request, Response
 from starlette.types import Receive, Scope, Send
 
 from middleware.audit_middleware import AuditMiddleware
-from middleware.authorization_middleware import ResourceAuthorizationMiddleware
-from middleware.idempotency_middleware import IdempotencyMiddleware
 from middleware.trace_middleware import TraceIDMiddleware
 
 
@@ -189,154 +187,6 @@ class TestAuditMiddleware:
                 assert call_kwargs is not None
 
 
-class TestResourceAuthorizationMiddleware:
-    """Tests for ResourceAuthorizationMiddleware."""
-
-    @pytest.mark.asyncio
-    async def test_allows_public_endpoints(self, mock_app):
-        """Test that public endpoints are allowed without auth."""
-        middleware = ResourceAuthorizationMiddleware(mock_app)
-
-        scope = {
-            "type": "http",
-            "method": "GET",
-            "path": "/health",
-            "headers": [],
-            "state": {},
-        }
-
-        receive = AsyncMock()
-        send = AsyncMock()
-
-        await middleware(scope, receive, send)
-
-        # Should pass through without error
-
-    @pytest.mark.asyncio
-    async def test_checks_admin_role_for_admin_endpoints(self, mock_app):
-        """Test that admin endpoints require admin role."""
-        middleware = ResourceAuthorizationMiddleware(mock_app)
-
-        scope = {
-            "type": "http",
-            "method": "GET",
-            "path": "/api/admin/settings",
-            "headers": [],
-            "state": {"user_id": "user-123", "user_role": "analyst"},
-        }
-
-        receive = AsyncMock()
-        send = AsyncMock()
-
-        # Should return 403 for non-admin
-        await middleware(scope, receive, send)
-
-        # Check response status (should be 403)
-        # The send function should have been called with 403 status
-
-    @pytest.mark.asyncio
-    async def test_allows_admin_to_admin_endpoints(self, mock_app):
-        """Test that admin can access admin endpoints."""
-        middleware = ResourceAuthorizationMiddleware(mock_app)
-
-        scope = {
-            "type": "http",
-            "method": "GET",
-            "path": "/api/admin/settings",
-            "headers": [],
-            "state": {"user_id": "admin-123", "user_role": "admin"},
-        }
-
-        receive = AsyncMock()
-        send = AsyncMock()
-
-        await middleware(scope, receive, send)
-
-        # Should pass through
-
-
-class TestIdempotencyMiddleware:
-    """Tests for IdempotencyMiddleware."""
-
-    @pytest.mark.asyncio
-    async def test_allows_requests_without_idempotency_key(self, mock_app):
-        """Test that requests without idempotency key pass through."""
-        middleware = IdempotencyMiddleware(mock_app)
-
-        scope = {
-            "type": "http",
-            "method": "POST",
-            "path": "/api/alerts",
-            "headers": [],
-            "state": {},
-        }
-
-        receive = AsyncMock()
-        send = AsyncMock()
-
-        await middleware(scope, receive, send)
-
-        # Should pass through
-
-    @pytest.mark.asyncio
-    async def test_caches_response_for_idempotent_request(self, mock_app):
-        """Test that middleware processes requests with idempotency key."""
-        middleware = IdempotencyMiddleware(mock_app)
-
-        idempotency_key = "test-key-123"
-        scope = {
-            "type": "http",
-            "method": "POST",
-            "path": "/api/alerts",
-            "headers": [(b"idempotency-key", idempotency_key.encode())],
-            "state": {},
-        }
-
-        receive = AsyncMock()
-        send = AsyncMock()
-
-        await middleware(scope, receive, send)
-
-    @pytest.mark.asyncio
-    async def test_returns_cached_response_for_duplicate_request(self, mock_app):
-        """Test that middleware handles duplicate idempotency key."""
-        middleware = IdempotencyMiddleware(mock_app)
-
-        idempotency_key = "test-key-456"
-        scope = {
-            "type": "http",
-            "method": "POST",
-            "path": "/api/alerts",
-            "headers": [(b"idempotency-key", idempotency_key.encode())],
-            "state": {},
-        }
-
-        receive = AsyncMock()
-        send = AsyncMock()
-
-        await middleware(scope, receive, send)
-
-    @pytest.mark.asyncio
-    async def test_only_applies_to_mutating_methods(self, mock_app):
-        """Test that idempotency only applies to POST, PUT, PATCH, DELETE."""
-        middleware = IdempotencyMiddleware(mock_app)
-
-        idempotency_key = "test-key-789"
-
-        scope = {
-            "type": "http",
-            "method": "GET",
-            "path": "/api/alerts",
-            "headers": [(b"idempotency-key", idempotency_key.encode())],
-            "state": {},
-        }
-
-        receive = AsyncMock()
-        send = AsyncMock()
-
-        await middleware(scope, receive, send)
-
-
 class TestMiddlewareChain:
     """Tests for middleware chain integration."""
 
@@ -346,7 +196,6 @@ class TestMiddlewareChain:
         # Build middleware chain
         app = TraceIDMiddleware(mock_app)
         app = AuditMiddleware(app)
-        app = ResourceAuthorizationMiddleware(app)
 
         scope = {
             "type": "http",
@@ -388,3 +237,82 @@ class TestMiddlewareChain:
         # Should propagate error
         with pytest.raises(ValueError):
             await app(scope, receive, send)
+
+
+class TestRoutingBoundary:
+    """App-boundary behaviour for unmatched paths and CORS preflight.
+
+    A former ``@app.options("/{path:path}")`` catch-all made Starlette report
+    every unmatched GET as 405 (path matched, method did not). Preflight is now
+    left to CORSMiddleware, so 404 must come back for unknown routes.
+    """
+
+    @pytest.mark.integration
+    async def test_unmatched_path_returns_404_not_405(self, client):
+        response = await client.get("/api/v1/definitely-not-a-route")
+        assert response.status_code == 404
+
+    @pytest.mark.integration
+    async def test_cors_preflight_is_still_answered(self, client):
+        response = await client.options(
+            "/api/v1/cases",
+            headers={
+                "origin": "http://localhost:13000",
+                "access-control-request-method": "POST",
+                "access-control-request-headers": "content-type",
+            },
+        )
+        assert response.status_code == 200
+        assert "access-control-allow-methods" in response.headers
+
+
+class TestMetricsAuthMiddleware:
+    """Guard on /metrics and /metrics/prometheus."""
+
+    @staticmethod
+    async def _downstream(request):
+        return Response(content=b"metrics", status_code=200)
+
+    async def _dispatch(self, path, headers=None, token="", environment="development"):
+        from middleware.metrics_auth_middleware import MetricsAuthMiddleware
+
+        request = MagicMock()
+        request.url = Mock(path=path)
+        request.headers = headers or {}
+        with patch("middleware.metrics_auth_middleware.settings") as settings:
+            settings.metrics_token = token
+            settings.environment = environment
+            return await MetricsAuthMiddleware(self._downstream).dispatch(
+                request, self._downstream
+            )
+
+    async def test_allowed_when_no_token_configured(self):
+        response = await self._dispatch("/metrics", environment="development")
+        assert response.status_code == 200
+
+    async def test_missing_credentials_are_rejected(self):
+        response = await self._dispatch("/metrics", token="s3cret")
+        assert response.status_code == 401
+        assert response.headers.get("www-authenticate") == "Bearer"
+
+    async def test_bearer_token_grants_access(self):
+        response = await self._dispatch(
+            "/metrics/prometheus",
+            headers={"authorization": "Bearer s3cret"},
+            token="s3cret",
+        )
+        assert response.status_code == 200
+
+    async def test_production_without_token_hides_the_endpoint(self):
+        response = await self._dispatch("/metrics", environment="production")
+        assert response.status_code == 404
+
+    async def test_other_paths_are_untouched(self):
+        response = await self._dispatch("/api/v1/cases", token="s3cret")
+        assert response.status_code == 200
+
+    @pytest.mark.integration
+    async def test_metrics_still_readable_in_development(self, client):
+        response = await client.get("/metrics")
+        assert response.status_code == 200
+        assert "soc_copilot" in response.text or response.text.strip()

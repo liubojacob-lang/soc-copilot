@@ -22,11 +22,20 @@ from db.session import Base
 # access to the values within the .ini file in use.
 config = context.config
 
-# Allow DATABASE_URL to override the default SQLite URL in alembic.ini.
+# 连接串只从 DATABASE_URL 读取。alembic.ini 不再保留任何硬编码地址，
+# 缺失时直接失败而不是回退 —— 否则漏配会把迁移打到错的库（审计 F-003）。
 import os
 
-if os.getenv("DATABASE_URL"):
-    config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
+_database_url = os.getenv("DATABASE_URL")
+
+if not _database_url:
+    raise RuntimeError(
+        "DATABASE_URL is not set, and alembic.ini no longer carries a fallback URL "
+        "(security audit F-003). Export DATABASE_URL before running alembic, or use "
+        "./Scripts/sim.sh, which injects it from .env.local-sim."
+    )
+
+config.set_main_option("sqlalchemy.url", _database_url)
 
 # Import all models to ensure they are registered with Base
 # F1-7a: Added comprehensive model imports for tenant isolation
@@ -44,12 +53,10 @@ import models.blocked_ip  # noqa: F401
 import models.case  # noqa: F401
 import models.correlated_event  # noqa: F401
 import models.correlation_rule  # noqa: F401
-import models.event_similarity  # noqa: F401
 import models.history  # noqa: F401
 import models.ioc_hit  # noqa: F401
 import models.marketplace  # noqa: F401
 import models.monitor_history  # noqa: F401
-import models.on_call_schedule  # noqa: F401
 import models.playbook_approval  # noqa: F401
 import models.playbook_definition  # noqa: F401
 import models.playbook_node_attempt  # noqa: F401

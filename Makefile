@@ -255,6 +255,7 @@ db-seed:
 	@echo "🌱 Seeding database with initial data..."
 	cd backend && source ../venv/bin/activate && python init_ai_models.py 2>/dev/null || true
 	cd backend && source ../venv/bin/activate && python init_correlation_rules.py 2>/dev/null || true
+	cd backend && source ../venv/bin/activate && python -m scripts.seed_prompt_registry 2>/dev/null || true
 	@echo "✅ Database seeded"
 
 db-shell:

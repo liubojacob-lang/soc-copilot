@@ -96,7 +96,7 @@ export function SeverityPieChart({
           {tChart("title")}
         </h3>
         {total !== undefined && (
-          <span className="text-xs text-gray-400 dark:text-gray-500">
+          <span className="text-xs text-text-tertiary">
             {tMonitor("total")}: {format.number(total)}
           </span>
         )}

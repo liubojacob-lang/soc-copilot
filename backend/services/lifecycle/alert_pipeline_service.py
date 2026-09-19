@@ -34,6 +34,7 @@ from sqlalchemy import select
 
 from core.lifecycle import LifecycleService, ServicePriority
 from core.logger import get_logger
+from services.prompt_resolution import resolve_prompt
 
 logger = get_logger(__name__)
 
@@ -201,9 +202,14 @@ class AlertPipelineService(LifecycleService):
                 f"title={sanitize_prompt_input(alert.title or '', max_length=300)}\n"
                 f"description={sanitize_prompt_input(alert.description or '', max_length=2000)}"
             )
+            # T3.2: triage template overridable via an active "alert_triage"
+            # row in the prompt registry.
+            triage_template = await resolve_prompt(
+                "alert_triage", _TRIAGE_PROMPT_TEMPLATE
+            )
             task_id = await get_ai_task_service().submit_task(
                 task_type=AITaskType.ALERT_ANALYSIS,
-                prompt=_TRIAGE_PROMPT_TEMPLATE.format(alert_block=alert_block),
+                prompt=triage_template.format(alert_block=alert_block),
                 input_data={
                     "alert_id": str(alert.id),
                     "source": alert.source,

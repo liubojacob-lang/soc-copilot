@@ -111,7 +111,7 @@ function SidebarLink({
       href={item.path}
       onClick={handleClick}
       aria-current={active ? "page" : undefined}
-      title={collapsed ? label : undefined}
+      title={label}
       className={cn(
         "group relative flex items-center gap-2.5 rounded-lg text-[13px] transition-colors duration-150",
         collapsed ? "justify-center h-9 w-9 mx-auto" : "h-9 px-2.5",
@@ -132,7 +132,12 @@ function SidebarLink({
           active ? "text-accent-600 dark:text-accent-400" : "text-text-tertiary"
         )}
       />
-      <span className="sidebar-label truncate">{label}</span>
+      <span className="sidebar-label truncate flex-1 min-w-0">{label}</span>
+      {!collapsed && item.badge && (
+        <span className="sidebar-label shrink-0 ml-auto px-1.5 py-0.2 text-[10px] font-semibold tracking-wider uppercase rounded bg-severity-medium-bg text-severity-medium-fg border border-severity-medium-border">
+          {item.badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -200,13 +205,12 @@ function NavContent({
 
   return (
     <nav
-      aria-label="Main navigation"
+      aria-label={t("mainNavigation")}
       className="sidebar-scrollbar flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 space-y-2.5"
     >
       {groups.map((group) => {
         const isGroupCollapsed = !collapsed && collapsedGroups.has(group.key);
         const hasActiveItem = group.items.some((item) => isPathActive(pathname, item.path));
-        const GroupIcon = group.icon;
 
         return (
           <div key={group.key}>
@@ -216,29 +220,30 @@ function NavContent({
                 onClick={() => toggleGroup(group.key)}
                 aria-expanded={!isGroupCollapsed}
                 aria-controls={`sidebar-group-${group.key}`}
+                title={group.label}
                 className={cn(
-                  "group/btn flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors duration-150 cursor-pointer select-none",
+                  "group/btn flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 transition-colors duration-150 cursor-pointer select-none",
                   hasActiveItem && isGroupCollapsed
-                    ? "bg-accent-50/80 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300 font-semibold"
-                    : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
+                    ? "bg-accent-50/80 dark:bg-accent-950/40"
+                    : "hover:bg-surface-hover"
                 )}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  {GroupIcon && (
-                    <GroupIcon
-                      className={cn(
-                        "h-4 w-4 shrink-0 transition-colors",
-                        hasActiveItem && isGroupCollapsed
-                          ? "text-accent-600 dark:text-accent-400"
-                          : "text-text-tertiary group-hover/btn:text-text-primary"
-                      )}
-                    />
+                {/* 分组标题用排版层级区分，不再配图标：
+                    小一档字号 + 字距 + 次级色，明确表达"这是一段的分隔"，
+                    与 13px 的子项拉开层级；图标语汇完整留给子项。 */}
+                <span
+                  className={cn(
+                    "sidebar-group-label truncate text-[11px] font-semibold uppercase tracking-[0.07em] transition-colors",
+                    hasActiveItem && isGroupCollapsed
+                      ? "text-accent-700 dark:text-accent-300"
+                      : "text-text-tertiary group-hover/btn:text-text-secondary"
                   )}
-                  <span className="truncate">{group.label}</span>
-                </div>
+                >
+                  {group.label}
+                </span>
                 <ChevronDown
                   className={cn(
-                    "h-3.5 w-3.5 shrink-0 text-text-tertiary transition-transform duration-200 group-hover/btn:text-text-primary ml-2",
+                    "ml-2 h-3.5 w-3.5 shrink-0 text-text-tertiary transition-transform duration-200 group-hover/btn:text-text-primary",
                     isGroupCollapsed && "-rotate-90"
                   )}
                   aria-hidden="true"
@@ -257,7 +262,7 @@ function NavContent({
               <div
                 className={cn(
                   "overflow-hidden space-y-0.5 pt-0.5",
-                  !collapsed && "ml-3.5 pl-2.5 border-l border-border-subtle/80"
+                  !collapsed && "ml-3 pl-2 border-l border-border-subtle/80"
                 )}
               >
                 {group.items.map((item) => (
@@ -407,7 +412,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "group/sidebar fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-w)] flex-col border-r border-border-subtle bg-surface-page dark:bg-surface-card lg:flex",
+        "group/sidebar fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-w)] flex-col border-r border-border-subtle bg-surface-card lg:flex",
         isMounted && "transition-[width] duration-200"
       )}
       style={{ height: "100dvh" }}
@@ -467,7 +472,7 @@ export function MobileNavDrawer({
         aria-label={tCommon("mainMenu")}
         tabIndex={-1}
         className={cn(
-          "group/sidebar fixed inset-y-0 left-0 z-[201] flex w-[240px] max-w-[85vw] flex-col border-r border-border-subtle bg-surface-page dark:bg-surface-card transition-transform duration-200 ease-out lg:hidden",
+          "group/sidebar fixed inset-y-0 left-0 z-[201] flex w-[260px] max-w-[85vw] flex-col border-r border-border-subtle bg-surface-card transition-transform duration-200 ease-out lg:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

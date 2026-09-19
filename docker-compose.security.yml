@@ -3,7 +3,8 @@
 #
 # P0-6: Security is now ENABLED by default. Elasticsearch runs with
 # xpack.security enabled (TLS + auth). To bootstrap:
-#   1. Generate strong passwords and export them (or set in .env.security):
+#   1. Generate strong passwords and export them (secrets stay in your shell
+#      or a secret manager — never in a file inside the repo):
 #        export ELASTICSEARCH_PASSWORD=$(openssl rand -base64 24)
 #        export KIBANA_SYSTEM_PASSWORD=$(openssl rand -base64 24)
 #        export WAZUH_API_PASSWORD=$(openssl rand -base64 24)

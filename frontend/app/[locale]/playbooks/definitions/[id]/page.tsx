@@ -156,17 +156,17 @@ export default function PlaybookDefinitionDetailPage() {
       ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
       : definition.status === "draft"
         ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
-        : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+        : "bg-surface-hover text-text-secondary dark:bg-surface-card dark:text-text-muted"
     : "";
 
   const backButton = (
-    <BackButton fallbackUrl="/playbooks?tab=definitions" label={tCommon("back")} />
+    <BackButton fallbackUrl="/playbooks/definitions" label={tCommon("back")} variant="ghost" />
   );
 
   // ── Loading ─────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-canvas transition-colors">
+      <div className="min-h-screen bg-surface-page transition-colors">
         <PageHeader title={t("title")} subtitle={t("subtitle")} backButton={backButton} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <LoadingState isLoading={true} type="skeleton" skeletonType="card" />
@@ -178,7 +178,7 @@ export default function PlaybookDefinitionDetailPage() {
   // ── Error / Not Found ───────────────────────────────────
   if (error || !definition) {
     return (
-      <div className="min-h-screen bg-surface-canvas transition-colors">
+      <div className="min-h-screen bg-surface-page transition-colors">
         <PageHeader title={t("title")} subtitle={t("subtitle")} backButton={backButton} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <LoadingState
@@ -193,7 +193,7 @@ export default function PlaybookDefinitionDetailPage() {
 
   // ── Loaded ──────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-surface-canvas transition-colors pb-16">
+    <div className="min-h-screen bg-surface-page transition-colors pb-16">
       {/* Header */}
       <PageHeader
         backButton={backButton}
@@ -204,9 +204,9 @@ export default function PlaybookDefinitionDetailPage() {
             <button
               type="button"
               onClick={() => router.push(`/playbooks/definitions/${definitionId}/edit`)}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-accent-600 hover:bg-accent-700 text-white text-xs font-semibold shadow-sm transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-600 hover:bg-accent-700 text-white text-sm font-medium shadow-subtle transition-all"
             >
-              <Edit2 className="w-3.5 h-3.5" />
+              <Edit2 className="w-4 h-4" />
               <span>{t("edit")}</span>
             </button>
           </div>
@@ -216,71 +216,74 @@ export default function PlaybookDefinitionDetailPage() {
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Basic Info */}
-          <div className="bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle space-y-4">
+          <div className="bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
               <Info className="w-4 h-4 text-accent-600 dark:text-accent-400" />
-              <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
+              <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
                 {t("basicInfo")}
               </h3>
             </div>
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-sm font-semibold text-text-primary">{definition.name}</h2>
+                <h2 className="text-base font-semibold text-text-primary">{definition.name}</h2>
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${statusPill}`}
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusPill}`}
                 >
                   {definition.status}
                 </span>
               </div>
-              <p className="mt-1.5 text-xs text-text-tertiary leading-relaxed">
+              <p className="mt-2 text-sm text-text-secondary leading-relaxed">
                 {definition.description || t("noDescription")}
               </p>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
-              <div className="px-2.5 py-2 rounded-xl bg-surface-hover/60">
-                <div className="text-[10px] text-text-tertiary">{t("version")}</div>
-                <div className="text-xs font-mono font-medium text-text-primary mt-0.5">
+              <div className="px-3 py-2 rounded-lg bg-surface-hover/60">
+                <div className="text-xs text-text-tertiary">{t("version")}</div>
+                <div className="text-sm font-mono font-medium text-text-primary mt-0.5">
                   {definition.version}
                 </div>
               </div>
-              <div className="px-2.5 py-2 rounded-xl bg-surface-hover/60">
-                <div className="text-[10px] text-text-tertiary">{t("nodes")}</div>
-                <div className="text-xs font-mono font-medium text-text-primary mt-0.5">
+              <div className="px-3 py-2 rounded-lg bg-surface-hover/60">
+                <div className="text-xs text-text-tertiary">{t("nodes")}</div>
+                <div className="text-sm font-mono font-medium text-text-primary mt-0.5">
                   {definition.node_count}
                 </div>
               </div>
-              <div className="px-2.5 py-2 rounded-xl bg-surface-hover/60">
-                <div className="text-[10px] text-text-tertiary">{t("edges")}</div>
-                <div className="text-xs font-mono font-medium text-text-primary mt-0.5">
+              <div className="px-3 py-2 rounded-lg bg-surface-hover/60">
+                <div className="text-xs text-text-tertiary">{t("edges")}</div>
+                <div className="text-sm font-mono font-medium text-text-primary mt-0.5">
                   {definition.edge_count}
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-border-subtle space-y-2 text-xs">
+            <div className="pt-2 border-t border-border-subtle space-y-2.5 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-text-tertiary shrink-0">{t("createdBy")}</span>
-                <span className="text-text-secondary font-mono truncate">
+                <span className="text-xs text-text-tertiary shrink-0">{t("createdBy")}</span>
+                <span className="text-sm text-text-secondary font-mono truncate">
                   {definition.created_by_user_id || "-"}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-text-tertiary shrink-0">{t("createdAt")}</span>
-                <span className="text-text-secondary">
+                <span className="text-xs text-text-tertiary shrink-0">{t("createdAt")}</span>
+                <span className="text-sm text-text-secondary">
                   {formatDateTime(definition.created_at, format)}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-text-tertiary shrink-0">{t("updatedAt")}</span>
-                <span className="text-text-secondary">
+                <span className="text-xs text-text-tertiary shrink-0">{t("updatedAt")}</span>
+                <span className="text-sm text-text-secondary">
                   {formatDateTime(definition.updated_at, format)}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-text-tertiary shrink-0">{t("definitionId")}</span>
-                <span className="text-text-secondary font-mono truncate" title={definition.id}>
+                <span className="text-xs text-text-tertiary shrink-0">{t("definitionId")}</span>
+                <span
+                  className="text-sm text-text-secondary font-mono truncate"
+                  title={definition.id}
+                >
                   {definition.id}
                 </span>
               </div>
@@ -288,15 +291,15 @@ export default function PlaybookDefinitionDetailPage() {
           </div>
 
           {/* DAG Topology */}
-          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle flex flex-col justify-between">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-4">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-accent-600 dark:text-accent-400" />
-                <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
+                <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
                   {t("dagTitle")}
                 </h3>
               </div>
-              <div className="flex items-center gap-1 p-0.5 rounded-xl bg-surface-hover border border-border-subtle text-xs">
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-hover border border-border-subtle text-xs">
                 <button
                   type="button"
                   onClick={() => setViewMode("visual")}
@@ -324,7 +327,7 @@ export default function PlaybookDefinitionDetailPage() {
               </div>
             </div>
 
-            <div className="min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-canvas/50 relative">
+            <div className="min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-page relative">
               {viewMode === "visual" ? (
                 <DAGCanvas
                   definition={dagDefinition}

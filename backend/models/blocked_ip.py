@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Index, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Index, String, Text, UniqueConstraint
 
 from db.session import Base
 
@@ -33,4 +33,6 @@ class BlockedIP(Base):
     __table_args__ = (
         Index("ix_blocked_ip_value_type", "value", "type"),
         Index("ix_blocked_ip_active_created", "is_active", "created_at"),
+        UniqueConstraint("value", "type", name="uq_blocked_ips_value_type"),
     )
+
