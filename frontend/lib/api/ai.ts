@@ -46,28 +46,28 @@ interface GenerateReportResponse {
  * List available AI models
  */
 export async function listAIModels(): Promise<AIModel[]> {
-  return client.get<AIModel[]>("/api/ai/models");
+  return client.get<AIModel[]>("/api/v1/ai/models");
 }
 
 /**
  * Get AI model by ID
  */
 export async function getAIModel(id: string): Promise<AIModel> {
-  return client.get<AIModel>(`/api/ai/models/${id}`);
+  return client.get<AIModel>(`/api/v1/ai/models/${id}`);
 }
 
 /**
  * Test AI model connection
  */
 export async function testAIModel(id: string): Promise<TestModelResponse> {
-  return client.post<TestModelResponse>("/api/ai/models/test", { model_id: id });
+  return client.post<TestModelResponse>("/api/v1/ai/models/test", { model_id: id });
 }
 
 /**
  * Set default AI model
  */
 export async function setDefaultAIModel(id: string): Promise<SetDefaultModelResponse> {
-  return client.post<SetDefaultModelResponse>("/api/ai/models/default", { model_id: id });
+  return client.post<SetDefaultModelResponse>("/api/v1/ai/models/default", { model_id: id });
 }
 
 /**
@@ -78,7 +78,7 @@ export async function sendChatMessage(
   conversationId?: string,
   modelId?: string
 ): Promise<ChatResponse> {
-  return client.post<ChatResponse>("/api/ai/chat", {
+  return client.post<ChatResponse>("/api/v1/ai/chat", {
     message,
     conversation_id: conversationId,
     model_id: modelId,
@@ -96,14 +96,14 @@ export async function analyzeAlert(alertData: {
   timestamp: string;
   raw_data?: Record<string, unknown>;
 }): Promise<AnalyzeAlertResponse> {
-  return client.post<AnalyzeAlertResponse>("/api/ai/analyze-alert", alertData, 120000);
+  return client.post<AnalyzeAlertResponse>("/api/v1/ai/analyze-alert", alertData, 120000);
 }
 
 /**
  * Build investigation timeline
  */
 export async function buildTimeline(events: TimelineEvent[]): Promise<BuildTimelineResponse> {
-  return client.post<BuildTimelineResponse>("/api/ai/build-timeline", { events }, 120000);
+  return client.post<BuildTimelineResponse>("/api/v1/ai/build-timeline", { events }, 120000);
 }
 
 /**
@@ -112,7 +112,7 @@ export async function buildTimeline(events: TimelineEvent[]): Promise<BuildTimel
 export async function generateReport(
   request: GenerateReportRequest
 ): Promise<GenerateReportResponse> {
-  return client.post<GenerateReportResponse>("/api/ai/generate-report", request, 120000);
+  return client.post<GenerateReportResponse>("/api/v1/ai/generate-report", request, 120000);
 }
 
 /**
@@ -128,14 +128,14 @@ export async function getAIHistory(params?: { limit?: number; offset?: number })
     created_at: string;
   }>
 > {
-  return client.get("/api/ai/history", { params } as RequestInit);
+  return client.get("/api/v1/ai/history", { params } as RequestInit);
 }
 
 /**
  * Clear AI chat history
  */
 export async function clearAIChatHistory(conversationId: string): Promise<void> {
-  return client.delete(`/api/ai/chat/history/${conversationId}`);
+  return client.delete(`/api/v1/ai/chat/history/${conversationId}`);
 }
 
 /**
@@ -146,7 +146,7 @@ export async function getAISettings(): Promise<{
   enable_streaming?: boolean;
   max_history_size?: number;
 }> {
-  return client.get("/api/ai/settings");
+  return client.get("/api/v1/ai/settings");
 }
 
 /**
@@ -157,7 +157,7 @@ export async function updateAISettings(settings: {
   enable_streaming?: boolean;
   max_history_size?: number;
 }): Promise<void> {
-  return client.put("/api/ai/settings", settings);
+  return client.put("/api/v1/ai/settings", settings);
 }
 
 // AI Model Management (admin)
@@ -210,21 +210,21 @@ export interface TestModelResponse {
 }
 
 export async function listAIModelsAdmin(skip = 0, limit = 100): Promise<AIModelListResponse> {
-  return client.get(`/api/ai/models?skip=${skip}&limit=${limit}`);
+  return client.get(`/api/v1/ai/models?skip=${skip}&limit=${limit}`);
 }
 
 export async function getDefaultModel(): Promise<AIModel> {
-  return client.get("/api/ai/models/default");
+  return client.get("/api/v1/ai/models/default");
 }
 
 export async function setDefaultModel(
   data: SetDefaultModelRequest
 ): Promise<SetDefaultModelResponse> {
-  return client.post("/api/ai/models/default", data);
+  return client.post("/api/v1/ai/models/default", data);
 }
 
 export async function testModelAdmin(data: TestModelRequest): Promise<TestModelResponse> {
-  return client.post("/api/ai/models/test", data);
+  return client.post("/api/v1/ai/models/test", data);
 }
 
 // Export AI API object
