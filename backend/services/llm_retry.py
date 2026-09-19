@@ -120,8 +120,12 @@ Please provide the corrected JSON response:"""
             base_response.update(
                 {
                     "event_type": "unknown",
-                    "severity": "unknown",
-                    "confidence": None,
+                    # Schema-valid placeholders: Severity/confidence are required
+                    # fields, so degraded mode reports "medium"/0 rather than
+                    # crashing validation. The degraded flag + summary carry the
+                    # "unassessed" semantics.
+                    "severity": "medium",
+                    "confidence": 0,
                     "attack_pattern": None,
                     "iocs": {"ips": [], "domains": [], "urls": [], "hashes": []},
                     "iocs_local": {"ips": [], "domains": [], "urls": [], "hashes": []},
@@ -148,9 +152,9 @@ Please provide the corrected JSON response:"""
                     "escalation_needed": False,
                     "impact_analysis": {
                         "affected_assets": [],
-                        "business_impact": None,
-                        "risk_score": None,
-                        "severity": "unknown",
+                        "business_impact": "Unavailable — AI analysis degraded",
+                        "risk_score": 0,
+                        "severity": "low",
                         "containment_priority": [],
                         "recommended_next_queries": [],
                     },
@@ -497,18 +501,17 @@ Please provide the corrected JSON response:"""
         try:
             degraded_response = response_class.model_validate(degraded_data)
             return degraded_response, settings.ai_provider, True
-        except ValidationError:
-            # If even degraded fails, return minimal response
-            return (
-                response_class.model_validate(
-                    {
-                        **degraded_data,
-                        "degraded": True,
-                    }
-                ),
-                settings.ai_provider,
-                True,
+        except ValidationError as e:
+            # The degraded payload must always satisfy the response schema; a
+            # miss here is a programming error in _create_degraded_response,
+            # not a runtime condition to paper over.
+            logger.error(
+                f"Degraded payload failed schema validation for "
+                f"{response_class.__name__}: {e!s}"
             )
+            raise ValueError(
+                f"Degraded response does not satisfy {response_class.__name__}"
+            ) from e
 
     async def _generate_freeform(
         self, prompt: str, request_id: str
