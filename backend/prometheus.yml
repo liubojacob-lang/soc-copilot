@@ -16,6 +16,9 @@ scrape_configs:
         labels:
           service: "backend"
     metrics_path: "/metrics/prometheus"
+    # Backend requires Authorization: Bearer $METRICS_TOKEN once it is set;
+    # empty default keeps scraping working where the guard is off (dev/test).
+    bearer_token: "${METRICS_TOKEN:-}"
     scrape_interval: 10s
 
   - job_name: "loki"

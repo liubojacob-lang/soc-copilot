@@ -53,12 +53,10 @@ import models.blocked_ip  # noqa: F401
 import models.case  # noqa: F401
 import models.correlated_event  # noqa: F401
 import models.correlation_rule  # noqa: F401
-import models.event_similarity  # noqa: F401
 import models.history  # noqa: F401
 import models.ioc_hit  # noqa: F401
 import models.marketplace  # noqa: F401
 import models.monitor_history  # noqa: F401
-import models.on_call_schedule  # noqa: F401
 import models.playbook_approval  # noqa: F401
 import models.playbook_definition  # noqa: F401
 import models.playbook_node_attempt  # noqa: F401

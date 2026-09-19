@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    app_version: str = "0.9.4"
     ai_provider: str = (
         "zhipu"  # Options: zhipu, claude, openai, nvidia, moonshot, openrouter
     )
@@ -96,6 +97,14 @@ class Settings(BaseSettings):
 
     # v0.7.1: API Settings for webhook URL generation
     base_url: str = "http://localhost:8000"  # Base URL for webhook URLs
+
+    # Deployment tenant. Server-configured on purpose: there is no tenant model
+    # yet, so the tenant must never be taken from a client-supplied header.
+    default_tenant_id: str = "default"
+
+    # Bearer token required by /metrics and /metrics/prometheus. Unset in
+    # production disables both endpoints; see MetricsAuthMiddleware.
+    metrics_token: str = ""
 
     # v0.7.4: Secrets & Queue Management
     secret_encryption_key: str = ""  # Fernet encryption key for secrets

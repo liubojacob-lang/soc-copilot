@@ -27,7 +27,6 @@ from middleware import (
     MetricsAuthMiddleware,
     ObservabilityMiddleware,
     RequestContextMiddleware,
-    ResourceAuthorizationMiddleware,
     TraceIDMiddleware,
     setup_exception_handlers,
     setup_trace_logging,
@@ -553,7 +552,6 @@ app.add_middleware(SetUserStateMiddleware)
 app.add_middleware(AuditMiddleware)
 
 # Resource authorization middleware (must be after SetUserStateMiddleware)
-app.add_middleware(ResourceAuthorizationMiddleware)
 
 # Setup global exception handlers
 setup_exception_handlers(app)

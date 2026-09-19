@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.session import Base
@@ -63,12 +63,6 @@ class PlaybookDefinitionModel(Base):
     )  # native
 
     # Relationships
-    nodes = relationship(
-        "PlaybookNodeModel", back_populates="definition", cascade="all, delete-orphan"
-    )
-    edges = relationship(
-        "PlaybookEdgeModel", back_populates="definition", cascade="all, delete-orphan"
-    )
     triggers = relationship(
         "PlaybookTriggerModel",
         back_populates="definition",
@@ -104,64 +98,6 @@ class PlaybookDefinitionModel(Base):
     def dag_json(self, value: dict) -> None:
         """Setter for dag_json alias."""
         self.definition_json = value
-
-
-class PlaybookNodeModel(Base):
-    """Model for storing node definitions within a playbook."""
-
-    __tablename__ = "playbook_nodes"
-
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
-    definition_id: Mapped[str] = mapped_column(
-        String(36),
-        ForeignKey("playbook_definitions.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    node_id: Mapped[str] = mapped_column(String(100), nullable=False)
-    step_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
-    retry_policy_json: Mapped[dict | None] = mapped_column(JSON)
-    timeout_seconds: Mapped[int] = mapped_column(Integer, default=300)
-    position_x: Mapped[float | None] = mapped_column(Float)
-    position_y: Mapped[float | None] = mapped_column(Float)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        default=lambda: datetime.now(UTC),
-    )
-
-    # Relationships
-    definition = relationship("PlaybookDefinitionModel", back_populates="nodes")
-
-
-class PlaybookEdgeModel(Base):
-    """Model for storing edges (connections) between nodes."""
-
-    __tablename__ = "playbook_edges"
-
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
-    definition_id: Mapped[str] = mapped_column(
-        String(36),
-        ForeignKey("playbook_definitions.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    source_node_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    target_node_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    condition_expression: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        default=lambda: datetime.now(UTC),
-    )
-
-    # Relationships
-    definition = relationship("PlaybookDefinitionModel", back_populates="edges")
 
 
 class PlaybookTriggerModel(Base):

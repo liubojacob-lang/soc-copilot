@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from models.playbook_definition import PlaybookDefinitionModel
-from services.playbook_dag_compiler import DAGCompiler, DAGValidationError
+from services.playbook.playbook_dag_compiler import DAGCompiler, DAGValidationError
 
 # Database path (same as session.py)
 DATA_DIR = Path(__file__).parent.parent / "data"

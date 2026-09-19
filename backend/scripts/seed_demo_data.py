@@ -1795,8 +1795,9 @@ async def reset_demo_data(session) -> dict:
         session, MarketplacePlaybookModel, MarketplacePlaybookModel.id.in_([pb["id"] for pb in OFFICIAL_PLAYBOOKS])
     )
     await session.flush()
-    from db.session import IS_POSTGRESQL
     from sqlalchemy import text
+
+    from db.session import IS_POSTGRESQL
     if IS_POSTGRESQL:
         await session.execute(text("SELECT setval('security_alerts_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM security_alerts), false);"))
     return purged

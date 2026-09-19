@@ -210,7 +210,7 @@ class TestLimiterOutcomes:
         async def endpoint(request: Request):
             return Response("ok")
 
-        with _Patch() as p:
+        with _Patch():
             resp = await endpoint(request=_request())
 
         assert resp.headers["X-RateLimit-Limit"] == "5"

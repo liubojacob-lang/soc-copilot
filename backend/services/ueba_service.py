@@ -6,7 +6,7 @@ F3-4: Data pipeline upgrade from demo to production-ready.
 import json
 import pickle
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -103,8 +103,7 @@ async def _extract_behavior_features_from_db(
     Returns:
         Dict with feature values keyed by feature name
     """
-    since = datetime.now() - timedelta(days=days)
-    since_iso = since.isoformat()
+    since = datetime.now(UTC) - timedelta(days=days)
 
     features: dict[str, Any] = {
         "login_count": 0,
@@ -131,7 +130,7 @@ async def _extract_behavior_features_from_db(
                   AND action LIKE :action_pattern
                 """
             ),
-            {"uid": user_id, "since": since_iso, "action_pattern": "%login%"},
+            {"uid": user_id, "since": since, "action_pattern": "%login%"},
         )
         row = result.fetchone()
         if row:
@@ -151,7 +150,7 @@ async def _extract_behavior_features_from_db(
             ),
             {
                 "uid": user_id,
-                "since": since_iso,
+                "since": since,
                 "a1": "%file%",
                 "a2": "%read%",
                 "a3": "%download%",
@@ -171,7 +170,7 @@ async def _extract_behavior_features_from_db(
                   AND (event_type LIKE :et1 OR event_type LIKE :et2)
                 """
             ),
-            {"since": since_iso, "et1": "%network%", "et2": "%connection%"},
+            {"since": since, "et1": "%network%", "et2": "%connection%"},
         )
         row = result.fetchone()
         if row:
@@ -195,7 +194,7 @@ async def _extract_behavior_features_from_db(
                 """
             ),
             {
-                "since": since_iso,
+                "since": since,
                 "et1": "%privilege%",
                 "et2": "%escalation%",
                 "t1": "%sudo%",
@@ -223,7 +222,7 @@ async def _extract_behavior_features_from_db(
                 """
             ),
             {
-                "since": since_iso,
+                "since": since,
                 "et1": "%lateral%",
                 "et2": "%movement%",
                 "rm1": "%TA0008%",
@@ -390,7 +389,7 @@ class UEBAEngine:
                     "fj": json.dumps(features),
                     "at": 0.8,
                     "ts": 8,
-                    "now": datetime.now().isoformat(),
+                    "now": datetime.now(UTC),
                     "uid": user_id,
                 },
             )
@@ -413,7 +412,7 @@ class UEBAEngine:
                     "fj": json.dumps(features),
                     "at": 0.8,
                     "ts": 8,
-                    "now": datetime.now().isoformat(),
+                    "now": datetime.now(UTC),
                 },
             )
         await session.commit()

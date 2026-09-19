@@ -157,6 +157,7 @@ class CaseService:
                     pass
             if int_alert_ids:
                 from sqlalchemy import select
+
                 from models.security_alert import SecurityAlert
 
                 existing_alerts_res = await self.session.execute(

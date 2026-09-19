@@ -107,8 +107,8 @@ class PlaybookEngineAdapter:
         dag_definition: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Run v0.7 DAG playbook."""
-        from services.playbook_dag_compiler import DAGCompiler
-        from services.playbook_dag_scheduler import DAGScheduler
+        from services.playbook.playbook_dag_compiler import DAGCompiler
+        from services.playbook.playbook_dag_scheduler import DAGScheduler
 
         # Get DAG definition
         if dag_definition:

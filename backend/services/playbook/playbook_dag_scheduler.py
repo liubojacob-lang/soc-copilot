@@ -106,7 +106,7 @@ class DAGScheduler:
         try:
             from db.session import AsyncSessionLocal
             from repositories.secret_repository import SecretRepository
-            from services.secret_service import get_secret_service
+            from services.security.secret_service import get_secret_service
 
             svc = get_secret_service()
             async with AsyncSessionLocal() as session:

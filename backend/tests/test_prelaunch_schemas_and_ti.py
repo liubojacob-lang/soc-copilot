@@ -4,16 +4,21 @@ Covers three risky, previously untested behaviour changes in the release batch:
 
 1. ``IOCHitCreate.ioc_type`` / ``.source`` were relaxed from ``IOCType`` /
    ``IOCSource`` enums to bare ``str`` (enum validation removed at the edge).
-2. ``ThreatIntelService.lookup`` was reordered: cache → internal IOC hits →
-   external-provider-enabled check. This inverted the "external TI disabled"
-   short circuit and broke 3 pre-existing tests.
+2. ``ThreatIntelService.lookup`` ordering. G8 (0112966) fixed DEFECT QA-002 by
+   putting the ``is_enabled()`` short circuit first, so the contract asserted
+   here is: compliance filter → ``is_enabled()`` → cache → internal IOC hits →
+   external provider. Every test drives ``is_enabled`` explicitly because
+   ``settings.allow_external_ti`` defaults to False and the ambient value
+   differs between a developer laptop with ``.env`` and CI without one.
 3. ``AlertAnalysisRequest.raw_log`` became optional, with the router
    synthesising a log from title/severity/source/description.
 """
 
+from contextlib import ExitStack
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
 from schemas.alert import AlertAnalysisRequest, RecommendedAction
 from schemas.ioc_hit import IOCSource, IOCType
@@ -60,7 +65,7 @@ class TestIOCHitSchemaValidation:
     def test_unknown_ioc_type_should_be_rejected(self):
         from schemas.ioc_hit import IOCHitCreate
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             IOCHitCreate(ioc_type="totally-bogus", ioc_value="x", source="local")
 
 
@@ -95,6 +100,43 @@ def _ioc_hit(confidence=95, source="local", ioc_type="ip", notes=None, context="
     return hit
 
 
+class _LookupPatches:
+    """Context manager patching the three collaborators ``lookup()`` touches.
+
+    ``IOCHitRepository`` is patched on the *service* module because G8 promoted
+    the import to top level there; patching the defining module no longer
+    intercepts the call and lets the repository hit the mock session.
+    """
+
+    def __init__(self, service, enabled=(True, None), hits=None):
+        self.service = service
+        self.enabled = enabled
+        self.hits = hits if hits is not None else []
+
+    def __enter__(self):
+        self._stack = ExitStack()
+        self._stack.enter_context(
+            patch(
+                "services.threat_intel_service.should_send_ioc_to_external_ti",
+                return_value=_allow_filter(),
+            )
+        )
+        self.is_enabled = self._stack.enter_context(
+            patch.object(self.service, "is_enabled", AsyncMock(return_value=self.enabled))
+        )
+        repo_cls = self._stack.enter_context(
+            patch("services.threat_intel_service.IOCHitRepository")
+        )
+        self.list_by_ioc = repo_cls.return_value.list_by_ioc = AsyncMock(
+            return_value=self.hits
+        )
+        return self
+
+    def __exit__(self, *exc):
+        self._stack.close()
+        return False
+
+
 class TestThreatIntelLookupOrdering:
     async def test_cache_hit_short_circuits_before_ioc_hits(self):
         service = _ti_service()
@@ -105,87 +147,61 @@ class TestThreatIntelLookupOrdering:
         cached.tags = '["c2"]'
         service.repository.get_by_ioc = AsyncMock(return_value=cached)
 
-        with patch(
-            "services.threat_intel_service.should_send_ioc_to_external_ti",
-            return_value=_allow_filter(),
-        ), patch(
-            "repositories.ioc_hit_repository.IOCHitRepository"
-        ) as repo_cls:
-            repo_cls.return_value.list_by_ioc = AsyncMock(return_value=[])
+        with _LookupPatches(service) as patches:
             resp = await service.lookup("ip", "1.2.3.4")
 
         assert resp.cached is True
         assert resp.verdict == Verdict.malicious
-        repo_cls.return_value.list_by_ioc.assert_not_called()
+        patches.list_by_ioc.assert_not_called()
 
     async def test_internal_ioc_hit_returned_without_external_provider(self):
         service = _ti_service()
-        is_enabled = AsyncMock(return_value=(True, None))
 
-        with patch.object(service, "is_enabled", is_enabled), patch(
-            "services.threat_intel_service.should_send_ioc_to_external_ti",
-            return_value=_allow_filter(),
-        ), patch("repositories.ioc_hit_repository.IOCHitRepository") as repo_cls:
-            repo_cls.return_value.list_by_ioc = AsyncMock(
-                return_value=[_ioc_hit(confidence=95)]
-            )
+        with _LookupPatches(service, hits=[_ioc_hit(confidence=95)]) as patches:
             resp = await service.lookup("ip", "9.9.9.9")
 
         assert resp.verdict == Verdict.malicious
         assert resp.score == 95
         assert resp.provider == "local"
-        # External provider was never consulted
-        is_enabled.assert_not_called()
+        # G8 made is_enabled() the gate for the whole lookup, so it is consulted
+        # before the cache and the internal IOC hits.
+        patches.is_enabled.assert_awaited_once()
 
     async def test_confidence_thresholds_map_to_verdicts(self):
         cases = [(95, Verdict.malicious), (60, Verdict.suspicious), (10, Verdict.benign)]
         for confidence, expected in cases:
             service = _ti_service()
-            with patch(
-                "services.threat_intel_service.should_send_ioc_to_external_ti",
-                return_value=_allow_filter(),
-            ), patch("repositories.ioc_hit_repository.IOCHitRepository") as repo_cls:
-                repo_cls.return_value.list_by_ioc = AsyncMock(
-                    return_value=[_ioc_hit(confidence=confidence)]
-                )
+            with _LookupPatches(service, hits=[_ioc_hit(confidence=confidence)]):
                 resp = await service.lookup("ip", "5.5.5.5")
             assert resp.verdict is expected, f"confidence={confidence}"
 
     async def test_disabled_provider_still_reports_disabled_when_nothing_cached(self):
         service = _ti_service()
-        is_enabled = AsyncMock(return_value=(False, "Disabled"))
 
-        with patch.object(service, "is_enabled", is_enabled), patch(
-            "services.threat_intel_service.should_send_ioc_to_external_ti",
-            return_value=_allow_filter(),
-        ), patch("repositories.ioc_hit_repository.IOCHitRepository") as repo_cls:
-            repo_cls.return_value.list_by_ioc = AsyncMock(return_value=[])
+        with _LookupPatches(service, enabled=(False, "Disabled")) as patches:
             resp = await service.lookup("ip", "8.8.8.8")
 
         assert resp.disabled is True
         assert resp.error_reason == "Disabled"
+        patches.list_by_ioc.assert_not_called()
 
-    async def test_disabled_provider_is_masked_by_internal_ioc_hit(self):
-        """DEFECT QA-002 (characterisation): the disabled short-circuit moved.
+    async def test_disabled_short_circuits_before_internal_ioc_hits(self):
+        """DEFECT QA-002, closed by G8: external TI off means no verdict at all.
 
-        With external TI disabled, an internal IOC hit now produces a
-        ``disabled=False`` response, so the "external TI off" switch no longer
-        guarantees "no threat-intel answer is returned".
+        Internal IOC hits are no longer consulted once ``is_enabled()`` reports
+        disabled, so the switch does guarantee that no threat-intel answer is
+        returned.
         """
         service = _ti_service()
-        is_enabled = AsyncMock(return_value=(False, "Disabled"))
 
-        with patch.object(service, "is_enabled", is_enabled), patch(
-            "services.threat_intel_service.should_send_ioc_to_external_ti",
-            return_value=_allow_filter(),
-        ), patch("repositories.ioc_hit_repository.IOCHitRepository") as repo_cls:
-            repo_cls.return_value.list_by_ioc = AsyncMock(
-                return_value=[_ioc_hit(confidence=90)]
-            )
+        with _LookupPatches(
+            service, enabled=(False, "Disabled"), hits=[_ioc_hit(confidence=90)]
+        ) as patches:
             resp = await service.lookup("ip", "8.8.8.8")
 
-        assert resp.disabled is False
-        assert resp.verdict == Verdict.malicious
+        assert resp.disabled is True
+        assert resp.verdict is Verdict.unknown
+        patches.list_by_ioc.assert_not_called()
 
 
 # --------------------------------------------------------------------------- #

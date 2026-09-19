@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 from schemas.case import CaseAlertLink, CaseCreate, CaseSeverity, CaseStatus
 from services.case_service import CaseService
@@ -84,7 +85,7 @@ class TestAlertIdSchemas:
         assert link.alert_ids == ["1", 2]
 
     def test_case_alert_link_still_requires_at_least_one(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             CaseAlertLink(alert_ids=[])
 
 

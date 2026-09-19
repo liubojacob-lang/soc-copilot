@@ -12,7 +12,6 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from httpx import AsyncClient
 
-from models.on_call_schedule import OnCallSchedule
 from services.notification_service import NotificationService
 from services.notifications.base import NotificationMessage, NotificationProvider
 from services.notifications.email import EmailProvider
@@ -270,24 +269,3 @@ async def test_notification_router_health(auth_client: AsyncClient):
     assert "channels" in data
 
 
-# ─────────────────────────────────────────────────────────────
-# 5. On-Call Schedule Model Unit Tests
-# ─────────────────────────────────────────────────────────────
-
-def test_on_call_schedule_model():
-    now = datetime.now(UTC)
-    end = now + timedelta(days=7)
-    schedule = OnCallSchedule(
-        id="schedule-001",
-        user_id="user-analyst-1",
-        start_date=now,
-        end_date=end,
-        rotation_group="tier1_soc",
-        is_primary=True,
-    )
-
-    assert schedule.id == "schedule-001"
-    assert schedule.user_id == "user-analyst-1"
-    assert schedule.rotation_group == "tier1_soc"
-    assert schedule.is_primary is True
-    assert schedule.end_date > schedule.start_date

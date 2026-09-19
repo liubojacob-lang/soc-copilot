@@ -141,10 +141,6 @@ class DataRetentionService(LifecycleService):
             "threat_intel_cache": lambda: self._delete_expired_ti(
                 session, now, max_age_days=d.threat_intel_cache_retention_days
             ),
-            # Similarity cache rows whose TTL column was never enforced.
-            "event_similarities": lambda: self._delete_expired_similarities(
-                session, now
-            ),
         }
         return {table: builders[table]() for table in only}
 
@@ -209,7 +205,6 @@ class DataRetentionService(LifecycleService):
             "history",
             "correlated_events",
             "threat_intel_cache",
-            "event_similarities",
         ]
 
     async def _delete_aged(
@@ -307,47 +302,4 @@ class DataRetentionService(LifecycleService):
             total += deleted
             if deleted < batch_size:
                 break
-        return total
-
-    async def _delete_expired_similarities(self, session, now: datetime) -> int:
-        """Enforce event_similarities.ttl_seconds, which no job ever did.
-
-        created_at is ISO text and ttl is per-row, so expiry is computed in
-        Python after a cheap text-range prefilter. The previous SQLite-only
-        datetime() expression was a hard error on PostgreSQL.
-        """
-        from sqlalchemy import bindparam, text
-
-        from core.config import settings
-
-        batch_size = settings.data_retention_batch_size
-        rows = (
-            await session.execute(
-                text(
-                    "SELECT id, created_at, ttl_seconds FROM event_similarities"
-                    " WHERE created_at < :now"
-                ),
-                {"now": now.isoformat()},
-            )
-        ).all()
-
-        expired: list[str] = []
-        for row_id, created_at, ttl_seconds in rows:
-            try:
-                created = datetime.fromisoformat(created_at)
-                is_expired = created <= now - timedelta(seconds=ttl_seconds or 0)
-            except (TypeError, ValueError):
-                is_expired = True  # unparseable legacy row — purge it
-            if is_expired:
-                expired.append(row_id)
-
-        total = 0
-        for start in range(0, len(expired), batch_size):
-            result = await session.execute(
-                text("DELETE FROM event_similarities WHERE id IN :ids").bindparams(
-                    bindparam("ids", expanding=True)
-                ),
-                {"ids": expired[start : start + batch_size]},
-            )
-            total += result.rowcount or 0
         return total

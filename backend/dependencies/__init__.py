@@ -8,20 +8,15 @@ from dependencies.auth import (
     require_analyst,
     require_role,
 )
-from dependencies.authorization import (
-    ResourceAccess,
-    get_resource_checker,
-    require_owner_or_admin,
-)
+
+# dependencies.authorization was removed (T3.5): its resource-ownership
+# helpers had zero callers — enforcement lives in the endpoint dependencies.
 
 __all__ = [
-    "ResourceAccess",
     "get_api_key_user",
     "get_current_user",
     "get_current_user_optional",
-    "get_resource_checker",
     "require_admin",
     "require_analyst",
-    "require_owner_or_admin",
     "require_role",
 ]

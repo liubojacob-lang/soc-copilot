@@ -14,7 +14,6 @@ Expands the marketplace with 24 realistic enterprise SOC playbooks across:
 import json
 import os
 import sys
-import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 

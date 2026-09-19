@@ -37,6 +37,18 @@ class TestGetTenantId:
         request.state = SimpleNamespace()
         assert await get_tenant_id(request) == "default"
 
+    def test_client_supplied_header_is_ignored(self):
+        """There is no tenant model yet, so ``x-tenant-id`` must not be trusted.
+
+        Honouring it lets any client relabel its own logs and metrics.
+        """
+        from middleware.tenant_middleware import resolve_tenant_id
+
+        request = make_request()
+        request.headers["x-tenant-id"] = "victim-tenant"
+        request.state = SimpleNamespace()
+        assert resolve_tenant_id(request) == "default"
+
 
 class TestPaginatedQuery:
     async def test_maps_explicit_values(self):
