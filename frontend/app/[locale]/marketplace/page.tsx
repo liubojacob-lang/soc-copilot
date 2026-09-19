@@ -348,7 +348,7 @@ export default function MarketplacePage() {
           {isFiltered && (
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-border-strong/60 text-xs">
               <div className="flex items-center gap-2 flex-wrap text-text-secondary dark:text-text-muted">
-                <span className="font-semibold text-amber-600 dark:text-amber-400">
+                <span className="font-semibold text-amber-700 dark:text-amber-400">
                   {t("searchResultsCount", { count: filteredPlaybooks.length })}
                 </span>
                 {searchQuery && (
@@ -435,7 +435,7 @@ export default function MarketplacePage() {
                             <span className="truncate">
                               {pb.author_name || pb.author || "Community"}
                             </span>
-                            <div className="flex items-center gap-1 text-amber-500 shrink-0">
+                            <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 shrink-0">
                               <Star className="w-3.5 h-3.5 fill-current" />
                               <span className="font-medium">{pb.rating_average}</span>
                             </div>
@@ -466,7 +466,7 @@ export default function MarketplacePage() {
                             disabled={downloading === pb.id}
                             title={tCommon("download")}
                             aria-label={`${tCommon("download")} ${pb.name}`}
-                            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
+                            className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
                           >
                             {downloading === pb.id ? (
                               <>
@@ -547,7 +547,7 @@ export default function MarketplacePage() {
                             disabled={downloading === pb.id}
                             title={tCommon("download")}
                             aria-label={`${tCommon("download")} ${pb.name}`}
-                            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
+                            className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
                           >
                             {downloading === pb.id ? (
                               <>
@@ -698,7 +698,7 @@ export default function MarketplacePage() {
                               downloadPlaybook(playbook.id);
                             }}
                             disabled={downloading === playbook.id}
-                            className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                            className="w-full py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors shadow-xs"
                           >
                             {downloading === playbook.id ? (
                               <>

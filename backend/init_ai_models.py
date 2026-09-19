@@ -77,9 +77,7 @@ async def seed_ai_models(session: AsyncSession) -> tuple[int, int]:
         tuple[int, int]: (added_count, updated_count)
     """
     # 1. Ensure table exists
-    await session.execute(
-        text(
-            """
+    await session.execute(text("""
         CREATE TABLE IF NOT EXISTS ai_models (
             id VARCHAR(100) PRIMARY KEY,
             provider VARCHAR(50) NOT NULL,
@@ -93,13 +91,9 @@ async def seed_ai_models(session: AsyncSession) -> tuple[int, int]:
             created_at VARCHAR(30) NOT NULL,
             updated_at VARCHAR(30) NOT NULL
         )
-        """
-        )
-    )
+        """))
 
-    await session.execute(
-        text(
-            """
+    await session.execute(text("""
         CREATE TABLE IF NOT EXISTS ai_user_settings (
             id VARCHAR(36) PRIMARY KEY,
             user_id VARCHAR(36) NOT NULL UNIQUE,
@@ -108,17 +102,11 @@ async def seed_ai_models(session: AsyncSession) -> tuple[int, int]:
             updated_at VARCHAR(30) NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
-        """
-        )
-    )
+        """))
 
-    await session.execute(
-        text(
-            """
+    await session.execute(text("""
         CREATE INDEX IF NOT EXISTS ai_models_provider_enabled ON ai_models (provider, enabled)
-        """
-        )
-    )
+        """))
 
     now = datetime.now().isoformat()
     models_to_add = get_default_models_list()
@@ -134,8 +122,7 @@ async def seed_ai_models(session: AsyncSession) -> tuple[int, int]:
 
         if existing:
             await session.execute(
-                text(
-                    """
+                text("""
                 UPDATE ai_models
                 SET display_name = :display_name,
                     description = :description,
@@ -144,8 +131,7 @@ async def seed_ai_models(session: AsyncSession) -> tuple[int, int]:
                     max_tokens = :max_tokens,
                     updated_at = :updated_at
                 WHERE id = :id
-                """
-                ),
+                """),
                 {
                     "id": model["id"],
                     "display_name": model["display_name"],
@@ -166,14 +152,12 @@ async def seed_ai_models(session: AsyncSession) -> tuple[int, int]:
                 "updated_at": now,
             }
             await session.execute(
-                text(
-                    """
+                text("""
                 INSERT INTO ai_models
                 (id, provider, display_name, description, enabled, is_default, capabilities, max_tokens, config, created_at, updated_at)
                 VALUES
                 (:id, :provider, :display_name, :description, :enabled, :is_default, :capabilities, :max_tokens, :config, :created_at, :updated_at)
-                """
-                ),
+                """),
                 model_data,
             )
             added_count += 1
@@ -183,9 +167,7 @@ async def seed_ai_models(session: AsyncSession) -> tuple[int, int]:
     # at models that no longer exist are reset to 'auto' below.
 
     # Ensure 'auto' is marked as default
-    await session.execute(
-        text("UPDATE ai_models SET is_default = FALSE")
-    )
+    await session.execute(text("UPDATE ai_models SET is_default = FALSE"))
     await session.execute(
         text("UPDATE ai_models SET is_default = TRUE WHERE id = 'auto'")
     )

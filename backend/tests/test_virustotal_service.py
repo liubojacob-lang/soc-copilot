@@ -249,22 +249,16 @@ class TestLookups:
 
         service._get.assert_awaited_with("/files/abc123")
 
-    async def test_lookup_url_uses_base64url_id_without_padding(
-        self, default_settings
-    ):
+    async def test_lookup_url_uses_base64url_id_without_padding(self, default_settings):
         service = make_service()
         service._get = AsyncMock(
-            return_value=vt_payload(
-                {"harmless": 5}, title="Example Domain"
-            )
+            return_value=vt_payload({"harmless": 5}, title="Example Domain")
         )
 
         url = "http://evil.example/path"
         result = await service.lookup_url(url)
 
-        expected_id = (
-            base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
-        )
+        expected_id = base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
         service._get.assert_awaited_with(f"/urls/{expected_id}")
         assert "=" not in expected_id
         assert base64.urlsafe_b64decode(expected_id + "==").decode() == url
@@ -274,9 +268,7 @@ class TestLookups:
 class TestScanUrl:
     async def test_submits_url_for_scanning(self, default_settings):
         service = make_service()
-        client = make_client(
-            make_response(json_data={"data": {"id": "scan-123"}})
-        )
+        client = make_client(make_response(json_data={"data": {"id": "scan-123"}}))
         service._get_client = AsyncMock(return_value=client)
 
         result = await service.scan_url("http://evil.example")

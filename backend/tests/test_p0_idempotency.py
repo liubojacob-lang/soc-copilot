@@ -301,7 +301,7 @@ class TestIdempotencyRegistration:
         # Update with new status
         await manager.register_idempotency_key(key, "run-1", "running")
 
-        cached_run_id, cached_status, _ = rqm_module._idempotency_cache[key]
+        _cached_run_id, cached_status, _ = rqm_module._idempotency_cache[key]
         assert cached_status == "running"
 
 

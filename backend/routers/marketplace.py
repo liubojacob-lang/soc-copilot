@@ -277,13 +277,19 @@ async def adapt_external(
         try:
             raw_content = await fetch_source_content(req.url, title_hint=req.title_hint)
         except ValueError as ssrf_exc:
-            raise HTTPException(status_code=400, detail=f"URL blocked by security policy: {ssrf_exc}")
+            raise HTTPException(
+                status_code=400, detail=f"URL blocked by security policy: {ssrf_exc}"
+            )
         except Exception as e:
-            logger.warning(f"Error fetching external URL {req.url}: {e}, using synthesized fallback")
+            logger.warning(
+                f"Error fetching external URL {req.url}: {e}, using synthesized fallback"
+            )
             raw_content = f"# Playbook: {req.title_hint or 'External Playbook'}\n# Source: {req.url}"
 
     if not raw_content or not raw_content.strip():
-        raw_content = f"# Playbook: {req.title_hint or 'Security Incident Response Playbook'}"
+        raw_content = (
+            f"# Playbook: {req.title_hint or 'Security Incident Response Playbook'}"
+        )
 
     adapted = await adapt_playbook_with_ai(
         raw_content=raw_content,
@@ -314,7 +320,9 @@ async def import_external(
     # Validate DAG structure before persisting
     dag_json = data.get("dag_json") or {}
     if not isinstance(dag_json, dict):
-        raise HTTPException(status_code=400, detail="playbook_data.dag_json must be an object")
+        raise HTTPException(
+            status_code=400, detail="playbook_data.dag_json must be an object"
+        )
     nodes = dag_json.get("nodes")
     edges = dag_json.get("edges")
     if not isinstance(nodes, list) or not isinstance(edges, list):
@@ -324,7 +332,9 @@ async def import_external(
         )
     # Guard against suspiciously large payloads
     if len(nodes) > 200 or len(edges) > 500:
-        raise HTTPException(status_code=400, detail="DAG exceeds allowed node/edge limits")
+        raise HTTPException(
+            status_code=400, detail="DAG exceeds allowed node/edge limits"
+        )
 
     # 1. Always save to local definitions so user can immediately view, edit, and run
     imported_def = await playbook_repo.create(

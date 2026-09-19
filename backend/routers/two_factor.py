@@ -84,7 +84,9 @@ async def enable_2fa(
     current_user.totp_policy = request.policy
 
     await db.commit()
-    logger.info(f"User {current_user.username} enabled 2FA with policy: {request.policy}")
+    logger.info(
+        f"User {current_user.username} enabled 2FA with policy: {request.policy}"
+    )
 
     return TOTPStatusResponse(
         is_enabled=True,
@@ -110,7 +112,9 @@ async def switch_2fa_policy(
     backup_codes: list[str] = []
     if current_user.totp_backup_codes:
         try:
-            backup_codes = json.loads(secret_service.decrypt(current_user.totp_backup_codes))
+            backup_codes = json.loads(
+                secret_service.decrypt(current_user.totp_backup_codes)
+            )
         except Exception:
             backup_codes = []
 
@@ -125,10 +129,14 @@ async def switch_2fa_policy(
 
     current_user.totp_policy = request.policy
     if used_backup and updated_backup is not None:
-        current_user.totp_backup_codes = secret_service.encrypt(json.dumps(updated_backup))
+        current_user.totp_backup_codes = secret_service.encrypt(
+            json.dumps(updated_backup)
+        )
 
     await db.commit()
-    logger.info(f"User {current_user.username} switched 2FA policy to: {request.policy}")
+    logger.info(
+        f"User {current_user.username} switched 2FA policy to: {request.policy}"
+    )
 
     return TOTPStatusResponse(
         is_enabled=True,
@@ -146,14 +154,18 @@ async def verify_sudo_mode(
     if not current_user.is_totp_enabled or not current_user.totp_secret:
         # If user has not enabled 2FA, pass-through sudo token
         sudo_token = create_sudo_token(current_user.id, minutes=10)
-        return TOTPSudoResponse(valid=True, sudo_token=sudo_token, expires_in_seconds=600)
+        return TOTPSudoResponse(
+            valid=True, sudo_token=sudo_token, expires_in_seconds=600
+        )
 
     secret_service = get_secret_service()
     plain_secret = secret_service.decrypt(current_user.totp_secret)
     backup_codes: list[str] = []
     if current_user.totp_backup_codes:
         try:
-            backup_codes = json.loads(secret_service.decrypt(current_user.totp_backup_codes))
+            backup_codes = json.loads(
+                secret_service.decrypt(current_user.totp_backup_codes)
+            )
         except Exception:
             backup_codes = []
 
@@ -167,7 +179,9 @@ async def verify_sudo_mode(
         )
 
     if used_backup and updated_backup is not None:
-        current_user.totp_backup_codes = secret_service.encrypt(json.dumps(updated_backup))
+        current_user.totp_backup_codes = secret_service.encrypt(
+            json.dumps(updated_backup)
+        )
         await db.commit()
 
     sudo_token = create_sudo_token(current_user.id, minutes=10)
@@ -197,7 +211,9 @@ async def disable_2fa(
     backup_codes: list[str] = []
     if current_user.totp_backup_codes:
         try:
-            backup_codes = json.loads(secret_service.decrypt(current_user.totp_backup_codes))
+            backup_codes = json.loads(
+                secret_service.decrypt(current_user.totp_backup_codes)
+            )
         except Exception:
             backup_codes = []
 

@@ -116,7 +116,7 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
 
         {/* Caret icon */}
         <ChevronDown
-          className={`w-3 h-3 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
+          className={`w-3 h-3 text-text-tertiary dark:text-gray-500 transition-transform duration-200 ${
             isOpen ? "rotate-180 text-accent-600 dark:text-accent-400" : ""
           }`}
         />
@@ -226,7 +226,7 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
 
           {/* 2. Group: 个人中心 / Personal */}
           <div className="pt-2 pb-1">
-            <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-text-tertiary dark:text-gray-500">
               {isZh ? "个人中心" : "Personal"}
             </div>
             <div className="space-y-0.5">
@@ -236,10 +236,10 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
                 className="flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/90 dark:hover:bg-gray-800/90 rounded-xl transition-all group cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <Settings className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
+                  <Settings className="w-4 h-4 text-text-tertiary dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
                   <span>{isZh ? "偏好与系统设置" : tNav("settings")}</span>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-3.5 h-3.5 text-text-tertiary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
               </Link>
 
               <Link
@@ -248,10 +248,10 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
                 className="flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/90 dark:hover:bg-gray-800/90 rounded-xl transition-all group cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <Lock className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
+                  <Lock className="w-4 h-4 text-text-tertiary dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
                   <span>{tNav("changePassword")}</span>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-3.5 h-3.5 text-text-tertiary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
               </Link>
             </div>
           </div>
@@ -259,7 +259,7 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
           {/* 3. Group: 平台管理 / Administration (Only for Admin/Analyst) */}
           {(isAdmin(user) || isAnalystOrAdmin(user)) && (
             <div className="pt-2 pb-1 border-t border-gray-100 dark:border-gray-800/80 mt-1">
-              <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-text-tertiary dark:text-gray-500">
                 {isZh ? "平台管理" : "Administration"}
               </div>
               <div className="space-y-0.5">
@@ -270,7 +270,7 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
                     className="flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/90 dark:hover:bg-gray-800/90 rounded-xl transition-all group cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5">
-                      <Users className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
+                      <Users className="w-4 h-4 text-text-tertiary dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
                       <span>{isZh ? "团队与权限" : tNav("users")}</span>
                     </div>
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/50 dark:border-purple-800/50">
@@ -285,10 +285,10 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
                   className="flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/90 dark:hover:bg-gray-800/90 rounded-xl transition-all group cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5">
-                    <ScrollText className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
+                    <ScrollText className="w-4 h-4 text-text-tertiary dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
                     <span>{isZh ? "操作审计合规" : tNav("audit")}</span>
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight className="w-3.5 h-3.5 text-text-tertiary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                 </Link>
               </div>
             </div>
@@ -307,7 +307,7 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
               className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/90 dark:hover:bg-gray-800/90 rounded-xl transition-all group cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <Keyboard className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
+                <Keyboard className="w-4 h-4 text-text-tertiary dark:text-gray-500 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors shrink-0" />
                 <span>{isZh ? "键盘快捷键帮助" : "Keyboard Shortcuts"}</span>
               </div>
               <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 shadow-subtle leading-none">

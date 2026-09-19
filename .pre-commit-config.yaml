@@ -4,13 +4,13 @@
 repos:
   # Backend Python hooks
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 26.5.1  # matches CI/backend formatting (T-ruff-backlog note)
     hooks:
       - id: black
         language_version: python3.12
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.2.1
+    rev: v0.16.8
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]

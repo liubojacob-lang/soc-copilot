@@ -63,27 +63,27 @@ class TestPasswordValidator:
     def test_password_strength_scoring(self):
         """Test password strength scoring."""
         # Weak password - too short
-        is_valid, errors = validate_password_strength("weak")
+        is_valid, _errors = validate_password_strength("weak")
         assert not is_valid
 
         # Valid password with 3 character types (lowercase, uppercase, digits)
-        is_valid, errors = validate_password_strength("ValidPass123")
+        is_valid, _errors = validate_password_strength("ValidPass123")
         assert is_valid
 
         # Strong password with all 4 types - avoid common patterns
-        is_valid, errors = validate_password_strength("Xyz789!Qwerty")
+        is_valid, _errors = validate_password_strength("Xyz789!Qwerty")
         assert is_valid
 
     def test_empty_password(self):
         """Test empty password handling."""
-        is_valid, errors = validate_password_strength("")
+        is_valid, _errors = validate_password_strength("")
         assert not is_valid
 
     def test_password_max_length(self):
         """Test password maximum length."""
         # Very long password
         long_password = "A" * 1000 + "1!a"
-        is_valid, errors = validate_password_strength(long_password)
+        is_valid, _errors = validate_password_strength(long_password)
         # Should either accept or reject gracefully
         assert isinstance(is_valid, bool)
 
@@ -91,7 +91,7 @@ class TestPasswordValidator:
         """Test password with unicode characters."""
         # Assembled at runtime so no credential-looking literal sits in source
         unicode_password = "P" + "@ssw0rd中文!日本語"
-        is_valid, errors = validate_password_strength(unicode_password)
+        is_valid, _errors = validate_password_strength(unicode_password)
         # Should handle unicode gracefully
         assert isinstance(is_valid, bool)
 
@@ -265,7 +265,7 @@ class TestBootstrapPasswordValidator:
 
     def test_bootstrap_password_validation(self):
         """Test bootstrap password validation."""
-        is_valid, error = validate_bootstrap_password()
+        is_valid, _error = validate_bootstrap_password()
         assert isinstance(is_valid, bool)
 
 

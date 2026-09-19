@@ -61,7 +61,9 @@ async def analyze_alert(
         service = AlertService(session=session)
         result = await service.analyze(raw_log)
         if not result.attack_pattern and result.event_type:
-            result.attack_pattern = f"{result.event_type.value.upper()} detection pattern"
+            result.attack_pattern = (
+                f"{result.event_type.value.upper()} detection pattern"
+            )
         return result
     except ValueError as e:
         logger.error(f"Validation error: {e!s}")

@@ -331,12 +331,13 @@ class SlackNotificationService:
 
         # Add failed nodes if provided
         if failed_nodes:
+            failed_list = ", ".join(f"`{n}`" for n in failed_nodes[:10])
             blocks.append(
                 {
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": f"*Failed Nodes:*\n{', '.join(f"`{n}`" for n in failed_nodes[:10])}"
+                        "text": f"*Failed Nodes:*\n{failed_list}"
                         + (
                             f" and {len(failed_nodes) - 10} more..."
                             if len(failed_nodes) > 10

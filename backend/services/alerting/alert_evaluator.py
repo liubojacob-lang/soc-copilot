@@ -234,7 +234,7 @@ class AlertEvaluator:
 
         # Evaluate each rule
         for rule in rules:
-            should_trigger, reason = rule.should_trigger(
+            should_trigger, _reason = rule.should_trigger(
                 metric_values, current_time=time.time()
             )
 

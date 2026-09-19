@@ -172,9 +172,7 @@ class TestAuditContextFactory:
         )
         create = audit_context("playbook:run")
 
-        context = await create(
-            make_request(), AsyncMock(spec=AsyncSession)
-        )
+        context = await create(make_request(), AsyncMock(spec=AsyncSession))
 
         assert context.user_id is None
 

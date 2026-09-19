@@ -239,7 +239,9 @@ class TestStatusTransitions:
         )
         service = AlertLifecycleService(session)
 
-        resp = await service.assign_alert("42", AlertAssignment(assigned_to="analyst-7"), "u1")
+        resp = await service.assign_alert(
+            "42", AlertAssignment(assigned_to="analyst-7"), "u1"
+        )
 
         assert alert.assigned_to == "analyst-7"
         assert alert.assigned_at is not None

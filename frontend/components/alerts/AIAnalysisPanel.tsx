@@ -85,7 +85,7 @@ export function AIAnalysisPanel({ alert, onAddNote }: AIAnalysisPanelProps) {
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold tracking-tight text-text-primary">
-          <Brain className="h-4 w-4 text-ai" />
+          <Brain className="h-4 w-4 text-ai-fg" />
           {t("title")}
         </h3>
         <div className="flex items-center gap-2">

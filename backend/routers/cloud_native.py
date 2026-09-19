@@ -108,9 +108,7 @@ async def scan_container_image(
             # Demo data: no scanner backend is wired behind this endpoint;
             # use /containers/trivy-scan for real vulnerability results
             "simulated": True,
-            "notice": (
-                "Demo data — configure Trivy/Clair integration for real scans"
-            ),
+            "notice": ("Demo data — configure Trivy/Clair integration for real scans"),
             "total_vulnerabilities": len(vulnerabilities),
             "severity_breakdown": {
                 "critical": len(
@@ -665,7 +663,10 @@ async def scan_with_trivy(
     structured CVE data. Results are cached for 24 hours unless
     force_rescan is set to true.
     """
-    from services.integration.trivy_service import TrivyNotInstalledError, get_trivy_service
+    from services.integration.trivy_service import (
+        TrivyNotInstalledError,
+        get_trivy_service,
+    )
 
     try:
         trivy = get_trivy_service(db)
@@ -701,7 +702,6 @@ async def scan_with_trivy(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Scan error: an unexpected error occurred.",
         )
-
 
 
 # ── Container Inventory & Detail Endpoints ─────────────────────────────
@@ -761,8 +761,14 @@ class ContainerDetailResponse(ContainerListItem):
 async def list_containers(
     cluster: str | None = Query(None, description="Filter by cluster name"),
     namespace: str | None = Query(None, description="Filter by namespace"),
-    status_filter: str | None = Query(None, alias="status", description="Filter by status (all, running, warning, terminated)"),
-    search: str | None = Query(None, description="Search keyword for container, pod, or image"),
+    status_filter: str | None = Query(
+        None,
+        alias="status",
+        description="Filter by status (all, running, warning, terminated)",
+    ),
+    search: str | None = Query(
+        None, description="Search keyword for container, pod, or image"
+    ),
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(10, ge=1, le=100, description="Items per page"),
     current_user: UserModel = Depends(get_current_user),

@@ -32,9 +32,9 @@ def _record_llm_usage(tag: str, model: str, usage: dict | None) -> None:
         prompt = usage.get("prompt_tokens") or usage.get("input_tokens")
         completion = usage.get("completion_tokens") or usage.get("output_tokens")
         if prompt:
-            llm_tokens_total.labels(
-                provider=tag, model=model, direction="prompt"
-            ).inc(int(prompt))
+            llm_tokens_total.labels(provider=tag, model=model, direction="prompt").inc(
+                int(prompt)
+            )
         if completion:
             llm_tokens_total.labels(
                 provider=tag, model=model, direction="completion"
@@ -108,7 +108,9 @@ class ZhipuAIProvider(LLMProvider):
         for attempt in range(2):
             try:
                 async with httpx.AsyncClient(
-                    timeout=httpx.Timeout(connect=15.0, read=req_timeout, write=30.0, pool=15.0)
+                    timeout=httpx.Timeout(
+                        connect=15.0, read=req_timeout, write=30.0, pool=15.0
+                    )
                 ) as client:
                     response = await client.post(
                         f"{self.base_url}/chat/completions",
@@ -123,7 +125,9 @@ class ZhipuAIProvider(LLMProvider):
                     return msg.get("content") or msg.get("reasoning_content") or ""
             except (httpx.RemoteProtocolError, httpx.ConnectError) as e:
                 if attempt == 0:
-                    logger.warning(f"Zhipu AI API transient network error ({e}), retrying once...")
+                    logger.warning(
+                        f"Zhipu AI API transient network error ({e}), retrying once..."
+                    )
                     await asyncio.sleep(1)
                     continue
                 logger.error(f"Zhipu AI API error: {e}")
@@ -446,7 +450,9 @@ class NVIDIAProvider(LLMProvider):
         for attempt in range(2):
             try:
                 async with httpx.AsyncClient(
-                    timeout=httpx.Timeout(connect=15.0, read=req_timeout, write=30.0, pool=15.0)
+                    timeout=httpx.Timeout(
+                        connect=15.0, read=req_timeout, write=30.0, pool=15.0
+                    )
                 ) as client:
                     response = await client.post(
                         f"{self.base_url}/chat/completions",
@@ -461,7 +467,9 @@ class NVIDIAProvider(LLMProvider):
                     return msg.get("content") or msg.get("reasoning_content") or ""
             except (httpx.RemoteProtocolError, httpx.ConnectError) as e:
                 if attempt == 0:
-                    logger.warning(f"NVIDIA API transient network error ({e}), retrying once...")
+                    logger.warning(
+                        f"NVIDIA API transient network error ({e}), retrying once..."
+                    )
                     await asyncio.sleep(1)
                     continue
                 logger.error(f"NVIDIA API error: {e}")
@@ -537,7 +545,7 @@ class LLMFactory:
         if provider_type.lower() not in provider_key_map:
             raise ValueError(f"Unknown provider: {provider_type}")
 
-        key_setting, model_setting = provider_key_map[provider_type.lower()]
+        key_setting, _model_setting = provider_key_map[provider_type.lower()]
         api_key = getattr(settings, key_setting, None)
 
         if not api_key:

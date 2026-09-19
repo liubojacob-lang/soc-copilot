@@ -36,8 +36,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Recreate bare schemas so downgrade does not break alembic traversal.
     # Data lost by upgrade() is NOT restored (rows, if any, were orphans).
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE IF NOT EXISTS event_similarities (
             id VARCHAR(36) PRIMARY KEY,
             event_id_1 VARCHAR(255) NOT NULL,
@@ -46,10 +45,8 @@ def downgrade() -> None:
             created_at VARCHAR(50) NOT NULL,
             ttl_seconds INTEGER
         )
-        """
-    )
-    op.execute(
-        """
+        """)
+    op.execute("""
         CREATE TABLE IF NOT EXISTS on_call_schedules (
             id VARCHAR(36) PRIMARY KEY,
             user_id VARCHAR(255) NOT NULL,
@@ -58,10 +55,8 @@ def downgrade() -> None:
             end_date TIMESTAMP WITH TIME ZONE NOT NULL,
             is_primary BOOLEAN NOT NULL DEFAULT FALSE
         )
-        """
-    )
-    op.execute(
-        """
+        """)
+    op.execute("""
         CREATE TABLE IF NOT EXISTS playbook_nodes (
             id VARCHAR(36) PRIMARY KEY,
             definition_id VARCHAR(36) NOT NULL
@@ -75,10 +70,8 @@ def downgrade() -> None:
             position_y FLOAT,
             created_at TIMESTAMP WITH TIME ZONE NOT NULL
         )
-        """
-    )
-    op.execute(
-        """
+        """)
+    op.execute("""
         CREATE TABLE IF NOT EXISTS playbook_edges (
             id VARCHAR(36) PRIMARY KEY,
             definition_id VARCHAR(36) NOT NULL
@@ -88,5 +81,4 @@ def downgrade() -> None:
             condition_expression TEXT,
             created_at TIMESTAMP WITH TIME ZONE NOT NULL
         )
-        """
-    )
+        """)

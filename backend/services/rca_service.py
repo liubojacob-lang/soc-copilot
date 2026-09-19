@@ -30,7 +30,9 @@ from services.llm_retry import get_llm_retry_service
 
 logger = get_logger(__name__)
 
-_PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "root_cause_analysis.md"
+_PROMPT_PATH = (
+    Path(__file__).resolve().parents[1] / "prompts" / "root_cause_analysis.md"
+)
 _PROMPT_VERSION = "cot-v1"
 _VALID_PRIORITIES = {"critical", "high", "medium", "low"}
 _MAX_SIMILAR_ALERTS = 5
@@ -160,11 +162,14 @@ class RootCauseAnalysisService:
 
     async def _build_context(self, alert: SecurityAlert) -> dict[str, str]:
         similar = await self._find_similar_alerts(alert)
-        similar_lines = "\n".join(
-            f"- [{s.created_at}] severity={s.severity} source={s.source} "
-            f"title={s.title!r} status={s.status}"
-            for s in similar
-        ) or "(no similar alerts found)"
+        similar_lines = (
+            "\n".join(
+                f"- [{s.created_at}] severity={s.severity} source={s.source} "
+                f"title={s.title!r} status={s.status}"
+                for s in similar
+            )
+            or "(no similar alerts found)"
+        )
 
         alert_context = (
             f"Alert #{alert.id}: {alert.title}\n"
@@ -195,9 +200,7 @@ class RootCauseAnalysisService:
             "similar_historical_cases": similar_lines,
         }
 
-    async def _find_similar_alerts(
-        self, alert: SecurityAlert
-    ) -> list[SecurityAlert]:
+    async def _find_similar_alerts(self, alert: SecurityAlert) -> list[SecurityAlert]:
         conditions = [SecurityAlert.id != alert.id, SecurityAlert.deleted_at.is_(None)]
         if alert.rule_id:
             conditions.append(SecurityAlert.rule_id == alert.rule_id)
@@ -231,8 +234,12 @@ def _to_response_dict(row: RootCauseAnalysis) -> dict[str, Any]:
         "root_cause_category": row.root_cause_category,
         "root_cause_subcategory": row.root_cause_subcategory,
         "confidence": row.confidence,
-        "reasoning_steps": reasoning.get("steps", []) if isinstance(reasoning, dict) else reasoning,
-        "evidence_chain": evidence.get("evidence", []) if isinstance(evidence, dict) else evidence,
+        "reasoning_steps": (
+            reasoning.get("steps", []) if isinstance(reasoning, dict) else reasoning
+        ),
+        "evidence_chain": (
+            evidence.get("evidence", []) if isinstance(evidence, dict) else evidence
+        ),
         "verification_steps": row.verification_steps or [],
         "suggested_remediation": row.suggested_remediation,
         "remediation_priority": row.remediation_priority,

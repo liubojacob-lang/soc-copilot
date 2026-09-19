@@ -40,7 +40,9 @@ class TestIOCHitSchemaValidation:
     def test_enum_members_still_accepted(self):
         from schemas.ioc_hit import IOCHitCreate
 
-        hit = IOCHitCreate(ioc_type=IOCType.domain, ioc_value="a.com", source=IOCSource.llm)
+        hit = IOCHitCreate(
+            ioc_type=IOCType.domain, ioc_value="a.com", source=IOCSource.llm
+        )
         assert hit.ioc_type is IOCType.domain or hit.ioc_type == "domain"
 
     def test_arbitrary_strings_accepted_characterisation(self):
@@ -122,7 +124,9 @@ class _LookupPatches:
             )
         )
         self.is_enabled = self._stack.enter_context(
-            patch.object(self.service, "is_enabled", AsyncMock(return_value=self.enabled))
+            patch.object(
+                self.service, "is_enabled", AsyncMock(return_value=self.enabled)
+            )
         )
         repo_cls = self._stack.enter_context(
             patch("services.threat_intel_service.IOCHitRepository")
@@ -168,7 +172,11 @@ class TestThreatIntelLookupOrdering:
         patches.is_enabled.assert_awaited_once()
 
     async def test_confidence_thresholds_map_to_verdicts(self):
-        cases = [(95, Verdict.malicious), (60, Verdict.suspicious), (10, Verdict.benign)]
+        cases = [
+            (95, Verdict.malicious),
+            (60, Verdict.suspicious),
+            (10, Verdict.benign),
+        ]
         for confidence, expected in cases:
             service = _ti_service()
             with _LookupPatches(service, hits=[_ioc_hit(confidence=confidence)]):

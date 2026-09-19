@@ -34,8 +34,25 @@
 import { test, expect, type Page } from "@playwright/test";
 import { login, TEST_USERS } from "../utils/auth";
 
-/** 待审计的页面。列表页 + 新建类页面是静态的；详情页的 ID 在运行时发现。 */
+/**
+ * 待审计的页面。列表页 + 新建类页面是静态的；详情页的 ID 在运行时发现。
+ *
+ * 覆盖面原则：**把 app/[locale] 下所有可达页面都放进来**，不留"以后再说"。
+ * 历史证明静态统计排不出优先级 —— `threat-hunting`（46 处）与 `monitor`（284 处）
+ * 都是跑出来才发现的，按硬编码色数量排序时它们根本不显眼。
+ *
+ * 刻意排除的只有两类：
+ *   · `/[...rest]` —— 404 兜底页，不是正常入口。
+ *   · `/login` —— 未登录态页面，而本闸全程在登录态下运行，访问它会被重定向，
+ *     审计到的其实是别的页面（假通过）。需要单独一条未登录用例，见文件末尾说明。
+ *
+ * 另外注意**重定向会造成重复计数**，下面三对是同一个页面，只保留落点：
+ *   /admin/health   → /admin/dashboard
+ *   /admin/settings → /settings/system
+ *   /admin/audit    → /audit
+ */
 const STATIC_PAGES: Array<{ label: string; path: string }> = [
+  // ── 概览与运营 ─────────────────────────────────────────────
   { label: "仪表盘", path: "/" },
   { label: "告警列表", path: "/alerts" },
   { label: "工单列表", path: "/cases" },
@@ -46,6 +63,32 @@ const STATIC_PAGES: Array<{ label: string; path: string }> = [
   { label: "威胁狩猎", path: "/threat-hunting" },
   { label: "触发器", path: "/triggers" },
   { label: "监控总览", path: "/monitor" },
+  // ── 安全能力 ───────────────────────────────────────────────
+  { label: "资产管理", path: "/assets" },
+  { label: "云原生", path: "/cloud-native" },
+  { label: "关联分析", path: "/correlation" },
+  { label: "威胁情报", path: "/threat-intel" },
+  { label: "情报看板", path: "/threat-intel/dashboard" },
+  { label: "UEBA", path: "/ueba" },
+  { label: "插件市场", path: "/marketplace" },
+  { label: "报表", path: "/reports" },
+  // ── AI ────────────────────────────────────────────────────
+  { label: "AI 助手", path: "/ai-assistant" },
+  // ── 管理（落点，非重定向源）────────────────────────────────
+  { label: "审计日志", path: "/audit" },
+  { label: "管理仪表盘", path: "/admin/dashboard" },
+  { label: "密钥管理", path: "/admin/secrets" },
+  { label: "用户管理", path: "/admin/users" },
+  { label: "系统配置", path: "/settings/system" },
+  // ── 设置 ──────────────────────────────────────────────────
+  { label: "设置", path: "/settings" },
+  { label: "AI 模型设置", path: "/settings/ai-models" },
+  { label: "API 密钥设置", path: "/settings/api-keys" },
+  { label: "通知设置", path: "/settings/notifications" },
+  { label: "修改密码", path: "/change-password" },
+  // ── 触发器新建 ─────────────────────────────────────────────
+  { label: "Cron 新建", path: "/triggers/cron/new" },
+  { label: "Webhook 新建", path: "/triggers/webhook/new" },
 ];
 
 const THEMES = ["light", "dark"] as const;
@@ -63,7 +106,7 @@ interface Failure {
 }
 
 /** 浏览器侧：遍历可见文本节点并按 AA 判定。 */
-function collectFailures(): Failure[] {
+function collectFailures(): { failures: Failure[]; gradientSkipped: number } {
   type RGB = { r: number; g: number; b: number; a: number };
 
   const parse = (value: string): RGB | null => {
@@ -99,11 +142,24 @@ function collectFailures(): Failure[] {
 
   const isDark = document.documentElement.classList.contains("dark");
 
-  /** 逐层向上找到第一个不透明背景；找不到就用主题兜底色。 */
-  const effectiveBg = (el: Element): RGB => {
+  /**
+   * 逐层向上找到第一个不透明背景。
+   *
+   * 返回 `null` 表示**无法判定**：背景链上出现了渐变（`background-image`）。
+   * 渐变的 `background-color` 是透明的，继续向上找会落到几百像素外的白色祖先，
+   * 于是"白字压在蓝色渐变按钮上"会被算成"白字压白底 = 1:1" —— 假阳性。
+   * 实测 `/ai-assistant` 的发送按钮就是这样被误报的。
+   *
+   * 无法判定时**跳过并计数**，而不是静默跳过：静默跳过会让闸悄悄失去覆盖面，
+   * 那是比假阳性更危险的事（见本文件顶部关于"假通过"的说明）。
+   * 计数会随每页结果一起输出，方便人工抽查。
+   */
+  const effectiveBg = (el: Element): RGB | null => {
     let n: Element | null = el;
     while (n && n !== document.documentElement) {
-      const p = parse(getComputedStyle(n).backgroundColor);
+      const s = getComputedStyle(n);
+      if (s.backgroundImage && s.backgroundImage.includes("gradient")) return null;
+      const p = parse(s.backgroundColor);
       if (p && p.a > 0.9) return p;
       n = n.parentElement;
     }
@@ -111,6 +167,7 @@ function collectFailures(): Failure[] {
   };
 
   const out: Failure[] = [];
+  let gradientSkipped = 0;
   const nodes = document.querySelectorAll(
     "p,span,h1,h2,h3,h4,h5,h6,a,button,label,td,th,li,dt,dd,code,figcaption,legend,summary"
   );
@@ -137,6 +194,10 @@ function collectFailures(): Failure[] {
     if (!rawFg) continue;
 
     const bg = effectiveBg(el);
+    if (!bg) {
+      gradientSkipped++;
+      continue;
+    }
     const fg = rawFg.a < 1 ? composite(rawFg, bg) : rawFg;
 
     const size = parseFloat(style.fontSize);
@@ -159,7 +220,7 @@ function collectFailures(): Failure[] {
     });
   }
 
-  return out;
+  return { failures: out, gradientSkipped };
 }
 
 /** 设主题：注入 zustand persist 的存储值，在页面脚本执行前生效。 */
@@ -230,6 +291,34 @@ async function waitForStable(page: Page, timeoutMs = 8000): Promise<void> {
   }
 }
 
+/**
+ * 渲染守卫的阈值。
+ *
+ * 取值的依据：扩面前对 24 个页面做过一次侦察，实测"可见文本节点数"最低 45、
+ * 正文长度也都在数百字以上；而空壳页（骨架屏 / 数据为空 / 权限不足）
+ * 通常只有个位数节点、几十字。阈值取在两者之间且明显偏低，宁可漏报也不误报 ——
+ * 守卫的目的是拦住"空壳被当成通过"，不是给正常页面设门槛。
+ */
+const RENDER_GUARD = { minLeaves: 15, minTextLen: 150 };
+
+/** 统计页面上真正可见的叶子文本节点数与正文长度（供渲染守卫判定）。 */
+async function measureRendered(page: Page): Promise<{ textLen: number; leaves: number }> {
+  return page.evaluate(() => {
+    const SEL =
+      "p,span,h1,h2,h3,h4,h5,h6,a,button,label,td,th,li,dt,dd,code,figcaption,legend,summary";
+    let leaves = 0;
+    document.querySelectorAll(SEL).forEach((el) => {
+      if (el.children.length > 0) return;
+      const t = (el.textContent || "").trim();
+      if (t.length < 2) return;
+      const r = el.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) return;
+      leaves++;
+    });
+    return { textLen: document.body.innerText.trim().length, leaves };
+  });
+}
+
 /** 滚动一遍以 materialize 折叠/懒渲染内容，再回到顶部。 */
 async function sweep(page: Page): Promise<void> {
   await page.evaluate(async () => {
@@ -247,6 +336,8 @@ async function sweep(page: Page): Promise<void> {
 interface PageAudit {
   failures: Failure[];
   surfaces: Array<{ tag: string; className: string; background: string; size: string }>;
+  /** 因背景是渐变而无法判定的文本节点数（假阳性的来源，需可见） */
+  gradientSkipped: number;
 }
 
 /**
@@ -278,7 +369,24 @@ async function audit(
   await page.mouse.move(2, 2);
   await page.waitForTimeout(250);
 
-  const failures = await page.evaluate(collectFailures);
+  // ⚠️ 渲染守卫：先确认页面真的渲染了内容，再谈对比度。
+  // 这是本闸第三个被修掉的假通过模式 —— 前两个是"固定等待导致审计空页"与
+  // "被重定向到 /login 却照常审计"。扩面到 30+ 页面之后，风险更大：
+  // 任何一个页面只要因为数据为空 / 权限不足 / 仍在加载而渲染成空壳，
+  // 审计都会得到"0 处不达标"，看起来像修好了。
+  // 这里把它变成显式失败，而不是让闸报绿。
+  const rendered = await measureRendered(page);
+  if (rendered.leaves < RENDER_GUARD.minLeaves || rendered.textLen < RENDER_GUARD.minTextLen) {
+    throw new Error(
+      `【这不是对比度结论】${label}（${path}）疑似未渲染完成：` +
+        `可见文本节点 ${rendered.leaves} 个、正文 ${rendered.textLen} 字，` +
+        `低于守卫阈值 ${RENDER_GUARD.minLeaves} / ${RENDER_GUARD.minTextLen}。\n` +
+        `      常见原因：页面仍在加载、数据为空、或该页对当前账号不可见。\n` +
+        `      闸在此主动失败 —— 渲染成空壳的页面必然"没有对比度问题"，那是假通过。`
+    );
+  }
+
+  const { failures, gradientSkipped } = await page.evaluate(collectFailures);
   for (const f of failures) f.text = `[${label}] ${f.text}`;
 
   // 浅色表面只在深色主题下有意义（判的是"深色界面上出现浅色大块"），
@@ -290,7 +398,7 @@ async function audit(
       }))
     : [];
 
-  return { failures, surfaces };
+  return { failures, surfaces, gradientSkipped };
 }
 
 /** 运行时发现详情页 ID —— 否则这类页面根本进不了闸的覆盖面。 */
@@ -497,14 +605,29 @@ test.describe("运行时对比度与主题适配闸", () => {
   const admin = TEST_USERS.admin;
 
   test("全部页面 · 明暗双主题 · 含交互态与浅色表面", async ({ page, baseURL }) => {
-    test.setTimeout(20 * 60 * 1000);
+    // 覆盖面扩到 35 个目标 × 2 主题 = 70 次页面访问，每次都要等客户端鉴权判定（2s）
+    // 与内容稳定，实测约 10–12 分钟。留出充足余量，避免把"环境慢"误报成"有缺陷"
+    // （曾经因为 20 分钟的硬超时，把一次 2.4 分钟就能跑完的检查变成失败）。
+    test.setTimeout(40 * 60 * 1000);
     const base = baseURL || "http://localhost:3003";
     await login(page, admin.username, admin.password);
 
     const ids = await discoverIds(page, base);
     const targets = [...STATIC_PAGES];
+    // 详情类页面：ID 在运行时通过 API 发现。
+    // 不这样做的话，这类页面根本进不了覆盖面 —— 而本闸抓到的第一个真实缺陷就在工单详情上。
     if (ids.caseId) targets.push({ label: "工单详情", path: `/cases/${ids.caseId}` });
-    if (ids.playbookId) targets.push({ label: "剧本详情", path: `/playbooks/${ids.playbookId}` });
+    if (ids.playbookId) {
+      targets.push({ label: "剧本详情", path: `/playbooks/${ids.playbookId}` });
+      targets.push({
+        label: "剧本定义详情",
+        path: `/playbooks/definitions/${ids.playbookId}`,
+      });
+      targets.push({
+        label: "剧本定义编辑",
+        path: `/playbooks/definitions/${ids.playbookId}/edit`,
+      });
+    }
 
     const failures: Failure[] = [];
     const lightSurfaces: Array<{
@@ -519,6 +642,7 @@ test.describe("运行时对比度与主题适配闸", () => {
     for (const theme of THEMES) {
       await useTheme(page, theme);
       let count = 0;
+      let skippedGradients = 0;
       for (const target of targets) {
         const result = await audit(page, base, target.label, target.path, admin, {
           collectSurfaces: theme === "dark",
@@ -526,8 +650,14 @@ test.describe("运行时对比度与主题适配闸", () => {
         count += result.failures.length;
         failures.push(...result.failures);
         lightSurfaces.push(...result.surfaces);
+        skippedGradients += result.gradientSkipped;
       }
-      console.log(`[静止态·${theme}] 审计 ${targets.length} 个页面，不达标 ${count} 处`);
+      console.log(
+        `[静止态·${theme}] 审计 ${targets.length} 个页面，不达标 ${count} 处` +
+          (skippedGradients
+            ? `；另有 ${skippedGradients} 处因背景是渐变而无法判定，已跳过（不计入结论）`
+            : "")
+      );
     }
 
     // ---------- 二、交互后才出现的状态 ----------
@@ -571,9 +701,11 @@ test.describe("运行时对比度与主题适配闸", () => {
       await target.click();
       await waitForStable(page);
 
-      const f = await page.evaluate(collectFailures);
-      for (const item of f) item.text = `[${probe.label}·${probe.theme}] ${item.text}`;
-      failures.push(...f);
+      const probeResult = await page.evaluate(collectFailures);
+      for (const item of probeResult.failures) {
+        item.text = `[${probe.label}·${probe.theme}] ${item.text}`;
+      }
+      failures.push(...probeResult.failures);
     }
 
     if (skipped.length) console.log("跳过：" + skipped.join("；"));

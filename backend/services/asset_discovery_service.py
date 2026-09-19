@@ -136,7 +136,9 @@ def _validate_scan_target(target: str) -> str:
     """
     cleaned = target.strip()
     if not cleaned or cleaned.startswith("-"):
-        raise ValueError(f"Invalid target (cannot be empty or start with '-'): {target}")
+        raise ValueError(
+            f"Invalid target (cannot be empty or start with '-'): {target}"
+        )
 
     # 1. Try IP network or IP address
     try:

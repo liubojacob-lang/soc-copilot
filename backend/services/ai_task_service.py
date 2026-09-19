@@ -292,11 +292,7 @@ class AITaskQueueService:
 
             summary_text = ""
             if isinstance(result, dict):
-                summary_text = (
-                    result.get("summary")
-                    or result.get("content")
-                    or ""
-                )
+                summary_text = result.get("summary") or result.get("content") or ""
             elif isinstance(result, str):
                 summary_text = result[:1000]
 
@@ -326,7 +322,6 @@ class AITaskQueueService:
             logger.info(f"T2.5: Backfilled AI triage result to alert {alert_id}")
         except Exception as e:
             logger.error(f"T2.5: Failed to backfill alert triage: {e}", exc_info=True)
-
 
     async def _handle_task_error(
         self, task_id: str, error_message: str, is_timeout: bool = False

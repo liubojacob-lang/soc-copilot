@@ -171,7 +171,9 @@ class TestLinkAlerts:
         service = self._service()
         service.repo.link_alerts = AsyncMock(return_value=2)
 
-        await service.link_alerts("case-1", CaseAlertLink(alert_ids=["11", 12]), user_id="u1")
+        await service.link_alerts(
+            "case-1", CaseAlertLink(alert_ids=["11", 12]), user_id="u1"
+        )
 
         assert service.repo.link_alerts.await_args.kwargs["alert_ids"] == [11, 12]
 
@@ -180,7 +182,9 @@ class TestLinkAlerts:
         service = self._service()
         service.repo.link_alerts = AsyncMock(return_value=0)
 
-        await service.link_alerts("case-1", CaseAlertLink(alert_ids=["x"]), user_id="u1")
+        await service.link_alerts(
+            "case-1", CaseAlertLink(alert_ids=["x"]), user_id="u1"
+        )
 
         assert service.repo.link_alerts.await_args.kwargs["alert_ids"] == []
 

@@ -44,7 +44,9 @@ class TestSchemaConstraintsT23:
     def test_trigger_idempotency_key_unique(self):
         table = TriggerInvocationModel.__table__
         col = table.c.idempotency_key
-        assert col.unique is True, "TriggerInvocationModel.idempotency_key must have unique=True"
+        assert (
+            col.unique is True
+        ), "TriggerInvocationModel.idempotency_key must have unique=True"
 
     def test_correlated_event_timestamp_indexes(self):
         table = CorrelatedEvent.__table__

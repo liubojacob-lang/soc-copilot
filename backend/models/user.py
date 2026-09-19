@@ -75,9 +75,7 @@ class UserModel(Base):
     is_totp_enabled: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
-    totp_policy: Mapped[str] = mapped_column(
-        String(32), default="sudo", nullable=False
-    )
+    totp_policy: Mapped[str] = mapped_column(String(32), default="sudo", nullable=False)
     totp_backup_codes: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     # Composite indexes for common queries

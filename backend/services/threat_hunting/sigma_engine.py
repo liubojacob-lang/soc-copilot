@@ -313,8 +313,7 @@ class SigmaEngine:
         ]
 
         logger.info(
-            "Sigma search for rule %s: %d real alert match(es) "
-            "(%d alerts scanned)",
+            "Sigma search for rule %s: %d real alert match(es) " "(%d alerts scanned)",
             rule_id,
             len(matches),
             alerts_scanned,
@@ -324,8 +323,7 @@ class SigmaEngine:
             "rule_id": rule_id,
             "rule_title": rule.title,
             "rule_level": rule.level,
-            "sql_query": rule.generated_sql
-            or self.rule_to_sql(rule.to_dict()),
+            "sql_query": rule.generated_sql or self.rule_to_sql(rule.to_dict()),
             "searched_hours": hours,
             "total_matches": len(matches),
             "alerts_scanned": alerts_scanned,
@@ -337,14 +335,29 @@ class SigmaEngine:
     def _rule_keywords(rule: SigmaRule) -> list[str]:
         """Extract search keywords from a rule title and MITRE techniques."""
         stopwords = {
-            "the", "a", "an", "of", "via", "and", "or", "in", "on", "with",
-            "for", "to", "from", "by", "suspicious", "potential", "possible",
-            "detected", "activity", "attack",
+            "the",
+            "a",
+            "an",
+            "of",
+            "via",
+            "and",
+            "or",
+            "in",
+            "on",
+            "with",
+            "for",
+            "to",
+            "from",
+            "by",
+            "suspicious",
+            "potential",
+            "possible",
+            "detected",
+            "activity",
+            "attack",
         }
         keywords = [
-            w
-            for w in rule.title.lower().split()
-            if len(w) > 3 and w not in stopwords
+            w for w in rule.title.lower().split() if len(w) > 3 and w not in stopwords
         ]
         techniques = [t for t in rule.mitre_techniques if t]
         return (techniques + keywords)[:8] or [rule.title.lower()]
@@ -375,6 +388,7 @@ class SigmaEngine:
             "container": "container_events",
         }
         return category_table.get(category, "security_events")
+
 
 FALLBACK_RULES = [
     {

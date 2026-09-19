@@ -6,8 +6,12 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 # v0.7 DAG Execution Status Types
-NodeStatus = Literal["pending", "running", "success", "failed", "skipped", "cancelled", "queued"]
-RunStatus = Literal["pending", "running", "success", "failed", "partial", "cancelled", "queued"]
+NodeStatus = Literal[
+    "pending", "running", "success", "failed", "skipped", "cancelled", "queued"
+]
+RunStatus = Literal[
+    "pending", "running", "success", "failed", "partial", "cancelled", "queued"
+]
 EngineVersion = str
 ExecutionMode = Literal["linear", "dag"]
 FailureStrategy = Literal["fail_fast", "continue"]

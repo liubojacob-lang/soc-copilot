@@ -159,7 +159,7 @@ export default function AssetsPage() {
             </button>
             <button
               onClick={() => setShowImport(true)}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 text-sm font-medium transition-colors"
             >
               {t("importJson")}
             </button>

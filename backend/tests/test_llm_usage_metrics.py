@@ -23,15 +23,24 @@ class TestRecordLLMUsage:
         _record_llm_usage(
             "openai", "gpt-4", {"prompt_tokens": 120, "completion_tokens": 80}
         )
-        assert _counter_value(
-            "soc_llm_tokens_total", provider="openai", model="gpt-4", direction="prompt"
-        ) == before_p + 120
-        assert _counter_value(
-            "soc_llm_tokens_total",
-            provider="openai",
-            model="gpt-4",
-            direction="completion",
-        ) == before_c + 80
+        assert (
+            _counter_value(
+                "soc_llm_tokens_total",
+                provider="openai",
+                model="gpt-4",
+                direction="prompt",
+            )
+            == before_p + 120
+        )
+        assert (
+            _counter_value(
+                "soc_llm_tokens_total",
+                provider="openai",
+                model="gpt-4",
+                direction="completion",
+            )
+            == before_c + 80
+        )
 
     def test_anthropic_style_keys(self):
         _record_llm_usage(
@@ -39,7 +48,9 @@ class TestRecordLLMUsage:
         )
         # just assert no raise and requests counted; token deltas covered above
         assert (
-            _counter_value("soc_llm_requests_total", provider="claude", model="claude-3")
+            _counter_value(
+                "soc_llm_requests_total", provider="claude", model="claude-3"
+            )
             >= 1
         )
 

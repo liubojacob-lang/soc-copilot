@@ -276,7 +276,11 @@ Respond in JSON format with these fields:
             techniques.append("T1046 - Network Service Discovery")
         if "brute" in low_context or "login" in low_context or "auth" in low_context:
             techniques.append("T1110 - Brute Force")
-        if "malware" in low_context or "trojan" in low_context or "virus" in low_context:
+        if (
+            "malware" in low_context
+            or "trojan" in low_context
+            or "virus" in low_context
+        ):
             techniques.append("T1204 - User Execution")
         if "privilege" in low_context or "escalat" in low_context:
             techniques.append("T1068 - Exploitation for Privilege Escalation")
@@ -444,19 +448,50 @@ Provide your recommendations:"""
 
         # 1. 深度安全推演 / APT / 溯源 / 复杂攻防 / 根因研判 / 报告编制
         deep_reasoning_keywords = [
-            "apt", "攻击链", "溯源", "推演", "根因", "rca", "应急响应", "处置报告",
-            "取证", "playbook", "剧本设计", "深入分析", "att&ck", "mitre", "横向移动",
-            "提权", "勒索", "挖矿", "cve-"
+            "apt",
+            "攻击链",
+            "溯源",
+            "推演",
+            "根因",
+            "rca",
+            "应急响应",
+            "处置报告",
+            "取证",
+            "playbook",
+            "剧本设计",
+            "深入分析",
+            "att&ck",
+            "mitre",
+            "横向移动",
+            "提权",
+            "勒索",
+            "挖矿",
+            "cve-",
         ]
         is_deep_reasoning = any(k in msg_lower for k in deep_reasoning_keywords)
 
         # 2. 长文本日志 / 代码审查 / SQL注入 / 脚本反混淆 / 大报文
         code_log_keywords = [
-            "```", "select ", "union select", "eval", "powershell", "base64",
-            "syslog", "traceback", "stack trace", "exception:", "error:", "audit_log",
-            "pcap", "payload", "cmd.exe", "bash -c"
+            "```",
+            "select ",
+            "union select",
+            "eval",
+            "powershell",
+            "base64",
+            "syslog",
+            "traceback",
+            "stack trace",
+            "exception:",
+            "error:",
+            "audit_log",
+            "pcap",
+            "payload",
+            "cmd.exe",
+            "bash -c",
         ]
-        is_code_or_log = (msg_len > 1000) or any(k in msg_lower for k in code_log_keywords)
+        is_code_or_log = (msg_len > 1000) or any(
+            k in msg_lower for k in code_log_keywords
+        )
 
         # 决策路由
         if is_code_or_log:
@@ -464,13 +499,13 @@ Provide your recommendations:"""
                 return (
                     "glm-4.7-flash",
                     "zhipu",
-                    "长文本/代码日志场景：路由至 200K 超长上下文与 MoE 代码增强模型 (GLM-4.7-Flash)"
+                    "长文本/代码日志场景：路由至 200K 超长上下文与 MoE 代码增强模型 (GLM-4.7-Flash)",
                 )
             elif nvidia_key:
                 return (
                     "meta/llama-3.2-11b-vision-instruct",
                     "nvidia",
-                    "长文本/日志分析场景：路由至 Llama 3.2 11B Vision"
+                    "长文本/日志分析场景：路由至 Llama 3.2 11B Vision",
                 )
 
         if is_deep_reasoning:
@@ -478,19 +513,19 @@ Provide your recommendations:"""
                 return (
                     "claude-3-5-sonnet-20241022",
                     "anthropic",
-                    "高危研判与深度推演：路由至顶级安全推理模型 Claude 3.5 Sonnet"
+                    "高危研判与深度推演：路由至顶级安全推理模型 Claude 3.5 Sonnet",
                 )
             elif nvidia_key:
                 return (
                     "nvidia/nemotron-3.5-lightning-30b-a3b",
                     "nvidia",
-                    "高危研判与深度推演：路由至 NVIDIA 官方思维链推理模型 (Nemotron 3.5 Lightning)"
+                    "高危研判与深度推演：路由至 NVIDIA 官方思维链推理模型 (Nemotron 3.5 Lightning)",
                 )
             elif zhipu_key:
                 return (
                     "glm-4-plus",
                     "zhipu",
-                    "高危研判与深度推演：路由至智谱 GLM-4 Plus 旗舰模型"
+                    "高危研判与深度推演：路由至智谱 GLM-4 Plus 旗舰模型",
                 )
 
         # 3. 日常交互 / 快速查 IP / 端口 / 常规问答
@@ -498,25 +533,25 @@ Provide your recommendations:"""
             return (
                 "meta/llama-3.2-11b-vision-instruct",
                 "nvidia",
-                "日常研判与实时交互：路由至毫秒级响应模型 (Llama 3.2 11B Vision)"
+                "日常研判与实时交互：路由至毫秒级响应模型 (Llama 3.2 11B Vision)",
             )
         elif zhipu_key:
             return (
                 "glm-4.7-flash",
                 "zhipu",
-                "日常研判与快速问答：路由至智谱高速模型 (GLM-4.7-Flash)"
+                "日常研判与快速问答：路由至智谱高速模型 (GLM-4.7-Flash)",
             )
         elif openai_key:
-            return (
-                "gpt-4o-mini",
-                "openai",
-                "日常问答：路由至 GPT-4o Mini"
-            )
+            return ("gpt-4o-mini", "openai", "日常问答：路由至 GPT-4o Mini")
 
         # 默认回退
         default_provider = getattr(settings, "ai_provider", "nvidia").lower()
         if default_provider == "nvidia":
-            return ("meta/llama-3.2-11b-vision-instruct", "nvidia", "系统默认 NVIDIA 路由")
+            return (
+                "meta/llama-3.2-11b-vision-instruct",
+                "nvidia",
+                "系统默认 NVIDIA 路由",
+            )
         elif default_provider == "zhipu":
             return ("glm-4", "zhipu", "系统默认智谱路由")
         return ("glm-4", "zhipu", "兜底默认路由")
@@ -545,7 +580,9 @@ Provide your recommendations:"""
             model_id, model_provider, reason = self.resolve_auto_model(
                 message, conversation_history
             )
-            logger.info(f"[Auto-Route] Selected {model_id} ({model_provider}): {reason}")
+            logger.info(
+                f"[Auto-Route] Selected {model_id} ({model_provider}): {reason}"
+            )
 
         # Use specified model/provider if provided
         llm = self.llm
@@ -638,7 +675,9 @@ Be concise, professional, and helpful."""
             ):
                 collected.append(delta)
                 yield delta
-            logger.info(f"Streamed chat response length: {sum(map(len, collected))} chars")
+            logger.info(
+                f"Streamed chat response length: {sum(map(len, collected))} chars"
+            )
         except Exception as e:
             logger.error(f"Error in chat stream: {e}")
             yield self._rule_based_chat_fallback(message, reason=str(e))
@@ -650,11 +689,43 @@ Be concise, professional, and helpful."""
         msg_lower = message.lower()
 
         # Determine intent & context
-        is_greeting = any(g in msg_lower for g in ["你好", "hello", "hi", "您好", "介绍", "你是谁"])
-        is_playbook = any(p in msg_lower for p in ["剧本", "playbook", "响应", "处置", "应急", "流程", "推荐"])
-        is_alert = any(a in msg_lower for a in ["告警", "alert", "日志", "log", "分析", "研判", "waf", "攻击", "powershell", "webshell"])
-        is_cve = any(c in msg_lower for c in ["cve", "漏洞", "vulnerability", "rce", "sql注入", "xss", "反序列化"])
-        is_report = any(r in msg_lower for r in ["报告", "report", "总结", "复盘", "生成"])
+        is_greeting = any(
+            g in msg_lower for g in ["你好", "hello", "hi", "您好", "介绍", "你是谁"]
+        )
+        is_playbook = any(
+            p in msg_lower
+            for p in ["剧本", "playbook", "响应", "处置", "应急", "流程", "推荐"]
+        )
+        is_alert = any(
+            a in msg_lower
+            for a in [
+                "告警",
+                "alert",
+                "日志",
+                "log",
+                "分析",
+                "研判",
+                "waf",
+                "攻击",
+                "powershell",
+                "webshell",
+            ]
+        )
+        is_cve = any(
+            c in msg_lower
+            for c in [
+                "cve",
+                "漏洞",
+                "vulnerability",
+                "rce",
+                "sql注入",
+                "xss",
+                "反序列化",
+            ]
+        )
+        is_report = any(
+            r in msg_lower for r in ["报告", "report", "总结", "复盘", "生成"]
+        )
 
         # Extract potential IOCs (IPs, CVEs)
         ip_matches = re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", message)
@@ -690,33 +761,51 @@ Be concise, professional, and helpful."""
                 "   - 修补系统或应用程序漏洞，强制重置受影响主机凭证\n"
             )
         elif is_alert or is_cve:
-            target_obj = message[:60].replace("\n", " ") + ("..." if len(message) > 60 else "")
+            target_obj = message[:60].replace("\n", " ") + (
+                "..." if len(message) > 60 else ""
+            )
             lines = [
                 "### 🛡️ 安全告警 / 威胁分析报告\n\n",
                 f"**分析对象**：`{target_obj}`\n\n",
                 "#### 1. 威胁研判与特征提取\n",
             ]
             if ip_matches:
-                lines.append(f"- **识别到的涉案 IP**：{', '.join(f'`{ip}`' for ip in set(ip_matches))}\n")
+                lines.append(
+                    f"- **识别到的涉案 IP**：{', '.join(f'`{ip}`' for ip in set(ip_matches))}\n"
+                )
             if cve_matches:
-                lines.append(f"- **关联 CVE 漏洞**：{', '.join(f'`{c.upper()}`' for c in set(cve_matches))}\n")
+                lines.append(
+                    f"- **关联 CVE 漏洞**：{', '.join(f'`{c.upper()}`' for c in set(cve_matches))}\n"
+                )
 
             techniques = []
             if any(k in msg_lower for k in ["scan", "扫描", "探测", "nmap"]):
                 techniques.append("T1046 - 网络服务发现 (Network Service Discovery)")
             if any(k in msg_lower for k in ["sql", "injection", "注入"]):
-                techniques.append("T1190 - 利用面向互联网的应用程序 (Exploit Public-Facing Application)")
+                techniques.append(
+                    "T1190 - 利用面向互联网的应用程序 (Exploit Public-Facing Application)"
+                )
             if any(k in msg_lower for k in ["brute", "暴破", "密码", "login"]):
                 techniques.append("T1110 - 暴力破解凭证 (Brute Force)")
-            if any(k in msg_lower for k in ["powershell", "cmd", "bash", "shell", "exec"]):
-                techniques.append("T1059 - 命令与脚本执行 (Command and Scripting Interpreter)")
+            if any(
+                k in msg_lower for k in ["powershell", "cmd", "bash", "shell", "exec"]
+            ):
+                techniques.append(
+                    "T1059 - 命令与脚本执行 (Command and Scripting Interpreter)"
+                )
             if any(k in msg_lower for k in ["ransom", "勒索", "加密", "encrypt"]):
                 techniques.append("T1486 - 针对性数据加密 (Data Encrypted for Impact)")
 
             if techniques:
-                lines.append("- **MITRE ATT&CK 战术技术映射**：\n" + "\n".join(f"  - {t}" for t in techniques) + "\n\n")
+                lines.append(
+                    "- **MITRE ATT&CK 战术技术映射**：\n"
+                    + "\n".join(f"  - {t}" for t in techniques)
+                    + "\n\n"
+                )
             else:
-                lines.append("- **初步定性**：检测到可疑网络活动，建议重点核对通信端口与载荷参数。\n\n")
+                lines.append(
+                    "- **初步定性**：检测到可疑网络活动，建议重点核对通信端口与载荷参数。\n\n"
+                )
 
             lines.append(
                 "#### 2. 建议应急处置措施\n"

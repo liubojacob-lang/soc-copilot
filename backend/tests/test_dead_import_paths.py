@@ -51,10 +51,14 @@ def _module_target_exists(package_dir: Path, parts: list[str]) -> bool:
     """Filesystem equivalent of importlib.util.find_spec, without executing
     package ``__init__.py`` side effects during collection."""
     candidate = package_dir.joinpath(*parts)
-    return candidate.with_suffix(".py").is_file() or (candidate / "__init__.py").is_file()
+    return (
+        candidate.with_suffix(".py").is_file() or (candidate / "__init__.py").is_file()
+    )
 
 
-@pytest.mark.parametrize("source", list(_iter_source_files()), ids=lambda p: str(p.relative_to(BACKEND_ROOT)))
+@pytest.mark.parametrize(
+    "source", list(_iter_source_files()), ids=lambda p: str(p.relative_to(BACKEND_ROOT))
+)
 def test_first_party_import_paths_resolve(source: Path):
     """Every import of a first-party module must point at a real file.
 
@@ -84,7 +88,9 @@ def test_first_party_import_paths_resolve(source: Path):
                 base = base.parent
             if node.module:
                 if not _module_target_exists(base, node.module.split(".")):
-                    broken.append(f"{source.parent.name}.{node.module} (level={node.level})")
+                    broken.append(
+                        f"{source.parent.name}.{node.module} (level={node.level})"
+                    )
             continue
 
         if not node.module:
@@ -95,7 +101,9 @@ def test_first_party_import_paths_resolve(source: Path):
         if not _module_target_exists(BACKEND_ROOT, parts):
             broken.append(node.module)
 
-    assert not broken, f"{source.relative_to(BACKEND_ROOT)} imports nonexistent modules: {broken}"
+    assert (
+        not broken
+    ), f"{source.relative_to(BACKEND_ROOT)} imports nonexistent modules: {broken}"
 
 
 def test_playbook_engine_triggers_package_stays_deleted():
@@ -114,9 +122,9 @@ def test_websocket_router_registers_each_path_once():
     ws_paths = [p for p in paths if p.startswith("/ws") or p.startswith("/api/v1/ws")]
 
     assert ws_paths.count("/ws/alerts") == 1, "/ws/alerts must be mounted exactly once"
-    assert "/api/v1/ws/monitoring/metrics" in ws_paths, (
-        "MonitoringDashboard calls /api/v1/ws/monitoring/metrics"
-    )
+    assert (
+        "/api/v1/ws/monitoring/metrics" in ws_paths
+    ), "MonitoringDashboard calls /api/v1/ws/monitoring/metrics"
     assert "/ws/stats" not in ws_paths, (
         "ops endpoints belong under /api/v1 only; a bare duplicate means the "
         "router got mounted twice again"
@@ -173,11 +181,19 @@ async def test_webhook_trigger_reaches_dag_scheduler(monkeypatch):
 
     service = TriggerService(session=MagicMock())
     secret = "wh_test_secret"
-    trigger = MagicMock(id="trig-1", definition_id="def-1", type="webhook", is_active=True, secret=secret)
+    trigger = MagicMock(
+        id="trig-1",
+        definition_id="def-1",
+        type="webhook",
+        is_active=True,
+        secret=secret,
+    )
 
     service.trigger_repo.get_by_id = AsyncMock(return_value=trigger)
     service.trigger_repo.check_idempotency = AsyncMock(return_value=None)
-    service.trigger_repo.record_invocation = AsyncMock(return_value=MagicMock(id="inv-1"))
+    service.trigger_repo.record_invocation = AsyncMock(
+        return_value=MagicMock(id="inv-1")
+    )
     service.trigger_repo.update_invocation = AsyncMock()
     service.trigger_repo.update_last_triggered = AsyncMock()
     service.run_repo.create = AsyncMock(return_value=MagicMock(id="run-1"))
@@ -188,11 +204,23 @@ async def test_webhook_trigger_reaches_dag_scheduler(monkeypatch):
     from repositories.playbook_definition_repository import PlaybookDefinitionRepository
     from services.playbook.playbook_dag_compiler import DAGCompiler
 
-    definition = MagicMock(name="phishing-triage", version="1.0.0", definition_json={"nodes": [], "edges": []})
-    monkeypatch.setattr(
-        PlaybookDefinitionRepository, "get_by_id", AsyncMock(return_value=definition), raising=False
+    definition = MagicMock(
+        name="phishing-triage",
+        version="1.0.0",
+        definition_json={"nodes": [], "edges": []},
     )
-    monkeypatch.setattr(DAGCompiler, "validate_and_compile", AsyncMock(return_value=MagicMock()), raising=False)
+    monkeypatch.setattr(
+        PlaybookDefinitionRepository,
+        "get_by_id",
+        AsyncMock(return_value=definition),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        DAGCompiler,
+        "validate_and_compile",
+        AsyncMock(return_value=MagicMock()),
+        raising=False,
+    )
 
     payload = b'{"alert_id": "ALT-1"}'
     signature = base64.b64encode(

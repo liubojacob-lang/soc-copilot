@@ -253,7 +253,9 @@ export default function APIKeysPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {key.description || (
-                          <span className="text-gray-400 italic">{tApiKeys("noDescription")}</span>
+                          <span className="text-text-tertiary italic">
+                            {tApiKeys("noDescription")}
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -284,7 +286,7 @@ export default function APIKeysPage() {
                         {key.is_active ? (
                           <button
                             onClick={() => handleDisableKey(key.id)}
-                            className="text-orange-600 hover:text-orange-900 mr-3"
+                            className="text-orange-700 hover:text-orange-800 mr-3"
                           >
                             {tCommon("disable")}
                           </button>

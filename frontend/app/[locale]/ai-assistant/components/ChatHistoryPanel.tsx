@@ -144,7 +144,7 @@ export function ChatHistoryPanel({
       {/* Sidebar Header */}
       <div className="h-13 px-3.5 border-b border-border-subtle flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded-lg bg-ai/10 text-ai border border-ai/20">
+          <div className="p-1 rounded-lg bg-ai/10 text-ai-fg border border-ai/20">
             <History className="w-3.5 h-3.5" />
           </div>
           <span className="text-xs font-semibold text-text-primary">

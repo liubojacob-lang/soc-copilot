@@ -142,7 +142,7 @@ export default function NotificationSettingsPage() {
         <PageHeader title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-text-tertiary" />
           </div>
         </main>
       </div>
@@ -271,7 +271,7 @@ export default function NotificationSettingsPage() {
                     {t("configured")}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-gray-400">
+                  <span className="flex items-center gap-1 text-text-tertiary">
                     <XCircle className="w-5 h-5" />
                     {t("notConfigured")}
                   </span>
@@ -313,7 +313,7 @@ export default function NotificationSettingsPage() {
                     {t("configured")}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-gray-400">
+                  <span className="flex items-center gap-1 text-text-tertiary">
                     <XCircle className="w-5 h-5" />
                     {t("notConfigured")}
                   </span>
@@ -355,7 +355,7 @@ export default function NotificationSettingsPage() {
                     {t("configured")}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-gray-400">
+                  <span className="flex items-center gap-1 text-text-tertiary">
                     <XCircle className="w-5 h-5" />
                     {t("notConfigured")}
                   </span>
@@ -386,7 +386,7 @@ export default function NotificationSettingsPage() {
                 {t("configInfoTitle")}
               </h4>
               <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">{t("configInfoDesc")}</p>
-              <div className="mt-2 text-xs text-blue-600 dark:text-blue-400 space-y-1">
+              <div className="mt-2 text-xs text-blue-700 dark:text-blue-400 space-y-1">
                 <p>
                   •{" "}
                   <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">

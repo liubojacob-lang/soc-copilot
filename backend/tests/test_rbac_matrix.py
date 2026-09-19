@@ -90,14 +90,14 @@ async def test_rbac_matrix(
     assert anon.status_code == anon_expected, f"anon {method} {path}: {anon.text[:120]}"
 
     as_analyst = await client.request(method, path, headers=analyst_headers)
-    assert as_analyst.status_code == analyst_expected, (
-        f"analyst {method} {path}: {as_analyst.text[:120]}"
-    )
+    assert (
+        as_analyst.status_code == analyst_expected
+    ), f"analyst {method} {path}: {as_analyst.text[:120]}"
 
     as_admin = await client.request(method, path, headers=admin_headers)
-    assert as_admin.status_code == admin_expected, (
-        f"admin {method} {path}: {as_admin.text[:120]}"
-    )
+    assert (
+        as_admin.status_code == admin_expected
+    ), f"admin {method} {path}: {as_admin.text[:120]}"
 
 
 async def test_analyst_cannot_refresh_ai_models(client, analyst_headers):

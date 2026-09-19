@@ -328,7 +328,7 @@ export default function CasesPage() {
         width: "140px",
         cell: (row) => (
           <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5 text-gray-400" />
+            <User className="w-3.5 h-3.5 text-text-tertiary" />
             {row.assigned_analyst_name || row.assigned_to || "—"}
           </span>
         ),

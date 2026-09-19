@@ -216,7 +216,10 @@ class TriggerService:
                 raise ValueError(f"Definition not found: {trigger.definition_id}")
 
             # Validate and compile DAG
-            from services.playbook.playbook_dag_compiler import DAGCompiler, DAGValidationError
+            from services.playbook.playbook_dag_compiler import (
+                DAGCompiler,
+                DAGValidationError,
+            )
 
             try:
                 compiled = await DAGCompiler.validate_and_compile(
@@ -416,7 +419,10 @@ class TriggerService:
                 return None
 
             # Validate and compile DAG
-            from services.playbook.playbook_dag_compiler import DAGCompiler, DAGValidationError
+            from services.playbook.playbook_dag_compiler import (
+                DAGCompiler,
+                DAGValidationError,
+            )
 
             try:
                 compiled = await DAGCompiler.validate_and_compile(

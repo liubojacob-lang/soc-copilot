@@ -159,9 +159,7 @@ class TestCheckTrivyInstalled:
             "subprocess.run",
             Mock(return_value=Mock(returncode=1)),
         )
-        monkeypatch.setattr(
-            "os.path.exists", lambda p: p == "/opt/homebrew/bin/trivy"
-        )
+        monkeypatch.setattr("os.path.exists", lambda p: p == "/opt/homebrew/bin/trivy")
         service = TrivyService(make_session())
         assert service._check_trivy_installed() is True
         assert service._trivy_path == "/opt/homebrew/bin/trivy"
@@ -199,9 +197,7 @@ class TestScanImage:
 
         session = make_session()
         service = TrivyService(session)
-        monkeypatch.setattr(
-            service, "_check_trivy_installed", Mock(return_value=False)
-        )
+        monkeypatch.setattr(service, "_check_trivy_installed", Mock(return_value=False))
 
         with pytest.raises(TrivyNotInstalledError):
             await service.scan_image("nginx:1.21")

@@ -20,14 +20,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from sqlalchemy import select  # noqa: E402
+from sqlalchemy import select
 
-from db.session import AsyncSessionLocal  # noqa: E402
-from models.prompt_registry import PromptEnvironment, PromptRegistryModel  # noqa: E402
-from services.alerting.alert_service import _ALERT_USER_PROMPT_BUILTIN  # noqa: E402
-from services.lifecycle.alert_pipeline_service import _TRIAGE_PROMPT_TEMPLATE  # noqa: E402
-from services.report_service import _REPORT_USER_PROMPT_BUILTIN  # noqa: E402
-from services.timeline_service import _TIMELINE_USER_PROMPT_BUILTIN  # noqa: E402
+from db.session import AsyncSessionLocal
+from models.prompt_registry import PromptEnvironment, PromptRegistryModel
+from services.alerting.alert_service import _ALERT_USER_PROMPT_BUILTIN
+from services.lifecycle.alert_pipeline_service import _TRIAGE_PROMPT_TEMPLATE
+from services.report_service import _REPORT_USER_PROMPT_BUILTIN
+from services.timeline_service import _TIMELINE_USER_PROMPT_BUILTIN
 
 # name → (builtin template, description)
 BUILTIN_PROMPTS: dict[str, tuple[str, str]] = {

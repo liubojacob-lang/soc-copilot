@@ -51,7 +51,7 @@ class TestGenerateStructuredFreeform:
         svc.ai_service.get_model_name = MagicMock(return_value="glm-4-test")
         # Speed up backoff so the test doesn't sleep for real
         with patch.object(svc, "_backoff", AsyncMock()):
-            result, model_used, degraded = await svc.generate_structured(
+            result, _model_used, degraded = await svc.generate_structured(
                 prompt="x", response_class=None
             )
         assert result == "ok on retry"
@@ -67,7 +67,7 @@ class TestGenerateStructuredFreeform:
         svc.ai_service.get_model_name = MagicMock(return_value="glm-4-test")
 
         with patch.object(svc, "_backoff", AsyncMock()):
-            result, model_used, degraded = await svc.generate_structured(
+            result, _model_used, degraded = await svc.generate_structured(
                 prompt="x", response_class=None
             )
         assert result == ""  # graceful empty, not an exception
@@ -106,7 +106,7 @@ class TestGenerateStructuredSchema:
         svc.ai_service.get_model_name = MagicMock(return_value="glm-4-test")
 
         # Should not raise even when LLM fails — degraded response returned
-        result, model_used, degraded = await svc.generate_structured(
+        result, _model_used, degraded = await svc.generate_structured(
             prompt="x", response_class=AlertAnalysisResponse
         )
         assert degraded is True  # exhausted retries → degraded
@@ -130,7 +130,8 @@ class TestGenerateStructuredSchema:
         svc.ai_service.get_model_name = MagicMock(return_value="glm-4-test")
 
         result, _, degraded = await svc.generate_structured(
-            prompt="suspicious DNS tunneling alert", response_class=AlertAnalysisResponse
+            prompt="suspicious DNS tunneling alert",
+            response_class=AlertAnalysisResponse,
         )
 
         assert degraded is True

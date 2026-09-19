@@ -81,6 +81,7 @@ if IS_SQLITE or (IS_TEST_ENV):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
+
 elif IS_POSTGRESQL:
     # PostgreSQL: Use connection pool settings
     # Convert sync URL to async if needed

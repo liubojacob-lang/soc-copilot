@@ -35,16 +35,22 @@ def _session(permission_rows=()):
 class TestCheckPermissionInDb:
     async def test_admin_short_circuits_without_touching_the_database(self):
         session = _session()
-        assert await check_permission_in_db(session, _user(UserRole.ADMIN), "admin", "write")
+        assert await check_permission_in_db(
+            session, _user(UserRole.ADMIN), "admin", "write"
+        )
         session.execute.assert_not_awaited()
 
     async def test_database_grant_authorises_a_non_admin(self):
         session = _session([MagicMock()])
-        assert await check_permission_in_db(session, _user(UserRole.ANALYST), "admin", "read")
+        assert await check_permission_in_db(
+            session, _user(UserRole.ANALYST), "admin", "read"
+        )
 
     async def test_role_map_is_the_fallback_when_no_row_grants_it(self):
         session = _session()
-        assert await check_permission_in_db(session, _user(UserRole.ANALYST), "assets", "read")
+        assert await check_permission_in_db(
+            session, _user(UserRole.ANALYST), "assets", "read"
+        )
         assert not await check_permission_in_db(
             session, _user(UserRole.AUDITOR), "assets", "write"
         )
@@ -53,7 +59,9 @@ class TestCheckPermissionInDb:
         """``users.role`` is stored as text, so both forms must work."""
         session = _session()
         assert await check_permission_in_db(session, _user("analyst"), "assets", "read")
-        assert not await check_permission_in_db(session, _user("auditor"), "users", "write")
+        assert not await check_permission_in_db(
+            session, _user("auditor"), "users", "write"
+        )
 
 
 class TestRequirePermissionDependency:
@@ -75,6 +83,7 @@ class TestSeedRBAC:
 
     async def test_seed_rbac_structure(self):
         from services.rbac_service import SYSTEM_PERMISSIONS, SYSTEM_ROLE_PERMISSIONS
+
         assert len(SYSTEM_PERMISSIONS) >= 15
         assert "admin" in SYSTEM_ROLE_PERMISSIONS
         assert "analyst" in SYSTEM_ROLE_PERMISSIONS
@@ -101,4 +110,3 @@ class TestSeedRBAC:
         assert roles_created == 3
         assert perms_created >= 15
         assert session.commit.called
-

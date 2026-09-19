@@ -219,4 +219,3 @@ async def test_create_case_with_integer_alert_ids(case_client: AsyncClient):
         if a:
             await session.delete(a)
             await session.commit()
-

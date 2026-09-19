@@ -405,7 +405,7 @@ export default function AIAssistantPage() {
             ) : (
               activeContext && (
                 <div className="flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 shrink-0 text-ai" />
+                  <ShieldAlert className="h-4 w-4 shrink-0 text-ai-fg" />
                   <Badge
                     severity={
                       (["critical", "high", "medium", "low", "info"].includes(

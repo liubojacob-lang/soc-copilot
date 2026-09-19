@@ -18,9 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     with op.batch_alter_table("users") as batch:
-        batch.add_column(
-            sa.Column("totp_secret", sa.String(length=255), nullable=True)
-        )
+        batch.add_column(sa.Column("totp_secret", sa.String(length=255), nullable=True))
         batch.add_column(
             sa.Column(
                 "is_totp_enabled",

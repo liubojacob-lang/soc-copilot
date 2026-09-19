@@ -38,7 +38,6 @@ class TrivyNotInstalledError(Exception):
         )
 
 
-
 @dataclass
 class TrivyVulnerability:
     """Parsed Trivy vulnerability result."""
@@ -253,7 +252,6 @@ class TrivyService:
             )
             raise TrivyNotInstalledError()
 
-
         # 3. Execute trivy scan
         trivy_cmd = self._trivy_path or "trivy"
 
@@ -321,4 +319,3 @@ class TrivyService:
 def get_trivy_service(session: AsyncSession) -> "TrivyService":
     """Factory function to create a TrivyService instance."""
     return TrivyService(session)
-

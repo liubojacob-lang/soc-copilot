@@ -18,8 +18,8 @@ const PROMPT_SCENARIOS_ZH = [
       "发现内网主机向可疑外部IP发生高频异常连接，请帮我分析潜在威胁等级，并给出阻断与排查排障建议。",
     tag: "告警研判",
     color:
-      "from-rose-500/10 to-orange-500/10 hover:border-rose-500/30 text-rose-600 dark:text-rose-400",
-    badgeColor: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+      "from-rose-500/10 to-orange-500/10 hover:border-rose-500/30 text-rose-700 dark:text-rose-400",
+    badgeColor: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
   },
   {
     icon: Terminal,
@@ -29,8 +29,8 @@ const PROMPT_SCENARIOS_ZH = [
       "请帮我分析这段可疑的命令载荷，还原其真实执行意图并提取潜在的恶意域名/C2地址：powershell -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA...",
     tag: "反混淆分析",
     color:
-      "from-blue-500/10 to-cyan-500/10 hover:border-blue-500/30 text-blue-600 dark:text-blue-400",
-    badgeColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+      "from-blue-500/10 to-cyan-500/10 hover:border-blue-500/30 text-blue-700 dark:text-blue-400",
+    badgeColor: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
   },
   {
     icon: FileCheck2,
@@ -40,8 +40,8 @@ const PROMPT_SCENARIOS_ZH = [
       "根据近期勒索攻击相关的告警日志，按 MITRE ATT&CK 战术阶段梳理攻击链拓扑，并撰写标准应急响应总结报告。",
     tag: "攻击链推演",
     color:
-      "from-purple-500/10 to-indigo-500/10 hover:border-purple-500/30 text-purple-600 dark:text-purple-400",
-    badgeColor: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+      "from-purple-500/10 to-indigo-500/10 hover:border-purple-500/30 text-purple-700 dark:text-purple-400",
+    badgeColor: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
   },
   {
     icon: Cpu,
@@ -51,8 +51,8 @@ const PROMPT_SCENARIOS_ZH = [
       "针对大量探测的 SQL 注入攻击行为，推荐自动化事件响应剧本（Playbook），包括防火墙封禁、WAF联动与通知流程。",
     tag: "安全剧本",
     color:
-      "from-emerald-500/10 to-teal-500/10 hover:border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
-    badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      "from-emerald-500/10 to-teal-500/10 hover:border-emerald-500/30 text-emerald-700 dark:text-emerald-400",
+    badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
   },
 ];
 
@@ -65,8 +65,8 @@ const PROMPT_SCENARIOS_EN = [
       "High-frequency abnormal outbound connections to suspicious external IP detected. Please analyze threat level and provide containment recommendations.",
     tag: "Alert Triage",
     color:
-      "from-rose-500/10 to-orange-500/10 hover:border-rose-500/30 text-rose-600 dark:text-rose-400",
-    badgeColor: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+      "from-rose-500/10 to-orange-500/10 hover:border-rose-500/30 text-rose-700 dark:text-rose-400",
+    badgeColor: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
   },
   {
     icon: Terminal,
@@ -76,8 +76,8 @@ const PROMPT_SCENARIOS_EN = [
       "Please analyze this suspicious command payload, reverse its execution intent and extract potential malicious C2/domains: powershell -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA...",
     tag: "Reverse Analysis",
     color:
-      "from-blue-500/10 to-cyan-500/10 hover:border-blue-500/30 text-blue-600 dark:text-blue-400",
-    badgeColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+      "from-blue-500/10 to-cyan-500/10 hover:border-blue-500/30 text-blue-700 dark:text-blue-400",
+    badgeColor: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
   },
   {
     icon: FileCheck2,
@@ -87,8 +87,8 @@ const PROMPT_SCENARIOS_EN = [
       "Based on recent ransomware alert logs, map the attack chain to MITRE ATT&CK tactics and generate a standard incident response report.",
     tag: "Attack Chain",
     color:
-      "from-purple-500/10 to-indigo-500/10 hover:border-purple-500/30 text-purple-600 dark:text-purple-400",
-    badgeColor: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+      "from-purple-500/10 to-indigo-500/10 hover:border-purple-500/30 text-purple-700 dark:text-purple-400",
+    badgeColor: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
   },
   {
     icon: Cpu,
@@ -98,8 +98,8 @@ const PROMPT_SCENARIOS_EN = [
       "For widespread SQL injection attacks, recommend an automated incident response playbook including firewall blocking, WAF sync, and alerting.",
     tag: "SOAR Playbook",
     color:
-      "from-emerald-500/10 to-teal-500/10 hover:border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
-    badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      "from-emerald-500/10 to-teal-500/10 hover:border-emerald-500/30 text-emerald-700 dark:text-emerald-400",
+    badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
   },
 ];
 
@@ -119,7 +119,7 @@ export function HeroPrompts({ onSelectPrompt, disabled }: HeroPromptsProps) {
         </h1>
         <p className="text-sm text-text-secondary max-w-xl mx-auto leading-relaxed">
           {isZh ? "已就绪 " : "Ready "}
-          <span className="text-ai font-medium">
+          <span className="text-ai-fg font-medium">
             {isZh ? "⚡ 动态智能自动分配" : "⚡ Dynamic Smart Routing"}
           </span>{" "}
           {isZh

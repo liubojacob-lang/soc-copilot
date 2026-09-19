@@ -135,17 +135,19 @@ class AlertService:
         prompt = template.format(
             raw_log=raw_log,
             ips_str=", ".join(local_iocs.ips) if local_iocs.ips else "None",
-            domains_str=", ".join(local_iocs.domains)
-            if local_iocs.domains
-            else "None",
-            urls_str=", ".join(local_iocs.urls[:5])
-            + ("..." if len(local_iocs.urls) > 5 else "")
-            if local_iocs.urls
-            else "None",
-            hashes_str=", ".join(local_iocs.hashes[:3])
-            + ("..." if len(local_iocs.hashes) > 3 else "")
-            if local_iocs.hashes
-            else "None",
+            domains_str=", ".join(local_iocs.domains) if local_iocs.domains else "None",
+            urls_str=(
+                ", ".join(local_iocs.urls[:5])
+                + ("..." if len(local_iocs.urls) > 5 else "")
+                if local_iocs.urls
+                else "None"
+            ),
+            hashes_str=(
+                ", ".join(local_iocs.hashes[:3])
+                + ("..." if len(local_iocs.hashes) > 3 else "")
+                if local_iocs.hashes
+                else "None"
+            ),
         )
 
         # Generate response with retry and degraded fallback

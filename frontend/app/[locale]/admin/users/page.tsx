@@ -212,7 +212,7 @@ export default function UsersPage() {
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
                 <input
                   type="text"
                   placeholder={t("searchPlaceholder")}
@@ -281,7 +281,7 @@ export default function UsersPage() {
           ) : users.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                <UserPlus className="w-8 h-8 text-gray-400" />
+                <UserPlus className="w-8 h-8 text-text-tertiary" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 {t("noUsers")}
@@ -363,7 +363,7 @@ export default function UsersPage() {
                             timeStyle: "short",
                           })
                         ) : (
-                          <span className="text-gray-400">{t("neverLogin")}</span>
+                          <span className="text-text-tertiary">{t("neverLogin")}</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -533,7 +533,7 @@ export default function UsersPage() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-gray-600"
                       >
                         {showPassword ? (
                           <EyeOff className="w-4 h-4" />
@@ -802,7 +802,7 @@ export default function UsersPage() {
                       <button
                         type="button"
                         onClick={() => setShowResetNewPassword(!showResetNewPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-gray-600"
                       >
                         {showResetNewPassword ? (
                           <EyeOff className="w-4 h-4" />

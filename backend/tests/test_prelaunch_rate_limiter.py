@@ -47,13 +47,17 @@ class _Patch:
         self.settings = patch(
             "middleware.rate_limiter.settings", MagicMock(environment="production")
         )
-        self.get_ip = patch("middleware.rate_limiter.get_client_ip", return_value="203.0.113.9")
+        self.get_ip = patch(
+            "middleware.rate_limiter.get_client_ip", return_value="203.0.113.9"
+        )
         self.get_limiter = patch("middleware.rate_limiter.get_rate_limiter")
         self.settings.start()
         self.get_ip.start()
         limiter_patch = self.get_limiter.start()
         self.limiter = MagicMock()
-        self.limiter.is_allowed = AsyncMock(return_value=(True, {"limit": 5, "remaining": 4, "reset": 60}))
+        self.limiter.is_allowed = AsyncMock(
+            return_value=(True, {"limit": 5, "remaining": 4, "reset": 60})
+        )
         limiter_patch.return_value = self.limiter
         return self
 
@@ -197,7 +201,12 @@ class TestLimiterOutcomes:
             p.limiter.is_allowed = AsyncMock(
                 return_value=(
                     False,
-                    {"limit": 5, "remaining": 0, "reset": 30, "redis_unavailable": True},
+                    {
+                        "limit": 5,
+                        "remaining": 0,
+                        "reset": 30,
+                        "redis_unavailable": True,
+                    },
                 )
             )
             with pytest.raises(HTTPException) as exc:

@@ -23,7 +23,7 @@ const colorClasses = {
   success: "text-success-500",
   warning: "text-warning-500",
   danger: "text-danger-500",
-  gray: "text-gray-400",
+  gray: "text-text-tertiary",
   white: "text-white",
 };
 

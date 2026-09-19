@@ -217,7 +217,7 @@ async def ingest_alert(
     except ValidationError as e:
         logger.error(f"Validation error: {e!s}")
         raise HTTPException(status_code=422, detail="Invalid request")
-    except Exception as e:
+    except Exception:
         logger.exception("Error ingesting alert")
         await session.rollback()
         raise HTTPException(status_code=500, detail="Failed to ingest alert")

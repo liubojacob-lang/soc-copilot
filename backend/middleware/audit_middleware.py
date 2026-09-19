@@ -21,7 +21,7 @@ EXCLUDED_PATHS = {
     "/api/auth/login",
     "/api/auth/refresh",
     "/api/auth/logout",
-    "/api/v1/auth/login",       # versioned — fix for gap where /api/* pattern missed these
+    "/api/v1/auth/login",  # versioned — fix for gap where /api/* pattern missed these
     "/api/v1/auth/refresh",
     "/api/v1/auth/logout",
     "/api/health",
@@ -46,8 +46,8 @@ BODY_EXCLUDED_PATHS = {
     "/api/auth/change-password",
     "/api/secrets",
     "/api/admin/secrets",
-    "/api/v1/auth/login",           # Login credentials must never appear in audit logs
-    "/api/v1/auth/change-password", # Password change payloads must never appear in audit logs
+    "/api/v1/auth/login",  # Login credentials must never appear in audit logs
+    "/api/v1/auth/change-password",  # Password change payloads must never appear in audit logs
     "/api/v1/secrets",
     "/api/v1/admin/secrets",
 }

@@ -280,7 +280,7 @@ def _init_sentry(app_instance: FastAPI) -> None:
     if not dsn:
         return
     try:
-        import sentry_sdk  # noqa: PLC0415 — optional dependency
+        import sentry_sdk
     except ImportError:
         logger.warning("SENTRY_DSN set but sentry-sdk is not installed; skipping")
         return
@@ -336,7 +336,9 @@ async def lifespan(app_instance: FastAPI):
 
     # Pre-flight schema compatibility check on startup
     try:
-        from services.security.security_alert_schema import ensure_security_alerts_schema
+        from services.security.security_alert_schema import (
+            ensure_security_alerts_schema,
+        )
 
         async with AsyncSessionLocal() as startup_session:
             await ensure_security_alerts_schema(startup_session)
@@ -376,7 +378,6 @@ async def lifespan(app_instance: FastAPI):
         logger.info("RBAC system roles and permissions initialized/verified")
     except Exception as e:
         logger.warning(f"Failed to auto-seed RBAC on startup: {e}")
-
 
     # Load node plugins
     from pathlib import Path
@@ -665,8 +666,12 @@ from routers import (
 )
 
 app.include_router(alerts_lifecycle.router)  # v0.9.0: Alert lifecycle management
-app.include_router(alert_import.router)  # v0.9.2: Alert import (frontend ImportAlertModal)
-app.include_router(ws_router.router)  # v0.8.5: WebSocket endpoint /ws/alerts (bare, nginx `location /ws`)
+app.include_router(
+    alert_import.router
+)  # v0.9.2: Alert import (frontend ImportAlertModal)
+app.include_router(
+    ws_router.router
+)  # v0.8.5: WebSocket endpoint /ws/alerts (bare, nginx `location /ws`)
 app.include_router(
     ws_router.ops_router, prefix="/api/v1"
 )  # v0.8.5: WebSocket ops endpoints under /api/v1/ws/*

@@ -308,7 +308,7 @@ export function ChatInput({
               onClick={() => setShowModelPanel(!showModelPanel)}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all shadow-subtle border ${
                 selectedModel?.id === "auto"
-                  ? "bg-ai/10 hover:bg-ai/15 text-ai border-ai/20"
+                  ? "bg-ai/10 hover:bg-ai/15 text-ai-fg border-ai/20"
                   : "bg-surface-hover hover:bg-surface-active text-text-primary border-border-subtle"
               }`}
               title="切换 AI 研判模型"

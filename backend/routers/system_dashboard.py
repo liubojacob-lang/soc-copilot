@@ -223,7 +223,11 @@ async def get_database_size(session: AsyncSession) -> str | None:
     """Get database size (SQLite fallback)."""
     try:
         if "sqlite" in str(engine.url):
-            db_path = str(engine.url).replace("sqlite:///", "").replace("sqlite+aiosqlite:///", "")
+            db_path = (
+                str(engine.url)
+                .replace("sqlite:///", "")
+                .replace("sqlite+aiosqlite:///", "")
+            )
             if os.path.exists(db_path):
                 size_bytes = os.path.getsize(db_path)
                 if size_bytes < 1024:
@@ -448,9 +452,11 @@ async def get_ai_models_status(session: AsyncSession) -> list[AIModelStatus]:
                 name=m.display_name,
                 provider=m.provider,
                 is_active=bool(m.enabled),
-                last_used=str(m.updated_at)
-                if hasattr(m, "updated_at") and m.updated_at
-                else None,
+                last_used=(
+                    str(m.updated_at)
+                    if hasattr(m, "updated_at") and m.updated_at
+                    else None
+                ),
                 total_requests=getattr(m, "total_requests", 0) or 0,
             )
             for m in models
@@ -639,7 +645,6 @@ async def get_feature_flags(
     return get_system_features()
 
 
-
 class ReplayDLQRequest(BaseModel):
     target_stream: str = "events:medium"
     limit: int = 100
@@ -671,7 +676,9 @@ async def replay_dlq_messages(
     from services.message_broker import get_message_broker
 
     broker = get_message_broker()
-    replayed = await broker.replay_dlq("events:dlq", request.target_stream, limit=request.limit)
+    replayed = await broker.replay_dlq(
+        "events:dlq", request.target_stream, limit=request.limit
+    )
     return {
         "status": "success",
         "replayed_count": replayed,
@@ -690,7 +697,13 @@ async def get_db_connections_detail(session: AsyncSession) -> DBConnectionsDetai
     if not is_postgres:
         return DBConnectionsDetail(
             engine="sqlite",
-            summary={"active": 1, "idle": 0, "idle_in_transaction": 0, "waiting": 0, "total": 1},
+            summary={
+                "active": 1,
+                "idle": 0,
+                "idle_in_transaction": 0,
+                "waiting": 0,
+                "total": 1,
+            },
             pool=pool_status,
             pool_utilization=pool_utilization,
             connections=[
@@ -821,11 +834,15 @@ async def get_redis_connections_detail() -> RedisConnectionsDetail:
             hit_rate = round((hits / total_ops * 100), 1) if total_ops > 0 else 100.0
 
             pubsub_count = sum(
-                1 for c in clients_raw if int(c.get("sub", 0)) > 0 or int(c.get("psub", 0)) > 0
+                1
+                for c in clients_raw
+                if int(c.get("sub", 0)) > 0 or int(c.get("psub", 0)) > 0
             )
 
             summary = {
-                "connected_clients": int(info.get("connected_clients", len(clients_raw))),
+                "connected_clients": int(
+                    info.get("connected_clients", len(clients_raw))
+                ),
                 "pubsub_clients": pubsub_count,
                 "blocked_clients": int(info.get("blocked_clients", 0)),
                 "max_clients": int(info.get("maxclients", 10000)),
@@ -957,13 +974,17 @@ def compute_health_score_and_warnings(
     idle_tx = sum(1 for c in db_detail.connections if c.is_idle_tx)
     if idle_tx > 0:
         score -= 10
-        warnings.append(f"检测到 {idle_tx} 个处于事务中空闲 (idle in transaction) 的阻塞连接")
+        warnings.append(
+            f"检测到 {idle_tx} 个处于事务中空闲 (idle in transaction) 的阻塞连接"
+        )
 
     # Redis and Queue checks
     dlq_pending = 0
     queues = redis_detail.queue.get("queues", {})
     if isinstance(queues, dict) and "dlq" in queues:
-        dlq_pending = int(queues["dlq"].get("pending", 0) or queues["dlq"].get("length", 0))
+        dlq_pending = int(
+            queues["dlq"].get("pending", 0) or queues["dlq"].get("length", 0)
+        )
     if dlq_pending > 0:
         score -= 10
         warnings.append(f"死信队列 (DLQ) 积压了 {dlq_pending} 条未处理的失败事件")
@@ -1026,7 +1047,10 @@ async def terminate_db_connection(
         raise HTTPException(status_code=403, detail="Admin permission required")
 
     if "postgresql" not in str(engine.url):
-        return {"status": "skipped", "message": "Connection termination is only available for PostgreSQL"}
+        return {
+            "status": "skipped",
+            "message": "Connection termination is only available for PostgreSQL",
+        }
 
     try:
         async with AsyncSessionLocal() as session:
@@ -1039,9 +1063,14 @@ async def terminate_db_connection(
             )
             row = check.fetchone()
             if not row:
-                raise HTTPException(status_code=404, detail=f"Connection PID {pid} not found")
+                raise HTTPException(
+                    status_code=404, detail=f"Connection PID {pid} not found"
+                )
             if row[0] == row[1]:
-                raise HTTPException(status_code=400, detail="Cannot terminate current query backend connection")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cannot terminate current query backend connection",
+                )
 
             term_res = await session.execute(
                 text("SELECT pg_terminate_backend(:pid)"),
@@ -1052,11 +1081,15 @@ async def terminate_db_connection(
             return {
                 "status": "success" if success else "failed",
                 "pid": pid,
-                "message": f"Connection {pid} terminated successfully" if success else f"Failed to terminate connection {pid}",
+                "message": (
+                    f"Connection {pid} terminated successfully"
+                    if success
+                    else f"Failed to terminate connection {pid}"
+                ),
             }
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         logger.exception(f"Failed to terminate connection {pid}")
         raise HTTPException(
             status_code=500, detail=f"Failed to terminate connection {pid}"
@@ -1154,7 +1187,11 @@ async def run_system_diagnostics(
                 name="Message Broker (Streams & DLQ)",
                 status="ok" if streams_healthy else "warn",
                 latency_ms=None,
-                message="All Streams online, event queues healthy" if streams_healthy else "Message broker operating in degraded mode",
+                message=(
+                    "All Streams online, event queues healthy"
+                    if streams_healthy
+                    else "Message broker operating in degraded mode"
+                ),
             )
         )
     except Exception as e:
@@ -1207,4 +1244,3 @@ async def run_system_diagnostics(
 
 # Track startup time
 _startup_time = time.time()
-

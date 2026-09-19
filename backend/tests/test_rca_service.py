@@ -20,7 +20,6 @@ from services.rca_service import (
     RootCauseAnalysisService,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
@@ -52,16 +51,24 @@ def _make_alert(alert_id=42, **overrides):
 
 
 def _make_llm_result(**overrides):
-    defaults = dict(
-        root_cause_category="attack",
-        root_cause_subcategory="ssh brute force",
-        confidence=0.87,
-        reasoning_steps=[{"step": 1, "description": "Gather facts", "findings": ["8 failed logins"]}],
-        evidence_chain=[{"evidence": "auth.log shows failures", "supports": "attack", "strength": "strong"}],
-        verification_steps=["grep 'Failed password' /var/log/auth.log"],
-        suggested_remediation="Block 203.0.113.7 at the firewall and enforce key auth",
-        remediation_priority="high",
-    )
+    defaults = {
+        "root_cause_category": "attack",
+        "root_cause_subcategory": "ssh brute force",
+        "confidence": 0.87,
+        "reasoning_steps": [
+            {"step": 1, "description": "Gather facts", "findings": ["8 failed logins"]}
+        ],
+        "evidence_chain": [
+            {
+                "evidence": "auth.log shows failures",
+                "supports": "attack",
+                "strength": "strong",
+            }
+        ],
+        "verification_steps": ["grep 'Failed password' /var/log/auth.log"],
+        "suggested_remediation": "Block 203.0.113.7 at the firewall and enforce key auth",
+        "remediation_priority": "high",
+    }
     defaults.update(overrides)
     return RootCauseLLMResult(**defaults)
 
@@ -81,7 +88,11 @@ def _make_session(alert="default", rca_row=None):
         return None
 
     session.get = AsyncMock(side_effect=_get)
-    session.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))))
+    session.execute = AsyncMock(
+        return_value=MagicMock(
+            scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))
+        )
+    )
     session.add = MagicMock()
     session.refresh = AsyncMock()
     return session
@@ -90,7 +101,9 @@ def _make_session(alert="default", rca_row=None):
 @pytest.fixture
 def llm_ok(monkeypatch):
     stub = MagicMock()
-    stub.generate_structured = AsyncMock(return_value=(_make_llm_result(), "glm-4-test", False))
+    stub.generate_structured = AsyncMock(
+        return_value=(_make_llm_result(), "glm-4-test", False)
+    )
     monkeypatch.setattr("services.rca_service.get_llm_retry_service", lambda: stub)
     return stub
 
@@ -157,7 +170,11 @@ class TestAnalyze:
     async def test_invalid_priority_falls_back_to_medium(self, monkeypatch):
         stub = MagicMock()
         stub.generate_structured = AsyncMock(
-            return_value=(_make_llm_result(remediation_priority="urgent!!"), "glm", False)
+            return_value=(
+                _make_llm_result(remediation_priority="urgent!!"),
+                "glm",
+                False,
+            )
         )
         monkeypatch.setattr("services.rca_service.get_llm_retry_service", lambda: stub)
         session = _make_session(alert=_make_alert())
@@ -173,7 +190,15 @@ class TestAnalyze:
 
 class TestFeedback:
     async def test_feedback_updates_record(self):
-        rca = MagicMock(spec=["id", "human_verified", "feedback_category", "human_feedback", "updated_at"])
+        rca = MagicMock(
+            spec=[
+                "id",
+                "human_verified",
+                "feedback_category",
+                "human_feedback",
+                "updated_at",
+            ]
+        )
         session = _make_session(rca_row=rca)
 
         row = await RootCauseAnalysisService(session).submit_feedback(

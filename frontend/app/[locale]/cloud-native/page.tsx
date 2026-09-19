@@ -845,7 +845,7 @@ export default function CloudNativePage() {
                           {t("cisCompliance")}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-green-600">
+                          <span className="text-lg font-bold text-green-700">
                             {dashboard.compliance?.cis_benchmark ?? 0}%
                           </span>
                           <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 group-hover:underline">
@@ -2769,7 +2769,7 @@ export default function CloudNativePage() {
                 {selectedContainer && (
                   <button
                     onClick={() => scanContainerFromList(selectedContainer.image)}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm"
+                    className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm"
                   >
                     <Scan className="w-4 h-4" />
                     对此镜像执行 Trivy 漏洞扫描

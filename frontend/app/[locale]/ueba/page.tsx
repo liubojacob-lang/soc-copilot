@@ -267,7 +267,7 @@ export default function UEBAPage() {
                       <p className="text-sm text-red-700 dark:text-red-300">
                         {anomaly.type === "off_hours_login" ? t("offHoursLogin") : anomaly.type}
                       </p>
-                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      <p className="text-xs text-red-700 dark:text-red-400 mt-1">
                         {format.dateTime(new Date(anomaly.detected_at), {
                           dateStyle: "medium",
                           timeStyle: "medium",

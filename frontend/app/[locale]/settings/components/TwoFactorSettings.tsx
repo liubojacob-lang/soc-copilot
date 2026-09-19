@@ -519,7 +519,7 @@ export function TwoFactorSettings() {
               <div className="text-base font-bold text-gray-900 dark:text-white">
                 {t("setupModalTitle")}
               </div>
-              <div className="text-[11px] text-gray-400 font-normal">
+              <div className="text-[11px] text-text-tertiary font-normal">
                 {isZh ? "基于 RFC 6238 TOTP 工业级认证协议" : "Industry standard RFC 6238 TOTP"}
               </div>
             </div>
@@ -539,7 +539,7 @@ export function TwoFactorSettings() {
                       ? "bg-emerald-500 text-white"
                       : setupStep === 1
                         ? "bg-accent-600 text-white ring-4 ring-accent-500/20 shadow-sm"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                        : "bg-gray-100 dark:bg-gray-800 text-text-tertiary"
                   }`}
                 >
                   {setupStep > 1 ? <Check className="w-3.5 h-3.5" /> : "1"}
@@ -548,7 +548,7 @@ export function TwoFactorSettings() {
                   className={`text-xs font-semibold ${
                     setupStep === 1
                       ? "text-gray-900 dark:text-white"
-                      : "text-gray-400 dark:text-gray-500"
+                      : "text-text-tertiary dark:text-gray-500"
                   }`}
                 >
                   {isZh ? "扫码绑定" : "Scan QR"}
@@ -569,7 +569,7 @@ export function TwoFactorSettings() {
                       ? "bg-emerald-500 text-white"
                       : setupStep === 2
                         ? "bg-accent-600 text-white ring-4 ring-accent-500/20 shadow-sm"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                        : "bg-gray-100 dark:bg-gray-800 text-text-tertiary"
                   }`}
                 >
                   {setupStep > 2 ? <Check className="w-3.5 h-3.5" /> : "2"}
@@ -578,7 +578,7 @@ export function TwoFactorSettings() {
                   className={`text-xs font-semibold ${
                     setupStep === 2
                       ? "text-gray-900 dark:text-white"
-                      : "text-gray-400 dark:text-gray-500"
+                      : "text-text-tertiary dark:text-gray-500"
                   }`}
                 >
                   {isZh ? "模式与备用码" : "Policy & Codes"}
@@ -597,7 +597,7 @@ export function TwoFactorSettings() {
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                     setupStep === 3
                       ? "bg-accent-600 text-white ring-4 ring-accent-500/20 shadow-sm"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                      : "bg-gray-100 dark:bg-gray-800 text-text-tertiary"
                   }`}
                 >
                   3
@@ -606,7 +606,7 @@ export function TwoFactorSettings() {
                   className={`text-xs font-semibold ${
                     setupStep === 3
                       ? "text-gray-900 dark:text-white"
-                      : "text-gray-400 dark:text-gray-500"
+                      : "text-text-tertiary dark:text-gray-500"
                   }`}
                 >
                   {isZh ? "验证激活" : "Verify"}
@@ -955,7 +955,7 @@ export function TwoFactorSettings() {
                   />
                 </div>
 
-                <div className="text-[11px] text-gray-400 dark:text-gray-500">
+                <div className="text-[11px] text-text-tertiary dark:text-gray-500">
                   {isZh
                     ? "💡 动态验证码每 30 秒自动更新一次，支持直接复制粘贴"
                     : "💡 Codes refresh every 30 seconds. Paste is supported."}

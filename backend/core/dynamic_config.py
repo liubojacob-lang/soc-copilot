@@ -203,7 +203,9 @@ class DynamicConfigService:
                     }
                 )
                 await redis.publish(CONFIG_RELOAD_CHANNEL, reload_msg)
-                logger.info(f"Dynamic config override deleted and broadcasted: {key_clean}")
+                logger.info(
+                    f"Dynamic config override deleted and broadcasted: {key_clean}"
+                )
             except Exception as e:
                 logger.error(f"Failed to delete dynamic config from Redis: {e}")
                 return False
@@ -275,7 +277,9 @@ class DynamicConfigService:
             self._redis_client = await self._get_redis()
 
         if self._redis_client is None:
-            logger.info("Redis not available; dynamic config running in local-only mode.")
+            logger.info(
+                "Redis not available; dynamic config running in local-only mode."
+            )
             return
 
         self._running = True
@@ -330,13 +334,17 @@ class DynamicConfigService:
                     if action == "set" and key:
                         val = payload.get("value")
                         self._local_cache[key] = val
-                        logger.info(f"Dynamic config hot-reloaded from peer: {key}={val}")
+                        logger.info(
+                            f"Dynamic config hot-reloaded from peer: {key}={val}"
+                        )
                     elif action == "delete" and key:
                         self._local_cache.pop(key, None)
                         logger.info(f"Dynamic config override reset by peer: {key}")
                     elif action == "reload_all":
                         self._local_cache.clear()
-                        logger.info("Dynamic config local cache cleared by peer request")
+                        logger.info(
+                            "Dynamic config local cache cleared by peer request"
+                        )
 
                 except asyncio.CancelledError:
                     break

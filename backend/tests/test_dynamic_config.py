@@ -99,7 +99,10 @@ async def test_get_all_configurations(service):
     """Test get_all returns list of supported keys with override flags."""
     mock_redis = AsyncMock()
     mock_redis.hgetall = AsyncMock(
-        return_value={"slow_request_threshold_ms": "1500", "custom_dynamic_param": '"test_val"'}
+        return_value={
+            "slow_request_threshold_ms": "1500",
+            "custom_dynamic_param": '"test_val"',
+        }
     )
 
     with patch.object(service, "_get_redis", new=AsyncMock(return_value=mock_redis)):
@@ -211,4 +214,3 @@ async def test_dynamic_config_api_endpoints(auth_client):
     )
     assert resp.status_code == 200
     assert resp.json()["success"] is True
-

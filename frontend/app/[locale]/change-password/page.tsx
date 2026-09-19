@@ -334,7 +334,7 @@ export default function ChangePasswordPage() {
                       className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] shrink-0 transition-colors ${
                         hasMinLength
                           ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                          : "bg-gray-200 dark:bg-gray-700 text-text-tertiary"
                       }`}
                     >
                       {hasMinLength ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : "•"}
@@ -356,7 +356,7 @@ export default function ChangePasswordPage() {
                       className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] shrink-0 transition-colors ${
                         hasUpperLower
                           ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                          : "bg-gray-200 dark:bg-gray-700 text-text-tertiary"
                       }`}
                     >
                       {hasUpperLower ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : "•"}
@@ -378,7 +378,7 @@ export default function ChangePasswordPage() {
                       className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] shrink-0 transition-colors ${
                         hasDigit
                           ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                          : "bg-gray-200 dark:bg-gray-700 text-text-tertiary"
                       }`}
                     >
                       {hasDigit ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : "•"}
@@ -402,7 +402,7 @@ export default function ChangePasswordPage() {
                           ? isDifferentFromCurrent
                             ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold"
                             : "bg-danger-500/20 text-danger-600 dark:text-danger-400 font-bold"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                          : "bg-gray-200 dark:bg-gray-700 text-text-tertiary"
                       }`}
                     >
                       {hasCurrentPassword && newPassword.length > 0 ? (

@@ -35,4 +35,3 @@ class BlockedIP(Base):
         Index("ix_blocked_ip_active_created", "is_active", "created_at"),
         UniqueConstraint("value", "type", name="uq_blocked_ips_value_type"),
     )
-

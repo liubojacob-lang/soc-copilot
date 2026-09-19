@@ -33,7 +33,11 @@ class _SsrfPinnedResolver(AbstractResolver):
             info
             for info in infos
             if not _is_private_ip(
-                str(info["host"] if isinstance(info, dict) else getattr(info, "host", ""))
+                str(
+                    info["host"]
+                    if isinstance(info, dict)
+                    else getattr(info, "host", "")
+                )
             )
         ]
         if len(allowed) != len(infos):

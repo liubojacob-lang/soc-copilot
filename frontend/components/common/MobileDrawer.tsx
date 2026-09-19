@@ -196,7 +196,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             <div key={group.label} className="mb-2">
               <button
                 onClick={() => setExpandedGroup(expandedGroup === group.label ? null : group.label)}
-                className="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-text-tertiary dark:text-gray-500 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 {group.label}
                 <ChevronRight
@@ -232,7 +232,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setExpandedGroup(expandedGroup === "admin" ? null : "admin")}
-                className="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-text-tertiary dark:text-gray-500 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 {tCommon("admin")}
                 <ChevronRight

@@ -276,9 +276,7 @@ Please provide the corrected JSON response:"""
             severity = (
                 Severity.high
                 if "high" in raw_sev
-                else Severity.low
-                if "low" in raw_sev
-                else Severity.medium
+                else Severity.low if "low" in raw_sev else Severity.medium
             )
 
         conf = (
@@ -371,7 +369,9 @@ Please provide the corrected JSON response:"""
                 "risk_score": conf,
                 "severity": severity,
                 "containment_priority": [],
-                "recommended_next_queries": [f'domain == "{domains[0]}"'] if domains else [],
+                "recommended_next_queries": (
+                    [f'domain == "{domains[0]}"'] if domains else []
+                ),
             },
             "threat_intel": {
                 "provider": "otx",

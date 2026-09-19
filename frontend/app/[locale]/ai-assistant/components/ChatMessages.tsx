@@ -39,14 +39,14 @@ function CodeBlock({ children, className }: { children?: React.ReactNode; classN
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block"></span>
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
           </div>
-          <span className="font-mono text-[11px] text-gray-400 uppercase tracking-wider ml-1.5">
+          <span className="font-mono text-[11px] text-text-tertiary uppercase tracking-wider ml-1.5">
             {lang}
           </span>
         </div>
         <button
           type="button"
           onClick={handleCopyCode}
-          className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-white px-2 py-0.5 rounded hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-1 text-[11px] text-text-tertiary hover:text-white px-2 py-0.5 rounded hover:bg-gray-800 transition-colors"
           title="复制代码"
         >
           {copied ? (
@@ -170,12 +170,12 @@ export function ChatMessages({
                     {/* Collapsible Thinking Process */}
                     {thinkingBlock && (
                       <details className="mb-3 group rounded-xl border border-ai/20 bg-ai/5 overflow-hidden text-xs">
-                        <summary className="px-3 py-2 cursor-pointer font-medium text-ai flex items-center justify-between hover:bg-ai/10 select-none transition-colors">
+                        <summary className="px-3 py-2 cursor-pointer font-medium text-ai-fg flex items-center justify-between hover:bg-ai/10 select-none transition-colors">
                           <span className="flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-ai" />
+                            <Sparkles className="w-3.5 h-3.5 text-ai-fg" />
                             <span>思考推演过程</span>
                           </span>
-                          <span className="text-[10px] text-ai/70 group-open:rotate-180 transition-transform">
+                          <span className="text-[10px] text-ai-fg/70 group-open:rotate-180 transition-transform">
                             ▼
                           </span>
                         </summary>
@@ -201,7 +201,7 @@ export function ChatMessages({
                           code({ className, children, ...props }: any) {
                             return (
                               <code
-                                className={`px-1.5 py-0.5 rounded bg-surface-hover border border-border-subtle text-ai font-mono text-xs ${className ?? ""}`}
+                                className={`px-1.5 py-0.5 rounded bg-surface-hover border border-border-subtle text-ai-fg font-mono text-xs ${className ?? ""}`}
                                 {...props}
                               >
                                 {children}
@@ -268,7 +268,7 @@ export function ChatMessages({
                 {/* Auto-routed Model Chip */}
                 {!isUser && message.routedModel && (
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-ai/10 text-ai border border-ai/20"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-ai/10 text-ai-fg border border-ai/20"
                     title={message.routeReason || undefined}
                   >
                     <span>⚡ 智能路由: {message.routedModel.split("/").pop()}</span>

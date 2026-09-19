@@ -31,15 +31,15 @@ _ALLOWED_SCHEMES = {"http", "https"}
 
 # Private / reserved IPv4 networks that must never be reached
 _PRIVATE_NETWORKS = [
-    ipaddress.ip_network("127.0.0.0/8"),      # loopback
-    ipaddress.ip_network("10.0.0.0/8"),        # RFC-1918
-    ipaddress.ip_network("172.16.0.0/12"),     # RFC-1918
-    ipaddress.ip_network("192.168.0.0/16"),    # RFC-1918
-    ipaddress.ip_network("169.254.0.0/16"),    # link-local / cloud metadata
-    ipaddress.ip_network("100.64.0.0/10"),     # carrier-grade NAT
-    ipaddress.ip_network("::1/128"),            # IPv6 loopback
-    ipaddress.ip_network("fc00::/7"),           # IPv6 unique-local
-    ipaddress.ip_network("fe80::/10"),          # IPv6 link-local
+    ipaddress.ip_network("127.0.0.0/8"),  # loopback
+    ipaddress.ip_network("10.0.0.0/8"),  # RFC-1918
+    ipaddress.ip_network("172.16.0.0/12"),  # RFC-1918
+    ipaddress.ip_network("192.168.0.0/16"),  # RFC-1918
+    ipaddress.ip_network("169.254.0.0/16"),  # link-local / cloud metadata
+    ipaddress.ip_network("100.64.0.0/10"),  # carrier-grade NAT
+    ipaddress.ip_network("::1/128"),  # IPv6 loopback
+    ipaddress.ip_network("fc00::/7"),  # IPv6 unique-local
+    ipaddress.ip_network("fe80::/10"),  # IPv6 link-local
 ]
 
 
@@ -93,7 +93,14 @@ CURATED_EXTERNAL_PLAYBOOKS: list[dict[str, Any]] = [
         "raw_url": "https://raw.githubusercontent.com/demisto/content/master/Packs/CobaltStrike/Playbooks/playbook-Cobalt_Strike_Triage.yml",
         "category": "malware_response",
         "difficulty": "advanced",
-        "tags": ["att&ck:T1071.001", "att&ck:T1059.001", "standard:NIST SP 800-61", "c2", "edr", "isolation"],
+        "tags": [
+            "att&ck:T1071.001",
+            "att&ck:T1059.001",
+            "standard:NIST SP 800-61",
+            "c2",
+            "edr",
+            "isolation",
+        ],
         "standard": "NIST SP 800-61 Rev.2",
     },
     {
@@ -107,7 +114,13 @@ CURATED_EXTERNAL_PLAYBOOKS: list[dict[str, Any]] = [
         "raw_url": "https://raw.githubusercontent.com/demisto/content/master/Packs/Phishing/Playbooks/playbook-Phishing_Investigation.yml",
         "category": "phishing",
         "difficulty": "intermediate",
-        "tags": ["att&ck:T1566.001", "att&ck:T1566.002", "standard:NIST SP 800-61", "email", "ioc"],
+        "tags": [
+            "att&ck:T1566.001",
+            "att&ck:T1566.002",
+            "standard:NIST SP 800-61",
+            "email",
+            "ioc",
+        ],
         "standard": "NIST SP 800-61 Rev.2",
     },
     {
@@ -121,7 +134,13 @@ CURATED_EXTERNAL_PLAYBOOKS: list[dict[str, Any]] = [
         "raw_url": "https://raw.githubusercontent.com/demisto/content/master/Packs/Ransomware/Playbooks/playbook-Ransomware_Investigation_and_Response.yml",
         "category": "ransomware",
         "difficulty": "advanced",
-        "tags": ["att&ck:T1486", "att&ck:T1489", "standard:NIST SP 800-61", "containment", "snapshot"],
+        "tags": [
+            "att&ck:T1486",
+            "att&ck:T1489",
+            "standard:NIST SP 800-61",
+            "containment",
+            "snapshot",
+        ],
         "standard": "NIST SP 800-61 Rev.2",
     },
     {
@@ -135,7 +154,13 @@ CURATED_EXTERNAL_PLAYBOOKS: list[dict[str, Any]] = [
         "raw_url": "https://raw.githubusercontent.com/splunk/security_content/develop/playbooks/aws_root_login_investigate_and_contain.py",
         "category": "cloud",
         "difficulty": "intermediate",
-        "tags": ["att&ck:T1078.004", "standard:CIS AWS Foundations Benchmark", "aws", "iam", "mfa"],
+        "tags": [
+            "att&ck:T1078.004",
+            "standard:CIS AWS Foundations Benchmark",
+            "aws",
+            "iam",
+            "mfa",
+        ],
         "standard": "CIS AWS Benchmark v1.4",
     },
     {
@@ -149,7 +174,13 @@ CURATED_EXTERNAL_PLAYBOOKS: list[dict[str, Any]] = [
         "raw_url": "https://raw.githubusercontent.com/splunk/security_content/develop/playbooks/log4j_exploit_investigate_and_block.py",
         "category": "network_intrusion",
         "difficulty": "advanced",
-        "tags": ["att&ck:T1190", "standard:CISA KEV", "cve:CVE-2021-44228", "waf", "firewall"],
+        "tags": [
+            "att&ck:T1190",
+            "standard:CISA KEV",
+            "cve:CVE-2021-44228",
+            "waf",
+            "firewall",
+        ],
         "standard": "CISA Known Exploited Vulnerabilities",
     },
     {
@@ -177,7 +208,12 @@ CURATED_EXTERNAL_PLAYBOOKS: list[dict[str, Any]] = [
         "raw_url": "https://raw.githubusercontent.com/shuffle/shuffle/main/workflows/cryptomining_pool_cutoff.json",
         "category": "malware_response",
         "difficulty": "intermediate",
-        "tags": ["att&ck:T1496", "standard:NIST SP 800-61", "cryptomining", "dns-sinkhole"],
+        "tags": [
+            "att&ck:T1496",
+            "standard:NIST SP 800-61",
+            "cryptomining",
+            "dns-sinkhole",
+        ],
         "standard": "NIST SP 800-61 Rev.2",
     },
     {
@@ -205,13 +241,21 @@ CURATED_EXTERNAL_PLAYBOOKS: list[dict[str, Any]] = [
         "raw_url": "https://raw.githubusercontent.com/cisagov/incident-response-playbooks/main/playbooks/denial_of_service.md",
         "category": "network_intrusion",
         "difficulty": "intermediate",
-        "tags": ["att&ck:T1498", "att&ck:T1499", "standard:CISA IR Playbook v2.0", "ddos", "bgp"],
+        "tags": [
+            "att&ck:T1498",
+            "att&ck:T1499",
+            "standard:CISA IR Playbook v2.0",
+            "ddos",
+            "bgp",
+        ],
         "standard": "CISA Federal IR Playbook v2.0",
     },
 ]
 
 
-async def search_online_playbooks(query: str, limit: int = 12) -> list[ExternalPlaybookSearchItem]:
+async def search_online_playbooks(
+    query: str, limit: int = 12
+) -> list[ExternalPlaybookSearchItem]:
     """Search online playbook sources by query."""
     q = (query or "").strip().lower()
     matched_items: list[dict[str, Any]] = []
@@ -237,27 +281,36 @@ async def search_online_playbooks(query: str, limit: int = 12) -> list[ExternalP
             async with httpx.AsyncClient(timeout=3.0) as client:
                 res = await client.get(
                     github_url,
-                    headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "SOC-Copilot/1.0"},
+                    headers={
+                        "Accept": "application/vnd.github.v3+json",
+                        "User-Agent": "SOC-Copilot/1.0",
+                    },
                 )
                 if res.status_code == 200:
                     data = res.json()
                     for repo in data.get("items", [])[:3]:
                         repo_name = repo.get("full_name", "")
                         if not any(m["repository"] == repo_name for m in matched_items):
-                            matched_items.append({
-                                "id": f"gh-{repo.get('id', uuid.uuid4())}",
-                                "title": repo.get("name", "").replace("-", " ").title() + " Response Playbook",
-                                "repository": repo_name,
-                                "source_platform": "GitHub Community",
-                                "description": repo.get("description") or "Open source security incident response playbook repository.",
-                                "stars": repo.get("stargazers_count", 0),
-                                "url": repo.get("html_url", ""),
-                                "raw_url": f"https://raw.githubusercontent.com/{repo_name}/master/README.md",
-                                "category": "custom",
-                                "difficulty": "intermediate",
-                                "tags": ["community", "github", "soar"],
-                                "standard": "Community Open Source",
-                            })
+                            matched_items.append(
+                                {
+                                    "id": f"gh-{repo.get('id', uuid.uuid4())}",
+                                    "title": repo.get("name", "")
+                                    .replace("-", " ")
+                                    .title()
+                                    + " Response Playbook",
+                                    "repository": repo_name,
+                                    "source_platform": "GitHub Community",
+                                    "description": repo.get("description")
+                                    or "Open source security incident response playbook repository.",
+                                    "stars": repo.get("stargazers_count", 0),
+                                    "url": repo.get("html_url", ""),
+                                    "raw_url": f"https://raw.githubusercontent.com/{repo_name}/master/README.md",
+                                    "category": "custom",
+                                    "difficulty": "intermediate",
+                                    "tags": ["community", "github", "soar"],
+                                    "standard": "Community Open Source",
+                                }
+                            )
         except Exception as e:
             logger.debug(f"GitHub API live search skipped: {e}")
 
@@ -460,7 +513,9 @@ async def fetch_source_content(url_or_raw: str, title_hint: str | None = None) -
     except ValueError:
         raise  # SSRF blocks should propagate
     except Exception as e:
-        logger.warning(f"External fetch connection failed for {raw_url}: {e}, applying fallback")
+        logger.warning(
+            f"External fetch connection failed for {raw_url}: {e}, applying fallback"
+        )
 
     # Match curated catalog by URL or title
     for item in CURATED_EXTERNAL_PLAYBOOKS:
@@ -503,7 +558,9 @@ tasks:
 """
 
 
-def build_fallback_playbook(content: str, title_hint: str | None = None) -> dict[str, Any]:
+def build_fallback_playbook(
+    content: str, title_hint: str | None = None
+) -> dict[str, Any]:
     """Fallback deterministic parser in case LLM is unavailable."""
     clean_title = title_hint or "Adapted Security Response Playbook"
     if "cobalt" in content.lower():
@@ -532,11 +589,41 @@ def build_fallback_playbook(content: str, title_hint: str | None = None) -> dict
 
     # Generate standard 5-node DAG
     nodes = [
-        {"id": "start", "type": "start", "name": "Start Execution", "action": "start", "params": {}},
-        {"id": "extract_iocs", "type": "extract_iocs", "name": "Extract Incident IOCs", "action": "extract_iocs", "params": {}},
-        {"id": "ti_enrichment", "type": "ti_lookup", "name": "Threat Intel Lookup", "action": "ti_lookup_otx", "params": {}},
-        {"id": "execute_containment", "type": "http_request", "name": "Execute Containment Action", "action": "http_request", "params": {}},
-        {"id": "end", "type": "end", "name": "End Execution", "action": "end", "params": {}},
+        {
+            "id": "start",
+            "type": "start",
+            "name": "Start Execution",
+            "action": "start",
+            "params": {},
+        },
+        {
+            "id": "extract_iocs",
+            "type": "extract_iocs",
+            "name": "Extract Incident IOCs",
+            "action": "extract_iocs",
+            "params": {},
+        },
+        {
+            "id": "ti_enrichment",
+            "type": "ti_lookup",
+            "name": "Threat Intel Lookup",
+            "action": "ti_lookup_otx",
+            "params": {},
+        },
+        {
+            "id": "execute_containment",
+            "type": "http_request",
+            "name": "Execute Containment Action",
+            "action": "http_request",
+            "params": {},
+        },
+        {
+            "id": "end",
+            "type": "end",
+            "name": "End Execution",
+            "action": "end",
+            "params": {},
+        },
     ]
     edges = [
         {"source": "start", "target": "extract_iocs"},
@@ -617,12 +704,17 @@ async def adapt_playbook_with_ai(
     try:
         provider = LLMFactory.create_from_config()
         if not provider:
-            logger.warning("No LLM provider configured, using deterministic fallback adapter")
+            logger.warning(
+                "No LLM provider configured, using deterministic fallback adapter"
+            )
             return build_fallback_playbook(raw_content, title_hint)
 
         response_text = await provider.chat_completion(
             messages=[
-                {"role": "system", "content": "You are a professional Cyber Security SOAR Playbook Architect. Always respond in valid parseable JSON only."},
+                {
+                    "role": "system",
+                    "content": "You are a professional Cyber Security SOAR Playbook Architect. Always respond in valid parseable JSON only.",
+                },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.2,

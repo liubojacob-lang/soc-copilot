@@ -10,13 +10,22 @@ export function formatDateForInput(date: Date): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-/** Get CSS class for status code */
+/**
+ * Get CSS class for status code
+ *
+ * 文字必须用 700/800 级，不能用 600 级 —— 徽章底是 100 级浅色（近乎白底），
+ * 600 级在其上均不足 WCAG AA 4.5:1（实测 success 3.32、danger 3.95、info 4.24）。
+ * 这与下方 getMethodClass 已经是同一约定（它一直用 800 级，因此从未出问题），
+ * 本函数此前是唯一的例外。改后实测 6.37–9.45:1。
+ *
+ * 该约定可推广：**深色字配 100–200 级底；白字配 600–700 级底；500 级只做填充与描边。**
+ */
 export function getStatusCodeClass(statusCode: number): string {
-  if (statusCode >= 200 && statusCode < 300) return "text-success-600 bg-success-100";
-  if (statusCode >= 300 && statusCode < 400) return "text-info-600 bg-info-100";
-  if (statusCode >= 400 && statusCode < 500) return "text-warning-700 bg-warning-100";
-  if (statusCode >= 500) return "text-danger-600 bg-danger-100";
-  return "text-primary-600 bg-primary-100";
+  if (statusCode >= 200 && statusCode < 300) return "text-success-800 bg-success-100";
+  if (statusCode >= 300 && statusCode < 400) return "text-info-800 bg-info-100";
+  if (statusCode >= 400 && statusCode < 500) return "text-warning-800 bg-warning-100";
+  if (statusCode >= 500) return "text-danger-800 bg-danger-100";
+  return "text-primary-700 bg-primary-100";
 }
 
 /** Get CSS class for HTTP method */

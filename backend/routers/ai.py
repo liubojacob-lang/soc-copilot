@@ -350,7 +350,9 @@ async def chat(
 
                 # Get user's preferred model
                 user_settings = await setting_repo.get_by_user_id(str(current_user.id))
-                user_model_id = user_settings.default_model_id if user_settings else None
+                user_model_id = (
+                    user_settings.default_model_id if user_settings else None
+                )
 
                 if user_model_id and user_model_id.lower() != "auto":
                     model = await model_repo.get_by_id(user_model_id)
@@ -362,8 +364,7 @@ async def chat(
             # If still 'auto' or None, invoke intelligent auto-routing
             if not model_id or model_id.lower() == "auto":
                 history_for_router = [
-                    {"role": msg.role, "content": msg.content}
-                    for msg in recent_history
+                    {"role": msg.role, "content": msg.content} for msg in recent_history
                 ]
                 model_id, model_provider, route_reason = ai_service.resolve_auto_model(
                     message=payload.message,
@@ -378,8 +379,7 @@ async def chat(
         history = None
         if recent_history:
             history = [
-                {"role": msg.role, "content": msg.content}
-                for msg in recent_history
+                {"role": msg.role, "content": msg.content} for msg in recent_history
             ]
 
         # Get complete response directly

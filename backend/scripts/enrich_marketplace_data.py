@@ -26,7 +26,16 @@ SQLITE_URL = "sqlite:///data/app.db"
 ENRICHMENTS = {
     "market-pb-001": {
         "author_name": "SOC Copilot / NIST SP 800-61",
-        "tags": ["standard:NIST SP 800-61", "att&ck:T1566.001", "att&ck:T1566.002", "phishing", "email", "ioc", "blocking", "otx"],
+        "tags": [
+            "standard:NIST SP 800-61",
+            "att&ck:T1566.001",
+            "att&ck:T1566.002",
+            "phishing",
+            "email",
+            "ioc",
+            "blocking",
+            "otx",
+        ],
         "documentation": """# 🎣 Phishing Email Auto-Response (鱼叉钓鱼邮件自动化响应)
 
 ## 📖 处置标准与依据
@@ -61,7 +70,15 @@ ENRICHMENTS = {
     },
     "market-pb-009": {
         "author_name": "Cyber Defense Labs / MITRE ATT&CK",
-        "tags": ["standard:MITRE ATT&CK", "att&ck:T1566", "att&ck:T1589", "bec", "phishing", "executive", "financial"],
+        "tags": [
+            "standard:MITRE ATT&CK",
+            "att&ck:T1566",
+            "att&ck:T1589",
+            "bec",
+            "phishing",
+            "executive",
+            "financial",
+        ],
         "documentation": """# 👔 Executive BEC Spear-Phishing Triage (高管商务邮件欺诈研判)
 
 ## 📖 处置标准与依据
@@ -85,7 +102,15 @@ ENRICHMENTS = {
     },
     "market-pb-010": {
         "author_name": "Palo Alto Cortex Community",
-        "tags": ["standard:Cortex XSOAR", "att&ck:T1204.002", "att&ck:T1059", "attachment", "sandbox", "antivirus", "macro"],
+        "tags": [
+            "standard:Cortex XSOAR",
+            "att&ck:T1204.002",
+            "att&ck:T1059",
+            "attachment",
+            "sandbox",
+            "antivirus",
+            "macro",
+        ],
         "documentation": """# 💣 Malicious Attachment Detonation Pipeline (恶意附件自动化沙箱引爆)
 
 ## 📖 处置标准与依据
@@ -105,7 +130,16 @@ ENRICHMENTS = {
     },
     "market-pb-002": {
         "author_name": "SOC Copilot / NIST SP 800-61",
-        "tags": ["standard:NIST SP 800-61", "att&ck:T1486", "att&ck:T1489", "ransomware", "emergency", "containment", "forensics", "edr"],
+        "tags": [
+            "standard:NIST SP 800-61",
+            "att&ck:T1486",
+            "att&ck:T1489",
+            "ransomware",
+            "emergency",
+            "containment",
+            "forensics",
+            "edr",
+        ],
         "documentation": """# 🚨 Ransomware Emergency Containment (勒索病毒应急遏制黄金5分钟)
 
 ## 📖 处置标准与依据
@@ -130,7 +164,15 @@ ENRICHMENTS = {
     },
     "market-pb-011": {
         "author_name": "SANS DFIR Guild",
-        "tags": ["standard:MITRE ATT&CK", "att&ck:T1490", "vss", "shadow_copy", "ransomware", "backup", "edr"],
+        "tags": [
+            "standard:MITRE ATT&CK",
+            "att&ck:T1490",
+            "vss",
+            "shadow_copy",
+            "ransomware",
+            "backup",
+            "edr",
+        ],
         "documentation": """# 🛡️ Shadow Copy & VSS Tampering Defense (卷影副本防篡改防御)
 
 ## 📖 处置标准与依据
@@ -148,7 +190,14 @@ ENRICHMENTS = {
     },
     "market-pb-012": {
         "author_name": "Europol NoMoreRansom Project",
-        "tags": ["standard:ISO 27035", "att&ck:T1486", "ransomware", "restoration", "decryption", "backup"],
+        "tags": [
+            "standard:ISO 27035",
+            "att&ck:T1486",
+            "ransomware",
+            "restoration",
+            "decryption",
+            "backup",
+        ],
         "documentation": """# 🔑 Ransomware Decryption & System Restoration (勒索灾后恢复与密钥匹配)
 
 ## 📖 处置标准与依据
@@ -164,7 +213,15 @@ ENRICHMENTS = {
     },
     "market-pb-003": {
         "author_name": "SOC Copilot / NIST SP 800-61",
-        "tags": ["standard:NIST SP 800-61", "att&ck:T1204", "att&ck:T1059", "malware", "sandbox", "quarantine", "edr"],
+        "tags": [
+            "standard:NIST SP 800-61",
+            "att&ck:T1204",
+            "att&ck:T1059",
+            "malware",
+            "sandbox",
+            "quarantine",
+            "edr",
+        ],
         "documentation": """# 🦠 Malware Analysis & Quarantine (恶意代码自动化研判与隔离)
 
 ## 📖 处置标准与依据
@@ -184,7 +241,15 @@ ENRICHMENTS = {
     },
     "market-pb-013": {
         "author_name": "Splunk SOAR Community",
-        "tags": ["standard:MITRE ATT&CK", "att&ck:T1071.001", "att&ck:T1573", "cobalt_strike", "c2", "beacon", "ja3"],
+        "tags": [
+            "standard:MITRE ATT&CK",
+            "att&ck:T1071.001",
+            "att&ck:T1573",
+            "cobalt_strike",
+            "c2",
+            "beacon",
+            "ja3",
+        ],
         "documentation": """# 📡 Cobalt Strike Beacon C2 Triage (C2 远控信标研判与阻断)
 
 ## 📖 处置标准与依据
@@ -204,7 +269,15 @@ ENRICHMENTS = {
     },
     "market-pb-014": {
         "author_name": "Application Security Guild / OWASP",
-        "tags": ["standard:OWASP Top 10", "att&ck:T1505.003", "webshell", "memory_horse", "backdoor", "waf", "java"],
+        "tags": [
+            "standard:OWASP Top 10",
+            "att&ck:T1505.003",
+            "webshell",
+            "memory_horse",
+            "backdoor",
+            "waf",
+            "java",
+        ],
         "documentation": """# 🗡️ WebShell & Memory Horse Backdoor Purge (后门与内存马彻底清除)
 
 ## 📖 处置标准与依据
@@ -220,7 +293,15 @@ ENRICHMENTS = {
     },
     "market-pb-006": {
         "author_name": "SOC Copilot / MITRE ATT&CK",
-        "tags": ["standard:MITRE ATT&CK", "att&ck:T1110", "bruteforce", "ssh", "rdp", "firewall", "ip_ban"],
+        "tags": [
+            "standard:MITRE ATT&CK",
+            "att&ck:T1110",
+            "bruteforce",
+            "ssh",
+            "rdp",
+            "firewall",
+            "ip_ban",
+        ],
         "documentation": """# 🔨 Brute Force Defense & Dynamic Blacklist (暴力破解动态封禁)
 
 ## 📖 处置标准与依据
@@ -236,7 +317,14 @@ ENRICHMENTS = {
     },
     "market-pb-015": {
         "author_name": "Cloudflare Defense Guidelines",
-        "tags": ["standard:NIST SP 800-61", "att&ck:T1498", "ddos", "waf", "scrubbing", "rate_limit"],
+        "tags": [
+            "standard:NIST SP 800-61",
+            "att&ck:T1498",
+            "ddos",
+            "waf",
+            "scrubbing",
+            "rate_limit",
+        ],
         "documentation": """# 🌊 High-Volume DDoS Mitigation & WAF Sync (大流量 DDoS 缓解清洗)
 
 ## 📖 处置标准与依据
@@ -255,7 +343,14 @@ ENRICHMENTS = {
     },
     "market-pb-016": {
         "author_name": "Cloud Threat Research / MITRE ATT&CK",
-        "tags": ["standard:MITRE ATT&CK", "att&ck:T1496", "cryptomining", "stratum", "firewall", "edr"],
+        "tags": [
+            "standard:MITRE ATT&CK",
+            "att&ck:T1496",
+            "cryptomining",
+            "stratum",
+            "firewall",
+            "edr",
+        ],
         "documentation": """# ⛏️ Cryptomining Pool Traffic Cutoff (挖矿木马全链路切断)
 
 ## 📖 处置标准与依据
@@ -271,7 +366,14 @@ ENRICHMENTS = {
     },
     "market-pb-017": {
         "author_name": "OWASP Foundation Standard",
-        "tags": ["standard:OWASP Top 10", "att&ck:T1190", "sqli", "injection", "waf", "database"],
+        "tags": [
+            "standard:OWASP Top 10",
+            "att&ck:T1190",
+            "sqli",
+            "injection",
+            "waf",
+            "database",
+        ],
         "documentation": """# 💉 SQL Injection & API Parameter Exploit Block (SQL 注入阻断)
 
 ## 📖 处置标准与依据
@@ -290,7 +392,15 @@ ENRICHMENTS = {
     },
     "market-pb-005": {
         "author_name": "SOC Copilot / CERT Insider Threat Center",
-        "tags": ["standard:CISA", "att&ck:T1078", "att&ck:T1005", "insider_threat", "ueba", "anomaly", "dlp"],
+        "tags": [
+            "standard:CISA",
+            "att&ck:T1078",
+            "att&ck:T1005",
+            "insider_threat",
+            "ueba",
+            "anomaly",
+            "dlp",
+        ],
         "documentation": """# 🕵️ Insider Threat & UEBA Anomaly Hunting (内部威胁与异常行为排查)
 
 ## 📖 处置标准与依据
@@ -310,7 +420,15 @@ ENRICHMENTS = {
     },
     "market-pb-018": {
         "author_name": "Active Directory Security Working Group",
-        "tags": ["standard:MITRE ATT&CK", "att&ck:T1550.002", "att&ck:T1558.003", "active_directory", "kerberoasting", "pass_the_hash", "lateral_movement"],
+        "tags": [
+            "standard:MITRE ATT&CK",
+            "att&ck:T1550.002",
+            "att&ck:T1558.003",
+            "active_directory",
+            "kerberoasting",
+            "pass_the_hash",
+            "lateral_movement",
+        ],
         "documentation": """# 🎫 Pass-the-Hash & Kerberoasting Lateral Defense (哈希传递与黄金票据防御)
 
 ## 📖 处置标准与依据
@@ -326,7 +444,15 @@ ENRICHMENTS = {
     },
     "market-pb-019": {
         "author_name": "Zero Trust Identity Defense Group",
-        "tags": ["standard:CIS", "att&ck:T1078.002", "att&ck:T1530", "service_account", "off_hours", "data_download", "zero_trust"],
+        "tags": [
+            "standard:CIS",
+            "att&ck:T1078.002",
+            "att&ck:T1530",
+            "service_account",
+            "off_hours",
+            "data_download",
+            "zero_trust",
+        ],
         "documentation": """# 🌙 Off-Hours Mass Data Download by Service Account (非工作时间服务账号批量下载)
 
 ## 📖 处置标准与依据
@@ -342,7 +468,15 @@ ENRICHMENTS = {
     },
     "market-pb-004": {
         "author_name": "SOC Copilot / NIST SP 800-61",
-        "tags": ["standard:NIST SP 800-61", "att&ck:T1048", "att&ck:T1567", "data_breach", "exfiltration", "dlp", "investigation"],
+        "tags": [
+            "standard:NIST SP 800-61",
+            "att&ck:T1048",
+            "att&ck:T1567",
+            "data_breach",
+            "exfiltration",
+            "dlp",
+            "investigation",
+        ],
         "documentation": """# 📤 Data Exfiltration Investigation (数据外发与泄露取证调查)
 
 ## 📖 处置标准与依据
@@ -358,7 +492,16 @@ ENRICHMENTS = {
     },
     "market-pb-020": {
         "author_name": "Cloud Security Alliance (CSA)",
-        "tags": ["standard:CIS", "att&ck:T1537", "att&ck:T1530", "cloud_storage", "s3", "sync", "data_leak", "csa"],
+        "tags": [
+            "standard:CIS",
+            "att&ck:T1537",
+            "att&ck:T1530",
+            "cloud_storage",
+            "s3",
+            "sync",
+            "data_leak",
+            "csa",
+        ],
         "documentation": """# ☁️ Unauthorized Public Cloud Storage Sync (未经授权云存储同步拦截)
 
 ## 📖 处置标准与依据
@@ -377,7 +520,16 @@ ENRICHMENTS = {
     },
     "market-pb-021": {
         "author_name": "Database Security Consortium",
-        "tags": ["standard:PCI-DSS", "att&ck:T1567", "att&ck:T1005", "database", "dump", "export", "pci_dss", "gdpr"],
+        "tags": [
+            "standard:PCI-DSS",
+            "att&ck:T1567",
+            "att&ck:T1005",
+            "database",
+            "dump",
+            "export",
+            "pci_dss",
+            "gdpr",
+        ],
         "documentation": """# 🗄️ Database Mass Dump & Export Alert Response (数据库全量导出告警阻断)
 
 ## 📖 处置标准与依据
@@ -393,7 +545,15 @@ ENRICHMENTS = {
     },
     "market-pb-007": {
         "author_name": "SOC Copilot / EU Privacy Office",
-        "tags": ["standard:ISO 27035", "compliance:GDPR-Art33", "compliance:ISO-27701", "gdpr", "compliance", "notification", "legal"],
+        "tags": [
+            "standard:ISO 27035",
+            "compliance:GDPR-Art33",
+            "compliance:ISO-27701",
+            "gdpr",
+            "compliance",
+            "notification",
+            "legal",
+        ],
         "documentation": """# ⚖️ GDPR & Data Compliance Breach Notification (GDPR 合规 72 小时应急通报)
 
 ## 📖 处置标准与依据
@@ -409,7 +569,15 @@ ENRICHMENTS = {
     },
     "market-pb-022": {
         "author_name": "PCI Security Standards Council",
-        "tags": ["standard:PCI-DSS", "standard:CIS", "compliance:PCI-DSS-Req1", "pci_dss", "firewall", "audit", "compliance"],
+        "tags": [
+            "standard:PCI-DSS",
+            "standard:CIS",
+            "compliance:PCI-DSS-Req1",
+            "pci_dss",
+            "firewall",
+            "audit",
+            "compliance",
+        ],
         "documentation": """# 📋 PCI-DSS Automated Quarterly Firewall Audit (PCI-DSS 防火墙策略季度巡检)
 
 ## 📖 处置标准与依据
@@ -425,7 +593,15 @@ ENRICHMENTS = {
     },
     "market-pb-023": {
         "author_name": "Internet Engineering Task Force (IETF)",
-        "tags": ["standard:NIST SP 800-52", "compliance:NIST-800-52", "compliance:RFC-8446", "ssl", "tls", "certificate", "renewal"],
+        "tags": [
+            "standard:NIST SP 800-52",
+            "compliance:NIST-800-52",
+            "compliance:RFC-8446",
+            "ssl",
+            "tls",
+            "certificate",
+            "renewal",
+        ],
         "documentation": """# 🔒 Expired SSL/TLS Certificate Auto-Renewal Check (SSL/TLS 证书到期巡检与续签)
 
 ## 📖 处置标准与依据
@@ -441,7 +617,16 @@ ENRICHMENTS = {
     },
     "market-pb-008": {
         "author_name": "CNCF Cloud Native Security Group",
-        "tags": ["standard:MITRE ATT&CK", "att&ck:T1611", "att&ck:T1610", "k8s", "kubernetes", "container", "isolation", "cloud_native"],
+        "tags": [
+            "standard:MITRE ATT&CK",
+            "att&ck:T1611",
+            "att&ck:T1610",
+            "k8s",
+            "kubernetes",
+            "container",
+            "isolation",
+            "cloud_native",
+        ],
         "documentation": """# ☸️ Cloud Native K8s Container Isolation (K8s 容器逃逸应急隔离)
 
 ## 📖 处置标准与依据
@@ -457,7 +642,17 @@ ENRICHMENTS = {
     },
     "market-pb-024": {
         "author_name": "AWS Security Best Practices Standard",
-        "tags": ["standard:AWS Best Practices", "standard:CIS", "att&ck:T1078.004", "compliance:CIS-AWS-1.5", "aws", "iam", "root", "mfa", "cloud"],
+        "tags": [
+            "standard:AWS Best Practices",
+            "standard:CIS",
+            "att&ck:T1078.004",
+            "compliance:CIS-AWS-1.5",
+            "aws",
+            "iam",
+            "root",
+            "mfa",
+            "cloud",
+        ],
         "documentation": """# ☁️ AWS Root Account Login Without MFA Remediation (AWS 根账号无MFA告警处置)
 
 ## 📖 处置标准与依据
@@ -476,9 +671,10 @@ ENRICHMENTS = {
     },
 }
 
+
 def enrich_and_seed():
     print("🚀 开始为 24 套剧本注入权威标准、ATT&CK 编号与专业 Markdown SOP...")
-    
+
     # 1. Update in-memory OFFICIAL_PLAYBOOKS list
     for pb in OFFICIAL_PLAYBOOKS:
         pid = pb["id"]
@@ -539,6 +735,7 @@ def enrich_and_seed():
         print("✅ SQLite (本地环境) 24 套剧本已成功富化权威标准与 Markdown 详情！")
     except Exception as e:
         print(f"⚠️ SQLite 富化失败: {e}")
+
 
 if __name__ == "__main__":
     enrich_and_seed()

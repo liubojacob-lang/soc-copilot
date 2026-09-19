@@ -382,7 +382,7 @@ export function PlaybookDetailsDrawer({
           <button
             onClick={() => onDownload(currentData.id)}
             disabled={isDownloading}
-            className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
+            className="px-5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-medium disabled:opacity-50 flex items-center gap-2 transition-colors shadow-sm"
           >
             {isDownloading ? (
               <>

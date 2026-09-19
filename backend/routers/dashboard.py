@@ -374,7 +374,9 @@ async def _compute_dashboard_stats(session: AsyncSession) -> DashboardStats:
         else today_start.replace(tzinfo=None)
     )
     ioc_result = await session.execute(
-        select(func.count(IOCHitModel.id)).where(IOCHitModel.created_at >= ioc_filter_ts)
+        select(func.count(IOCHitModel.id)).where(
+            IOCHitModel.created_at >= ioc_filter_ts
+        )
     )
     ioc_hits_today = ioc_result.scalar() or 0
 
@@ -402,7 +404,11 @@ async def _compute_dashboard_stats(session: AsyncSession) -> DashboardStats:
         t_list: list[str] = []
         if mitre_tactics:
             try:
-                parsed = json.loads(mitre_tactics) if isinstance(mitre_tactics, str) else mitre_tactics
+                parsed = (
+                    json.loads(mitre_tactics)
+                    if isinstance(mitre_tactics, str)
+                    else mitre_tactics
+                )
                 if isinstance(parsed, list):
                     t_list.extend([str(x) for x in parsed])
                 elif isinstance(parsed, str):
@@ -415,7 +421,11 @@ async def _compute_dashboard_stats(session: AsyncSession) -> DashboardStats:
         tech_list: list[str] = []
         if mitre_techniques:
             try:
-                parsed = json.loads(mitre_techniques) if isinstance(mitre_techniques, str) else mitre_techniques
+                parsed = (
+                    json.loads(mitre_techniques)
+                    if isinstance(mitre_techniques, str)
+                    else mitre_techniques
+                )
                 if isinstance(parsed, list):
                     tech_list.extend([str(x) for x in parsed])
                 elif isinstance(parsed, str):

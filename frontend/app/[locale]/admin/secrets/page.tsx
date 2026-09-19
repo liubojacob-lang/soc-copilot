@@ -163,7 +163,9 @@ export default function SecretsPage() {
           {secrets.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-gray-500 dark:text-gray-400">{t("noSecretsFound")}</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">{t("noSecretsInfo")}</p>
+              <p className="text-sm text-text-tertiary dark:text-gray-500 mt-2">
+                {t("noSecretsInfo")}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -193,7 +195,7 @@ export default function SecretsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <svg
-                            className="w-5 h-5 text-gray-400 mr-2"
+                            className="w-5 h-5 text-text-tertiary mr-2"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"

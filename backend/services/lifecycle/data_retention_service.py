@@ -112,7 +112,11 @@ class DataRetentionService(LifecycleService):
                 parent_col="started_at",
             ),
             "playbook_runs": lambda: aged(
-                session, "playbook_runs", "started_at", d.playbook_run_retention_days, now
+                session,
+                "playbook_runs",
+                "started_at",
+                d.playbook_run_retention_days,
+                now,
             ),
             "siem_logs": lambda: aged(
                 session, "siem_logs", "timestamp", d.siem_log_retention_days, now
@@ -173,9 +177,7 @@ class DataRetentionService(LifecycleService):
                     try:
                         pass_stats[table] = await jobs[table]
                     except Exception as e:
-                        logger.error(
-                            f"Data retention cleanup failed for {table}: {e}"
-                        )
+                        logger.error(f"Data retention cleanup failed for {table}: {e}")
                         first_failure = idx
                         break
                 if first_failure is None:

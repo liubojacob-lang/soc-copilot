@@ -361,7 +361,7 @@ export function RuleDetailsDrawer({
               className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 text-white shadow-sm ${
                 rule.enabled
                   ? "bg-rose-600 hover:bg-rose-700"
-                  : "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-emerald-700 hover:bg-emerald-800"
               }`}
             >
               {isToggling && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

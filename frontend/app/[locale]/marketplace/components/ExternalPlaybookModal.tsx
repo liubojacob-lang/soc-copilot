@@ -246,7 +246,7 @@ export function ExternalPlaybookModal({
                   <button
                     type="submit"
                     disabled={isSearching}
-                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
+                    className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
                   >
                     {isSearching ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -346,7 +346,7 @@ export function ExternalPlaybookModal({
                           type="button"
                           onClick={() => handleAdapt(item)}
                           disabled={isAdapting}
-                          className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 transition-colors shadow-sm"
+                          className="px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 transition-colors shadow-sm"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
                           <span>{t("adaptAndPreview")}</span>
@@ -432,7 +432,7 @@ tasks:
                   type="button"
                   onClick={() => handleAdapt()}
                   disabled={isAdapting || (!directUrl.trim() && !directContent.trim())}
-                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-sm"
+                  className="w-full py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-sm"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>{t("startAdapt")}</span>

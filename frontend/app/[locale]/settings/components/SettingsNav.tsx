@@ -143,7 +143,7 @@ export function SettingsNav() {
         >
           {groups.map((group) => (
             <div key={group.id}>
-              <p className="px-3 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <p className="px-3 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-text-tertiary dark:text-gray-500">
                 {isZh ? group.zh : group.en}
               </p>
               <div className="space-y-0.5">

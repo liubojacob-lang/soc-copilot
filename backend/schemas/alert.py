@@ -91,9 +91,15 @@ class RecommendedAction(BaseModel):
     action: str = Field(..., description="The action to take")
     priority: str = Field(..., description="Priority: high, medium, low")
     details: str = Field(default="", description="Detailed explanation")
-    description: str | None = Field(default=None, description="Alias for details for frontend compatibility")
-    verification: str = Field(default="", description="How to verify the action was effective")
-    automated: bool = Field(default=False, description="Whether action can be automated")
+    description: str | None = Field(
+        default=None, description="Alias for details for frontend compatibility"
+    )
+    verification: str = Field(
+        default="", description="How to verify the action was effective"
+    )
+    automated: bool = Field(
+        default=False, description="Whether action can be automated"
+    )
 
     model_config = ConfigDict(protected_namespaces=())
 
@@ -124,7 +130,9 @@ class AlertAnalysisResponse(BaseModel):
     # Analysis results
     event_type: EventType
     severity: Severity
-    attack_pattern: str | None = Field(None, description="Identified attack pattern or technique")
+    attack_pattern: str | None = Field(
+        None, description="Identified attack pattern or technique"
+    )
     iocs: IOCsFinal
     iocs_local: IOCsLocal
     iocs_llm: IOCsLLM

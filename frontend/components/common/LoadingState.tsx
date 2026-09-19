@@ -131,7 +131,7 @@ export function LoadingState({
   if (empty && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
-        <div className="w-16 h-16 mb-4 text-gray-400">
+        <div className="w-16 h-16 mb-4 text-text-tertiary">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"

@@ -50,7 +50,7 @@ export function ChatHeader({
         )}
 
         <div className="flex items-center gap-2 min-w-0">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-ai/10 text-ai border border-ai/20">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-ai/10 text-ai-fg border border-ai/20">
             <Brain className="w-3.5 h-3.5" />
           </div>
           <span className="text-xs sm:text-sm font-semibold text-text-primary truncate max-w-[200px] sm:max-w-[320px]">
@@ -58,7 +58,7 @@ export function ChatHeader({
           </span>
           {activeModelName && (
             <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface-hover text-text-secondary border border-border-subtle">
-              <Sparkles className="w-2.5 h-2.5 text-ai" />
+              <Sparkles className="w-2.5 h-2.5 text-ai-fg" />
               {activeModelName}
             </span>
           )}

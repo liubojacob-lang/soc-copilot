@@ -127,7 +127,10 @@ async def login(
     user, access_token, refresh_token = await auth_service.authenticate(credentials)
 
     # If user has 2FA enabled with login policy, issue temporary pre_auth_token instead
-    if getattr(user, "is_totp_enabled", False) and getattr(user, "totp_policy", "sudo") == "login":
+    if (
+        getattr(user, "is_totp_enabled", False)
+        and getattr(user, "totp_policy", "sudo") == "login"
+    ):
         pre_auth_token = create_pre_auth_token(user.id)
         return TokenResponse(
             access_token=None,

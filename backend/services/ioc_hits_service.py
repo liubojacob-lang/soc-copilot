@@ -67,9 +67,7 @@ class IOCHitsService:
         total = await self.repository.count_by_ioc(self.session, ioc_value)
         return [self._to_response(h) for h in hits], total
 
-    async def list_recent(
-        self, limit: int = 100
-    ) -> tuple[list[IOCHitResponse], int]:
+    async def list_recent(self, limit: int = 100) -> tuple[list[IOCHitResponse], int]:
         """List recent IOC hits across all IOCs.
 
         Args:

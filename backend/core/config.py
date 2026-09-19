@@ -79,7 +79,9 @@ class Settings(BaseSettings):
     # v0.6.2: Authentication & JWT Settings
     jwt_secret: str = ""  # MUST be set in production (min 32 characters)
     jwt_secret_previous: str = ""  # P1-17: Previous JWT secret for rotation过渡期
-    jwt_expire_minutes: int = 60  # 1 hour — short-lived access tokens; refresh tokens carry longevity
+    jwt_expire_minutes: int = (
+        60  # 1 hour — short-lived access tokens; refresh tokens carry longevity
+    )
     jwt_refresh_expire_minutes: int = 10080  # 7 days
     # S0-20: Replaced allow_public_readonly bool with endpoint whitelist
     # for defense-in-depth (default deny). Only endpoints explicitly listed
@@ -121,7 +123,9 @@ class Settings(BaseSettings):
     api_timeout_dag_run_ms: int = 300000  # 5 minutes for DAG playbook execution
 
     # v0.8.1: Database connection pool settings
-    auto_run_migrations: bool = True  # Run Alembic migrations on startup; set to False in multi-replica deployments
+    auto_run_migrations: bool = (
+        True  # Run Alembic migrations on startup; set to False in multi-replica deployments
+    )
     db_pool_size: int = 20  # Default connection pool size (increased from 10)
     db_max_overflow: int = 40  # Maximum overflow connections (increased from 20)
     db_pool_timeout: int = 30  # Pool timeout in seconds
@@ -214,8 +218,14 @@ class Settings(BaseSettings):
                 )
 
             insecure_patterns = [
-                "changeme", "change-this", "password", "default", "example",
-                "your-jwt-secret", "your-secret-key", "replace-me"
+                "changeme",
+                "change-this",
+                "password",
+                "default",
+                "example",
+                "your-jwt-secret",
+                "your-secret-key",
+                "replace-me",
             ]
             if any(p in v.lower() for p in insecure_patterns):
                 if strict_mode:
@@ -263,7 +273,12 @@ class Settings(BaseSettings):
                 )
 
             insecure_passwords = [
-                "admin", "password", "123456", "changeme", "default", "soc_copilot"
+                "admin",
+                "password",
+                "123456",
+                "changeme",
+                "default",
+                "soc_copilot",
             ]
             if any(p in v.lower() for p in insecure_passwords):
                 if strict_mode:

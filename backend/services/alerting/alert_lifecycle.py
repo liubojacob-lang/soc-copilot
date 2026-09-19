@@ -100,7 +100,8 @@ class AlertLifecycleService:
             escalated_info = AlertEscalation(
                 escalated_to=alert.escalated_to or "Unassigned",
                 escalated_by=alert.assigned_to or "system",
-                reason=getattr(alert, "escalation_reason", None) or "Escalated for higher-level investigation",
+                reason=getattr(alert, "escalation_reason", None)
+                or "Escalated for higher-level investigation",
                 escalated_at=alert.escalated_at or alert.updated_at or alert.created_at,
             )
 
@@ -120,7 +121,9 @@ class AlertLifecycleService:
                 "title": c.title,
                 "severity": c.severity,
                 "status": c.status,
-                "created_at": c.created_at.isoformat() if getattr(c, "created_at", None) else None,
+                "created_at": (
+                    c.created_at.isoformat() if getattr(c, "created_at", None) else None
+                ),
             }
             for c in cases_res.scalars().all()
         ]

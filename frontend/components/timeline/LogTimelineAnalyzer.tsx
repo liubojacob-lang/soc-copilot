@@ -341,7 +341,7 @@ export function LogTimelineAnalyzer() {
       <Card className="p-4 space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-ai" />
+            <Sparkles className="w-4 h-4 text-ai-fg" />
             {t("title")}
           </h3>
           <p className="text-xs text-text-muted mt-1 leading-relaxed">{t("description")}</p>
@@ -531,7 +531,7 @@ export function LogTimelineAnalyzer() {
             {/* Next steps */}
             <Card className="p-4">
               <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-ai" />
+                <Sparkles className="w-4 h-4 text-ai-fg" />
                 {t("nextStepsTitle")}
               </h4>
               {data.next_steps.length === 0 ? (

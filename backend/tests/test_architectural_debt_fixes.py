@@ -177,7 +177,7 @@ async def test_cron_scheduler_distributed_lock():
 
     # Create scheduler without active DB
     scheduler = CronSchedulerService(session_factory=lambda: None)
-    
+
     # Test acquiring lock (with fallback or redis)
     has_lock = await scheduler._acquire_distributed_lock("test_key_1", ttl_seconds=10)
     assert isinstance(has_lock, bool)

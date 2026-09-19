@@ -131,7 +131,7 @@ export function AlertTrendsChart({
 
       <div className="w-full min-w-0 h-[300px]">
         {chartData.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-sm text-gray-400">
+          <div className="flex items-center justify-center h-full text-sm text-text-tertiary">
             {t("common.noData")}
           </div>
         ) : (

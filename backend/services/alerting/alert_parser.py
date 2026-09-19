@@ -162,7 +162,7 @@ class AlertParser:
         if not match:
             raise ValueError(f"Invalid CEF format: {line[:120]}...")
 
-        version, vendor, product, dev_version, sig_id, name, sev_str, extension = (
+        _version, vendor, product, dev_version, sig_id, name, sev_str, extension = (
             match.groups()
         )
 

@@ -96,7 +96,7 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-accent-600 dark:group-hover:text-accent-400 group-hover:translate-x-0.5 transition-transform duration-150 shrink-0" />
+            <ChevronRight className="w-4 h-4 text-text-tertiary group-hover:text-accent-600 dark:group-hover:text-accent-400 group-hover:translate-x-0.5 transition-transform duration-150 shrink-0" />
           </Link>
         </section>
       </main>

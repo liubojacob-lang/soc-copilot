@@ -144,7 +144,6 @@ class CorrelatedEvent(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )
 
-
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Performance metrics

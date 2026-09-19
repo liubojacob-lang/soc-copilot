@@ -208,9 +208,9 @@ function TimelineView({ events }: { events?: TimelineEventLocal[] }) {
   const iconMap: Record<string, React.ReactNode> = {
     created: <Activity className="w-3.5 h-3.5 text-text-link" />,
     status_changed: <RefreshCw className="w-3.5 h-3.5 text-status-warning-fg" />,
-    assigned: <User className="w-3.5 h-3.5 text-ai" />,
+    assigned: <User className="w-3.5 h-3.5 text-ai-fg" />,
     enriched: <Shield className="w-3.5 h-3.5 text-status-success-fg" />,
-    correlated: <Link className="w-3.5 h-3.5 text-ai" />,
+    correlated: <Link className="w-3.5 h-3.5 text-ai-fg" />,
     escalated: <AlertTriangle className="w-3.5 h-3.5 text-severity-critical-fg" />,
     resolved: <CheckCircle className="w-3.5 h-3.5 text-status-success-fg" />,
     noted: <FileText className="w-3.5 h-3.5 text-text-muted" />,

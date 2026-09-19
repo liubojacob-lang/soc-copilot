@@ -275,7 +275,9 @@ class ConnectionManager:
                     if target_channel and msg_dict:
                         await self._deliver_local(target_channel, msg_dict)
                 except Exception as e:
-                    logger.warning(f"Failed to process Redis Pub/Sub broadcast payload: {e}")
+                    logger.warning(
+                        f"Failed to process Redis Pub/Sub broadcast payload: {e}"
+                    )
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -305,7 +307,9 @@ class ConnectionManager:
                 if user_id:
                     delivered_users.add(user_id)
             except Exception as e:
-                logger.error(f"Failed to deliver local message to channel {channel}: {e}")
+                logger.error(
+                    f"Failed to deliver local message to channel {channel}: {e}"
+                )
                 await self.disconnect(websocket)
         return delivered_users
 
@@ -336,7 +340,9 @@ class ConnectionManager:
                 )
                 await self._redis_client.publish(self._pubsub_channel, payload)
             except Exception as e:
-                logger.warning(f"Failed to publish WebSocket message to Redis Pub/Sub: {e}")
+                logger.warning(
+                    f"Failed to publish WebSocket message to Redis Pub/Sub: {e}"
+                )
 
         # 3. Queue for known offline users
         if message_queue and await message_queue.is_available():

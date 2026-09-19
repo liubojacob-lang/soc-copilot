@@ -43,7 +43,7 @@ export function AssetRiskTable({
         width: "2fr",
         cell: (row) => (
           <div className="flex items-center gap-2">
-            <Server className="w-4 h-4 text-gray-400 shrink-0" />
+            <Server className="w-4 h-4 text-text-tertiary shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                 {row.asset_name}

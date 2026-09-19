@@ -119,8 +119,7 @@ async def _extract_behavior_features_from_db(
     try:
         # ── 1. Login count & failures from audit_logs ──
         result = await session.execute(
-            text(
-                """
+            text("""
                 SELECT
                   COUNT(*) as total_logins,
                   SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as failures
@@ -128,8 +127,7 @@ async def _extract_behavior_features_from_db(
                 WHERE user_id = :uid
                   AND created_at >= :since
                   AND action LIKE :action_pattern
-                """
-            ),
+                """),
             {"uid": user_id, "since": since, "action_pattern": "%login%"},
         )
         row = result.fetchone()
@@ -139,15 +137,13 @@ async def _extract_behavior_features_from_db(
 
         # ── 2. File access from audit_logs ──
         result = await session.execute(
-            text(
-                """
+            text("""
                 SELECT COUNT(*)
                 FROM audit_logs
                 WHERE user_id = :uid
                   AND created_at >= :since
                   AND (action LIKE :a1 OR action LIKE :a2 OR action LIKE :a3)
-                """
-            ),
+                """),
             {
                 "uid": user_id,
                 "since": since,
@@ -162,14 +158,12 @@ async def _extract_behavior_features_from_db(
 
         # ── 3. Network connections from security_alerts ──
         result = await session.execute(
-            text(
-                """
+            text("""
                 SELECT COUNT(*)
                 FROM security_alerts
                 WHERE created_at >= :since
                   AND (event_type LIKE :et1 OR event_type LIKE :et2)
-                """
-            ),
+                """),
             {"since": since, "et1": "%network%", "et2": "%connection%"},
         )
         row = result.fetchone()
@@ -178,8 +172,7 @@ async def _extract_behavior_features_from_db(
 
         # ── 4. Privilege escalation from security_alerts ──
         result = await session.execute(
-            text(
-                """
+            text("""
                 SELECT COUNT(*)
                 FROM security_alerts
                 WHERE created_at >= :since
@@ -191,8 +184,7 @@ async def _extract_behavior_features_from_db(
                     OR rule_mitre LIKE :rm1
                     OR rule_mitre LIKE :rm2
                   )
-                """
-            ),
+                """),
             {
                 "since": since,
                 "et1": "%privilege%",
@@ -209,8 +201,7 @@ async def _extract_behavior_features_from_db(
 
         # ── 5. Lateral movement from security_alerts ──
         result = await session.execute(
-            text(
-                """
+            text("""
                 SELECT COUNT(*), COUNT(DISTINCT destination_ip)
                 FROM security_alerts
                 WHERE created_at >= :since
@@ -219,8 +210,7 @@ async def _extract_behavior_features_from_db(
                     OR event_type LIKE :et2
                     OR rule_mitre LIKE :rm1
                   )
-                """
-            ),
+                """),
             {
                 "since": since,
                 "et1": "%lateral%",
@@ -375,15 +365,13 @@ class UEBAEngine:
 
         if row:
             await session.execute(
-                text(
-                    """
+                text("""
                     UPDATE ueba_baselines
                     SET model_data = :md, features_json = :fj,
                         anomaly_threshold = :at, training_samples = :ts,
                         updated_at = :now
                     WHERE user_id = :uid
-                    """
-                ),
+                    """),
                 {
                     "md": model_bytes,
                     "fj": json.dumps(features),
@@ -397,13 +385,11 @@ class UEBAEngine:
             import uuid
 
             await session.execute(
-                text(
-                    """
+                text("""
                     INSERT INTO ueba_baselines (id, user_id, entity_type, model_data,
                         features_json, anomaly_threshold, training_samples, created_at, updated_at)
                     VALUES (:id, :uid, :et, :md, :fj, :at, :ts, :now, :now)
-                    """
-                ),
+                    """),
                 {
                     "id": str(uuid.uuid4()),
                     "uid": user_id,
@@ -438,15 +424,13 @@ class UEBAEngine:
 
         try:
             result = await db.execute(
-                text(
-                    """
+                text("""
                     SELECT model_data, features_json, training_samples
                     FROM ueba_baselines
                     WHERE user_id = :uid
                     ORDER BY updated_at DESC
                     LIMIT 1
-                    """
-                ),
+                    """),
                 {"uid": user_id},
             )
             row = result.fetchone()

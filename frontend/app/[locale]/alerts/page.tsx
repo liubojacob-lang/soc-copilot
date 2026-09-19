@@ -1052,7 +1052,7 @@ export default function AlertsPage() {
               size="xs"
               variant="primary"
               onClick={() => handleBatchStatus("resolved")}
-              className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white"
+              className="bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white"
               leftIcon={<CheckCircle className="w-3.5 h-3.5" />}
             >
               {t("batch.resolve")}

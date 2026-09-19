@@ -111,17 +111,19 @@ class TimelineService:
             type_hint=type_hint,
             raw_log=raw_log,
             ips_str=", ".join(local_iocs.ips) if local_iocs.ips else "None",
-            domains_str=", ".join(local_iocs.domains)
-            if local_iocs.domains
-            else "None",
-            urls_str=", ".join(local_iocs.urls[:5])
-            + ("..." if len(local_iocs.urls) > 5 else "")
-            if local_iocs.urls
-            else "None",
-            hashes_str=", ".join(local_iocs.hashes[:3])
-            + ("..." if len(local_iocs.hashes) > 3 else "")
-            if local_iocs.hashes
-            else "None",
+            domains_str=", ".join(local_iocs.domains) if local_iocs.domains else "None",
+            urls_str=(
+                ", ".join(local_iocs.urls[:5])
+                + ("..." if len(local_iocs.urls) > 5 else "")
+                if local_iocs.urls
+                else "None"
+            ),
+            hashes_str=(
+                ", ".join(local_iocs.hashes[:3])
+                + ("..." if len(local_iocs.hashes) > 3 else "")
+                if local_iocs.hashes
+                else "None"
+            ),
         )
 
         result, model_used, degraded = await self.llm_service.generate_structured(
@@ -217,9 +219,8 @@ class TimelineService:
             # Match by hostname
             hostnames = []
             for event in result.timeline:
-                key_fields = (
-                    getattr(event, "key_fields", None)
-                    or (event.get("key_fields", {}) if isinstance(event, dict) else {})
+                key_fields = getattr(event, "key_fields", None) or (
+                    event.get("key_fields", {}) if isinstance(event, dict) else {}
                 )
                 for key, value in key_fields.items():
                     if "host" in key.lower() and isinstance(value, str):
@@ -433,7 +434,9 @@ class TimelineService:
                 event.get("type") if isinstance(event, dict) else "Unknown"
             )
             desc = getattr(event, "description", None) or (
-                event.get("description") if isinstance(event, dict) else "No description"
+                event.get("description")
+                if isinstance(event, dict)
+                else "No description"
             )
             key_fields = getattr(event, "key_fields", None) or (
                 event.get("key_fields") if isinstance(event, dict) else {}
@@ -470,7 +473,9 @@ class TimelineService:
                 event.get("severity") if isinstance(event, dict) else "N/A"
             )
             desc = getattr(event, "description", None) or (
-                event.get("description") if isinstance(event, dict) else "No description"
+                event.get("description")
+                if isinstance(event, dict)
+                else "No description"
             )
             reasoning = getattr(event, "reasoning", None) or (
                 event.get("reasoning") if isinstance(event, dict) else "N/A"

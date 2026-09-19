@@ -47,7 +47,7 @@ async def run_root_cause_analysis(
         row = await service.analyze(alert_id)
     except RootCauseAlertNotFoundError:
         raise HTTPException(status_code=404, detail="Alert not found") from None
-    except AIServiceUnavailableError as e:
+    except AIServiceUnavailableError:
         # LLM degraded: refuse rather than fabricate (T1.1 principle)
         raise HTTPException(
             status_code=503,

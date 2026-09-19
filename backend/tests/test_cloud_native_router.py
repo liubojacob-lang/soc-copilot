@@ -9,7 +9,12 @@ async def test_cloud_native_dashboard(auth_client):
     resp = await auth_client.get("/api/v1/cloud-native/dashboard")
     assert resp.status_code == 200
     data = resp.json()
-    assert "metrics" in data or "overview" in data or "total_containers" in data or isinstance(data, dict)
+    assert (
+        "metrics" in data
+        or "overview" in data
+        or "total_containers" in data
+        or isinstance(data, dict)
+    )
 
 
 @pytest.mark.asyncio
@@ -93,7 +98,9 @@ async def test_cloud_native_containers_list(auth_client):
     assert len(data["containers"]) == 10
 
     # Test page 2
-    resp_p2 = await auth_client.get("/api/v1/cloud-native/containers?page=2&page_size=10")
+    resp_p2 = await auth_client.get(
+        "/api/v1/cloud-native/containers?page=2&page_size=10"
+    )
     assert resp_p2.status_code == 200
     data_p2 = resp_p2.json()
     assert data_p2["page"] == 2
@@ -137,5 +144,3 @@ async def test_cloud_native_container_detail(auth_client):
     # Test not found
     resp_404 = await auth_client.get("/api/v1/cloud-native/containers/non-existent-id")
     assert resp_404.status_code == 404
-
-

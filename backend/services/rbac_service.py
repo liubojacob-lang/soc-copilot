@@ -37,9 +37,7 @@ SYSTEM_PERMISSIONS = [
 
 # Role to permission codes mapping
 SYSTEM_ROLE_PERMISSIONS: dict[str, list[tuple[str, str]]] = {
-    "admin": [
-        (res, act) for res, act, _ in SYSTEM_PERMISSIONS
-    ],
+    "admin": [(res, act) for res, act, _ in SYSTEM_PERMISSIONS],
     "analyst": [
         ("assets", "read"),
         ("assets", "write"),

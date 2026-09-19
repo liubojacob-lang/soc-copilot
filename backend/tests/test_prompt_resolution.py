@@ -91,9 +91,8 @@ class TestEnvironmentMapping:
         assert _ENV_MAPPING["production"] is PromptEnvironment.PROD
 
     def test_unknown_environment_defaults_to_dev(self):
-        from models.prompt_registry import PromptEnvironment
-
         import core.config as config_mod
+        from models.prompt_registry import PromptEnvironment
 
         original = config_mod.settings.environment
         config_mod.settings.environment = "weird-env"

@@ -114,7 +114,9 @@ class TestExecuteDagSuccess:
         assert result["status"] == "success"
         assert result["outputs"]["n1"] == {"sync": True}
 
-    async def test_inputs_template_rendered_for_node(self, run_repo_update, monkeypatch):
+    async def test_inputs_template_rendered_for_node(
+        self, run_repo_update, monkeypatch
+    ):
         from services.playbook.playbook_context_service import context_service
 
         monkeypatch.setattr(
@@ -159,9 +161,7 @@ class TestExecuteDagSuccess:
     async def test_retry_policy_success_after_transient_failure(self, run_repo_update):
         session = make_session()
         step = AsyncMock(spec=AsyncStep)
-        step.execute = AsyncMock(
-            side_effect=[RuntimeError("transient"), {"ok": True}]
-        )
+        step.execute = AsyncMock(side_effect=[RuntimeError("transient"), {"ok": True}])
         engine = make_engine(session, StubRegistry({"noop": step}))
         definition = one_node_definition(
             retry_policy={
@@ -202,9 +202,7 @@ class TestExecuteDagFailure:
     async def test_structured_dag_error_uses_to_dict(self, run_repo_update):
         session = make_session()
         step = AsyncStep(
-            error=NodeTimeoutError(
-                node_id="n1", step_id="noop", timeout_seconds=300
-            )
+            error=NodeTimeoutError(node_id="n1", step_id="noop", timeout_seconds=300)
         )
         engine = make_engine(session, StubRegistry({"noop": step}))
 
@@ -241,7 +239,9 @@ class TestExecuteDagFailure:
 
 
 class TestExecuteDagTimeout:
-    async def test_global_timeout_skips_remaining_nodes(self, run_repo_update, monkeypatch):
+    async def test_global_timeout_skips_remaining_nodes(
+        self, run_repo_update, monkeypatch
+    ):
         monkeypatch.setattr(engine_module, "DAG_GLOBAL_TIMEOUT_SECONDS", 0)
         session = make_session()
         step = AsyncStep()

@@ -364,8 +364,16 @@ class CaseRepository:
         resolved_today = resolved_today_result.scalar() or 0
 
         # Average resolution time in hours
-        bind = session.get_bind() if hasattr(session, "get_bind") else getattr(session, "bind", None)
-        is_postgres = bind is not None and getattr(bind, "dialect", None) is not None and bind.dialect.name == "postgresql"
+        bind = (
+            session.get_bind()
+            if hasattr(session, "get_bind")
+            else getattr(session, "bind", None)
+        )
+        is_postgres = (
+            bind is not None
+            and getattr(bind, "dialect", None) is not None
+            and bind.dialect.name == "postgresql"
+        )
 
         if is_postgres:
             diff_hours = (

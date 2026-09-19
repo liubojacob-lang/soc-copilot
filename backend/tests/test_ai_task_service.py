@@ -341,8 +341,9 @@ class TestAITaskQueueService:
         assert triage["task_id"] == "task-alert-1"
         assert triage["model_used"] == "glm-4-flash"
         assert triage["degraded"] is False
-        assert fake_alert.raw_data["pipeline"].get("ai_suggested_severity") == "critical"
-
+        assert (
+            fake_alert.raw_data["pipeline"].get("ai_suggested_severity") == "critical"
+        )
 
 
 class TestAITaskModel:
@@ -470,7 +471,6 @@ class TestQueuePriorityAndCrashRecovery:
 
     @pytest.mark.asyncio
     async def test_higher_priority_consumed_first(self):
-        import asyncio
 
         from services.ai_task_service import _queue_item, _task_queue
 
@@ -508,7 +508,9 @@ class TestQueuePriorityAndCrashRecovery:
         session.execute = AsyncMock(
             return_value=MagicMock(
                 scalars=MagicMock(
-                    return_value=MagicMock(all=MagicMock(return_value=[pending, processing]))
+                    return_value=MagicMock(
+                        all=MagicMock(return_value=[pending, processing])
+                    )
                 )
             )
         )

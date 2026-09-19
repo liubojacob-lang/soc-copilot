@@ -149,7 +149,6 @@ class BulkThreatIntelResponse(BaseModel):
     )
 
 
-
 class ThreatIntelAnalysis(BaseModel):
     """Threat intelligence analysis for alert/timeline output.
 

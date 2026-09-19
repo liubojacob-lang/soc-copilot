@@ -26,8 +26,7 @@ depends_on = None
 def upgrade() -> None:
     # varchar -> text keeps existing data; no table rewrite needed in PG
     op.execute(
-        "ALTER TABLE correlated_events "
-        "ALTER COLUMN business_impact TYPE TEXT"
+        "ALTER TABLE correlated_events " "ALTER COLUMN business_impact TYPE TEXT"
     )
 
 
