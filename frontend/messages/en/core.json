@@ -206,7 +206,9 @@
     "logout": "Logout",
     "api": "API",
     "checking": "Checking",
-    "statusError": "Error"
+    "statusError": "Error",
+    "userAccount": "User account menu",
+    "mainNavigation": "Main navigation"
   },
   "nav": {
     "home": "Home",

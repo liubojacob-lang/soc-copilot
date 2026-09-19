@@ -567,7 +567,7 @@ export default function CreatePlaybookPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="例如: 自动化 IP 封禁响应"
                 required
-                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
+                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
               />
             </div>
 
@@ -581,7 +581,7 @@ export default function CreatePlaybookPage() {
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
                   placeholder="1.0.0"
-                  className="w-full px-3.5 py-2 text-sm font-mono rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
+                  className="w-full px-3.5 py-2 text-sm font-mono rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
                 />
               </div>
 
@@ -595,7 +595,7 @@ export default function CreatePlaybookPage() {
                   className={`w-full py-2 px-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                     isActive
                       ? "bg-success-500/15 border-success-500/30 text-success-700 dark:text-success-400"
-                      : "bg-surface-hover border-border-subtle text-text-tertiary"
+                      : "bg-surface-hover border-border-subtle text-text-secondary"
                   }`}
                 >
                   <div
@@ -617,7 +617,7 @@ export default function CreatePlaybookPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="简明描述该剧本的触发条件、执行逻辑与应急响应目的..."
-                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors resize-none"
+                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors resize-none"
               />
             </div>
 
@@ -652,6 +652,11 @@ export default function CreatePlaybookPage() {
                   DAG 流程拓扑可视化
                 </h3>
               </div>
+              {/* 分段控件：轨道用 bg-surface-hover，激活项是白色浮起的 pill。
+                  未激活文字必须用 secondary —— tertiary 落在 surface-hover 上
+                  浅色只有 4.34:1（低于 AA），正是 check-contrast.mjs 按根因登记的
+                  "弱文本层级放在 hover/active 背景上" 那一类。
+                  两个按钮的圆角也要一致（原为 rounded-md / rounded-lg 混用）。 */}
               <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-hover border border-border-subtle text-xs">
                 <button
                   type="button"
@@ -659,7 +664,7 @@ export default function CreatePlaybookPage() {
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors font-medium ${
                     viewMode === "visual"
                       ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
+                      : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
                   <Play className="w-3 h-3" />
@@ -668,10 +673,10 @@ export default function CreatePlaybookPage() {
                 <button
                   type="button"
                   onClick={() => setViewMode("json")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors font-medium ${
                     viewMode === "json"
                       ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
+                      : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
                   <Code2 className="w-3 h-3" />

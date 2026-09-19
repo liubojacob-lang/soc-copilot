@@ -173,7 +173,7 @@ export default function PlaybookDefinitionsPage() {
               placeholder={t("definitions.searchPlaceholder") || "Search definitions..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors h-9"
+              className="w-full pl-9 pr-3 py-1.5 text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors h-9"
             />
           </div>
           <button

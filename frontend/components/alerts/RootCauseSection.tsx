@@ -273,7 +273,14 @@ export function RootCauseSection({ alertId }: { alertId: number | string }) {
               <CircleAlert className="w-3 h-3" />
               {t("historyPrompt")}
               <select
-                className="border border-border-subtle rounded px-1.5 py-0.5 bg-surface-panel text-text-primary"
+                // 原先这里用的是一个不存在的 surface 槽位（"面板"名）：surface 规模只有
+                // page / ground / canvas / card / hover / active / input，Tailwind 生成不出
+                // 任何 CSS，于是这个下拉框根本拿不到我们定义的背景色。
+                // 表单控件统一用 surface-input。
+                //
+                // ⚠️ 别在注释里把那个槽位名原样写出来：scripts/check-design-tokens.mjs
+                // 扫的是源码原文（含注释），会把注释里的死类名当成仍在使用的 token 报错。
+                className="border border-border-subtle rounded px-1.5 py-0.5 bg-surface-input text-text-primary"
                 value={current.id}
                 onChange={(e) => setSelectedId(e.target.value)}
               >

@@ -89,7 +89,7 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
         }`}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        aria-label="User account menu"
+        aria-label={tNav("userAccount")}
       >
         {/* Avatar with gradient & online indicator */}
         <div className="relative shrink-0">

@@ -30,7 +30,7 @@ interface AuditFiltersProps {
 
 /** 统一的输入控件样式（与告警列表工具栏同一设计语言） */
 const controlClass =
-  "w-full px-3 py-2 text-sm bg-surface-input border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 text-text-primary placeholder:text-text-disabled transition-all";
+  "w-full px-3 py-2 text-sm bg-surface-input border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 text-text-primary placeholder:text-text-tertiary transition-all";
 
 const iconInputClass = cn(controlClass, "pl-9 pr-8");
 

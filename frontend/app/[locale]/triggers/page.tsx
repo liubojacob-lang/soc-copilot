@@ -191,7 +191,7 @@ export default function TriggersPage() {
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-3.5">
         {/* Error Message */}
         {error && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-600 dark:text-red-400">
+          <div className="p-3 bg-status-failed-bg border border-status-failed-border rounded-lg text-xs text-status-failed-fg">
             {error}
           </div>
         )}
@@ -199,7 +199,7 @@ export default function TriggersPage() {
         {/* Test Result */}
         {testResult && (
           <div
-            className={`p-3 rounded-lg border text-xs ${testResult.success ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400"}`}
+            className={`p-3 rounded-lg border text-xs ${testResult.success ? "bg-status-success-bg border-status-success-border text-status-success-fg" : "bg-status-failed-bg border-status-failed-border text-status-failed-fg"}`}
           >
             {testResult.success ? "✓ " : "✗ "}
             {testResult.message}
@@ -296,7 +296,7 @@ export default function TriggersPage() {
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium text-text-primary">
                         {trigger.name || (
-                          <span className="text-text-disabled italic">{tPage("unnamed")}</span>
+                          <span className="text-text-tertiary">{tPage("unnamed")}</span>
                         )}
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-sm text-text-secondary">

@@ -404,7 +404,7 @@ export default function LoginPage() {
       </main>
 
       {/* Subtle Footer */}
-      <footer className="relative z-10 py-4 text-center text-xs text-text-disabled">
+      <footer className="relative z-10 py-4 text-center text-xs text-text-tertiary">
         © {new Date().getFullYear()} SOC Copilot Inc. Enterprise Security Operations.
       </footer>
     </div>

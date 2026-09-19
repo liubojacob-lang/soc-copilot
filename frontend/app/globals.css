@@ -62,10 +62,16 @@
   --sev-medium-fg: #b45309;
   --sev-medium-border: rgba(217, 119, 6, 0.24);
 
-  --sev-low: #2563eb;
-  --sev-low-bg: #eff6ff;
-  --sev-low-fg: #1d4ed8;
-  --sev-low-border: rgba(37, 99, 235, 0.22);
+  /* 低危用青灰系，不用品牌蓝。
+     蓝色在本产品里已被三重占用：accent（可交互/主按钮/链接/焦点）、
+     info（信息态）、status-investigating（进行中）。若低危也用蓝，
+     则"低危告警徽章"与"主按钮"同色，操作员无法区分"这是可点的"和"这是低危的"
+     —— 等于把语义色降级成了装饰色。迁到青灰后，蓝色完整归还给"可交互"。
+     亮度刻意贴近原蓝（相对亮度 0.1532 → 0.1460），保证视觉权重不变、只换色相。 */
+  --sev-low: #0e7490;
+  --sev-low-bg: #ecfeff;
+  --sev-low-fg: #155e75;
+  --sev-low-border: rgba(14, 116, 144, 0.22);
 
   --sev-info: #475569;
   --sev-info-bg: #f1f5f9;
@@ -115,7 +121,13 @@
 
   --status-disabled: #94a3b8;
   --status-disabled-bg: #f1f5f9;
-  --status-disabled-fg: #64748b;
+  /* fg 曾被设为 #64748b：在本底色上只有 4.34:1，低于 AA。
+     注意这个 token 不只服务"禁用"——Badge.tsx 里 falsePositive（误报）、
+     rejected、expired 也复用它，都是用户必须读懂的结果态，
+     不能按"禁用控件"豁免（WCAG 1.4.3 的豁免只覆盖真正 inactive 的控件）。
+     加深到 #5a6a80 → 5.03:1；仍弱于 status-unknown-fg（#475569 / 6.92:1），
+     层次关系保持不变。 */
+  --status-disabled-fg: #5a6a80;
   --status-disabled-border: rgba(148, 163, 184, 0.24);
 
   --status-unknown: #64748b;
@@ -266,10 +278,19 @@
   --color-bg-active: #334155;
   --color-bg-input: #0b1120;
 
-  /* 文字层级 */
+  /* 文字层级
+     深色底（#0f172a / #090d16）比浅底暗得多，中性灰必须随主题整体提亮。
+     tertiary/muted 一旦沿用浅色值，在深底上只有 3.75:1，低于 WCAG AA 的 4.5:1。
+     现值全部经 WCAG 2.1 实算，四级递降且每级均达标：
+       primary   #f8fafc  on card 17.06 : 1
+       secondary #94a3b8  on card  6.96 : 1
+       tertiary  #8595ab  on card  5.85 : 1
+       muted     #7c8ba1  on card  5.16 : 1
+     disabled  #475569  on card  2.36 : 1 —— WCAG 对"非活动控件"有豁免，
+     因此它只允许用在真正的 disabled 控件上，不得作为"次级可读信息"使用。 */
   --color-text-primary: #f8fafc;
   --color-text-secondary: #94a3b8;
-  --color-text-tertiary: #64748b;
+  --color-text-tertiary: #8595ab;
   --color-text-disabled: #475569;
   --color-text-inverse: #090d16;
   --color-text-link: #38bdf8;
@@ -297,7 +318,7 @@
   --color-neutral-bg: rgba(148, 163, 184, 0.1);
   --color-neutral-text: #94a3b8;
 
-  --color-text-muted: #94a3b8;
+  --color-text-muted: #7c8ba1;
 
   /* Severity 深色映射（低透明度底 + 高亮前景，保证 WCAG 对比度） */
   --sev-critical: #f87171;
@@ -315,10 +336,12 @@
   --sev-medium-fg: #fcd34d;
   --sev-medium-border: rgba(245, 158, 11, 0.32);
 
-  --sev-low: #60a5fa;
-  --sev-low-bg: rgba(59, 130, 246, 0.14);
-  --sev-low-fg: #93c5fd;
-  --sev-low-border: rgba(59, 130, 246, 0.32);
+  /* 低危迁到青灰系（与浅色同一决策，见 :root 处注释）。
+     取 cyan-500 而非更亮的 cyan-400：低危在深色下不应成为全屏最亮的色块。 */
+  --sev-low: #06b6d4;
+  --sev-low-bg: rgba(6, 182, 212, 0.14);
+  --sev-low-fg: #a5f3fc;
+  --sev-low-border: rgba(6, 182, 212, 0.32);
 
   --sev-info: #94a3b8;
   --sev-info-bg: rgba(148, 163, 184, 0.12);
@@ -368,7 +391,12 @@
 
   --status-disabled: #475569;
   --status-disabled-bg: rgba(71, 85, 105, 0.16);
-  --status-disabled-fg: #64748b;
+  /* 深色映射的遗漏项：其余 8 个 status 的 -fg 在深色下全部换成了高亮前景
+     （active→#6ee7b7、investigating→#93c5fd、pending→#fcd34d、failed→#fca5a5 …），
+     只有 disabled 沿用了浅色的 #64748b，在深底上只有 3.38:1。
+     因 falsePositive（误报）/ rejected / expired 共用该 token，影响面高于字面含义。
+     #94a3b8 → 6.27:1。 */
+  --status-disabled-fg: #94a3b8;
   --status-disabled-border: rgba(71, 85, 105, 0.28);
 
   --status-unknown: #94a3b8;
@@ -413,9 +441,14 @@
 /* 语言相关差异只允许作用于文字本身，禁止驱动盒子尺寸。
    中文加极轻字距让方块字视觉更饱满（7 字约 +1.8px，不会造成截断），
    这样既回应"中文侧栏显得空"，又完全不影响布局几何。 */
-html[lang^="zh"] .sidebar-label,
-html[lang^="zh"] .sidebar-group-label {
+html[lang^="zh"] .sidebar-label {
   letter-spacing: 0.02em;
+}
+
+/* 分组标题是"段"的分隔，中文字距再放开一档，方块字之间更透气，
+   与 13px 的子项在密度上就能分开 —— 不再依赖图标来区分层级。 */
+html[lang^="zh"] .sidebar-group-label {
+  letter-spacing: 0.07em;
 }
 
 /* 折叠态优先级最高，各语系统一为 64px 图标宽度 */
@@ -977,4 +1010,84 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator {
 .rdp-root .rdp-dropdown option {
   background-color: var(--color-bg-card);
   color: var(--color-text-primary);
+}
+
+/* ==================== 焦点可见性（WCAG 2.4.7 AA）====================
+   在此之前没有任何全局焦点规则：焦点样式全靠局部拼凑 —— 92 处 focus-visible、
+   90 处 focus:outline-none、另有 OtpInput / GlobalSearch 这类裸 outline-none。
+   凡是漏掉的地方，键盘用户完全看不出焦点落在哪。而安全运营的分诊、审批、
+   弹窗确认几乎全靠键盘，这不只是合规问题，是效率问题。
+
+   用 :focus-visible 而非 :focus 是刻意的：鼠标点击不画焦点环，键盘导航才画。
+   这正是 2.4.7 要的语义，也避免给鼠标用户添视觉噪音。
+
+   --color-border-focus 在明暗两套里早就定义好，此前从未被任何规则引用；
+   这里把它接上。实测对各自底色：浅色 #2563eb / 5.17:1，深色 #38bdf8 / 8.33:1，
+   均高于非文本对比度要求的 3:1。
+
+   ⚠️ 两条踩过的坑（都验证过，别"优化"掉）
+   -------------------------------------------
+   坑 1｜不加 !important 等于没写。
+   Tailwind v3 不生成真正的 CSS `@layer`（本地与线上产物都验证过，0 个 @layer 块），
+   优先级只由「特异性 + 源顺序」决定，而本条规则两项都输：
+     · Tailwind 的 `.focus-visible\:outline-none:focus-visible` 特异性 (0,2,0) > 本条 (0,1,0)；
+     · 且它在产物里位于本条之后（实测文件偏移 112700 vs 93633）。
+   实测证据：加 !important 前，14 个带 outline-none 的元素聚焦后 outline-style 全是 none。
+
+   坑 2｜必须用 longhand，不能用 shorthand。
+   第一版写的是 `outline: 2px solid var(--color-border-focus) !important`。
+   动态注入对照实验（同一元素、同一 !important）：
+     · longhand 版 outline-width/style/color/offset → 立即生效；
+     · shorthand 版 `outline: … var(…) !important` → color 分量失效，
+       被下一条规则（focus-visible:outline-none 的 outline-color）接管，
+       实测 computed 停在 `solid 3px currentColor offset=0` 并长时间处于过渡中间态。
+   shorthand 把 var() 与 !important 混在一起时，Chrome 会按 longhand 逐个求值，
+   失效的分量回退到级联中的下一个值。拆成四条 longhand 后每个属性独立生效，问题消失。
+
+   组件仍可自定义焦点视觉 —— ring 走 box-shadow，与 outline 是两个独立属性，互不覆盖。
+   唯一失去的是"某些组件完全不画焦点环"的能力，而那正是这里要禁止的。 */
+:focus-visible {
+  outline-width: 2px !important;
+  outline-style: solid !important;
+  outline-color: var(--color-border-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* ==================== 第三方组件样式覆盖 ==================== */
+
+/* reactflow@11 的 attribution 水印（画布左下角的 "React Flow"）默认写死
+   `color: #999` + `background: rgba(255, 255, 255, 0.5)` + `font-size: 10px`。
+   两个问题：
+     1. 浅色下 #999 落在近白底上只有 2.72:1（低于 AA）；
+     2. 深色下那层 50% 白底会在深色画布上留一块不明所以的浅色方块 ——
+        reactflow 的样式表不知道我们的主题。
+   这里保留水印本身（不启用 proOptions.hideAttribution：那是 Pro 授权下才建议关闭的），
+   只把颜色接到语义 token 上，使明暗两套都达标：
+     浅色 secondary #334155 / bg-hover #f1f5f9 = 9.46:1
+     深色 secondary #94a3b8 / bg-hover #1e293b = 5.70:1
+   选择器提到 (0,2,0) 是必须的：reactflow 的 style.css 是独立 CSS chunk，
+   与本文件同特异性时取决于加载顺序，不能指望 globals.css 一定在后。 */
+.react-flow .react-flow__attribution {
+  background: var(--color-bg-hover);
+  color: var(--color-text-secondary);
+}
+
+.react-flow .react-flow__attribution a {
+  color: inherit;
+}
+
+/* reactflow@11 的 MiniMap 同样写死了浅色：
+   `.react-flow__minimap { background-color: #fff }`，
+   深色主题下会在画布右下角留一块 200×150 的纯白方块 —— 比水印更显眼，
+   实测（深色下扫描 10 个页面的大面积近白表面）它也是全站唯一一处。
+   组件侧不传 bgColor/maskColor，统一由这里接管，避免同一件事有两个来源。
+   蒙版是 SVG 的 fill **属性**（presentation attribute），优先级低于任何 CSS 规则，
+   所以这里可以直接覆盖掉组件传入的 maskColor。 */
+.react-flow .react-flow__minimap {
+  background-color: var(--color-bg-card);
+}
+
+.react-flow .react-flow__minimap-mask {
+  fill: var(--color-text-muted);
+  fill-opacity: 0.22;
 }

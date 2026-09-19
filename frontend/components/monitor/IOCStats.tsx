@@ -350,8 +350,25 @@ function StatCard({
 
 // IOC Breakdown Card
 function IOCBreakdownCard({ data, showTrend }: { data: IOCBreakdown; showTrend: boolean }) {
-  const config = REPUTATION_CONFIG;
+  const tCommon = useTranslations("common");
+  const tReputation = useTranslations("reputation");
+  const tTI = useTranslations("threatIntel");
   const maliciousPercent = data.total > 0 ? (data.malicious / data.total) * 100 : 0;
+
+  const typeLabel = (() => {
+    switch (data.type) {
+      case "ip":
+        return tTI("type_ip");
+      case "domain":
+        return tTI("type_domain");
+      case "url":
+        return tTI("type_url");
+      case "hash":
+        return tTI("type_hash");
+      default:
+        return data.type;
+    }
+  })();
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
@@ -359,7 +376,7 @@ function IOCBreakdownCard({ data, showTrend }: { data: IOCBreakdown; showTrend: 
         <div className="flex items-center gap-2">
           <span className="text-lg">{TYPE_ICONS[data.type]}</span>
           <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">
-            {data.type}s
+            {typeLabel}
           </span>
         </div>
         {showTrend && <TrendIndicator trend={data.trend} />}
@@ -367,15 +384,15 @@ function IOCBreakdownCard({ data, showTrend }: { data: IOCBreakdown; showTrend: 
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-gray-600 dark:text-gray-400">Total:</span>
+          <span className="text-gray-600 dark:text-gray-400">{tCommon("total")}:</span>
           <span className="font-semibold text-gray-900 dark:text-white">{data.total}</span>
         </div>
         <div className="flex items-center justify-between text-xs">
-          <span className="text-gray-600 dark:text-gray-400">Malicious:</span>
+          <span className="text-gray-600 dark:text-gray-400">{tReputation("malicious")}:</span>
           <span className="font-semibold text-red-600 dark:text-red-400">{data.malicious}</span>
         </div>
         <div className="flex items-center justify-between text-xs">
-          <span className="text-gray-600 dark:text-gray-400">Suspicious:</span>
+          <span className="text-gray-600 dark:text-gray-400">{tReputation("suspicious")}:</span>
           <span className="font-semibold text-orange-600 dark:text-orange-400">
             {data.suspicious}
           </span>
@@ -391,7 +408,7 @@ function IOCBreakdownCard({ data, showTrend }: { data: IOCBreakdown; showTrend: 
               />
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {maliciousPercent.toFixed(1)}% malicious
+              {maliciousPercent.toFixed(1)}% {tReputation("malicious")}
             </div>
           </div>
         )}
@@ -402,11 +419,13 @@ function IOCBreakdownCard({ data, showTrend }: { data: IOCBreakdown; showTrend: 
 
 // Trend Indicator
 function TrendIndicator({ trend }: { trend: "up" | "down" | "stable" }) {
+  const t = useTranslations("threatIntel.dashboard");
+
   if (trend === "stable") {
     return (
       <span className="flex items-center gap-1 text-xs text-gray-500">
         <span className="w-2 h-2 bg-gray-400 rounded-full" />
-        Stable
+        {t("stable")}
       </span>
     );
   }
@@ -429,7 +448,7 @@ function TrendIndicator({ trend }: { trend: "up" | "down" | "stable" }) {
           d="M5 10l7-7m0 0l7 7m-7-7v18"
         />
       </svg>
-      {isUp ? "Increasing" : "Decreasing"}
+      {isUp ? t("increasing") : t("decreasing")}
     </span>
   );
 }

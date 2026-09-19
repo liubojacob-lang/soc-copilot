@@ -522,7 +522,7 @@ export default function ReportsPage() {
                     placeholder={t("alertIdPlaceholder")}
                     aria-describedby="reports-form-hint"
                     disabled={generating}
-                    className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all font-mono disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all font-mono disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -540,7 +540,7 @@ export default function ReportsPage() {
                     placeholder={t("notesPlaceholder")}
                     rows={3}
                     disabled={generating}
-                    className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 text-xs sm:text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
 

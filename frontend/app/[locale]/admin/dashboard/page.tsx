@@ -362,7 +362,7 @@ export default function SystemDashboardPage() {
             <button
               onClick={() => handleTestModel(row.id)}
               disabled={!row.is_active}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-border-subtle dark:border-border-strong bg-white hover:bg-surface-card text-text-secondary dark:bg-surface-card dark:hover:bg-gray-750 dark:text-text-disabled transition-colors shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-border-subtle dark:border-border-strong bg-white hover:bg-surface-card text-text-secondary dark:bg-surface-card dark:hover:bg-gray-750 transition-colors shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Zap className="w-3 h-3 text-warning-500 shrink-0" />
               <span>{t("testConnection")}</span>
@@ -449,14 +449,14 @@ export default function SystemDashboardPage() {
             setConnModalTab("database");
             setConnModalOpen(true);
           }}
-          className="px-3 py-1.5 bg-white dark:bg-surface-card border border-border-subtle dark:border-border-strong text-text-secondary dark:text-text-disabled rounded-lg hover:bg-surface-card dark:hover:bg-gray-750 flex items-center gap-2 text-sm font-medium transition-colors shadow-xs"
+          className="px-3 py-1.5 bg-white dark:bg-surface-card border border-border-subtle dark:border-border-strong text-text-secondary rounded-lg hover:bg-surface-card dark:hover:bg-gray-750 flex items-center gap-2 text-sm font-medium transition-colors shadow-xs"
         >
           <Database className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
           <span>{t("viewConnections")}</span>
         </button>
         <button
           onClick={() => setDiagModalOpen(true)}
-          className="px-3 py-1.5 bg-white dark:bg-surface-card border border-border-subtle dark:border-border-strong text-text-secondary dark:text-text-disabled rounded-lg hover:bg-surface-card dark:hover:bg-gray-750 flex items-center gap-2 text-sm font-medium transition-colors shadow-xs"
+          className="px-3 py-1.5 bg-white dark:bg-surface-card border border-border-subtle dark:border-border-strong text-text-secondary rounded-lg hover:bg-surface-card dark:hover:bg-gray-750 flex items-center gap-2 text-sm font-medium transition-colors shadow-xs"
         >
           <Zap className="w-3.5 h-3.5 text-warning-500" />
           <span>{t("runDiagnostics")}</span>

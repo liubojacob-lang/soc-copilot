@@ -32,6 +32,7 @@ import { Link } from "@/i18n/navigation";
 import { Badge, ConfidenceBadge, AIBadge, type Severity } from "@/components/ui/Badge";
 import { Button } from "@/components/common/Button";
 import { Card } from "@/components/common";
+import { cn } from "@/lib/utils";
 
 interface AIAnalysisPanelProps {
   alert: {
@@ -115,14 +116,21 @@ export function AIAnalysisPanel({ alert, onAddNote }: AIAnalysisPanelProps) {
         </div>
       </div>
 
-      <div className="p-5">
+      {/* 空态单独收紧纵向内边距：面板没有内容时不该继续预留一屏的呼吸空间。
+          有数据时才回到 p-5 的正常密度。 */}
+      <div
+        className={cn(
+          "px-5",
+          !data && !mutation.isPending && !mutation.isError ? "py-3.5" : "py-5"
+        )}
+      >
         {/* ── 未运行：空态 + 明确的下一步 ───────────────── */}
         {!data && !mutation.isPending && !mutation.isError && (
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-medium text-text-secondary">{t("notRun")}</p>
-              <p className="mt-0.5 text-xs text-text-muted">{t("notRunSub")}</p>
-            </div>
+          <div className="flex flex-col items-start gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-text-muted">
+              <span className="font-medium text-text-secondary">{t("notRun")}</span>{" "}
+              {t("notRunSub")}
+            </p>
             <Button size="sm" onClick={() => mutation.mutate()} className="shrink-0">
               <Sparkles className="mr-1.5 h-3.5 w-3.5" />
               {t("run")}

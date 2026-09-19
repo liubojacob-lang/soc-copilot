@@ -270,7 +270,7 @@ export function AuditDateRangePicker({ dateFrom, dateTo, onChange }: AuditDateRa
             hasValue ? "text-accent-600 dark:text-accent-400" : "text-text-muted"
           )}
         />
-        <span className={cn("truncate", !hasValue && "text-text-disabled font-normal")}>
+        <span className={cn("truncate", !hasValue && "text-text-tertiary font-normal")}>
           {triggerLabel()}
         </span>
         <ChevronDown

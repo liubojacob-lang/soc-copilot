@@ -203,7 +203,7 @@ export default function SecurityWallboardPage() {
         <div className="space-y-6">
           {/* ── Row 1: Real-time Metrics ───────────────── */}
           <section>
-            <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+            <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
               {t("dashboard.realTimeMetrics")}
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

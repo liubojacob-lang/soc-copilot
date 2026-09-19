@@ -154,7 +154,15 @@ export function AlertTrendsChart({
               />
               <YAxis {...themeAxis} allowDecimals={false} width={40} />
               <Tooltip {...themeTooltip} />
-              <Legend {...themeLegend} />
+              {/* 图例文字走语义色：recharts 默认沿用系列描边色（500/600 级），
+                  落在白底上 3.19–3.77:1、深色底上 3.04–4.12:1。
+                  仓库里另外 5 处 <Legend> 都加了 formatter，这一处漏了。 */}
+              <Legend
+                {...themeLegend}
+                formatter={(value: string) => (
+                  <span className="text-sm text-text-secondary">{value}</span>
+                )}
+              />
               <Area
                 type="monotone"
                 dataKey="critical"

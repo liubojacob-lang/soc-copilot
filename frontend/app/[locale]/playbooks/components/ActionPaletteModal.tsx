@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useLocale } from "next-intl";
 import {
   X,
@@ -82,6 +82,16 @@ export function ActionPaletteModal({ isOpen, onClose, onSelectAction }: ActionPa
     return map;
   }, [filteredActions]);
 
+  // Lock background scroll when open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -90,8 +100,14 @@ export function ActionPaletteModal({ isOpen, onClose, onSelectAction }: ActionPa
       aria-modal="true"
       aria-label={isZh ? "添加动作节点" : "Add Action Step"}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="w-full max-w-2xl bg-surface-card border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div
+        className="w-full max-w-2xl bg-surface-card border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-4 border-b border-border-subtle flex items-center justify-between bg-surface-ground/50">
           <div className="flex items-center gap-2">

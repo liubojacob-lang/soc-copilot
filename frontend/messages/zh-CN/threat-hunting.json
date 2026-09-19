@@ -12,6 +12,7 @@
     "successRate": "成功率",
     "huntHypotheses": "狩猎假设",
     "recentResults": "最近结果",
+    "recentResultsEmpty": "暂无狩猎记录",
     "topTechniques": "热门技术",
     "times": "次",
     "findingsCount": "{count} 个发现",

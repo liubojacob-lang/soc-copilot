@@ -183,7 +183,7 @@ export default function PlaybooksPage() {
               placeholder={t("searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors h-9"
+              className="w-full pl-9 pr-3 py-1.5 text-sm border border-border-default rounded-lg bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors h-9"
             />
           </div>
           <select
@@ -337,7 +337,7 @@ export default function PlaybooksPage() {
                           {duration !== null ? (
                             <span>{duration}s</span>
                           ) : (
-                            <span className="text-text-disabled">-</span>
+                            <span className="text-text-tertiary">-</span>
                           )}
                         </td>
                       </tr>

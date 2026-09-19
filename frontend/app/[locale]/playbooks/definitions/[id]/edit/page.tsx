@@ -581,7 +581,7 @@ export default function EditPlaybookDefinitionPage() {
                   className={`w-full py-2 px-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                     isActive
                       ? "bg-success-500/15 border-success-500/30 text-success-700 dark:text-success-400"
-                      : "bg-surface-hover border-border-subtle text-text-tertiary"
+                      : "bg-surface-hover border-border-subtle text-text-secondary"
                   }`}
                 >
                   <div
@@ -671,15 +671,18 @@ export default function EditPlaybookDefinitionPage() {
                   {t("addAction")}
                 </button>
 
-                {/* View mode toggle */}
+                {/* View mode toggle —— 与 playbooks/create 里的同名控件保持同一写法。
+                    未激活文字必须用 secondary：tertiary 落在 bg-surface-hover 上
+                    浅色只有 4.34:1（低于 AA）。这是运行时闸抓到的第 7 处缺陷，
+                    create 页修了、这一页漏了，属于同一处改动的两半。 */}
                 <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-hover border border-border-subtle text-xs">
                   <button
                     type="button"
                     onClick={() => switchToView("visual")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors font-medium ${
                       viewMode === "visual"
                         ? "bg-surface-card text-text-primary shadow-subtle"
-                        : "text-text-tertiary hover:text-text-secondary"
+                        : "text-text-secondary hover:text-text-primary"
                     }`}
                   >
                     <Play className="w-3 h-3" />
@@ -688,10 +691,10 @@ export default function EditPlaybookDefinitionPage() {
                   <button
                     type="button"
                     onClick={() => switchToView("json")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors font-medium ${
                       viewMode === "json"
                         ? "bg-surface-card text-text-primary shadow-subtle"
-                        : "text-text-tertiary hover:text-text-secondary"
+                        : "text-text-secondary hover:text-text-primary"
                     }`}
                   >
                     <Code2 className="w-3 h-3" />

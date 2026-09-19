@@ -503,14 +503,18 @@ export default function CaseDetailPage() {
             >
               {getStatusLabel(c.status, t)}
             </span>
+            {/* SLA 已超期 / 即将超期：走 severity 语义 token。
+                tailwind.config.ts 明示"禁止在组件里再裸写 red/orange/amber"，
+                且 severity 槽位在 globals.css 里已带明暗两套值 —— 不需要 dark: 变体。
+                原先写 text-red-600 在深色下只有 3.7:1、text-amber-600 浅色下 3.19:1。 */}
             {sla.expired && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-danger-500/10 text-danger-600 dark:text-danger-400 border border-danger-500/20 flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-severity-critical-bg text-severity-critical-fg border border-severity-critical-border flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 SLA OVERDUE
               </span>
             )}
             {sla.urgent && !sla.expired && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning-500/10 text-warning-600 dark:text-warning-400 border border-warning-500/20 flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-severity-medium-bg text-severity-medium-fg border border-severity-medium-border flex items-center gap-1">
                 <Timer className="w-3 h-3" />
                 SLA: {sla.text}
               </span>
@@ -571,9 +575,9 @@ export default function CaseDetailPage() {
                     className={cn(
                       "text-sm font-medium",
                       sla.expired
-                        ? "text-red-600"
+                        ? "text-severity-critical-fg"
                         : sla.urgent
-                          ? "text-amber-600"
+                          ? "text-severity-medium-fg"
                           : "text-text-primary dark:text-white"
                     )}
                   >

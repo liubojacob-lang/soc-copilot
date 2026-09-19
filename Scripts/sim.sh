@@ -266,8 +266,24 @@ fast_update_frontend() {
 fast_update_backend() {
     info "正在平滑更新后端容器 soc-backend-sim..."
     cd "$ROOT_DIR"
-    compose_sim up -d --force-recreate --no-deps backend
-    success "后端容器已平滑重启上线！(http://127.0.0.1:18088)"
+    if docker ps -a --format '{{.Names}}' | grep -q "^soc-backend-sim$"; then
+        docker cp "$ROOT_DIR/backend/." soc-backend-sim:/app/
+        docker exec -u 0 soc-backend-sim sh -c 'chown -R appuser:appuser /app 2>/dev/null; true'
+        docker restart soc-backend-sim >/dev/null
+    else
+        compose_sim up -d --force-recreate --no-deps backend
+    fi
+
+    local be_port="${HOST_PORT_BACKEND:-18088}" i
+    for i in $(seq 1 30); do
+        if curl -fsSL -o /dev/null --max-time 2 "http://127.0.0.1:${be_port}/api/health" 2>/dev/null || \
+           curl -fsSL -o /dev/null --max-time 2 "http://127.0.0.1:${be_port}/api/v1/health" 2>/dev/null; then
+            success "后端容器已平滑重启上线！(http://127.0.0.1:${be_port})"
+            return 0
+        fi
+        sleep 1
+    done
+    warn "后端重启已触发，等待服务就绪中..."
 }
 
 # 极速更新命令入口

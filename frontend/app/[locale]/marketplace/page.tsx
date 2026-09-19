@@ -266,7 +266,7 @@ export default function MarketplacePage() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-text-secondary dark:hover:text-text-disabled p-0.5 rounded-full"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-text-secondary dark:hover:text-text-primary p-0.5 rounded-full"
                   aria-label="Clear search"
                 >
                   <X className="w-4 h-4" />
@@ -372,7 +372,7 @@ export default function MarketplacePage() {
                 <button
                   type="button"
                   onClick={() => setShowRecommendations(!showRecommendations)}
-                  className="px-2.5 py-1 text-text-tertiary hover:text-text-primary dark:hover:text-text-disabled rounded border border-border-subtle dark:border-border-strong flex items-center gap-1 hover:bg-surface-card dark:hover:bg-surface-active transition-colors"
+                  className="px-2.5 py-1 text-text-tertiary hover:text-text-primary dark:hover:text-text-primary rounded border border-border-subtle dark:border-border-strong flex items-center gap-1 hover:bg-surface-card dark:hover:bg-surface-active transition-colors"
                 >
                   {showRecommendations ? (
                     <ChevronUp className="w-3.5 h-3.5" />
@@ -685,7 +685,7 @@ export default function MarketplacePage() {
                               e.stopPropagation();
                               setSelectedPlaybookId(playbook.id);
                             }}
-                            className="w-full py-2 bg-surface-hover dark:bg-surface-active/80 hover:bg-gray-200 dark:hover:bg-surface-active text-text-primary dark:text-text-disabled rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                            className="w-full py-2 bg-surface-hover dark:bg-surface-active/80 hover:bg-gray-200 dark:hover:bg-surface-active text-text-primary rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>{t("viewDetails")}</span>
