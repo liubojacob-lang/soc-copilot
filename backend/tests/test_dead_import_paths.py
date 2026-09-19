@@ -118,7 +118,23 @@ def test_playbook_engine_triggers_package_stays_deleted():
 def test_websocket_router_registers_each_path_once():
     from main import app
 
-    paths = [getattr(r, "path", "") for r in app.routes]
+    # FastAPI >= 0.141 wraps mounted routers in _IncludedRouter nodes whose
+    # routes live under `original_router` and whose include-time prefix lives
+    # on `include_context.prefix` — reconstruct effective paths from there.
+    paths: list[str] = []
+
+    for r in app.routes:
+        name = type(r).__name__
+        if name == "_IncludedRouter":
+            prefix = getattr(getattr(r, "include_context", None), "prefix", "") or ""
+            for inner in getattr(getattr(r, "original_router", None), "routes", []):
+                inner_path = getattr(inner, "path", "")
+                if inner_path:
+                    paths.append(prefix + inner_path)
+        else:
+            path = getattr(r, "path", "")
+            if path:
+                paths.append(path)
     ws_paths = [p for p in paths if p.startswith("/ws") or p.startswith("/api/v1/ws")]
 
     assert ws_paths.count("/ws/alerts") == 1, "/ws/alerts must be mounted exactly once"

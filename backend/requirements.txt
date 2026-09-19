@@ -1,7 +1,7 @@
-fastapi==0.135.1
+fastapi==0.141.1
 uvicorn[standard]==0.41.0
 pydantic[email]==2.9.2
-pydantic-settings==2.13.1
+pydantic-settings==2.14.2
 email-validator>=2.0.0
 python-dotenv==1.2.2
 httpx==0.27.2
@@ -29,17 +29,17 @@ alembic==1.14.0
 # chromadb removed: zero references + CVE-2026-45829/45833 (pre-auth code injection, no fix available)
 
 # Phase 3: Advanced Analytics
-scikit-learn==1.4.0
+scikit-learn==1.5.0
 
 # Phase 4: Observability
-prometheus-fastapi-instrumentator==7.0.0  # v0.8.2: Metrics
+prometheus-fastapi-instrumentator==8.1.0  # v0.8.2: Metrics
 psutil>=5.9.0  # System metrics monitoring (CPU, memory)
 
 # P1-24: LLM tracing (optional)
 langfuse>=2.0
 
 # v0.9.0: Notifications
-aiohttp==3.13.3  # Async HTTP client for notifications
+aiohttp==3.14.3  # Async HTTP client for notifications
 backoff==2.2.1  # Exponential backoff for retry logic
 
 # v1.0.0: Wazuh Integration + P0-5: now the sole JWT library (auth + Wazuh)
@@ -58,7 +58,7 @@ python-nmap==0.7.1  # NMAP integration for asset discovery
 
 # Phase 3: Report Export (F3-6, F3-7)
 Jinja2>=3.1.6  # HTML template rendering (security upgrade)
-WeasyPrint==63.1  # PDF generation from HTML (optional - requires system libs)
+WeasyPrint==70.0  # PDF generation from HTML (optional - requires system libs)
 # WeasyPrint system deps (macOS): brew install pango gdk-pixbuf libffi
 # WeasyPrint system deps (Linux): apt install libpango-1.0-0 libgdk-pixbuf2.0-0 libffi-dev
 
@@ -68,3 +68,7 @@ qrcode[pil]>=8.0
 
 # Error tracking (T4.1) — main.py imports it conditionally when SENTRY_DSN is set
 sentry-sdk[fastapi]>=2.19.0
+
+# Pinned transitively for PYSEC-2026-161 (fix >= 1.0.1); fastapi alone
+# permits older starlette in a fresh resolve, which pip-audit gates on.
+starlette==1.6.0
