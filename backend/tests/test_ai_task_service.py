@@ -446,3 +446,98 @@ class TestAITaskType:
         assert AITaskType.REPORT_GENERATION.value == "report_generation"
         assert AITaskType.CHAT_COMPLETION.value == "chat_completion"
         assert AITaskType.IOC_ANALYSIS.value == "ioc_analysis"
+
+
+class TestQueuePriorityAndCrashRecovery:
+    """T3.4: priority-ordered consumption and startup crash recovery."""
+
+    @pytest.fixture(autouse=True)
+    def _drain_global_queue(self):
+        """The task queue is module-global; keep tests isolated."""
+        from services import ai_task_service as mod
+
+        while not mod._task_queue.empty():
+            try:
+                mod._task_queue.get_nowait()
+            except Exception:
+                break
+        yield
+        while not mod._task_queue.empty():
+            try:
+                mod._task_queue.get_nowait()
+            except Exception:
+                break
+
+    @pytest.mark.asyncio
+    async def test_higher_priority_consumed_first(self):
+        import asyncio
+
+        from services.ai_task_service import _queue_item, _task_queue
+
+        # Enqueue low → high → medium; consumption order must invert for the
+        # high one while same-priority items stay FIFO.
+        _task_queue.put_nowait(_queue_item("low-1", 1))
+        _task_queue.put_nowait(_queue_item("high-1", 9))
+        _task_queue.put_nowait(_queue_item("med-1", 5))
+        _task_queue.put_nowait(_queue_item("low-2", 1))
+
+        order = []
+        while not _task_queue.empty():
+            _, _, task_id = _task_queue.get_nowait()
+            order.append(task_id)
+
+        assert order == ["high-1", "med-1", "low-1", "low-2"]
+
+    @pytest.mark.asyncio
+    async def test_recovery_requeues_pending_and_fails_processing(
+        self, mock_session_factory
+    ):
+        from services.ai_task_service import _task_queue
+
+        pending = MagicMock()
+        pending.id = "t-pending"
+        pending.status = "pending"
+        pending.priority = 7
+
+        processing = MagicMock()
+        processing.id = "t-processing"
+        processing.status = "processing"
+        processing.priority = 3
+
+        session_factory, session = mock_session_factory
+        session.execute = AsyncMock(
+            return_value=MagicMock(
+                scalars=MagicMock(
+                    return_value=MagicMock(all=MagicMock(return_value=[pending, processing]))
+                )
+            )
+        )
+
+        service = AITaskQueueService(session_factory)
+        requeued, failed = await service.recover_orphaned_tasks()
+
+        assert requeued == 1
+        assert failed == 1
+        # pending row re-enqueued with its original priority
+        neg_prio, _, task_id = _task_queue.get_nowait()
+        assert task_id == "t-pending"
+        assert neg_prio == -7
+        # processing row marked failed with an explanation
+        assert processing.status == "failed"
+        assert "orphaned" in processing.error_message
+        session.commit.assert_awaited()
+
+    @pytest.mark.asyncio
+    async def test_recovery_no_op_when_queue_clean(self, mock_session_factory):
+        session_factory, session = mock_session_factory
+        session.execute = AsyncMock(
+            return_value=MagicMock(
+                scalars=MagicMock(
+                    return_value=MagicMock(all=MagicMock(return_value=[]))
+                )
+            )
+        )
+
+        service = AITaskQueueService(session_factory)
+        requeued, failed = await service.recover_orphaned_tasks()
+        assert (requeued, failed) == (0, 0)

@@ -2,12 +2,17 @@
 
 This service provides:
 - Async task creation and submission
+- Priority-ordered background processing (higher priority first, FIFO
+  within the same priority)
+- Crash recovery: on startup, pending tasks left in the DB by a previous
+  process are re-enqueued and stale "processing" rows are marked failed
 - Background task processing with timeout handling
 - Status polling for long-running AI operations
 - Automatic retry on transient failures
 """
 
 import asyncio
+import itertools
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -20,9 +25,16 @@ from services.llm_retry import get_llm_retry_service
 
 logger = get_logger(__name__)
 
-# Global task queue
-_task_queue: asyncio.Queue = asyncio.Queue()
+# Priority queue: items are (-priority, seq, task_id) so higher priority
+# pops first and the unique seq keeps ordering FIFO within a priority
+# (and stops heapq from ever comparing task_id strings).
+_task_queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
+_task_seq = itertools.count()
 _background_processor: asyncio.Task | None = None
+
+
+def _queue_item(task_id: str, priority: int) -> tuple[int, int, str]:
+    return (-priority, next(_task_seq), task_id)
 
 
 class AITaskQueueService:
@@ -84,7 +96,7 @@ class AITaskQueueService:
             await session.commit()
 
         # Add to processing queue
-        await _task_queue.put((task_id, priority))
+        await _task_queue.put(_queue_item(task_id, priority))
         logger.info(f"Submitted AI task {task_id} type={task_type.value}")
 
         return task_id
@@ -352,16 +364,64 @@ class AITaskQueueService:
                 await session.commit()
 
                 # Re-queue
-                await _task_queue.put((task_id, task.priority))
+                await _task_queue.put(_queue_item(task_id, task.priority))
                 logger.info(
                     f"Retrying AI task {task_id} (attempt {task.retry_count}/{task.max_retries})"
                 )
 
+    async def recover_orphaned_tasks(self) -> tuple[int, int]:
+        """Recover tasks orphaned by a previous process crash/restart.
+
+        The in-memory queue dies with the process, so at startup any DB row
+        still pending/processing belongs to a previous lifetime:
+
+        - ``pending``    → re-enqueued with its original priority
+        - ``processing`` → the worker died mid-run; mark failed so the row
+          does not sit as a zombie forever (callers can resubmit)
+
+        Returns:
+            (requeued, failed) counts.
+        """
+        requeued = failed = 0
+        async with self.session_factory() as session:
+            stmt = select(AITaskModel).where(
+                AITaskModel.status.in_(
+                    [AITaskStatus.PENDING.value, AITaskStatus.PROCESSING.value]
+                )
+            )
+            result = await session.execute(stmt)
+            orphans = list(result.scalars().all())
+
+            for task in orphans:
+                if task.status == AITaskStatus.PENDING.value:
+                    await _task_queue.put(_queue_item(task.id, task.priority))
+                    requeued += 1
+                else:
+                    task.status = AITaskStatus.FAILED.value
+                    task.error_message = (
+                        "orphaned by restart: worker exited before completion; "
+                        "resubmit if still needed"
+                    )
+                    task.completed_at = datetime.now(UTC)
+                    failed += 1
+                    logger.warning(
+                        f"AI task {task.id} orphaned in 'processing' by a restart; "
+                        "marked failed"
+                    )
+            await session.commit()
+
+        if requeued or failed:
+            logger.info(
+                f"AI task crash recovery: requeued={requeued}, marked failed={failed}"
+            )
+        return requeued, failed
+
     async def start_background_processor(self) -> None:
-        """Start the background task processor."""
+        """Start the background task processor (with crash recovery)."""
         if self._processor_task and not self._processor_task.done():
             return
 
+        await self.recover_orphaned_tasks()
         self._processor_task = asyncio.create_task(self._processor_loop())
         logger.info("AI task background processor started")
 
@@ -380,8 +440,9 @@ class AITaskQueueService:
         """Main processor loop."""
         while True:
             try:
-                # Get next task from queue
-                task_id, priority = await _task_queue.get()
+                # Get next task from the priority queue (highest priority
+                # first; FIFO within one priority level via the sequence).
+                _, _, task_id = await _task_queue.get()
 
                 # Wait if at max concurrent
                 while len(self._running_tasks) >= self._max_concurrent:
