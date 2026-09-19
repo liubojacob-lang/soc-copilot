@@ -363,8 +363,6 @@ soc-copilot/
 │   └── package.json
 ├── data/                       # Dev SQLite database (prod uses PostgreSQL)
 ├── docs/                       # Documentation
-├── MANUAL_TEST.md              # Manual Test Documentation
-├── TEST_CASES.md               # Test Cases
 └── README.md                   # Project Description
 ```
 
@@ -534,8 +532,7 @@ This project has undergone comprehensive security optimization. [View Full Repor
 
 ## Related Documentation
 
-- [MANUAL_TEST.md](./MANUAL_TEST.md) - Manual Test Documentation
-- [TEST_CASES.md](./TEST_CASES.md) - Test Cases
+- [CHANGELOG.md](./CHANGELOG.md) - Version history
 - [API Documentation](http://localhost:8000/docs) - Interactive API Documentation (backend must be running)
 - [`openapi.json`](./openapi.json) - Full machine-readable spec (269 paths / 314 operations)
 - [docs/api-retry-policy.md](./docs/api-retry-policy.md) - Rate limits & retry policy

@@ -47,7 +47,7 @@ services:
     restart: always
 
   backend:
-    image: ${DOCKERHUB_USERNAME}/soc-copilot-backend:${IMAGE_TAG:-0.9.0}
+    image: ${DOCKERHUB_USERNAME}/soc-copilot-backend:${IMAGE_TAG:-0.9.4}
     container_name: soc-copilot-backend-prod
     environment:
       - "DATABASE_URL=postgresql+asyncpg://${DB_USER:?DB_USER is required}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:?DB_NAME is required}"
@@ -61,6 +61,7 @@ services:
       - "HTTP_ALLOWED_HOSTS=${HTTP_ALLOWED_HOSTS:?HTTP_ALLOWED_HOSTS is required}"
       - "CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS is required}"
       - "ENVIRONMENT=production"
+      - "METRICS_TOKEN=${METRICS_TOKEN:-}"
       - "DIFY_API_URL=${DIFY_API_URL}"
       - "DIFY_API_KEY=${DIFY_API_KEY}"
       - "LOG_LEVEL=INFO"
@@ -80,7 +81,7 @@ services:
           memory: 2G
 
   frontend:
-    image: ${DOCKERHUB_USERNAME}/soc-copilot-frontend:${IMAGE_TAG:-0.9.0}
+    image: ${DOCKERHUB_USERNAME}/soc-copilot-frontend:${IMAGE_TAG:-0.9.4}
     container_name: soc-copilot-frontend-prod
     environment:
       - NEXT_PUBLIC_API_URL=${API_URL}

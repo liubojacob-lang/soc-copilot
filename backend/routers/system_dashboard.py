@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.logger import get_logger
-from core.token_blacklist import REDIS_AVAILABLE, get_token_blacklist
+from core.token_blacklist import REDIS_AVAILABLE
 from db.session import AsyncSessionLocal, engine
 from dependencies.auth import get_current_user
 from models.user import UserModel
@@ -567,7 +567,7 @@ async def get_system_dashboard(
 
     return SystemDashboard(
         timestamp=datetime.now(UTC).isoformat(),
-        version="0.8.5",
+        version=settings.app_version,
         environment=settings.environment,
         database=database_status,
         redis=redis_status_model,
@@ -1057,8 +1057,10 @@ async def terminate_db_connection(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to terminate connection {pid}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception(f"Failed to terminate connection {pid}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to terminate connection {pid}"
+        )
 
 
 @router.post(
