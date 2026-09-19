@@ -24,8 +24,9 @@ class TriggerInvocationModel(Base):
         index=True,
     )
     idempotency_key: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, index=True
+        String(100), nullable=True, index=True, unique=True  # uq_trigger_invocations_idempotency_key (0006)
     )
+
     run_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("playbook_runs.id", ondelete="SET NULL"), nullable=True
     )
