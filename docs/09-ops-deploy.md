@@ -61,7 +61,7 @@ make db-restore FILE=backups/<时间戳>/postgres.sql.gz # PG 恢复（需确认
 
 - k8s 环境：`kubectl apply -f k8s/10-backup-cronjob.yaml`（每日 02:30 pg_dump → backup-pvc，保留 30 天）。
 - **必须演练**：每季度执行一次「备份 → 删除 → 恢复 → 冒烟」闭环并记录。
-- 备份含环境变量快照（敏感），目录勿入库（.gitignore 已排除）。
+- 备份不再打包环境变量快照（T1.3 安全加固，彻底杜绝明文密钥泄漏）；备份目录已在 `.gitignore` 中排除。
 
 ## 5. 监控
 
@@ -85,8 +85,9 @@ GRAFANA_ADMIN_PASSWORD=xxx docker compose -f docker-compose.grafana.yml up -d
 - 生产启动校验（`STRICT_PRODUCTION_CHECKS=true`）会拒绝弱密钥/默认口令——`JWT_SECRET` ≥32 字符。
 - 应用读取 `JWT_SECRET`（历史遗留的 `SECRET_KEY` 从未被代码使用，已从 compose 移除）。
 
-## 8. 已知限制（截至 v0.9.2）
+## 8. 已知限制（截至 v0.9.4）
 
 - 生产整机演练需在目标服务器执行一次（配置插值已验证通过）。
 - k8s Secret 仍为 CHANGE_ME 占位，apply 前必须替换。
 - 审计归档写本地容器卷，多副本部署时应改为共享/对象存储。
+

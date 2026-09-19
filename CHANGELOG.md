@@ -5,7 +5,33 @@ All notable changes to SOC Copilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2026-09-19
+
+### Security
+- **Eliminate AI heuristic hallucination**: Remove fake alert triage synthesis (`_build_heuristic_alert_response`) with simulated metrics, entropy and domains; enforce honest degraded state with clear `[AI 分析不可用]` status
+- **Trivy mock removal**: Disable mock vulnerability generation in `TrivyService.scan_image()`; raise `TrivyNotInstalledError` (503 `SCANNER_NOT_INSTALLED`) when scanner CLI is missing
+- **Dev admin backdoor removal**: Remove hardcoded backdoor credentials in `auth_service.py`
+- **Backup script hardening**: Exclude `.env*` from automated filesystem and tarball backups to prevent plaintext secret leaks; document secret exclusion by design
+- **Audit middleware fix**: Prefix `/api/v1/` to login/auth exclusion paths preventing plaintext credential leaks in audit logs
+
+### Fixed & Database
+- **Database constraints (0006)**: Add UniqueConstraint on `blocked_ips (value, type)` and `trigger_invocations.idempotency_key`; add timestamp indexes on `correlated_events` and run_id index on `playbook_approvals`
+- **Model exports**: Export `SecurityVulnerability` and `VulnerabilityNote` in `models.__init__` and `__all__`
+- **AI triage pipeline feedback loop**: Backfill asynchronous AI triage conclusions into `alert.raw_data.pipeline.ai_triage` and extract suggested severity
+- **API path alignment**: Correct broken unversioned `/api/ai/*` routes in `lib/api/ai.ts` to `/api/v1/ai/*`
+
+### Added & UI
+- **Frontend triage indicators**: Add "AI 已分诊" badge in alert lists and dedicated automated triage conclusions card in alert detail view
+- **External TI status**: Explicitly surface `provider_status: unconfigured` when OTX is not configured, displaying alert banner in UI
+- **Cases E2E test suite**: Add Playwright test coverage for security cases management flow with CI trigger workflow
+- **Cloud-Native roadmap freeze**: Freeze cloud-native features with "Demo" navigation badge and roadmap documentation
+
+### Removed
+- Remove opaque binary `Scripts/email_validator.exe`
+- Remove unused components (`QuickActions.tsx`, `authStore.ts`, `notificationStore.ts`, `MonitoringDashboard.tsx`, `FilterConfig.tsx`, `PlaceholderPage.tsx`)
+
 ## [0.9.3] - 2026-09-13
+
 
 ### Added
 - **TOTP two-factor authentication** (RFC 6238): enroll/verify/disable, backup codes and a sudo-mode policy, so sensitive operations can require a second factor without forcing it on every login

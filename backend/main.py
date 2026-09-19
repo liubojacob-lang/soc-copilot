@@ -17,7 +17,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
 
 from core.config import settings
 from core.logger import get_logger
@@ -25,6 +24,7 @@ from db.session import AsyncSessionLocal
 from middleware import (
     AuditMiddleware,
     ExceptionCaptureMiddleware,
+    MetricsAuthMiddleware,
     ObservabilityMiddleware,
     RequestContextMiddleware,
     ResourceAuthorizationMiddleware,
@@ -276,7 +276,7 @@ async def lifespan(app_instance: FastAPI):
     startup and shutdown of all services.
     """
     # Startup
-    logger.info("Initializing SOC Copilot API v0.9.0")
+    logger.info(f"Initializing SOC Copilot API v{settings.app_version}")
     logger.info(f"Environment: {settings.environment}")
     logger.info("Playbook Engine: ENABLED (DAG-based with Node Plugin System)")
     logger.info("Trigger System: ENABLED (webhook + cron)")
@@ -402,7 +402,7 @@ async def lifespan(app_instance: FastAPI):
 app = FastAPI(
     title="SOC Copilot API",
     description="Security Operations Center Analysis Platform with Playbook Engine, OTX Threat Intelligence, and Multi-User Support",
-    version="0.8.0",
+    version=settings.app_version,
     lifespan=lifespan,
 )
 
@@ -530,6 +530,10 @@ app.add_middleware(RequestContextMiddleware)
 app.add_middleware(ObservabilityMiddleware)
 app.add_middleware(ExceptionCaptureMiddleware)
 
+# Metrics scrape guard. Inner than AuditMiddleware so denied scrapes stay
+# logged, outer than the request-context stack so they never reach routing.
+app.add_middleware(MetricsAuthMiddleware)
+
 # Set user state middleware (must be before AuditMiddleware)
 app.add_middleware(SetUserStateMiddleware)
 
@@ -623,8 +627,10 @@ from routers import (
 
 app.include_router(alerts_lifecycle.router)  # v0.9.0: Alert lifecycle management
 app.include_router(alert_import.router)  # v0.9.2: Alert import (frontend ImportAlertModal)
-app.include_router(ws_router.router)  # v0.8.5: WebSocket real-time alerts
-app.include_router(ws_router.router, prefix="/api/v1")  # v0.8.5: WebSocket real-time alerts & monitoring under /api/v1
+app.include_router(ws_router.router)  # v0.8.5: WebSocket endpoint /ws/alerts (bare, nginx `location /ws`)
+app.include_router(
+    ws_router.ops_router, prefix="/api/v1"
+)  # v0.8.5: WebSocket ops endpoints under /api/v1/ws/*
 app.include_router(websocket_filters.router)  # v0.9.0: WebSocket filter management
 app.include_router(monitoring_alerts.router)  # v0.9.1: Monitoring alert rules
 app.include_router(export.router)  # v0.8.5: Data export functionality
@@ -639,67 +645,16 @@ app.include_router(dashboard.router)  # v0.10.0: Operational dashboard
 app.include_router(siem.router)  # v1.1: SIEM log storage and search
 
 
-# Global OPTIONS handler for CORS preflight
-@app.options("/{path:path}")
-async def options_handler(path: str, request: Request):
-    """Handle OPTIONS preflight requests for CORS.
-
-    SECURITY: Validate origin against whitelist to prevent unauthorized cross-origin access.
-    """
-    origin = request.headers.get("origin", "")
-
-    # Security: Validate origin against whitelist
-    if origin:
-        # Check if origin is in allowed list
-        # cors_origins is a comma-separated string; split before matching or
-        # `origin in allowed_origins` degrades into substring matching
-        raw_origins = getattr(settings, "cors_origins", "") or ""
-        allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
-        # Handle wildcard and specific origins
-        is_allowed = "*" in allowed_origins or origin in allowed_origins
-
-        # In production, reject unknown origins
-        if not is_allowed and settings.environment == "production":
-            return Response(
-                status_code=403,
-                headers={"Content-Type": "text/plain"},
-                content="Origin not allowed",
-            )
-
-        # In development, allow localhost variants
-        if not is_allowed and settings.environment == "development":
-            if not (
-                origin.startswith("http://localhost")
-                or origin.startswith("http://127.0.0.1")
-            ):
-                return Response(
-                    status_code=403,
-                    headers={"Content-Type": "text/plain"},
-                    content="Origin not allowed in development mode",
-                )
-
-    return Response(
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": origin or "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, X-CSRF-Token, X-API-Key",
-            "Access-Control-Allow-Credentials": "true" if origin else "false",
-            "Access-Control-Max-Age": "600",
-        },
-    )
+# CORS preflight is answered by CORSMiddleware above. A manual
+# `@app.options("/{path:path}")` catch-all used to live here; because Starlette
+# treats a path match with the wrong method as 405, it turned every unmatched
+# GET into "405 allow: OPTIONS" instead of a 404.
 
 
 @app.get("/")
 async def root() -> dict[str, str]:
     """Root endpoint."""
     return {"message": "SOC Copilot API v1.1", "auth": "enabled"}
-
-
-@app.get("/api/v1/health")
-async def health() -> dict[str, str]:
-    """Health check endpoint."""
-    return {"status": "ok", "version": "1.1.0", "auth": "enabled"}
 
 
 if __name__ == "__main__":
