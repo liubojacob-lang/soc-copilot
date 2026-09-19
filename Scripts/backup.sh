@@ -55,7 +55,11 @@ fi
 if [ "${1:-}" == "restore" ]; then
     RESTORE_FILE="${2:-}"
     [ -f "$RESTORE_FILE" ] || { log_error "Restore file not found: $RESTORE_FILE"; exit 1; }
-    PG_CONTAINER=$(docker ps --filter "name=soc-copilot-postgres" --format "{{.Names}}" | head -1)
+    PG_CONTAINER=$(docker ps --format "{{.Names}}" | grep -E "soc.*postgres" | head -1)
+    if [ -n "$PG_CONTAINER" ]; then
+        DB_USER="${DB_USER:-$(docker exec "$PG_CONTAINER" printenv POSTGRES_USER 2>/dev/null || echo soc_copilot)}"
+        DB_NAME="${DB_NAME:-$(docker exec "$PG_CONTAINER" printenv POSTGRES_DB 2>/dev/null || echo soc_copilot)}"
+    fi
     case "$RESTORE_FILE" in
         *.sql.gz)
             [ -n "$PG_CONTAINER" ] || { log_error "PostgreSQL container not running"; exit 1; }
@@ -123,17 +127,19 @@ fi
 # 1b. PostgreSQL 备份
 log_info "📦 Backing up PostgreSQL..."
 
-if docker ps | grep -q "soc-copilot-postgres"; then
-    PG_CONTAINER=$(docker ps --filter "name=soc-copilot-postgres" --format "{{.Names}}" | head -1)
+PG_CONTAINER=$(docker ps --format "{{.Names}}" | grep -E "soc.*postgres" | head -1)
+if [ -n "$PG_CONTAINER" ]; then
+    DB_USER="${DB_USER:-$(docker exec "$PG_CONTAINER" printenv POSTGRES_USER 2>/dev/null || echo soc_copilot)}"
+    DB_NAME="${DB_NAME:-$(docker exec "$PG_CONTAINER" printenv POSTGRES_DB 2>/dev/null || echo soc_copilot)}"
 
     if [ "$DRY_RUN" = false ]; then
-        docker exec "$PG_CONTAINER" pg_dump -U "${DB_USER:-soc_copilot}" "${DB_NAME:-soc_copilot}" | \
+        docker exec "$PG_CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" | \
             gzip > "$BACKUP_PATH/postgres.sql.gz"
 
         PG_SIZE=$(du -h "$BACKUP_PATH/postgres.sql.gz" | cut -f1)
-        log_success "  PostgreSQL backup completed: $PG_SIZE"
+        log_success "  PostgreSQL backup completed: $PG_SIZE (from $PG_CONTAINER / $DB_NAME)"
     else
-        log_info "  [DRY-RUN] Would backup PostgreSQL"
+        log_info "  [DRY-RUN] Would backup PostgreSQL ($PG_CONTAINER / $DB_NAME)"
     fi
 else
     log_warning "  PostgreSQL container not found, skipping..."
@@ -142,9 +148,8 @@ fi
 # 2. Redis 备份
 log_info "📦 Backing up Redis..."
 
-if docker ps | grep -q "soc-copilot-redis"; then
-    REDIS_CONTAINER=$(docker ps --filter "name=soc-copilot-redis" --format "{{.Names}}")
-
+REDIS_CONTAINER=$(docker ps --format "{{.Names}}" | grep -E "soc.*redis" | head -1)
+if [ -n "$REDIS_CONTAINER" ]; then
     if [ "$DRY_RUN" = false ]; then
         # 创建 RDB 快照
         docker exec "$REDIS_CONTAINER" redis-cli BGSAVE
@@ -156,9 +161,9 @@ if docker ps | grep -q "soc-copilot-redis"; then
         docker cp "$REDIS_CONTAINER:/data/dump.rdb" "$BACKUP_PATH/redis.rdb"
 
         REDIS_SIZE=$(du -h "$BACKUP_PATH/redis.rdb" | cut -f1)
-        log_success "  Redis backup completed: $REDIS_SIZE"
+        log_success "  Redis backup completed: $REDIS_SIZE (from $REDIS_CONTAINER)"
     else
-        log_info "  [DRY-RUN] Would backup Redis"
+        log_info "  [DRY-RUN] Would backup Redis ($REDIS_CONTAINER)"
     fi
 else
     log_warning "  Redis container not found, skipping..."
