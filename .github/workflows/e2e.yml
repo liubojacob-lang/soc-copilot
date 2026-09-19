@@ -11,11 +11,11 @@ on:
     - cron: "30 2 * * *" # nightly, 02:30 UTC
   push:
     branches:
-      - main
+      - master
       - "release/**"
   pull_request:
     branches:
-      - main
+      - master
       - "release/**"
   workflow_dispatch:
     inputs:
