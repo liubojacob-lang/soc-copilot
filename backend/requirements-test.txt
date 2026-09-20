@@ -9,4 +9,4 @@ faker>=20.0.0
 
 # Security scanning tools (used in CI and pre-commit)
 pip-audit>=2.7.0
-safety>=3.0.0
+safety>=3.8.1
