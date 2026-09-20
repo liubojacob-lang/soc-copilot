@@ -101,7 +101,9 @@ async def export_report_pdf(
             "nist": "compliance_nist.html",
             "incident_report": "incident_report.html",
         }
-        template_file = template_map.get(template, template_map["incident_report"])
+        template_file = template_map.get(
+            template or "incident_report", template_map["incident_report"]
+        )
 
         if format == "html":
             html_content = await svc.export_html(report_data, template_file)
