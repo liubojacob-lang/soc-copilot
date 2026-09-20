@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, Mock
 
 import httpx
 import pytest
-
 import services.integration.virustotal_service as vt_module
 from services.integration.virustotal_service import VirusTotalService
 
