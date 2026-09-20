@@ -43,16 +43,16 @@ jobs:
         id: diff
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "range=origin/${{ github.base_ref }}...HEAD" >> "$GITHUB_OUTPUT"
+            echo "from=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
             # 新分支首次推送没有 before，检查最后一个提交
-            echo "range=HEAD~1..HEAD" >> "$GITHUB_OUTPUT"
+            echo "from=HEAD~1" >> "$GITHUB_OUTPUT"
           else
-            echo "range=${{ github.event.before }}..HEAD" >> "$GITHUB_OUTPUT"
+            echo "from=${{ github.event.before }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run pre-commit on changed files
-        run: pre-commit run --show-diff-on-failure --from-ref ${{ steps.diff.outputs.range }} --to-ref HEAD
+        run: pre-commit run --show-diff-on-failure --from-ref ${{ steps.diff.outputs.from }} --to-ref HEAD
 
       - name: Upload pre-commit results
         if: failure()
