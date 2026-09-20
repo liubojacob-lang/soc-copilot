@@ -110,9 +110,14 @@ export function ExternalPlaybookModal({
     }
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch();
+  };
+
   const handleAdapt = async (item?: ExternalSearchItem) => {
     setIsAdapting(true);
-    setAdaptingTarget(item ? item.title : directTitle || "外部剧本");
+    setAdaptingTarget(item ? item.title : directTitle || t("defaultExternalPlaybook"));
     try {
       const payload = item
         ? {
@@ -128,18 +133,13 @@ export function ExternalPlaybookModal({
           };
 
       const res = await api.post<any>("/api/marketplace/external/adapt", payload, 90000);
-      if (res && res.name) {
-        showToast(t("adaptSuccess"), "success");
-        onAdaptSuccess(res);
-        onClose();
-      } else {
-        throw new Error("Invalid adapted response");
-      }
+      showToast(t("adaptSuccess"), "success");
+      onAdaptSuccess(res);
+      onClose();
     } catch (e: any) {
       showToast(e.message || t("adaptFailed"), "error");
     } finally {
       setIsAdapting(false);
-      setAdaptingTarget(null);
     }
   };
 
@@ -147,14 +147,14 @@ export function ExternalPlaybookModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !isAdapting) onClose();
       }}
     >
       <div
         ref={modalRef}
-        className="w-full max-w-3xl bg-surface-card border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200"
+        className="w-full max-w-3xl bg-surface-card border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200 relative"
         role="dialog"
         aria-modal="true"
         aria-labelledby="external-modal-title"
@@ -226,13 +226,7 @@ export function ExternalPlaybookModal({
             <div className="space-y-4">
               {/* Search Bar & Quick Tags */}
               <div className="space-y-2.5">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSearch();
-                  }}
-                  className="flex gap-2"
-                >
+                <form onSubmit={handleSearchSubmit} className="flex gap-2">
                   <div className="flex-1 relative">
                     <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted" />
                     <input
@@ -259,7 +253,7 @@ export function ExternalPlaybookModal({
 
                 {/* Popular Query Chips */}
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] text-content-muted">热门场景:</span>
+                  <span className="text-[11px] text-content-muted">{t("hotTopics")}</span>
                   {PRESET_TOPICS.map((topic) => (
                     <button
                       key={topic}
@@ -280,7 +274,7 @@ export function ExternalPlaybookModal({
               {isSearching ? (
                 <div className="py-12 flex flex-col items-center justify-center text-content-muted text-xs gap-2">
                   <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
-                  <span>正在全网检索开源安全剧本库...</span>
+                  <span>{t("searchingRepositories")}</span>
                 </div>
               ) : searchResults.length === 0 ? (
                 <div className="py-12 text-center text-content-muted text-xs bg-surface-ground/40 rounded-xl border border-border-subtle p-6">
@@ -337,7 +331,7 @@ export function ExternalPlaybookModal({
                           target="_blank"
                           rel="noreferrer"
                           className="p-2 text-content-muted hover:text-content-primary rounded-lg hover:bg-surface-card transition-colors"
-                          title="查看开源仓库源文件"
+                          title={t("viewRepoSource")}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
@@ -373,7 +367,7 @@ export function ExternalPlaybookModal({
                   <option value="Splunk SOAR">Splunk SOAR / Phantom (Python/JSON)</option>
                   <option value="Shuffle SOAR">Shuffle SOAR (JSON Workflow)</option>
                   <option value="Microsoft Sentinel">Microsoft Sentinel (Logic Apps ARM)</option>
-                  <option value="NIST / CISA">NIST / CISA 标准应急 SOP (Markdown/Text)</option>
+                  <option value="NIST / CISA">NIST / CISA Standard SOP (Markdown/Text)</option>
                 </select>
               </div>
 
@@ -401,15 +395,7 @@ export function ExternalPlaybookModal({
                   rows={8}
                   value={directContent}
                   onChange={(e) => setDirectContent(e.target.value)}
-                  placeholder={`# 示例：粘贴外部剧本定义或事故处理规范...
-name: Log4Shell Incident Response
-tasks:
-  - id: extract
-    type: extract_iocs
-  - id: query_ti
-    type: virustotal
-  - id: block_ip
-    type: firewall_acl`}
+                  placeholder={t("directContentPlaceholder")}
                   className="w-full p-3 border border-border-subtle dark:border-gray-600 rounded-lg font-mono text-xs leading-relaxed dark:bg-surface-active dark:text-white"
                 />
               </div>
@@ -422,7 +408,7 @@ tasks:
                   type="text"
                   value={directTitle}
                   onChange={(e) => setDirectTitle(e.target.value)}
-                  placeholder="例如：Log4Shell 应急处置自动化响应"
+                  placeholder={t("titleHintPlaceholder")}
                   className="w-full px-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg text-xs dark:bg-surface-active dark:text-white"
                 />
               </div>
@@ -449,10 +435,10 @@ tasks:
               <Loader2 className="w-6 h-6 animate-spin" />
             </div>
             <h4 className="font-bold text-sm text-content-primary mb-1">
-              AI 正在智能适配工作流拓扑...
+              {t("adaptingOverlayTitle")}
             </h4>
             <p className="text-xs text-content-muted max-w-sm">
-              正在将「{adaptingTarget}」解析为标准有向无环图 (DAG)，映射节点动作与依赖插件。
+              {t("adaptingOverlayDesc", { target: adaptingTarget || t("defaultExternalPlaybook") })}
             </p>
           </div>
         )}

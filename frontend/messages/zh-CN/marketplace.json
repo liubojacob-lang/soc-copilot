@@ -66,6 +66,14 @@
     "adaptSuccess": "外部剧本适配成功！已生成标准工作流 DAG",
     "adaptFailed": "适配外部剧本失败，请检查文件格式或重试",
     "noExternalResults": "未检索到相关的外部开源剧本，您可以尝试调整关键词或直接粘贴文件内容进行适配",
-    "externalPlaybookImported": "成功将外部剧本 \"{name}\" 导入至本地剧本库！"
+    "externalPlaybookImported": "成功将外部剧本 \"{name}\" 导入至本地剧本库！",
+    "hotTopics": "热门场景:",
+    "searchingRepositories": "正在全网检索开源安全剧本库...",
+    "viewRepoSource": "查看开源仓库源文件",
+    "directContentPlaceholder": "# 示例：粘贴外部剧本定义或事故处理规范...\nname: Log4Shell Incident Response\ntasks:\n  - id: extract\n    type: extract_iocs\n  - id: query_ti\n    type: virustotal\n  - id: block_ip\n    type: firewall_acl",
+    "titleHintPlaceholder": "例如：Log4Shell 应急处置自动化响应",
+    "adaptingOverlayTitle": "AI 正在智能适配工作流拓扑...",
+    "adaptingOverlayDesc": "正在将「{target}」解析为标准有向无环图 (DAG)，映射节点动作与依赖插件。",
+    "defaultExternalPlaybook": "外部剧本"
   }
 }

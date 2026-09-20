@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
-import { useFormatter } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { Brain, Copy, Check, Sparkles, Terminal, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type { Message } from "../types";
@@ -14,11 +14,12 @@ interface ChatMessagesProps {
   thinking: boolean;
   copiedIndex: number | null;
   onCopy: (text: string, index: number) => void;
-  t: (key: string) => string;
+  t: (key: string, values?: Record<string, any>) => string;
 }
 
 /** Code block component with Mac header and Copy button */
 function CodeBlock({ children, className }: { children?: React.ReactNode; className?: string }) {
+  const t = useTranslations("aiAssistant");
   const [copied, setCopied] = useState(false);
   const match = /language-(\w+)/.exec(className || "");
   const lang = match ? match[1] : "text";
@@ -47,17 +48,17 @@ function CodeBlock({ children, className }: { children?: React.ReactNode; classN
           type="button"
           onClick={handleCopyCode}
           className="flex items-center gap-1 text-[11px] text-text-tertiary hover:text-white px-2 py-0.5 rounded hover:bg-gray-800 transition-colors"
-          title="复制代码"
+          title={t("actions.copyCode")}
         >
           {copied ? (
             <>
               <Check className="w-3 h-3 text-emerald-400" />
-              <span className="text-emerald-400">已复制</span>
+              <span className="text-emerald-400">{t("actions.copied")}</span>
             </>
           ) : (
             <>
               <Copy className="w-3 h-3" />
-              <span>复制</span>
+              <span>{t("actions.copy")}</span>
             </>
           )}
         </button>
@@ -173,7 +174,7 @@ export function ChatMessages({
                         <summary className="px-3 py-2 cursor-pointer font-medium text-ai-fg flex items-center justify-between hover:bg-ai/10 select-none transition-colors">
                           <span className="flex items-center gap-1.5">
                             <Sparkles className="w-3.5 h-3.5 text-ai-fg" />
-                            <span>思考推演过程</span>
+                            <span>{t("thinkingProcess")}</span>
                           </span>
                           <span className="text-[10px] text-ai-fg/70 group-open:rotate-180 transition-transform">
                             ▼
@@ -271,7 +272,9 @@ export function ChatMessages({
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-ai/10 text-ai-fg border border-ai/20"
                     title={message.routeReason || undefined}
                   >
-                    <span>⚡ 智能路由: {message.routedModel.split("/").pop()}</span>
+                    <span>
+                      {t("smartRouting", { model: message.routedModel.split("/").pop() || "" })}
+                    </span>
                   </span>
                 )}
 
@@ -316,7 +319,9 @@ export function ChatMessages({
                 style={{ animationDelay: "300ms" }}
               />
             </div>
-            <span className="text-xs text-text-muted font-medium">正在研判与逻辑推演中...</span>
+            <span className="text-xs text-text-muted font-medium">
+              {t("analyzingAndReasoning")}
+            </span>
           </div>
         </div>
       )}

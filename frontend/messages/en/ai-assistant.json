@@ -65,6 +65,13 @@
       "search": "Search conversations",
       "emptyTitle": "No conversations yet",
       "emptyHint": "Start a new conversation to get started",
+      "searchPlaceholder": "Search chat history...",
+      "noSearchResults": "No matching conversations found",
+      "tryDifferentKeywords": "Please try different keywords",
+      "titlePlaceholder": "Enter conversation title...",
+      "cancel": "Cancel",
+      "save": "Save",
+      "untitled": "Untitled Session",
       "shortcuts": {
         "new": "New chat",
         "close": "Close"
@@ -110,11 +117,16 @@
     "toSend": "to send",
     "forNewLine": "for new line",
     "thinking": "Thinking...",
+    "thinkingProcess": "Reasoning & Thinking Process",
+    "smartRouting": "⚡ Smart Route: {model}",
+    "analyzingAndReasoning": "Analyzing and reasoning...",
     "userLabel": "You",
     "actions": {
       "quickActions": "Quick Actions",
       "clearChat": "Clear Chat",
-      "copy": "Copy"
+      "copy": "Copy",
+      "copyCode": "Copy Code",
+      "copied": "Copied"
     },
     "analyzeAlert": "Analyze Alert",
     "extractIOCs": "Extract IOCs",

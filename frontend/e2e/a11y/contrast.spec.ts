@@ -32,6 +32,8 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { login, TEST_USERS } from "../utils/auth";
 
 /**
@@ -143,24 +145,49 @@ function collectFailures(): { failures: Failure[]; gradientSkipped: number } {
   const isDark = document.documentElement.classList.contains("dark");
 
   /**
-   * 逐层向上找到第一个不透明背景。
+   * 逐层向上找到候选背景色。
    *
-   * 返回 `null` 表示**无法判定**：背景链上出现了渐变（`background-image`）。
-   * 渐变的 `background-color` 是透明的，继续向上找会落到几百像素外的白色祖先，
-   * 于是"白字压在蓝色渐变按钮上"会被算成"白字压白底 = 1:1" —— 假阳性。
-   * 实测 `/ai-assistant` 的发送按钮就是这样被误报的。
+   * 返回**数组**：普通情况下 1 个元素；遇到渐变时返回**所有色标**。
    *
-   * 无法判定时**跳过并计数**，而不是静默跳过：静默跳过会让闸悄悄失去覆盖面，
-   * 那是比假阳性更危险的事（见本文件顶部关于"假通过"的说明）。
-   * 计数会随每页结果一起输出，方便人工抽查。
+   * 为什么渐变不能简单跳过：渐变的 `background-color` 是透明的，逐层向上找会越过它、
+   * 落到几百像素外的祖先 —— 于是"白字压蓝色渐变按钮"被算成"白字压白底 = **1:1**"，
+   * 这是个假阳性。但**直接跳过又会丢掉覆盖面**（实测 25 个文本节点）。
+   * 正确做法是**按所有色标逐个判、取最差的一个** —— 渐变上任何位置都必须达标。
+   *
+   * 只有在色标一个都解析不出来时才返回空数组（真正无法判定）。
    */
-  const effectiveBg = (el: Element): RGB | null => {
+  const candidateBgs = (el: Element): RGB[] => {
     let n: Element | null = el;
     while (n && n !== document.documentElement) {
-      const s = getComputedStyle(n);
-      if (s.backgroundImage && s.backgroundImage.includes("gradient")) return null;
+      const cur: Element = n;
+      const s = getComputedStyle(cur);
+
+      if (s.backgroundImage && s.backgroundImage.includes("gradient")) {
+        // 取出该元素之前已经确定的不透明底色，用于给半透明色标做合成
+        const stops = (s.backgroundImage.match(/rgba?\([^)]+\)/g) || [])
+          .map(parse)
+          .filter((c): c is RGB => !!c)
+          .map((c) => (c.a < 1 ? composite(c, fallbackBg(cur)) : c));
+        if (stops.length > 0) return stops;
+        break; // 有渐变但解析不出色标：确实无法判定
+      }
+
       const p = parse(s.backgroundColor);
-      if (p && p.a > 0.9) return p;
+      if (p && p.a > 0.9) return [p];
+      n = n.parentElement;
+    }
+    return [isDark ? { r: 9, g: 13, b: 22, a: 1 } : { r: 248, g: 250, b: 252, a: 1 }];
+  };
+
+  /** 渐变之下的兜底底色（用于合成半透明色标）。 */
+  const fallbackBg = (el: Element): RGB => {
+    let n: Element | null = el.parentElement;
+    while (n && n !== document.documentElement) {
+      const s = getComputedStyle(n);
+      if (!s.backgroundImage || !s.backgroundImage.includes("gradient")) {
+        const p = parse(s.backgroundColor);
+        if (p && p.a > 0.9) return p;
+      }
       n = n.parentElement;
     }
     return isDark ? { r: 9, g: 13, b: 22, a: 1 } : { r: 248, g: 250, b: 252, a: 1 };
@@ -174,11 +201,17 @@ function collectFailures(): { failures: Failure[]; gradientSkipped: number } {
 
   for (let i = 0; i < nodes.length; i++) {
     const el = nodes[i];
-    // 只看承载文本的叶子节点，避免把容器自身的 color 重复计入
-    if (el.children.length > 0) continue;
-
-    const text = (el.textContent || "").trim();
-    if (text.length < 2) continue;
+    // 只审计元素**自己的**文本子节点。
+    // ⚠️ 不能写 `if (el.children.length > 0) continue;` —— 那样会把含图标的行
+    // （`<p>HASH <ChevronDown/></p>`）整条跳过；也不能用 `el.textContent` 判断，
+    // 那会把子元素的文本重复计入。这两条叠加实测造成 15 处漏报。
+    const ownText = [...el.childNodes]
+      .filter((n) => n.nodeType === Node.TEXT_NODE)
+      .map((n) => n.textContent ?? "")
+      .join("")
+      .trim();
+    // 单字符同样要审：`*` 必填标记实测 3.76:1（旧规则 `length < 2` 会漏掉）。
+    if (!ownText) continue;
 
     const rect = el.getBoundingClientRect();
     if (rect.width < 2 || rect.height < 2) continue;
@@ -193,23 +226,33 @@ function collectFailures(): { failures: Failure[]; gradientSkipped: number } {
     const rawFg = parse(style.color);
     if (!rawFg) continue;
 
-    const bg = effectiveBg(el);
-    if (!bg) {
+    const bgs = candidateBgs(el);
+    if (bgs.length === 0) {
       gradientSkipped++;
       continue;
     }
-    const fg = rawFg.a < 1 ? composite(rawFg, bg) : rawFg;
+
+    // 所有候选背景里最差的一个决定结论 —— 渐变上任何位置都必须可读
+    let bg = bgs[0];
+    let ratio = -1;
+    for (const cand of bgs) {
+      const fg0 = rawFg.a < 1 ? composite(rawFg, cand) : rawFg;
+      const r = ratioOf(fg0, cand);
+      if (ratio < 0 || r < ratio) {
+        ratio = r;
+        bg = cand;
+      }
+    }
 
     const size = parseFloat(style.fontSize);
     const weight = parseInt(style.fontWeight, 10) || 400;
     const isLarge = size >= 24 || (size >= 18.66 && weight >= 700);
     const required = isLarge ? 3 : 4.5;
 
-    const ratio = ratioOf(fg, bg);
     if (ratio >= required) continue;
 
     out.push({
-      text: text.slice(0, 40),
+      text: ownText.slice(0, 40),
       ratio: Math.round(ratio * 100) / 100,
       required,
       color: style.color,
@@ -442,7 +485,12 @@ async function discoverIds(page: Page, baseUrl: string): Promise<Record<string, 
  * 误报时怎么办：先确认它是不是真的没适配主题。若确有正当理由（例如某处刻意用白底
  * 承载深色插画），把它加进下面的 DARK_SURFACE_ALLOWLIST 并写明原因，不要放宽阈值。
  */
-const DARK_SURFACE_ALLOWLIST: string[] = [];
+const DARK_SURFACE_ALLOWLIST: string[] = [
+  // 二维码容器**必须**保持白底：认证器应用依赖二维码周围的白色静默区才能正确识别，
+  // 深色底会让扫描失败。这是有正当理由的例外，不是"漏了主题适配"。
+  // 位置：settings/components/TwoFactorSettings.tsx（"Framed QR Container"）。
+  "bg-white rounded-2xl shadow-md border border-gray-200/90",
+];
 
 // 注意：allowlist 必须作为参数传入。page.evaluate 只序列化函数本身，
 // 闭包里的模块级变量在浏览器侧是取不到的（会直接 ReferenceError）。
@@ -590,6 +638,58 @@ interface RuntimeDebt {
 }
 
 const KNOWN_RUNTIME_DEBT: RuntimeDebt[] = [];
+
+/**
+ * 存量基线文件（自动维护）。
+ * ============================================================================
+ * `KNOWN_RUNTIME_DEBT` 适合登记"我逐条判断过、写了理由"的债务；
+ * 但当一次性引入大量存量页（本轮从 12 页扩到 35 页）时，逐条誊抄 26 类
+ * 既费时又容易抄错 —— 而**抄错的方向恰恰是危险的**（抄少了会把真问题当存量放过去）。
+ *
+ * 所以这里用一个基线文件：键是 `${页面}|${前景}|${背景}|${字号}`，值是允许的最大处数。
+ *   · 命中且 ≤ 基线 → 记为存量，不阻断
+ *   · 未命中，或超出基线 → **阻断**
+ *   · 基线里某个键**消失了** → 只提示（说明修好了），提示更新基线把棘轮收紧
+ *
+ * 更新基线：`A11Y_UPDATE_BASELINE=1 npx playwright test a11y`（会重写整个文件）。
+ * 收紧基线应当在**确认修复生效之后**做，而不是为了让它变绿。
+ */
+/**
+ * 基线文件路径。**相对本文件所在目录**（`e2e/a11y/`），不要写成 `"a11y/xxx.json"` ——
+ * 那样会拼成 `e2e/a11y/a11y/xxx.json`，目录不存在会让写基线静默失败（踩过）。
+ */
+const DEBT_BASELINE_PATH = "runtime-debt-baseline.json";
+
+interface DebtBaseline {
+  updatedAt: string;
+  note: string;
+  /** key = `${页面}|${前景}|${背景}|${字号}`，value = 允许的最大处数 */
+  entries: Record<string, number>;
+}
+
+function loadDebtBaseline(): DebtBaseline | null {
+  try {
+    const raw = readFileSync(resolve(__dirname, DEBT_BASELINE_PATH), "utf8");
+    return JSON.parse(raw) as DebtBaseline;
+  } catch {
+    return null;
+  }
+}
+
+function groupKey(page: string, fg: string, bg: string, fs: string): string {
+  return `${page}|${fg}|${bg}|${fs}`;
+}
+
+/** 汇总当前失败为 (页面, 色对) → 处数，供写基线用。 */
+function summarize(failures: Failure[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const f of failures) {
+    const page = (f.text.match(/^\[([^\]]+)\]/) || [, "?"])[1] as string;
+    const key = groupKey(page, f.color, f.background, f.fontSize);
+    out[key] = (out[key] || 0) + 1;
+  }
+  return out;
+}
 /**
  * 用例划分：**整个闸就是一个 test，只登录一次。**
  *
@@ -722,18 +822,50 @@ test.describe("运行时对比度与主题适配闸", () => {
     console.log("浅色表面探针：" + surfaceReport.split("\n")[0]);
     expect.soft(lightSurfaces, surfaceReport).toEqual([]);
 
-    // ---------- 断言二：对比度（含债务棘轮） ----------
-    const { unexpected, tolerated } = applyDebtRatchet(failures);
+    // ---------- 断言二：对比度（含债务棘轮 + 基线） ----------
+    const baseline = loadDebtBaseline();
+
+    // 重写基线：只在显式要求时执行，避免"顺手让它变绿"
+    if (process.env.A11Y_UPDATE_BASELINE === "1") {
+      const entries = summarize(failures);
+      const payload: DebtBaseline = {
+        updatedAt: new Date().toISOString().slice(0, 10),
+        note:
+          "运行时对比度存量基线。key = 页面|前景|背景|字号，value = 允许的最大处数。" +
+          "该数字只应下降。更新前请确认修复已生效（A11Y_UPDATE_BASELINE=1 npx playwright test a11y）。",
+        entries: Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b))),
+      };
+      writeFileSync(
+        resolve(__dirname, DEBT_BASELINE_PATH),
+        JSON.stringify(payload, null, 2) + "\n",
+        "utf8"
+      );
+      console.log(`已重写基线：${Object.keys(entries).length} 类 / ${failures.length} 处`);
+    }
+
+    const { unexpected, tolerated } = applyDebtRatchet(failures, baseline);
 
     if (tolerated.length) {
       const total = tolerated.reduce((a, t) => a + t.count, 0);
       console.log(
-        `已知债务（不阻断）：${total} 处 / ${tolerated.length} 类，全部在 ` +
+        `已知债务（不阻断）：${total} 处 / ${tolerated.length} 类，涉及页面 ` +
           `${[...new Set(tolerated.map((t) => t.page))].join("、")}`
       );
       for (const t of tolerated) {
         console.log(
           `  ×${t.count}/${t.max} ${t.sample.ratio}:1  ${t.fg} on ${t.bg} @ ${t.fs}  [${t.page}]`
+        );
+      }
+    }
+
+    // 基线里"已经不再出现"的键 = 修好了，提示收紧棘轮（不是失败，但是行动信号）
+    if (baseline) {
+      const current = summarize(failures);
+      const fixed = Object.keys(baseline.entries).filter((k) => !current[k]);
+      if (fixed.length) {
+        console.log(
+          `基线中有 ${fixed.length} 类已不再出现（说明修好了），建议更新基线把棘轮收紧：\n` +
+            fixed.map((k) => `  ${k}`).join("\n")
         );
       }
     }
@@ -761,14 +893,17 @@ interface DebtGroup {
  *
  * 这样闸在"存量还没清完"的情况下依然可用，同时把存量钉住只降不升。
  */
-function applyDebtRatchet(failures: Failure[]): { unexpected: Failure[]; tolerated: DebtGroup[] } {
+function applyDebtRatchet(
+  failures: Failure[],
+  baseline: DebtBaseline | null
+): { unexpected: Failure[]; tolerated: DebtGroup[] } {
   const groups = new Map<
     string,
     { items: Failure[]; page: string; fg: string; bg: string; fs: string }
   >();
   for (const f of failures) {
     const page = (f.text.match(/^\[([^\]]+)\]/) || [, "?"])[1] as string;
-    const key = `${page}|${f.color}|${f.background}|${f.fontSize}`;
+    const key = groupKey(page, f.color, f.background, f.fontSize);
     const g = groups.get(key);
     if (g) g.items.push(f);
     else groups.set(key, { items: [f], page, fg: f.color, bg: f.background, fs: f.fontSize });
@@ -777,11 +912,19 @@ function applyDebtRatchet(failures: Failure[]): { unexpected: Failure[]; tolerat
   const unexpected: Failure[] = [];
   const tolerated: DebtGroup[] = [];
 
-  for (const g of groups.values()) {
-    const debt = KNOWN_RUNTIME_DEBT.find(
+  for (const [key, g] of groups) {
+    // 上限来源：显式登记的 KNOWN_RUNTIME_DEBT 优先，其次基线文件
+    const declared = KNOWN_RUNTIME_DEBT.find(
       (d) => d.page === g.page && d.fg === g.fg && d.bg === g.bg && d.fs === g.fs
     );
-    if (debt && g.items.length <= debt.max) {
+    const max = declared ? declared.max : (baseline?.entries[key] ?? 0);
+    const reason = declared
+      ? declared.reason
+      : max > 0
+        ? "基线存量（扩面时一次性引入，待逐类清理）"
+        : "";
+
+    if (max > 0 && g.items.length <= max) {
       tolerated.push({
         page: g.page,
         fg: g.fg,
@@ -789,8 +932,8 @@ function applyDebtRatchet(failures: Failure[]): { unexpected: Failure[]; tolerat
         fs: g.fs,
         count: g.items.length,
         sample: g.items[0],
-        max: debt.max,
-        reason: debt.reason,
+        max,
+        reason,
       });
     } else {
       unexpected.push(...g.items);

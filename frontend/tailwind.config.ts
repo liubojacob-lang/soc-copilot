@@ -5,6 +5,15 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    // ⚠️ 必须包含 lib/：`lib/marketplaceUtils.ts` 用字符串字面量返回 Tailwind 类名
+    // （badgeClass / badgeBorderClass），运行时通过 ${meta.badgeClass} 注入。
+    // 少了这一行，Tailwind 扫不到这些类名 → 静默不生成 CSS →
+    // 元素只剩浅色值（如 bg-amber-50）而 dark: 变体失效，
+    // 表现为"深色下深色文字配浅色底"的对比度缺陷（实测 1.39:1）。
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
+    "./hooks/**/*.{js,ts,jsx,tsx,mdx}",
+    "./stores/**/*.{js,ts,jsx,tsx,mdx}",
+    "./providers/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   darkMode: "class",
   theme: {

@@ -82,7 +82,7 @@ export function AuditPagination({
               onClick={() => onPageChange(p as number)}
               className={`w-8 h-8 flex items-center justify-center text-sm font-medium rounded-lg transition-colors ${
                 page === p
-                  ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-md"
                   : "border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >

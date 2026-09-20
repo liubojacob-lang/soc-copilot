@@ -579,9 +579,9 @@ export default function CloudNativePage() {
   const getSeverityColor = (severity: string) => {
     switch (severity?.toLowerCase()) {
       case "critical":
-        return "text-red-600 bg-red-50 dark:bg-red-900/30";
+        return "text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-900/30";
       case "high":
-        return "text-orange-600 bg-orange-50 dark:bg-orange-900/30";
+        return "text-orange-700 bg-orange-50 dark:text-orange-300 dark:bg-orange-900/30";
       case "medium":
         return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30";
       default:
@@ -651,7 +651,7 @@ export default function CloudNativePage() {
               <p className="text-2xl font-bold text-text-primary dark:text-white">
                 {dashboard.overview?.total_containers ?? 45}
               </p>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1 group-hover:underline">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-2 flex items-center gap-1 group-hover:underline">
                 {t("clickToViewContainers")} <ChevronRight className="w-3 h-3" />
               </p>
             </div>
@@ -670,7 +670,7 @@ export default function CloudNativePage() {
               <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {dashboard.overview?.vulnerable_images ?? 8}
               </p>
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1 group-hover:underline">
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-2 flex items-center gap-1 group-hover:underline">
                 {t("clickToScan")} <ChevronRight className="w-3 h-3" />
               </p>
             </div>
@@ -689,7 +689,7 @@ export default function CloudNativePage() {
               <p className="text-2xl font-bold text-sky-600 dark:text-sky-400">
                 {dashboard.overview?.connected_clouds ?? connections.length}
               </p>
-              <p className="text-xs text-sky-600 dark:text-sky-400 mt-2 flex items-center gap-1 group-hover:underline">
+              <p className="text-xs text-sky-700 dark:text-sky-400 mt-2 flex items-center gap-1 group-hover:underline">
                 {t("clickToViewDetails")} <ChevronRight className="w-3 h-3" />
               </p>
             </div>
@@ -785,19 +785,19 @@ export default function CloudNativePage() {
                           key: "critical_findings",
                           labelKey: "critical",
                           bg: "bg-danger-500/10 border border-danger-500/20 hover:border-danger-500/50",
-                          text: "text-danger-600 dark:text-danger-400",
+                          text: "text-danger-700 dark:text-danger-400",
                         },
                         {
                           key: "high_findings",
                           labelKey: "high",
                           bg: "bg-warning-500/10 border border-warning-500/20 hover:border-warning-500/50",
-                          text: "text-warning-600 dark:text-warning-400",
+                          text: "text-warning-700 dark:text-warning-400",
                         },
                         {
                           key: "medium_findings",
                           labelKey: "medium",
                           bg: "bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/50",
-                          text: "text-amber-600 dark:text-amber-400",
+                          text: "text-amber-800 dark:text-amber-400",
                         },
                         {
                           key: "low_findings",
@@ -845,10 +845,10 @@ export default function CloudNativePage() {
                           {t("cisCompliance")}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-green-700">
+                          <span className="text-lg font-bold text-green-700 dark:text-green-400">
                             {dashboard.compliance?.cis_benchmark ?? 0}%
                           </span>
-                          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 group-hover:underline">
+                          <span className="text-xs text-green-700 dark:text-green-400 flex items-center gap-1 group-hover:underline">
                             {t("clickToViewReport")} <ExternalLink className="w-3 h-3" />
                           </span>
                         </div>
@@ -870,7 +870,7 @@ export default function CloudNativePage() {
                             : "-"}
                         </span>
                         <span className="text-text-muted group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors text-[11px]">
-                          100项基准已审计 (85通过 / 10未通过)
+                          {t("benchmarkAuditedSummary")}
                         </span>
                       </p>
                     </div>
@@ -908,7 +908,7 @@ export default function CloudNativePage() {
                       <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </h3>
                     <p className="text-sm text-text-tertiary">
-                      {t("cisBenchmark")} — 点击打开集群审计
+                      {t("cisBenchmark")} — {t("openClusterAudit")}
                     </p>
                   </button>
                 </div>
@@ -960,7 +960,9 @@ export default function CloudNativePage() {
                 <div className="bg-white dark:bg-surface-card rounded-xl shadow-sm border border-border-subtle dark:border-border-strong p-4">
                   <h3 className="font-semibold text-text-primary dark:text-white mb-4 flex items-center justify-between">
                     <span>{t("recentVulnerabilities")}</span>
-                    <span className="text-xs text-text-muted font-normal">点击重新扫描</span>
+                    <span className="text-xs text-text-muted font-normal">
+                      {t("clickToRescan")}
+                    </span>
                   </h3>
                   <div className="space-y-3">
                     {dashboard.recent_vulnerabilities.map((vuln, index) => (
@@ -1025,7 +1027,7 @@ export default function CloudNativePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
-                    全部容器资产
+                    {t("allContainerAssets")}
                   </span>
                   <Container className="w-4 h-4 text-blue-500" />
                 </div>
@@ -1033,7 +1035,7 @@ export default function CloudNativePage() {
                   {containersStats.total}
                 </p>
                 <p className="text-[11px] text-text-tertiary dark:text-text-muted mt-0.5">
-                  跨 2 集群 / 6 命名空间
+                  {t("clustersAndNamespaces")}
                 </p>
               </button>
 
@@ -1051,7 +1053,7 @@ export default function CloudNativePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
-                    运行正常
+                    {t("statusRunningNormal")}
                   </span>
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
                 </div>
@@ -1059,7 +1061,7 @@ export default function CloudNativePage() {
                   {containersStats.running}
                 </p>
                 <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
-                  健康率 93.3%
+                  {t("healthRate")}
                 </p>
               </button>
 
@@ -1077,7 +1079,7 @@ export default function CloudNativePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
-                    异常 / 警告
+                    {t("statusAbnormalWarning")}
                   </span>
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
                 </div>
@@ -1085,7 +1087,7 @@ export default function CloudNativePage() {
                   {containersStats.warning}
                 </p>
                 <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5">
-                  重启或安全策略违规
+                  {t("restartOrPolicyViolation")}
                 </p>
               </button>
 
@@ -1103,7 +1105,7 @@ export default function CloudNativePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
-                    已结束 / 停止
+                    {t("statusTerminated")}
                   </span>
                   <XCircle className="w-4 h-4 text-text-muted" />
                 </div>
@@ -1111,7 +1113,7 @@ export default function CloudNativePage() {
                   {containersStats.terminated}
                 </p>
                 <p className="text-[11px] text-text-tertiary dark:text-text-muted mt-0.5">
-                  已完成的批处理任务
+                  {t("completedBatchTasks")}
                 </p>
               </button>
 
@@ -1125,7 +1127,7 @@ export default function CloudNativePage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-tertiary dark:text-text-muted font-medium">
-                    含已知漏洞
+                    {t("hasKnownVulnerabilities")}
                   </span>
                   <Shield className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" />
                 </div>
@@ -1133,7 +1135,7 @@ export default function CloudNativePage() {
                   {containersStats.vulnerable}
                 </p>
                 <p className="text-[11px] text-red-500/80 dark:text-red-400/80 mt-0.5">
-                  建议执行 Trivy 漏洞加固
+                  {t("suggestTrivyHardening")}
                 </p>
               </button>
             </div>
@@ -1216,7 +1218,7 @@ export default function CloudNativePage() {
                     }}
                     className="px-3 py-2 bg-surface-card dark:bg-surface-active border border-border-subtle dark:border-gray-600 rounded-lg text-xs text-text-secondary focus:outline-none focus:border-blue-500"
                   >
-                    <option value="">全部集群</option>
+                    <option value="">{t("allClusters")}</option>
                     <option value="k8s-prod-cluster">k8s-prod-cluster (36)</option>
                     <option value="k8s-staging-cluster">k8s-staging-cluster (9)</option>
                   </select>
@@ -1226,7 +1228,7 @@ export default function CloudNativePage() {
                     onClick={() => loadContainers({ page: containerPage })}
                     disabled={loadingContainers}
                     className="p-2 border border-border-subtle dark:border-gray-600 rounded-lg hover:bg-surface-card dark:hover:bg-surface-active text-text-secondary dark:text-text-muted transition-colors"
-                    title="刷新列表"
+                    title={t("refreshList")}
                   >
                     <RefreshCw
                       className={`w-4 h-4 ${loadingContainers ? "animate-spin text-blue-500" : ""}`}
@@ -1245,12 +1247,10 @@ export default function CloudNativePage() {
                     {t("containersList")}
                   </h3>
                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-full text-xs font-semibold">
-                    {containers.length} 个实例
+                    {t("instancesCount", { count: containers.length })}
                   </span>
                 </div>
-                <span className="text-xs text-text-muted">
-                  点击任意容器行查看端口映射、挂载卷、环境与安全上下文
-                </span>
+                <span className="text-xs text-text-muted">{t("containerInspectHint")}</span>
               </div>
 
               {/* Table Body Area with preserved height to prevent scroll jumping */}
@@ -1260,7 +1260,7 @@ export default function CloudNativePage() {
                   <div className="absolute inset-0 bg-white/60 dark:bg-surface-card/60 z-10 flex items-center justify-center backdrop-blur-[1px] transition-all">
                     <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-card border border-border-subtle dark:border-border-strong shadow-md rounded-lg text-xs font-medium text-text-secondary">
                       <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                      <span>正在加载第 {containerPage} 页数据...</span>
+                      <span>{t("loadingPage", { page: containerPage })}</span>
                     </div>
                   </div>
                 )}
@@ -1268,7 +1268,7 @@ export default function CloudNativePage() {
                 {loadingContainers && containers.length === 0 ? (
                   <div className="py-24 text-center text-sm text-text-muted flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                    正在加载容器资产列表...
+                    {t("loadingContainers")}
                   </div>
                 ) : containers.length === 0 ? (
                   <div className="py-20 text-center text-sm text-text-muted space-y-2">
@@ -1282,12 +1282,12 @@ export default function CloudNativePage() {
                         <tr className="bg-surface-card/80 dark:bg-gray-750/80 text-text-tertiary dark:text-text-muted border-b border-border-subtle dark:border-border-strong">
                           <th className="py-3 px-4 font-semibold">{t("containerName")}</th>
                           <th className="py-3 px-3 font-semibold">{t("status")}</th>
-                          <th className="py-3 px-3 font-semibold">集群 / 命名空间</th>
+                          <th className="py-3 px-3 font-semibold">{t("colClusterNamespace")}</th>
                           <th className="py-3 px-4 font-semibold">{t("image")}</th>
                           <th className="py-3 px-3 font-semibold">{t("securityContext")}</th>
-                          <th className="py-3 px-3 font-semibold">已知漏洞</th>
-                          <th className="py-3 px-3 font-semibold">资源配额</th>
-                          <th className="py-3 px-4 font-semibold text-right">操作</th>
+                          <th className="py-3 px-3 font-semibold">{t("colKnownVulns")}</th>
+                          <th className="py-3 px-3 font-semibold">{t("colResourceQuota")}</th>
+                          <th className="py-3 px-4 font-semibold text-right">{t("colActions")}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">
@@ -1324,7 +1324,7 @@ export default function CloudNativePage() {
                                   {cnt.state_reason || t("warning")}
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface-hover text-text-secondary dark:bg-surface-active dark:text-text-muted">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface-hover text-text-secondary dark:bg-surface-active dark:text-text-primary">
                                   <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
                                   {cnt.state_reason || t("terminated")}
                                 </span>
@@ -1354,7 +1354,9 @@ export default function CloudNativePage() {
                                   Ports: {cnt.ports.join(", ")}
                                 </div>
                               ) : (
-                                <div className="text-text-muted text-[10px] mt-0.5">无暴露端口</div>
+                                <div className="text-text-muted text-[10px] mt-0.5">
+                                  {t("noExposedPorts")}
+                                </div>
                               )}
                             </td>
 
@@ -1363,27 +1365,28 @@ export default function CloudNativePage() {
                               <div className="flex flex-wrap gap-1">
                                 {cnt.privileged ? (
                                   <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 text-[10px] font-semibold flex items-center gap-0.5">
-                                    <AlertTriangle className="w-2.5 h-2.5" /> 特权容器
+                                    <AlertTriangle className="w-2.5 h-2.5" />{" "}
+                                    {t("privilegedContainer")}
                                   </span>
                                 ) : (
-                                  <span className="px-1.5 py-0.5 rounded bg-surface-hover text-text-secondary dark:bg-surface-active dark:text-text-muted text-[10px]">
-                                    非特权
+                                  <span className="px-1.5 py-0.5 rounded bg-surface-hover text-text-secondary dark:bg-surface-active dark:text-text-primary text-[10px]">
+                                    {t("unprivileged")}
                                   </span>
                                 )}
 
                                 {cnt.run_as_root ? (
                                   <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 text-[10px] font-medium">
-                                    Root运行
+                                    {t("runsAsRoot")}
                                   </span>
                                 ) : (
                                   <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">
-                                    非Root
+                                    {t("runsAsNonRoot")}
                                   </span>
                                 )}
 
                                 {cnt.readonly_rootfs && (
                                   <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-[10px]">
-                                    只读FS
+                                    {t("readOnlyFs")}
                                   </span>
                                 )}
                               </div>
@@ -1398,15 +1401,15 @@ export default function CloudNativePage() {
                                     scanContainerFromList(cnt.image);
                                   }}
                                   className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 hover:bg-red-200 transition-colors flex items-center gap-1"
-                                  title="点击直接进入 Trivy 扫描该镜像"
+                                  title={t("clickToScanImage")}
                                 >
                                   <AlertTriangle className="w-3 h-3" />
-                                  {cnt.vulnerabilities_count} 个已知漏洞
+                                  {t("vulnCount", { count: cnt.vulnerabilities_count })}
                                 </button>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-[11px]">
                                   <CheckCircle className="w-3 h-3" />
-                                  安全
+                                  {t("secure")}
                                 </span>
                               )}
                             </td>
@@ -1436,7 +1439,7 @@ export default function CloudNativePage() {
                                   title={t("scanImageAction")}
                                 >
                                   <Scan className="w-3 h-3" />
-                                  扫描
+                                  {t("scanAction")}
                                 </button>
                               </div>
                             </td>
@@ -1479,9 +1482,9 @@ export default function CloudNativePage() {
                       }}
                       className="px-2 py-1 bg-white dark:bg-surface-active border border-border-subtle dark:border-gray-600 rounded text-xs text-text-secondary focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
-                      <option value={10}>10 条/页</option>
-                      <option value={20}>20 条/页</option>
-                      <option value={50}>50 条/页</option>
+                      <option value={10}>{t("itemsPerPage", { count: 10 })}</option>
+                      <option value={20}>{t("itemsPerPage", { count: 20 })}</option>
+                      <option value={50}>{t("itemsPerPage", { count: 50 })}</option>
                     </select>
                   </div>
                 </div>
@@ -1901,7 +1904,7 @@ export default function CloudNativePage() {
                       {t("clusterDetails")}
                     </h2>
                     <p className="text-xs text-text-tertiary mt-0.5">
-                      查看集群拓扑、资源详情及执行 CIS 基准安全扫描
+                      {t("clusterTopologySubtitle")}
                     </p>
                   </div>
                 </div>
@@ -2018,9 +2021,9 @@ export default function CloudNativePage() {
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-amber-600" />
-                        安全扫描发现 ({k8sScanFindings.length} 项隐患)
+                        {t("scanFindingsCount", { count: k8sScanFindings.length })}
                       </h3>
-                      <span className="text-xs text-text-tertiary">已完成 CIS 基准比对</span>
+                      <span className="text-xs text-text-tertiary">{t("cisBenchmarkMatched")}</span>
                     </div>
                     <div className="space-y-2">
                       {k8sScanFindings.map((f, idx) => (
@@ -2035,14 +2038,14 @@ export default function CloudNativePage() {
                             <span className={getSeverityBadge(f.severity)}>{f.severity}</span>
                           </div>
                           <p className="text-text-secondary dark:text-text-muted">
-                            资源:{" "}
+                            {t("resourceLabel")}{" "}
                             <code className="font-mono text-blue-600 dark:text-blue-400">
                               {f.kind}/{f.resource_name}
                             </code>{" "}
                             (ns: {f.namespace})
                           </p>
                           <p className="text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded">
-                            <strong>加固建议:</strong> {f.remediation}
+                            <strong>{t("remediationAdvise")}</strong> {f.remediation}
                           </p>
                         </div>
                       ))}
@@ -2087,11 +2090,11 @@ export default function CloudNativePage() {
                     {loadingResources ? (
                       <div className="p-8 text-center text-xs text-text-muted flex items-center justify-center gap-2">
                         <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        正在加载集群资源...
+                        {t("loadingClusterResources")}
                       </div>
                     ) : clusterResources.length === 0 ? (
                       <div className="p-8 text-center text-xs text-text-muted">
-                        当前命名空间下未找到 {activeResourceType} 资源
+                        {t("noResourceInNamespace", { type: activeResourceType })}
                       </div>
                     ) : (
                       <table className="w-full text-left text-xs">
@@ -2173,7 +2176,7 @@ export default function CloudNativePage() {
                       {t("cisComplianceReport")}
                     </h2>
                     <p className="text-xs text-text-tertiary mt-0.5">
-                      CIS Kubernetes Benchmark 100 项安全合规基线检查详情
+                      {t("cisBenchmarkDetailTitle")}
                     </p>
                   </div>
                 </div>
@@ -2189,7 +2192,7 @@ export default function CloudNativePage() {
                 {loadingCompliance ? (
                   <div className="py-16 text-center text-sm text-text-muted flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                    正在生成 CIS 合规审计报告...
+                    {t("generatingCisReport")}
                   </div>
                 ) : (
                   <>
@@ -2245,12 +2248,12 @@ export default function CloudNativePage() {
                               </span>
                             </div>
                             <p className="text-text-tertiary">
-                              受影响资源:{" "}
+                              {t("affectedResource")}{" "}
                               <code className="font-mono text-text-primary">{item.resource}</code>{" "}
                               (namespace: {item.namespace})
                             </p>
                             <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 rounded-lg">
-                              <strong>加固指导:</strong> {item.remediation}
+                              <strong>{t("remediationGuidance")}</strong> {item.remediation}
                             </div>
                           </div>
                         ))}
@@ -2295,9 +2298,7 @@ export default function CloudNativePage() {
                     <h2 className="text-xl font-bold text-text-primary dark:text-white">
                       {t("securityFindings")}
                     </h2>
-                    <p className="text-xs text-text-tertiary mt-0.5">
-                      按严重程度筛选查看云原生与容器安全风险细节
-                    </p>
+                    <p className="text-xs text-text-tertiary mt-0.5">{t("filterRiskDetails")}</p>
                   </div>
                 </div>
                 <button
@@ -2321,7 +2322,7 @@ export default function CloudNativePage() {
                       "px-3 py-1 rounded-lg text-xs font-medium transition-all capitalize",
                       findingsFilter === sev
                         ? "bg-blue-600 text-white shadow-sm"
-                        : "bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-muted hover:bg-gray-200"
+                        : "bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-primary hover:bg-gray-200"
                     )}
                   >
                     {sev}
@@ -2346,7 +2347,7 @@ export default function CloudNativePage() {
                         <span className={getSeverityBadge(f.severity)}>{f.severity}</span>
                       </div>
                       <p className="text-text-tertiary">
-                        涉及资源:{" "}
+                        {t("involvedResource")}{" "}
                         <code className="font-mono text-blue-600 dark:text-blue-400">
                           {f.resource_name}
                         </code>{" "}
@@ -2354,7 +2355,7 @@ export default function CloudNativePage() {
                       </p>
                       <p className="text-text-secondary dark:text-text-muted">{f.description}</p>
                       <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 rounded-lg">
-                        <strong>加固方案:</strong> {f.remediation}
+                        <strong>{t("remediationPlan")}</strong> {f.remediation}
                       </div>
                     </div>
                   ))}
@@ -2395,9 +2396,7 @@ export default function CloudNativePage() {
                     <h2 className="text-xl font-bold text-text-primary dark:text-white">
                       {t("cloudProviderDetails")} — {selectedCloudProvider?.toUpperCase()}
                     </h2>
-                    <p className="text-xs text-text-tertiary mt-0.5">
-                      多云环境凭据配置与云端安全事件监控
-                    </p>
+                    <p className="text-xs text-text-tertiary mt-0.5">{t("cloudEnvSubtitle")}</p>
                   </div>
                 </div>
                 <button
@@ -2415,9 +2414,7 @@ export default function CloudNativePage() {
                     <Info className="w-4 h-4" />
                     {t("configureGuide")}
                   </h3>
-                  <p className="text-sky-800 dark:text-sky-300">
-                    在后端运行环境或 Docker compose 文件中设置以下环境变量以点亮此连接：
-                  </p>
+                  <p className="text-sky-800 dark:text-sky-300">{t("cloudEnvConfigNotice")}</p>
                   <code className="block p-2.5 bg-sky-100/60 dark:bg-sky-950/40 rounded text-sky-900 dark:text-sky-200 font-mono text-[11px]">
                     {selectedCloudProvider === "aws" &&
                       "AWS_ACCESS_KEY_ID=your-key\nAWS_SECRET_ACCESS_KEY=your-secret"}
@@ -2432,7 +2429,7 @@ export default function CloudNativePage() {
                 {/* Cloud security events list */}
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold text-text-primary dark:text-white flex items-center justify-between">
-                    <span>云安全审计事件 (近 24 小时)</span>
+                    <span>{t("cloudAuditEventsTitle")}</span>
                     <span className="text-xs text-text-muted font-normal">
                       CloudTrail / Activity Logs
                     </span>
@@ -2440,11 +2437,11 @@ export default function CloudNativePage() {
                   {loadingCloudEvents ? (
                     <div className="py-8 text-center text-xs text-text-muted flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-                      正在加载云端事件...
+                      {t("loadingCloudEvents")}
                     </div>
                   ) : cloudEvents.length === 0 ? (
                     <div className="p-8 text-center text-xs text-text-muted bg-surface-card dark:bg-gray-750 rounded-xl border border-dashed border-border-subtle dark:border-border-strong">
-                      暂无未处理的云安全事件。连接凭证配置后将自动实时同步。
+                      {t("noCloudEvents")}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -2514,7 +2511,7 @@ export default function CloudNativePage() {
                               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
                               : selectedContainer.status === "warning"
                                 ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-                                : "bg-surface-hover text-text-primary dark:bg-surface-active dark:text-text-muted"
+                                : "bg-surface-hover text-text-primary dark:bg-surface-active dark:text-text-primary"
                           }`}
                         >
                           {selectedContainer.status}
@@ -2522,8 +2519,8 @@ export default function CloudNativePage() {
                       )}
                     </h2>
                     <p className="text-xs text-text-tertiary mt-0.5">
-                      {selectedContainer?.cluster_name} · 命名空间: {selectedContainer?.namespace} ·
-                      Pod: {selectedContainer?.pod_name}
+                      {selectedContainer?.cluster_name} · {t("namespaceLabel")}:{" "}
+                      {selectedContainer?.namespace} · Pod: {selectedContainer?.pod_name}
                     </p>
                   </div>
                 </div>
@@ -2540,7 +2537,7 @@ export default function CloudNativePage() {
                 {loadingContainerDetail ? (
                   <div className="py-20 text-center text-sm text-text-muted flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                    正在拉取容器配置与安全详情...
+                    {t("fetchingContainerDetails")}
                   </div>
                 ) : selectedContainer ? (
                   <>
@@ -2548,7 +2545,7 @@ export default function CloudNativePage() {
                     <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-750 dark:to-gray-800 p-4 rounded-xl border border-border-subtle dark:border-border-strong space-y-3">
                       <div className="flex items-center gap-2 text-sm font-bold text-text-primary dark:text-white">
                         <Shield className="w-4 h-4 text-blue-500" />
-                        安全上下文与合规策略核查
+                        {t("securityContextPolicyCheck")}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div
@@ -2558,11 +2555,11 @@ export default function CloudNativePage() {
                               : "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
                           }`}
                         >
-                          <div className="font-semibold">特权容器 (Privileged)</div>
+                          <div className="font-semibold">{t("privilegedModeTitle")}</div>
                           <div className="mt-1 text-xs">
                             {selectedContainer.privileged
-                              ? "⚠️ 允许特权模式 (存在逃逸风险)"
-                              : "✓ 已禁用 (合规)"}
+                              ? t("privilegedModeWarning")
+                              : t("privilegedModeCompliant")}
                           </div>
                         </div>
 
@@ -2573,11 +2570,11 @@ export default function CloudNativePage() {
                               : "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300"
                           }`}
                         >
-                          <div className="font-semibold">用户权限 (RunAsUser)</div>
+                          <div className="font-semibold">{t("userPrivilegeTitle")}</div>
                           <div className="mt-1 text-xs">
                             {selectedContainer.run_as_root
-                              ? "⚠️ 以 Root 身份执行"
-                              : "✓ 非 Root 用户执行 (合规)"}
+                              ? t("userPrivilegeWarning")
+                              : t("userPrivilegeCompliant")}
                           </div>
                         </div>
 
@@ -2588,11 +2585,11 @@ export default function CloudNativePage() {
                               : "bg-surface-card border-border-subtle text-text-secondary dark:bg-surface-active/50 dark:border-gray-600 dark:text-text-muted"
                           }`}
                         >
-                          <div className="font-semibold">只读根文件系统</div>
+                          <div className="font-semibold">{t("readOnlyFsTitle")}</div>
                           <div className="mt-1 text-xs">
                             {selectedContainer.readonly_rootfs
-                              ? "✓ ReadOnlyRootFS 已开启"
-                              : "未开启 (建议加固开启)"}
+                              ? t("readOnlyFsEnabled")
+                              : t("readOnlyFsDisabled")}
                           </div>
                         </div>
                       </div>
@@ -2601,7 +2598,7 @@ export default function CloudNativePage() {
                         <div className="mt-2 p-3 bg-amber-50/80 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-800 dark:text-amber-200 flex items-start gap-2">
                           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                           <div>
-                            <span className="font-semibold">安全建议：</span>
+                            <span className="font-semibold">{t("securityRecommendations")}</span>
                             {selectedContainer.remediation}
                           </div>
                         </div>
@@ -2614,41 +2611,41 @@ export default function CloudNativePage() {
                       <div className="bg-surface-card dark:bg-gray-750 p-4 rounded-xl border border-border-subtle dark:border-border-strong space-y-2.5">
                         <h4 className="font-bold text-text-primary dark:text-white flex items-center gap-1.5 text-xs">
                           <HardDrive className="w-4 h-4 text-indigo-500" />
-                          基础运行时规格
+                          {t("runtimeSpecs")}
                         </h4>
                         <div className="grid grid-cols-2 gap-2 text-[11px]">
                           <div>
-                            <span className="text-text-muted">容器 ID:</span>
+                            <span className="text-text-muted">{t("containerId")}</span>
                             <p className="font-mono text-text-primary mt-0.5">
                               {selectedContainer.id}
                             </p>
                           </div>
                           <div>
-                            <span className="text-text-muted">内部 IP:</span>
+                            <span className="text-text-muted">{t("internalIp")}</span>
                             <p className="font-mono text-text-primary mt-0.5">
                               {selectedContainer.ip_address}
                             </p>
                           </div>
                           <div>
-                            <span className="text-text-muted">工作节点:</span>
+                            <span className="text-text-muted">{t("workerNode")}</span>
                             <p className="font-mono text-text-primary mt-0.5">
                               {selectedContainer.node_name || "node-worker-01"}
                             </p>
                           </div>
                           <div>
-                            <span className="text-text-muted">重启次数:</span>
+                            <span className="text-text-muted">{t("restartCountLabel")}</span>
                             <p className="font-mono text-text-primary mt-0.5">
-                              {selectedContainer.restart_count} 次
+                              {t("restartCountUnit", { count: selectedContainer.restart_count })}
                             </p>
                           </div>
                           <div>
-                            <span className="text-text-muted">CPU 占用:</span>
+                            <span className="text-text-muted">{t("cpuUsage")}</span>
                             <p className="font-mono text-text-primary mt-0.5">
                               {selectedContainer.cpu_usage}
                             </p>
                           </div>
                           <div>
-                            <span className="text-text-muted">内存占用:</span>
+                            <span className="text-text-muted">{t("memoryUsage")}</span>
                             <p className="font-mono text-text-primary mt-0.5">
                               {selectedContainer.memory_usage}
                             </p>
@@ -2660,16 +2657,20 @@ export default function CloudNativePage() {
                       <div className="bg-surface-card dark:bg-gray-750 p-4 rounded-xl border border-border-subtle dark:border-border-strong space-y-2.5">
                         <h4 className="font-bold text-text-primary dark:text-white flex items-center gap-1.5 text-xs">
                           <Scan className="w-4 h-4 text-emerald-500" />
-                          镜像与网络端口
+                          {t("imageAndNetworkPorts")}
                         </h4>
                         <div>
-                          <span className="text-text-muted text-[11px]">容器镜像:</span>
+                          <span className="text-text-muted text-[11px]">
+                            {t("containerImageLabel")}
+                          </span>
                           <p className="font-mono text-text-primary dark:text-white text-xs font-semibold mt-0.5 break-all">
                             {selectedContainer.image}
                           </p>
                         </div>
                         <div>
-                          <span className="text-text-muted text-[11px]">暴露端口:</span>
+                          <span className="text-text-muted text-[11px]">
+                            {t("exposedPortsLabel")}
+                          </span>
                           <div className="flex flex-wrap gap-1.5 mt-1">
                             {selectedContainer.ports && selectedContainer.ports.length > 0 ? (
                               selectedContainer.ports.map((p, idx) => (
@@ -2681,21 +2682,25 @@ export default function CloudNativePage() {
                                 </span>
                               ))
                             ) : (
-                              <span className="text-text-muted text-xs">无端口映射</span>
+                              <span className="text-text-muted text-xs">{t("noPortMapping")}</span>
                             )}
                           </div>
                         </div>
                         <div>
-                          <span className="text-text-muted text-[11px]">已知漏洞状态:</span>
+                          <span className="text-text-muted text-[11px]">
+                            {t("knownVulnStatus")}
+                          </span>
                           <p className="mt-0.5">
                             {selectedContainer.vulnerabilities_count > 0 ? (
                               <span className="text-red-600 dark:text-red-400 font-semibold">
-                                检测到 {selectedContainer.vulnerabilities_count} 个漏洞 (含高危:{" "}
-                                {selectedContainer.high_vulns})
+                                {t("detectedVulnsWithHigh", {
+                                  total: selectedContainer.vulnerabilities_count,
+                                  high: selectedContainer.high_vulns,
+                                })}
                               </span>
                             ) : (
                               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                                未检测到已知 CVE 漏洞
+                                {t("noKnownCveVulns")}
                               </span>
                             )}
                           </p>
@@ -2708,7 +2713,7 @@ export default function CloudNativePage() {
                       <div>
                         <h4 className="font-bold text-text-primary dark:text-white mb-2 flex items-center gap-1.5 text-xs">
                           <Terminal className="w-4 h-4 text-text-tertiary" />
-                          启动命令 (Entrypoint / Command)
+                          {t("entrypointCommand")}
                         </h4>
                         <div className="bg-gray-900 text-emerald-400 p-3 rounded-xl font-mono text-xs overflow-x-auto">
                           $ {selectedContainer.command.join(" ")}
@@ -2721,7 +2726,7 @@ export default function CloudNativePage() {
                       <div>
                         <h4 className="font-bold text-text-primary dark:text-white mb-2 flex items-center gap-1.5 text-xs">
                           <HardDrive className="w-4 h-4 text-purple-500" />
-                          存储卷挂载 (Volume Mounts)
+                          {t("volumeMounts")}
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {selectedContainer.mounts.map((m, idx) => (
@@ -2741,7 +2746,7 @@ export default function CloudNativePage() {
                       Object.keys(selectedContainer.env_vars).length > 0 && (
                         <div>
                           <h4 className="font-bold text-text-primary dark:text-white mb-2 text-xs">
-                            环境变量 (Environment Variables)
+                            {t("envVars")}
                           </h4>
                           <div className="bg-surface-card dark:bg-gray-750 border border-border-subtle dark:border-border-strong rounded-xl overflow-hidden divide-y divide-gray-200 dark:divide-gray-700">
                             {Object.entries(selectedContainer.env_vars).map(([k, v]) => (
@@ -2772,7 +2777,7 @@ export default function CloudNativePage() {
                     className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm"
                   >
                     <Scan className="w-4 h-4" />
-                    对此镜像执行 Trivy 漏洞扫描
+                    {t("runTrivyScanForImage")}
                   </button>
                 )}
                 <button

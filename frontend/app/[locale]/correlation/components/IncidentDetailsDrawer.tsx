@@ -50,31 +50,21 @@ interface IncidentDetailsDrawerProps {
   onStatusChange?: (incidentId: string, newStatus: string) => Promise<void>;
 }
 
-const ATTACK_TYPE_LABELS: Record<string, string> = {
-  ransomware: "勒索软件 (Ransomware)",
-  account_takeover: "凭据失陷与账户接管 (Account Takeover)",
-  brute_force: "分布式爆破集群 (Brute Force)",
-  c2_communication: "C2 远控信道 (C2 Communication)",
-  data_exfiltration: "敏感数据外发 (Data Exfiltration)",
-  privilege_escalation: "权限提升 (Privilege Escalation)",
-  lateral_movement: "内网横向移动 (Lateral Movement)",
-};
-
-function formatDuration(firstSeen: string, lastSeen: string): string {
+function formatDuration(firstSeen: string, lastSeen: string, t: any): string {
   try {
     const start = new Date(firstSeen).getTime();
     const end = new Date(lastSeen).getTime();
     const diffMs = Math.abs(end - start);
     const diffSec = Math.floor(diffMs / 1000);
-    if (diffSec < 60) return `${diffSec} 秒`;
+    if (diffSec < 60) return t("drawer.durationSec", { count: diffSec });
     const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin} 分钟`;
+    if (diffMin < 60) return t("drawer.durationMin", { count: diffMin });
     const diffHours = Math.floor(diffMin / 60);
     const remMin = diffMin % 60;
-    if (diffHours < 24) return `${diffHours} 小时 ${remMin} 分钟`;
+    if (diffHours < 24) return t("drawer.durationHourMin", { hours: diffHours, minutes: remMin });
     const diffDays = Math.floor(diffHours / 24);
     const remHours = diffHours % 24;
-    return `${diffDays} 天 ${remHours} 小时`;
+    return t("drawer.durationDayHour", { days: diffDays, hours: remHours });
   } catch {
     return "—";
   }
@@ -189,12 +179,13 @@ export function IncidentDetailsDrawer({
     destinationIps.length > 0 ||
     otherEntityEntries.length > 0;
 
+  const attackTypeKey = incident.attack_type?.toLowerCase();
   const displayAttackType =
-    (incident.attack_type && ATTACK_TYPE_LABELS[incident.attack_type]) ||
-    incident.attack_type ||
-    "多源告警复合关联 (Correlated Cluster)";
+    (attackTypeKey && t.has(`attackTypes.${attackTypeKey}` as any)
+      ? t(`attackTypes.${attackTypeKey}` as any)
+      : incident.attack_type) || t("drawer.correlatedCluster");
 
-  const durationText = formatDuration(incident.first_seen, incident.last_seen);
+  const durationText = formatDuration(incident.first_seen, incident.last_seen, t);
 
   return (
     <div
@@ -241,8 +232,8 @@ export function IncidentDetailsDrawer({
                   <button
                     type="button"
                     onClick={handleCopyId}
-                    title="复制事件 ID"
-                    aria-label="复制事件 ID"
+                    title={t("drawer.copyId")}
+                    aria-label={t("drawer.copyId")}
                     className="p-1 hover:text-text-primary transition-colors rounded hover:bg-surface-hover"
                   >
                     {copiedId ? (
@@ -258,7 +249,7 @@ export function IncidentDetailsDrawer({
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors shrink-0"
-              aria-label="关闭详情"
+              aria-label={t("drawer.close")}
             >
               <X className="w-5 h-5" />
             </button>
@@ -394,7 +385,7 @@ export function IncidentDetailsDrawer({
                 {t("commonEntities")}
               </h3>
               <span className="text-xs text-text-muted">
-                {hasAnyEntity ? "多源同质特征收敛" : t("noEntities")}
+                {hasAnyEntity ? t("drawer.homogeneousFeature") : t("noEntities")}
               </span>
             </div>
 
@@ -417,7 +408,7 @@ export function IncidentDetailsDrawer({
                           type="button"
                           onClick={() => handleCopyText(ip, `sip-${idx}`)}
                           className="text-text-muted hover:text-text-primary p-0.5 rounded"
-                          title="复制 IP"
+                          title={t("drawer.copyIp")}
                         >
                           {copiedEntity === `sip-${idx}` ? (
                             <Check className="w-3 h-3 text-status-success-fg" />
@@ -428,7 +419,7 @@ export function IncidentDetailsDrawer({
                         <Link
                           href={`/threat-intel`}
                           className="text-accent-600 hover:text-accent-700 ml-0.5"
-                          title="在威胁情报中研判"
+                          title={t("drawer.investigateTI")}
                         >
                           <ExternalLink className="w-3 h-3" />
                         </Link>
@@ -456,7 +447,7 @@ export function IncidentDetailsDrawer({
                           type="button"
                           onClick={() => handleCopyText(host, `host-${idx}`)}
                           className="text-text-muted hover:text-text-primary p-0.5 rounded"
-                          title="复制主机名"
+                          title={t("drawer.copyHost")}
                         >
                           {copiedEntity === `host-${idx}` ? (
                             <Check className="w-3 h-3 text-status-success-fg" />
@@ -488,7 +479,7 @@ export function IncidentDetailsDrawer({
                           type="button"
                           onClick={() => handleCopyText(usr, `user-${idx}`)}
                           className="text-text-muted hover:text-text-primary p-0.5 rounded"
-                          title="复制用户名"
+                          title={t("drawer.copyUser")}
                         >
                           {copiedEntity === `user-${idx}` ? (
                             <Check className="w-3 h-3 text-status-success-fg" />
@@ -520,7 +511,7 @@ export function IncidentDetailsDrawer({
                           type="button"
                           onClick={() => handleCopyText(ip, `dip-${idx}`)}
                           className="text-text-muted hover:text-text-primary p-0.5 rounded"
-                          title="复制目标 IP"
+                          title={t("drawer.copyDestIp")}
                         >
                           {copiedEntity === `dip-${idx}` ? (
                             <Check className="w-3 h-3 text-status-success-fg" />
@@ -570,7 +561,7 @@ export function IncidentDetailsDrawer({
                     {t("changeStatus")}
                   </span>
                   <span className="text-[11px] text-text-muted">
-                    流转处置生命周期并同步写入安全审计记录
+                    {t("drawer.workflowAuditHint")}
                   </span>
                 </div>
 

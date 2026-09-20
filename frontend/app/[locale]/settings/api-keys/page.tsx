@@ -286,7 +286,7 @@ export default function APIKeysPage() {
                         {key.is_active ? (
                           <button
                             onClick={() => handleDisableKey(key.id)}
-                            className="text-orange-700 hover:text-orange-800 mr-3"
+                            className="text-orange-700 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 mr-3"
                           >
                             {tCommon("disable")}
                           </button>
@@ -300,7 +300,7 @@ export default function APIKeysPage() {
                         )}
                         <button
                           onClick={() => setDeleteTarget(key)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                         >
                           {tCommon("delete")}
                         </button>

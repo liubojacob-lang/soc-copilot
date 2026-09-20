@@ -1,0 +1,5 @@
+{
+  "updatedAt": "2026-09-20",
+  "note": "运行时对比度存量基线。key = 页面|前景|背景|字号，value = 允许的最大处数。该数字只应下降。更新前请确认修复已生效（A11Y_UPDATE_BASELINE=1 npx playwright test a11y）。",
+  "entries": {}
+}

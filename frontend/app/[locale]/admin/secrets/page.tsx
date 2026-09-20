@@ -163,7 +163,7 @@ export default function SecretsPage() {
           {secrets.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-gray-500 dark:text-gray-400">{t("noSecretsFound")}</p>
-              <p className="text-sm text-text-tertiary dark:text-gray-500 mt-2">
+              <p className="text-sm text-text-tertiary dark:text-gray-400 mt-2">
                 {t("noSecretsInfo")}
               </p>
             </div>
@@ -246,8 +246,8 @@ export default function SecretsPage() {
           <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
             {t("usingSecrets")}
           </h3>
-          <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">{t("usingSecretsInfo")}</p>
-          <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
+          <p className="text-sm text-blue-700 dark:text-blue-200 mb-2">{t("usingSecretsInfo")}</p>
+          <ul className="text-sm text-blue-700 dark:text-blue-200 space-y-1 list-disc list-inside">
             <li>
               <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">
                 {"{{secret.SLACK_WEBHOOK}}"}

@@ -45,8 +45,8 @@ export function StatusTimeline({ steps, className }: StatusTimelineProps) {
               <span
                 className={cn("mt-1.5 text-[11px] font-medium whitespace-nowrap", {
                   "text-slate-900 dark:text-slate-100": step.status === "completed",
-                  "text-slate-500 dark:text-slate-400": step.status === "current",
-                  "text-slate-300 dark:text-slate-600": step.status === "pending",
+                  "text-text-secondary dark:text-slate-400": step.status === "current",
+                  "text-text-tertiary dark:text-text-muted": step.status === "pending",
                 })}
               >
                 {step.label}

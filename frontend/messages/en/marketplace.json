@@ -66,6 +66,14 @@
     "adaptSuccess": "Playbook adapted successfully into standard DAG!",
     "adaptFailed": "Failed to adapt external playbook, please check content and retry",
     "noExternalResults": "No matching external playbooks found. Try another keyword or paste content directly.",
-    "externalPlaybookImported": "Successfully imported external playbook \"{name}\" to local definitions!"
+    "externalPlaybookImported": "Successfully imported external playbook \"{name}\" to local definitions!",
+    "hotTopics": "Popular Scenarios:",
+    "searchingRepositories": "Searching open-source security playbook repositories...",
+    "viewRepoSource": "View open-source repository source file",
+    "directContentPlaceholder": "# Example: Paste external playbook definition or SOP...\nname: Log4Shell Incident Response\ntasks:\n  - id: extract\n    type: extract_iocs\n  - id: query_ti\n    type: virustotal\n  - id: block_ip\n    type: firewall_acl",
+    "titleHintPlaceholder": "e.g., Log4Shell automated incident response",
+    "adaptingOverlayTitle": "AI is adapting workflow topology...",
+    "adaptingOverlayDesc": "Parsing \"{target}\" into standard Directed Acyclic Graph (DAG), mapping node actions and plugins.",
+    "defaultExternalPlaybook": "External Playbook"
   }
 }

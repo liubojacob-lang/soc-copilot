@@ -179,7 +179,7 @@ function SingleResult({ result }: { result: ThreatIntelLookupResponse }) {
       )}
 
       {result.provider_status === "unconfigured" && (
-        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-850 dark:text-amber-300 flex items-start gap-2">
+        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <span>外部情报源未配置 (OTX_API_KEY 未设置)，返回默认空态结果。</span>
         </div>
@@ -523,7 +523,7 @@ function IOCHitFeedPanel({ onInspectIoc }: { onInspectIoc: (ioc: string, type: s
                 </span>
                 <span
                   className={`rounded-full px-1.5 text-[10px] tabular-nums ${
-                    isSelected ? "bg-white/20 text-white" : "bg-surface-card text-text-muted"
+                    isSelected ? "bg-black/20 text-white" : "bg-surface-card text-text-muted"
                   }`}
                 >
                   {count}
@@ -1151,7 +1151,7 @@ export default function ThreatIntelPage() {
               onClick={() => setTab(item.key)}
               className={
                 tab === item.key
-                  ? "flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-accent-600 border-b-2 border-accent-600 -mb-px transition-colors"
+                  ? "flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-accent-600 dark:text-accent-400 border-b-2 border-accent-600 -mb-px transition-colors"
                   : "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-text-muted hover:text-text-primary border-b-2 border-transparent -mb-px transition-colors"
               }
             >

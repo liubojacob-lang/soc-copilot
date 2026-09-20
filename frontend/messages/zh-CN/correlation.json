@@ -108,6 +108,31 @@
     "jumpToCases": "在事件中心立案处理",
     "jumpToAlerts": "查看关联底层告警",
     "jumpToThreatIntel": "威胁情报深度研判",
-    "viewIncident": "查看详情"
+    "viewIncident": "查看详情",
+    "drawer": {
+      "copyId": "复制事件 ID",
+      "close": "关闭详情",
+      "copyIp": "复制 IP",
+      "copyHost": "复制主机名",
+      "copyUser": "复制用户名",
+      "copyDestIp": "复制目标 IP",
+      "investigateTI": "在威胁情报中研判",
+      "homogeneousFeature": "多源同质特征收敛",
+      "workflowAuditHint": "流转处置生命周期并同步写入安全审计记录",
+      "correlatedCluster": "多源告警复合关联 (Correlated Cluster)",
+      "durationSec": "{count} 秒",
+      "durationMin": "{count} 分钟",
+      "durationHourMin": "{hours} 小时 {minutes} 分钟",
+      "durationDayHour": "{days} 天 {hours} 小时"
+    },
+    "attackTypes": {
+      "ransomware": "勒索软件 (Ransomware)",
+      "account_takeover": "凭据失陷与账户接管 (Account Takeover)",
+      "brute_force": "分布式爆破集群 (Brute Force)",
+      "c2_communication": "C2 远控信道 (C2 Communication)",
+      "data_exfiltration": "敏感数据外发 (Data Exfiltration)",
+      "privilege_escalation": "权限提升 (Privilege Escalation)",
+      "lateral_movement": "内网横向移动 (Lateral Movement)"
+    }
   }
 }

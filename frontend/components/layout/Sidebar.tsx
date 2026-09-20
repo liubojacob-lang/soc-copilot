@@ -142,6 +142,11 @@ function SidebarLink({
   );
 }
 
+// 跨 NavContent 挂载保留上一次路径（模块级，F5 后自然归零）：
+// 首次进入或刷新时视为"无上一次路径"，不自动展开当前分组，
+// 从而保留用户手动折叠的偏好；仅 SPA 内真实路由跳转才触发自动展开。
+let lastNavPathname: string | null = null;
+
 function NavContent({
   onNavigate,
   collapsed,
@@ -174,8 +179,13 @@ function NavContent({
     [t, admin, analyst]
   );
 
-  // 路由跳转时，自动展开当前活跃页面所在的分组，防止用户在折叠菜单中迷失
+  // 路由跳转时，自动展开当前活跃页面所在的分组，防止用户在折叠菜单中迷失。
+  // 首次挂载（刷新/直达/侧栏重挂载）跳过，避免吞掉用户手动折叠的状态。
   useEffect(() => {
+    const prev = lastNavPathname;
+    lastNavPathname = pathname;
+    if (prev === null || prev === pathname) return;
+
     const activeGroup = groups.find((g) =>
       g.items.some((item) => isPathActive(pathname, item.path))
     );

@@ -253,7 +253,7 @@ export const IOCStats = React.memo(function IOCStats({
               style={{ width: `${Math.min(threatPercentage, 100)}%` }}
             />
           </div>
-          <div className="flex justify-between mt-2 text-xs text-text-tertiary">
+          <div className="flex justify-between mt-2 text-xs text-text-secondary">
             <span>{tMonitor("safe")}</span>
             <span>{tMonitor("warning")}</span>
             <span>{tSeverity("critical")}</span>

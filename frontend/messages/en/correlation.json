@@ -108,6 +108,31 @@
     "jumpToCases": "Open in Cases",
     "jumpToAlerts": "View Correlated Alerts",
     "jumpToThreatIntel": "Threat Intel Lookup",
-    "viewIncident": "View Details"
+    "viewIncident": "View Details",
+    "drawer": {
+      "copyId": "Copy Incident ID",
+      "close": "Close details",
+      "copyIp": "Copy IP",
+      "copyHost": "Copy hostname",
+      "copyUser": "Copy username",
+      "copyDestIp": "Copy destination IP",
+      "investigateTI": "Investigate in Threat Intelligence",
+      "homogeneousFeature": "Multi-source converged homogeneous features",
+      "workflowAuditHint": "Transition response lifecycle and write to security audit log",
+      "correlatedCluster": "Multi-source Correlated Alert Cluster",
+      "durationSec": "{count}s",
+      "durationMin": "{count}m",
+      "durationHourMin": "{hours}h {minutes}m",
+      "durationDayHour": "{days}d {hours}h"
+    },
+    "attackTypes": {
+      "ransomware": "Ransomware",
+      "account_takeover": "Account Takeover",
+      "brute_force": "Brute Force",
+      "c2_communication": "C2 Communication",
+      "data_exfiltration": "Data Exfiltration",
+      "privilege_escalation": "Privilege Escalation",
+      "lateral_movement": "Lateral Movement"
+    }
   }
 }

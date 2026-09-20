@@ -230,7 +230,7 @@ export default function SystemSettingsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-gray-500">
+                      <td className="px-3 py-2 text-text-tertiary dark:text-text-muted">
                         {String(item.default_value ?? "—")}
                       </td>
                       <td className="px-3 py-2">
@@ -272,7 +272,10 @@ export default function SystemSettingsPage() {
                   ))}
                   {items.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-3 py-6 text-center text-gray-500">
+                      <td
+                        colSpan={4}
+                        className="px-3 py-6 text-center text-text-tertiary dark:text-text-muted"
+                      >
                         {t("noDynamic")}
                       </td>
                     </tr>

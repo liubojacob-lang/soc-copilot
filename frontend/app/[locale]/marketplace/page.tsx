@@ -316,7 +316,7 @@ export default function MarketplacePage() {
                 className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors border ${
                   verifiedOnly
                     ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
-                    : "bg-surface-card text-text-secondary border-border-subtle dark:bg-surface-active dark:text-text-muted dark:border-gray-600 hover:bg-surface-hover"
+                    : "bg-surface-card text-text-secondary border-border-subtle dark:bg-surface-active dark:text-text-primary dark:border-gray-600 hover:bg-surface-hover"
                 }`}
               >
                 <CheckCircle
@@ -337,7 +337,7 @@ export default function MarketplacePage() {
               <button
                 type="button"
                 onClick={loadData}
-                className="px-3.5 py-2 bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-muted rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-xs sm:text-sm font-medium transition-colors"
+                className="px-3.5 py-2 bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-primary rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-xs sm:text-sm font-medium transition-colors"
               >
                 {t("refresh")}
               </button>
@@ -352,7 +352,7 @@ export default function MarketplacePage() {
                   {t("searchResultsCount", { count: filteredPlaybooks.length })}
                 </span>
                 {searchQuery && (
-                  <span className="px-2 py-0.5 rounded bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-muted font-mono">
+                  <span className="px-2 py-0.5 rounded bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-primary font-mono">
                     "{searchQuery}"
                   </span>
                 )}
@@ -643,7 +643,7 @@ export default function MarketplacePage() {
                                 : t("difficulty.advanced")}
                           </span>
 
-                          <span className="px-2 py-0.5 bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-muted rounded text-xs">
+                          <span className="px-2 py-0.5 bg-surface-hover dark:bg-surface-active text-text-secondary dark:text-text-primary rounded text-xs">
                             {playbook.category}
                           </span>
 

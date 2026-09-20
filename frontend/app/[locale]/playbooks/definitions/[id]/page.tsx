@@ -306,7 +306,7 @@ export default function PlaybookDefinitionDetailPage() {
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
                     viewMode === "visual"
                       ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
+                      : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
                   <Play className="w-3 h-3" />
@@ -318,7 +318,7 @@ export default function PlaybookDefinitionDetailPage() {
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
                     viewMode === "json"
                       ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
+                      : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
                   <Code2 className="w-3 h-3" />

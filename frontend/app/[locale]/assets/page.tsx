@@ -223,9 +223,15 @@ export default function AssetsPage() {
             <SkeletonTable rows={8} columns={6} />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border">
-              <thead className="bg-gray-50">
+          <div className="bg-surface-card rounded-lg shadow-sm border border-border-subtle overflow-x-auto">
+            {/*
+              原先这里是 `bg-white`（表格）与 `bg-gray-50`（表头），都没有深色变体。
+              深色模式下就是「白底 + 近白文字」—— 实测这一处让 242 个文本节点不可读，
+              是本轮扩面发现的**最严重的一处**：不是"对比度偏低"，而是内容完全看不见。
+              改用语义面 token 后明暗两套自动正确。
+            */}
+            <table className="min-w-full border">
+              <thead className="bg-surface-hover">
                 <tr>
                   <th className="px-4 py-2 text-left border">{t("hostname")}</th>
                   <th className="px-4 py-2 text-left border">{t("ipAddress")}</th>
@@ -259,13 +265,13 @@ export default function AssetsPage() {
                       <td className="px-4 py-2 border">
                         <button
                           onClick={() => handleEdit(asset)}
-                          className="text-blue-600 hover:text-blue-800 mr-2"
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-2"
                         >
                           {tCommon("edit")}
                         </button>
                         <button
                           onClick={() => handleDelete(asset.id)}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                         >
                           {tCommon("delete")}
                         </button>

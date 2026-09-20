@@ -345,7 +345,7 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {user.is_active ? (
-                          <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+                          <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-400">
                             <CheckCircle className="w-4 h-4" />
                             {t("active")}
                           </span>

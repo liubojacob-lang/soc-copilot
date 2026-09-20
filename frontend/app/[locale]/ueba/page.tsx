@@ -84,12 +84,34 @@ export default function UEBAPage() {
     }
   };
 
-  const getRiskColor = (score: number) => {
-    if (score >= 80) return "text-red-600 bg-red-50";
-    if (score >= 60) return "text-orange-600 bg-orange-50";
-    if (score >= 30) return "text-yellow-600 bg-yellow-50";
-    return "text-green-600 bg-green-50";
-  };
+  /**
+   * 风险分档样式 —— 单一数据源。
+   *
+   * ⚠️ 文字色与底色**分开定义**，不要再用 `getRiskColor(score).split(" ")[0]`
+   * 去取文字色：那只拿到第一个 token（浅色值），`dark:text-*` 会被一起丢掉。
+   * 在硬编码的 `dark:bg-gray-700` 卡片上，浅色的 `text-red-700` 实测只有 1.59:1。
+   *
+   * 浅色值按最不利底色校准（黄档要 600，绿档同）—— 不要为了"整齐"统一成 600，
+   * 它们贴在各自的 `bg-*-50` 上，同色系浅底比白底更难达标。
+   */
+  const RISK_TIERS = [
+    { min: 80, text: "text-red-700 dark:text-red-300", bg: "bg-red-50 dark:bg-red-900/30" },
+    {
+      min: 60,
+      text: "text-orange-700 dark:text-orange-300",
+      bg: "bg-orange-50 dark:bg-orange-900/30",
+    },
+    {
+      min: 30,
+      text: "text-yellow-600 dark:text-yellow-300",
+      bg: "bg-yellow-50 dark:bg-yellow-900/30",
+    },
+    { min: 0, text: "text-green-600 dark:text-green-300", bg: "bg-green-50 dark:bg-green-900/30" },
+  ];
+  const riskTier = (score: number) =>
+    RISK_TIERS.find((t) => score >= t.min) ?? RISK_TIERS[RISK_TIERS.length - 1];
+  const getRiskTextColor = (score: number) => riskTier(score).text;
+  const getRiskColor = (score: number) => `${riskTier(score).text} ${riskTier(score).bg}`;
 
   if (!mounted) return null;
 
@@ -165,9 +187,13 @@ export default function UEBAPage() {
               </div>
               <div className="p-4">
                 {loading ? (
-                  <div className="text-center py-8 text-gray-500">{tCommon("loading")}</div>
+                  <div className="text-center py-8 text-text-tertiary dark:text-text-muted">
+                    {tCommon("loading")}
+                  </div>
                 ) : highRiskUsers.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">{t("noHighRiskUsers")}</div>
+                  <div className="text-center py-8 text-text-tertiary dark:text-text-muted">
+                    {t("noHighRiskUsers")}
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {highRiskUsers.map((user, index) => (
@@ -185,19 +211,19 @@ export default function UEBAPage() {
                             <p className="font-medium text-gray-900 dark:text-white">
                               {user.username}
                             </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                            <p className="text-sm text-text-tertiary dark:text-gray-300">
                               {t("anomalousBehaviors", { count: user.anomaly_count })}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <p
-                              className={`text-lg font-bold ${getRiskColor(user.risk_score).split(" ")[0]}`}
-                            >
+                            <p className={`text-lg font-bold ${getRiskTextColor(user.risk_score)}`}>
                               {user.risk_score.toFixed(1)}
                             </p>
-                            <p className="text-xs text-gray-500">{t("riskScore")}</p>
+                            <p className="text-xs text-text-tertiary dark:text-gray-300">
+                              {t("riskScore")}
+                            </p>
                           </div>
                           <span
                             className={`px-3 py-1 rounded-full text-sm font-medium ${getRiskColor(user.risk_score)}`}
