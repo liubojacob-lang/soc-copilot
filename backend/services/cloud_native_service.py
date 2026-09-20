@@ -716,11 +716,11 @@ class CloudNativeSecurityService:
                         "uvicorn",
                         "main:app",
                         "--host",
-                        "0.0.0.0",
+                        "0.0.0.0",  # nosec B104 - demo container spec string, not a real bind
                         "--port",
                         "8000",
                     ],
-                    mounts=["/app", "/tmp"],
+                    mounts=["/app", "/tmp"],  # nosec B108 - demo mount path
                     env_vars={"ENVIRONMENT": "production", "LOG_LEVEL": "INFO"},
                 )
             )
@@ -1509,7 +1509,7 @@ class CloudNativeSecurityService:
                     "created_at": c.created_at,
                     "node_name": c.node_name,
                     "command": c.command or ["/bin/sh"],
-                    "mounts": c.mounts or ["/tmp"],
+                    "mounts": c.mounts or ["/tmp"],  # nosec B108 - demo default mount path
                     "env_vars": c.env_vars or {},
                     "remediation": c.remediation,
                 }

@@ -205,7 +205,7 @@ class TestLookups:
         service = make_service()
         service._get = AsyncMock(return_value=vt_payload({}))
 
-        result = await service.lookup_ip("0.0.0.0")
+        result = await service.lookup_ip("0.0.0.0")  # nosec B104 - test stub IP, not a bind address
 
         assert result["verdict"] == "unknown"
 
