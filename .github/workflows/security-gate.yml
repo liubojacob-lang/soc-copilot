@@ -70,7 +70,8 @@ jobs:
           with open('pip-audit-report.json') as f:
               data = json.load(f)
           high_critical = 0
-          for dep in data:
+          deps = data.get("dependencies", []) if isinstance(data, dict) else data
+          for dep in deps:
               for v in dep.get('vulnerabilities', []):
                   aliases = v.get('aliases', [])
                   # GHSA/CVE/RUSTSEC/PYSEC are serious identifiers
