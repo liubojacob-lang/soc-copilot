@@ -115,6 +115,22 @@ known-first-party = [
     "repositories",
 ]
 
+[tool.isort]
+# 与 [tool.ruff.lint.isort] 保持一致：pre-commit 同时跑 ruff(I001) 和 isort，
+# 两者对 first-party 分组的认知必须相同，否则会无限互相改写。
+profile = "black"
+known_first_party = [
+    "core",
+    "models",
+    "routers",
+    "services",
+    "middleware",
+    "dependencies",
+    "db",
+    "schemas",
+    "repositories",
+]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
