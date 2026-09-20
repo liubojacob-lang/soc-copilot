@@ -920,7 +920,7 @@ class CloudNativeSecurityService:
             )
 
         # Cert-Manager (3 containers)
-        cert_comps = [
+        cert_comps: list[tuple[str, str, str, str, list[str]]] = [
             (
                 "mgr",
                 "cert-manager-controller",
@@ -1509,7 +1509,8 @@ class CloudNativeSecurityService:
                     "created_at": c.created_at,
                     "node_name": c.node_name,
                     "command": c.command or ["/bin/sh"],
-                    "mounts": c.mounts or ["/tmp"],  # nosec B108 - demo default mount path
+                    "mounts": c.mounts
+                    or ["/tmp"],  # nosec B108 - demo default mount path
                     "env_vars": c.env_vars or {},
                     "remediation": c.remediation,
                 }
