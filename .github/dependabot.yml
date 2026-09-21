@@ -1,11 +1,12 @@
 version: 2
 
 updates:
+  # 前端 NPM 依赖
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: monthly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     reviewers:
       - levent
     labels:
@@ -13,24 +14,25 @@ updates:
       - frontend
     commit-message:
       prefix: "deps(frontend)"
+    ignore:
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
     groups:
-      nextjs:
+      core-framework:
         patterns:
           - "next"
           - "react"
           - "react-dom"
-      dev-dependencies:
+      frontend-dependencies:
         patterns:
-          - "@types/*"
-          - "typescript"
-          - "vitest"
-          - "playwright*"
+          - "*"
 
+  # 后端 Python 依赖
   - package-ecosystem: pip
     directory: /backend
     schedule:
       interval: monthly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     reviewers:
       - levent
     labels:
@@ -39,29 +41,41 @@ updates:
     commit-message:
       prefix: "deps(backend)"
     groups:
-      fastapi:
+      core-backend:
         patterns:
           - "fastapi"
           - "uvicorn"
           - "pydantic*"
-      sqlalchemy:
-        patterns:
           - "sqlalchemy*"
-          - "aiosqlite"
           - "alembic"
+      backend-dependencies:
+        patterns:
+          - "*"
 
+  # Docker 依赖
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 2
     labels:
       - dependencies
       - docker
+    groups:
+      docker-images:
+        patterns:
+          - "*"
 
+  # GitHub Actions 依赖
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 2
     labels:
       - dependencies
       - ci-cd
+    groups:
+      github-actions:
+        patterns:
+          - "*"
