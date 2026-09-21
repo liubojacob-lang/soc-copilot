@@ -38,6 +38,8 @@
     "allStatus": "全部状态",
     "rulesCount": "共 {count} 条规则",
     "actions": "操作",
+    "viewIncidentDetails": "点击查看关联事件研判详情",
+    "viewRuleDetails": "点击查看规则详情",
     "enable": "启用",
     "disable": "停用",
     "category": "攻击分类",

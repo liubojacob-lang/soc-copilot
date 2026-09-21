@@ -150,7 +150,21 @@ export default function Navigation({ apiStatus, actions, onOpenMobileNav }: Navi
         </div>
         <div className="flex-1 lg:hidden" />
 
-        <div className="flex shrink-0 items-center gap-2">
+        {/*
+          右侧操作区：不能写 `shrink-0`。
+
+          中等宽度（768–1280）下，各页面塞进来的 actions 加起来会超过 header 可用宽度，
+          `shrink-0` 会让这一组拒绝收缩，把整个 header 撑破 —— 实测 /admin/dashboard
+          在 768 下溢出 533px、1280 下溢出 187px（/assets、/triggers、/playbooks/create、
+          /threat-intel/dashboard 同样）。
+
+          改成可收缩 + 自身横向滚动后，页面级溢出归零，多出来的按钮仍可横向滚到
+          （不是被裁掉）。滚动条隐藏，避免视觉上多一条。
+
+          更彻底的降级是各页面在 md 断点自行隐藏次要按钮，但那属于页面级决策，
+          这里先保证布局不被撑破。
+        */}
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {effectiveActions}
 
           {apiStatus && !isHome && !headerData?.apiStatus && (

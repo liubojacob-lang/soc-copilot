@@ -21,11 +21,13 @@ describe("LanguageSwitcher Component", () => {
     const containerClasses =
       "inline-flex items-center p-0.5 rounded-lg bg-gray-100 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/80 text-xs font-medium select-none shadow-xs shrink-0 whitespace-nowrap";
     const buttonClasses =
-      "relative inline-flex items-center justify-center min-w-[2.25rem] px-2.5 py-1 rounded-md text-xs transition-all duration-200 font-medium whitespace-nowrap shrink-0 leading-none";
+      "relative inline-flex items-center justify-center min-h-[24px] min-w-[2.25rem] px-2.5 py-1 rounded-md text-xs transition-all duration-200 font-medium whitespace-nowrap shrink-0 leading-none";
 
     expect(containerClasses).toContain("shrink-0");
     expect(containerClasses).toContain("whitespace-nowrap");
     expect(buttonClasses).toContain("shrink-0");
     expect(buttonClasses).toContain("whitespace-nowrap");
+    // WCAG 2.5.8 AA：触摸目标不小于 24×24（实测改动前仅 39×19）
+    expect(buttonClasses).toContain("min-h-[24px]");
   });
 });

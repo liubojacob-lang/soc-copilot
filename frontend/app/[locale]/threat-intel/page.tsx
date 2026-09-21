@@ -64,11 +64,10 @@ const MAX_BATCH = 50;
 
 /** Quick preset query samples for analysts */
 const QUICK_PRESETS = [
-  { label: "Cobalt Strike C2", value: "209.141.35.17", type: "ip" as TIIOCType },
-  { label: "SSH爆破 & Log4Shell", value: "45.155.205.233", type: "ip" as TIIOCType },
-  { label: "仿冒SSO钓鱼域名", value: "mail-verify-secure-login.com", type: "domain" as TIIOCType },
-  { label: "XMRig矿池", value: "pool.supportxmr.top", type: "domain" as TIIOCType },
-  { label: "Google DNS (白名单)", value: "8.8.8.8", type: "ip" as TIIOCType },
+  { presetKey: "sshLog4j", value: "45.155.205.233", type: "ip" as TIIOCType },
+  { presetKey: "phishingSSO", value: "mail-verify-secure-login.com", type: "domain" as TIIOCType },
+  { presetKey: "xmrig", value: "pool.supportxmr.top", type: "domain" as TIIOCType },
+  { presetKey: "googleDns", value: "8.8.8.8", type: "ip" as TIIOCType },
 ];
 
 /** Map a threat-intel verdict to Badge severity tokens. */
@@ -181,7 +180,7 @@ function SingleResult({ result }: { result: ThreatIntelLookupResponse }) {
       {result.provider_status === "unconfigured" && (
         <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <span>外部情报源未配置 (OTX_API_KEY 未设置)，返回默认空态结果。</span>
+          <span>{t("unconfiguredProviderNotice")}</span>
         </div>
       )}
 
@@ -316,7 +315,9 @@ function SingleLookupPanel({
               className="px-2.5 py-1 rounded-lg bg-surface-hover hover:bg-surface-hover/80 text-text-primary border border-border-subtle hover:border-accent-500/40 text-[11px] font-mono transition-colors flex items-center gap-1.5"
             >
               <span>{preset.value}</span>
-              <span className="text-text-muted text-[10px]">({preset.label})</span>
+              <span className="text-text-muted text-[10px]">
+                ({t(`presets.${preset.presetKey}` as any)})
+              </span>
             </button>
           ))}
         </div>
@@ -1065,13 +1066,13 @@ export default function ThreatIntelPage() {
           <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-amber-900 dark:text-amber-200 text-sm">
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
             <div className="flex-1">
-              <p className="font-medium">外部威胁情报源（Alienvault OTX）未配置或已禁用</p>
+              <p className="font-medium">{t("bannerDisabledTitle")}</p>
               <p className="text-xs text-amber-700 dark:text-amber-300/80 mt-0.5">
-                当前系统仅显示本地缓存与已知命中记录。如需实时联网查询全球威胁情报，请在系统配置中填入有效的{" "}
+                {t("bannerDisabledDesc")}{" "}
                 <code className="px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 font-mono text-[11px]">
                   OTX_API_KEY
                 </code>
-                。
+                .
               </p>
             </div>
           </div>

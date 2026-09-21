@@ -107,10 +107,19 @@ export function VirtualAuditTable({
       {isFetching && (
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 animate-pulse z-20" />
       )}
-      <div className="overflow-hidden flex-1 flex flex-col">
+      {/*
+        列是固定宽度 + 响应式显隐，lg 断点下列宽总和约 1196px，
+        而容器在 <1280 的窗口下只有 705–985px —— 次要列（Duration / Target）
+        会被 overflow-hidden 永久裁掉且无法滚动到达（实测 @768 / @1024 / @1280 皆如此）。
+
+        所以这里让 header 与列表共享同一个横向滚动容器，并给两者一致的 min-width：
+        空间不够时整表横向滚动，而不是把列吃掉。min-width 按断点给，
+        避免窄屏出现多余的空滚动区域。
+      */}
+      <div className="overflow-y-hidden overflow-x-auto flex-1 flex flex-col">
         {/* Table Header */}
         <div
-          className="flex items-center bg-surface-card dark:bg-surface-active sticky top-0 z-10 shrink-0 border-b border-border-subtle dark:border-gray-600"
+          className="flex items-center bg-surface-card dark:bg-surface-active sticky top-0 z-10 shrink-0 border-b border-border-subtle dark:border-gray-600 min-w-0 md:min-w-[900px] lg:min-w-[1200px]"
           style={{ height: HEADER_HEIGHT }}
         >
           <div className="w-36 lg:w-40 shrink-0 px-3 lg:px-4 py-3 text-left text-xs font-medium text-text-tertiary dark:text-text-muted uppercase tracking-wider">
@@ -153,7 +162,7 @@ export function VirtualAuditTable({
             itemCount={logs.length}
             itemSize={rowHeight}
             width="100%"
-            className="custom-scrollbar"
+            className="custom-scrollbar min-w-0 md:min-w-[900px] lg:min-w-[1200px]"
             style={{ overflowX: "hidden" }}
           >
             {Row}

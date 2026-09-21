@@ -64,7 +64,7 @@ export function LanguageSwitcher() {
             disabled={isSwitching}
             onClick={() => switchLocale(code)}
             className={`
-              relative inline-flex items-center justify-center min-w-[2.25rem] px-2.5 py-1 rounded-md text-xs transition-all duration-200 font-medium whitespace-nowrap shrink-0 leading-none
+              relative inline-flex items-center justify-center min-h-[24px] min-w-[2.25rem] px-2.5 py-1 rounded-md text-xs transition-all duration-200 font-medium whitespace-nowrap shrink-0 leading-none
               ${
                 isActive
                   ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-subtle font-semibold"

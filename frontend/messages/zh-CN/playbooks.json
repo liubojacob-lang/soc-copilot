@@ -20,6 +20,10 @@
     "noPlaybookRuns": "暂无剧本运行",
     "runPlaybookHint": "运行剧本以在此处查看",
     "noDefinitions": "未找到剧本定义",
+    "loadingEngine": "加载可视化流程引擎...",
+    "exportCsv": "导出当前记录 (CSV)",
+    "exportFailed": "导出失败，请稍后重试",
+    "exporting": "导出中...",
     "statuses": {
       "running": "运行中",
       "success": "成功",

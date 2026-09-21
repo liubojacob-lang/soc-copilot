@@ -58,6 +58,15 @@
     "no": "No",
     "tags": "Tags",
     "references": "References",
+    "unconfiguredProviderNotice": "External threat intelligence provider not configured (OTX_API_KEY not set), returning empty state results.",
+    "bannerDisabledTitle": "External threat intelligence provider (AlienVault OTX) is not configured or disabled",
+    "bannerDisabledDesc": "The system currently displays only local cache and known hits. To query global threat intelligence in real time, please configure a valid",
+    "presets": {
+      "sshLog4j": "SSH Brute Force & Log4Shell",
+      "phishingSSO": "Fake SSO Phishing Domain",
+      "xmrig": "XMRig Mining Pool",
+      "googleDns": "Google DNS (Allowlist)"
+    },
     "skippedReason": "Skipped",
     "errorReason": "Error",
     "rawDetails": "Raw response",

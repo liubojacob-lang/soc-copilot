@@ -108,7 +108,8 @@
       "next": "下一页",
       "last": "末页",
       "perPagePrefix": "每页",
-      "perPageSuffix": "条"
+      "perPageSuffix": "条",
+      "pageSizeLabel": "每页显示条数"
     }
   },
   "adminAudit": {

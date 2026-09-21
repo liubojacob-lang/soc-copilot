@@ -93,7 +93,7 @@ export default function PlaybooksPage() {
       if (filters.status) params.append("status", filters.status);
 
       const res = await authFetch(`/api/v1/export/playbook-runs?${params.toString()}`);
-      if (!res.ok) throw new Error("导出失败");
+      if (!res.ok) throw new Error("Export failed");
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -106,7 +106,7 @@ export default function PlaybooksPage() {
       document.body.removeChild(a);
     } catch (err) {
       console.error("Export error:", err);
-      alert("导出失败，请稍后重试");
+      alert(t("exportFailed"));
     } finally {
       setExporting(false);
     }
@@ -221,10 +221,10 @@ export default function PlaybooksPage() {
               onClick={() => handleExport("csv")}
               disabled={exporting}
               className="h-9 px-3 border border-border-default rounded-lg hover:bg-surface-hover active:bg-surface-active flex items-center gap-1.5 transition-colors text-sm text-text-secondary disabled:opacity-50 bg-surface-card"
-              title="导出当前记录 (CSV)"
+              title={t("exportCsv")}
             >
               <Download className={`w-3.5 h-3.5 ${exporting ? "animate-bounce" : ""}`} />
-              {exporting ? "导出中..." : "导出"}
+              {exporting ? t("exporting") : tCommon("export")}
             </button>
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}

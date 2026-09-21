@@ -17,7 +17,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { Edge, Node } from "reactflow";
 import { authFetch, loadAuthState } from "@/lib/auth";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -40,23 +40,19 @@ import type { NodeData } from "@/components/dag/DAGNode";
 import { NodeInspectorDrawer } from "../../../components/NodeInspectorDrawer";
 import { EdgeInspectorDrawer } from "../../../components/EdgeInspectorDrawer";
 import { ActionPaletteModal } from "../../../components/ActionPaletteModal";
+import { VisualEngineLoader } from "../../../components/VisualEngineLoader";
 
 // Dynamically import DAGCanvas to prevent SSR issues with ReactFlow
 const DAGCanvas = dynamic(() => import("@/components/dag/DAGCanvas").then((mod) => mod.DAGCanvas), {
   ssr: false,
-  loading: () => (
-    <div className="h-[460px] w-full flex items-center justify-center bg-surface-hover/30 rounded-2xl border border-dashed border-border-subtle">
-      <div className="flex items-center gap-2 text-text-tertiary text-xs">
-        <div className="w-4 h-4 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
-        <span>加载可视化流程引擎...</span>
-      </div>
-    </div>
-  ),
+  loading: VisualEngineLoader,
 });
 
 export default function EditPlaybookDefinitionPage() {
   const params = useParams();
   const router = useRouter();
+  const locale = useLocale();
+  const isZh = locale.startsWith("zh");
   const t = useTranslations("playbooks.edit");
   const tCommon = useTranslations("common");
   const definitionId = params.id as string;
@@ -120,7 +116,7 @@ export default function EditPlaybookDefinitionPage() {
         id: String(n.id || `node-${idx + 1}`),
         type: normalizeNodeType((n.type || n.action || n.step_id) as string),
         step_id: String(n.step_id || n.id || `step_${idx + 1}`),
-        name: String(n.name || n.id || `节点 ${idx + 1}`),
+        name: String(n.name || n.id || (isZh ? `节点 ${idx + 1}` : `Step ${idx + 1}`)),
         position_x: typeof n.position_x === "number" ? n.position_x : 60 + idx * 260,
         position_y: typeof n.position_y === "number" ? n.position_y : 160,
         action: typeof n.action === "string" ? n.action : undefined,
@@ -207,7 +203,7 @@ export default function EditPlaybookDefinitionPage() {
         ...original,
         id: newId,
         step_id: `${original.step_id}_copy`,
-        name: `${original.name} (副本)`,
+        name: `${original.name} ${isZh ? "(副本)" : "(Copy)"}`,
         position_x: (original.position_x ?? 0) + 30,
         position_y: (original.position_y ?? 0) + 30,
       };

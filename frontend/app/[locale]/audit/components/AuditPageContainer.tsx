@@ -166,20 +166,20 @@ export function AuditPageContainer() {
           {/* Top Quick Page Size Selector & Mini Pager */}
           {total > 0 && (
             <div className="flex items-center gap-2 bg-surface-card border border-border-subtle px-3 py-1.5 rounded-lg text-xs shadow-subtle">
-              <span className="text-text-muted">{t("pagination.perPagePrefix") || "每页"}</span>
+              <span className="text-text-muted">{t("pagination.perPagePrefix")}</span>
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
                 disabled={isFetching}
                 className="bg-surface-input border border-border-default rounded px-1.5 py-0.5 text-xs text-text-primary font-medium disabled:opacity-50"
-                aria-label="每页显示条数"
+                aria-label={t("pagination.pageSizeLabel")}
               >
                 <option value="25">25</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
                 <option value="200">200</option>
               </select>
-              <span className="text-text-muted">{t("pagination.perPageSuffix") || "条"}</span>
+              <span className="text-text-muted">{t("pagination.perPageSuffix")}</span>
               <div className="h-3 w-px bg-border-strong mx-1" />
               <span className="text-text-secondary font-medium">
                 {page} / {Math.max(1, Math.ceil(total / pageSize))}
@@ -189,7 +189,7 @@ export function AuditPageContainer() {
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page <= 1 || isFetching}
                   className="w-5 h-5 flex items-center justify-center rounded text-text-secondary hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed text-xs"
-                  title={t("pagination.prev") || "上一页"}
+                  title={t("pagination.prev")}
                 >
                   ‹
                 </button>
@@ -197,7 +197,7 @@ export function AuditPageContainer() {
                   onClick={() => setPage(Math.min(Math.ceil(total / pageSize), page + 1))}
                   disabled={page >= Math.ceil(total / pageSize) || isFetching}
                   className="w-5 h-5 flex items-center justify-center rounded text-text-secondary hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed text-xs"
-                  title={t("pagination.next") || "下一页"}
+                  title={t("pagination.next")}
                 >
                   ›
                 </button>
