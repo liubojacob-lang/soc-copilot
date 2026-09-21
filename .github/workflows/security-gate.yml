@@ -64,7 +64,7 @@ jobs:
         working-directory: ./backend
         run: |
           set -o pipefail
-          pip-audit --requirement=requirements.txt --format=json --output=pip-audit-report.json 2>&1 | tee pip-audit-output.txt
+          pip-audit --requirement=requirements.txt --format=json --output=pip-audit-report.json 2>&1 | tee pip-audit-output.txt || true
           # pip-audit exits non-zero when vulnerabilities are found;
           # the gate script decides whether the findings are blocking.
           python ../.github/scripts/check_pip_audit.py pip-audit-report.json
@@ -100,7 +100,7 @@ jobs:
         working-directory: ./frontend
         run: |
           set -o pipefail
-          npm audit --json 2>&1 | tee npm-audit-output.json
+          npm audit --json 2>&1 | tee npm-audit-output.json || true
           # npm audit exits non-zero when vulnerabilities are found;
           # the gate script decides whether the findings are blocking.
           python ../.github/scripts/check_npm_audit.py npm-audit-output.json
