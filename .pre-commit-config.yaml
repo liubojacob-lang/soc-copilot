@@ -19,7 +19,34 @@ repos:
     rev: 5.13.2
     hooks:
       - id: isort
-        args: [--profile, black]
+        # first-party 分组必须显式传参：isort 只按"第一个被检查文件"所在目录查找
+        # pyproject.toml，而 pre-commit 会把所有文件一次性传入；只要列表里混入
+        # backend 之外的文件（根目录的 .py / .md 等），isort 就会退化成"全部按第三方
+        # 排序"，与 ruff(I001) 的分组判据冲突，两者互相改写、CI 永远红。
+        # 注意 isort 的 CLI 选项是 -p/--project（不支持 --known-first-party，
+        # 且逗号不会拆分），需逐个 -p 传入。
+        # 此列表需与 backend/pyproject.toml [tool.isort] 及
+        # backend/ruff.toml [lint.isort] known-first-party 保持一致。
+        args:
+          - --profile=black
+          - -p
+          - core
+          - -p
+          - models
+          - -p
+          - routers
+          - -p
+          - services
+          - -p
+          - middleware
+          - -p
+          - dependencies
+          - -p
+          - db
+          - -p
+          - schemas
+          - -p
+          - repositories
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
@@ -27,7 +54,7 @@ repos:
       - id: mypy
         additional_dependencies:
           - types-requests
-        args: [--ignore-missing-imports]
+        args: [--ignore-missing-imports, --follow-imports=skip]
         exclude: ^tests/
 
   # Frontend hooks
