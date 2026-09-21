@@ -4,9 +4,9 @@ pytest-asyncio>=0.21.0
 pytest-cov>=4.1.0
 httpx>=0.25.0
 asgi-lifespan>=2.1.0
-factory-boy>=3.3.0
+factory-boy>=3.3.3
 faker>=40.39.0
 
 # Security scanning tools (used in CI and pre-commit)
-pip-audit>=2.7.0
+pip-audit>=2.10.1
 safety>=3.8.1

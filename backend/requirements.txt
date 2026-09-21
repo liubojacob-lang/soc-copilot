@@ -2,24 +2,24 @@ fastapi==0.141.1
 uvicorn[standard]==0.53.0
 pydantic[email]==2.13.5
 pydantic-settings==2.15.0
-email-validator>=2.0.0
-python-dotenv==1.2.2
-httpx==0.27.2
-anthropic==0.84.0
-python-json-logger==3.2.1
+email-validator>=2.3.0
+python-dotenv==1.2.3
+httpx==0.28.1
+anthropic==1.6.0
+python-json-logger==4.2.0
 sqlalchemy[asyncio]>=2.0.47
 aiosqlite==0.22.1
-asyncpg==0.30.0
+asyncpg==0.31.0
 numpy>=1.22.5,<3.0
 redis==8.1.0
-tenacity==8.2.3
+tenacity==9.1.4
 requests>=2.32.3
 
 # v0.6.2 additions
 # P0-4: removed passlib (unmaintained, incompatible with bcrypt>=4.0).
 # P0-5: removed python-jose (CVE-2024-33664/33663) — migrated to PyJWT.
 # Password/API-key hashing now uses bcrypt native API directly.
-bcrypt>=4.0.0,<5.0.0
+bcrypt>=4.0.0,<6.0.0
 
 # v0.7.1 additions (trigger system)
 croniter==6.2.4
@@ -29,11 +29,11 @@ alembic==1.20.0
 # chromadb removed: zero references + CVE-2026-45829/45833 (pre-auth code injection, no fix available)
 
 # Phase 3: Advanced Analytics
-scikit-learn==1.5.0
+scikit-learn==1.9.1
 
 # Phase 4: Observability
 prometheus-fastapi-instrumentator==8.1.0  # v0.8.2: Metrics
-psutil>=5.9.0  # System metrics monitoring (CPU, memory)
+psutil>=7.2.2  # System metrics monitoring (CPU, memory)
 
 # P1-24: LLM tracing (optional)
 langfuse>=2.0
@@ -44,7 +44,7 @@ backoff==2.2.1  # Exponential backoff for retry logic
 
 # v1.0.0: Wazuh Integration + P0-5: now the sole JWT library (auth + Wazuh)
 pyjwt>=2.13.0  # JWT encode/decode for app auth and Wazuh API (upgraded from 2.11.0, G4/F-032)
-cryptography>=42.0.0  # Fernet encryption for secrets
+cryptography>=50.0.1  # Fernet encryption for secrets
 
 opentelemetry-api==1.44.0
 opentelemetry-sdk==1.44.0
@@ -63,11 +63,11 @@ WeasyPrint==70.0  # PDF generation from HTML (optional - requires system libs)
 # WeasyPrint system deps (Linux): apt install libpango-1.0-0 libgdk-pixbuf2.0-0 libffi-dev
 
 # Two-Factor Authentication (TOTP - RFC 6238)
-pyotp>=2.9.0
-qrcode[pil]>=8.0
+pyotp>=2.10.0
+qrcode[pil]>=8.2
 
 # Error tracking (T4.1) — main.py imports it conditionally when SENTRY_DSN is set
-sentry-sdk[fastapi]>=2.19.0
+sentry-sdk[fastapi]>=2.69.2
 
 # Pinned transitively for PYSEC-2026-161 (fix >= 1.0.1); fastapi alone
 # permits older starlette in a fresh resolve, which pip-audit gates on.
