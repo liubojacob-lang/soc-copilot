@@ -26,7 +26,7 @@ dependencies = [
     "aiosqlite==0.20.0",
     "asyncpg>=0.29",
     "numpy>=1.22.5,<3.0",
-    "redis==7.2.1",
+    "redis==8.1.0",
     "tenacity==8.2.3",
     "requests==2.34.2",
     # P0-4: removed passlib (unmaintained, incompatible with bcrypt>=4.0)
