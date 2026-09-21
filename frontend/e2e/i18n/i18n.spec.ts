@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { login } from "../utils/auth";
+import { login, TEST_USERS } from "../utils/auth";
 
 test.describe("Internationalization (i18n)", () => {
   test.beforeEach(async ({ page }) => {
-    await login(page, "admin", "admin123!");
+    await login(page, TEST_USERS.admin.username, TEST_USERS.admin.password);
   });
 
   test("loads English content by default", async ({ page }) => {

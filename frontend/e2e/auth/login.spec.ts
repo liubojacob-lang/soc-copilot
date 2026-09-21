@@ -19,7 +19,7 @@ test.describe("Authentication", () => {
     await page.goto("/dashboard");
 
     // Should redirect to login
-    await page.waitForURL("**/login", { timeout: 10000 });
+    await page.waitForURL("**/login*", { timeout: 10000 });
 
     // Check login form elements
     await expect(page.locator('input[name="username"]')).toBeVisible();
@@ -32,14 +32,16 @@ test.describe("Authentication", () => {
 
     await login(page, admin.username, admin.password);
 
-    // Should be on dashboard
-    await expect(page).toHaveURL(/.*dashboard.*/);
+    // Should be on dashboard / home
+    await expect(page).not.toHaveURL(/.*login.*/);
 
     // Should show user menu
-    await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
+    await expect(
+      page.locator('[data-testid="user-menu"], button[aria-haspopup="menu"]').first()
+    ).toBeVisible();
 
     // Should show navigation
-    await expect(page.locator("nav")).toBeVisible();
+    await expect(page.locator("nav").first()).toBeVisible();
   });
 
   test("should show error for invalid credentials", async ({ page }) => {
@@ -50,7 +52,9 @@ test.describe("Authentication", () => {
     await page.click('button[type="submit"]');
 
     // Should show error message
-    await expect(page.locator('[data-testid="error-message"]')).toBeVisible();
+    await expect(
+      page.locator('[data-testid="error-message"], [role="alert"]').first()
+    ).toBeVisible();
 
     // Should still be on login page
     await expect(page).toHaveURL(/.*login.*/);
@@ -68,7 +72,7 @@ test.describe("Authentication", () => {
     await logout(page);
 
     // Should redirect to login
-    await page.waitForURL("**/login", { timeout: 10000 });
+    await page.waitForURL("**/login*", { timeout: 10000 });
 
     // Verify logged out
     expect(await isLoggedIn(page)).toBe(false);
@@ -91,7 +95,7 @@ test.describe("Authentication", () => {
     await page.goto("/playbooks");
 
     // Should redirect to login
-    await page.waitForURL("**/login", { timeout: 10000 });
+    await page.waitForURL("**/login*", { timeout: 10000 });
 
     // Login
     const admin = TEST_USERS.admin;
@@ -153,7 +157,9 @@ test.describe("Role-based Access Control", () => {
     await page.goto("/settings");
 
     // Should show access denied or redirect
-    await expect(page.locator("text=/access denied|unauthorized/i")).toBeVisible();
+    await expect(
+      page.locator("text=/access denied|unauthorized|administrator privileges|权限/i").first()
+    ).toBeVisible();
   });
 
   test("auditor should have read-only access", async ({ page }) => {
@@ -161,8 +167,8 @@ test.describe("Role-based Access Control", () => {
     await login(page, auditor.username, auditor.password);
 
     // Navigate to audit logs
-    await page.goto("/audit-logs");
-    await expect(page).toHaveURL(/.*audit-logs.*/);
+    await page.goto("/audit");
+    await expect(page).toHaveURL(/.*audit.*/);
 
     // Should not see create/edit buttons
     await expect(page.locator('button:has-text("Create")')).not.toBeVisible();

@@ -224,6 +224,7 @@ export default function UsersPage() {
               <div className="flex gap-2">
                 <select
                   value={filters.role}
+                  aria-label={t("allRoles")}
                   onChange={(e) => handleRoleChange(e.target.value)}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
@@ -234,6 +235,7 @@ export default function UsersPage() {
                 </select>
                 <select
                   value={filters.status}
+                  aria-label={t("allStatus")}
                   onChange={(e) => handleStatusChange(e.target.value)}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
                 >
@@ -244,6 +246,7 @@ export default function UsersPage() {
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
+                  aria-label={tCommon("refresh")}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 disabled:opacity-50"
                 >
                   <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />

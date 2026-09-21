@@ -472,6 +472,7 @@ export default function SystemDashboardPage() {
             }`}
             role="switch"
             aria-checked={autoRefresh}
+            aria-label={t("autoRefresh")}
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${

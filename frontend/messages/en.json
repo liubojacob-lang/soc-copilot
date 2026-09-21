@@ -1102,7 +1102,9 @@
     "pagination": {
       "prev": "← Prev",
       "next": "Next →"
-    }
+    },
+    "selectAll": "Select all alerts",
+    "selectRow": "Select this alert"
   },
   "reports": {
     "title": "Reports",

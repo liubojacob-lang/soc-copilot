@@ -1,0 +1,300 @@
+name: E2E Regression Tests
+
+on:
+  pull_request:
+    branches: [master, develop]
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - ".github/workflows/e2e.yml"
+  schedule:
+    # Nightly run at 02:00 UTC (10:00 AM CST)
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      full_suite:
+        description: "Run full suite (14 specs + a11y) instead of PR core specs"
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+  E2E_ADMIN_USERNAME: "admin"
+  E2E_ADMIN_PASSWORD: "admin123"
+  E2E_ANALYST_USERNAME: "analyst"
+  E2E_ANALYST_PASSWORD: "analyst123"
+  E2E_AUDITOR_USERNAME: "auditor"
+  E2E_AUDITOR_PASSWORD: "auditor123"
+  NEXT_PUBLIC_API_URL: "http://127.0.0.1:8088"
+  E2E_BASE_URL: "http://localhost:3003"
+  E2E_BACKEND_URL: "http://127.0.0.1:8088"
+  CI: "true"
+
+jobs:
+  # PR Core E2E Tests (Required for PR gates)
+  # Runs the 4 critical path specs: auth, alerts, cases, dashboard on Chromium
+  e2e-pr-core:
+    name: E2E Core Regression (4 Specs)
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && !inputs.full_suite)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: soc_test_user
+          POSTGRES_PASSWORD: soc_test_password
+          POSTGRES_DB: soc_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache Pip Packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-test.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: ./frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Migrate and Seed Database
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://soc_test_user:soc_test_password@localhost:5432/soc_test_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: e2e-test-secret-key-must-be-at-least-32-chars-long
+          JWT_SECRET: e2e-test-jwt-secret-key-must-be-at-least-32-chars-long
+          SECRET_ENCRYPTION_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+          ENVIRONMENT: development
+          RATE_LIMIT_ENABLED: "false"
+        run: |
+          alembic upgrade head
+          python scripts/seed_demo_data.py
+          python scripts/seed_e2e_users.py
+
+      - name: Start Backend API
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://soc_test_user:soc_test_password@localhost:5432/soc_test_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: e2e-test-secret-key-must-be-at-least-32-chars-long
+          JWT_SECRET: e2e-test-jwt-secret-key-must-be-at-least-32-chars-long
+          SECRET_ENCRYPTION_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+          ENVIRONMENT: development
+          RATE_LIMIT_ENABLED: "false"
+          PORT: 8088
+        run: |
+          uvicorn main:app --host 0.0.0.0 --port 8088 > backend.log 2>&1 &
+          echo $! > backend.pid
+
+          # Wait for backend health check
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:8088/api/health | grep -q "ok"; then
+              echo "✅ Backend is healthy and responding on :8088"
+              break
+            fi
+            echo "Waiting for backend (:8088)..."
+            sleep 2
+          done
+
+      - name: Run Core Playwright Specs
+        working-directory: ./frontend
+        run: |
+          npx playwright test \
+            e2e/auth/login.spec.ts \
+            e2e/alerts/alert.spec.ts \
+            e2e/cases/cases.spec.ts \
+            e2e/dashboard/dashboard.spec.ts \
+            --project=chromium
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-core-report
+          path: frontend/playwright-report/
+          retention-days: 14
+
+      - name: Upload Backend Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log-core
+          path: backend/backend.log
+          retention-days: 7
+
+  # Nightly Full E2E Tests (14 Specs + A11y with single worker)
+  e2e-nightly-full:
+    name: E2E Nightly Full Suite (14 Specs + A11y)
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full_suite)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: soc_test_user
+          POSTGRES_PASSWORD: soc_test_password
+          POSTGRES_DB: soc_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache Pip Packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-test.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        working-directory: ./frontend
+        run: npx playwright install --with-deps
+
+      - name: Migrate and Seed Database
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://soc_test_user:soc_test_password@localhost:5432/soc_test_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: e2e-test-secret-key-must-be-at-least-32-chars-long
+          JWT_SECRET: e2e-test-jwt-secret-key-must-be-at-least-32-chars-long
+          SECRET_ENCRYPTION_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+          ENVIRONMENT: development
+          RATE_LIMIT_ENABLED: "false"
+        run: |
+          alembic upgrade head
+          python scripts/seed_demo_data.py
+          python scripts/seed_e2e_users.py
+
+      - name: Start Backend API
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://soc_test_user:soc_test_password@localhost:5432/soc_test_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: e2e-test-secret-key-must-be-at-least-32-chars-long
+          JWT_SECRET: e2e-test-jwt-secret-key-must-be-at-least-32-chars-long
+          SECRET_ENCRYPTION_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+          ENVIRONMENT: development
+          RATE_LIMIT_ENABLED: "false"
+          PORT: 8088
+        run: |
+          uvicorn main:app --host 0.0.0.0 --port 8088 > backend.log 2>&1 &
+          echo $! > backend.pid
+
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:8088/api/health | grep -q "ok"; then
+              echo "✅ Backend is healthy and responding on :8088"
+              break
+            fi
+            echo "Waiting for backend (:8088)..."
+            sleep 2
+          done
+
+      - name: Run Full Playwright Suite (Single Worker)
+        working-directory: ./frontend
+        run: npx playwright test --workers=1
+
+      - name: Run Accessibility Tests
+        working-directory: ./frontend
+        if: always()
+        run: npx playwright test e2e/a11y --workers=1
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-nightly-report
+          path: frontend/playwright-report/
+          retention-days: 14
+
+      - name: Upload Backend Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log-nightly
+          path: backend/backend.log
+          retention-days: 7

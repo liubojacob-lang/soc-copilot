@@ -278,6 +278,7 @@ export default function MarketplacePage() {
             <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
               <select
                 value={selectedCategory}
+                aria-label={t("allCategories")}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="px-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-surface-active dark:text-white text-xs sm:text-sm font-medium"
               >
@@ -291,6 +292,7 @@ export default function MarketplacePage() {
 
               <select
                 value={selectedDifficulty}
+                aria-label={t("allDifficulties")}
                 onChange={(e) => setSelectedDifficulty(e.target.value)}
                 className="px-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-surface-active dark:text-white text-xs sm:text-sm font-medium"
               >
@@ -302,6 +304,7 @@ export default function MarketplacePage() {
 
               <select
                 value={sortBy}
+                aria-label={t("sortBy")}
                 onChange={(e) => setSortBy(e.target.value as "rating" | "downloads" | "newest")}
                 className="px-3 py-2 border border-border-subtle dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-surface-active dark:text-white text-xs sm:text-sm font-medium"
               >

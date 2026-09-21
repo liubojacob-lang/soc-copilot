@@ -81,6 +81,7 @@ export function UserMenu({ user, onLogout, getRoleBadgeClass }: UserMenuProps) {
       {/* Navbar trigger button */}
       <button
         type="button"
+        data-testid="user-menu"
         onClick={() => setIsOpen(!isOpen)}
         className={`h-8 inline-flex items-center gap-2 p-1 pr-2.5 rounded-xl border transition-all duration-150 select-none shadow-subtle shrink-0 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer ${
           isOpen

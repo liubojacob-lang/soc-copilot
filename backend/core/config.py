@@ -135,6 +135,12 @@ class Settings(BaseSettings):
     # v0.8.2: Redis settings for distributed deployments
     redis_url: str = ""  # Redis connection URL (e.g., redis://localhost:6379/0)
     redis_enabled: bool = False  # Enable Redis for token blacklist and idempotency
+    rate_limit_enabled: bool = (
+        True  # Enable/disable rate limiting (set to False to disable)
+    )
+    rate_limit_login_max_requests: int = (
+        1000  # Max login requests per minute (relaxed default)
+    )
 
     # v1.1: Message queue backend selection
     queue_backend: str = (

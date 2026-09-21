@@ -379,6 +379,7 @@ export default function CorrelationPage() {
                 </div>
                 <select
                   value={severityFilter}
+                  aria-label={t("allSeverity")}
                   onChange={(e) => setSeverityFilter(e.target.value)}
                   className="px-4 py-2 border border-border-subtle rounded-lg bg-surface-ground text-text-primary text-sm focus:outline-none focus:border-accent-500 transition-colors"
                 >
@@ -536,6 +537,7 @@ export default function CorrelationPage() {
                 <div className="flex items-center gap-3">
                   <select
                     value={ruleStatusFilter}
+                    aria-label={t("allStatus")}
                     onChange={(e) => setRuleStatusFilter(e.target.value as any)}
                     className="px-3.5 py-2 border border-border-subtle rounded-lg bg-surface-ground text-text-primary text-sm focus:outline-none focus:border-accent-500 transition-colors"
                   >

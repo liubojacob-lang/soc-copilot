@@ -1,15 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { login } from "../utils/auth";
+import { login, TEST_USERS } from "../utils/auth";
 
 test.describe("Dashboard Home Page", () => {
   test.beforeEach(async ({ page }) => {
-    await login(page, "admin", "admin123!");
+    await login(page, TEST_USERS.admin.username, TEST_USERS.admin.password);
   });
 
   test("displays dashboard with key widgets", async ({ page }) => {
     await page.goto("/en");
 
-    await expect(page.locator("text=Alert")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Alert").first()).toBeVisible({ timeout: 10000 });
   });
 
   test("shows alert severity distribution", async ({ page }) => {
@@ -22,8 +22,8 @@ test.describe("Dashboard Home Page", () => {
   test("displays navigation sidebar", async ({ page }) => {
     await page.goto("/en");
 
-    await expect(page.locator("text=Alerts")).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("text=Playbooks")).toBeVisible();
+    await expect(page.locator("text=Alerts").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=/Playbook/i").first()).toBeVisible();
   });
 
   test("navigates to alerts page from dashboard", async ({ page }) => {
@@ -37,9 +37,9 @@ test.describe("Dashboard Home Page", () => {
   test("shows system status indicator", async ({ page }) => {
     await page.goto("/en");
 
-    const statusIndicator = page.locator(
-      '[data-testid="system-status"], .status-indicator, text=/online|healthy|connected/i'
-    );
+    const statusIndicator = page
+      .locator('[data-testid="system-status"], .status-indicator')
+      .or(page.getByText(/online|healthy|connected/i));
     if ((await statusIndicator.count()) > 0) {
       await expect(statusIndicator.first()).toBeVisible();
     }
@@ -49,12 +49,11 @@ test.describe("Dashboard Home Page", () => {
     await page.goto("/en");
 
     const userMenu = page
-      .locator('[data-testid="user-menu"], button:has-text("admin"), [aria-label="User menu"]')
+      .locator('button[aria-label*="account"], button[aria-haspopup="menu"]')
       .first();
-    if (await userMenu.isVisible()) {
-      await userMenu.click();
-      await expect(page.locator("text=/logout|sign out/i")).toBeVisible();
-    }
+    await expect(userMenu).toBeVisible({ timeout: 10000 });
+    await userMenu.click();
+    await expect(page.locator("text=/logout|sign out|退出/i").first()).toBeVisible();
   });
 
   test("shows recent activity or alerts summary", async ({ page }) => {

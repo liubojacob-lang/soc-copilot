@@ -198,6 +198,7 @@ export default function LoginPage() {
             {/* Error Message Alert */}
             {error && (
               <div
+                data-testid="error-message"
                 className="mb-5 p-3 rounded-lg bg-danger-500/10 border border-danger-500/25 flex items-start gap-2.5 text-danger-700 dark:text-danger-400 text-xs sm:text-sm animate-in fade-in duration-200"
                 role="alert"
               >

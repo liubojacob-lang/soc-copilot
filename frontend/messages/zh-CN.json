@@ -1102,7 +1102,9 @@
     "pagination": {
       "prev": "← 上一页",
       "next": "下一页 →"
-    }
+    },
+    "selectAll": "全选所有告警",
+    "selectRow": "选择此告警"
   },
   "reports": {
     "title": "报告",

@@ -36,8 +36,13 @@ export const TEST_USERS: Record<string, TestUser> = {
   },
 };
 
-/** Per-username session cookies captured from the first successful UI login. */
-const sessionCache = new Map<string, Cookie[]>();
+interface CachedSession {
+  cookies: Cookie[];
+  userStorage: string | null;
+}
+
+/** Per-username session cookies and user storage captured from the first successful UI login. */
+const sessionCache = new Map<string, CachedSession>();
 
 /**
  * Get locale for E2E tests
@@ -79,17 +84,43 @@ export async function login(page: Page, username: string, password: string): Pro
   const cached = sessionCache.get(username);
 
   if (cached) {
-    await page.context().addCookies(cached);
+    await page.context().addCookies(cached.cookies);
     // The replayed cookie may have expired server-side; detect and re-login.
     const probe = await page.request.get(`/api/v1/auth/me`);
     if (probe.status() === 200) {
+      if (page.url() === "about:blank") {
+        await page.goto(`/${locale}/login`, { waitUntil: "domcontentloaded" });
+      }
+      if (cached.userStorage) {
+        await page.evaluate((val) => {
+          try {
+            localStorage.setItem("user", val);
+          } catch {}
+        }, cached.userStorage);
+      }
+      if (page.url().includes("/login")) {
+        await page.goto(`/${locale}`, { waitUntil: "domcontentloaded" });
+      }
       return;
     }
     sessionCache.delete(username);
   }
 
   await submitLoginForm(page, username, password);
-  sessionCache.set(username, await page.context().cookies());
+  let userStorage = await page.evaluate(() => localStorage.getItem("user")).catch(() => null);
+  if (!userStorage) {
+    const probe = await page.request.get(`/api/v1/auth/me`);
+    if (probe.status() === 200) {
+      const userData = await probe.json().catch(() => null);
+      if (userData) {
+        userStorage = JSON.stringify(userData);
+      }
+    }
+  }
+  sessionCache.set(username, {
+    cookies: await page.context().cookies(),
+    userStorage,
+  });
   await page.waitForTimeout(500);
 }
 
@@ -115,8 +146,14 @@ export async function logout(page: Page): Promise<void> {
  */
 export async function isLoggedIn(page: Page): Promise<boolean> {
   try {
+    const cookies = await page.context().cookies();
+    const hasCookie = cookies.some(
+      (c) =>
+        c.name === "access_token" || c.name === "access_token_cookie" || c.name === "refresh_token"
+    );
+    if (hasCookie) return true;
     const hasToken = await page.evaluate(() => {
-      return !!document.cookie.includes("access_token");
+      return !!(document.cookie.includes("access_token") || localStorage.getItem("access_token"));
     });
     return hasToken;
   } catch {

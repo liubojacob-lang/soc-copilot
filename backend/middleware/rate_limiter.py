@@ -470,9 +470,10 @@ def rate_limit(max_requests: int = 10, window_seconds: int = 60):
     def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # Skip rate limiting in test environment (tests fire rapid requests
-            # and would otherwise hit limits, producing false 429 failures).
-            if settings.environment == "test":
+            # Skip rate limiting in test environment or when rate limiting is disabled
+            if settings.environment == "test" or not getattr(
+                settings, "rate_limit_enabled", True
+            ):
                 return await func(*args, **kwargs)
 
             # Extract request from kwargs or args
@@ -482,9 +483,7 @@ def rate_limit(max_requests: int = 10, window_seconds: int = 60):
                     (v for v in kwargs.values() if isinstance(v, Request)), None
                 )
             if not isinstance(request, Request):
-                request = next(
-                    (v for v in args if isinstance(v, Request)), None
-                )
+                request = next((v for v in args if isinstance(v, Request)), None)
             if not request or not isinstance(request, Request):
                 return await func(*args, **kwargs)
 
