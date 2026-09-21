@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check PR title follows Conventional Commits
-        uses: amannn/action-semantic-pull-request@v5.5.3
+        uses: amannn/action-semantic-pull-request@v6.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -47,7 +47,7 @@ jobs:
     name: PR Description Completeness
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check PR description is not empty
         env:
@@ -73,7 +73,7 @@ jobs:
     name: PR Size Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check PR change size
         env:
@@ -107,7 +107,7 @@ jobs:
       has_security_changes: ${{ steps.detect.outputs.has_security_changes }}
       security_files: ${{ steps.detect.outputs.security_files }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Detect security-related file changes
         id: detect
@@ -189,7 +189,7 @@ jobs:
     outputs:
       has_migration: ${{ steps.detect.outputs.has_migration }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Detect database migration changes
         id: detect
