@@ -1,6 +1,6 @@
 [project]
 name = "soc-copilot-backend"
-version = "0.9.4"
+version = "1.0.0"
 description = "SOC Copilot - AI-Powered Security Operations Center"
 readme = "README.md"
 requires-python = ">=3.12"

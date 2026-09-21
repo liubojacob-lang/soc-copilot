@@ -5,6 +5,37 @@ All notable changes to SOC Copilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-09-21
+
+### Milestone — Production GA Release
+This is the official v1.0.0 General Availability release of SOC Copilot, representing a fully hardened, production-ready Security Operations Center intelligent analysis workbench.
+
+### Added & Quality
+- **E2E Regression CI Workflow (`.github/workflows/e2e.yml`)**: Two-tier automated testing:
+  - PR-required fast regression job executing 4 core user flows (`login`, `alert`, `cases`, `dashboard`) across Chromium in parallel with 0 test retries.
+  - Nightly scheduled matrix job running full 14 spec suites and axe-core accessibility checks.
+  - Test user database seeding (`backend/scripts/seed_e2e_users.py`) for consistent test state across CI runners.
+  - Isolated Playwright authentication strategy preventing session bleed and logout redirect races across workers.
+- **Backend Test Coverage Floor Tightened to 55%**:
+  - Full test suite expanded to 1,248 tests passing cleanly.
+  - Measured line coverage increased from 50.70% baseline to **55.15%**, covering previously untested mission-critical business logic (`AlertCRUDService`, `CaseService` state machine transitions, `AuthService` lockout and token rotation, `TokenBlacklist`, `PlaybookVersionService`, `PerformanceMonitor`, and playbook executors).
+  - `--cov-fail-under` floor officially raised from 50% to 55% in `backend/pytest.ini`.
+- **alert-worker End-to-End Pipeline Verification (`backend/scripts/verify_alert_worker.py`)**:
+  - Validated Redis Streams message ingestion (`events:critical`), automated consumer group lifecycle (`alert_workers_group`), notification template rendering, multi-channel webhook dispatch (Feishu, Slack, Email), and explicit message acknowledgment.
+  - Unit test suite added (`backend/tests/test_alert_worker_pipeline.py`).
+
+### Infrastructure & Deployment
+- **Production Compose Hardening (`docker-compose.prod.yml`)**:
+  - Backend, frontend, and alert-worker images pinned to prebuilt production release tags `${DOCKERHUB_USERNAME}/soc-copilot-*:1.0.0`.
+  - Alert-worker updated to use prebuilt backend container images in replicated mode (`replicas: 3`) with explicit resource limits (`cpus: 0.5`, `memory: 256M`).
+  - Production resource constraints applied across all core services (PostgreSQL 2 CPU/2GB, Redis 1 CPU/768MB, Nginx 1 CPU/512MB).
+  - Production compose config validated with `.env.production.example`.
+
+### Scope & Deferrals
+- **Deferred to v1.x (Deliberate Architectural Decisions)**:
+  - Enterprise SSO (SAML 2.0 / OIDC): deferred to v1.1 to preserve the stability of the RFC 6238 TOTP and JWT architecture.
+  - Kubernetes multi-instance / Distributed Multi-Tenancy: deferred to v1.2; v1.0.0 standardizes on single-tenant high-reliability Docker Compose and PostgreSQL/Redis clustering.
+
 ## [0.9.4] - 2026-09-19
 
 ### Security
