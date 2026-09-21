@@ -159,9 +159,7 @@ class TestCheckTrivyInstalled:
             "subprocess.run",
             Mock(return_value=Mock(returncode=1)),
         )
-        monkeypatch.setattr(
-            "os.path.exists", lambda p: p == "/opt/homebrew/bin/trivy"
-        )
+        monkeypatch.setattr("os.path.exists", lambda p: p == "/opt/homebrew/bin/trivy")
         service = TrivyService(make_session())
         assert service._check_trivy_installed() is True
         assert service._trivy_path == "/opt/homebrew/bin/trivy"
@@ -189,21 +187,23 @@ class TestScanImage:
 
         assert result == cached
 
-    async def test_mock_result_when_trivy_missing(self, monkeypatch):
+    async def test_refuses_mock_data_when_trivy_missing(self, monkeypatch):
+        """T1.2 contract: a missing scanner must surface as an error.
+
+        Returning fabricated CVE results from a security scanner misleads
+        analysts, so the service refuses instead of degrading to mock data.
+        """
+        from services.integration.trivy_service import TrivyNotInstalledError
+
         session = make_session()
         service = TrivyService(session)
-        monkeypatch.setattr(
-            service, "_check_trivy_installed", Mock(return_value=False)
-        )
+        monkeypatch.setattr(service, "_check_trivy_installed", Mock(return_value=False))
 
-        result = await service.scan_image("nginx:1.21")
+        with pytest.raises(TrivyNotInstalledError):
+            await service.scan_image("nginx:1.21")
 
-        assert result["total_vulnerabilities"] == 5
-        assert result["severity_counts"]["HIGH"] == 3
-        assert result["severity_counts"]["MEDIUM"] == 2
-        # Result is cached for later runs
-        assert session.execute.await_count >= 2
-        session.commit.assert_awaited()
+        # No scan result may be cached from a refused scan
+        assert session.commit.await_count == 0
 
     async def test_successful_scan_parses_and_caches(self, monkeypatch):
 

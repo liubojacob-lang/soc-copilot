@@ -51,6 +51,11 @@ logger = get_logger(__name__)
 
 router = APIRouter(tags=["WebSocket"])
 
+# Operational HTTP endpoints. Registered under /api/v1 only, unlike `router`,
+# which must stay mounted at the bare path because nginx proxies `location /ws`
+# straight to the WebSocket endpoint.
+ops_router = APIRouter(tags=["WebSocket"])
+
 
 async def push_alert(alert_data: dict[str, Any]):
     """Push an alert to all connected clients.
@@ -306,7 +311,7 @@ async def alerts_websocket(
         await manager.disconnect(websocket)
 
 
-@router.get("/ws/stats")
+@ops_router.get("/ws/stats")
 async def get_websocket_stats(user=Depends(get_current_user)):
     """Get WebSocket connection statistics."""
     manager = get_manager()
@@ -316,7 +321,7 @@ async def get_websocket_stats(user=Depends(get_current_user)):
     }
 
 
-@router.get("/ws/monitoring/metrics")
+@ops_router.get("/ws/monitoring/metrics")
 async def get_monitoring_metrics(user=Depends(get_current_user)):
     """Get current WebSocket monitoring metrics."""
     try:
@@ -334,7 +339,7 @@ async def get_monitoring_metrics(user=Depends(get_current_user)):
         }
 
 
-@router.get("/ws/monitoring/health")
+@ops_router.get("/ws/monitoring/health")
 async def get_monitoring_health(user=Depends(get_current_user)):
     """Get WebSocket system health score."""
     try:
@@ -353,7 +358,7 @@ async def get_monitoring_health(user=Depends(get_current_user)):
         return {"health_score": 0.0, "status": "error", "error": str(e)}
 
 
-@router.get("/ws/monitoring/summary")
+@ops_router.get("/ws/monitoring/summary")
 async def get_monitoring_summary(user=Depends(get_current_user)):
     """Get WebSocket monitoring summary."""
     try:
@@ -373,7 +378,7 @@ async def get_monitoring_summary(user=Depends(get_current_user)):
         }
 
 
-@router.get("/ws/compression/stats")
+@ops_router.get("/ws/compression/stats")
 async def get_compression_stats(user=Depends(get_current_user)):
     """Get message compression statistics."""
     try:
@@ -390,7 +395,7 @@ async def get_compression_stats(user=Depends(get_current_user)):
         }
 
 
-@router.post("/ws/compression/reset-stats")
+@ops_router.post("/ws/compression/reset-stats")
 async def reset_compression_stats(user=Depends(get_current_user)):
     """Reset compression statistics."""
     try:
@@ -402,7 +407,7 @@ async def reset_compression_stats(user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to reset stats: {e!s}")
 
 
-@router.get("/ws/batch/stats")
+@ops_router.get("/ws/batch/stats")
 async def get_batch_stats(user=Depends(get_current_user)):
     """Get message batching statistics."""
     try:
@@ -416,7 +421,7 @@ async def get_batch_stats(user=Depends(get_current_user)):
         return {"total_batches": 0, "total_messages_batched": 0, "avg_batch_size": 0.0}
 
 
-@router.post("/ws/batch/flush")
+@ops_router.post("/ws/batch/flush")
 async def flush_batches(user=Depends(get_current_user)):
     """Manually flush all pending message batches."""
     try:
@@ -430,7 +435,7 @@ async def flush_batches(user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to flush batches: {e!s}")
 
 
-@router.get("/ws/pool/stats")
+@ops_router.get("/ws/pool/stats")
 async def get_pool_stats(user=Depends(get_current_user)):
     """Get connection pool statistics."""
     try:

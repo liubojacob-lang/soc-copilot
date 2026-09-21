@@ -137,11 +137,11 @@ class CorrelatedEvent(Base):
 
     # Metadata — real timestamps (were String(50) ISO text before v0.9.2)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )
 
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )
 
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

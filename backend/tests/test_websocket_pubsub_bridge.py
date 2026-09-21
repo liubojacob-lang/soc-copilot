@@ -118,25 +118,29 @@ class TestWebSocketPubSubBridge:
         mock_pubsub = AsyncMock()
         mock_redis.pubsub.return_value = mock_pubsub
 
-        peer_payload = json.dumps({
-            "sender_id": "other-peer-instance-999",
-            "channel": "alerts",
-            "message": {
-                "type": "alert",
-                "data": {"title": "Peer Pod Alert"},
-                "timestamp": "2026-09-04T12:00:00Z",
-            },
-        })
+        peer_payload = json.dumps(
+            {
+                "sender_id": "other-peer-instance-999",
+                "channel": "alerts",
+                "message": {
+                    "type": "alert",
+                    "data": {"title": "Peer Pod Alert"},
+                    "timestamp": "2026-09-04T12:00:00Z",
+                },
+            }
+        )
 
-        self_payload = json.dumps({
-            "sender_id": connection_manager._instance_id,  # Echo from self
-            "channel": "alerts",
-            "message": {
-                "type": "alert",
-                "data": {"title": "Self Echo Alert"},
-                "timestamp": "2026-09-04T12:00:00Z",
-            },
-        })
+        self_payload = json.dumps(
+            {
+                "sender_id": connection_manager._instance_id,  # Echo from self
+                "channel": "alerts",
+                "message": {
+                    "type": "alert",
+                    "data": {"title": "Self Echo Alert"},
+                    "timestamp": "2026-09-04T12:00:00Z",
+                },
+            }
+        )
 
         async def mock_listen():
             # 1. Message from peer

@@ -54,6 +54,17 @@ export default function NewWebhookTriggerPage() {
     fetchDefinitions();
   }, [router]);
 
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (showSuccessModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [showSuccessModal]);
+
   const fetchDefinitions = async () => {
     try {
       const data = await authFetchJSON<{ items: Definition[]; total: number }>(
@@ -227,8 +238,16 @@ export default function NewWebhookTriggerPage() {
 
       {/* Success Modal */}
       {showSuccessModal && createdTrigger && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) handleCloseModal();
+          }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="mb-4">
               <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
                 <svg

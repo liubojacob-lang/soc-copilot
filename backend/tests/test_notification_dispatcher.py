@@ -7,12 +7,10 @@ from __future__ import annotations
 
 import unittest.mock as mock
 import uuid
-from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
 
-from models.on_call_schedule import OnCallSchedule
 from services.notification_service import NotificationService
 from services.notifications.base import NotificationMessage, NotificationProvider
 from services.notifications.email import EmailProvider
@@ -24,6 +22,7 @@ from services.notifications.templates import render_alert_template
 # ─────────────────────────────────────────────────────────────
 # 1. Template Rendering & Message Formulation Tests
 # ─────────────────────────────────────────────────────────────
+
 
 def test_render_alert_template_standard():
     alert = {
@@ -52,12 +51,17 @@ def test_render_alert_template_fallback_values():
 # 2. Individual Provider Unit Tests with Mocks
 # ─────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_feishu_provider_send_success():
-    provider = FeishuProvider(webhook_url="https://open.feishu.cn/open-apis/bot/v2/hook/test")
+    provider = FeishuProvider(
+        webhook_url="https://open.feishu.cn/open-apis/bot/v2/hook/test"
+    )
     assert provider.is_configured() is True
 
-    msg = NotificationMessage(title="Test Alert", body="Alert details", severity="high", payload={})
+    msg = NotificationMessage(
+        title="Test Alert", body="Alert details", severity="high", payload={}
+    )
 
     with mock.patch("aiohttp.ClientSession.post") as mock_post:
         mock_resp = mock.AsyncMock()
@@ -82,10 +86,14 @@ async def test_feishu_provider_unconfigured():
 
 @pytest.mark.asyncio
 async def test_slack_provider_send_success():
-    provider = SlackProvider(webhook_url="https://hooks.slack.com/services/test/test/test")
+    provider = SlackProvider(
+        webhook_url="https://hooks.slack.com/services/test/test/test"
+    )
     assert provider.is_configured() is True
 
-    msg = NotificationMessage(title="Critical Alert", body="Host compromised", severity="critical", payload={})
+    msg = NotificationMessage(
+        title="Critical Alert", body="Host compromised", severity="critical", payload={}
+    )
 
     with mock.patch("aiohttp.ClientSession.post") as mock_post:
         mock_resp = mock.AsyncMock()
@@ -99,9 +107,13 @@ async def test_slack_provider_send_success():
 
 @pytest.mark.asyncio
 async def test_slack_provider_send_failure():
-    provider = SlackProvider(webhook_url="https://hooks.slack.com/services/test/test/test")
+    provider = SlackProvider(
+        webhook_url="https://hooks.slack.com/services/test/test/test"
+    )
 
-    msg = NotificationMessage(title="Critical Alert", body="Details", severity="critical", payload={})
+    msg = NotificationMessage(
+        title="Critical Alert", body="Details", severity="critical", payload={}
+    )
 
     with mock.patch("aiohttp.ClientSession.post") as mock_post:
         mock_resp = mock.AsyncMock()
@@ -121,7 +133,9 @@ async def test_email_provider_send_mocked():
     provider.smtp_password = "test-" + uuid.uuid4().hex
     assert provider.is_configured() is True
 
-    msg = NotificationMessage(title="Security Notice", body="Test email content", severity="low", payload={})
+    msg = NotificationMessage(
+        title="Security Notice", body="Test email content", severity="low", payload={}
+    )
 
     with mock.patch("smtplib.SMTP") as mock_smtp_cls:
         mock_smtp_inst = mock.MagicMock()
@@ -130,7 +144,9 @@ async def test_email_provider_send_mocked():
         result = await provider.send(msg)
         assert result is True
         mock_smtp_inst.starttls.assert_called_once()
-        mock_smtp_inst.login.assert_called_once_with("soc-bot@example.com", provider.smtp_password)
+        mock_smtp_inst.login.assert_called_once_with(
+            "soc-bot@example.com", provider.smtp_password
+        )
         mock_smtp_inst.sendmail.assert_called_once()
 
 
@@ -140,7 +156,9 @@ async def test_email_provider_unconfigured():
     provider.to_email = None
     assert provider.is_configured() is False
 
-    msg = NotificationMessage(title="Notice", body="Content", severity="low", payload={})
+    msg = NotificationMessage(
+        title="Notice", body="Content", severity="low", payload={}
+    )
     result = await provider.send(msg)
     assert result is False
 
@@ -149,8 +167,11 @@ async def test_email_provider_unconfigured():
 # 3. NotificationService Facade & Event Bus Integration Tests
 # ─────────────────────────────────────────────────────────────
 
+
 class MockProvider(NotificationProvider):
-    def __init__(self, name: str, should_succeed: bool = True, raise_error: bool = False):
+    def __init__(
+        self, name: str, should_succeed: bool = True, raise_error: bool = False
+    ):
         self.name = name
         self.should_succeed = should_succeed
         self.raise_error = raise_error
@@ -178,7 +199,9 @@ async def test_notification_service_send_alert_multi_channel():
     svc.registry.register(p_slack)
     svc.registry.register(p_email)
 
-    with mock.patch.object(svc.event_bus, "publish", new_callable=mock.AsyncMock) as mock_publish:
+    with mock.patch.object(
+        svc.event_bus, "publish", new_callable=mock.AsyncMock
+    ) as mock_publish:
         alert = {
             "id": "ALT-555",
             "title": "SQL Injection Attempt",
@@ -222,9 +245,12 @@ async def test_notification_service_filtered_channels():
 # 4. API Router Endpoints Tests (/api/v1/notifications/...)
 # ─────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_notification_router_test_endpoint(auth_client: AsyncClient):
-    with mock.patch("services.notification_service.NotificationService.send_alert") as mock_send:
+    with mock.patch(
+        "services.notification_service.NotificationService.send_alert"
+    ) as mock_send:
         mock_send.return_value = {"feishu": True, "slack": True}
 
         response = await auth_client.post(
@@ -268,26 +294,3 @@ async def test_notification_router_health(auth_client: AsyncClient):
     assert "redis" in data
     assert "streams" in data
     assert "channels" in data
-
-
-# ─────────────────────────────────────────────────────────────
-# 5. On-Call Schedule Model Unit Tests
-# ─────────────────────────────────────────────────────────────
-
-def test_on_call_schedule_model():
-    now = datetime.now(UTC)
-    end = now + timedelta(days=7)
-    schedule = OnCallSchedule(
-        id="schedule-001",
-        user_id="user-analyst-1",
-        start_date=now,
-        end_date=end,
-        rotation_group="tier1_soc",
-        is_primary=True,
-    )
-
-    assert schedule.id == "schedule-001"
-    assert schedule.user_id == "user-analyst-1"
-    assert schedule.rotation_group == "tier1_soc"
-    assert schedule.is_primary is True
-    assert schedule.end_date > schedule.start_date

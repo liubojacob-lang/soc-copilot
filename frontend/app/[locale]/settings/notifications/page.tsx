@@ -142,7 +142,7 @@ export default function NotificationSettingsPage() {
         <PageHeader title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-text-tertiary" />
           </div>
         </main>
       </div>
@@ -165,7 +165,7 @@ export default function NotificationSettingsPage() {
             className={`mb-6 p-4 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"}`}
           >
             <p
-              className={`text-sm ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+              className={`text-sm ${testResult.success ? "text-green-700 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
             >
               {testResult.success ? (
                 <CheckCircle className="w-4 h-4 inline mr-2" />
@@ -266,12 +266,12 @@ export default function NotificationSettingsPage() {
               </div>
               <div className="flex items-center gap-4">
                 {channels?.feishu ? (
-                  <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <span className="flex items-center gap-1 text-green-700 dark:text-green-400">
                     <CheckCircle className="w-5 h-5" />
                     {t("configured")}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-gray-400">
+                  <span className="flex items-center gap-1 text-text-tertiary">
                     <XCircle className="w-5 h-5" />
                     {t("notConfigured")}
                   </span>
@@ -308,12 +308,12 @@ export default function NotificationSettingsPage() {
               </div>
               <div className="flex items-center gap-4">
                 {channels?.slack ? (
-                  <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <span className="flex items-center gap-1 text-green-700 dark:text-green-400">
                     <CheckCircle className="w-5 h-5" />
                     {t("configured")}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-gray-400">
+                  <span className="flex items-center gap-1 text-text-tertiary">
                     <XCircle className="w-5 h-5" />
                     {t("notConfigured")}
                   </span>
@@ -339,7 +339,7 @@ export default function NotificationSettingsPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                  <Mail className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  <Mail className="w-6 h-6 text-green-700 dark:text-green-400" />
                 </div>
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -350,12 +350,12 @@ export default function NotificationSettingsPage() {
               </div>
               <div className="flex items-center gap-4">
                 {channels?.email ? (
-                  <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <span className="flex items-center gap-1 text-green-700 dark:text-green-400">
                     <CheckCircle className="w-5 h-5" />
                     {t("configured")}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-gray-400">
+                  <span className="flex items-center gap-1 text-text-tertiary">
                     <XCircle className="w-5 h-5" />
                     {t("notConfigured")}
                   </span>
@@ -386,7 +386,7 @@ export default function NotificationSettingsPage() {
                 {t("configInfoTitle")}
               </h4>
               <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">{t("configInfoDesc")}</p>
-              <div className="mt-2 text-xs text-blue-600 dark:text-blue-400 space-y-1">
+              <div className="mt-2 text-xs text-blue-700 dark:text-blue-400 space-y-1">
                 <p>
                   •{" "}
                   <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">
@@ -419,7 +419,7 @@ function HealthCell({ label, healthy }: { label: string; healthy: boolean }) {
     <div className="p-3 rounded border border-gray-200 dark:border-gray-700 flex items-center justify-between">
       <span className="text-gray-700 dark:text-gray-300">{label}</span>
       {healthy ? (
-        <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+        <span className="text-green-700 dark:text-green-400 flex items-center gap-1">
           <CheckCircle className="w-4 h-4" />
           OK
         </span>

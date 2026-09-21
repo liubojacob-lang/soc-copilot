@@ -31,22 +31,7 @@ import {
 } from "lucide-react";
 import { RuleDetailsDrawer, CorrelationRule } from "./components/RuleDetailsDrawer";
 import { RuleFormModal } from "./components/RuleFormModal";
-
-interface Incident {
-  id: string;
-  title: string;
-  description: string | null;
-  severity: string;
-  attack_type: string | null;
-  confidence_score: number;
-  raw_event_count: number;
-  common_entities: Record<string, any>;
-  first_seen: string;
-  last_seen: string;
-  status: string;
-  risk_score: number;
-  created_at: string;
-}
+import { IncidentDetailsDrawer, type Incident } from "./components/IncidentDetailsDrawer";
 
 interface Stats {
   total_incidents: number;
@@ -68,7 +53,7 @@ const STATUS_COLORS = {
   open: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   investigating: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
   resolved: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  closed: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400",
+  closed: "bg-surface-hover text-text-secondary dark:bg-surface-active dark:text-text-primary",
 };
 
 export default function CorrelationPage() {
@@ -99,6 +84,10 @@ export default function CorrelationPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<CorrelationRule | null>(null);
   const [deletingRuleId, setDeletingRuleId] = useState<string | null>(null);
+
+  // Incident Detail Drawer State
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [isIncidentDetailsOpen, setIsIncidentDetailsOpen] = useState(false);
 
   useEffect(() => {
     const authState = loadAuthState();
@@ -231,6 +220,25 @@ export default function CorrelationPage() {
     setRefreshing(false);
   };
 
+  const handleViewIncident = (incident: Incident) => {
+    setSelectedIncident(incident);
+    setIsIncidentDetailsOpen(true);
+  };
+
+  const handleUpdateIncidentStatus = async (incidentId: string, newStatus: string) => {
+    await authFetchJSON(
+      `/api/correlation/incidents/${incidentId}/status?status=${encodeURIComponent(newStatus)}`,
+      { method: "PUT" }
+    );
+    // Update local state
+    setIncidents((prev) =>
+      prev.map((item) => (item.id === incidentId ? { ...item, status: newStatus } : item))
+    );
+    if (selectedIncident && selectedIncident.id === incidentId) {
+      setSelectedIncident((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
+  };
+
   const filteredIncidents = incidents.filter((incident) => {
     const matchesSearch =
       !search ||
@@ -255,9 +263,9 @@ export default function CorrelationPage() {
         <PageHeader title={t("title")} subtitle={t("subtitle")} />
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse space-y-3">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
-            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-8 bg-gray-200 dark:bg-surface-active rounded w-1/3" />
+            <div className="h-32 bg-gray-200 dark:bg-surface-active rounded" />
+            <div className="h-32 bg-gray-200 dark:bg-surface-active rounded" />
           </div>
         </main>
       </div>
@@ -413,17 +421,22 @@ export default function CorrelationPage() {
                         <th className="px-6 py-3.5 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">
                           {t("created")}
                         </th>
+                        <th className="px-6 py-3.5 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                          {t("actions")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-subtle">
                       {filteredIncidents.map((incident) => (
                         <tr
                           key={incident.id}
-                          className="hover:bg-surface-hover/50 transition-colors"
+                          onClick={() => handleViewIncident(incident)}
+                          className="hover:bg-surface-hover/50 transition-colors cursor-pointer group"
+                          title="点击查看关联事件研判详情"
                         >
                           <td className="px-6 py-4">
                             <div>
-                              <p className="text-sm font-medium text-text-primary">
+                              <p className="text-sm font-medium text-text-primary group-hover:text-accent-600 transition-colors">
                                 {incident.title}
                               </p>
                               {incident.description && (
@@ -458,6 +471,20 @@ export default function CorrelationPage() {
                               dateStyle: "medium",
                               timeStyle: "medium",
                             })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewIncident(incident);
+                              }}
+                              title={t("viewIncident")}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-accent-600 dark:text-accent-400 bg-accent-50 dark:bg-accent-950/40 rounded-lg hover:bg-accent-100 dark:hover:bg-accent-900/60 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>{t("viewIncident")}</span>
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -721,6 +748,14 @@ export default function CorrelationPage() {
         onEdit={handleEditRule}
         onDelete={handleDeleteRule}
         isDeleting={deletingRuleId === selectedRule?.id}
+      />
+
+      {/* Incident Details Drawer */}
+      <IncidentDetailsDrawer
+        incident={selectedIncident}
+        isOpen={isIncidentDetailsOpen}
+        onClose={() => setIsIncidentDetailsOpen(false)}
+        onStatusChange={handleUpdateIncidentStatus}
       />
 
       {/* Create / Edit Rule Modal */}

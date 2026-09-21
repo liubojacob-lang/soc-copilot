@@ -155,7 +155,7 @@ export const ConversationItem = React.memo(function ConversationItem({
                 onStartEdit();
               }}
               aria-label={t("rename")}
-              className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400
+              className="p-1.5 text-text-tertiary hover:text-blue-600 dark:hover:text-blue-400
                          hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
               title={t("rename")}
             >
@@ -167,7 +167,7 @@ export const ConversationItem = React.memo(function ConversationItem({
                 onDelete();
               }}
               aria-label={t("delete")}
-              className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400
+              className="p-1.5 text-text-tertiary hover:text-red-600 dark:hover:text-red-400
                          hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
               title={t("delete")}
             >

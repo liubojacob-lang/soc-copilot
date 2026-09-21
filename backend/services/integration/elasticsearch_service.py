@@ -364,12 +364,28 @@ async def _search_sqlite(
     if log_type:
         conditions.append(SIEMLog.log_type == log_type)
     if keyword:
+        bind = (
+            session.get_bind()
+            if hasattr(session, "get_bind")
+            else getattr(session, "bind", None)
+        )
+        if (
+            bind is not None
+            and getattr(bind, "dialect", None) is not None
+            and bind.dialect.name == "sqlite"
+        ):
+            parsed_cond = (
+                func.json_extract(SIEMLog.parsed_fields, "$")
+                .cast(Text)
+                .ilike(f"%{keyword}%")
+            )
+        else:
+            parsed_cond = SIEMLog.parsed_fields.cast(Text).ilike(f"%{keyword}%")
+
         conditions.append(
             or_(
                 SIEMLog.raw_data.ilike(f"%{keyword}%"),
-                func.json_extract(SIEMLog.parsed_fields, "$")
-                .cast(Text)
-                .ilike(f"%{keyword}%"),
+                parsed_cond,
             )
         )
 

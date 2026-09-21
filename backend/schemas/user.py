@@ -91,8 +91,12 @@ class TokenResponse(BaseModel):
     user: UserResponse
     csrf_token: str | None = None  # CSRF token for protected requests
     must_change_password: bool | None = False  # Force password change on first login
-    require_2fa: bool = False  # True when 2FA code is required before issuing full tokens
-    pre_auth_token: str | None = None  # Short-lived token used to complete 2FA login challenge
+    require_2fa: bool = (
+        False  # True when 2FA code is required before issuing full tokens
+    )
+    pre_auth_token: str | None = (
+        None  # Short-lived token used to complete 2FA login challenge
+    )
 
 
 class TokenRefresh(BaseModel):

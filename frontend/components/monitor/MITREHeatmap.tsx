@@ -33,6 +33,22 @@ interface TacticMeta {
   color: string;
 }
 
+/**
+ * 把 #rrggbb 转成 rgba(...)。
+ *
+ * 存在的理由是一条设计规则：**数据强度只能用"填充 alpha + 同色描边"表达，
+ * 绝不能给元素加 `opacity`** —— 后者会把文字、边框一起淡掉。
+ * 本组件此前正是用 `opacity: 0.35~1` 表达强度，于是白字被一起淡到 1.92:1。
+ * 现在强度走 alpha，文字色固定为语义文本色，与强度解耦。
+ */
+function withAlpha(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // MITRE ATT&CK 14 项核心战术（按 Kill Chain 杀伤链顺序）
 const TACTICS: Record<string, TacticMeta> = {
   reconnaissance: { id: "TA0043", name: "Reconnaissance", nameZh: "侦察", color: "#a855f7" },
@@ -139,7 +155,8 @@ export const MITREHeatmap = React.memo(function MITREHeatmap({ data, onClick }: 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
           <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-            {totalTactics} <span className="text-xs font-normal text-purple-500">/ 14</span>
+            {totalTactics}{" "}
+            <span className="text-xs font-normal text-purple-700 dark:text-purple-300">/ 14</span>
           </div>
           <div className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">{t("tactics")}</div>
         </div>
@@ -187,19 +204,25 @@ export const MITREHeatmap = React.memo(function MITREHeatmap({ data, onClick }: 
                     >
                       {displayName}
                     </div>
-                    <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5 truncate">
+                    <div className="text-[10px] text-text-secondary font-mono mt-0.5 truncate">
                       {subName}
                     </div>
                     <div className="mt-1">
                       {hasData ? (
+                        // 计数徽章：色调只由填充承担，文字走语义色。
+                        // 原先是"实色 500 级 + 白字"，实测 2.8–3.76:1，且部分色（如 #8b5cf6）
+                        // 落在黑白字都无法达标的亮度死区里，靠换字色根本修不好。
                         <span
-                          className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-semibold text-white"
-                          style={{ backgroundColor: tactic.color }}
+                          className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-semibold text-text-primary"
+                          style={{
+                            backgroundColor: withAlpha(tactic.color, 0.16),
+                            border: `1px solid ${withAlpha(tactic.color, 0.5)}`,
+                          }}
                         >
                           {tacticAlertCount}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-gray-400 dark:text-gray-500">0</span>
+                        <span className="text-[10px] text-text-tertiary">0</span>
                       )}
                     </div>
                   </div>
@@ -209,35 +232,36 @@ export const MITREHeatmap = React.memo(function MITREHeatmap({ data, onClick }: 
                     {hasData ? (
                       tacticData.techniques.map((tech) => {
                         const intensity = maxCount > 0 ? tech.count / maxCount : 0;
-                        const opacity = Math.min(0.35 + intensity * 0.65, 1);
+                        // 强度走 alpha（0.14→0.42）。上限刻意压在 0.42：再高就会让黄/绿/青
+                        // 这类亮色的填充亮度接近白字，实测 #eab308 在 0.45 时白字掉到 2.69:1。
+                        const fillAlpha = 0.14 + intensity * 0.28;
                         return (
                           <div
                             key={tech.technique_id}
                             onClick={() => onClick?.(tactic.name, tech.technique)}
                             className="p-2 rounded-md border text-left cursor-pointer transition-all hover:scale-[1.02] hover:shadow-sm"
                             style={{
-                              backgroundColor: tactic.color,
-                              opacity,
-                              borderColor: `${tactic.color}80`,
+                              backgroundColor: withAlpha(tactic.color, fillAlpha),
+                              borderColor: withAlpha(tactic.color, 0.35 + intensity * 0.4),
                             }}
                             title={`${displayName} > ${tech.technique} (${tech.technique_id}): ${tech.count} ${t("alertCount", { count: tech.count })}`}
                           >
                             <div className="flex items-center justify-between gap-1">
-                              <span className="text-[10px] font-mono font-bold text-white tracking-wider">
+                              <span className="text-[10px] font-mono font-bold text-text-primary tracking-wider">
                                 {tech.technique_id}
                               </span>
-                              <span className="px-1 py-0.2 bg-black/30 rounded text-[9px] font-bold text-white tabular-nums">
+                              <span className="px-1 py-0.2 bg-black/10 dark:bg-white/10 rounded text-[9px] font-bold text-text-primary tabular-nums">
                                 ×{tech.count}
                               </span>
                             </div>
-                            <div className="text-[11px] font-medium text-white/95 leading-tight line-clamp-2 mt-1 drop-shadow-sm">
+                            <div className="text-[11px] font-medium text-text-primary leading-tight line-clamp-2 mt-1">
                               {tech.technique}
                             </div>
                           </div>
                         );
                       })
                     ) : (
-                      <div className="flex-1 flex items-center justify-center text-center p-2 text-[11px] text-gray-400 dark:text-gray-500 border border-dashed border-gray-200 dark:border-gray-700/60 rounded">
+                      <div className="flex-1 flex items-center justify-center text-center p-2 text-[11px] text-text-tertiary border border-dashed border-border-subtle rounded">
                         {t("noActivity")}
                       </div>
                     )}
@@ -297,7 +321,7 @@ export const MITREHeatmap = React.memo(function MITREHeatmap({ data, onClick }: 
                     <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                       {displayName}
                     </span>
-                    <span className="text-xs text-gray-400 font-mono">({config.id})</span>
+                    <span className="text-xs text-text-tertiary font-mono">({config.id})</span>
                   </div>
                   <span className="text-xs font-medium text-accent-600 dark:text-accent-400 whitespace-nowrap">
                     {t("alertCount", { count: tacticAlertCount })}
@@ -308,10 +332,10 @@ export const MITREHeatmap = React.memo(function MITREHeatmap({ data, onClick }: 
                     <span
                       key={technique.technique_id}
                       onClick={() => onClick?.(tactic.tactic, technique.technique)}
-                      className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs rounded transition-colors cursor-pointer inline-flex items-center gap-1"
+                      className="px-2 py-0.5 bg-surface-hover hover:bg-surface-active text-text-primary text-xs rounded border border-border-subtle transition-colors cursor-pointer inline-flex items-center gap-1"
                       title={`${technique.technique} (${technique.technique_id})`}
                     >
-                      <span className="font-mono text-[10px] text-gray-500 dark:text-gray-400">
+                      <span className="font-mono text-[10px] text-text-secondary">
                         {technique.technique_id}
                       </span>
                       <span className="truncate max-w-[120px]">{technique.technique}</span>

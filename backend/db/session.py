@@ -22,20 +22,32 @@ DATA_DIR.mkdir(exist_ok=True)
 # Check if using test database (for testing)
 IS_TEST_ENV = os.getenv("ENVIRONMENT") == "test"
 
-# Check if using PostgreSQL (from environment or docker-compose)
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DATA_DIR / 'app.db'}")
+# 数据库连接串必须由 DATABASE_URL 显式提供。
+#
+# 这里曾经在 DATABASE_URL 缺失时回退到一个硬编码的仿真库连接串（含口令），
+# 已按安全审计 F-003 移除。原因是回退方向恰好是"生产漏配 → 静默连到本地
+# 仿真库"，alembic 迁移也会跟着打错库 —— 宁可启动就失败，也不要静默连错。
+_database_url = os.getenv("DATABASE_URL")
+
+if IS_TEST_ENV:
+    # Use separate test database in test environment (fast isolated pytest unit tests)
+    TEST_DB_PATH = os.getenv(
+        "TEST_DB_PATH", "/tmp/soc_copilot_test.db"
+    )  # nosec B108 - test-only path
+    _database_url = f"sqlite+aiosqlite:///{TEST_DB_PATH}"
+
+if not _database_url:
+    raise RuntimeError(
+        "DATABASE_URL is not set. Refusing to fall back to a hardcoded connection "
+        "string (security audit F-003). Set DATABASE_URL explicitly, or start the "
+        "local sim via ./Scripts/sim.sh, which injects it from .env.local-sim."
+    )
+
+DATABASE_URL: str = _database_url
 
 # Determine database type
 IS_POSTGRESQL = DATABASE_URL.startswith("postgresql")
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
-
-# Use separate test database in test environment
-if IS_TEST_ENV and IS_SQLITE:
-    # Use in-memory database for tests (faster and isolated)
-    TEST_DB_PATH = os.getenv(
-        "TEST_DB_PATH", "/tmp/soc_copilot_test.db"
-    )  # nosec B108 - test-only path
-    DATABASE_URL = f"sqlite+aiosqlite:///{TEST_DB_PATH}"
 
 # Create engine with appropriate settings based on database type
 if IS_SQLITE or (IS_TEST_ENV):
@@ -69,6 +81,7 @@ if IS_SQLITE or (IS_TEST_ENV):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
+
 elif IS_POSTGRESQL:
     # PostgreSQL: Use connection pool settings
     # Convert sync URL to async if needed

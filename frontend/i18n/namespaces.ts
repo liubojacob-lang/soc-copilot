@@ -26,6 +26,7 @@ export const ROUTE_NAMESPACES: Record<string, string[]> = {
   "/settings/ai-models": ["settings", "aiModels"],
   "/settings/api-keys": ["settings", "apiKeys"],
   "/settings/notifications": ["settings"],
+  "/settings/system": ["settings", "admin"],
   "/users": ["users"],
   "/reports": ["reports"],
   "/ueba": ["ueba"],

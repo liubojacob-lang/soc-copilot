@@ -141,13 +141,17 @@ class PlaybookRunRepository:
         return runs, total
 
     async def update(
-        self, run_id: str, updates: dict[str, Any]
+        self,
+        run_id: str,
+        updates: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> PlaybookRunModel | None:
         """Update a playbook run.
 
         Args:
             run_id: Run ID
-            updates: Fields to update
+            updates: Fields to update as a dict
+            **kwargs: Fields to update as keyword arguments
 
         Returns:
             Updated PlaybookRunModel instance or None
@@ -156,7 +160,13 @@ class PlaybookRunRepository:
         if not run:
             return None
 
-        for key, value in updates.items():
+        combined_updates: dict[str, Any] = {}
+        if updates:
+            combined_updates.update(updates)
+        if kwargs:
+            combined_updates.update(kwargs)
+
+        for key, value in combined_updates.items():
             if hasattr(run, key):
                 setattr(run, key, value)
 

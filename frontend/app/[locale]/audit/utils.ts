@@ -1,7 +1,5 @@
 /** Utility functions for audit logs page */
 
-import type { DatePreset } from "./types";
-
 /** Format date for datetime-local input */
 export function formatDateForInput(date: Date): string {
   const year = date.getFullYear();
@@ -12,30 +10,39 @@ export function formatDateForInput(date: Date): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-/** Get CSS class for status code */
+/**
+ * Get CSS class for status code
+ *
+ * 文字必须用 700/800 级，不能用 600 级 —— 徽章底是 100 级浅色（近乎白底），
+ * 600 级在其上均不足 WCAG AA 4.5:1（实测 success 3.32、danger 3.95、info 4.24）。
+ * 这与下方 getMethodClass 已经是同一约定（它一直用 800 级，因此从未出问题），
+ * 本函数此前是唯一的例外。改后实测 6.37–9.45:1。
+ *
+ * 该约定可推广：**深色字配 100–200 级底；白字配 600–700 级底；500 级只做填充与描边。**
+ */
 export function getStatusCodeClass(statusCode: number): string {
-  if (statusCode >= 200 && statusCode < 300) return "text-green-600 bg-green-100";
-  if (statusCode >= 300 && statusCode < 400) return "text-blue-600 bg-blue-100";
-  if (statusCode >= 400 && statusCode < 500) return "text-orange-600 bg-orange-100";
-  if (statusCode >= 500) return "text-red-600 bg-red-100";
-  return "text-gray-600 bg-gray-100";
+  if (statusCode >= 200 && statusCode < 300) return "text-success-800 bg-success-100";
+  if (statusCode >= 300 && statusCode < 400) return "text-info-800 bg-info-100";
+  if (statusCode >= 400 && statusCode < 500) return "text-warning-800 bg-warning-100";
+  if (statusCode >= 500) return "text-danger-800 bg-danger-100";
+  return "text-primary-700 bg-primary-100";
 }
 
 /** Get CSS class for HTTP method */
 export function getMethodClass(method: string): string {
   switch (method) {
     case "GET":
-      return "bg-blue-100 text-blue-800";
+      return "bg-info-100 text-info-800";
     case "POST":
-      return "bg-green-100 text-green-800";
+      return "bg-success-100 text-success-800";
     case "PUT":
-      return "bg-yellow-100 text-yellow-800";
+      return "bg-warning-100 text-warning-800";
     case "PATCH":
-      return "bg-purple-100 text-purple-800";
+      return "bg-primary-100 text-primary-700";
     case "DELETE":
-      return "bg-red-100 text-red-800";
+      return "bg-danger-100 text-danger-800";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "bg-primary-100 text-primary-700";
   }
 }
 
@@ -75,135 +82,3 @@ export function getPageNumbers(page: number, total: number, pageSize: number): (
 
   return pages;
 }
-
-/** Date range presets */
-export const datePresets: DatePreset[] = [
-  {
-    id: "15min",
-    name: "🕐 15 min",
-    label: "Last 15 minutes",
-    getRange: () => {
-      const now = new Date();
-      const from = new Date(now.getTime() - 15 * 60 * 1000);
-      return {
-        from: formatDateForInput(from),
-        to: formatDateForInput(now),
-        display: "Last 15 minutes",
-      };
-    },
-  },
-  {
-    id: "1hour",
-    name: "🕐 1 hour",
-    label: "Last hour",
-    getRange: () => {
-      const now = new Date();
-      const from = new Date(now.getTime() - 60 * 60 * 1000);
-      return {
-        from: formatDateForInput(from),
-        to: formatDateForInput(now),
-        display: "Last hour",
-      };
-    },
-  },
-  {
-    id: "today",
-    name: "📅 Today",
-    label: "Today",
-    getRange: () => {
-      const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      return {
-        from: formatDateForInput(from),
-        to: formatDateForInput(now),
-        display: "Today",
-      };
-    },
-  },
-  {
-    id: "yesterday",
-    name: "📅 Yesterday",
-    label: "Yesterday",
-    getRange: () => {
-      const now = new Date();
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const from = new Date(
-        yesterday.getFullYear(),
-        yesterday.getMonth(),
-        yesterday.getDate(),
-        0,
-        0,
-        0
-      );
-      return {
-        from: formatDateForInput(from),
-        to: formatDateForInput(
-          new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59)
-        ),
-        display: "Yesterday",
-      };
-    },
-  },
-  {
-    id: "7days",
-    name: "📊 7 days",
-    label: "Last 7 days",
-    getRange: () => {
-      const now = new Date();
-      const from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      return {
-        from: formatDateForInput(from),
-        to: formatDateForInput(now),
-        display: "Last 7 days",
-      };
-    },
-  },
-  {
-    id: "30days",
-    name: "📊 30 days",
-    label: "Last 30 days",
-    getRange: () => {
-      const now = new Date();
-      const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      return {
-        from: formatDateForInput(from),
-        to: formatDateForInput(now),
-        display: "Last 30 days",
-      };
-    },
-  },
-  {
-    id: "thisWeek",
-    name: "📊 This week",
-    label: "This week",
-    getRange: () => {
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      // Calculate Monday of current week
-      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const from = new Date(now);
-      from.setDate(now.getDate() - daysFromMonday);
-      from.setHours(0, 0, 0, 0);
-      return {
-        from: formatDateForInput(from),
-        to: formatDateForInput(now),
-        display: "This week",
-      };
-    },
-  },
-  {
-    id: "thisMonth",
-    name: "📊 This month",
-    label: "This month",
-    getRange: () => {
-      const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-      return {
-        from: formatDateForInput(from),
-        to: formatDateForInput(now),
-        display: "This month",
-      };
-    },
-  },
-];

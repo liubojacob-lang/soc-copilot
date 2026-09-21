@@ -101,7 +101,9 @@ async def export_report_pdf(
             "nist": "compliance_nist.html",
             "incident_report": "incident_report.html",
         }
-        template_file = template_map.get(template, template_map["incident_report"])
+        template_file = template_map.get(
+            template or "incident_report", template_map["incident_report"]
+        )
 
         if format == "html":
             html_content = await svc.export_html(report_data, template_file)
@@ -109,7 +111,7 @@ async def export_report_pdf(
                 content=html_content,
                 media_type="text/html",
                 headers={
-                    {"Content-Disposition": f"inline; filename=report-{report_id}.html"}
+                    "Content-Disposition": f"inline; filename=report-{report_id}.html"
                 },
             )
 
@@ -124,7 +126,7 @@ async def export_report_pdf(
             content=pdf_bytes,
             media_type="application/pdf",
             headers={
-                {"Content-Disposition": f"attachment; filename=report-{report_id}.pdf"}
+                "Content-Disposition": f"attachment; filename=report-{report_id}.pdf"
             },
         )
     except HTTPException:
@@ -184,7 +186,7 @@ async def generate_compliance_report(
             content=pdf_bytes,
             media_type="application/pdf",
             headers={
-                {"Content-Disposition": "attachment; filename={framework}-report.pdf"}
+                "Content-Disposition": f"attachment; filename={framework}-report.pdf"
             },
         )
     except HTTPException:

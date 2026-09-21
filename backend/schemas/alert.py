@@ -90,16 +90,36 @@ class RecommendedAction(BaseModel):
 
     action: str = Field(..., description="The action to take")
     priority: str = Field(..., description="Priority: high, medium, low")
-    details: str = Field(..., description="Detailed explanation")
-    verification: str = Field(..., description="How to verify the action was effective")
+    details: str = Field(default="", description="Detailed explanation")
+    description: str | None = Field(
+        default=None, description="Alias for details for frontend compatibility"
+    )
+    verification: str = Field(
+        default="", description="How to verify the action was effective"
+    )
+    automated: bool = Field(
+        default=False, description="Whether action can be automated"
+    )
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    def model_post_init(self, __context: object) -> None:
+        if not self.description and self.details:
+            self.description = self.details
+        elif not self.details and self.description:
+            self.details = self.description
 
 
 class AlertAnalysisRequest(BaseModel):
     """Request for alert analysis."""
 
-    raw_log: str = Field(
-        ..., description="Raw alert/log content", min_length=10, max_length=50000
+    raw_log: str | None = Field(
+        None, description="Raw alert/log content", max_length=50000
     )
+    title: str | None = Field(None, description="Alert title")
+    description: str | None = Field(None, description="Alert description")
+    source: str | None = Field(None, description="Alert source")
+    severity: str | None = Field(None, description="Alert severity")
 
 
 class AlertAnalysisResponse(BaseModel):
@@ -110,6 +130,9 @@ class AlertAnalysisResponse(BaseModel):
     # Analysis results
     event_type: EventType
     severity: Severity
+    attack_pattern: str | None = Field(
+        None, description="Identified attack pattern or technique"
+    )
     iocs: IOCsFinal
     iocs_local: IOCsLocal
     iocs_llm: IOCsLLM

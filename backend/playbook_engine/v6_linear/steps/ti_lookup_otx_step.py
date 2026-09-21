@@ -77,7 +77,9 @@ class TILookupOTXStep(BaseStepImpl):
         results["simulated"] = False
 
         if not settings.allow_external_ti:
-            results["error"] = "External threat intelligence is disabled by configuration"
+            results["error"] = (
+                "External threat intelligence is disabled by configuration"
+            )
             return results
 
         if not settings.otx_api_key:

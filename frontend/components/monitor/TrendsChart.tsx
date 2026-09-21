@@ -6,7 +6,7 @@
  */
 
 import React, { useMemo, useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   LineChart,
   Line,
@@ -54,6 +54,8 @@ export function TrendsChart({
   height = 300,
 }: TrendsChartProps) {
   const tSeverity = useTranslations("severity");
+  const t = useTranslations("threatIntel.dashboard");
+  const locale = useLocale();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -81,12 +83,12 @@ export function TrendsChart({
   const chartData = useMemo(() => {
     return data.map((item) => ({
       ...item,
-      date: new Date(item.timestamp).toLocaleDateString("en-US", {
+      date: new Date(item.timestamp).toLocaleDateString(locale === "zh-CN" ? "zh-CN" : "en-US", {
         month: "short",
         day: "numeric",
       }),
     }));
-  }, [data]);
+  }, [data, locale]);
 
   // 自定义 Tooltip
   const CustomTooltip = ({
@@ -128,7 +130,16 @@ export function TrendsChart({
             <XAxis dataKey="date" {...themeAxis} />
             <YAxis {...themeAxis} />
             <Tooltip content={<CustomTooltip />} />
-            {showLegend && <Legend wrapperStyle={themeLegend.wrapperStyle} />}
+            {showLegend && (
+              <Legend
+                wrapperStyle={themeLegend.wrapperStyle}
+                // 图例文字走语义色：recharts 默认沿用系列描边色（500/600 级），
+                // 落在白底上只有 3.19–3.77:1。与 SeverityDistribution 里已有的写法保持一致。
+                formatter={(value) => (
+                  <span className="text-sm text-text-secondary">{value as string}</span>
+                )}
+              />
+            )}
             <Line
               type="monotone"
               dataKey="critical"
@@ -175,7 +186,16 @@ export function TrendsChart({
             <XAxis dataKey="date" {...themeAxis} />
             <YAxis {...themeAxis} />
             <Tooltip content={<CustomTooltip />} />
-            {showLegend && <Legend wrapperStyle={themeLegend.wrapperStyle} />}
+            {showLegend && (
+              <Legend
+                wrapperStyle={themeLegend.wrapperStyle}
+                // 图例文字走语义色：recharts 默认沿用系列描边色（500/600 级），
+                // 落在白底上只有 3.19–3.77:1。与 SeverityDistribution 里已有的写法保持一致。
+                formatter={(value) => (
+                  <span className="text-sm text-text-secondary">{value as string}</span>
+                )}
+              />
+            )}
             <Bar
               dataKey="critical"
               fill={colors.critical}
@@ -201,7 +221,16 @@ export function TrendsChart({
             <XAxis dataKey="date" {...themeAxis} />
             <YAxis {...themeAxis} />
             <Tooltip content={<CustomTooltip />} />
-            {showLegend && <Legend wrapperStyle={themeLegend.wrapperStyle} />}
+            {showLegend && (
+              <Legend
+                wrapperStyle={themeLegend.wrapperStyle}
+                // 图例文字走语义色：recharts 默认沿用系列描边色（500/600 级），
+                // 落在白底上只有 3.19–3.77:1。与 SeverityDistribution 里已有的写法保持一致。
+                formatter={(value) => (
+                  <span className="text-sm text-text-secondary">{value as string}</span>
+                )}
+              />
+            )}
             <Area
               type="monotone"
               dataKey="critical"
@@ -248,7 +277,7 @@ export function TrendsChart({
       <div className="flex items-center justify-center h-64 bg-surface-hover dark:bg-slate-800/50 rounded-lg border border-dashed border-border-subtle dark:border-slate-700">
         <div className="text-center">
           <TrendingUp className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
-          <p className="text-sm text-text-tertiary">No trend data available</p>
+          <p className="text-sm text-text-tertiary">{t("noTrendData")}</p>
         </div>
       </div>
     );
@@ -265,6 +294,8 @@ export function TrendsChart({
 
 // 简化版：仅显示总数趋势
 export function SimpleTrendChart({ data, height = 200 }: { data: TrendData[]; height?: number }) {
+  const t = useTranslations("threatIntel.dashboard");
+  const locale = useLocale();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -287,13 +318,13 @@ export function SimpleTrendChart({ data, height = 200 }: { data: TrendData[]; he
 
   const chartData = useMemo(() => {
     return data.map((item) => ({
-      date: new Date(item.timestamp).toLocaleDateString("en-US", {
+      date: new Date(item.timestamp).toLocaleDateString(locale === "zh-CN" ? "zh-CN" : "en-US", {
         month: "short",
         day: "numeric",
       }),
       count: item.total,
     }));
-  }, [data]);
+  }, [data, locale]);
 
   if (!data || data.length === 0) {
     return null;
@@ -313,7 +344,7 @@ export function SimpleTrendChart({ data, height = 200 }: { data: TrendData[]; he
               return (
                 <div style={themeTooltip.contentStyle}>
                   <p style={{ fontSize: "12px", fontWeight: 500 }}>
-                    {data.payload.date}: {data.value} alerts
+                    {data.payload.date}: {t("alertsCount", { count: data.value })}
                   </p>
                 </div>
               );

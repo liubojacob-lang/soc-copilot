@@ -17,36 +17,17 @@ import {
   ClipboardCheck,
   Crosshair,
   Flame,
-  Timer,
   Server,
   ArrowUpRight,
 } from "lucide-react";
 
 import { useDashboardStats } from "@/hooks/useDashboard";
-import type { DashboardStats, SeverityDistribution } from "@/lib/api/dashboard";
+import type { DashboardStats } from "@/lib/api/dashboard";
 import { loadAuthState } from "@/lib/auth";
 import { Card, LoadingSpinner, SkeletonCard } from "@/components/common";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Badge, type Severity } from "@/components/ui/Badge";
-
-// 严重程度统一走 severity-* 设计令牌，不再裸写 danger/amber/yellow/emerald。
-type SeverityLevel = Extract<Severity, "critical" | "high" | "medium" | "low" | "info">;
-
-const SEVERITY_CONFIG: { key: keyof SeverityDistribution; severity: SeverityLevel }[] = [
-  { key: "critical", severity: "critical" },
-  { key: "high", severity: "high" },
-  { key: "medium", severity: "medium" },
-  { key: "low", severity: "low" },
-  { key: "info", severity: "info" },
-];
-
-const SEVERITY_TOKENS: Record<SeverityLevel, { dot: string; bar: string }> = {
-  critical: { dot: "bg-severity-critical", bar: "bg-severity-critical" },
-  high: { dot: "bg-severity-high", bar: "bg-severity-high" },
-  medium: { dot: "bg-severity-medium", bar: "bg-severity-medium" },
-  low: { dot: "bg-severity-low", bar: "bg-severity-low" },
-  info: { dot: "bg-severity-info", bar: "bg-severity-info" },
-};
+import { SeverityBreakdown } from "@/components/ui/SeverityBreakdown";
 
 interface PriorityItem {
   severity: Severity;
@@ -55,7 +36,38 @@ interface PriorityItem {
 }
 
 /**
- * 由**真实统计数据**推导的优先级队列，回答 "What should I do next?"。
+ * 把原始分钟数格式化为人类可读的时长。
+ *
+ * 之前直接把后端返回值渲染出来，界面上会出现「平均解决时长：105665.9 分钟」
+ * —— 读者要在脑子里做两次除法才知道那大约是 73 天。指标卡不是数据导出，
+ * 应该直接给出可理解的量级。
+ */
+function formatDuration(minutes: number, t: (key: never) => string): string {
+  if (!Number.isFinite(minutes) || minutes < 0) return "—";
+  if (minutes < 60) return `${Math.round(minutes)} ${t("dashboard.minutes" as never)}`;
+  const hours = minutes / 60;
+  if (hours < 24) return `${Math.round(hours)} ${t("dashboard.hours" as never)}`;
+  const days = hours / 24;
+  const rounded = days >= 10 ? Math.round(days) : Number(days.toFixed(1));
+  return `${rounded} ${t("dashboard.days" as never)}`;
+}
+
+/**
+ * 把坐标轴上限取整到好读的刻度（1/1.5/2/2.5/3/4/5/6/8 × 10^n）。
+ *
+ * 直接用最大值当上限会让最高的那根柱永远顶到画布顶端，既没有呼吸空间，
+ * 也让 Y 轴刻度变成 63、71 这种读不出含义的数字。
+ */
+function niceCeil(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 1;
+  const base = Math.pow(10, Math.floor(Math.log10(value)));
+  for (const m of [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) {
+    if (value <= m * base) return m * base;
+  }
+  return 10 * base;
+}
+
+/** 由**真实统计数据**推导的优先级队列，回答 "What should I do next?"。
  * 这里是首页唯一的数据驱动建议区 —— 静态快捷入口不回答这个问题。
  */
 function buildPriorities(stats: DashboardStats | undefined, t: (k: string, v?: object) => string) {
@@ -127,7 +139,8 @@ export default function HomePage() {
   const criticalHigh = stats
     ? stats.alerts_by_severity.critical + stats.alerts_by_severity.high
     : 0;
-  const trendMax = stats ? Math.max(1, ...stats.alerts_trend.map((p) => p.count)) : 1;
+  // Y 轴上界取整到好读的刻度，给最高的柱留出呼吸空间
+  const trendAxisMax = stats ? niceCeil(Math.max(1, ...stats.alerts_trend.map((p) => p.count))) : 1;
   const totalSeverityCount = stats
     ? Object.values(stats.alerts_by_severity).reduce((acc, n) => acc + n, 0)
     : 0;
@@ -248,52 +261,91 @@ export default function HomePage() {
         <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-3">
           {/* ── 7-day trend ────────────────────────────────── */}
           <Card className="p-5 sm:p-6 lg:col-span-2">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-              <div>
-                <h2 className="text-sm font-semibold tracking-tight text-text-primary">
-                  {t("dashboard.trend7d")}
-                </h2>
-                <p className="text-xs text-text-muted mt-0.5">{t("trendSubtitle")}</p>
-              </div>
-              {stats && stats.mttr_minutes !== null && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-hover border border-border-subtle text-xs text-text-secondary">
-                  <Timer className="w-3.5 h-3.5 text-accent-500" />
-                  <span>
-                    {t("dashboard.mttr")}:{" "}
-                    <strong className="text-text-primary tabular-nums">{stats.mttr_minutes}</strong>{" "}
-                    {t("dashboard.minutes")}
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold tracking-tight text-text-primary">
+                {t("dashboard.trend7d")}
+              </h2>
+              {/* MTTR 从"与标题争抢注意力的药丸"降级为副文本，
+                  并把 105665.9 分钟这类原始值格式化成人类可读的 ≈73 天 */}
+              <p className="mt-0.5 text-xs text-text-muted">
+                {t("trendSubtitle")}
+                {stats && stats.mttr_minutes !== null && (
+                  <span className="ml-1.5 tabular-nums">
+                    · {t("dashboard.mttr")} {formatDuration(stats.mttr_minutes, t)}
                   </span>
-                </div>
-              )}
+                )}
+              </p>
             </div>
 
             {isLoading ? (
               <SkeletonCard />
             ) : stats && stats.alerts_trend.length > 0 ? (
-              <div className="flex items-end gap-2 sm:gap-3 h-44 pt-4 px-2">
-                {stats.alerts_trend.map((point) => {
-                  const percentage = Math.max(4, (point.count / trendMax) * 100);
-                  return (
+              <div className="flex gap-3">
+                {/* Y 轴刻度 —— 没有它就只能比较柱高、读不出绝对值 */}
+                <div
+                  className="flex h-40 shrink-0 flex-col justify-between text-right text-[10px] font-medium text-text-muted tabular-nums"
+                  aria-hidden="true"
+                >
+                  <span>{trendAxisMax}</span>
+                  {trendAxisMax >= 4 && <span>{Math.round(trendAxisMax / 2)}</span>}
+                  <span>0</span>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="relative h-40">
+                    {/* 轻量基准线：0 / 50% / 100%。
+                        此前每根柱背后有一个**等高灰色轨道**，柱与轨道并置形成
+                        "双柱"错觉，且轨道会让人误以为那是量程本身。这里改为
+                        贯穿全宽的横向基准线，不再产生第二个"柱"。 */}
                     <div
-                      key={point.date}
-                      className="flex-1 flex flex-col items-center gap-2 group h-full justify-end"
+                      className="pointer-events-none absolute inset-0 flex flex-col justify-between"
+                      aria-hidden="true"
                     >
-                      <span className="text-[11px] font-semibold text-text-secondary tabular-nums opacity-0 group-hover:opacity-100 transition-opacity">
-                        {point.count}
-                      </span>
-                      <div className="w-full bg-surface-hover rounded-t-md overflow-hidden flex items-end h-full max-h-32">
-                        <div
-                          className="w-full rounded-t-md bg-accent-500 group-hover:bg-accent-400 transition-colors duration-200"
-                          style={{ height: `${percentage}%` }}
-                          title={`${point.date}: ${point.count}`}
-                        />
-                      </div>
-                      <span className="text-[10px] font-medium text-text-muted">
+                      <div className="border-t border-border-subtle" />
+                      <div className="border-t border-border-subtle" />
+                      <div className="border-t border-border-default" />
+                    </div>
+
+                    <div className="relative flex h-full items-end gap-2 sm:gap-3">
+                      {stats.alerts_trend.map((point) => {
+                        const pct = trendAxisMax > 0 ? (point.count / trendAxisMax) * 100 : 0;
+                        // 0 值不渲染柱体；非 0 值给 2% 的可视下限
+                        // （柱高承载数值，因此下限必须极小，不能用它来"救"小值）
+                        const height = point.count === 0 ? 0 : Math.max(2, pct);
+                        return (
+                          <div
+                            key={point.date}
+                            className="group relative flex h-full flex-1 items-end justify-center"
+                          >
+                            {/* 悬停数值绝对定位，不参与布局，避免挤压柱体高度 */}
+                            <span className="pointer-events-none absolute inset-x-0 top-0 text-center text-[11px] font-semibold text-text-secondary tabular-nums opacity-0 transition-opacity group-hover:opacity-100">
+                              {point.count}
+                            </span>
+                            {height > 0 && (
+                              <div
+                                className="w-full rounded-t-md bg-accent-500 transition-colors duration-200 group-hover:bg-accent-400"
+                                style={{ height: `${height}%` }}
+                                title={`${point.date}: ${point.count}`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* X 轴日期与柱体共用同一套 flex 参数，保证对齐 */}
+                  <div className="mt-2 flex gap-2 sm:gap-3">
+                    {stats.alerts_trend.map((point) => (
+                      <span
+                        key={point.date}
+                        className="flex-1 text-center text-[10px] font-medium text-text-muted"
+                      >
                         {point.date.slice(5)}
                       </span>
-                    </div>
-                  );
-                })}
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="py-12 text-center text-sm text-text-muted">{t("noTrend")}</div>
@@ -314,32 +366,7 @@ export default function HomePage() {
               {isLoading ? (
                 <SkeletonCard />
               ) : stats ? (
-                <ul className="space-y-3">
-                  {SEVERITY_CONFIG.map(({ key, severity }) => {
-                    const count = stats.alerts_by_severity[key] || 0;
-                    const pct = totalSeverityCount > 0 ? (count / totalSeverityCount) * 100 : 0;
-                    const token = SEVERITY_TOKENS[severity];
-                    return (
-                      <li key={key} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="flex items-center gap-2 font-medium text-text-secondary">
-                            <span className={`w-2 h-2 rounded-full ${token.dot}`} />
-                            {tAlerts(key)}
-                          </span>
-                          <span className="font-semibold text-text-primary tabular-nums">
-                            {count}
-                          </span>
-                        </div>
-                        <div className="w-full h-1.5 bg-surface-hover rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${token.bar}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <SeverityBreakdown counts={stats.alerts_by_severity} layout="list" />
               ) : null}
             </div>
 

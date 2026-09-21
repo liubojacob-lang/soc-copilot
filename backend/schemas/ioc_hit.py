@@ -28,10 +28,10 @@ class IOCHitBase(BaseModel):
 
     history_id: str | None = Field(None, description="Associated history record ID")
     asset_id: str | None = Field(None, description="Associated asset ID")
-    ioc_type: IOCType = Field(..., description="IOC type")
+    ioc_type: str = Field(..., description="IOC type")
     ioc_value: str = Field(..., description="IOC value")
     confidence: int = Field(default=60, ge=0, le=100, description="Confidence score")
-    source: IOCSource = Field(..., description="IOC source")
+    source: str = Field(..., description="IOC source")
     context_snippet: str | None = Field(None, description="Context snippet")
     notes: str | None = Field(None, description="Additional notes")
 

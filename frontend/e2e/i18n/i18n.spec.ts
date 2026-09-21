@@ -77,4 +77,67 @@ test.describe("Internationalization (i18n)", () => {
       expect(response.status()).toBeLessThan(400);
     }
   });
+
+  /**
+   * 回归护栏：切换语言不得改变任何布局几何。
+   *
+   * 历史 bug：globals.css 曾按 html[lang^="zh"] 把 --sidebar-w 从 256px 改成
+   * 216px，而该变量同时驱动侧栏宽度和内容区 paddingLeft，导致切语言时整个
+   * 外壳做 200ms 横向位移。语言只能影响文字（字体/字距），不能驱动盒子尺寸。
+   * 任何人再引入语言相关的宽度，这里会直接失败。
+   */
+  test("switching locale must not shift layout geometry", async ({ page }) => {
+    const measureLayout = () =>
+      page.evaluate(() => {
+        const box = (el: Element | null) => {
+          if (!el) return null;
+          const r = el.getBoundingClientRect();
+          return [r.x, r.y, r.width, r.height].map((n) => Math.round(n));
+        };
+        const sidebar = document.querySelector("aside");
+        const content = document.getElementById("main-content");
+        return {
+          sidebar: box(sidebar),
+          content: box(content),
+          contentBox: box(content?.parentElement ?? null),
+          viewportClientWidth: document.documentElement.clientWidth,
+        };
+      });
+
+    await page.goto("/en/alerts");
+    await page.waitForSelector("aside", { timeout: 10000 });
+
+    const before = await measureLayout();
+
+    // 断言侧栏确实是展开态，否则测不到真正的宽度驱动逻辑
+    expect(before.sidebar?.[2], "侧栏应处于展开态（宽度应大于 0）").toBeGreaterThan(0);
+
+    await page.getByTestId("lang-switcher").getByRole("radio", { name: "中文" }).click();
+    await expect(page).toHaveURL(/\/zh-CN\/alerts/);
+    await page.waitForSelector("aside nav a", { timeout: 10000 });
+
+    const after = await measureLayout();
+
+    for (const key of ["sidebar", "content", "contentBox", "viewportClientWidth"] as const) {
+      expect(
+        after[key],
+        `切语言后 ${key} 的几何发生了变化：${JSON.stringify(before[key])} -> ${JSON.stringify(after[key])}`
+      ).toEqual(before[key]);
+    }
+  });
+
+  test("sidebar width stays constant across locales", async ({ page }) => {
+    const sidebarWidth = async (locale: string) => {
+      await page.goto(`${locale}/alerts`);
+      await page.waitForSelector("aside", { timeout: 10000 });
+      return page.evaluate(() =>
+        Math.round(document.querySelector("aside")!.getBoundingClientRect().width)
+      );
+    };
+
+    const en = await sidebarWidth("en");
+    const zh = await sidebarWidth("zh-CN");
+
+    expect(zh, `中文与英文侧栏宽度必须一致：zh=${zh}px, en=${en}px`).toBe(en);
+  });
 });

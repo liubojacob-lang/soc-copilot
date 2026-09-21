@@ -889,7 +889,7 @@ PENDING → RUNNING → SUCCESS
 | redis | redis:7-alpine | 127.0.0.1:6379 | backend-net (internal) | 1CPU/512M |
 | backend | 自建 | 8000 (内部) | backend-net + database-net | 2CPU/2G |
 | frontend | 自建 | 3000 (内部) | frontend-net | 1CPU/1G |
-| nginx | nginx:alpine | 80:80, 443:443 | frontend-net | 0.5CPU/256M |
+| nginx | nginx:1.26-alpine | 80:80, 443:443 | frontend-net | 0.5CPU/256M |
 
 **网络隔离**: 三层网络架构
 - `frontend-net`: 前端→Nginx通信

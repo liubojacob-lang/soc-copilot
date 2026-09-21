@@ -67,6 +67,19 @@ class IOCHitsService:
         total = await self.repository.count_by_ioc(self.session, ioc_value)
         return [self._to_response(h) for h in hits], total
 
+    async def list_recent(self, limit: int = 100) -> tuple[list[IOCHitResponse], int]:
+        """List recent IOC hits across all IOCs.
+
+        Args:
+            limit: Maximum results
+
+        Returns:
+            Tuple of (hits, total count)
+        """
+        hits = await self.repository.list_recent(self.session, limit)
+        total = await self.repository.count_all(self.session)
+        return [self._to_response(h) for h in hits], total
+
     async def list_by_asset(
         self, asset_id: str, limit: int = 100
     ) -> tuple[list[IOCHitResponse], int]:

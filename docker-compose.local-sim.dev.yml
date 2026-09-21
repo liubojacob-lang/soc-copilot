@@ -1,0 +1,25 @@
+# SOC Copilot 本地独立仿真 - 全栈热重载/实时挂载扩展编排
+# 作用:
+#   1. 后端: 将宿主机 backend 目录直接挂载进仿真容器并开启 uvicorn --reload
+#   2. 前端: 将宿主机 frontend 目录挂载进仿真容器，启动 next dev 开启 Fast Refresh / HMR 热重载
+#   使得任何前端 / 后端代码修改均能实时秒级生效，无需重新构建 Docker 镜像
+
+services:
+  backend:
+    volumes:
+      - ./backend:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      - WORKERS=1
+
+  frontend:
+    user: "0:0"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: ["sh", "-c", "node scripts/patch-next.mjs && node scripts/sync-i18n.mjs && npx next dev --webpack -H 0.0.0.0 -p 3000"]
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - WATCHPACK_POLLING=true

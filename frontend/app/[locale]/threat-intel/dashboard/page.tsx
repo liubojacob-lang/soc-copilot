@@ -188,7 +188,7 @@ export default function ThreatIntelDashboardPage() {
       }
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err);
-      setError("Failed to load dashboard data");
+      setError(t("threatIntel.dashboard.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -228,10 +228,10 @@ export default function ThreatIntelDashboardPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      showToast("Export Complete: Threat intelligence report has been downloaded.", "success");
+      showToast(t("threatIntel.dashboard.exportSuccess"), "success");
     } catch (error) {
       console.error("Failed to export:", error);
-      showToast("Export Failed: Failed to generate export file.", "error");
+      showToast(t("threatIntel.dashboard.exportFailed"), "error");
     } finally {
       setLoading(false);
     }
@@ -261,7 +261,11 @@ export default function ThreatIntelDashboardPage() {
                       : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                   }`}
                 >
-                  {range === "7d" ? "7 Days" : range === "30d" ? "30 Days" : "90 Days"}
+                  {range === "7d"
+                    ? t("threatIntel.dashboard.range7d")
+                    : range === "30d"
+                      ? t("threatIntel.dashboard.range30d")
+                      : t("threatIntel.dashboard.range90d")}
                 </button>
               ))}
             </div>
@@ -272,14 +276,14 @@ export default function ThreatIntelDashboardPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 text-xs font-medium shadow-sm transition-colors"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-              <span>Refresh</span>
+              <span>{t("threatIntel.dashboard.refresh")}</span>
             </button>
             <button
               onClick={handleExport}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium shadow-sm transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export</span>
+              <span>{t("threatIntel.dashboard.export")}</span>
             </button>
           </div>
         }
@@ -294,7 +298,7 @@ export default function ThreatIntelDashboardPage() {
               onClick={fetchDashboardData}
               className="mt-2 text-sm text-red-600 dark:text-red-400 hover:underline"
             >
-              Retry
+              {t("threatIntel.dashboard.retry")}
             </button>
           </div>
         )}
@@ -358,8 +362,9 @@ export default function ThreatIntelDashboardPage() {
               {/* Trends Chart */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Alert Trends (Last {dateRange === "7d" ? "7" : dateRange === "30d" ? "30" : "90"}{" "}
-                  Days)
+                  {t("threatIntel.dashboard.alertTrends", {
+                    days: dateRange === "7d" ? "7" : dateRange === "30d" ? "30" : "90",
+                  })}
                 </h3>
                 <TrendsChart data={trendData} type="area" height={250} />
               </div>
@@ -367,7 +372,7 @@ export default function ThreatIntelDashboardPage() {
               {/* Severity Distribution */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Severity Distribution
+                  {t("threatIntel.dashboard.severityDistribution")}
                 </h3>
                 <SeverityDistribution data={severityData} type="donut" height={250} />
               </div>
@@ -387,7 +392,7 @@ export default function ThreatIntelDashboardPage() {
               {/* Top Threat Sources */}
               <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Top Threat Sources
+                  {t("threatIntel.dashboard.topThreatSources")}
                 </h3>
                 <TopSources sources={topSources} limit={8} />
               </div>
@@ -395,7 +400,7 @@ export default function ThreatIntelDashboardPage() {
               {/* Severity Breakdown */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Severity Breakdown
+                  {t("threatIntel.dashboard.severityBreakdown")}
                 </h3>
                 <SeverityBars data={severityData} limit={5} />
               </div>
@@ -415,7 +420,7 @@ export default function ThreatIntelDashboardPage() {
               {/* IOC Statistics */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  IOC Statistics
+                  {t("threatIntel.dashboard.iocStatistics")}
                 </h3>
                 <IOCStats stats={iocStats} />
               </div>

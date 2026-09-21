@@ -2,7 +2,7 @@
 
 "use client";
 
-import { Brain, Plus, PanelLeft, PanelLeftClose, Sparkles } from "lucide-react";
+import { Brain, Plus, PanelLeft, Sparkles } from "lucide-react";
 
 interface ChatHeaderProps {
   t: (key: string) => string;
@@ -32,26 +32,25 @@ export function ChatHeader({
   const isBusy = loading || thinking || isStreaming;
 
   return (
-    <div className="h-13 px-4 border-b border-border-subtle flex items-center justify-between bg-surface-card/80 backdrop-blur-xl sticky top-0 z-20 flex-shrink-0">
+    <div className="h-13 px-4 border-b border-border-subtle flex items-center justify-between bg-surface-card sticky top-0 z-20 flex-shrink-0">
       <div className="flex items-center gap-2.5 min-w-0">
-        {/* Toggle History Sidebar Button (Claude/ChatGPT style) */}
-        <button
-          onClick={onToggleHistory}
-          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-            showHistory
-              ? "text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-950/50"
-              : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
-          }`}
-          title={showHistory ? "收起研判历史 (⌘/)" : "展开研判历史 (⌘/)"}
-          aria-label={showHistory ? "收起研判历史" : "展开研判历史"}
-        >
-          {showHistory ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
-        </button>
-
-        <div className="h-4 w-px bg-border-subtle" aria-hidden="true" />
+        {/* Toggle History Sidebar Button (only visible when sidebar is collapsed) */}
+        {!showHistory && (
+          <>
+            <button
+              onClick={onToggleHistory}
+              className="p-1.5 rounded-lg transition-colors cursor-pointer text-text-secondary hover:text-text-primary hover:bg-surface-hover"
+              title={`${t("history.expandHistory") || "展开历史"} (⌘/)`}
+              aria-label={t("history.expandHistory") || "展开历史"}
+            >
+              <PanelLeft className="w-4 h-4" />
+            </button>
+            <div className="h-4 w-px bg-border-subtle" aria-hidden="true" />
+          </>
+        )}
 
         <div className="flex items-center gap-2 min-w-0">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-ai/10 text-ai border border-ai/20">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-ai/10 text-ai-fg border border-ai/20">
             <Brain className="w-3.5 h-3.5" />
           </div>
           <span className="text-xs sm:text-sm font-semibold text-text-primary truncate max-w-[200px] sm:max-w-[320px]">
@@ -59,7 +58,7 @@ export function ChatHeader({
           </span>
           {activeModelName && (
             <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface-hover text-text-secondary border border-border-subtle">
-              <Sparkles className="w-2.5 h-2.5 text-ai" />
+              <Sparkles className="w-2.5 h-2.5 text-ai-fg" />
               {activeModelName}
             </span>
           )}

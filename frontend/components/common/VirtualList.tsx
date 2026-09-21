@@ -232,7 +232,7 @@ function VirtualListComponent<T>({
             textAlign: "center",
           }}
         >
-          {loadingComponent || <div className="text-gray-400">Loading more...</div>}
+          {loadingComponent || <div className="text-text-tertiary">Loading more...</div>}
         </div>
       )}
     </div>

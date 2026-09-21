@@ -119,3 +119,103 @@ async def test_create_case_requires_auth(client: AsyncClient):
         json={"title": "anon", "severity": "low", "status": "new"},
     )
     assert response.status_code in (401, 403)
+
+
+async def test_create_case_with_alert_ids(case_client: AsyncClient):
+    """Creating a case with alert_ids links the alert and records timeline."""
+    from db.session import AsyncSessionLocal
+    from models.security_alert import SecurityAlert
+
+    alert_id = None
+    async with AsyncSessionLocal() as session:
+        alert = SecurityAlert(
+            source="test_source",
+            external_event_id="evt_test_case_123",
+            event_type="test_event",
+            title="Alert for case test",
+            severity="high",
+            status="new",
+        )
+        session.add(alert)
+        await session.commit()
+        alert_id = alert.id
+
+    assert alert_id is not None
+
+    created = await _create_case(
+        case_client,
+        title="case-with-alert",
+        alert_ids=[str(alert_id)],
+    )
+    case_id = created["id"]
+    assert "id" in created
+    assert created["title"] == "case-with-alert"
+
+    # Read back case and check alert is linked
+    read_back = await case_client.get(f"/api/v1/cases/{case_id}")
+    assert read_back.status_code == 200
+    body = read_back.json()
+    assert body["title"] == "case-with-alert"
+    assert any(a["id"] == alert_id for a in body.get("alerts", []))
+
+    # Verify alert lifecycle includes related_cases
+    lifecycle_resp = await case_client.get(f"/api/v1/alerts/{alert_id}/lifecycle")
+    assert lifecycle_resp.status_code == 200
+    lifecycle_data = lifecycle_resp.json()
+    assert "related_cases" in lifecycle_data
+    assert any(c["id"] == case_id for c in lifecycle_data["related_cases"])
+
+    await case_client.delete(f"/api/v1/cases/{case_id}")
+
+    # Clean up alert
+    async with AsyncSessionLocal() as session:
+        a = await session.get(SecurityAlert, alert_id)
+        if a:
+            await session.delete(a)
+            await session.commit()
+
+
+async def test_create_case_with_integer_alert_ids(case_client: AsyncClient):
+    """Creating a case with integer alert_ids (e.g. [1]) must succeed without 422 error."""
+    from db.session import AsyncSessionLocal
+    from models.security_alert import SecurityAlert
+
+    alert_id = None
+    async with AsyncSessionLocal() as session:
+        alert = SecurityAlert(
+            source="test_source_int",
+            external_event_id="evt_test_case_int_123",
+            event_type="test_event",
+            title="Alert for int case test",
+            severity="medium",
+            status="new",
+        )
+        session.add(alert)
+        await session.commit()
+        alert_id = alert.id
+
+    assert alert_id is not None
+
+    created = await _create_case(
+        case_client,
+        title="case-with-int-alert",
+        alert_ids=[alert_id],
+    )
+    case_id = created["id"]
+    assert "id" in created
+    assert created["title"] == "case-with-int-alert"
+
+    # Read back case and check alert is linked
+    read_back = await case_client.get(f"/api/v1/cases/{case_id}")
+    assert read_back.status_code == 200
+    body = read_back.json()
+    assert any(a["id"] == alert_id for a in body.get("alerts", []))
+
+    await case_client.delete(f"/api/v1/cases/{case_id}")
+
+    # Clean up alert
+    async with AsyncSessionLocal() as session:
+        a = await session.get(SecurityAlert, alert_id)
+        if a:
+            await session.delete(a)
+            await session.commit()

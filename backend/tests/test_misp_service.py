@@ -88,7 +88,9 @@ class TestRateLimit:
 
 class TestServiceConfig:
     def test_enabled_with_explicit_credentials(self):
-        service = MISPService(base_url="http://m.local", api_key=secrets.token_urlsafe(8))
+        service = MISPService(
+            base_url="http://m.local", api_key=secrets.token_urlsafe(8)
+        )
         assert service.is_enabled is True
 
     def test_disabled_without_configuration(self, monkeypatch):
@@ -169,9 +171,7 @@ class TestGet:
     async def test_auth_errors_raise_runtime_error(self, default_settings, status_code):
         service = make_service_client()
         service._get_client = AsyncMock(
-            return_value=make_client(
-                make_response(raise_exc=status_error(status_code))
-            )
+            return_value=make_client(make_response(raise_exc=status_error(status_code)))
         )
 
         with pytest.raises(RuntimeError, match="API key is invalid"):

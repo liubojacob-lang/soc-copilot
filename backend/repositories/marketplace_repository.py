@@ -331,7 +331,9 @@ class MarketplaceRepository:
                     ),
                     0,
                 ).label("verified"),
-                func.coalesce(func.sum(MarketplacePlaybookModel.download_count), 0).label("downloads"),
+                func.coalesce(
+                    func.sum(MarketplacePlaybookModel.download_count), 0
+                ).label("downloads"),
             )
         )
         row = result.one()

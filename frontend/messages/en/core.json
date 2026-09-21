@@ -168,14 +168,14 @@
   "navigation": {
     "home": "Home",
     "playbooks": "Playbooks",
-    "runs": "Runs",
+    "runs": "Playbook Runs",
     "definitions": "Definitions",
     "analytics": "Analytics",
     "aiCopilot": "AI Copilot",
     "threatIntel": "Threat Intel",
     "correlation": "Correlation",
     "ueba": "UEBA",
-    "threatHunting": "Threat Hunting",
+    "threatHunting": "Hunt",
     "ecosystem": "Ecosystem",
     "marketplace": "Marketplace",
     "cloudNative": "Cloud Native",
@@ -206,7 +206,9 @@
     "logout": "Logout",
     "api": "API",
     "checking": "Checking",
-    "statusError": "Error"
+    "statusError": "Error",
+    "userAccount": "User account menu",
+    "mainNavigation": "Main navigation"
   },
   "nav": {
     "home": "Home",

@@ -8,12 +8,14 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { useToast } from "@/components/Toast";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useTranslations } from "next-intl";
+import { RefreshCw } from "lucide-react";
 
 export default function AssetsPage() {
   const t = useTranslations("assets");
   const tCommon = useTranslations("common");
   const [assets, setAssets] = useState<AssetResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [criticalityFilter, setCriticalityFilter] = useState("all");
@@ -43,8 +45,8 @@ export default function AssetsPage() {
     loadAssets();
   }, []);
 
-  const loadAssets = async () => {
-    setLoading(true);
+  const loadAssets = async (silent = false) => {
+    if (!silent) setLoading(true);
     setLoadError(null);
     try {
       const result = await api.listAssets({ query: search || undefined, limit: 100 });
@@ -53,8 +55,19 @@ export default function AssetsPage() {
       console.error("Failed to load assets:", error);
       setLoadError(error instanceof Error ? error.message : String(error));
       setAssets([]);
+    } finally {
+      if (!silent) setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadAssets(true);
+      showToast(t("refreshSuccess"), "success");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const { showToast } = useToast();
@@ -130,6 +143,15 @@ export default function AssetsPage() {
         actions={
           <div className="flex items-center gap-2">
             <button
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="px-3.5 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/60 text-sm font-medium transition-colors inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              title={t("refresh")}
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-blue-500" : ""}`} />
+              <span>{t("refresh")}</span>
+            </button>
+            <button
               onClick={() => setShowForm(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
             >
@@ -137,7 +159,7 @@ export default function AssetsPage() {
             </button>
             <button
               onClick={() => setShowImport(true)}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 text-sm font-medium transition-colors"
             >
               {t("importJson")}
             </button>
@@ -188,7 +210,7 @@ export default function AssetsPage() {
               {t("loadFailed")}：{loadError}
             </span>
             <button
-              onClick={loadAssets}
+              onClick={() => loadAssets()}
               className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
             >
               {tCommon("retry")}
@@ -201,9 +223,15 @@ export default function AssetsPage() {
             <SkeletonTable rows={8} columns={6} />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border">
-              <thead className="bg-gray-50">
+          <div className="bg-surface-card rounded-lg shadow-sm border border-border-subtle overflow-x-auto">
+            {/*
+              原先这里是 `bg-white`（表格）与 `bg-gray-50`（表头），都没有深色变体。
+              深色模式下就是「白底 + 近白文字」—— 实测这一处让 242 个文本节点不可读，
+              是本轮扩面发现的**最严重的一处**：不是"对比度偏低"，而是内容完全看不见。
+              改用语义面 token 后明暗两套自动正确。
+            */}
+            <table className="min-w-full border">
+              <thead className="bg-surface-hover">
                 <tr>
                   <th className="px-4 py-2 text-left border">{t("hostname")}</th>
                   <th className="px-4 py-2 text-left border">{t("ipAddress")}</th>
@@ -237,13 +265,13 @@ export default function AssetsPage() {
                       <td className="px-4 py-2 border">
                         <button
                           onClick={() => handleEdit(asset)}
-                          className="text-blue-600 hover:text-blue-800 mr-2"
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-2"
                         >
                           {tCommon("edit")}
                         </button>
                         <button
                           onClick={() => handleDelete(asset.id)}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                         >
                           {tCommon("delete")}
                         </button>

@@ -3,6 +3,7 @@ AI Service Module - SOC Copilot AI Assistant
 Provides intelligent analysis and recommendations using LLM
 """
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 
@@ -11,8 +12,36 @@ import httpx
 from core.config import settings
 from core.http_client import get_http_client
 from core.logger import get_logger
+from observability.metrics import llm_requests_total, llm_tokens_total
 
 logger = get_logger(__name__)
+
+
+def _record_llm_usage(tag: str, model: str, usage: dict | None) -> None:
+    """Record token usage from a provider response (T3.3).
+
+    Handles both OpenAI-style keys (prompt_tokens/completion_tokens) and
+    Anthropic-style keys (input_tokens/output_tokens). Counters are cheap
+    and thread-safe; recording must never break the response path, so all
+    failures are swallowed.
+    """
+    try:
+        if not isinstance(usage, dict):
+            usage = {}
+        model = model or "unknown"
+        prompt = usage.get("prompt_tokens") or usage.get("input_tokens")
+        completion = usage.get("completion_tokens") or usage.get("output_tokens")
+        if prompt:
+            llm_tokens_total.labels(provider=tag, model=model, direction="prompt").inc(
+                int(prompt)
+            )
+        if completion:
+            llm_tokens_total.labels(
+                provider=tag, model=model, direction="completion"
+            ).inc(int(completion))
+        llm_requests_total.labels(provider=tag, model=model).inc()
+    except Exception:  # metrics must never break an AI response
+        logger.debug("Failed to record LLM usage metrics", exc_info=True)
 
 
 class LLMProvider:
@@ -60,39 +89,52 @@ class ZhipuAIProvider(LLMProvider):
         timeout: float | None = None,
     ) -> str:
         """Generate chat completion using Zhipu AI."""
-        try:
-            actual_model = self.model if (not model or model.lower() == "auto") else model
+        actual_model = self.model if (not model or model.lower() == "auto") else model
 
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            }
-            payload = {
-                "model": actual_model,
-                "messages": messages,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "Connection": "close",
+        }
+        payload = {
+            "model": actual_model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
 
-            if timeout:
-                async with httpx.AsyncClient(timeout=timeout) as client:
+        req_timeout = timeout or getattr(settings, "ai_timeout", 90.0) or 90.0
+        # Use dedicated client with Connection: close to avoid stale socket pool disconnects
+        for attempt in range(2):
+            try:
+                async with httpx.AsyncClient(
+                    timeout=httpx.Timeout(
+                        connect=15.0, read=req_timeout, write=30.0, pool=15.0
+                    )
+                ) as client:
                     response = await client.post(
                         f"{self.base_url}/chat/completions",
                         headers=headers,
                         json=payload,
                     )
-            else:
-                response = await self.client.post(
-                    f"{self.base_url}/chat/completions",
-                    headers=headers,
-                    json=payload,
-                )
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-        except Exception as e:
-            logger.error(f"Zhipu AI API error: {e}")
-            raise
+                    response.raise_for_status()
+                    data = response.json()
+                    _record_llm_usage("zhipu", actual_model, data.get("usage"))
+                    choice = data["choices"][0]
+                    msg = choice.get("message", {})
+                    return msg.get("content") or msg.get("reasoning_content") or ""
+            except (httpx.RemoteProtocolError, httpx.ConnectError) as e:
+                if attempt == 0:
+                    logger.warning(
+                        f"Zhipu AI API transient network error ({e}), retrying once..."
+                    )
+                    await asyncio.sleep(1)
+                    continue
+                logger.error(f"Zhipu AI API error: {e}")
+                raise
+            except Exception as e:
+                logger.error(f"Zhipu AI API error: {e}")
+                raise
 
     async def embedding(self, text: str) -> list[float]:
         """Generate embedding using Zhipu AI."""
@@ -161,6 +203,7 @@ class ClaudeProvider(LLMProvider):
             )
             response.raise_for_status()
             data = response.json()
+            _record_llm_usage("claude", model, data.get("usage"))
             return data["content"][0]["text"]
         except Exception as e:
             logger.error(f"Claude API error: {e}")
@@ -207,6 +250,7 @@ class OpenAIProvider(LLMProvider):
             )
             response.raise_for_status()
             data = response.json()
+            _record_llm_usage("openai", model, data.get("usage"))
             return data["choices"][0]["message"]["content"]
         except Exception as e:
             logger.error(f"OpenAI API error: {e}")
@@ -274,6 +318,7 @@ class OpenRouterProvider(LLMProvider):
             )
             response.raise_for_status()
             data = response.json()
+            _record_llm_usage("openrouter", actual_model, data.get("usage"))
             return data["choices"][0]["message"]["content"]
         except Exception as e:
             logger.error(f"OpenRouter API error: {e}")
@@ -341,6 +386,7 @@ class MoonshotAIProvider(LLMProvider):
             )
             response.raise_for_status()
             data = response.json()
+            _record_llm_usage("moonshot", actual_model, data.get("usage"))
             return data["choices"][0]["message"]["content"]
         except Exception as e:
             logger.error(f"Moonshot AI API error: {e}")
@@ -384,36 +430,53 @@ class NVIDIAProvider(LLMProvider):
         timeout: float | None = None,
     ) -> str:
         """Generate chat completion using NVIDIA API."""
-        try:
-            # Use provided model or default from initialization
-            actual_model = self.model if (not model or model.lower() == "auto") else model
+        # Use provided model or default from initialization
+        actual_model = self.model if (not model or model.lower() == "auto") else model
 
-            # Use custom timeout if provided
-            client = self.client
-            if timeout:
-                client = httpx.AsyncClient(timeout=timeout)
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "Connection": "close",
+        }
+        payload = {
+            "model": actual_model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
 
-            response = await client.post(
-                f"{self.base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": actual_model,
-                    "messages": messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                },
-            )
-            response.raise_for_status()
-            data = response.json()
-            choice = data["choices"][0]
-            msg = choice.get("message", {})
-            return msg.get("content") or msg.get("reasoning_content") or ""
-        except Exception as e:
-            logger.error(f"NVIDIA API error: {e}")
-            raise
+        req_timeout = timeout or getattr(settings, "ai_timeout", 90.0) or 90.0
+        # Use dedicated client with Connection: close to avoid stale socket pool disconnects
+        for attempt in range(2):
+            try:
+                async with httpx.AsyncClient(
+                    timeout=httpx.Timeout(
+                        connect=15.0, read=req_timeout, write=30.0, pool=15.0
+                    )
+                ) as client:
+                    response = await client.post(
+                        f"{self.base_url}/chat/completions",
+                        headers=headers,
+                        json=payload,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    _record_llm_usage("nvidia", actual_model, data.get("usage"))
+                    choice = data["choices"][0]
+                    msg = choice.get("message", {})
+                    return msg.get("content") or msg.get("reasoning_content") or ""
+            except (httpx.RemoteProtocolError, httpx.ConnectError) as e:
+                if attempt == 0:
+                    logger.warning(
+                        f"NVIDIA API transient network error ({e}), retrying once..."
+                    )
+                    await asyncio.sleep(1)
+                    continue
+                logger.error(f"NVIDIA API error: {e}")
+                raise
+            except Exception as e:
+                logger.error(f"NVIDIA API error: {e}")
+                raise
 
     async def embedding(
         self, text: str, model: str = "nvidia/nv-embedqa-e5-v5"
@@ -482,7 +545,7 @@ class LLMFactory:
         if provider_type.lower() not in provider_key_map:
             raise ValueError(f"Unknown provider: {provider_type}")
 
-        key_setting, model_setting = provider_key_map[provider_type.lower()]
+        key_setting, _model_setting = provider_key_map[provider_type.lower()]
         api_key = getattr(settings, key_setting, None)
 
         if not api_key:

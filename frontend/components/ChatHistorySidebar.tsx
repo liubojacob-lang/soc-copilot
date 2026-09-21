@@ -174,7 +174,7 @@ export function ChatHistorySidebar({
                                     rounded-lg whitespace-nowrap shadow-lg"
                     >
                       <div className="font-medium max-w-[200px] truncate">{conv.title}</div>
-                      <div className="text-gray-400 text-[10px] mt-0.5">
+                      <div className="text-text-tertiary text-[10px] mt-0.5">
                         {formatTimeAgo(conv.updatedAt)} · {conv.messages.length} {t("messages")}
                       </div>
                     </div>
@@ -246,7 +246,7 @@ export function ChatHistorySidebar({
               <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
             <h2 className="font-semibold text-gray-900 dark:text-white">{t("title")}</h2>
-            <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+            <span className="text-xs text-text-tertiary bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
               {conversations.length}
             </span>
           </div>
@@ -254,7 +254,7 @@ export function ChatHistorySidebar({
             <button
               onClick={() => setIsCollapsed(true)}
               aria-label={t("collapse")}
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+              className="p-1.5 text-text-tertiary hover:text-gray-600 dark:hover:text-gray-300
                          hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
               title={t("collapse")}
             >
@@ -263,7 +263,7 @@ export function ChatHistorySidebar({
             <button
               onClick={onClose}
               aria-label="Close sidebar"
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+              className="p-1.5 text-text-tertiary hover:text-gray-600 dark:hover:text-gray-300
                          hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <span className="sr-only">Close</span>
@@ -298,7 +298,7 @@ export function ChatHistorySidebar({
         {/* Search */}
         <div className="p-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
             <input
               type="text"
               value={searchQuery}
@@ -325,7 +325,7 @@ export function ChatHistorySidebar({
                               dark:from-gray-800 dark:to-gray-700
                               flex items-center justify-center mb-4"
               >
-                <MessageSquare className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                <MessageSquare className="w-8 h-8 text-text-tertiary dark:text-gray-500" />
               </div>
               <p className="text-gray-700 dark:text-gray-300 font-medium text-center mb-1">
                 {t("emptyTitle")}
@@ -351,7 +351,7 @@ export function ChatHistorySidebar({
               {groupedConversations.map(({ label, conversations: groupConvs }) => (
                 <div key={label} className="mb-2">
                   <div
-                    className="px-4 py-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500
+                    className="px-4 py-1.5 text-[11px] font-semibold text-text-tertiary dark:text-gray-500
                                   uppercase tracking-wider flex items-center gap-2"
                   >
                     {label}
@@ -391,7 +391,7 @@ export function ChatHistorySidebar({
           className="px-4 py-3 border-t border-gray-200 dark:border-gray-700
                         bg-gray-50/80 dark:bg-gray-800/50"
         >
-          <div className="flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500">
+          <div className="flex items-center justify-between text-[11px] text-text-tertiary dark:text-gray-500">
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[10px] font-mono">
                 ⌘N

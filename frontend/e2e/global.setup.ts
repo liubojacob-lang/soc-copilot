@@ -17,9 +17,13 @@ async function globalSetup(config: FullConfig) {
   const context = await browser.newContext();
   const page = await context.newPage();
 
+  // E2E_BACKEND_URL overrides the derived backend origin (e.g. when the
+  // backend is not on the same host as the frontend dev server).
+  const backendURL = process.env.E2E_BACKEND_URL || baseURL.replace(":3003", ":8000");
+
   try {
     console.log("🔍 Checking backend health...");
-    const response = await page.goto(`${baseURL.replace(":3003", ":8000")}/api/health`);
+    const response = await page.goto(`${backendURL}/api/health`);
 
     if (response && response.ok()) {
       console.log("✅ Backend is healthy");

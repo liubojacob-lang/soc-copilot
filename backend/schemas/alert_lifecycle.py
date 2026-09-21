@@ -111,6 +111,7 @@ class AlertLifecycleResponse(BaseModel):
     first_seen: datetime
     last_seen: datetime
     timeline: list[dict[str, Any]] = []
+    related_cases: list[dict[str, Any]] = []
 
     class Config:
         from_attributes = True

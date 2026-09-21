@@ -1,0 +1,42 @@
+# Root .dockerignore for docker-compose builds
+
+# Environment files (CRITICAL: prevent secrets from leaking)
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+README*
+LICENSE
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Build artifacts
+node_modules/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/venv/
+backend/.venv/
+frontend/node_modules/
+frontend/.next/

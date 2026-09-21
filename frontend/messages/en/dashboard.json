@@ -1,7 +1,7 @@
 {
   "dashboard": {
-    "title": "Operations Dashboard",
-    "overview": "Real-time SOC monitoring and metrics",
+    "title": "Security Operations Wallboard",
+    "overview": "Real-time security posture, ATT&CK matrix and threat indicators",
     "realTimeMetrics": "Real-time Metrics",
     "totalAlerts": "Total Alerts",
     "unresolvedAlerts": "Unresolved",

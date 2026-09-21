@@ -92,7 +92,9 @@ async def create_definition(
         created_at=definition.created_at,
         updated_at=definition.updated_at,
         is_active=definition.is_active,
-        status=getattr(definition, "status", "published" if definition.is_active else "draft"),
+        status=getattr(
+            definition, "status", "published" if definition.is_active else "draft"
+        ),
         node_count=compiled["node_count"],
         edge_count=compiled["edge_count"],
     )
@@ -126,7 +128,9 @@ async def list_definitions(
                 created_at=item.created_at,
                 updated_at=item.updated_at,
                 is_active=item.is_active,
-                status=getattr(item, "status", "published" if item.is_active else "draft"),
+                status=getattr(
+                    item, "status", "published" if item.is_active else "draft"
+                ),
                 node_count=len(item.definition_json.get("nodes", [])),
                 edge_count=len(item.definition_json.get("edges", [])),
             )
@@ -181,7 +185,9 @@ async def get_definition(
         created_at=definition.created_at,
         updated_at=definition.updated_at,
         is_active=definition.is_active,
-        status=getattr(definition, "status", "published" if definition.is_active else "draft"),
+        status=getattr(
+            definition, "status", "published" if definition.is_active else "draft"
+        ),
         node_count=len(definition.definition_json.get("nodes", [])),
         edge_count=len(definition.definition_json.get("edges", [])),
     )
@@ -233,7 +239,9 @@ async def update_definition(
         created_at=definition.created_at,
         updated_at=definition.updated_at,
         is_active=definition.is_active,
-        status=getattr(definition, "status", "published" if definition.is_active else "draft"),
+        status=getattr(
+            definition, "status", "published" if definition.is_active else "draft"
+        ),
         node_count=len(definition.definition_json.get("nodes", [])),
         edge_count=len(definition.definition_json.get("edges", [])),
     )

@@ -282,6 +282,69 @@ class TestAITaskQueueService:
         assert task.result["degraded"] is True
         assert task.result["content"] == ""
 
+    @pytest.mark.asyncio
+    async def test_process_task_backfills_alert_triage(
+        self, ai_task_service, mock_session_factory
+    ):
+        """T2.5: Verify alert.raw_data is backfilled when alert analysis task finishes."""
+        from models.security_alert import SecurityAlert
+
+        _, session = mock_session_factory
+
+        task = AITaskModel(
+            id="task-alert-1",
+            task_type=AITaskType.ALERT_ANALYSIS.value,
+            status=AITaskStatus.PENDING.value,
+            prompt="analyze alert",
+            input_data={"alert_id": "42"},
+            created_at=datetime.now(UTC),
+            timeout_seconds=300,
+        )
+        fake_alert = SecurityAlert(
+            id=42,
+            title="Suspicious SSH Login",
+            severity="high",
+            source="wazuh",
+            external_event_id="ext-1",
+            event_type="brute_force",
+            raw_data={"pipeline": {"ai_task_id": "task-alert-1"}},
+        )
+
+        res_task1 = MagicMock()
+        res_task1.scalar_one_or_none.return_value = task
+        res_task2 = MagicMock()
+        res_task2.scalar_one_or_none.return_value = task
+        res_alert = MagicMock()
+        res_alert.scalar_one_or_none.return_value = fake_alert
+
+        session.execute = AsyncMock(side_effect=[res_task1, res_task2, res_alert])
+
+        with patch("services.ai_task_service.get_llm_retry_service") as mock_get_llm:
+            mock_llm = MagicMock()
+            mock_llm.generate_structured = AsyncMock(
+                return_value=(
+                    "分析结论：存在密码爆破攻击，建议严重度: critical",
+                    "glm-4-flash",
+                    False,
+                )
+            )
+            mock_get_llm.return_value = mock_llm
+
+            await ai_task_service._process_task("task-alert-1")
+
+        assert task.status == AITaskStatus.COMPLETED.value
+        # Verify alert raw_data was updated with triage information
+        assert "pipeline" in fake_alert.raw_data
+        triage = fake_alert.raw_data["pipeline"].get("ai_triage")
+        assert triage is not None
+        assert "密码爆破攻击" in triage["summary"]
+        assert triage["task_id"] == "task-alert-1"
+        assert triage["model_used"] == "glm-4-flash"
+        assert triage["degraded"] is False
+        assert (
+            fake_alert.raw_data["pipeline"].get("ai_suggested_severity") == "critical"
+        )
+
 
 class TestAITaskModel:
     """Tests for AITaskModel."""
@@ -384,3 +447,99 @@ class TestAITaskType:
         assert AITaskType.REPORT_GENERATION.value == "report_generation"
         assert AITaskType.CHAT_COMPLETION.value == "chat_completion"
         assert AITaskType.IOC_ANALYSIS.value == "ioc_analysis"
+
+
+class TestQueuePriorityAndCrashRecovery:
+    """T3.4: priority-ordered consumption and startup crash recovery."""
+
+    @pytest.fixture(autouse=True)
+    def _drain_global_queue(self):
+        """The task queue is module-global; keep tests isolated."""
+        from services import ai_task_service as mod
+
+        while not mod._task_queue.empty():
+            try:
+                mod._task_queue.get_nowait()
+            except Exception:
+                break
+        yield
+        while not mod._task_queue.empty():
+            try:
+                mod._task_queue.get_nowait()
+            except Exception:
+                break
+
+    @pytest.mark.asyncio
+    async def test_higher_priority_consumed_first(self):
+
+        from services.ai_task_service import _queue_item, _task_queue
+
+        # Enqueue low → high → medium; consumption order must invert for the
+        # high one while same-priority items stay FIFO.
+        _task_queue.put_nowait(_queue_item("low-1", 1))
+        _task_queue.put_nowait(_queue_item("high-1", 9))
+        _task_queue.put_nowait(_queue_item("med-1", 5))
+        _task_queue.put_nowait(_queue_item("low-2", 1))
+
+        order = []
+        while not _task_queue.empty():
+            _, _, task_id = _task_queue.get_nowait()
+            order.append(task_id)
+
+        assert order == ["high-1", "med-1", "low-1", "low-2"]
+
+    @pytest.mark.asyncio
+    async def test_recovery_requeues_pending_and_fails_processing(
+        self, mock_session_factory
+    ):
+        from services.ai_task_service import _task_queue
+
+        pending = MagicMock()
+        pending.id = "t-pending"
+        pending.status = "pending"
+        pending.priority = 7
+
+        processing = MagicMock()
+        processing.id = "t-processing"
+        processing.status = "processing"
+        processing.priority = 3
+
+        session_factory, session = mock_session_factory
+        session.execute = AsyncMock(
+            return_value=MagicMock(
+                scalars=MagicMock(
+                    return_value=MagicMock(
+                        all=MagicMock(return_value=[pending, processing])
+                    )
+                )
+            )
+        )
+
+        service = AITaskQueueService(session_factory)
+        requeued, failed = await service.recover_orphaned_tasks()
+
+        assert requeued == 1
+        assert failed == 1
+        # pending row re-enqueued with its original priority
+        neg_prio, _, task_id = _task_queue.get_nowait()
+        assert task_id == "t-pending"
+        assert neg_prio == -7
+        # processing row marked failed with an explanation
+        assert processing.status == "failed"
+        assert "orphaned" in processing.error_message
+        session.commit.assert_awaited()
+
+    @pytest.mark.asyncio
+    async def test_recovery_no_op_when_queue_clean(self, mock_session_factory):
+        session_factory, session = mock_session_factory
+        session.execute = AsyncMock(
+            return_value=MagicMock(
+                scalars=MagicMock(
+                    return_value=MagicMock(all=MagicMock(return_value=[]))
+                )
+            )
+        )
+
+        service = AITaskQueueService(session_factory)
+        requeued, failed = await service.recover_orphaned_tasks()
+        assert (requeued, failed) == (0, 0)

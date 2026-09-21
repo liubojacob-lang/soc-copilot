@@ -6,6 +6,7 @@ from utils.retry import with_retry, with_sync_retry
 @pytest.mark.asyncio
 async def test_async_retry_success():
     calls = 0
+
     @with_retry(max_retries=3, base_delay=0.01, jitter=False)
     async def sample_async_func():
         nonlocal calls
@@ -18,6 +19,7 @@ async def test_async_retry_success():
     assert result == "done"
     assert calls == 3
 
+
 @pytest.mark.asyncio
 async def test_async_retry_exhausted():
     @with_retry(max_retries=2, base_delay=0.01, jitter=False)
@@ -27,8 +29,10 @@ async def test_async_retry_exhausted():
     with pytest.raises(RuntimeError, match="permanent failure"):
         await sample_fail()
 
+
 def test_sync_retry_success():
     calls = 0
+
     @with_sync_retry(max_retries=3, base_delay=0.01, jitter=False)
     def sample_sync_func():
         nonlocal calls

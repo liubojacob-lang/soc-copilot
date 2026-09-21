@@ -12,7 +12,6 @@ import logging
 import os
 
 from .base import MessageBroker
-from .kafka_broker import KafkaBroker
 from .memory_broker import MemoryBroker
 from .redis_broker import RedisBroker
 
@@ -41,8 +40,12 @@ def get_message_broker() -> MessageBroker:
     backend = _broker_backend_setting or os.getenv("MESSAGE_BROKER", "").lower()
 
     if backend == "kafka":
-        _broker = KafkaBroker()
-        return _broker
+        # KafkaBroker was removed (T3.5): it was a NotImplementedError stub.
+        # Redis Streams is the real backend; refuse the value explicitly so a
+        # misconfiguration is visible instead of silently degrading.
+        raise ValueError(
+            "MESSAGE_BROKER=kafka is no longer supported; use redis or memory"
+        )
 
     if backend == "memory":
         _broker = MemoryBroker()

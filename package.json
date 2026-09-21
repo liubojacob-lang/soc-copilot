@@ -1,6 +1,6 @@
 {
   "name": "soc-copilot",
-  "version": "0.9.0",
+  "version": "0.9.4",
   "private": true,
   "workspaces": [
     "frontend"
@@ -36,5 +36,16 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "prettier": "^3.2.5"
+  },
+  "overrides": {
+    "brace-expansion@^1.0.0": "^1.1.18",
+    "brace-expansion@^5.0.0": "^5.0.12",
+    "browserslist": "^4.29.0",
+    "flatted": "^3.4.4",
+    "picomatch": "^4.0.7",
+    "undici": "^7.29.1",
+    "vite": "^7.3.6",
+    "lodash": "^4.18.0",
+    "shell-quote": "^1.8.5"
   }
 }

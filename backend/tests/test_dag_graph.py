@@ -38,9 +38,9 @@ class TestDAGBuilder:
         assert definition.nodes["a"].name == "a"
 
     def test_missing_required_keys_raises(self):
-        with pytest.raises(ValueError, match="nodes.*edges"):
+        with pytest.raises(ValueError, match=r"nodes.*edges"):
             DAGBuilder.from_json({"nodes": []})
-        with pytest.raises(ValueError, match="nodes.*edges"):
+        with pytest.raises(ValueError, match=r"nodes.*edges"):
             DAGBuilder.from_json({})
 
     def test_step_id_falls_back_to_type(self):

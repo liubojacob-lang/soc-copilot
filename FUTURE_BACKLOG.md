@@ -3,7 +3,9 @@
 > 由 PROJECT_FINAL_AUDIT.md（🟡 CONDITIONAL CLOSE）派生。收尾后按序消化，不阻塞当前版本。
 
 ## 上线前置（P1，与 PROJECT_FINAL_AUDIT.md 第五节对应）
-- [ ] P1-1 修复 lint 门禁：后端 `ruff check --fix --unsafe-fixes` 逐项复核 94 处存量风格错误；前端 `npm run i18n:sync` 同步 cloudNative.demoNotice
+- [x] P1-1 修复 lint 门禁：后端 `ruff check` 0 错误（本地实测）；前端 `npm run lint` 全绿（含 i18n/design-token/contrast/prettier）
+- [x] P1-1b CI 门禁转绿（2026-09-20）：pre-commit workflow 从"永远红"修复为 diff 模式 + hook 环境缓存；`[tool.isort] known_first_party` 对齐 ruff 消除双工具互改；pre-commit 的 mypy 加 `--follow-imports=skip`；三个 security gate 的内联 python 提取为 `.github/scripts/check_{pip_audit,npm_audit,bandit}.py`（支持新旧两种 audit JSON schema）；修复 `routers/report.py` headers dict-in-set 真实 bug（bandit 崩溃 + Content-Disposition 丢失）
+- [ ] P1-1c 存量格式化大扫除（可选）：`pre-commit run --all-files` 会改写 ~360 个历史文件，建议单独一个 commit 做，不阻塞上线
 - [ ] P1-2 数据库备份：pg_dump cron（compose/k8s CronJob）+ 恢复演练一次，写入 Makefile
 - [ ] P1-3 生产部署演练：干净机器 `docker compose -f docker-compose.prod.yml up`（先补 JWT_SECRET/SECRET_ENCRYPTION_KEY/CORS_ORIGINS/HTTP_ALLOWED_HOSTS/DOCKERHUB_USERNAME/API_URL），TLS 走 certbot，修复 Scripts/deploy/deploy.sh 的 cd 路径 bug
 - [ ] P1-4 git 历史清理决策：外发/开源前用 git filter-repo 清除 768d84a 的 env 文件与 docs 中旧密钥 blob
@@ -33,3 +35,4 @@
 - [ ] 用户级 AI 配额与成本看板
 - [ ] 修复 test_websocket_pubsub_bridge 环境依赖型失败（加 Redis 前置条件）
 - [ ] chat 路径接入熔断器（与结构化生成一致）
+- [ ] 真实 K8s/容器数据源接入：替换 cloud-native 模块中的示例连接器，对接生产环境集群 API 与真实事件流

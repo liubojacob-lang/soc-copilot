@@ -10,6 +10,11 @@ from core.config import settings
 from models.threat_intel_cache import ThreatIntelCacheDB
 
 
+def _utcnow_naive() -> datetime:
+    """Return current UTC datetime as timezone-naive for TIMESTAMP columns."""
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class ThreatIntelRepository:
     """Repository for threat intelligence cache CRUD operations."""
 
@@ -37,7 +42,7 @@ class ThreatIntelRepository:
                     ThreatIntelCacheDB.provider == provider,
                     ThreatIntelCacheDB.ioc_type == ioc_type,
                     ThreatIntelCacheDB.ioc_value == ioc_value,
-                    ThreatIntelCacheDB.expires_at > datetime.now(UTC),
+                    ThreatIntelCacheDB.expires_at > _utcnow_naive(),
                 )
             )
         )
@@ -76,7 +81,7 @@ class ThreatIntelRepository:
             Created cache entry
         """
         ttl_hours = settings.ti_cache_ttl_hours
-        expires_at = datetime.now(UTC) + timedelta(hours=ttl_hours)
+        expires_at = _utcnow_naive() + timedelta(hours=ttl_hours)
 
         cache_entry = ThreatIntelCacheDB(
             provider=provider,
@@ -124,7 +129,7 @@ class ThreatIntelRepository:
             Updated cache entry
         """
         ttl_hours = settings.ti_cache_ttl_hours
-        expires_at = datetime.now(UTC) + timedelta(hours=ttl_hours)
+        expires_at = _utcnow_naive() + timedelta(hours=ttl_hours)
 
         cache_entry.status = status
         cache_entry.response_json = json.dumps(response_json)
@@ -133,7 +138,7 @@ class ThreatIntelRepository:
         cache_entry.pulse_count = pulse_count
         cache_entry.last_seen = last_seen
         cache_entry.expires_at = expires_at
-        cache_entry.updated_at = datetime.now(UTC)
+        cache_entry.updated_at = _utcnow_naive()
         cache_entry.error_reason = error_reason
 
         await session.flush()
@@ -150,7 +155,7 @@ class ThreatIntelRepository:
         """
         result = await session.execute(
             select(ThreatIntelCacheDB).where(
-                ThreatIntelCacheDB.expires_at < datetime.now(UTC)
+                ThreatIntelCacheDB.expires_at < _utcnow_naive()
             )
         )
         expired = result.scalars().all()
@@ -178,7 +183,7 @@ class ThreatIntelRepository:
         active_result = await session.execute(
             select(func.count())
             .select_from(ThreatIntelCacheDB)
-            .where(ThreatIntelCacheDB.expires_at > datetime.now(UTC))
+            .where(ThreatIntelCacheDB.expires_at > _utcnow_naive())
         )
         active = active_result.scalar() or 0
 
@@ -190,7 +195,7 @@ class ThreatIntelRepository:
                 .where(
                     and_(
                         ThreatIntelCacheDB.provider == provider,
-                        ThreatIntelCacheDB.expires_at > datetime.now(UTC),
+                        ThreatIntelCacheDB.expires_at > _utcnow_naive(),
                     )
                 )
             )

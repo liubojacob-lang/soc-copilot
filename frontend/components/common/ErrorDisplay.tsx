@@ -93,7 +93,7 @@ export function ErrorDisplay({
 
       {/* Request ID */}
       {showRequestId && normalizedError.requestId && (
-        <p className="text-xs text-gray-400 dark:text-gray-600 mb-6">
+        <p className="text-xs text-text-tertiary dark:text-gray-600 mb-6">
           Request ID: {normalizedError.requestId}
         </p>
       )}
@@ -241,7 +241,7 @@ export function ErrorToast({ error, onRetry, onDismiss, duration = 5000 }: Error
           {onDismiss && (
             <button
               onClick={onDismiss}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="text-text-tertiary hover:text-gray-600 dark:hover:text-gray-300"
             >
               ✕
             </button>

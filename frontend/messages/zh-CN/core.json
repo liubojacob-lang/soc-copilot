@@ -206,7 +206,9 @@
     "logout": "登出",
     "api": "API",
     "checking": "检查中",
-    "statusError": "错误"
+    "statusError": "错误",
+    "userAccount": "用户账户菜单",
+    "mainNavigation": "主导航"
   },
   "nav": {
     "home": "首页",

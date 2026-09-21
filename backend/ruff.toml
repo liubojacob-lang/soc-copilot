@@ -58,6 +58,13 @@ ignore = [
     "E712",   # == True/False (required idiom for SQLAlchemy column expressions)
     "RUF001", # ambiguous unicode in string (zh-CN product strings are intentional)
     "RUF002", # ambiguous unicode in comment (zh-CN comments are intentional)
+    # --- mass legacy refactors, tracked for post-1.0 (T-ruff-backlog) ---
+    # UP042: (str, Enum) -> StrEnum across ~49 classes; mechanical but touches
+    #        serialization-adjacent enums, not a release-weekend change
+    "UP042",
+    # UP046/UP047: PEP 695 generics (class Foo[T]) across TypedDict/Generic helpers
+    "UP046",
+    "UP047",
     "RUF003", # ambiguous unicode in docstring (zh-CN docstrings are intentional)
     "RUF006", # asyncio dangling task (needs task-ref rework, tracked as tech debt)
     "RUF012", # mutable class default (needs ClassVar audit)

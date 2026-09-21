@@ -328,7 +328,7 @@ export default function CasesPage() {
         width: "140px",
         cell: (row) => (
           <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5 text-gray-400" />
+            <User className="w-3.5 h-3.5 text-text-tertiary" />
             {row.assigned_analyst_name || row.assigned_to || "—"}
           </span>
         ),
@@ -540,7 +540,7 @@ export default function CasesPage() {
                 setPage(1);
               }}
               placeholder={t("cases.searchPlaceholder")}
-              className="w-full pl-9 pr-4 py-2 text-sm bg-surface-input border border-border-default rounded-lg text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all"
+              className="w-full pl-9 pr-4 py-2 text-sm bg-surface-input border border-border-default rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-all"
             />
           </div>
 

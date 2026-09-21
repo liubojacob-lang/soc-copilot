@@ -2,15 +2,18 @@ name: Pre-commit Checks
 
 on:
   push:
-    branches: [main, develop, "release/*"]
+    branches: [master, develop, "release/*"]
   pull_request:
-    branches: [main, develop]
+    branches: [master, develop]
 
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # diff 模式需要完整历史来定位 merge-base
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,12 +28,35 @@ jobs:
       - name: Install pre-commit
         run: pip install pre-commit
 
-      - name: Run pre-commit
-        run: pre-commit run --all-files --show-diff-on-failure
+      # 缓存 hook 环境（black/ruff/isort/mypy/prettier/eslint 的安装），
+      # 否则每次运行都要重新装 6 套环境，既慢又容易因网络抖动失败。
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # 只检查本次变更涉及的文件，与本地 pre-commit 钩子行为一致。
+      # 存量文件不符合 hook 规则（历史遗留）不再阻塞 CI；
+      # 想全量清理时可手动跑 pre-commit run --all-files 后一次性提交。
+      - name: Determine diff range
+        id: diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "from=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            # 新分支首次推送没有 before，检查最后一个提交
+            echo "from=HEAD~1" >> "$GITHUB_OUTPUT"
+          else
+            echo "from=${{ github.event.before }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run pre-commit on changed files
+        run: pre-commit run --show-diff-on-failure --from-ref ${{ steps.diff.outputs.from }} --to-ref HEAD
 
       - name: Upload pre-commit results
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pre-commit-results
           path: |

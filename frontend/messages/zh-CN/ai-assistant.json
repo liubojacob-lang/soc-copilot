@@ -68,6 +68,13 @@
       "search": "搜索对话",
       "emptyTitle": "暂无历史对话",
       "emptyHint": "开始一个新的对话吧",
+      "searchPlaceholder": "搜索研判历史...",
+      "noSearchResults": "未搜索到匹配记录",
+      "tryDifferentKeywords": "请尝试其他关键词",
+      "titlePlaceholder": "输入会话标题...",
+      "cancel": "取消",
+      "save": "保存",
+      "untitled": "未命名会话",
       "shortcuts": {
         "new": "新建对话",
         "close": "关闭"
@@ -113,11 +120,16 @@
     "toSend": "发送",
     "forNewLine": "换行",
     "thinking": "思考中...",
+    "thinkingProcess": "思考推演过程",
+    "smartRouting": "⚡ 智能路由: {model}",
+    "analyzingAndReasoning": "正在研判与逻辑推演中...",
     "userLabel": "您",
     "actions": {
       "quickActions": "快速操作",
       "clearChat": "清除对话",
-      "copy": "复制"
+      "copy": "复制",
+      "copyCode": "复制代码",
+      "copied": "已复制"
     }
   },
   "ai": {

@@ -30,6 +30,8 @@ jobs:
             test
             config
             migration
+            deps
+            chore
           scopes: |
             backend
             frontend

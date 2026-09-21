@@ -71,9 +71,11 @@ export interface CaseCreatePayload {
   title: string;
   description?: string;
   severity: CaseSeverity;
+  status?: CaseStatus;
   assigned_to?: string;
   sla_deadline?: string;
   tags?: string[];
+  alert_ids?: (string | number)[];
 }
 
 export interface CaseUpdatePayload {

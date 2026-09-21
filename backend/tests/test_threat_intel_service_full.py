@@ -102,8 +102,12 @@ class TestThreatIntelServiceLookup:
 
     async def test_lookup_disabled(self, mock_session):
         service = ThreatIntelService(mock_session)
-        with patch.object(service, "is_enabled", AsyncMock(return_value=(False, "Disabled"))):
-            with patch("services.threat_intel_service.should_send_ioc_to_external_ti") as mock_filter:
+        with patch.object(
+            service, "is_enabled", AsyncMock(return_value=(False, "Disabled"))
+        ):
+            with patch(
+                "services.threat_intel_service.should_send_ioc_to_external_ti"
+            ) as mock_filter:
                 mock_decision = MagicMock()
                 mock_decision.allowed = True
                 mock_filter.return_value = mock_decision
@@ -115,7 +119,9 @@ class TestThreatIntelServiceLookup:
     async def test_lookup_cached_hit(self, mock_session):
         service = ThreatIntelService(mock_session)
         with patch.object(service, "is_enabled", AsyncMock(return_value=(True, None))):
-            with patch("services.threat_intel_service.should_send_ioc_to_external_ti") as mock_filter:
+            with patch(
+                "services.threat_intel_service.should_send_ioc_to_external_ti"
+            ) as mock_filter:
                 mock_decision = MagicMock()
                 mock_decision.allowed = True
                 mock_filter.return_value = mock_decision
@@ -137,7 +143,9 @@ class TestThreatIntelServiceLookup:
     async def test_lookup_otx_success(self, mock_session):
         service = ThreatIntelService(mock_session)
         with patch.object(service, "is_enabled", AsyncMock(return_value=(True, None))):
-            with patch("services.threat_intel_service.should_send_ioc_to_external_ti") as mock_filter:
+            with patch(
+                "services.threat_intel_service.should_send_ioc_to_external_ti"
+            ) as mock_filter:
                 mock_decision = MagicMock()
                 mock_decision.allowed = True
                 mock_filter.return_value = mock_decision
@@ -145,46 +153,78 @@ class TestThreatIntelServiceLookup:
                 service.repository.get_by_ioc = AsyncMock(return_value=None)
                 service.repository.create = AsyncMock()
 
-                mock_client = MagicMock()
-                with patch.object(service, "_get_otx_client", return_value=mock_client):
+                # Patch IOCHitRepository so internal-hit DB path doesn't touch the mock session
+                with patch(
+                    "services.threat_intel_service.IOCHitRepository"
+                ) as mock_ioc_hit_repo_cls:
+                    mock_ioc_hit_repo_cls.return_value.list_by_ioc = AsyncMock(
+                        return_value=[]
+                    )
+
+                    mock_client = MagicMock()
                     with patch.object(
-                        service,
-                        "_lookup_otx",
-                        AsyncMock(return_value={
-                            "verdict": "suspicious",
-                            "score": 65,
-                            "pulse_count": 2,
-                            "tags": ["phishing"],
-                            "references": ["https://otx.alienvault.com"],
-                            "raw": {},
-                        }),
+                        service, "_get_otx_client", return_value=mock_client
                     ):
-                        resp = await service.lookup("domain", "suspicious-bank.com")
-                        assert resp.cached is False
-                        assert resp.verdict == Verdict.suspicious
-                        assert resp.score == 65
-                        assert resp.tags == ["phishing"]
-                        service.repository.create.assert_awaited_once()
+                        with patch.object(
+                            service,
+                            "_lookup_otx",
+                            AsyncMock(
+                                return_value={
+                                    "verdict": "suspicious",
+                                    "score": 65,
+                                    "pulse_count": 2,
+                                    "tags": ["phishing"],
+                                    "references": ["https://otx.alienvault.com"],
+                                    "raw": {},
+                                }
+                            ),
+                        ):
+                            resp = await service.lookup("domain", "suspicious-bank.com")
+                            assert resp.cached is False
+                            assert resp.verdict == Verdict.suspicious
+                            assert resp.score == 65
+                            assert resp.tags == ["phishing"]
+                            service.repository.create.assert_awaited_once()
 
     async def test_lookup_otx_exception_degraded(self, mock_session):
         service = ThreatIntelService(mock_session)
         with patch.object(service, "is_enabled", AsyncMock(return_value=(True, None))):
-            with patch("services.threat_intel_service.should_send_ioc_to_external_ti") as mock_filter:
+            with patch(
+                "services.threat_intel_service.should_send_ioc_to_external_ti"
+            ) as mock_filter:
                 mock_decision = MagicMock()
                 mock_decision.allowed = True
                 mock_filter.return_value = mock_decision
 
                 service.repository.get_by_ioc = AsyncMock(return_value=None)
-                mock_client = MagicMock()
-                with patch.object(service, "_get_otx_client", return_value=mock_client):
+
+                # Patch IOCHitRepository so internal-hit DB path doesn't touch the mock session
+                with patch(
+                    "services.threat_intel_service.IOCHitRepository"
+                ) as mock_ioc_hit_repo_cls:
+                    mock_ioc_hit_repo_cls.return_value.list_by_ioc = AsyncMock(
+                        return_value=[]
+                    )
+
+                    mock_client = MagicMock()
                     with patch.object(
-                        service,
-                        "_lookup_otx",
-                        AsyncMock(side_effect=RuntimeError("OTX API 503 Service Unavailable")),
+                        service, "_get_otx_client", return_value=mock_client
                     ):
-                        resp = await service.lookup("hash", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-                        assert resp.degraded is True
-                        assert "503" in resp.error_reason
+                        with patch.object(
+                            service,
+                            "_lookup_otx",
+                            AsyncMock(
+                                side_effect=RuntimeError(
+                                    "OTX API 503 Service Unavailable"
+                                )
+                            ),
+                        ):
+                            resp = await service.lookup(
+                                "hash",
+                                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                            )
+                            assert resp.degraded is True
+                            assert "503" in resp.error_reason
 
 
 @pytest.mark.asyncio
@@ -193,8 +233,12 @@ class TestThreatIntelServiceBulkAndEnrich:
 
     async def test_bulk_lookup_disabled(self, mock_session):
         service = ThreatIntelService(mock_session)
-        with patch.object(service, "is_enabled", AsyncMock(return_value=(False, "Disabled"))):
-            resp = await service.bulk_lookup([{"ioc_type": "ip", "ioc_value": "8.8.8.8"}])
+        with patch.object(
+            service, "is_enabled", AsyncMock(return_value=(False, "Disabled"))
+        ):
+            resp = await service.bulk_lookup(
+                [{"ioc_type": "ip", "ioc_value": "8.8.8.8"}]
+            )
             assert resp.disabled is True
             assert resp.results == []
 
@@ -204,7 +248,9 @@ class TestThreatIntelServiceBulkAndEnrich:
             with patch("services.threat_intel_service.settings") as mock_settings:
                 mock_settings.ti_allow_private_ip = False
                 mock_settings.ti_allow_url_with_private_host = False
-                mock_settings.ti_max_iocs_per_request = 1  # only allow 1, rest rate-limited
+                mock_settings.ti_max_iocs_per_request = (
+                    1  # only allow 1, rest rate-limited
+                )
 
                 fake_res = ThreatIntelResponse(
                     request_id="test",
@@ -223,9 +269,15 @@ class TestThreatIntelServiceBulkAndEnrich:
                 )
                 with patch.object(service, "lookup", AsyncMock(return_value=fake_res)):
                     items = [
-                        {"ioc_type": "ip", "ioc_value": "192.168.1.1"},  # filtered compliance
-                        {"ioc_type": "ip", "ioc_value": "8.8.8.8"},      # processed
-                        {"ioc_type": "domain", "ioc_value": "example.com"}, # rate-limited
+                        {
+                            "ioc_type": "ip",
+                            "ioc_value": "192.168.1.1",
+                        },  # filtered compliance
+                        {"ioc_type": "ip", "ioc_value": "8.8.8.8"},  # processed
+                        {
+                            "ioc_type": "domain",
+                            "ioc_value": "example.com",
+                        },  # rate-limited
                     ]
                     bulk_resp = await service.bulk_lookup(items)
 
@@ -237,7 +289,9 @@ class TestThreatIntelServiceBulkAndEnrich:
 
     async def test_enrich_iocs_disabled(self, mock_session):
         service = ThreatIntelService(mock_session)
-        with patch.object(service, "is_enabled", AsyncMock(return_value=(False, "Disabled"))):
+        with patch.object(
+            service, "is_enabled", AsyncMock(return_value=(False, "Disabled"))
+        ):
             analysis = await service.enrich_iocs({"ips": ["8.8.8.8"]})
             assert analysis.disabled is True
             assert analysis.items == []
@@ -264,12 +318,16 @@ class TestThreatIntelServiceBulkAndEnrich:
                 )
             ]
             fake_bulk.filtered_items = []
-            with patch.object(service, "bulk_lookup", AsyncMock(return_value=fake_bulk)):
-                analysis = await service.enrich_iocs({
-                    "ips": ["8.8.8.8"],
-                    "domains": ["safe.com"],
-                    "other": ["ignore_me"],
-                })
+            with patch.object(
+                service, "bulk_lookup", AsyncMock(return_value=fake_bulk)
+            ):
+                analysis = await service.enrich_iocs(
+                    {
+                        "ips": ["8.8.8.8"],
+                        "domains": ["safe.com"],
+                        "other": ["ignore_me"],
+                    }
+                )
                 assert analysis.disabled is False
                 assert len(analysis.items) == 1
                 assert analysis.items[0].ioc_value == "8.8.8.8"

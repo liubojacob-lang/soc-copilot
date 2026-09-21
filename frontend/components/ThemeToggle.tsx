@@ -61,7 +61,7 @@ export function ThemeToggle() {
               ${
                 isActive
                   ? "bg-white dark:bg-gray-700 text-accent-600 dark:text-accent-400 shadow-subtle font-semibold"
-                  : "text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                  : "text-text-tertiary hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
               }
             `}
           >

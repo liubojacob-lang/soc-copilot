@@ -26,7 +26,11 @@ class CircuitState(str, Enum):
 class CircuitBreakerOpenException(Exception):
     """Raised when an operation is attempted while the circuit is OPEN."""
 
-    def __init__(self, message: str = "Circuit breaker is OPEN. Request rejected.", name: str = "default"):
+    def __init__(
+        self,
+        message: str = "Circuit breaker is OPEN. Request rejected.",
+        name: str = "default",
+    ):
         super().__init__(f"[{name}] {message}")
         self.name = name
 
@@ -74,7 +78,9 @@ class CircuitBreaker:
             if self.state == CircuitState.OPEN:
                 if now - self.last_state_change >= self.recovery_timeout:
                     self.state = CircuitState.HALF_OPEN
-                    logger.warning(f"CircuitBreaker[{self.name}] transitioned to HALF_OPEN. Probing downstream...")
+                    logger.warning(
+                        f"CircuitBreaker[{self.name}] transitioned to HALF_OPEN. Probing downstream..."
+                    )
                 else:
                     raise CircuitBreakerOpenException(
                         f"Circuit breaker is OPEN (cooldown: {self.recovery_timeout - (now - self.last_state_change):.1f}s remaining)",
@@ -99,7 +105,9 @@ class CircuitBreaker:
                 self.state = CircuitState.CLOSED
                 self.failure_count = 0
                 self.last_state_change = time.time()
-                logger.info(f"CircuitBreaker[{self.name}] recovered to CLOSED after successful probe.")
+                logger.info(
+                    f"CircuitBreaker[{self.name}] recovered to CLOSED after successful probe."
+                )
             elif self.state == CircuitState.CLOSED and self.failure_count > 0:
                 self.failure_count = 0
 
@@ -114,7 +122,10 @@ class CircuitBreaker:
                 logger.error(
                     f"CircuitBreaker[{self.name}] probe failed in HALF_OPEN ({exc}). Re-opening circuit for {self.recovery_timeout}s."
                 )
-            elif self.state == CircuitState.CLOSED and self.failure_count >= self.failure_threshold:
+            elif (
+                self.state == CircuitState.CLOSED
+                and self.failure_count >= self.failure_threshold
+            ):
                 self.state = CircuitState.OPEN
                 self.last_state_change = time.time()
                 logger.error(

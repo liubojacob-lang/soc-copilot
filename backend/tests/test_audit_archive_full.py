@@ -69,6 +69,7 @@ async def seed_reference_users(setup_database, client):
 # 1. AuditArchiveService Unit Tests
 # ─────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_audit_archive_service_lifecycle(tmp_path: Path):
     archive_dir = tmp_path / "audit_archives"
@@ -126,14 +127,18 @@ async def test_audit_archive_service_lifecycle(tmp_path: Path):
     # 3. Export Logs (JSON)
     start_date = old_date - timedelta(days=5)
     end_date = datetime.now(UTC) + timedelta(days=1)
-    export_json = await service.export_logs(start_date, end_date, format="json", include_archived=True)
+    export_json = await service.export_logs(
+        start_date, end_date, format="json", include_archived=True
+    )
     assert export_json.exists()
     with open(export_json, encoding="utf-8") as f:
         exported = json.load(f)
         assert exported["total_count"] >= 1
 
     # 4. Export Logs (CSV)
-    export_csv = await service.export_logs(start_date, end_date, format="csv", include_archived=True)
+    export_csv = await service.export_logs(
+        start_date, end_date, format="csv", include_archived=True
+    )
     assert export_csv.exists()
     with open(export_csv, encoding="utf-8") as f:
         reader = csv.reader(f)
@@ -155,6 +160,7 @@ def test_audit_archive_service_singleton():
 # ─────────────────────────────────────────────────────────────
 # 2. AuditRepository Unit Tests
 # ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_audit_repository_crud_and_filters():
@@ -215,7 +221,7 @@ async def test_audit_repository_crud_and_filters():
         assert any(entry.status_code == 401 for entry in client_err_logs)
 
         # 4. Filter by status_code="error" (4xx + 5xx)
-        err_logs, e_total = await repo.list(status_code="error", limit=50)
+        _err_logs, e_total = await repo.list(status_code="error", limit=50)
         assert e_total >= 2
 
         # 5. Query by target
@@ -227,6 +233,7 @@ async def test_audit_repository_crud_and_filters():
 # ─────────────────────────────────────────────────────────────
 # 3. Audit Log Router API Endpoints Tests
 # ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_audit_logs_list_api(auth_client: AsyncClient):

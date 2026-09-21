@@ -235,7 +235,9 @@ class AuditArchiveService:
             Dict with cleanup statistics
         """
         retention_days = (
-            retention_days if retention_days is not None else self.archive_retention_days
+            retention_days
+            if retention_days is not None
+            else self.archive_retention_days
         )
         cutoff_date = datetime.now() - timedelta(days=retention_days)
 

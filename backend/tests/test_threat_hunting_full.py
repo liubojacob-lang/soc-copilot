@@ -26,6 +26,7 @@ from services.threat_hunting_service import (
 # 1. ThreatHuntingEngine Unit Tests
 # ─────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_threat_hunting_engine_initialization():
     engine = ThreatHuntingEngine()
@@ -98,9 +99,7 @@ async def test_threat_hunting_engine_execute_hunt_success():
     )
 
     async with AsyncSessionLocal() as session:
-        result = await engine.execute_hunt(
-            "hunt_001", time_range_hours=12, db=session
-        )
+        result = await engine.execute_hunt("hunt_001", time_range_hours=12, db=session)
 
     assert result.hunt_id.startswith("hunt_exec_")
     assert result.status == HuntStatus.COMPLETED
@@ -215,6 +214,7 @@ async def test_threat_hunting_lifecycle_and_results_retrieval():
 # 2. Sigma Rule Engine Unit Tests
 # ─────────────────────────────────────────────────────────────
 
+
 def test_sigma_engine_rules_loading():
     engine = get_sigma_engine()
     rules = engine.get_all_rules()
@@ -238,6 +238,7 @@ def test_sigma_engine_rules_loading():
 # ─────────────────────────────────────────────────────────────
 # 3. Threat Hunting API Router Endpoints Tests
 # ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_get_hunt_hypotheses_api(auth_client: AsyncClient):
@@ -286,7 +287,11 @@ async def test_execute_hunt_api(auth_client: AsyncClient):
 async def test_ioc_hunt_api(auth_client: AsyncClient):
     payload = {
         "iocs": [
-            {"type": "ip", "value": "198.51.100.23", "description": "Suspicious Scanner"},
+            {
+                "type": "ip",
+                "value": "198.51.100.23",
+                "description": "Suspicious Scanner",
+            },
         ],
         "time_range_days": 14,
     }
@@ -343,12 +348,16 @@ async def test_sigma_rules_api_endpoints(auth_client: AsyncClient):
     assert "categories" in cat_data
 
     # 3. Rule detail
-    detail_resp = await auth_client.get(f"/api/v1/threat-hunting/sigma/rules/{first_rule_id}")
+    detail_resp = await auth_client.get(
+        f"/api/v1/threat-hunting/sigma/rules/{first_rule_id}"
+    )
     assert detail_resp.status_code == 200
     detail = detail_resp.json()
     assert detail["id"] == first_rule_id
     assert "title" in detail
 
     # 4. 404 for invalid rule
-    not_found_resp = await auth_client.get("/api/v1/threat-hunting/sigma/rules/invalid_rule_999")
+    not_found_resp = await auth_client.get(
+        "/api/v1/threat-hunting/sigma/rules/invalid_rule_999"
+    )
     assert not_found_resp.status_code == 404

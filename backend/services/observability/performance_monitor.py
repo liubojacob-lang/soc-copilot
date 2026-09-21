@@ -71,8 +71,7 @@ class PerformanceMonitor:
 
         try:
             # Query for slow API requests from audit logs
-            query = text(
-                """
+            query = text("""
                 SELECT 
                     method,
                     path,
@@ -88,8 +87,7 @@ class PerformanceMonitor:
                 HAVING AVG(duration_ms) > 100  -- Only include slow requests (>100ms avg)
                 ORDER BY avg_duration_ms DESC
                 LIMIT 20
-            """
-            )
+            """)
 
             result = await self.db_session.execute(
                 query, {"start_time": start_time, "end_time": end_time}
@@ -97,7 +95,7 @@ class PerformanceMonitor:
             rows = result.fetchall()
 
             for row in rows:
-                method, path, count, avg_duration, max_duration, p95_duration = row
+                method, path, count, avg_duration, _max_duration, p95_duration = row
 
                 metrics.append(
                     PerformanceMetric(
@@ -178,19 +176,36 @@ class PerformanceMonitor:
             # For now, we'll check for common performance issues
 
             # Check for table sizes and growth
-            query = text(
-                """
-                SELECT 
-                    name as table_name,
-                    COUNT(*) as row_count
-                FROM sqlite_master 
-                WHERE type='table' 
-                  AND name NOT LIKE 'sqlite_%'
-                GROUP BY name
-                ORDER BY row_count DESC
-                LIMIT 10
-            """
+            bind = (
+                self.db_session.get_bind()
+                if hasattr(self.db_session, "get_bind")
+                else getattr(self.db_session, "bind", None)
             )
+            is_postgres = (
+                bind is not None
+                and getattr(bind, "dialect", None) is not None
+                and bind.dialect.name == "postgresql"
+            )
+
+            if is_postgres:
+                query = text("""
+                    SELECT 
+                        relname as table_name,
+                        n_live_tup as row_count
+                    FROM pg_stat_user_tables
+                    ORDER BY n_live_tup DESC
+                    LIMIT 10
+                    """)
+            else:
+                query = text("""
+                    SELECT 
+                        name as table_name,
+                        0 as row_count
+                    FROM sqlite_master 
+                    WHERE type='table' 
+                      AND name NOT LIKE 'sqlite_%'
+                    LIMIT 10
+                    """)
 
             result = await self.db_session.execute(query)
             tables = result.fetchall()

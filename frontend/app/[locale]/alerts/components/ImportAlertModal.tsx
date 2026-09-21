@@ -11,7 +11,7 @@
  * - Confirm import → sends to API
  */
 
-import { useState, useRef, useCallback, type DragEvent } from "react";
+import { useState, useRef, useCallback, useEffect, type DragEvent } from "react";
 import { useTranslations } from "next-intl";
 import {
   Upload,
@@ -218,17 +218,41 @@ export default function ImportAlertModal({
     setFormat("auto");
   }, []);
 
+  // Lock background scroll and listen for ESC key when open
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, onClose]);
+
   // ── Dismiss ──────────────────────────────────────────
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 max-w-2xl w-full mx-4 max-h-[90vh] flex flex-col">
+      <div
+        className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 max-w-2xl w-full max-h-[90vh] flex flex-col"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
@@ -244,7 +268,7 @@ export default function ImportAlertModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1.5 text-text-tertiary hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -309,7 +333,7 @@ export default function ImportAlertModal({
                   "border-gray-200 dark:border-gray-700"
                 )}
               />
-              <p className="text-xs text-gray-400 mt-1">{textContent.length} characters</p>
+              <p className="text-xs text-text-tertiary mt-1">{textContent.length} characters</p>
             </div>
           )}
 
@@ -362,11 +386,13 @@ export default function ImportAlertModal({
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2">
-                  <Upload className="w-10 h-10 text-gray-400" />
+                  <Upload className="w-10 h-10 text-text-tertiary" />
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Drag & drop a file here, or click to browse
                   </p>
-                  <p className="text-xs text-gray-400">Supported: .csv, .json, .txt, .log, .cef</p>
+                  <p className="text-xs text-text-tertiary">
+                    Supported: .csv, .json, .txt, .log, .cef
+                  </p>
                 </div>
               )}
             </div>
@@ -480,7 +506,7 @@ export default function ImportAlertModal({
                           key={idx}
                           className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
                         >
-                          <td className="px-3 py-2 text-gray-400 text-xs">{idx + 1}</td>
+                          <td className="px-3 py-2 text-text-tertiary text-xs">{idx + 1}</td>
                           <td className="px-3 py-2 max-w-[200px]">
                             <span className="text-gray-900 dark:text-white truncate block">
                               {String(item.title || "-")}
@@ -508,7 +534,7 @@ export default function ImportAlertModal({
                                 {String(item.source_ip)}
                               </code>
                             ) : (
-                              <span className="text-gray-400 text-xs">-</span>
+                              <span className="text-text-tertiary text-xs">-</span>
                             )}
                           </td>
                         </tr>
@@ -516,7 +542,7 @@ export default function ImportAlertModal({
                     </tbody>
                   </table>
                   {previewData.length > 20 && (
-                    <div className="px-4 py-2 text-xs text-gray-400 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                    <div className="px-4 py-2 text-xs text-text-tertiary bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
                       Showing 20 of {previewData.length} parsed alerts
                     </div>
                   )}
@@ -538,7 +564,7 @@ export default function ImportAlertModal({
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-text-tertiary">
             Supported formats: CEF, Syslog (RFC 3164), JSON, CSV
           </p>
           <button

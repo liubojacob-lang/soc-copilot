@@ -1,6 +1,6 @@
 {
   "playbooks": {
-    "title": "剧本",
+    "title": "剧本运行",
     "execute": "执行",
     "history": "运行历史",
     "dag": "DAG可视化",
@@ -9,7 +9,8 @@
     "running": "运行中",
     "completed": "已完成",
     "failed": "失败",
-    "subtitle": "剧本自动化与编排",
+    "subtitle": "监控剧本执行记录与并发队列",
+    "goToDefinitions": "剧本定义与编排",
     "duration": "持续时间",
     "mode": "模式",
     "started": "开始时间",
@@ -113,14 +114,58 @@
       "canvasView": "流程画布",
       "jsonView": "JSON 源码",
       "stepSummary": "步骤概要清单 ({count})",
+      "addAction": "添加动作",
+      "clickToInspect": "点击节点或连线可打开配置抽屉",
+      "noSteps": "暂无步骤，点击上方按钮添加",
       "footerStats": "共计 {nodes} 个执行节点，{edges} 条转换关系",
-      "footerHint": "支持平移缩放、节点选中与链路排查",
+      "footerHint": "点击节点或连线可展开参数配置抽屉，支持平移与缩放",
       "nameRequired": "请输入剧本名称",
       "nodesRequired": "剧本流程必须包含至少一个节点",
       "invalidEdge": "流程连线异常：节点 \"{source}\" 或 \"{target}\" 不存在于节点列表中",
       "saveSuccess": "剧本定义保存成功！正在返回详情页...",
       "saveFailed": "保存剧本定义失败，请检查数据格式",
       "networkError": "网络请求异常，请检查后端服务连接状态"
+    },
+    "createPage": {
+      "title": "新建安全剧本",
+      "subtitle": "基于 DAG 流程图设计、编排与发布自动化安全处置流程",
+      "backToList": "返回列表",
+      "publishPlaybook": "发布剧本",
+      "publishing": "正在保存...",
+      "loadingVisualEngine": "加载可视化流程引擎...",
+      "chooseTemplate": "选择预置模板或空白起步",
+      "chooseTemplateDesc": "快速应用经安全验证的编排模版，支持在画布上二次微调",
+      "selected": "已选择",
+      "nodesCount": "{count} 个节点",
+      "edgesCount": "{count} 条边",
+      "defaultName": "自动化 IP 威胁封禁剧本",
+      "defaultDesc": "检测高危外联告警，经威胁情报研判后自动在防火墙下发阻断规则并通知值班员",
+      "publishSuccess": "剧本定义发布成功！正在返回剧本工作区...",
+      "publishFailed": "提交剧本定义失败，请检查数据格式",
+      "networkError": "网络请求异常，请检查后端服务连接状态",
+      "nameRequired": "请输入剧本名称",
+      "nodesRequired": "剧本流程必须包含至少一个节点",
+      "invalidEdge": "流程连线异常：节点 \"{source}\" 或 \"{target}\" 不存在于节点列表中",
+      "totalNodesAndEdges": "共计 {nodes} 个执行节点，{edges} 条转换关系",
+      "canvasHint": "支持平移缩放、节点选中与链路排查",
+      "templates": {
+        "ipBlock": {
+          "name": "恶意 IP 自动封禁",
+          "description": "检测高危外联告警，经威胁情报研判后自动在防火墙下发阻断规则并通知值班员"
+        },
+        "phishing": {
+          "name": "钓鱼邮件快速处置",
+          "description": "提取邮件正文与附件 IOC，自动化沙箱引申检测，若发现恶意则全网隔离并重置凭证"
+        },
+        "endpoint": {
+          "name": "终端进程应急隔离",
+          "description": "EDR 捕获异常进程提权，溯源进程链，经审批节点后执行终端逻辑隔离与进程查杀"
+        },
+        "custom": {
+          "name": "自定义空白工作流",
+          "description": "从基础的三节点模板开始构建，自由编排输入输出、条件路由与处置动作"
+        }
+      }
     },
     "runDetail": {
       "title": "运行详情",

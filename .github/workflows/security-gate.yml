@@ -1,15 +1,15 @@
 # Security Gate — Required PR Check
 # S0-21: Consolidates pip-audit, npm audit, and bandit as a PR-blocking gate.
-# This workflow runs on every PR targeting main and is configured as a
+# This workflow runs on every PR targeting master and is configured as a
 # required status check in branch protection rules.
 
 name: Security Gate (Required)
 
 on:
   pull_request:
-    branches: [main, "release/*"]
+    branches: [master, "release/*"]
   push:
-    branches: [main]
+    branches: [master]
 
 permissions:
   contents: read
@@ -34,9 +34,11 @@ jobs:
             backend:
               - 'backend/**'
               - '.github/workflows/security-gate.yml'
+              - '.github/scripts/**'
             frontend:
               - 'frontend/**'
               - '.github/workflows/security-gate.yml'
+              - '.github/scripts/**'
 
   # ── Python Dependency Audit (pip-audit) ──
   pip-audit:
@@ -62,26 +64,10 @@ jobs:
         working-directory: ./backend
         run: |
           set -o pipefail
-          pip-audit --requirement=requirements.txt --format=json --output=pip-audit-report.json 2>&1 | tee pip-audit-output.txt
-          # pip-audit exits non-zero when vulnerabilities are found
-          # We parse the report to decide severity threshold
-          python -c "
-          import json, sys
-          with open('pip-audit-report.json') as f:
-              data = json.load(f)
-          high_critical = 0
-          for dep in data:
-              for v in dep.get('vulnerabilities', []):
-                  aliases = v.get('aliases', [])
-                  # GHSA/CVE/RUSTSEC/PYSEC are serious identifiers
-                  if any(a.startswith(('GHSA-', 'CVE-', 'RUSTSEC-', 'PYSEC-')) for a in aliases):
-                      high_critical += 1
-          print(f'High/Critical vulnerabilities found: {high_critical}')
-          if high_critical > 0:
-              print('::error::High or critical vulnerabilities detected. Please upgrade affected dependencies.')
-              sys.exit(1)
-          print('No high/critical vulnerabilities — gate passed.')
-          "
+          pip-audit --requirement=requirements.txt --format=json --output=pip-audit-report.json 2>&1 | tee pip-audit-output.txt || true
+          # pip-audit exits non-zero when vulnerabilities are found;
+          # the gate script decides whether the findings are blocking.
+          python ../.github/scripts/check_pip_audit.py pip-audit-report.json
 
       - name: Upload pip-audit report
         if: always()
@@ -105,44 +91,19 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        working-directory: ./frontend
         run: npm ci
 
       - name: Run npm audit
         working-directory: ./frontend
         run: |
           set -o pipefail
-          npm audit --json 2>&1 | tee npm-audit-output.json
-          # npm audit exits non-zero when vulnerabilities are found
-          # Parse for high/critical only
-          python -c "
-          import json, sys, os
-          try:
-              with open('npm-audit-output.json') as f:
-                  raw = f.read().strip()
-              data = json.loads(raw)
-              advisories = data.get('advisories', {})
-              high_critical = 0
-              for adv_id, adv in advisories.items():
-                  sev = adv.get('severity', '').lower()
-                  if sev in ('high', 'critical'):
-                      high_critical += 1
-                      print(f'  [{sev.upper()}] {adv.get("module_name", "?")} — {adv.get("title", adv_id)}')
-              print(f'High/Critical vulnerabilities found: {high_critical}')
-              if high_critical > 0:
-                  print('::error::High or critical npm vulnerabilities detected. Please upgrade or audit affected packages.')
-                  sys.exit(1)
-              print('No high/critical npm vulnerabilities — gate passed.')
-          except (json.JSONDecodeError, AttributeError):
-              # npm audit can output non-JSON when there are no vulns
-              if 'found 0 vulnerabilities' in raw or 'no known vulnerabilities' in raw.lower():
-                  print('No vulnerabilities found — gate passed.')
-              else:
-                  print('Could not parse npm audit output, skipping...')
-          "
+          npm audit --json 2>&1 | tee npm-audit-output.json || true
+          # npm audit exits non-zero when vulnerabilities are found;
+          # the gate script decides whether the findings are blocking.
+          python ../.github/scripts/check_npm_audit.py npm-audit-output.json
 
   # ── Python SAST (Bandit) ──
   bandit:
@@ -167,33 +128,8 @@ jobs:
         run: |
           set -o pipefail
           bandit -r . -f json -o bandit-gate-report.json -ll 2>&1 || true
-          # Check for high-confidence/high-severity issues
-          python -c "
-          import json, sys
-          try:
-              with open('bandit-gate-report.json') as f:
-                  data = json.load(f)
-          except (json.JSONDecodeError, FileNotFoundError):
-              print('Bandit report not generated — gate passed (no issues detected).')
-              sys.exit(0)
-
-          results = data.get('results', [])
-          blocked = [
-              r for r in results
-              if r.get('issue_severity', '').upper() in ('HIGH', 'MEDIUM')
-              and r.get('issue_confidence', '').upper() in ('HIGH',)
-          ]
-          if blocked:
-              print(f'Blocked {len(blocked)} high-confidence issues:')
-              for r in blocked:
-                  print(f'  [{r.get("issue_severity", "?")}/{r.get("issue_confidence", "?")}] '
-                        f'{r.get("filename", "?")}:{r.get("line_number", "?")} — '
-                        f'{r.get("test_name", "?")}: {r.get("issue_text", "?")}')
-              print('::error::Bandit found high-confidence security issues. Please fix before merging.')
-              sys.exit(1)
-          else:
-              print('No high-confidence issues found — Bandit gate passed.')
-          "
+          # The gate script decides which findings are blocking.
+          python ../.github/scripts/check_bandit.py bandit-gate-report.json
 
       - name: Upload Bandit report
         if: always()
@@ -222,8 +158,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Note**: This gate is configured as a required PR check. All three scans must pass before merging." >> $GITHUB_STEP_SUMMARY
 
-          # Fail the summary if any check failed
-          if [ "${{ needs.pip-audit.result }}" != "success" ] ||              [ "${{ needs.npm-audit.result }}" != "success" ] ||              [ "${{ needs.bandit.result }}" != "success" ]; then
+          # Fail the summary only when a scan actually ran and failed.
+          # Path-filtered runs skip the audit jobs (result: "skipped") when
+          # no backend/frontend files changed — that is a pass, not a failure.
+          if [ "${{ needs.pip-audit.result }}" = "failure" ] ||             [ "${{ needs.pip-audit.result }}" = "cancelled" ] ||             [ "${{ needs.npm-audit.result }}" = "failure" ] ||             [ "${{ needs.npm-audit.result }}" = "cancelled" ] ||             [ "${{ needs.bandit.result }}" = "failure" ] ||             [ "${{ needs.bandit.result }}" = "cancelled" ]; then
             echo "❌ Security gate FAILED — please fix the issues above before merging."
             exit 1
           fi

@@ -31,7 +31,7 @@ async def test_webhook_fingerprint_and_memory_deduplication():
         headers=headers,
         trigger_id=trigger_id,
         response=response_data,
-        ttl_seconds=60
+        ttl_seconds=60,
     )
     assert idem_key.startswith("webhook:fingerprint:")
 

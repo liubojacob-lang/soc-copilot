@@ -15,30 +15,43 @@ from utils.client_ip import get_client_ip
 logger = get_logger(__name__)
 
 # Paths to exclude from audit logging
+# IMPORTANT: All versioned API paths must include the /api/v1/ prefix.
+# The /api/* variants are kept for backward-compat with any unversioned endpoints.
 EXCLUDED_PATHS = {
     "/api/auth/login",
     "/api/auth/refresh",
     "/api/auth/logout",
+    "/api/v1/auth/login",  # versioned — fix for gap where /api/* pattern missed these
+    "/api/v1/auth/refresh",
+    "/api/v1/auth/logout",
     "/api/health",
     "/health",
     "/metrics",
     "/docs",
     "/openapi.json",
     "/redoc",
-    "/api/audit-logs",  # Audit viewing doesn't need to be audited
-    "/api/audit-logs/stats",  # Audit stats queries
+    "/api/audit-logs",
+    "/api/audit-logs/stats",
+    "/api/v1/audit-logs",
+    "/api/v1/audit-logs/stats",
     "/favicon.ico",
-    "/_next",  # Next.js static files
+    "/_next",
     "/static",
 }
 
-# Paths where request body should not be logged at all
+# Paths where request body should not be logged at all (credentials protection)
+# IMPORTANT: Both /api/* and /api/v1/* must be listed — middleware checks exact prefix.
 BODY_EXCLUDED_PATHS = {
     "/api/auth/login",
     "/api/auth/change-password",
     "/api/secrets",
     "/api/admin/secrets",
+    "/api/v1/auth/login",  # Login credentials must never appear in audit logs
+    "/api/v1/auth/change-password",  # Password change payloads must never appear in audit logs
+    "/api/v1/secrets",
+    "/api/v1/admin/secrets",
 }
+
 
 # Maximum body size to capture (in bytes)
 MAX_BODY_SIZE = 100000

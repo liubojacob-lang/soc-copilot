@@ -1,5 +1,4 @@
-/** Smart pagination component for audit logs */
-
+import { useRef } from "react";
 import { useTranslations } from "next-intl";
 
 import { getPageNumbers } from "../utils";
@@ -10,6 +9,7 @@ interface AuditPaginationProps {
   total: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
+  isFetching?: boolean;
 }
 
 export function AuditPagination({
@@ -18,16 +18,21 @@ export function AuditPagination({
   total,
   onPageChange,
   onPageSizeChange,
+  isFetching = false,
 }: AuditPaginationProps) {
   const t = useTranslations("auditPage");
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  if (total === 0) return null;
+  if (total === 0 && !isFetching) return null;
 
-  const totalPages = Math.ceil(total / pageSize);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const pageNumbers = getPageNumbers(page, total, pageSize);
 
   return (
-    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+    <div
+      ref={containerRef}
+      className="sticky bottom-0 z-20 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg transition-all"
+    >
       {/* Left: Statistics */}
       <div className="text-sm text-gray-700 dark:text-gray-300">
         {t.rich("pagination.range", {
@@ -41,7 +46,7 @@ export function AuditPagination({
       </div>
 
       {/* Center: Page Numbers */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap justify-center">
         {/* First Page */}
         <button
           onClick={() => onPageChange(1)}
@@ -77,7 +82,7 @@ export function AuditPagination({
               onClick={() => onPageChange(p as number)}
               className={`w-8 h-8 flex items-center justify-center text-sm font-medium rounded-lg transition-colors ${
                 page === p
-                  ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-md"
                   : "border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
@@ -115,9 +120,16 @@ export function AuditPagination({
         <select
           value={pageSize}
           onChange={(e) => {
-            onPageSizeChange(Number(e.target.value));
+            const newSize = Number(e.target.value);
+            onPageSizeChange(newSize);
+            // Smoothly anchor the pagination container in view
+            requestAnimationFrame(() => {
+              containerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            });
           }}
-          className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          disabled={isFetching}
+          className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+          aria-label={t("pagination.perPagePrefix")}
         >
           <option value="25">25</option>
           <option value="50">50</option>

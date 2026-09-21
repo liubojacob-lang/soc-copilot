@@ -9,6 +9,7 @@ from services.history_service import HistoryService
 from services.impact_service import ImpactAnalysisService, get_degraded_impact
 from services.ioc_hits_service import IOCHitsService
 from services.llm_retry import get_llm_retry_service
+from services.prompt_resolution import resolve_prompt
 from services.threat_intel_service import ThreatIntelService, get_degraded_threat_intel
 from utils.ioc_extract import IOCs, extract_iocs
 
@@ -56,6 +57,33 @@ Recommended actions MUST include:
 - verification: how to verify the action was effective"""
 
 
+# Builtin user-prompt template (T3.2): overridable at runtime via an active
+# "alert_analysis_user" row in the prompt registry. Keep placeholders stable.
+_ALERT_USER_PROMPT_BUILTIN = """Analyze this security alert/log:
+
+Raw Log:
+{raw_log}
+
+Pre-extracted IOCs (Local Regex):
+- IPs: {ips_str}
+- Domains: {domains_str}
+- URLs: {urls_str}
+- Hashes: {hashes_str}
+
+IMPORTANT: These IOCs are pre-extracted from the input. You may only add NEW IOCs that are actually present in the raw log text above. DO NOT fabricate any IOCs.
+
+Provide structured analysis including:
+1. Event type classification
+2. Severity assessment
+3. IOCs (merge your findings with pre-extracted IOCs)
+4. Entities (users, hosts, processes)
+5. Summary of what happened
+6. Evidence points supporting your analysis
+7. Recommended actions with verification steps
+8. Escalation decision
+9. Confidence score"""
+
+
 class AlertService:
     """Service for alert analysis."""
 
@@ -98,35 +126,35 @@ class AlertService:
             f"{len(local_iocs.hashes)} hashes"
         )
 
-        # Build prompt with local IOC context
-        prompt = f"""Analyze this security alert/log:
-
-Raw Log:
-{raw_log}
-
-Pre-extracted IOCs (Local Regex):
-- IPs: {', '.join(local_iocs.ips) if local_iocs.ips else 'None'}
-- Domains: {', '.join(local_iocs.domains) if local_iocs.domains else 'None'}
-- URLs: {', '.join(local_iocs.urls[:5])}{'...' if len(local_iocs.urls) > 5 else '' if local_iocs.urls else 'None'}
-- Hashes: {', '.join(local_iocs.hashes[:3])}{'...' if len(local_iocs.hashes) > 3 else '' if local_iocs.hashes else 'None'}
-
-IMPORTANT: These IOCs are pre-extracted from the input. You may only add NEW IOCs that are actually present in the raw log text above. DO NOT fabricate any IOCs.
-
-Provide structured analysis including:
-1. Event type classification
-2. Severity assessment
-3. IOCs (merge your findings with pre-extracted IOCs)
-4. Entities (users, hosts, processes)
-5. Summary of what happened
-6. Evidence points supporting your analysis
-7. Recommended actions with verification steps
-8. Escalation decision
-9. Confidence score"""
+        # Build prompt with local IOC context. The template is resolvable via
+        # the prompt registry (T3.2): an active "alert_analysis_user" row
+        # overrides the builtin; misses fall back to it.
+        template = await resolve_prompt(
+            "alert_analysis_user", _ALERT_USER_PROMPT_BUILTIN
+        )
+        prompt = template.format(
+            raw_log=raw_log,
+            ips_str=", ".join(local_iocs.ips) if local_iocs.ips else "None",
+            domains_str=", ".join(local_iocs.domains) if local_iocs.domains else "None",
+            urls_str=(
+                ", ".join(local_iocs.urls[:5])
+                + ("..." if len(local_iocs.urls) > 5 else "")
+                if local_iocs.urls
+                else "None"
+            ),
+            hashes_str=(
+                ", ".join(local_iocs.hashes[:3])
+                + ("..." if len(local_iocs.hashes) > 3 else "")
+                if local_iocs.hashes
+                else "None"
+            ),
+        )
 
         # Generate response with retry and degraded fallback
         result, model_used, degraded = await self.llm_service.generate_structured(
             prompt=prompt,
             response_class=AlertAnalysisResponse,
+            extracted_iocs=local_iocs.to_dict(),
         )
 
         # Step 4: Merge IOCs - local takes precedence, LLM supplements

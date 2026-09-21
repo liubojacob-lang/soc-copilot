@@ -235,15 +235,22 @@ export default function ThreatHuntingPage() {
   };
 
   const getSeverityColor = (severity: string) => {
+    // 使用全局 severity 语义 token，不要在这里自建第二套配色。
+    // 原实现的问题：① 硬编码 text-red-600/bg-red-50 等 8 个调色板类；
+    // ② 只有 4 档（critical/high/medium/default），而系统严重度是 5 档；
+    // ③ default 落到品牌蓝上——与 accent 撞色，正是批次 2 修过的
+    //    "低危复用品牌蓝导致徽章与主按钮同色"问题的重现。
     switch (severity) {
       case "critical":
-        return "text-red-600 bg-red-50 dark:bg-red-900/30";
+        return "text-severity-critical-fg bg-severity-critical-bg";
       case "high":
-        return "text-orange-600 bg-orange-50 dark:bg-orange-900/30";
+        return "text-severity-high-fg bg-severity-high-bg";
       case "medium":
-        return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30";
+        return "text-severity-medium-fg bg-severity-medium-bg";
+      case "low":
+        return "text-severity-low-fg bg-severity-low-bg";
       default:
-        return "text-blue-600 bg-blue-50 dark:bg-blue-900/30";
+        return "text-severity-info-fg bg-severity-info-bg";
     }
   };
 
@@ -284,7 +291,7 @@ export default function ThreatHuntingPage() {
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <p className="text-sm text-gray-600 dark:text-gray-400">{t("successRate")}</p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-accent-600 dark:text-accent-400">
                 {dashboard.hunt_effectiveness.success_rate}
               </p>
             </div>
@@ -299,8 +306,8 @@ export default function ThreatHuntingPage() {
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab
-                  ? "border-green-500 text-green-600 dark:text-green-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  ? "border-accent-500 text-accent-600 dark:text-accent-400"
+                  : "border-transparent text-text-tertiary hover:text-text-primary"
               }`}
             >
               {tab === "hypotheses"
@@ -329,7 +336,9 @@ export default function ThreatHuntingPage() {
                   </div>
                   <div className="p-4">
                     {loading ? (
-                      <div className="text-center py-8 text-gray-500">{tCommon("loading")}</div>
+                      <div className="text-center py-8 text-text-tertiary">
+                        {tCommon("loading")}
+                      </div>
                     ) : (
                       <div className="space-y-4">
                         {hypotheses.map((hypothesis) => (
@@ -361,7 +370,7 @@ export default function ThreatHuntingPage() {
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                                   {hypothesis.description}
                                 </p>
-                                <div className="flex items-center gap-4 text-xs text-gray-500">
+                                <div className="flex items-center gap-4 text-xs text-text-tertiary">
                                   <span>
                                     {t("mitre")}: {hypothesis.mitre_techniques.join(", ")}
                                   </span>
@@ -373,7 +382,7 @@ export default function ThreatHuntingPage() {
                               <button
                                 onClick={() => executeHunt(hypothesis.id)}
                                 disabled={executing === hypothesis.id}
-                                className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                                className="ml-4 px-4 py-2 bg-accent-600 text-white rounded-lg hover:bg-accent-700 disabled:opacity-50 flex items-center gap-2"
                               >
                                 {executing === hypothesis.id ? (
                                   <>
@@ -402,13 +411,13 @@ export default function ThreatHuntingPage() {
                   {/* Category Filter */}
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Filter className="w-4 h-4 text-gray-400" />
+                      <Filter className="w-4 h-4 text-text-tertiary" />
                       <button
                         onClick={() => setSelectedCategory("all")}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                           selectedCategory === "all"
                             ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700"
+                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 dark:active:bg-gray-700"
                         }`}
                       >
                         {t("all")} ({sigmaRules.length})
@@ -420,7 +429,7 @@ export default function ThreatHuntingPage() {
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                             selectedCategory === cat
                               ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-700"
+                              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700 dark:active:bg-gray-700"
                           }`}
                         >
                           {CATEGORY_ICONS[cat] || ""} {CATEGORY_LABELS[cat] || cat} (
@@ -443,7 +452,7 @@ export default function ThreatHuntingPage() {
                         <div key={rule.id}>
                           <button
                             onClick={() => loadRuleDetail(rule.id)}
-                            className="w-full p-4 text-left hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-750 active:bg-gray-750 transition-colors flex items-start justify-between"
+                            className="w-full p-4 text-left hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-750 dark:active:bg-gray-750 transition-colors flex items-start justify-between"
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
@@ -451,7 +460,7 @@ export default function ThreatHuntingPage() {
                                   {selectedRuleId === rule.id ? (
                                     <ChevronDown className="w-4 h-4 text-green-500" />
                                   ) : (
-                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                                    <ChevronRight className="w-4 h-4 text-text-tertiary" />
                                   )}
                                 </span>
                                 <h3 className="font-medium text-gray-900 dark:text-white text-sm">
@@ -462,18 +471,20 @@ export default function ThreatHuntingPage() {
                                 >
                                   {rule.level}
                                 </span>
-                                <span className="text-xs text-gray-400 font-mono">{rule.id}</span>
+                                <span className="text-xs text-text-tertiary font-mono">
+                                  {rule.id}
+                                </span>
                               </div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 line-clamp-2">
+                              <p className="text-xs text-text-tertiary ml-6 line-clamp-2">
                                 {rule.description}
                               </p>
                               <div className="flex items-center gap-3 ml-6 mt-1">
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-text-tertiary">
                                   {CATEGORY_ICONS[rule.category] || ""}{" "}
                                   {CATEGORY_LABELS[rule.category] || rule.category}
                                 </span>
                                 {rule.mitre_techniques.length > 0 && (
-                                  <span className="text-xs px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded font-mono">
+                                  <span className="text-xs px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-accent-600 dark:text-accent-400 dark:text-blue-400 rounded font-mono">
                                     {rule.mitre_techniques[0]}
                                   </span>
                                 )}
@@ -488,26 +499,26 @@ export default function ThreatHuntingPage() {
                                 {/* Meta info */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                                   <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                    <span className="text-gray-400">{t("status")}</span>
+                                    <span className="text-text-tertiary">{t("status")}</span>
                                     <p className="font-medium text-gray-700 dark:text-gray-300">
                                       {selectedRule.status}
                                     </p>
                                   </div>
                                   <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                    <span className="text-gray-400">{t("author")}</span>
+                                    <span className="text-text-tertiary">{t("author")}</span>
                                     <p className="font-medium text-gray-700 dark:text-gray-300">
                                       {selectedRule.author}
                                     </p>
                                   </div>
                                   <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                    <span className="text-gray-400">{t("logsource")}</span>
+                                    <span className="text-text-tertiary">{t("logsource")}</span>
                                     <p className="font-medium text-gray-700 dark:text-gray-300">
                                       {selectedRule.logsource.product} /{" "}
                                       {selectedRule.logsource.service}
                                     </p>
                                   </div>
                                   <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                    <span className="text-gray-400">MITRE</span>
+                                    <span className="text-text-tertiary">MITRE</span>
                                     <p className="font-medium text-gray-700 dark:text-gray-300">
                                       {selectedRule.mitre_techniques.join(", ") || "—"}
                                     </p>
@@ -531,7 +542,7 @@ export default function ThreatHuntingPage() {
                                 {/* SQL Preview */}
                                 <div>
                                   <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                    <span className="text-xs font-medium text-text-tertiary flex items-center gap-1">
                                       <Database className="w-3 h-3" />
                                       {t("generatedSQL")}
                                     </span>
@@ -546,7 +557,7 @@ export default function ThreatHuntingPage() {
                                   <button
                                     onClick={() => executeSigmaSearch(rule.id)}
                                     disabled={searching}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+                                    className="px-4 py-2 bg-accent-600 text-white rounded-lg hover:bg-accent-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
                                   >
                                     {searching ? (
                                       <>
@@ -568,7 +579,7 @@ export default function ThreatHuntingPage() {
                                     <div className="flex items-center gap-3">
                                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                         {t("matchCount")}:{" "}
-                                        <span className="text-green-600 font-bold">
+                                        <span className="text-text-primary font-bold">
                                           {sigmaSearchResult.total_matches}
                                         </span>
                                       </span>
@@ -599,7 +610,7 @@ export default function ThreatHuntingPage() {
                                             {sigmaSearchResult.matches.map((match, idx) => (
                                               <tr
                                                 key={idx}
-                                                className="hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-750 active:bg-gray-750"
+                                                className="hover:bg-gray-50 active:bg-gray-50 dark:hover:bg-gray-750 dark:active:bg-gray-750"
                                               >
                                                 {Object.values(match).map((val: any, i) => (
                                                   <td
@@ -624,7 +635,7 @@ export default function ThreatHuntingPage() {
                       ))}
                     </div>
                     {filteredRules.length === 0 && (
-                      <div className="p-8 text-center text-gray-400">
+                      <div className="p-8 text-center text-text-tertiary">
                         <Code className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         {t("noSigmaRules")}
                       </div>
@@ -644,6 +655,14 @@ export default function ThreatHuntingPage() {
                   </h3>
                 </div>
                 <div className="p-4">
+                  {/* results 为空时这里原先什么都不渲染，卡片只剩一个标题
+                      （就是实测截图里那张空白卡片）。补一个空状态。
+                      用 && 而不是三元，避免整块 map 重新缩进。 */}
+                  {results.length === 0 && (
+                    <p className="py-6 text-center text-xs text-text-tertiary">
+                      {t("recentResultsEmpty")}
+                    </p>
+                  )}
                   {results.slice(0, 5).map((result, index) => (
                     <div
                       key={index}
@@ -653,7 +672,7 @@ export default function ThreatHuntingPage() {
                         <p className="font-medium text-gray-900 dark:text-white text-sm">
                           {result.hunt_name}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-text-tertiary">
                           {format.dateTime(new Date(result.started_at), {
                             dateStyle: "medium",
                             timeStyle: "medium",
@@ -662,11 +681,11 @@ export default function ThreatHuntingPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {result.findings_count > 0 ? (
-                          <span className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs">
+                          <span className="px-2 py-1 bg-severity-critical-bg text-severity-critical-fg rounded text-xs">
                             {t("findingsCount", { count: result.findings_count })}
                           </span>
                         ) : (
-                          <span className="px-2 py-1 bg-green-100 text-green-600 rounded text-xs">
+                          <span className="px-2 py-1 bg-status-active-bg text-status-active-fg rounded text-xs">
                             {t("clean")}
                           </span>
                         )}
@@ -689,9 +708,11 @@ export default function ThreatHuntingPage() {
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
                             {tech.technique}
                           </p>
-                          <p className="text-xs text-gray-500">{tech.name}</p>
+                          <p className="text-xs text-text-tertiary">{tech.name}</p>
                         </div>
-                        <span className="text-sm text-gray-600">
+                        {/* 原先只有 text-gray-600、没有 dark 变体：深色下 #4b5563
+                            对深底仅 2.9:1。改用语义色，明暗两套自动适配。 */}
+                        <span className="text-sm text-text-secondary">
                           {tech.count} {t("times")}
                         </span>
                       </div>
@@ -738,7 +759,7 @@ export default function ThreatHuntingPage() {
                 </p>
                 <button
                   onClick={() => showToast(t("iocHunt.comingSoon"), "info")}
-                  className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                  className="w-full py-2 bg-accent-600 text-white rounded-lg hover:bg-accent-700 text-sm"
                 >
                   {t("iocHunt.button")}
                 </button>

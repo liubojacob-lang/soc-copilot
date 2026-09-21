@@ -51,7 +51,7 @@ class TestGenerateStructuredFreeform:
         svc.ai_service.get_model_name = MagicMock(return_value="glm-4-test")
         # Speed up backoff so the test doesn't sleep for real
         with patch.object(svc, "_backoff", AsyncMock()):
-            result, model_used, degraded = await svc.generate_structured(
+            result, _model_used, degraded = await svc.generate_structured(
                 prompt="x", response_class=None
             )
         assert result == "ok on retry"
@@ -67,7 +67,7 @@ class TestGenerateStructuredFreeform:
         svc.ai_service.get_model_name = MagicMock(return_value="glm-4-test")
 
         with patch.object(svc, "_backoff", AsyncMock()):
-            result, model_used, degraded = await svc.generate_structured(
+            result, _model_used, degraded = await svc.generate_structured(
                 prompt="x", response_class=None
             )
         assert result == ""  # graceful empty, not an exception
@@ -106,8 +106,74 @@ class TestGenerateStructuredSchema:
         svc.ai_service.get_model_name = MagicMock(return_value="glm-4-test")
 
         # Should not raise even when LLM fails — degraded response returned
-        result, model_used, degraded = await svc.generate_structured(
+        result, _model_used, degraded = await svc.generate_structured(
             prompt="x", response_class=AlertAnalysisResponse
         )
         assert degraded is True  # exhausted retries → degraded
         assert isinstance(result, AlertAnalysisResponse)
+
+    async def test_degraded_alert_response_contains_no_fabricated_evidence(
+        self, retry_service_with_mock_ai
+    ):
+        """T1.1 contract: degraded mode must never invent forensic detail.
+
+        The heuristic builder that fabricated DNS rates, entropy values and a
+        hardcoded malicious domain was removed; the degraded payload must stay
+        empty of evidence and clearly marked.
+        """
+        from schemas.alert import AlertAnalysisResponse
+
+        svc = retry_service_with_mock_ai
+        svc.ai_service.generate_structured = AsyncMock(
+            side_effect=RuntimeError("simulated LLM failure")
+        )
+        svc.ai_service.get_model_name = MagicMock(return_value="glm-4-test")
+
+        result, _, degraded = await svc.generate_structured(
+            prompt="suspicious DNS tunneling alert",
+            response_class=AlertAnalysisResponse,
+        )
+
+        assert degraded is True
+        assert result.degraded is True
+        assert result.error_reason  # caller can explain why
+        assert result.confidence == 0  # no confidence in degraded mode
+        assert result.evidence_points == []
+        assert result.ioc_count.total == 0
+        # The removed heuristic used to fabricate these — none may reappear.
+        dumped = result.model_dump()
+        assert "0xcd10e1.tech" not in str(dumped)
+        assert "8-12" not in str(dumped)
+
+    @pytest.mark.parametrize(
+        "response_class",
+        [
+            "schemas.alert:AlertAnalysisResponse",
+            "schemas.timeline:TimelineResponse",
+            "schemas.report:ReportGenerationResponse",
+        ],
+    )
+    async def test_degraded_payload_satisfies_schema(
+        self, retry_service_with_mock_ai, response_class
+    ):
+        """Regression: the degraded dict must validate against its schema.
+
+        A payload that fails model_validate would turn "LLM down" into an
+        HTTP 500 instead of a graceful degraded response (T1.1 follow-up fix).
+        """
+        import importlib
+
+        module_name, class_name = response_class.split(":")
+        cls = getattr(importlib.import_module(module_name), class_name)
+
+        svc = retry_service_with_mock_ai
+        svc.ai_service.generate_structured = AsyncMock(
+            side_effect=RuntimeError("simulated LLM failure")
+        )
+        svc.ai_service.get_model_name = MagicMock(return_value="glm-4-test")
+
+        result, _, degraded = await svc.generate_structured(
+            prompt="x", response_class=cls
+        )
+        assert degraded is True
+        assert isinstance(result, cls)

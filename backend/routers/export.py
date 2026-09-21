@@ -188,7 +188,7 @@ async def export_audit_logs(
 
     # Fetch data
     repo = AuditRepository(session)
-    logs, total = await repo.list(
+    logs, _total = await repo.list(
         skip=0,
         limit=limit,
         user_id=user_id,

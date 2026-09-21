@@ -49,6 +49,17 @@ export default function SecretsPage() {
     fetchSecrets();
   }, [router]);
 
+  // Lock background scroll when any modal is open
+  useEffect(() => {
+    if (showCreateModal || showDeleteModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [showCreateModal, showDeleteModal]);
+
   const fetchSecrets = async () => {
     try {
       const data = await authFetchJSON<{ items: Secret[]; total: number }>("/api/secrets");
@@ -152,7 +163,9 @@ export default function SecretsPage() {
           {secrets.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-gray-500 dark:text-gray-400">{t("noSecretsFound")}</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">{t("noSecretsInfo")}</p>
+              <p className="text-sm text-text-tertiary dark:text-gray-400 mt-2">
+                {t("noSecretsInfo")}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -182,7 +195,7 @@ export default function SecretsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <svg
-                            className="w-5 h-5 text-gray-400 mr-2"
+                            className="w-5 h-5 text-text-tertiary mr-2"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -233,8 +246,8 @@ export default function SecretsPage() {
           <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
             {t("usingSecrets")}
           </h3>
-          <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">{t("usingSecretsInfo")}</p>
-          <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
+          <p className="text-sm text-blue-700 dark:text-blue-200 mb-2">{t("usingSecretsInfo")}</p>
+          <ul className="text-sm text-blue-700 dark:text-blue-200 space-y-1 list-disc list-inside">
             <li>
               <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">
                 {"{{secret.SLACK_WEBHOOK}}"}
@@ -259,8 +272,16 @@ export default function SecretsPage() {
 
       {/* Create Secret Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowCreateModal(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               {t("createNewSecret")}
             </h3>

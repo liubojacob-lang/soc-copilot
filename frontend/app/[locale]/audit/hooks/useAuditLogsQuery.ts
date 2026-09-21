@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/queryClient";
@@ -29,6 +29,8 @@ interface UseAuditLogsQueryResult {
   logs: AuditLog[];
   stats: AuditLogStats | null;
   isLoading: boolean;
+  isFetching: boolean;
+  isPlaceholderData: boolean;
   isError: boolean;
   error: Error | null;
   total: number;
@@ -105,7 +107,7 @@ export function useAuditLogsQuery(options: UseAuditLogsQueryOptions = {}): UseAu
     filterIpAddress,
   });
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isFetching, isPlaceholderData, isError, error, refetch } = useQuery({
     queryKey,
     queryFn: () =>
       fetchAuditLogs({
@@ -114,6 +116,7 @@ export function useAuditLogsQuery(options: UseAuditLogsQueryOptions = {}): UseAu
         pageSize: currentPageSize,
       }),
     enabled,
+    placeholderData: keepPreviousData,
     // Cache configuration
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
@@ -190,6 +193,8 @@ export function useAuditLogsQuery(options: UseAuditLogsQueryOptions = {}): UseAu
     setPage,
     setPageSize,
     isLoading,
+    isFetching,
+    isPlaceholderData,
     isError,
     error: error as Error | null,
     refetch,

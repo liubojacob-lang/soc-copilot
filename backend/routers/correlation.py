@@ -10,6 +10,7 @@ from core.logger import get_logger
 from core.metrics import observe_correlation_rule_hit
 from db.session import get_session
 from dependencies.auth import get_current_user
+from middleware.tenant_middleware import resolve_tenant_id
 from models.correlation_rule import CorrelationRule
 from models.user import UserModel
 from services.correlation import CorrelationRuleDSL, RuleEngine
@@ -126,7 +127,7 @@ async def correlate_events(
         )
 
         # Update rule statistics (delegated to service for rule lookup)
-        tenant_id = http_request.headers.get("x-tenant-id", "default")
+        tenant_id = resolve_tenant_id(http_request)
         for event in correlated_events:
             rule = await db.get(CorrelationRule, event.rule_id)
             if rule:

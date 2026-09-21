@@ -14,7 +14,6 @@ from sqlalchemy import select
 
 from core.logger import get_logger
 from db.session import AsyncSessionLocal
-from models.on_call_schedule import OnCallSchedule
 from services.notification_service import NotificationService
 
 if TYPE_CHECKING:
@@ -103,21 +102,14 @@ class EscalationService:
         return summary
 
     async def _get_current_on_call_users(self, session: AsyncSession) -> list[str]:
-        """Get user IDs currently on call (within their schedule window)."""
-        now = datetime.now(UTC)
+        """Get user IDs currently on call.
 
-        result = await session.execute(
-            select(OnCallSchedule)
-            .where(OnCallSchedule.start_date <= now)
-            .where(OnCallSchedule.end_date >= now)
-            .where(OnCallSchedule.is_primary == True)
-            .order_by(OnCallSchedule.start_date.desc())
-        )
-        schedules = result.scalars().all()
-
-        user_ids = list(dict.fromkeys(s.user_id for s in schedules))
-        logger.debug(f"Current on-call users ({now.isoformat()}): {user_ids}")
-        return user_ids
+        The on_call_schedules table was removed (T3.5): it had no writer, so
+        the lookup could never return anyone. Escalation therefore always
+        reports "no on-call users configured" — the caller's existing skip
+        path. Re-introduce a schedule writer before restoring this query.
+        """
+        return []
 
     async def _get_unacknowledged_alerts(
         self, session: AsyncSession, threshold: datetime

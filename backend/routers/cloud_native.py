@@ -70,6 +70,20 @@ class K8sFindingResponse(BaseModel):
     detected_at: datetime
 
 
+class K8sClusterResponse(BaseModel):
+    """Kubernetes cluster summary response."""
+
+    name: str
+    provider: str
+    region: str
+    version: str
+    status: str
+    nodes_count: int
+    pods_count: int
+    namespaces: list[str]
+    created_at: datetime
+
+
 @router.post("/containers/scan")
 async def scan_container_image(
     request: ContainerScanRequest,
@@ -94,9 +108,7 @@ async def scan_container_image(
             # Demo data: no scanner backend is wired behind this endpoint;
             # use /containers/trivy-scan for real vulnerability results
             "simulated": True,
-            "notice": (
-                "Demo data — configure Trivy/Clair integration for real scans"
-            ),
+            "notice": ("Demo data — configure Trivy/Clair integration for real scans"),
             "total_vulnerabilities": len(vulnerabilities),
             "severity_breakdown": {
                 "critical": len(
@@ -202,6 +214,42 @@ async def scan_kubernetes_cluster(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Scan failed: {e!s}",
+        )
+
+
+@router.get("/kubernetes/clusters")
+async def get_kubernetes_clusters(
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get list of connected Kubernetes clusters with health and metadata.
+    """
+    try:
+        service = get_cloud_native_service()
+        clusters = await service.get_kubernetes_clusters()
+
+        return {
+            "total_clusters": len(clusters),
+            "clusters": [
+                K8sClusterResponse(
+                    name=c.name,
+                    provider=c.provider,
+                    region=c.region,
+                    version=c.version,
+                    status=c.status,
+                    nodes_count=c.nodes_count,
+                    pods_count=c.pods_count,
+                    namespaces=c.namespaces,
+                    created_at=c.created_at,
+                )
+                for c in clusters
+            ],
+        }
+    except Exception as e:
+        logger.error(f"Error getting K8s clusters: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get clusters: {e!s}",
         )
 
 
@@ -615,7 +663,10 @@ async def scan_with_trivy(
     structured CVE data. Results are cached for 24 hours unless
     force_rescan is set to true.
     """
-    from services.integration.trivy_service import get_trivy_service
+    from services.integration.trivy_service import (
+        TrivyNotInstalledError,
+        get_trivy_service,
+    )
 
     try:
         trivy = get_trivy_service(db)
@@ -629,6 +680,16 @@ async def scan_with_trivy(
             vulnerabilities=result["vulnerabilities"],
         )
 
+    except TrivyNotInstalledError as e:
+        logger.warning(f"Trivy scanner not installed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "SCANNER_NOT_INSTALLED",
+                "message": "Trivy vulnerability scanner is not installed on this host.",
+                "hint": "Install via: brew install trivy  (macOS)  or  apt-get install trivy  (Linux)",
+            },
+        )
     except RuntimeError as e:
         logger.error(f"Trivy scan failed: {e}")
         raise HTTPException(
@@ -639,5 +700,125 @@ async def scan_with_trivy(
         logger.error(f"Unexpected Trivy scan error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Scan error: {e!s}",
+            detail="Scan error: an unexpected error occurred.",
+        )
+
+
+# ── Container Inventory & Detail Endpoints ─────────────────────────────
+
+
+class ContainerListItem(BaseModel):
+    """Container item summary."""
+
+    id: str
+    name: str
+    pod_name: str
+    namespace: str
+    cluster_name: str
+    image: str
+    status: str
+    state_reason: str | None = None
+    restart_count: int
+    cpu_usage: str
+    memory_usage: str
+    ip_address: str
+    ports: list[str]
+    privileged: bool
+    run_as_root: bool
+    readonly_rootfs: bool
+    vulnerabilities_count: int
+    critical_vulns: int
+    high_vulns: int
+    created_at: str
+    node_name: str = "node-worker-01"
+    remediation: str | None = None
+
+
+class ContainerListResponse(BaseModel):
+    """Response containing container inventory and breakdown metrics with pagination."""
+
+    total: int
+    filtered_total: int
+    page: int = 1
+    page_size: int = 10
+    total_pages: int = 1
+    running: int
+    warning: int
+    terminated: int
+    vulnerable: int
+    containers: list[ContainerListItem]
+
+
+class ContainerDetailResponse(ContainerListItem):
+    """Full detail of a container instance including configuration and context."""
+
+    command: list[str] = Field(default_factory=list)
+    mounts: list[str] = Field(default_factory=list)
+    env_vars: dict[str, str] = Field(default_factory=dict)
+
+
+@router.get("/containers", response_model=ContainerListResponse)
+async def list_containers(
+    cluster: str | None = Query(None, description="Filter by cluster name"),
+    namespace: str | None = Query(None, description="Filter by namespace"),
+    status_filter: str | None = Query(
+        None,
+        alias="status",
+        description="Filter by status (all, running, warning, terminated)",
+    ),
+    search: str | None = Query(
+        None, description="Search keyword for container, pod, or image"
+    ),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(10, ge=1, le=100, description="Items per page"),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get inventory of all containers across Kubernetes clusters.
+
+    Supports filtering by cluster, namespace, health status, and keyword search with pagination.
+    """
+    try:
+        service = get_cloud_native_service()
+        result = await service.get_containers(
+            cluster=cluster,
+            namespace=namespace,
+            status=status_filter,
+            search=search,
+            page=page,
+            page_size=page_size,
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Error listing containers: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list containers: {e!s}",
+        )
+
+
+@router.get("/containers/{container_id}", response_model=ContainerDetailResponse)
+async def get_container_detail(
+    container_id: str,
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get detailed security and configuration information for a specific container.
+    """
+    try:
+        service = get_cloud_native_service()
+        container = await service.get_container_detail(container_id)
+        if not container:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Container with ID '{container_id}' not found",
+            )
+        return container
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting container detail for {container_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get container detail: {e!s}",
         )

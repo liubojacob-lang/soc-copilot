@@ -144,13 +144,11 @@ export function ChatHistoryPanel({
       {/* Sidebar Header */}
       <div className="h-13 px-3.5 border-b border-border-subtle flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded-lg bg-ai/10 text-ai border border-ai/20">
+          <div className="p-1 rounded-lg bg-ai/10 text-ai-fg border border-ai/20">
             <History className="w-3.5 h-3.5" />
           </div>
-          <span className="text-xs font-semibold text-text-primary">
-            {t("title") || "研判记录"}
-          </span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-surface-hover text-text-tertiary font-medium">
+          <span className="text-xs font-semibold text-text-primary">{t("title")}</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-surface-hover text-text-secondary font-medium">
             {conversations.length}
           </span>
         </div>
@@ -159,8 +157,8 @@ export function ChatHistoryPanel({
         <button
           onClick={onToggle}
           className="p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
-          title="收起历史列表 (⌘/)"
-          aria-label="收起历史列表"
+          title={`${t("collapse")} (⌘/)`}
+          aria-label={t("collapse")}
         >
           <PanelLeftClose className="w-4 h-4" />
         </button>
@@ -174,7 +172,7 @@ export function ChatHistoryPanel({
         >
           <div className="flex items-center gap-1.5">
             <Plus className="w-3.5 h-3.5" />
-            <span>新建研判会话</span>
+            <span>{t("newChat")}</span>
           </div>
           <kbd className="text-[10px] px-1.5 py-0.2 bg-accent-100 dark:bg-accent-900/60 rounded text-accent-700 dark:text-accent-300 font-mono">
             ⌘N
@@ -188,7 +186,7 @@ export function ChatHistoryPanel({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="搜索研判历史..."
+            placeholder={t("searchPlaceholder")}
             className="w-full pl-8 pr-7 py-1.5 text-xs bg-surface-ground border border-border-subtle rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-500 transition-all"
           />
           {searchQuery && (
@@ -210,10 +208,10 @@ export function ChatHistoryPanel({
               <MessageSquare className="w-5 h-5" />
             </div>
             <p className="text-xs font-medium text-text-secondary">
-              {searchQuery ? "未搜索到匹配记录" : t("emptyTitle") || "暂无研判记录"}
+              {searchQuery ? t("noSearchResults") : t("emptyTitle")}
             </p>
             <p className="text-[11px] text-text-muted mt-1">
-              {searchQuery ? "请尝试其他关键词" : t("emptyHint") || "发起提问将自动归档"}
+              {searchQuery ? t("tryDifferentKeywords") : t("emptyHint")}
             </p>
           </div>
         ) : (
@@ -241,20 +239,20 @@ export function ChatHistoryPanel({
                         onChange={(e) => setEditTitle(e.target.value)}
                         onKeyDown={handleEditKeyDown}
                         className="w-full px-2 py-1 text-xs bg-surface-card border border-border-default rounded-md text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-500"
-                        placeholder="输入会话标题..."
+                        placeholder={t("titlePlaceholder")}
                       />
                       <div className="flex justify-end gap-1 mt-1.5">
                         <button
                           onClick={cancelRename}
                           className="p-1 text-text-muted hover:text-text-primary rounded"
-                          title="取消"
+                          title={t("cancel")}
                         >
                           <X className="w-3 h-3" />
                         </button>
                         <button
                           onClick={saveRename}
                           className="p-1 text-accent-600 dark:text-accent-400 hover:text-accent-700 rounded"
-                          title="保存"
+                          title={t("save")}
                         >
                           <Check className="w-3 h-3" />
                         </button>
@@ -277,7 +275,7 @@ export function ChatHistoryPanel({
                       <MessageSquare
                         className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-accent-600 dark:text-accent-400" : "text-text-muted group-hover:text-text-secondary"}`}
                       />
-                      <span className="truncate">{conv.title || "未命名会话"}</span>
+                      <span className="truncate">{conv.title || t("untitled")}</span>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
@@ -295,7 +293,7 @@ export function ChatHistoryPanel({
                             startEditing(conv);
                           }}
                           className="p-1 text-text-muted hover:text-text-primary rounded hover:bg-surface-active transition-colors"
-                          title="重命名"
+                          title={t("rename")}
                         >
                           <Edit2 className="w-3 h-3" />
                         </button>
@@ -305,7 +303,7 @@ export function ChatHistoryPanel({
                             setDeleteConfirmId(conv.id);
                           }}
                           className="p-1 text-text-muted hover:text-rose-600 dark:hover:text-rose-400 rounded hover:bg-surface-active transition-colors"
-                          title="删除"
+                          title={t("delete")}
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -325,25 +323,21 @@ export function ChatHistoryPanel({
           <div className="bg-surface-card rounded-2xl shadow-xl border border-border-subtle max-w-[240px] w-full p-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-2.5 text-rose-600 dark:text-rose-400 mb-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-              <h4 className="text-xs font-semibold text-text-primary">
-                {t("deleteConfirm") || "确认删除会话？"}
-              </h4>
+              <h4 className="text-xs font-semibold text-text-primary">{t("deleteConfirm")}</h4>
             </div>
-            <p className="text-[11px] text-text-muted mb-3">
-              {t("deleteWarning") || "此操作将永久删除此条研判记录，不可撤回。"}
-            </p>
+            <p className="text-[11px] text-text-muted mb-3">{t("deleteWarning")}</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setDeleteConfirmId(null)}
                 className="flex-1 py-1.5 text-xs text-text-secondary hover:bg-surface-hover rounded-lg transition-colors cursor-pointer"
               >
-                {t("cancelRename") || "取消"}
+                {t("cancelRename")}
               </button>
               <button
                 onClick={confirmDelete}
                 className="flex-1 py-1.5 text-xs text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors font-medium shadow-subtle cursor-pointer"
               >
-                {t("delete") || "删除"}
+                {t("delete")}
               </button>
             </div>
           </div>

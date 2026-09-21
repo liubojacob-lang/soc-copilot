@@ -20,6 +20,24 @@ logger = get_logger(__name__)
 SCAN_CACHE_TTL_HOURS = 24
 
 
+class TrivyNotInstalledError(Exception):
+    """Raised when Trivy binary is not found on the host.
+
+    T1.2: Security scanners must never return fabricated vulnerability data.
+    When Trivy is not installed, callers receive this exception and should
+    surface a clear 'scanner not installed' message to the user instead of
+    returning mock CVE results.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Trivy scanner is not installed on this host. "
+            "Install via: brew install trivy  (macOS) or "
+            "apt-get install trivy  (Debian/Ubuntu). "
+            "See https://aquasecurity.github.io/trivy/latest/getting-started/installation/"
+        )
+
+
 @dataclass
 class TrivyVulnerability:
     """Parsed Trivy vulnerability result."""
@@ -228,12 +246,11 @@ class TrivyService:
 
         # 2. Check trivy installation
         if not self._check_trivy_installed():
-            logger.warning(
-                f"Trivy not installed; returning mock data for image: {image}"
+            logger.error(
+                "Trivy is not installed on this host; refusing to return mock scan data. "
+                "Install Trivy or disable vulnerability scanning. (T1.2)"
             )
-            mock_result = self._generate_mock_result(image)
-            await self._cache_scan_result(image, mock_result)
-            return mock_result
+            raise TrivyNotInstalledError()
 
         # 3. Execute trivy scan
         trivy_cmd = self._trivy_path or "trivy"
@@ -298,83 +315,7 @@ class TrivyService:
                 "Install: brew install trivy or apt install trivy"
             )
 
-    def _generate_mock_result(self, image: str) -> dict:
-        """Generate mock scan data for demo/testing when Trivy is not available."""
-        mock_vulns = [
-            TrivyVulnerability(
-                cve_id="CVE-2023-5363",
-                severity="HIGH",
-                title="OpenSSL: Incorrect cipher key and IV length processing",
-                description="Issue summary: A bug has been identified in the processing of key and initialisation vector (IV) lengths.",
-                package_name="openssl",
-                installed_version="3.0.7",
-                fixed_version="3.0.12",
-                published_date="2023-10-24T00:00:00Z",
-                url="https://nvd.nist.gov/vuln/detail/CVE-2023-5363",
-            ),
-            TrivyVulnerability(
-                cve_id="CVE-2023-38545",
-                severity="HIGH",
-                title="curl: SOCKS5 heap buffer overflow",
-                description="This flaw makes curl overflow a heap based buffer in the SOCKS5 proxy handshake.",
-                package_name="curl",
-                installed_version="8.1.2",
-                fixed_version="8.4.0",
-                published_date="2023-10-11T00:00:00Z",
-                url="https://nvd.nist.gov/vuln/detail/CVE-2023-38545",
-            ),
-            TrivyVulnerability(
-                cve_id="CVE-2023-44487",
-                severity="HIGH",
-                title="HTTP/2: Multiple HTTP/2 enabled web servers are vulnerable to a DDoS attack (Rapid Reset Attack)",
-                description="The HTTP/2 protocol allows a denial of service (server resource consumption) because request cancellation can reset many streams quickly.",
-                package_name="nginx",
-                installed_version="1.21.6",
-                fixed_version="1.25.3",
-                published_date="2023-10-10T00:00:00Z",
-                url="https://nvd.nist.gov/vuln/detail/CVE-2023-44487",
-            ),
-            TrivyVulnerability(
-                cve_id="CVE-2023-45871",
-                severity="MEDIUM",
-                title="openssh: Possible integrity checks bypass in ssh-add",
-                description="An issue was discovered in OpenSSH before 9.5.",
-                package_name="openssh",
-                installed_version="9.3p1",
-                fixed_version="9.5p1",
-                published_date="2023-10-06T00:00:00Z",
-                url="https://nvd.nist.gov/vuln/detail/CVE-2023-45871",
-            ),
-            TrivyVulnerability(
-                cve_id="CVE-2023-5678",
-                severity="MEDIUM",
-                title="openssl: Generating excessively long X9.42 DH keys may be very slow",
-                description="Issue summary: Generating excessively long X9.42 DH keys or checking excessively long X9.42 DH keys or parameters may be very slow.",
-                package_name="openssl",
-                installed_version="3.0.7",
-                fixed_version="3.1.3",
-                published_date="2023-11-06T00:00:00Z",
-                url="https://nvd.nist.gov/vuln/detail/CVE-2023-5678",
-            ),
-        ]
 
-        severity_counts = {
-            "CRITICAL": 0,
-            "HIGH": 3,
-            "MEDIUM": 2,
-            "LOW": 0,
-            "UNKNOWN": 0,
-        }
-
-        return {
-            "image": image,
-            "scan_time": datetime.now(UTC).isoformat(),
-            "total_vulnerabilities": len(mock_vulns),
-            "severity_counts": severity_counts,
-            "vulnerabilities": [v.to_dict() for v in mock_vulns],
-        }
-
-
-def get_trivy_service(session: AsyncSession) -> TrivyService:
+def get_trivy_service(session: AsyncSession) -> "TrivyService":
     """Factory function to create a TrivyService instance."""
     return TrivyService(session)

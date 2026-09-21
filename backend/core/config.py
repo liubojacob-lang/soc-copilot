@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    app_version: str = "0.9.4"
     ai_provider: str = (
         "zhipu"  # Options: zhipu, claude, openai, nvidia, moonshot, openrouter
     )
@@ -78,7 +79,9 @@ class Settings(BaseSettings):
     # v0.6.2: Authentication & JWT Settings
     jwt_secret: str = ""  # MUST be set in production (min 32 characters)
     jwt_secret_previous: str = ""  # P1-17: Previous JWT secret for rotation过渡期
-    jwt_expire_minutes: int = 60  # 1 hour — short-lived access tokens; refresh tokens carry longevity
+    jwt_expire_minutes: int = (
+        60  # 1 hour — short-lived access tokens; refresh tokens carry longevity
+    )
     jwt_refresh_expire_minutes: int = 10080  # 7 days
     # S0-20: Replaced allow_public_readonly bool with endpoint whitelist
     # for defense-in-depth (default deny). Only endpoints explicitly listed
@@ -97,6 +100,14 @@ class Settings(BaseSettings):
     # v0.7.1: API Settings for webhook URL generation
     base_url: str = "http://localhost:8000"  # Base URL for webhook URLs
 
+    # Deployment tenant. Server-configured on purpose: there is no tenant model
+    # yet, so the tenant must never be taken from a client-supplied header.
+    default_tenant_id: str = "default"
+
+    # Bearer token required by /metrics and /metrics/prometheus. Unset in
+    # production disables both endpoints; see MetricsAuthMiddleware.
+    metrics_token: str = ""
+
     # v0.7.4: Secrets & Queue Management
     secret_encryption_key: str = ""  # Fernet encryption key for secrets
     run_queue_max: int = 3  # Maximum concurrent playbook runs
@@ -112,7 +123,9 @@ class Settings(BaseSettings):
     api_timeout_dag_run_ms: int = 300000  # 5 minutes for DAG playbook execution
 
     # v0.8.1: Database connection pool settings
-    auto_run_migrations: bool = True  # Run Alembic migrations on startup; set to False in multi-replica deployments
+    auto_run_migrations: bool = (
+        True  # Run Alembic migrations on startup; set to False in multi-replica deployments
+    )
     db_pool_size: int = 20  # Default connection pool size (increased from 10)
     db_max_overflow: int = 40  # Maximum overflow connections (increased from 20)
     db_pool_timeout: int = 30  # Pool timeout in seconds
@@ -205,8 +218,14 @@ class Settings(BaseSettings):
                 )
 
             insecure_patterns = [
-                "changeme", "change-this", "password", "default", "example",
-                "your-jwt-secret", "your-secret-key", "replace-me"
+                "changeme",
+                "change-this",
+                "password",
+                "default",
+                "example",
+                "your-jwt-secret",
+                "your-secret-key",
+                "replace-me",
             ]
             if any(p in v.lower() for p in insecure_patterns):
                 if strict_mode:
@@ -254,7 +273,12 @@ class Settings(BaseSettings):
                 )
 
             insecure_passwords = [
-                "admin", "password", "123456", "changeme", "default", "soc_copilot"
+                "admin",
+                "password",
+                "123456",
+                "changeme",
+                "default",
+                "soc_copilot",
             ]
             if any(p in v.lower() for p in insecure_passwords):
                 if strict_mode:

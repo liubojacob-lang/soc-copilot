@@ -364,14 +364,30 @@ class CaseRepository:
         resolved_today = resolved_today_result.scalar() or 0
 
         # Average resolution time in hours
+        bind = (
+            session.get_bind()
+            if hasattr(session, "get_bind")
+            else getattr(session, "bind", None)
+        )
+        is_postgres = (
+            bind is not None
+            and getattr(bind, "dialect", None) is not None
+            and bind.dialect.name == "postgresql"
+        )
+
+        if is_postgres:
+            diff_hours = (
+                func.extract("epoch", CaseModel.resolved_at)
+                - func.extract("epoch", CaseModel.created_at)
+            ) / 3600.0
+        else:
+            diff_hours = (
+                func.julianday(CaseModel.resolved_at)
+                - func.julianday(CaseModel.created_at)
+            ) * 24.0
+
         avg_result = await session.execute(
-            select(
-                func.avg(
-                    func.julianday(CaseModel.resolved_at)
-                    - func.julianday(CaseModel.created_at)
-                )
-                * 24
-            ).where(
+            select(func.avg(diff_hours)).where(
                 and_(
                     CaseModel.resolved_at.isnot(None),
                     CaseModel.status.in_(["resolved", "closed"]),

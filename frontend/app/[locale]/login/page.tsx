@@ -167,7 +167,7 @@ export default function LoginPage() {
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>SOC Platform v2.0</span>
         </div>
-        <div className="flex items-center gap-2 bg-surface-card/60 backdrop-blur-md border border-border-subtle rounded-xl p-1 shadow-subtle">
+        <div className="flex items-center gap-2 bg-surface-card border border-border-subtle rounded-xl p-1 shadow-subtle">
           <LanguageSwitcher />
           <div className="w-px h-4 bg-border-subtle mx-0.5" />
           <ThemeToggle />
@@ -404,7 +404,7 @@ export default function LoginPage() {
       </main>
 
       {/* Subtle Footer */}
-      <footer className="relative z-10 py-4 text-center text-xs text-text-disabled">
+      <footer className="relative z-10 py-4 text-center text-xs text-text-tertiary">
         © {new Date().getFullYear()} SOC Copilot Inc. Enterprise Security Operations.
       </footer>
     </div>

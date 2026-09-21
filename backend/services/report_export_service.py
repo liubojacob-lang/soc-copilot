@@ -38,10 +38,10 @@ class ReportExportService:
             import weasyprint  # type: ignore[import-untyped] # noqa: F401
 
             return True
-        except ImportError:
+        except (ImportError, OSError):
             logger.warning(
-                "WeasyPrint not installed. PDF export will be unavailable. "
-                "Install with: pip install weasyprint"
+                "WeasyPrint not installed or system libraries missing. PDF export will be unavailable. "
+                "Install with: pip install weasyprint and system libpango/libgobject"
             )
             return False
 

@@ -8,6 +8,7 @@ from core.logger import get_logger
 from schemas.report import ReportGenerationResponse
 from services.history_service import HistoryService
 from services.llm_retry import get_llm_retry_service
+from services.prompt_resolution import resolve_prompt
 
 logger = get_logger(__name__)
 
@@ -20,6 +21,25 @@ Security guidelines:
 - Include evidence collection steps
 - Suggest verification procedures
 - Never suggest: log deletion, audit disabling, evidence destruction"""
+
+
+# Builtin user-prompt template (T3.2): overridable via an active
+# "report_generation" row in the prompt registry. Keep placeholders stable.
+_REPORT_USER_PROMPT_BUILTIN = """Based on this alert analysis, generate three report templates:
+
+Alert Data:
+{alert_json}{notes_text}
+
+Generate:
+1. ticket_template: Incident ticket format (title, description, severity, next steps)
+2. daily_report_template: Daily SOC report summary format
+3. postmortem_template: Post-incident review format
+
+Each template should be professional Markdown with:
+- Clear sections and headers
+- Action items with verification steps
+- Evidence collection procedures
+- Timeline if applicable"""
 
 
 class ReportService:
@@ -63,21 +83,15 @@ class ReportService:
             f"\n\nAdditional Notes:\n{additional_notes}" if additional_notes else ""
         )
 
-        prompt = f"""Based on this alert analysis, generate three report templates:
-
-Alert Data:
-{json.dumps(alert_data, indent=2, ensure_ascii=False)}{notes_text}
-
-Generate:
-1. ticket_template: Incident ticket format (title, description, severity, next steps)
-2. daily_report_template: Daily SOC report summary format
-3. postmortem_template: Post-incident review format
-
-Each template should be professional Markdown with:
-- Clear sections and headers
-- Action items with verification steps
-- Evidence collection procedures
-- Timeline if applicable"""
+        # T3.2: the template is overridable via an active
+        # "report_generation" row in the prompt registry.
+        template = await resolve_prompt(
+            "report_generation", _REPORT_USER_PROMPT_BUILTIN
+        )
+        prompt = template.format(
+            alert_json=json.dumps(alert_data, indent=2, ensure_ascii=False),
+            notes_text=notes_text,
+        )
 
         result, model_used, degraded = await self.llm_service.generate_structured(
             prompt=prompt,

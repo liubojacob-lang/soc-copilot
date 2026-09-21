@@ -26,7 +26,7 @@ function formatTimestamp(value: string | Date | number): string {
 
 export function TimeDisplay({ value, className }: TimeDisplayProps) {
   return (
-    <Caption color="tertiary" className={cn("text-xs text-slate-400", className)}>
+    <Caption color="tertiary" className={cn("text-xs text-text-tertiary", className)}>
       {formatTimestamp(value)}
     </Caption>
   );

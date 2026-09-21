@@ -147,7 +147,7 @@ class DAGCompiler:
                         return result
                 elif neighbor in rec_stack:
                     cycle_start = path.index(neighbor)
-                    return path[cycle_start:] + [neighbor]
+                    return [*path[cycle_start:], neighbor]
 
             path.pop()
             rec_stack.remove(node_id)

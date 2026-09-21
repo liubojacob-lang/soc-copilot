@@ -95,6 +95,7 @@ class CaseCreate(CaseBase):
 
     assigned_to: str | None = None
     sla_due_at: datetime | None = None
+    alert_ids: list[str | int] | None = None
 
 
 class CaseUpdate(BaseModel):
@@ -124,7 +125,7 @@ class CaseAssign(BaseModel):
 class CaseAlertLink(BaseModel):
     """Schema for linking alert IDs to a case."""
 
-    alert_ids: list[int] = Field(..., min_length=1, max_length=50)
+    alert_ids: list[int | str] = Field(..., min_length=1, max_length=50)
 
 
 class CaseResponse(BaseModel):

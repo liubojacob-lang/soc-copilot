@@ -212,8 +212,9 @@ async def batch_update_alerts(
 
     for alert_id in batch.alert_ids:
         try:
+            parsed_alert_id = int(alert_id) if str(alert_id).isdigit() else alert_id
             result = await db.execute(
-                select(SecurityAlert).where(SecurityAlert.id == alert_id)
+                select(SecurityAlert).where(SecurityAlert.id == parsed_alert_id)
             )
             alert = result.scalar_one_or_none()
 

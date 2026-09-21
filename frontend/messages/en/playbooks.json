@@ -1,6 +1,6 @@
 {
   "playbooks": {
-    "title": "Playbooks",
+    "title": "Playbook Runs",
     "execute": "Execute",
     "history": "Run History",
     "dag": "DAG Visualization",
@@ -9,7 +9,8 @@
     "running": "Running",
     "completed": "Completed",
     "failed": "Failed",
-    "subtitle": "Automated security response playbooks",
+    "subtitle": "Monitor automated playbook executions and concurrency queue",
+    "goToDefinitions": "Playbook Definitions & DAG",
     "started": "Started",
     "duration": "Duration",
     "mode": "Mode",
@@ -84,14 +85,58 @@
       "canvasView": "Canvas",
       "jsonView": "JSON Source",
       "stepSummary": "Step Summary ({count})",
+      "addAction": "Add Step",
+      "clickToInspect": "Click a node or edge to open inspector drawer",
+      "noSteps": "No steps yet, click button above to add",
       "footerStats": "{nodes} nodes, {edges} transitions in total",
-      "footerHint": "Pan, zoom and select nodes to trace execution paths",
+      "footerHint": "Click nodes or edges to configure parameters, supports pan and zoom",
       "nameRequired": "Playbook name is required",
       "nodesRequired": "The playbook must contain at least one node",
       "invalidEdge": "Invalid edge: node \"{source}\" or \"{target}\" does not exist in the node list",
       "saveSuccess": "Playbook definition saved! Returning to detail page...",
       "saveFailed": "Failed to save playbook definition, please check the data format",
       "networkError": "Network request failed, please check the backend service connection"
+    },
+    "createPage": {
+      "title": "Create Playbook",
+      "subtitle": "Design, orchestrate, and publish automated security response flows based on DAG",
+      "backToList": "Back to List",
+      "publishPlaybook": "Publish Playbook",
+      "publishing": "Saving...",
+      "loadingVisualEngine": "Loading visual flow engine...",
+      "chooseTemplate": "Select Preset Template or Start from Scratch",
+      "chooseTemplateDesc": "Quickly apply verified security orchestration templates with support for fine-tuning on canvas",
+      "selected": "Selected",
+      "nodesCount": "{count} nodes",
+      "edgesCount": "{count} edges",
+      "defaultName": "Automated IP Threat Block Playbook",
+      "defaultDesc": "Detect high-risk outbound connection alerts, automatically deploy firewall block rules after threat intel triage, and notify the on-duty analyst",
+      "publishSuccess": "Playbook definition published successfully! Returning to workspace...",
+      "publishFailed": "Failed to submit playbook definition, please check data format",
+      "networkError": "Network request error, please check backend service connection",
+      "nameRequired": "Please enter a playbook name",
+      "nodesRequired": "The playbook flow must contain at least one node",
+      "invalidEdge": "Flow edge error: node \"{source}\" or \"{target}\" does not exist in node list",
+      "totalNodesAndEdges": "{nodes} execution nodes, {edges} transition links in total",
+      "canvasHint": "Supports pan, zoom, node selection, and path tracing",
+      "templates": {
+        "ipBlock": {
+          "name": "Malicious IP Auto-Block",
+          "description": "Detect high-risk outbound alerts, automatically deploy blocking rules to firewalls after threat intel analysis, and alert operators"
+        },
+        "phishing": {
+          "name": "Phishing Email Rapid Response",
+          "description": "Extract IOCs from email body and attachments, run automated sandbox triage, isolate network and reset credentials if malicious"
+        },
+        "endpoint": {
+          "name": "Endpoint Process Isolation",
+          "description": "EDR catches abnormal privilege escalation, traces process chain, isolates endpoint and kills process after analyst approval"
+        },
+        "custom": {
+          "name": "Custom Empty Workflow",
+          "description": "Start from a 3-node blank blueprint, customize inputs/outputs, conditions, and response actions freely"
+        }
+      }
     },
     "runDetail": {
       "title": "Run Detail",

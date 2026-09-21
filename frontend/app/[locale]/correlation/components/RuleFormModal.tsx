@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { X, Loader2, Sliders, Shield, Layers, AlertCircle } from "lucide-react";
 import { authFetchJSON } from "@/lib/auth";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type { CorrelationRule } from "./RuleDetailsDrawer";
 
 interface RuleFormModalProps {
@@ -70,6 +71,20 @@ export function RuleFormModal({ isOpen, onClose, initialData, onSuccess }: RuleF
     setErrorMessage(null);
   }, [initialData, isOpen]);
 
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
+  // Escape-to-close + focus trap, aligned with the shared Modal component
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(isOpen, onClose, modalRef);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,11 +141,21 @@ export function RuleFormModal({ isOpen, onClose, initialData, onSuccess }: RuleF
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+      onMouseDown={(e) => {
+        // 仅点击遮罩本身(非内容)时关闭
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
+        ref={modalRef}
         className="w-full max-w-xl bg-surface-card rounded-2xl border border-border-subtle shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
+        // 阻止 mousedown 冒泡到遮罩(避免误关闭)
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between bg-surface-ground/50">

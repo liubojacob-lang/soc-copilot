@@ -289,7 +289,7 @@ export default function AIModelsPage() {
                         </span>
                       ))
                     ) : (
-                      <span className="text-xs text-gray-400">{t("noCapabilities")}</span>
+                      <span className="text-xs text-text-tertiary">{t("noCapabilities")}</span>
                     )}
                   </div>
                 </div>
@@ -413,7 +413,7 @@ export default function AIModelsPage() {
         {/* Empty State */}
         {models.length === 0 && (
           <div className="text-center py-12">
-            <Brain className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <Brain className="w-16 h-16 text-text-tertiary mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               {t("emptyTitle")}
             </h3>

@@ -131,7 +131,7 @@ export function GlobalSearch() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyNavigation}
             placeholder="Search pages, tools, and actions..."
-            className="flex-1 bg-transparent outline-none text-sm text-text-primary placeholder:text-text-disabled"
+            className="flex-1 bg-transparent outline-none text-sm text-text-primary placeholder:text-text-tertiary"
           />
           <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary bg-surface-hover border border-border-subtle rounded">
             ESC
@@ -166,7 +166,7 @@ export function GlobalSearch() {
                 <span className="truncate">{item.title}</span>
                 <span
                   className={`ml-auto text-[11px] font-mono ${
-                    index === selectedIndex ? "text-white/80" : "text-text-disabled"
+                    index === selectedIndex ? "text-white/80" : "text-text-tertiary"
                   }`}
                 >
                   {item.url}

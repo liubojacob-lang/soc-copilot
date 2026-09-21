@@ -57,6 +57,17 @@ export default function APIKeysPage() {
     fetchAPIKeys();
   }, [router]);
 
+  // Lock background scroll when any modal is open
+  useEffect(() => {
+    if (showCreateModal || showKeyModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [showCreateModal, showKeyModal]);
+
   const fetchAPIKeys = async () => {
     try {
       const data = await authFetchJSON<{ items: APIKey[]; total: number }>("/api/api-keys");
@@ -242,7 +253,9 @@ export default function APIKeysPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {key.description || (
-                          <span className="text-gray-400 italic">{tApiKeys("noDescription")}</span>
+                          <span className="text-text-tertiary italic">
+                            {tApiKeys("noDescription")}
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -273,7 +286,7 @@ export default function APIKeysPage() {
                         {key.is_active ? (
                           <button
                             onClick={() => handleDisableKey(key.id)}
-                            className="text-orange-600 hover:text-orange-900 mr-3"
+                            className="text-orange-700 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 mr-3"
                           >
                             {tCommon("disable")}
                           </button>
@@ -287,7 +300,7 @@ export default function APIKeysPage() {
                         )}
                         <button
                           onClick={() => setDeleteTarget(key)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                         >
                           {tCommon("delete")}
                         </button>
@@ -315,8 +328,16 @@ export default function APIKeysPage() {
 
       {/* Create Key Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowCreateModal(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               {tApiKeys("createNewApiKey")}
             </h3>
@@ -383,8 +404,16 @@ export default function APIKeysPage() {
 
       {/* Show Key Modal */}
       {showKeyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowKeyModal(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="mb-4">
               <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
                 <svg

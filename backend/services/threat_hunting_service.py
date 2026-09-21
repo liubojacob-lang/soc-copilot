@@ -433,9 +433,7 @@ class ThreatHuntingEngine:
         from repositories.alert_repository import AlertRepository
         from schemas.common import PaginationParams
 
-        since = datetime.now(UTC).replace(tzinfo=None) - timedelta(
-            days=time_range_days
-        )
+        since = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=time_range_days)
         findings: list[HuntFinding] = []
         repo = AlertRepository(db)
         page = PaginationParams(

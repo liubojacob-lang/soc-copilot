@@ -20,15 +20,16 @@ router = APIRouter(tags=["alert"])
 @router.post("/api/v1/analyze-alert", response_model=AlertAnalysisResponse)
 @rate_limit(max_requests=10, window_seconds=60)
 async def analyze_alert(
-    request: AlertAnalysisRequest,
-    http_request: Request,
+    payload: AlertAnalysisRequest,
+    request: Request,
     session: AsyncSession = Depends(get_session),
     current_user: UserModel = Depends(get_current_user),
 ) -> AlertAnalysisResponse:
     """Analyze a security alert/log.
 
     Args:
-        request: Alert analysis request with raw log
+        payload: Alert analysis request with raw log or alert attributes
+        request: HTTP request for rate limiting and tracing
         session: Database session
 
     Returns:
@@ -37,9 +38,32 @@ async def analyze_alert(
     request_id = str(uuid.uuid4())[:8]
     logger.info(f"Received alert analysis request: {request_id}")
 
+    # Build raw_log if omitted or too brief
+    raw_log = payload.raw_log
+    if not raw_log or len(raw_log.strip()) < 10:
+        parts = []
+        if payload.title:
+            parts.append(f"Alert Title: {payload.title}")
+        if payload.severity:
+            parts.append(f"Severity: {payload.severity}")
+        if payload.source:
+            parts.append(f"Source: {payload.source}")
+        if payload.description:
+            parts.append(f"Description: {payload.description}")
+        raw_log = "\n".join(parts)
+        if len(raw_log.strip()) < 10:
+            raw_log = (
+                f"Security Alert Event: {payload.title or 'Unknown alert'} "
+                f"detected by {payload.source or 'Security Monitoring System'}."
+            )
+
     try:
         service = AlertService(session=session)
-        result = await service.analyze(request.raw_log)
+        result = await service.analyze(raw_log)
+        if not result.attack_pattern and result.event_type:
+            result.attack_pattern = (
+                f"{result.event_type.value.upper()} detection pattern"
+            )
         return result
     except ValueError as e:
         logger.error(f"Validation error: {e!s}")

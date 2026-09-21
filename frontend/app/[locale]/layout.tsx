@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import { hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -17,19 +16,6 @@ import { ThemeClassSync } from "@/components/ThemeClassSync";
 import { locales } from "@/i18n/routing";
 import { buildAlternates, getMetadataBase } from "@/lib/seo";
 import "../globals.css";
-
-// CSS 变量名与 globals.css / tailwind.config.ts 中的字体栈约定一致。
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
-});
 
 const THEME_INIT_SCRIPT = `
   (function() {
@@ -164,7 +150,7 @@ export default async function LocaleLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased min-h-screen`}>
+      <body className="font-sans antialiased min-h-screen">
         {/* The theme script must exist in the SSR HTML before first paint, but a
             <script> element rendered by React errors on client re-renders
             (locale switches) because scripts are never executed there. Emitting

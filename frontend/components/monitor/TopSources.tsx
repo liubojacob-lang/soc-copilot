@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   BarChart,
   Bar,
@@ -50,6 +51,10 @@ export const TopSources = React.memo(function TopSources({
   limit = 10,
   showDetails = true,
 }: TopSourcesProps) {
+  const t = useTranslations("threatIntel.dashboard");
+  const tSeverity = useTranslations("severity");
+  const tCommon = useTranslations("common");
+  const tTI = useTranslations("threatIntel");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // 过滤和限制数据
@@ -79,7 +84,7 @@ export const TopSources = React.memo(function TopSources({
       <div className="flex items-center justify-center h-64 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
         <div className="text-center">
           <Globe className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">No threat sources found</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t("noThreatSources")}</p>
         </div>
       </div>
     );
@@ -113,7 +118,7 @@ export const TopSources = React.memo(function TopSources({
                 return (
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2">
                     <p className="text-xs font-medium text-gray-900 dark:text-white">
-                      {data.payload.name}: {data.value} alerts
+                      {data.payload.name}: {t("alertsCount", { count: data.value })}
                     </p>
                   </div>
                 );
@@ -184,7 +189,7 @@ export const TopSources = React.memo(function TopSources({
                         )}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {source.count} alert{source.count !== 1 ? "s" : ""}
+                        {t("alertsCount", { count: source.count })}
                       </div>
                     </div>
                   </div>
@@ -192,7 +197,7 @@ export const TopSources = React.memo(function TopSources({
                   {/* 展开按钮 */}
                   <button
                     className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-                    aria-label={isExpanded ? "Collapse" : "Expand"}
+                    aria-label={isExpanded ? tCommon("collapse") : tCommon("expand")}
                   >
                     {isExpanded ? (
                       <ChevronUp className="w-4 h-4 text-gray-500" />
@@ -207,13 +212,13 @@ export const TopSources = React.memo(function TopSources({
                   <div className="px-3 pb-3 pt-0 border-t border-gray-200 dark:border-gray-700">
                     <div className="grid grid-cols-2 gap-3 mt-3 text-xs">
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Type:</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("type")}:</span>
                         <span className="ml-2 font-medium text-gray-900 dark:text-white capitalize">
-                          {source.type}
+                          {source.type === "domain" ? tTI("type_domain") : tTI("type_ip")}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Severity:</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("severity")}:</span>
                         <span
                           className={`ml-2 font-medium capitalize ${
                             source.severity === "critical"
@@ -225,17 +230,17 @@ export const TopSources = React.memo(function TopSources({
                                   : "text-blue-600 dark:text-blue-400"
                           }`}
                         >
-                          {source.severity}
+                          {tSeverity(source.severity) || source.severity}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">First Seen:</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("firstSeen")}:</span>
                         <span className="ml-2 text-gray-900 dark:text-white">
                           {new Date(source.first_seen).toLocaleDateString()}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Last Seen:</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("lastSeen")}:</span>
                         <span className="ml-2 text-gray-900 dark:text-white">
                           {new Date(source.last_seen).toLocaleDateString()}
                         </span>
@@ -262,7 +267,7 @@ export const TopSources = React.memo(function TopSources({
                         }}
                       >
                         <ExternalLink className="w-3 h-3" />
-                        Details
+                        {t("details")}
                       </button>
                     </div>
                   </div>
@@ -287,11 +292,12 @@ interface BlockIPButtonProps {
 function BlockIPButton({ value, type, alertId, onSuccess }: BlockIPButtonProps) {
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
+  const t = useTranslations("threatIntel.dashboard");
 
   const handleBlock = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!confirm(`Are you sure you want to block ${type} ${value}?`)) {
+    if (!confirm(t("confirmBlock", { type, value }))) {
       return;
     }
 
@@ -305,15 +311,14 @@ function BlockIPButton({ value, type, alertId, onSuccess }: BlockIPButtonProps) 
         expires_in_hours: 168, // 7 days
       });
 
-      showToast(
-        `Blocked Successfully: ${type.toUpperCase()} ${value} has been blocked for 7 days.`,
-        "success"
-      );
+      showToast(t("blockSuccess", { type: type.toUpperCase(), value }), "success");
 
       onSuccess?.();
     } catch (error) {
       showToast(
-        `Failed to Block: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
+        t("blockFailed", {
+          error: error instanceof Error ? error.message : "Unknown error occurred",
+        }),
         "error"
       );
     } finally {
@@ -328,7 +333,7 @@ function BlockIPButton({ value, type, alertId, onSuccess }: BlockIPButtonProps) 
       disabled={loading}
     >
       {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
-      Block
+      {t("block")}
     </button>
   );
 }
@@ -343,6 +348,7 @@ export function SimpleTopSources({
   limit?: number;
   type?: "ip" | "domain" | "both";
 }) {
+  const t = useTranslations("threatIntel.dashboard");
   const filteredSources = sources.filter((s) => type === "both" || s.type === type).slice(0, limit);
 
   if (filteredSources.length === 0) {
@@ -373,7 +379,7 @@ export function SimpleTopSources({
                 {source.value}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                {source.count} alert{source.count !== 1 ? "s" : ""}
+                {t("alertsCount", { count: source.count })}
               </div>
             </div>
           </div>

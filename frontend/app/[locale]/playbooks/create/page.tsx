@@ -21,17 +21,22 @@ import {
   Info,
 } from "lucide-react";
 
-// Dynamically import DAGCanvas to prevent SSR issues with ReactFlow
-const DAGCanvas = dynamic(() => import("@/components/dag/DAGCanvas").then((mod) => mod.DAGCanvas), {
-  ssr: false,
-  loading: () => (
+function CanvasLoading() {
+  const t = useTranslations("playbooks");
+  return (
     <div className="h-[460px] w-full flex items-center justify-center bg-surface-hover/30 rounded-2xl border border-dashed border-border-subtle">
       <div className="flex items-center gap-2 text-text-tertiary text-xs">
         <div className="w-4 h-4 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
-        <span>加载可视化流程引擎...</span>
+        <span>{t("createPage.loadingVisualEngine")}</span>
       </div>
     </div>
-  ),
+  );
+}
+
+// Dynamically import DAGCanvas to prevent SSR issues with ReactFlow
+const DAGCanvas = dynamic(() => import("@/components/dag/DAGCanvas").then((mod) => mod.DAGCanvas), {
+  ssr: false,
+  loading: () => <CanvasLoading />,
 });
 
 import type { DagNodeDef, DagEdgeDef } from "../constants";
@@ -261,21 +266,49 @@ export default function CreatePlaybookPage() {
   const locale = useLocale();
   const t = useTranslations("playbooks");
 
+  const localizeDagNodes = (rawNodes: DagNodeDef[]) => {
+    if (locale !== "en") return rawNodes;
+    return rawNodes.map((n) => {
+      const match = n.name.match(/\((.*?)\)/);
+      return {
+        ...n,
+        name: match ? match[1] : n.name,
+      };
+    });
+  };
+
+  const templates: TemplateOption[] = useMemo(() => {
+    return TEMPLATES.map((tmpl) => {
+      let key = "ipBlock";
+      if (tmpl.id === "phishing-triage") key = "phishing";
+      else if (tmpl.id === "endpoint-isolate") key = "endpoint";
+      else if (tmpl.id === "custom-blank") key = "custom";
+      return {
+        ...tmpl,
+        name: t(`createPage.templates.${key}.name` as any),
+        description: t(`createPage.templates.${key}.description` as any),
+        nodes: localizeDagNodes(tmpl.nodes),
+      };
+    });
+  }, [t, locale]);
+
   // Form State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("ip-block");
-  const [name, setName] = useState("自动化 IP 威胁封禁剧本");
+  const [name, setName] = useState(() => t("createPage.defaultName"));
   const [version, setVersion] = useState("1.0.0");
-  const [description, setDescription] = useState(
-    "检测高危外联告警，经威胁情报研判后自动在防火墙下发阻断规则并通知值班员"
-  );
+  const [description, setDescription] = useState(() => t("createPage.defaultDesc"));
   const [isActive, setIsActive] = useState(true);
 
   // DAG State
-  const [nodes, setNodes] = useState<DagNodeDef[]>(TEMPLATES[0].nodes);
+  const [nodes, setNodes] = useState<DagNodeDef[]>(() => localizeDagNodes(TEMPLATES[0].nodes));
   const [edges, setEdges] = useState<DagEdgeDef[]>(TEMPLATES[0].edges);
   const [viewMode, setViewMode] = useState<"visual" | "json">("visual");
   const [jsonText, setJsonText] = useState(() =>
-    JSON.stringify({ nodes: TEMPLATES[0].nodes, edges: TEMPLATES[0].edges }, null, 2)
+    JSON.stringify(
+      { nodes: localizeDagNodes(TEMPLATES[0].nodes), edges: TEMPLATES[0].edges },
+      null,
+      2
+    )
   );
   const [jsonError, setJsonError] = useState<string | null>(null);
 
@@ -332,12 +365,12 @@ export default function CreatePlaybookPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setFeedback({ type: "error", message: "请输入剧本名称" });
+      setFeedback({ type: "error", message: t("createPage.nameRequired") });
       return;
     }
 
     if (nodes.length === 0) {
-      setFeedback({ type: "error", message: "剧本流程必须包含至少一个节点" });
+      setFeedback({ type: "error", message: t("createPage.nodesRequired") });
       return;
     }
 
@@ -347,7 +380,10 @@ export default function CreatePlaybookPage() {
     if (invalidEdge) {
       setFeedback({
         type: "error",
-        message: `流程连线异常：节点 "${invalidEdge.source}" 或 "${invalidEdge.target}" 不存在于节点列表中`,
+        message: t("createPage.invalidEdge", {
+          source: invalidEdge.source,
+          target: invalidEdge.target,
+        }),
       });
       return;
     }
@@ -402,13 +438,13 @@ export default function CreatePlaybookPage() {
       if (res.ok) {
         setFeedback({
           type: "success",
-          message: "剧本定义发布成功！正在返回剧本工作区...",
+          message: t("createPage.publishSuccess"),
         });
         setTimeout(() => {
-          router.push("/playbooks?tab=definitions");
+          router.push("/playbooks/definitions");
         }, 1200);
       } else {
-        let errMsg = "提交剧本定义失败，请检查数据格式";
+        let errMsg = t("createPage.publishFailed");
         try {
           const errData = await res.json();
           if (errData?.detail) {
@@ -434,7 +470,7 @@ export default function CreatePlaybookPage() {
       console.error("API request error:", err);
       setFeedback({
         type: "error",
-        message: "网络请求异常，请检查后端服务连接状态",
+        message: t("createPage.networkError"),
       });
     } finally {
       setSubmitting(false);
@@ -442,29 +478,31 @@ export default function CreatePlaybookPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-canvas transition-colors pb-16">
+    <div className="min-h-screen bg-surface-page transition-colors pb-16">
       {/* Header */}
       <PageHeader
-        title="新建安全剧本"
-        subtitle="基于 DAG 流程图设计、编排与发布自动化安全处置流程"
+        title={t("createPage.title")}
+        subtitle={t("createPage.subtitle")}
         actions={
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => router.push("/playbooks?tab=definitions")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-subtle bg-surface-card hover:bg-surface-hover text-text-secondary text-xs font-medium transition-colors"
+              onClick={() => router.push("/playbooks/definitions")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border-default bg-surface-card hover:bg-surface-hover text-text-secondary text-sm font-medium transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>返回列表</span>
+              <span>{t("createPage.backToList")}</span>
             </button>
             <button
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-accent-600 hover:bg-accent-700 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent-600 hover:bg-accent-700 text-white text-sm font-medium shadow-subtle transition-all disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{submitting ? "正在保存..." : "发布剧本"}</span>
+              <span>
+                {submitting ? t("createPage.publishing") : t("createPage.publishPlaybook")}
+              </span>
             </button>
           </div>
         }
@@ -474,7 +512,7 @@ export default function CreatePlaybookPage() {
         {/* Feedback Alert */}
         {feedback && (
           <div
-            className={`p-4 rounded-2xl border flex items-center gap-3 animate-fade-in ${
+            className={`p-4 rounded-xl border flex items-center gap-3 animate-fade-in ${
               feedback.type === "success"
                 ? "bg-success-500/10 border-success-500/30 text-success-700 dark:text-success-300"
                 : "bg-danger-500/10 border-danger-500/30 text-danger-700 dark:text-danger-300"
@@ -485,7 +523,7 @@ export default function CreatePlaybookPage() {
             ) : (
               <AlertTriangle className="w-5 h-5 shrink-0" />
             )}
-            <span className="text-xs font-medium">{feedback.message}</span>
+            <span className="text-sm font-medium">{feedback.message}</span>
           </div>
         )}
 
@@ -493,14 +531,14 @@ export default function CreatePlaybookPage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-sm font-semibold text-text-primary">选择预置模板或空白起步</h2>
-              <p className="text-xs text-text-tertiary">
-                快速应用经安全验证的编排模版，支持在画布上二次微调
-              </p>
+              <h2 className="text-sm font-semibold text-text-primary">
+                {t("createPage.chooseTemplate")}
+              </h2>
+              <p className="text-xs text-text-muted mt-0.5">{t("createPage.chooseTemplateDesc")}</p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {TEMPLATES.map((tmpl) => {
+            {templates.map((tmpl) => {
               const isSelected = selectedTemplateId === tmpl.id;
               const IconComp = tmpl.icon;
               return (
@@ -508,7 +546,7 @@ export default function CreatePlaybookPage() {
                   key={tmpl.id}
                   type="button"
                   onClick={() => handleSelectTemplate(tmpl)}
-                  className={`p-4 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between group ${
+                  className={`p-4 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between group ${
                     isSelected
                       ? "bg-accent-50/70 dark:bg-accent-950/40 border-accent-500/40 shadow-subtle ring-1 ring-accent-500/30"
                       : "bg-surface-card border-border-subtle hover:bg-surface-hover hover:border-border-default"
@@ -517,7 +555,7 @@ export default function CreatePlaybookPage() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                           isSelected
                             ? "bg-accent-600 text-white"
                             : "bg-surface-hover text-text-secondary group-hover:text-accent-600"
@@ -527,18 +565,18 @@ export default function CreatePlaybookPage() {
                       </div>
                       {isSelected && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent-500/15 text-accent-700 dark:text-accent-300">
-                          已选择
+                          {t("createPage.selected")}
                         </span>
                       )}
                     </div>
-                    <h3 className="text-xs font-semibold text-text-primary mb-1">{tmpl.name}</h3>
-                    <p className="text-[11px] text-text-tertiary line-clamp-2 leading-relaxed">
+                    <h3 className="text-sm font-semibold text-text-primary mb-1">{tmpl.name}</h3>
+                    <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed">
                       {tmpl.description}
                     </p>
                   </div>
-                  <div className="mt-3 pt-2 border-t border-border-subtle/50 flex items-center justify-between text-[10px] text-text-tertiary font-mono">
-                    <span>{tmpl.nodes.length} 个节点</span>
-                    <span>{tmpl.edges.length} 条边</span>
+                  <div className="mt-3 pt-2 border-t border-border-subtle/50 flex items-center justify-between text-[11px] text-text-secondary font-mono">
+                    <span>{t("createPage.nodesCount", { count: tmpl.nodes.length })}</span>
+                    <span>{t("createPage.edgesCount", { count: tmpl.edges.length })}</span>
                   </div>
                 </button>
               );
@@ -549,53 +587,53 @@ export default function CreatePlaybookPage() {
         {/* Section 2: Metadata Form & Flow Canvas */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Metadata Config */}
-          <div className="bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle space-y-4">
+          <div className="bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
               <Info className="w-4 h-4 text-accent-600 dark:text-accent-400" />
               <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-                基础配置
+                {t("edit.basicConfig")}
               </h3>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                剧本名称 <span className="text-danger-500">*</span>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                {t("edit.name")} <span className="text-danger-700 dark:text-danger-400">*</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="例如: 自动化 IP 封禁响应"
+                placeholder={t("edit.namePlaceholder")}
                 required
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
+                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                  版本号
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  {t("edit.version")}
                 </label>
                 <input
                   type="text"
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
                   placeholder="1.0.0"
-                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
+                  className="w-full px-3.5 py-2 text-sm font-mono rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                  立即激活
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  {t("edit.isActive")}
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsActive(!isActive)}
-                  className={`w-full py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-colors ${
+                  className={`w-full py-2 px-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                     isActive
                       ? "bg-success-500/15 border-success-500/30 text-success-700 dark:text-success-400"
-                      : "bg-surface-hover border-border-subtle text-text-tertiary"
+                      : "bg-surface-hover border-border-subtle text-text-secondary"
                   }`}
                 >
                   <div
@@ -603,28 +641,28 @@ export default function CreatePlaybookPage() {
                       isActive ? "bg-success-500 animate-pulse" : "bg-text-tertiary"
                     }`}
                   />
-                  <span>{isActive ? "已激活 (Active)" : "草稿 (Draft)"}</span>
+                  <span>{isActive ? t("edit.activeLabel") : t("edit.draftLabel")}</span>
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                功能描述
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                {t("edit.description")}
               </label>
               <textarea
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="简明描述该剧本的触发条件、执行逻辑与应急响应目的..."
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-default bg-surface-card text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors resize-none"
+                placeholder={t("edit.descriptionPlaceholder")}
+                className="w-full px-3.5 py-2 text-sm rounded-lg border border-border-default bg-surface-input text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors resize-none"
               />
             </div>
 
             {/* Step Summary */}
             <div className="pt-2 border-t border-border-subtle">
-              <h4 className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider mb-2">
-                步骤概要清单 ({nodes.length})
+              <h4 className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">
+                {t("edit.stepSummary", { count: nodes.length })}
               </h4>
               <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                 {nodes.map((n, idx) => (
@@ -644,44 +682,49 @@ export default function CreatePlaybookPage() {
           </div>
 
           {/* Flow Preview & Editor */}
-          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-2xl p-5 shadow-subtle flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-surface-card border border-border-subtle rounded-xl p-5 shadow-subtle flex flex-col justify-between">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-4">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-accent-600 dark:text-accent-400" />
                 <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-                  DAG 流程拓扑可视化
+                  {t("edit.dagTitle")}
                 </h3>
               </div>
-              <div className="flex items-center gap-1 p-0.5 rounded-xl bg-surface-hover border border-border-subtle text-xs">
+              {/* 分段控件：轨道用 bg-surface-hover，激活项是白色浮起的 pill。
+                  未激活文字必须用 secondary —— tertiary 落在 surface-hover 上
+                  浅色只有 4.34:1（低于 AA），正是 check-contrast.mjs 按根因登记的
+                  "弱文本层级放在 hover/active 背景上" 那一类。
+                  两个按钮的圆角也要一致（原为 rounded-md / rounded-lg 混用）。 */}
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-hover border border-border-subtle text-xs">
                 <button
                   type="button"
                   onClick={() => setViewMode("visual")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors font-medium ${
                     viewMode === "visual"
                       ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
+                      : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
                   <Play className="w-3 h-3" />
-                  <span>流程画布</span>
+                  <span>{t("edit.canvasView")}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("json")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors font-medium ${
                     viewMode === "json"
                       ? "bg-surface-card text-text-primary shadow-subtle"
-                      : "text-text-tertiary hover:text-text-secondary"
+                      : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
                   <Code2 className="w-3 h-3" />
-                  <span>JSON 源码</span>
+                  <span>{t("edit.jsonView")}</span>
                 </button>
               </div>
             </div>
 
             {/* Canvas / JSON Area */}
-            <div className="flex-1 min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-canvas/50 relative">
+            <div className="flex-1 min-h-[460px] rounded-xl overflow-hidden border border-border-subtle bg-surface-page relative">
               {viewMode === "visual" ? (
                 <DAGCanvas
                   definition={dagDefinition}
@@ -708,9 +751,9 @@ export default function CreatePlaybookPage() {
             {/* Footer hint */}
             <div className="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between text-xs text-text-tertiary">
               <span>
-                共计 {nodes.length} 个执行节点，{edges.length} 条转换关系
+                {t("createPage.totalNodesAndEdges", { nodes: nodes.length, edges: edges.length })}
               </span>
-              <span>支持平移缩放、节点选中与链路排查</span>
+              <span>{t("createPage.canvasHint")}</span>
             </div>
           </div>
         </div>

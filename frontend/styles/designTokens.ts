@@ -175,7 +175,8 @@ export const semanticTokens = {
     cardGap: coreSpacing["4"],
     tableRowHeight: "48px",
     navHeight: "56px",
-    sidebarWidth: "256px",
+    /** 侧栏展开宽度。全语系统一，禁止按语言分化（否则切换语言会平移整个外壳）。 */
+    sidebarWidth: "216px",
   },
 } as const;
 
