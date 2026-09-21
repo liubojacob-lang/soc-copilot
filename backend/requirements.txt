@@ -22,7 +22,7 @@ requests>=2.32.3
 bcrypt>=4.0.0,<5.0.0
 
 # v0.7.1 additions (trigger system)
-croniter==3.0.3
+croniter==6.2.4
 alembic==1.14.0
 
 # Phase 2: AI enhancements (optional)
