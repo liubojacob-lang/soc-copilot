@@ -3,7 +3,9 @@
 Covers three risky, previously untested behaviour changes in the release batch:
 
 1. ``IOCHitCreate.ioc_type`` / ``.source`` were relaxed from ``IOCType`` /
-   ``IOCSource`` enums to bare ``str`` (enum validation removed at the edge).
+   ``IOCSource`` enums to bare ``str`` (enum validation removed at the edge);
+   QA-007 later restored enum validation on the create boundary only, while
+   ``IOCHitBase`` / ``IOCHitResponse`` stay ``str`` for historical rows.
 2. ``ThreatIntelService.lookup`` ordering. G8 (0112966) fixed DEFECT QA-002 by
    putting the ``is_enabled()`` short circuit first, so the contract asserted
    here is: compliance filter → ``is_enabled()`` → cache → internal IOC hits →
@@ -25,7 +27,7 @@ from schemas.ioc_hit import IOCSource, IOCType
 from schemas.threat_intel import Verdict
 
 # --------------------------------------------------------------------------- #
-# 1. IOC hit schema: enum validation removed
+# 1. IOC hit schema: enum validation at the create boundary (QA-007)
 # --------------------------------------------------------------------------- #
 
 
@@ -45,30 +47,28 @@ class TestIOCHitSchemaValidation:
         )
         assert hit.ioc_type is IOCType.domain or hit.ioc_type == "domain"
 
-    def test_arbitrary_strings_accepted_characterisation(self):
-        """DEFECT QA-007 (characterisation): enum validation was removed in v0.9.4.
+    def test_arbitrary_strings_rejected_at_create_boundary(self):
+        """QA-007 fixed in v0.9.4: the create boundary rejects non-enum values.
 
-        Any string is now persisted as ``ioc_type`` / ``source``. The API layer
-        no longer rejects typos or hostile values at the boundary.
+        ``ioc_type`` / ``source`` are validated against the enums again, so
+        typos and hostile values are refused with 422 instead of persisted.
         """
         from schemas.ioc_hit import IOCHitCreate
 
-        hit = IOCHitCreate(ioc_type="totally-bogus", ioc_value="x", source="<script>")
-        assert hit.ioc_type == "totally-bogus"
-        assert hit.source == "<script>"
+        with pytest.raises(ValidationError):
+            IOCHitCreate(ioc_type="totally-bogus", ioc_value="x", source="<script>")
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "DEFECT QA-007: ioc_type/source were relaxed from enums to str, so the "
-            "request boundary no longer rejects unknown IOC types/sources."
-        ),
-    )
     def test_unknown_ioc_type_should_be_rejected(self):
         from schemas.ioc_hit import IOCHitCreate
 
         with pytest.raises(ValidationError):
             IOCHitCreate(ioc_type="totally-bogus", ioc_value="x", source="local")
+
+    def test_unknown_source_should_be_rejected(self):
+        from schemas.ioc_hit import IOCHitCreate
+
+        with pytest.raises(ValidationError):
+            IOCHitCreate(ioc_type="ip", ioc_value="8.8.8.8", source="shadow-api")
 
 
 # --------------------------------------------------------------------------- #

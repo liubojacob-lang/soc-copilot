@@ -481,6 +481,10 @@ def rate_limit(max_requests: int = 10, window_seconds: int = 60):
                 request = next(
                     (v for v in kwargs.values() if isinstance(v, Request)), None
                 )
+            if not isinstance(request, Request):
+                request = next(
+                    (v for v in args if isinstance(v, Request)), None
+                )
             if not request or not isinstance(request, Request):
                 return await func(*args, **kwargs)
 

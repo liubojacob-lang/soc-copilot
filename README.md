@@ -546,6 +546,6 @@ This project is an internal security operations tool for authorized users only.
 
 ---
 
-**Version**: v0.9.2
-**Last Updated**: 2026-09-08
+**Version**: v0.9.4
+**Last Updated**: 2026-09-21
 **Maintainer**: SOC Team

@@ -478,7 +478,11 @@ export function NodeInspectorDrawer({
                   rows={3}
                   value={String(inputs.message || "")}
                   onChange={(e) => handleFieldChange("message", e.target.value)}
-                  placeholder="告警已阻断: {{$.output.blocked}}"
+                  placeholder={
+                    isZh
+                      ? "告警已阻断: {{$.output.blocked}}"
+                      : "Alert blocked: {{$.output.blocked}}"
+                  }
                   className="w-full px-2.5 py-1.5 text-[11px] rounded-xl border border-border-default bg-surface-ground text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-500 resize-none font-mono"
                 />
               </div>

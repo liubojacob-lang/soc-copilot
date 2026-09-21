@@ -738,7 +738,7 @@
     "status": "Status",
     "mode": "Mode",
     "searchPlaceholder": "Search by name or ID...",
-    "noPlaybookRuns": "No playbook runs found",
+    "noPlaybookRuns": "No playbook runs yet",
     "runPlaybookHint": "Run a playbook to see it here",
     "noDefinitions": "No playbook definitions found",
     "statuses": {
@@ -900,7 +900,11 @@
           "description": "Start from a 3-node blank blueprint, customize inputs/outputs, conditions, and response actions freely"
         }
       }
-    }
+    },
+    "loadingEngine": "Loading workflow engine...",
+    "exportCsv": "Export records (CSV)",
+    "exportFailed": "Export failed, please try again later",
+    "exporting": "Exporting..."
   },
   "alerts": {
     "title": "Alerts",
@@ -1309,7 +1313,16 @@
     "scoreUnit": "pts",
     "copyIoc": "Copy IOC",
     "copied": "Copied",
-    "unitItems": "records"
+    "unitItems": "records",
+    "unconfiguredProviderNotice": "External threat intelligence provider not configured (OTX_API_KEY not set), returning empty state results.",
+    "bannerDisabledTitle": "External threat intelligence provider (AlienVault OTX) is not configured or disabled",
+    "bannerDisabledDesc": "The system currently displays only local cache and known hits. To query global threat intelligence in real time, please configure a valid",
+    "presets": {
+      "sshLog4j": "SSH Brute Force & Log4Shell",
+      "phishingSSO": "Fake SSO Phishing Domain",
+      "xmrig": "XMRig Mining Pool",
+      "googleDns": "Google DNS (Allowlist)"
+    }
   },
   "marketplace": {
     "title": "Playbook Marketplace",
@@ -2533,7 +2546,9 @@
       "data_exfiltration": "Data Exfiltration",
       "privilege_escalation": "Privilege Escalation",
       "lateral_movement": "Lateral Movement"
-    }
+    },
+    "viewIncidentDetails": "Click to view correlation incident details",
+    "viewRuleDetails": "Click to view rule details"
   },
   "navigation": {
     "home": "Home",
@@ -2903,7 +2918,8 @@
       "next": "Next page",
       "last": "Last page",
       "perPagePrefix": "Per page:",
-      "perPageSuffix": ""
+      "perPageSuffix": "",
+      "pageSizeLabel": "Items per page"
     }
   },
   "alertAnalyzer": {

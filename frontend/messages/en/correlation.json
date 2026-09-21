@@ -38,6 +38,8 @@
     "allStatus": "All Status",
     "rulesCount": "{count} rules total",
     "actions": "Actions",
+    "viewIncidentDetails": "Click to view correlation incident details",
+    "viewRuleDetails": "Click to view rule details",
     "enable": "Enable",
     "disable": "Disable",
     "category": "Category",

@@ -124,14 +124,9 @@ class TestRequestExtraction:
 
         p.limiter.is_allowed.assert_awaited_once()
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "DEFECT QA-004: decorator only inspects kwargs, never *args — a Request "
-            "passed positionally bypasses rate limiting entirely."
-        ),
-    )
     async def test_request_passed_positionally_is_still_limited(self):
+        """QA-004 fixed in v0.9.4: positional Request args are inspected too."""
+
         @rate_limit(max_requests=5, window_seconds=60)
         async def endpoint(req: Request):
             return Response("ok")

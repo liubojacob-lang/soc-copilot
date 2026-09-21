@@ -58,6 +58,15 @@
     "no": "否",
     "tags": "标签",
     "references": "参考链接",
+    "unconfiguredProviderNotice": "外部情报源未配置 (OTX_API_KEY 未设置)，返回默认空态结果。",
+    "bannerDisabledTitle": "外部威胁情报源（Alienvault OTX）未配置或已禁用",
+    "bannerDisabledDesc": "当前系统仅显示本地缓存与已知命中记录。如需实时联网查询全球威胁情报，请在系统配置中填入有效的",
+    "presets": {
+      "sshLog4j": "SSH爆破 & Log4Shell",
+      "phishingSSO": "仿冒SSO钓鱼域名",
+      "xmrig": "XMRig矿池",
+      "googleDns": "Google DNS (白名单)"
+    },
     "skippedReason": "已跳过",
     "errorReason": "错误",
     "rawDetails": "原始响应",

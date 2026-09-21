@@ -432,7 +432,7 @@ export default function CorrelationPage() {
                           key={incident.id}
                           onClick={() => handleViewIncident(incident)}
                           className="hover:bg-surface-hover/50 transition-colors cursor-pointer group"
-                          title="点击查看关联事件研判详情"
+                          title={t("viewIncidentDetails")}
                         >
                           <td className="px-6 py-4">
                             <div>
@@ -615,7 +615,7 @@ export default function CorrelationPage() {
                               <div
                                 onClick={() => handleViewRule(rule)}
                                 className="cursor-pointer group"
-                                title="点击查看规则详情"
+                                title={t("viewRuleDetails")}
                               >
                                 <p className="text-sm font-semibold text-text-primary group-hover:text-accent-600 transition-colors">
                                   {displayName}

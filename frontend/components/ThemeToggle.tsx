@@ -57,7 +57,7 @@ export function ThemeToggle() {
             title={label}
             aria-label={label}
             className={`
-              relative inline-flex items-center justify-center p-1.5 rounded-md text-xs transition-all duration-200 shrink-0 leading-none
+              relative inline-flex items-center justify-center min-h-[24px] min-w-[24px] p-1.5 rounded-md text-xs transition-all duration-200 shrink-0 leading-none
               ${
                 isActive
                   ? "bg-white dark:bg-gray-700 text-accent-600 dark:text-accent-400 shadow-subtle font-semibold"

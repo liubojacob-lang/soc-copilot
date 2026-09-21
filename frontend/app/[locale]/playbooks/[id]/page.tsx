@@ -22,20 +22,14 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { BackButton } from "@/components/common";
 import { Layers, Code2, Play, Info, Ban, RefreshCw } from "lucide-react";
 import type { DagDefinition } from "../constants";
+import { VisualEngineLoader } from "../components/VisualEngineLoader";
 
 type Formatter = ReturnType<typeof useFormatter>;
 
 // Dynamically import DAGCanvas to prevent SSR issues with ReactFlow
 const DAGCanvas = dynamic(() => import("@/components/dag/DAGCanvas").then((mod) => mod.DAGCanvas), {
   ssr: false,
-  loading: () => (
-    <div className="h-[460px] w-full flex items-center justify-center bg-surface-hover/30 rounded-2xl border border-dashed border-border-subtle">
-      <div className="flex items-center gap-2 text-text-tertiary text-xs">
-        <div className="w-4 h-4 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
-        <span>加载可视化流程引擎...</span>
-      </div>
-    </div>
-  ),
+  loading: VisualEngineLoader,
 });
 
 interface PlaybookRunDetail {

@@ -108,7 +108,8 @@
       "next": "Next page",
       "last": "Last page",
       "perPagePrefix": "Per page:",
-      "perPageSuffix": ""
+      "perPageSuffix": "",
+      "pageSizeLabel": "Items per page"
     }
   },
   "adminAudit": {

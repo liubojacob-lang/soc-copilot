@@ -37,9 +37,16 @@ class IOCHitBase(BaseModel):
 
 
 class IOCHitCreate(IOCHitBase):
-    """Schema for creating an IOC hit."""
+    """Schema for creating an IOC hit.
 
-    pass
+    QA-007 fix: the create boundary validates against the enums again, so
+    typos and hostile values are rejected with 422 instead of being persisted.
+    IOCHitBase/IOCHitResponse intentionally stay ``str`` so historical rows
+    with unexpected values still read back fine.
+    """
+
+    ioc_type: IOCType
+    source: IOCSource
 
 
 class IOCHitResponse(IOCHitBase):
