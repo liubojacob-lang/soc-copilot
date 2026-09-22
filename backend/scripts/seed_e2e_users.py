@@ -39,8 +39,20 @@ E2E_USERS = [
     },
 ]
 
+# The seeded passwords are well-known weak values for browser automation —
+# the script must never be able to (re)set them on a real deployment.
+ALLOWED_ENVS = {"development", "test", "ci"}
+
 
 async def seed_users():
+    env = os.getenv("ENVIRONMENT", "production").lower()
+    if env not in ALLOWED_ENVS:
+        sys.exit(
+            "REFUSED: seed_e2e_users creates users with well-known weak "
+            f"passwords; only allowed in {sorted(ALLOWED_ENVS)} "
+            f"(ENVIRONMENT={env})."
+        )
+
     async with AsyncSessionLocal() as session:
         for u in E2E_USERS:
             stmt = select(UserModel).where(UserModel.username == u["username"])
