@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Float, Index, String, Text
+from sqlalchemy import JSON, Boolean, Float, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db.session import Base
@@ -98,7 +98,8 @@ class RootCauseAnalysis(Base):
 
     # Feedback loop
     human_verified: Mapped[bool] = mapped_column(
-        String(10), default=False, doc="Whether human analyst verified this analysis"
+        Boolean, nullable=False, default=False, server_default="false",
+        doc="Whether human analyst verified this analysis",
     )
 
     human_feedback: Mapped[str] = mapped_column(
