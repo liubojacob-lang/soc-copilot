@@ -142,8 +142,10 @@ jobs:
         id: changelog
         run: |
           VERSION="${{ needs.validate-version.outputs.version }}"
-          chmod +x scripts/generate-changelog.sh
-          CHANGELOG_CONTENT=$(./scripts/generate-changelog.sh "$VERSION" --ci)
+          CHANGELOG_SCRIPT="Scripts/generate-changelog.sh"
+          [ ! -f "$CHANGELOG_SCRIPT" ] && CHANGELOG_SCRIPT="scripts/generate-changelog.sh"
+          chmod +x "$CHANGELOG_SCRIPT"
+          CHANGELOG_CONTENT=$("./$CHANGELOG_SCRIPT" "$VERSION" --ci)
 
           # Save to file for multiline output
           echo "$CHANGELOG_CONTENT" > /tmp/changelog.txt
@@ -183,9 +185,11 @@ jobs:
       matrix:
         include:
           - target: backend
+            context: ./backend
             dockerfile: backend/Dockerfile
             image: soc-copilot-backend
           - target: frontend
+            context: ./frontend
             dockerfile: frontend/Dockerfile
             image: soc-copilot-frontend
     steps:
@@ -214,7 +218,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           push: ${{ inputs.dry_run != true }}
           tags: ${{ steps.meta.outputs.tags }}
