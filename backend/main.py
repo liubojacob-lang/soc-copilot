@@ -698,7 +698,7 @@ app.include_router(siem.router)  # v1.1: SIEM log storage and search
 @app.get("/")
 async def root() -> dict[str, str]:
     """Root endpoint."""
-    return {"message": "SOC Copilot API v1.1", "auth": "enabled"}
+    return {"message": f"SOC Copilot API v{settings.app_version}", "auth": "enabled"}
 
 
 if __name__ == "__main__":

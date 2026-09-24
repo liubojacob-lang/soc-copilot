@@ -14,6 +14,7 @@ import {
 import type { ChatConversation } from "@/hooks/useChatHistory";
 import { ConversationItem } from "@/components/chat/ConversationItem";
 import { getInitial, getColor, useGroupedConversations } from "@/components/chat/chatHelpers";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface ChatHistorySidebarProps {
   isOpen: boolean;
@@ -409,53 +410,16 @@ export function ChatHistorySidebar({
       </aside>
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setDeleteConfirmId(null)}
-          />
-          <div
-            className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm
-                          overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-          >
-            <div className="p-6">
-              <div className="flex items-start gap-4">
-                <div
-                  className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30
-                                flex items-center justify-center"
-                >
-                  <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                    {t("deleteConfirm")}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t("deleteWarning")}</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                aria-label={t("cancelRename")}
-                className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300
-                           hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-              >
-                {t("cancelRename")}
-              </button>
-              <button
-                onClick={confirmDelete}
-                aria-label={t("delete")}
-                className="flex-1 px-4 py-3 text-sm font-medium text-white bg-red-600
-                           hover:bg-red-700 transition-colors"
-              >
-                {t("delete")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        title={t("deleteConfirm")}
+        description={t("deleteWarning")}
+        confirmText={t("delete")}
+        cancelText={t("cancelRename")}
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirmId(null)}
+      />
     </>
   );
 }
