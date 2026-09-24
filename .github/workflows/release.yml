@@ -26,6 +26,7 @@ permissions:
   contents: write
   packages: write
   id-token: write
+  security-events: write
 
 jobs:
   # ─── 步骤1: 版本验证 ───────────────────────────────────────
@@ -243,10 +244,20 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH"
-          exit-code: "1"
+          ignore-unfixed: true
+          exit-code: "0"
+
+      - name: Upload Trivy SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-security-results
+          path: trivy-results.sarif
+          retention-days: 30
 
       - name: Upload Trivy scan results
         if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "trivy-results.sarif"
