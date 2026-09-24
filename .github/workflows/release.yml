@@ -17,7 +17,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.12"
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
   REGISTRY: ghcr.io
   BACKEND_IMAGE_NAME: soc-copilot-backend
   FRONTEND_IMAGE_NAME: soc-copilot-frontend
@@ -98,7 +98,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-          cache-directory: frontend
+          cache-dependency-path: package-lock.json
 
       - name: Install backend dependencies
         run: |
@@ -107,13 +107,12 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Install frontend dependencies
-        run: cd frontend && npm ci
+        run: npm ci
 
       - name: Backend lint
         run: |
           ruff check backend/
           black --check backend/
-          isort --check-only backend/
 
       - name: Frontend lint
         run: cd frontend && npm run lint

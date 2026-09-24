@@ -73,7 +73,9 @@ async def test_update_status_allowed_transitions(case_service):
     case.status = "investigating"
     res = await case_service.update_status(
         "case-100",
-        CaseStatusUpdate(status=CaseStatus.resolved, resolution="Root cause eliminated"),
+        CaseStatusUpdate(
+            status=CaseStatus.resolved, resolution="Root cause eliminated"
+        ),
         user_id="user-1",
     )
     assert res is not None
@@ -194,7 +196,9 @@ async def test_comments_flow(case_service):
     assert comment_res.content == "Forensic analysis completed."
     case_service.repo.add_timeline_entry.assert_awaited()
 
-    comments_list = await case_service.repo.get_comments(case_service.session, "case-500")
+    comments_list = await case_service.repo.get_comments(
+        case_service.session, "case-500"
+    )
     assert len(comments_list) == 1
     assert comments_list[0].id == "cmt-1"
 

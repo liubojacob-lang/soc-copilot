@@ -87,7 +87,9 @@ async def test_decision_executor():
             input_json=inp,
         )
         res = await executor.execute(ctx)
-        assert res["result"] == expected, f"Failed for condition '{cond}' with input {inp}"
+        assert (
+            res["result"] == expected
+        ), f"Failed for condition '{cond}' with input {inp}"
 
 
 @pytest.mark.asyncio
@@ -186,7 +188,9 @@ async def test_slack_webhook_executor():
     mock_resp = MagicMock()
     mock_resp.status_code = 200
 
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_resp):
+    with patch(
+        "httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_resp
+    ):
         res = await executor.execute(ctx_success)
         assert res["status"] == "success"
         assert res["message"] == "Notification sent"
@@ -216,7 +220,9 @@ async def test_human_approval_executor():
     )
 
     with patch.object(executor, "_get_session", return_value=mock_session):
-        with patch.object(executor, "_update_node_status", new_callable=AsyncMock) as mock_upd:
+        with patch.object(
+            executor, "_update_node_status", new_callable=AsyncMock
+        ) as mock_upd:
             res = await executor.execute(ctx)
             assert res["status"] == "waiting_approval"
             assert res["title"] == "Block IP Approval"

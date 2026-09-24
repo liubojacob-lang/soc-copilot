@@ -17,8 +17,14 @@ def sample_report_data():
         "summary": "Unauthorized transfer of sensitive database records detected.",
         "affected_systems": ["srv-db-01", "srv-app-02"],
         "timeline": [
-            {"time": "2026-09-21 10:00:00", "description": "Abnormal outbound traffic detected"},
-            {"time": "2026-09-21 10:05:00", "description": "Host isolated by automated playbook"},
+            {
+                "time": "2026-09-21 10:00:00",
+                "description": "Abnormal outbound traffic detected",
+            },
+            {
+                "time": "2026-09-21 10:05:00",
+                "description": "Host isolated by automated playbook",
+            },
         ],
         "iocs": ["198.51.100.24", "bad-exfil.net"],
         "recommendations": [
@@ -79,11 +85,17 @@ async def test_export_pdf_fallback_and_generators(sample_report_data):
     svc = ReportExportService()
 
     # When weasyprint is not available or mock template
-    with patch.object(svc, "_get_template_path", return_value=Path("/dummy/incident.html")):
-        with patch.object(svc, "_render_template", return_value="<html>Rendered HTML</html>"):
+    with patch.object(
+        svc, "_get_template_path", return_value=Path("/dummy/incident.html")
+    ):
+        with patch.object(
+            svc, "_render_template", return_value="<html>Rendered HTML</html>"
+        ):
             # 1. Fallback when weasyprint is disabled
             svc._weasyprint_available = False
-            pdf_bytes = await svc.export_pdf(sample_report_data, template_name="incident.html")
+            pdf_bytes = await svc.export_pdf(
+                sample_report_data, template_name="incident.html"
+            )
             assert pdf_bytes == b"<html>Rendered HTML</html>"
 
             # 2. ISO 27001 report generator

@@ -156,7 +156,9 @@ async def test_refresh_tokens_success(auth_service):
         mock_blacklist_inst.is_blacklisted.return_value = False
         mock_bl.return_value = mock_blacklist_inst
 
-        ret_user, new_access, new_refresh = await auth_service.refresh_tokens(valid_refresh)
+        ret_user, new_access, new_refresh = await auth_service.refresh_tokens(
+            valid_refresh
+        )
 
         assert ret_user.id == user.id
         assert new_access is not None
@@ -208,7 +210,9 @@ async def test_refresh_tokens_user_inactive_or_missing(auth_service):
 
 @pytest.mark.asyncio
 async def test_logout_blacklists_tokens(auth_service):
-    with patch("services.auth_service.add_token_to_blacklist", new_callable=AsyncMock) as mock_bl:
+    with patch(
+        "services.auth_service.add_token_to_blacklist", new_callable=AsyncMock
+    ) as mock_bl:
         await auth_service.logout(
             user_id="user-123",
             access_token="acc-tok",
@@ -275,7 +279,9 @@ async def test_unlock_user(auth_service):
     user = _make_mock_user(failed_attempts=5, locked_until=datetime.now(UTC))
     auth_service.user_repo.get_by_username.return_value = user
 
-    unlocked = await auth_service.unlock_user(admin_id="admin-99", username=user.username)
+    unlocked = await auth_service.unlock_user(
+        admin_id="admin-99", username=user.username
+    )
     assert unlocked.failed_login_attempts == 0
     assert unlocked.locked_until is None
     auth_service.audit_repo.create.assert_awaited_once()

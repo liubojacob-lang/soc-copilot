@@ -73,7 +73,9 @@ def test_alert_analysis_result_model():
         attack_technique_ids=["T1486"],
         attack_tactic_ids=["TA0040"],
         iocs=IOCs(
-            file_hashes=["e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+            file_hashes=[
+                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            ],
             ip_addresses=["192.168.1.50"],
         ),
         impact=ImpactAssessment(

@@ -47,7 +47,9 @@ async def test_performance_monitor_cache_and_db_metrics():
     # 1. Cache metrics
     cache_metrics = await monitor.collect_cache_metrics()
     assert len(cache_metrics) == 3
-    assert all(m.metric_type == PerformanceMetricType.CACHE_HIT_RATE for m in cache_metrics)
+    assert all(
+        m.metric_type == PerformanceMetricType.CACHE_HIT_RATE for m in cache_metrics
+    )
     assert cache_metrics[0].value == 85.0
 
     # 2. Database metrics
@@ -92,14 +94,21 @@ async def test_performance_monitor_generate_report():
         source="database_analysis",
     )
 
-    with patch.object(monitor, "collect_api_metrics", new_callable=AsyncMock, return_value=[m1]):
+    with patch.object(
+        monitor, "collect_api_metrics", new_callable=AsyncMock, return_value=[m1]
+    ):
         with patch.object(
             monitor, "collect_cache_metrics", new_callable=AsyncMock, return_value=[m2]
         ):
             with patch.object(
-                monitor, "collect_database_metrics", new_callable=AsyncMock, return_value=[m3]
+                monitor,
+                "collect_database_metrics",
+                new_callable=AsyncMock,
+                return_value=[m3],
             ):
-                report = await monitor.generate_performance_report(time_window_minutes=30)
+                report = await monitor.generate_performance_report(
+                    time_window_minutes=30
+                )
                 assert isinstance(report, PerformanceReport)
                 assert len(report.metrics) == 3
                 assert "api_metrics" in report.summary
