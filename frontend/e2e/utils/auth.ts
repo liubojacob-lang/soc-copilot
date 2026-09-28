@@ -54,13 +54,15 @@ function getLocale(): string {
 /**
  * goto with one retry: `next dev` in CI occasionally aborts the document
  * request (net::ERR_ABORTED) while compiling a route on demand.
+ * Keep the default "load" waitUntil — "domcontentloaded" fires before React
+ * hydrates, so a click on the submit button would silently no-op.
  */
 async function safeGoto(page: Page, url: string): Promise<void> {
   try {
-    await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.goto(url);
   } catch {
     await page.waitForTimeout(2000);
-    await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.goto(url);
   }
 }
 
