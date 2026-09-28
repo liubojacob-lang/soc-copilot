@@ -138,11 +138,11 @@ export async function login(page: Page, username: string, password: string): Pro
     cookies: await page.context().cookies(),
     userStorage,
   });
-  await page.waitForTimeout(500);
+  // Wait out the app's post-login guard bounce (hydration on the landing
+  // route re-reads auth state and may redirect back to /login briefly).
+  await page.waitForTimeout(1500);
 
-  // Recovery: the app's auth guard can bounce a freshly-logged-in page back
-  // to /login while the target route hydrates (localStorage user lands after
-  // the guard runs). Cookies and user storage are set by now, so one more
+  // Recovery: cookies and user storage are set by now, so one more
   // navigation lands authenticated.
   if (page.url().includes("/login")) {
     await page.goto(`/${locale}`, { waitUntil: "load" });
