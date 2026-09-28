@@ -52,8 +52,17 @@ test.describe("Dashboard Home Page", () => {
       .locator('button[aria-label*="account"], button[aria-haspopup="menu"]')
       .first();
     await expect(userMenu).toBeVisible({ timeout: 10000 });
+
+    // The SSR'd button is visible before React attaches onClick in next dev;
+    // if the dropdown did not open, the first click was a hydration no-op.
+    const signOut = page.locator("text=/logout|sign out|退出/i").first();
     await userMenu.click();
-    await expect(page.locator("text=/logout|sign out|退出/i").first()).toBeVisible();
+    try {
+      await expect(signOut).toBeVisible({ timeout: 3000 });
+    } catch {
+      await userMenu.click();
+      await expect(signOut).toBeVisible({ timeout: 5000 });
+    }
   });
 
   test("shows recent activity or alerts summary", async ({ page }) => {

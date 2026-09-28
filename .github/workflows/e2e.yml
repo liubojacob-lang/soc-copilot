@@ -101,7 +101,7 @@ jobs:
         working-directory: ./frontend
         run: npx playwright install --with-deps chromium
 
-      - name: Migrate and Seed Database
+      - name: Migrate Database
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql+asyncpg://soc_test_user:soc_test_password@localhost:5432/soc_test_db
@@ -111,10 +111,7 @@ jobs:
           SECRET_ENCRYPTION_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
           ENVIRONMENT: development
           RATE_LIMIT_ENABLED: "false"
-        run: |
-          alembic upgrade head
-          python scripts/seed_demo_data.py
-          python scripts/seed_e2e_users.py
+        run: alembic upgrade head
 
       - name: Start Backend API
         working-directory: ./backend
@@ -131,15 +128,35 @@ jobs:
           uvicorn main:app --host 0.0.0.0 --port 8088 > backend.log 2>&1 &
           echo $! > backend.pid
 
-          # Wait for backend health check
+          # Wait for backend health check; fail the step if it never comes up
+          # (the app lifespan bootstraps the admin user needed by seeding).
+          healthy=0
           for i in {1..30}; do
             if curl -s http://127.0.0.1:8088/api/health | grep -q "ok"; then
               echo "✅ Backend is healthy and responding on :8088"
+              healthy=1
               break
             fi
             echo "Waiting for backend (:8088)..."
             sleep 2
           done
+          [ "$healthy" = "1" ] || { echo "❌ Backend failed to become healthy"; tail -30 backend.log; exit 1; }
+
+      - name: Seed Database
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://soc_test_user:soc_test_password@localhost:5432/soc_test_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: e2e-test-secret-key-must-be-at-least-32-chars-long
+          JWT_SECRET: e2e-test-jwt-secret-key-must-be-at-least-32-chars-long
+          SECRET_ENCRYPTION_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+          ENVIRONMENT: development
+          RATE_LIMIT_ENABLED: "false"
+        # Runs after backend startup: seed_demo_data requires the bootstrap
+        # admin user, which the app lifespan creates on first boot.
+        run: |
+          python scripts/seed_demo_data.py
+          python scripts/seed_e2e_users.py
 
       - name: Run Core Playwright Specs
         working-directory: ./frontend
@@ -235,7 +252,7 @@ jobs:
         working-directory: ./frontend
         run: npx playwright install --with-deps
 
-      - name: Migrate and Seed Database
+      - name: Migrate Database
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql+asyncpg://soc_test_user:soc_test_password@localhost:5432/soc_test_db
@@ -245,10 +262,7 @@ jobs:
           SECRET_ENCRYPTION_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
           ENVIRONMENT: development
           RATE_LIMIT_ENABLED: "false"
-        run: |
-          alembic upgrade head
-          python scripts/seed_demo_data.py
-          python scripts/seed_e2e_users.py
+        run: alembic upgrade head
 
       - name: Start Backend API
         working-directory: ./backend
@@ -265,14 +279,35 @@ jobs:
           uvicorn main:app --host 0.0.0.0 --port 8088 > backend.log 2>&1 &
           echo $! > backend.pid
 
+          # Wait for backend health check; fail the step if it never comes up
+          # (the app lifespan bootstraps the admin user needed by seeding).
+          healthy=0
           for i in {1..30}; do
             if curl -s http://127.0.0.1:8088/api/health | grep -q "ok"; then
               echo "✅ Backend is healthy and responding on :8088"
+              healthy=1
               break
             fi
             echo "Waiting for backend (:8088)..."
             sleep 2
           done
+          [ "$healthy" = "1" ] || { echo "❌ Backend failed to become healthy"; tail -30 backend.log; exit 1; }
+
+      - name: Seed Database
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://soc_test_user:soc_test_password@localhost:5432/soc_test_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: e2e-test-secret-key-must-be-at-least-32-chars-long
+          JWT_SECRET: e2e-test-jwt-secret-key-must-be-at-least-32-chars-long
+          SECRET_ENCRYPTION_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+          ENVIRONMENT: development
+          RATE_LIMIT_ENABLED: "false"
+        # Runs after backend startup: seed_demo_data requires the bootstrap
+        # admin user, which the app lifespan creates on first boot.
+        run: |
+          python scripts/seed_demo_data.py
+          python scripts/seed_e2e_users.py
 
       - name: Run Full Playwright Suite (Single Worker)
         working-directory: ./frontend
