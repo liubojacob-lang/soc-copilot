@@ -1,6 +1,6 @@
 {
   "name": "soc-copilot-frontend",
-  "version": "0.9.4",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "predev": "node scripts/patch-next.mjs && node scripts/sync-i18n.mjs",

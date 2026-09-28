@@ -249,7 +249,7 @@ export function TwoFactorSettings() {
     a.download = `soc-copilot-backup-codes-${Date.now()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast(isZh ? "备用恢复码文件已下载" : "Backup codes file downloaded", "success");
+    showToast(t("backupCodesDownloaded"), "success");
   };
 
   if (loading) {
@@ -310,7 +310,7 @@ export function TwoFactorSettings() {
                 <KeyRound className="w-4 h-4" />
               )}
               <span className="whitespace-nowrap">
-                {setupLoading ? (isZh ? "正在初始化..." : "Initializing...") : t("enableButton")}
+                {setupLoading ? t("initializing") : t("enableButton")}
               </span>
             </button>
           </div>
@@ -519,9 +519,7 @@ export function TwoFactorSettings() {
               <div className="text-base font-bold text-gray-900 dark:text-white">
                 {t("setupModalTitle")}
               </div>
-              <div className="text-[11px] text-text-tertiary font-normal">
-                {isZh ? "基于 RFC 6238 TOTP 工业级认证协议" : "Industry standard RFC 6238 TOTP"}
-              </div>
+              <div className="text-[11px] text-text-tertiary font-normal">{t("rfcStandard")}</div>
             </div>
           </div>
         }
@@ -551,7 +549,7 @@ export function TwoFactorSettings() {
                       : "text-text-tertiary dark:text-gray-500"
                   }`}
                 >
-                  {isZh ? "扫码绑定" : "Scan QR"}
+                  {t("stepScan")}
                 </span>
               </div>
 
@@ -581,7 +579,7 @@ export function TwoFactorSettings() {
                       : "text-text-tertiary dark:text-gray-500"
                   }`}
                 >
-                  {isZh ? "模式与备用码" : "Policy & Codes"}
+                  {t("stepPolicy")}
                 </span>
               </div>
 
@@ -609,7 +607,7 @@ export function TwoFactorSettings() {
                       : "text-text-tertiary dark:text-gray-500"
                   }`}
                 >
-                  {isZh ? "验证激活" : "Verify"}
+                  {t("stepVerify")}
                 </span>
               </div>
             </div>
@@ -629,9 +627,7 @@ export function TwoFactorSettings() {
               <div className="space-y-4 animate-fade-in">
                 <div className="text-center max-w-md mx-auto">
                   <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                    {isZh
-                      ? "使用认证器应用扫描下方二维码"
-                      : "Scan the QR code with your authenticator"}
+                    {t("scanQrSubtitle")}
                   </h4>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("step1Desc")}</p>
                 </div>
@@ -680,13 +676,7 @@ export function TwoFactorSettings() {
                     >
                       <KeyRound className="w-3.5 h-3.5" />
                       <span>
-                        {showManualKey
-                          ? isZh
-                            ? "收起手动输入密钥"
-                            : "Hide manual key"
-                          : isZh
-                            ? "无法扫码？点击查看密钥"
-                            : "Can't scan? Enter key manually"}
+                        {showManualKey ? t("collapseManualSecret") : t("expandManualSecret")}
                       </span>
                     </button>
                     {showManualKey && (
@@ -707,7 +697,7 @@ export function TwoFactorSettings() {
                         ) : (
                           <>
                             <Copy className="w-3.5 h-3.5 text-gray-500" />
-                            <span>{isZh ? "复制密钥" : "Copy Key"}</span>
+                            <span>{t("copyKey")}</span>
                           </>
                         )}
                       </Button>
@@ -740,7 +730,7 @@ export function TwoFactorSettings() {
                     }}
                     className="group relative h-10 px-5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-accent-600 via-indigo-600 to-accent-600 bg-[length:200%_auto] hover:bg-right transition-all duration-300 shadow-md shadow-accent-600/20 hover:shadow-lg hover:shadow-accent-600/30 active:scale-[0.98] cursor-pointer whitespace-nowrap inline-flex items-center gap-2 border border-white/10"
                   >
-                    <span>{isZh ? "下一步：安全模式与备用码" : "Next: Policy & Backup"}</span>
+                    <span>{t("nextStepPolicy")}</span>
                     <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5 opacity-80" />
                   </button>
                 </div>
@@ -755,7 +745,7 @@ export function TwoFactorSettings() {
                 {/* 1. Policy Selection */}
                 <div>
                   <h5 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-2">
-                    {isZh ? "1. 选择双因素认证策略" : "1. Choose Authentication Policy"}
+                    {t("policySectionTitle")}
                   </h5>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Sudo Mode */}
@@ -785,7 +775,7 @@ export function TwoFactorSettings() {
                           </span>
                         </div>
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                          {isZh ? "推荐" : "Recommended"}
+                          {t("recommendedBadge")}
                         </span>
                       </div>
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-2 leading-relaxed pl-6">
@@ -833,9 +823,7 @@ export function TwoFactorSettings() {
                     <div className="flex items-center gap-2">
                       <Lock className="w-4 h-4 text-accent-600 dark:text-accent-400" />
                       <h5 className="text-xs font-bold text-gray-900 dark:text-white">
-                        {isZh
-                          ? "2. 紧急恢复备用码 (一次性有效)"
-                          : "2. Emergency Backup Codes (Single Use)"}
+                        {t("backupCodesSectionTitle")}
                       </h5>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -856,7 +844,7 @@ export function TwoFactorSettings() {
                         ) : (
                           <>
                             <Copy className="w-3.5 h-3.5 text-gray-500" />
-                            <span>{isZh ? "复制全部" : "Copy All"}</span>
+                            <span>{t("copyAll")}</span>
                           </>
                         )}
                       </Button>
@@ -868,7 +856,7 @@ export function TwoFactorSettings() {
                         className="text-xs h-7 gap-1 text-accent-600 dark:text-accent-400"
                       >
                         <Download className="w-3.5 h-3.5" />
-                        <span>{isZh ? "下载 .txt" : "Download .txt"}</span>
+                        <span>{t("downloadTxt")}</span>
                       </Button>
                     </div>
                   </div>
@@ -891,11 +879,7 @@ export function TwoFactorSettings() {
 
                   <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 flex items-start gap-2 text-[11px] text-amber-800 dark:text-amber-300">
                     <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                    <span>
-                      {isZh
-                        ? "请务必妥善保存上述恢复码。若您的认证器设备丢失或损坏，备用码是唯一能够恢复账户访问权限的凭证。"
-                        : "Please save these codes safely. If you lose your device, these codes are the only way to recover access."}
-                    </span>
+                    <span>{t("backupCodesWarning")}</span>
                   </div>
                 </div>
 
@@ -907,7 +891,7 @@ export function TwoFactorSettings() {
                     className="h-10 px-4 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100/90 hover:bg-gray-200/90 dark:bg-gray-800 dark:hover:bg-gray-750 border border-gray-200/80 dark:border-gray-700 transition-all active:scale-[0.98] cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-subtle"
                   >
                     <ArrowLeft className="w-3.5 h-3.5 opacity-70" />
-                    <span>{isZh ? "返回上一步" : "Back"}</span>
+                    <span>{t("prevStep")}</span>
                   </button>
                   <button
                     type="button"
@@ -917,7 +901,7 @@ export function TwoFactorSettings() {
                     }}
                     className="group relative h-10 px-5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-accent-600 via-indigo-600 to-accent-600 bg-[length:200%_auto] hover:bg-right transition-all duration-300 shadow-md shadow-accent-600/20 hover:shadow-lg hover:shadow-accent-600/30 active:scale-[0.98] cursor-pointer whitespace-nowrap inline-flex items-center gap-2 border border-white/10"
                   >
-                    <span>{isZh ? "下一步：验证激活" : "Next: Verify & Activate"}</span>
+                    <span>{t("nextStepVerify")}</span>
                     <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5 opacity-80" />
                   </button>
                 </div>
@@ -934,12 +918,10 @@ export function TwoFactorSettings() {
                     <KeyRound className="w-6 h-6" />
                   </div>
                   <h4 className="text-base font-bold text-gray-900 dark:text-white">
-                    {isZh ? "输入 6 位动态验证码完成激活" : "Enter the 6-digit verification code"}
+                    {t("verifyActivationTitle")}
                   </h4>
                   <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                    {isZh
-                      ? "打开您刚绑定的认证器 App，输入为当前 SOC Copilot 账号生成的 6 位实时数字口令："
-                      : "Open your authenticator app and enter the 6-digit code for SOC Copilot:"}
+                    {t("verifyActivationSubtitle")}
                   </p>
                 </div>
 
@@ -956,9 +938,7 @@ export function TwoFactorSettings() {
                 </div>
 
                 <div className="text-[11px] text-text-tertiary dark:text-gray-500">
-                  {isZh
-                    ? "💡 动态验证码每 30 秒自动更新一次，支持直接复制粘贴"
-                    : "💡 Codes refresh every 30 seconds. Paste is supported."}
+                  {t("verifyDynamicTip")}
                 </div>
 
                 {/* Step 3 Actions */}
@@ -970,7 +950,7 @@ export function TwoFactorSettings() {
                     className="h-10 px-4 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100/90 hover:bg-gray-200/90 dark:bg-gray-800 dark:hover:bg-gray-750 border border-gray-200/80 dark:border-gray-700 transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-subtle"
                   >
                     <ArrowLeft className="w-3.5 h-3.5 opacity-70" />
-                    <span>{isZh ? "返回上一步" : "Back"}</span>
+                    <span>{t("prevStep")}</span>
                   </button>
                   <button
                     type="button"
@@ -1034,7 +1014,7 @@ export function TwoFactorSettings() {
 
           <div className="space-y-2 pt-1">
             <label className="block text-xs font-semibold text-center text-gray-700 dark:text-gray-300">
-              {isZh ? "输入 6 位动态验证码确认切换" : "Enter 6-digit code to confirm"}
+              {t("confirmSwitchOtpDesc")}
             </label>
             <OtpInput
               value={policyCode}
@@ -1119,7 +1099,7 @@ export function TwoFactorSettings() {
 
           <div className="space-y-2 pt-1">
             <label className="block text-xs font-semibold text-center text-gray-700 dark:text-gray-300">
-              {isZh ? "输入 6 位动态验证码确认关闭" : "Enter 6-digit code to confirm"}
+              {t("confirmDisableOtpDesc")}
             </label>
             <OtpInput
               value={disableCode}

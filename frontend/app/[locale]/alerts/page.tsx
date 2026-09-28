@@ -582,6 +582,8 @@ export default function AlertsPage() {
             type="checkbox"
             checked={sortedAlerts.length > 0 && selectedIds.size === sortedAlerts.length}
             onChange={toggleSelectAll}
+            // 无名称的复选框读屏只念「复选框」，批量操作时无法区分全选与单行选择
+            aria-label={t("selectAll")}
             className="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
           />
         ),
@@ -590,6 +592,7 @@ export default function AlertsPage() {
             type="checkbox"
             checked={selectedIds.has(row.id)}
             onChange={() => toggleSelect(row.id)}
+            aria-label={t("selectRow")}
             className="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
           />
         ),

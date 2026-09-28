@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { X, Keyboard } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface ShortcutItem {
   key: string;
@@ -26,10 +27,13 @@ const SHORTCUTS: ShortcutItem[] = [
 export function KeyboardShortcutsHelp() {
   const t = useTranslations("shortcuts");
   const [isOpen, setIsOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
   }, []);
+
+  useFocusTrap(isOpen, handleClose, modalRef);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -39,9 +43,6 @@ export function KeyboardShortcutsHelp() {
           e.preventDefault();
           setIsOpen((prev) => !prev);
         }
-      }
-      if (e.key === "Escape" && isOpen) {
-        setIsOpen(false);
       }
     };
 
@@ -80,6 +81,7 @@ export function KeyboardShortcutsHelp() {
       aria-labelledby="shortcuts-title"
     >
       <div
+        ref={modalRef}
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >

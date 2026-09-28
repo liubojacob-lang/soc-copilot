@@ -46,9 +46,15 @@ export function useFocusTrap(
 
     try {
       const elements = container.querySelectorAll<HTMLElement>(focusableSelectors.join(", "));
-      return Array.from(elements).filter(
-        (el) => el.offsetParent !== null && !el.hasAttribute("disabled")
-      );
+      return Array.from(elements).filter((el) => {
+        if (el.hasAttribute("disabled")) return false;
+        // Check visibility. Note: fixed-position elements have offsetParent === null in DOM specs.
+        if (el.offsetParent !== null) return true;
+        const rects = el.getClientRects();
+        if (rects.length === 0) return false;
+        const style = window.getComputedStyle(el);
+        return style.display !== "none" && style.visibility !== "hidden";
+      });
     } catch {
       return [];
     }

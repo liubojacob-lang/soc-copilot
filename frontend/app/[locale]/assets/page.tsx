@@ -179,6 +179,9 @@ export default function AssetsPage() {
           <select
             value={criticalityFilter}
             onChange={(e) => setCriticalityFilter(e.target.value)}
+            // <select> 的第一个 option 只是当前值，不是可访问名称 —— Chrome
+            // 实测判定为无名（role=combobox 且 name 为空）。筛选用"维度"命名。
+            aria-label={t("allCriticality")}
             className="px-3 py-2 border rounded"
           >
             <option value="all">{t("allCriticality")}</option>
@@ -190,6 +193,7 @@ export default function AssetsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label={t("allStatus")}
             className="px-3 py-2 border rounded"
           >
             <option value="all">{t("allStatus")}</option>

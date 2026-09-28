@@ -114,7 +114,7 @@ def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthServic
     },
 )
 @rate_limit(
-    max_requests=100 if settings.environment == "development" else 5,
+    max_requests=getattr(settings, "rate_limit_login_max_requests", 1000),
     window_seconds=60,
 )
 async def login(
@@ -163,7 +163,10 @@ async def login(
     summary="2FA 二次验证登录",
     description="当用户启用登录 2FA 时，校验 pre_auth_token 和 6 位验证码以签发正式凭据。",
 )
-@rate_limit(max_requests=5, window_seconds=60)
+@rate_limit(
+    max_requests=getattr(settings, "rate_limit_login_max_requests", 1000),
+    window_seconds=60,
+)
 async def login_2fa(
     data: Login2FARequest,
     request: Request,

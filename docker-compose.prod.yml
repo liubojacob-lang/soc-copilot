@@ -61,7 +61,7 @@ services:
     restart: always
 
   backend:
-    image: ${DOCKERHUB_USERNAME}/soc-copilot-backend:${IMAGE_TAG:-0.9.4}
+    image: ${DOCKERHUB_USERNAME}/soc-copilot-backend:${IMAGE_TAG:-1.0.0}
     container_name: soc-copilot-backend-prod
     environment:
       - "DATABASE_URL=postgresql+asyncpg://${DB_USER:?DB_USER is required}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:?DB_NAME is required}"
@@ -95,7 +95,7 @@ services:
           memory: 2G
 
   frontend:
-    image: ${DOCKERHUB_USERNAME}/soc-copilot-frontend:${IMAGE_TAG:-0.9.4}
+    image: ${DOCKERHUB_USERNAME}/soc-copilot-frontend:${IMAGE_TAG:-1.0.0}
     container_name: soc-copilot-frontend-prod
     environment:
       - NEXT_PUBLIC_API_URL=${API_URL}
@@ -153,9 +153,7 @@ services:
       - soc-copilot-prod
 
   alert-worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME}/soc-copilot-backend:${IMAGE_TAG:-1.0.0}
     # Note: container_name removed to support replicas (unique names auto-generated)
     command: python workers/alert_worker.py
     environment:

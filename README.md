@@ -1,15 +1,15 @@
 # SOC Copilot - Security Operations Center Intelligent Analysis Platform
 
-[![Version](https://img.shields.io/badge/version-v0.9.4-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/node.js-20+-green.svg)](https://nodejs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black.svg)](https://nextjs.org/)
-[![Security](https://img.shields.io/badge/security-hardened-brightgreen.svg)](./SECURITY_OPTIMIZATION_SUMMARY.md)
+[![Security](https://img.shields.io/badge/security-hardened-brightgreen.svg)](./docs/reports/SECURITY_OPTIMIZATION_SUMMARY.md)
 
 SOC Copilot is an intelligent analysis workbench designed for Security Operations Center (SOC) teams, providing alert analysis, event timeline reconstruction, report generation, asset management, threat intelligence queries, and **Playbook automation orchestration** capabilities.
 
-**🔒 Security Status**: All P0+P1 security issues resolved. [View Security Report](./SECURITY_OPTIMIZATION_SUMMARY.md)
+**🔒 Security Status**: All P0+P1 security issues resolved. [View Security Report](./docs/reports/SECURITY_OPTIMIZATION_SUMMARY.md)
 
 ---
 
@@ -483,7 +483,7 @@ HTTP_ALLOWED_HOSTS=otx.alienvault.com,hooks.slack.com  # HTTP sandbox whitelist
 
 ### 🔒 Security Hardening (v0.9.0)
 
-This project has undergone comprehensive security optimization. [View Full Report](./SECURITY_OPTIMIZATION_SUMMARY.md)
+This project has undergone comprehensive security optimization. [View Full Report](./docs/reports/SECURITY_OPTIMIZATION_SUMMARY.md)
 
 **Completed Security Enhancements:**
 
@@ -536,7 +536,7 @@ This project has undergone comprehensive security optimization. [View Full Repor
 - [API Documentation](http://localhost:8000/docs) - Interactive API Documentation (backend must be running)
 - [`openapi.json`](./openapi.json) - Full machine-readable spec (269 paths / 314 operations)
 - [docs/api-retry-policy.md](./docs/api-retry-policy.md) - Rate limits & retry policy
-- [PROJECT_FINAL_AUDIT.md](./PROJECT_FINAL_AUDIT.md) - Final acceptance audit
+- [PROJECT_FINAL_AUDIT.md](./docs/reports/PROJECT_FINAL_AUDIT.md) - Final acceptance audit
 
 ---
 
@@ -546,6 +546,6 @@ This project is an internal security operations tool for authorized users only.
 
 ---
 
-**Version**: v0.9.4
+**Version**: v1.0.0
 **Last Updated**: 2026-09-21
 **Maintainer**: SOC Team

@@ -226,6 +226,7 @@ export default function PlaybookApprovalsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label={t("allStatuses")}
             className="px-3 py-1.5 text-sm border border-border-default rounded-lg bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors h-9"
           >
             <option value="">{t("allStatuses") || "All Statuses"}</option>

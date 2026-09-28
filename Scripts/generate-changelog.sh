@@ -14,10 +14,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-info()  { echo -e "${BLUE}[INFO]${NC} $*"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
-error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
-success() { echo -e "${GREEN}[OK]${NC} $*"; }
+info()  { echo -e "${BLUE}[INFO]${NC} $*" >&2; }
+warn()  { echo -e "${YELLOW}[WARN]${NC} $*" >&2; }
+error() { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
+success() { echo -e "${GREEN}[OK]${NC} $*" >&2; }
 
 # ─── 帮助信息 ────────────────────────────────────────────────
 usage() {
@@ -89,8 +89,8 @@ fi
 
 # ─── 自动检测起始标签 ────────────────────────────────────────
 if [[ -z "$FROM_TAG" ]]; then
-    # 获取最近的版本标签（允许 grep 无匹配时不失败）
-    FROM_TAG=$(git tag --sort=-version:refname | (grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true) | head -1)
+    # 获取最近的版本标签（排除当前正在发布的版本标签）
+    FROM_TAG=$(git tag --sort=-version:refname | (grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true) | (grep -v -E "^v?${VERSION}$" || true) | head -1)
     if [[ -z "$FROM_TAG" ]]; then
         warn "未找到已有版本标签，将从所有提交生成 CHANGELOG"
         FROM_TAG=""
@@ -151,31 +151,17 @@ classify_commits() {
         log_cmd="git log"
     fi
 
-    # 使用 %x00 (NUL) 作为字段分隔符，%x01 (SOH) 作为提交分隔符
-    while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
+    while IFS=$'\x1f' read -r hash subject; do
+        [[ -z "$hash" ]] && continue
 
-        # 解析字段：hash, subject, body
-        local hash subject body
-        hash=$(echo "$line" | awk -F'\x00' '{print $1}')
-        subject=$(echo "$line" | awk -F'\x00' '{print $2}')
-        body=$(echo "$line" | awk -F'\x00' '{print $3}')
-
-        # 提取 short hash
         local short_hash="${hash:0:7}"
-
-        # 格式化条目
         local entry="- ${subject} (${short_hash})"
 
         # 检测破坏性变更
-        if echo "$subject$body" | grep -qiE 'BREAKING CHANGE|BREAKING-CHANGE|!:'; then
+        if [[ "$subject" =~ (BREAKING[ -]CHANGE|\!:) ]]; then
             local breaking_desc=""
-            if echo "$body" | grep -qE 'BREAKING CHANGE:'; then
-                breaking_desc=$(echo "$body" | grep -oE 'BREAKING CHANGE:.*' | sed 's/BREAKING CHANGE: //' | head -1)
-            elif echo "$subject" | grep -qE '!:'; then
-                breaking_desc=$(echo "$subject" | sed 's/.*!: //')
-            fi
-            if [[ -n "$breaking_desc" ]]; then
+            if [[ "$subject" =~ \!:\ (.*) ]]; then
+                breaking_desc="${BASH_REMATCH[1]}"
                 echo "- ${breaking_desc} (${short_hash})" >> "$breaking_file"
             else
                 echo "$entry" >> "$breaking_file"
@@ -183,27 +169,26 @@ classify_commits() {
         fi
 
         # 按 type 分类
-        if echo "$subject" | grep -qiE '^feat(\(.+\))?:'; then
+        if [[ "$subject" =~ ^feat(\(.+\))?: ]]; then
             echo "$entry" >> "$added_file"
-        elif echo "$subject" | grep -qiE '^fix(\(.+\))?:'; then
+        elif [[ "$subject" =~ ^fix(\(.+\))?: ]]; then
             echo "$entry" >> "$fixed_file"
-            # 安全修复
-            if echo "$subject$body" | grep -qiE 'security|CVE|vulnerability|XSS|injection|CSRF'; then
+            if [[ "$subject" =~ (security|CVE|vulnerability|XSS|injection|CSRF) ]]; then
                 echo "$entry" >> "$security_file"
             fi
-        elif echo "$subject" | grep -qiE '^perf(\(.+\))?:'; then
+        elif [[ "$subject" =~ ^perf(\(.+\))?: ]]; then
             echo "$entry" >> "$changed_file"
-        elif echo "$subject" | grep -qiE '^refactor(\(.+\))?:'; then
+        elif [[ "$subject" =~ ^refactor(\(.+\))?: ]]; then
             echo "$entry" >> "$changed_file"
-        elif echo "$subject" | grep -qiE '^revert(\(.+\))?:'; then
+        elif [[ "$subject" =~ ^revert(\(.+\))?: ]]; then
             echo "$entry" >> "$fixed_file"
-        elif echo "$subject" | grep -qiE '^deprecate(\(.+\))?:'; then
+        elif [[ "$subject" =~ ^deprecate(\(.+\))?: ]]; then
             echo "$entry" >> "$deprecated_file"
-        elif echo "$subject" | grep -qiE '^remove(\(.+\))?:'; then
+        elif [[ "$subject" =~ ^remove(\(.+\))?: ]]; then
             echo "$entry" >> "$removed_file"
         fi
         # docs, style, test, chore, ci 不计入 CHANGELOG
-    done < <($log_cmd --pretty=format:"%H%x00%s%x00%b" 2>/dev/null || true)
+    done < <($log_cmd --pretty=format:"%H%x1f%s" 2>/dev/null || true)
 
     # ─── 输出 CHANGELOG 内容 ────────────────────────────────
     local today

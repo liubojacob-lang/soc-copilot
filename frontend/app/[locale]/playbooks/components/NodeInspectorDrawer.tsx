@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   X,
   Trash2,
@@ -50,6 +50,7 @@ export function NodeInspectorDrawer({
 }: NodeInspectorDrawerProps) {
   const locale = useLocale();
   const isZh = locale !== "en";
+  const t = useTranslations("playbooks.inspector");
 
   // Form State
   const [name, setName] = useState("");
@@ -153,7 +154,7 @@ export function NodeInspectorDrawer({
   return (
     <aside
       role="region"
-      aria-label={isZh ? "节点属性配置" : "Step Configuration"}
+      aria-label={t("ariaLabel")}
       className="absolute right-0 top-0 bottom-0 w-80 sm:w-96 bg-surface-card border-l border-border-subtle shadow-2xl z-30 flex flex-col animate-fade-in"
     >
       {/* Header */}
@@ -163,9 +164,7 @@ export function NodeInspectorDrawer({
             <CategoryIcon className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-xs font-semibold text-text-primary truncate">
-              {isZh ? "步骤属性配置" : "Step Configuration"}
-            </h3>
+            <h3 className="text-xs font-semibold text-text-primary truncate">{t("title")}</h3>
             <span className="text-[10px] text-text-tertiary font-mono truncate block">
               {stepId}
             </span>
@@ -175,7 +174,7 @@ export function NodeInspectorDrawer({
           type="button"
           onClick={onClose}
           className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface-hover transition-colors"
-          title={isZh ? "关闭" : "Close"}
+          title={t("close")}
         >
           <X className="w-4 h-4" />
         </button>
@@ -186,21 +185,21 @@ export function NodeInspectorDrawer({
         {/* Step Name */}
         <div>
           <label className="block text-[11px] font-medium text-text-secondary mb-1">
-            {isZh ? "步骤名称" : "Step Name"} <span className="text-danger-500">*</span>
+            {t("stepName")} <span className="text-danger-500">*</span>
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => handleNameChange(e.target.value)}
             className="w-full px-3 py-1.5 rounded-xl border border-border-default bg-surface-ground text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-500"
-            placeholder={isZh ? "例如: 防火墙下发封禁" : "e.g. Block IP via Firewall"}
+            placeholder={t("stepNamePlaceholder")}
           />
         </div>
 
         {/* Step ID */}
         <div>
           <label className="block text-[11px] font-medium text-text-secondary mb-1">
-            {isZh ? "步骤标识 (Step ID)" : "Step ID"}
+            {t("stepId")}
           </label>
           <input
             type="text"
@@ -213,48 +212,30 @@ export function NodeInspectorDrawer({
         {/* Action Type Selector */}
         <div>
           <label className="block text-[11px] font-medium text-text-secondary mb-1">
-            {isZh ? "动作类型 (Action Type)" : "Action Type"}
+            {t("actionType")}
           </label>
           <select
             value={type}
             onChange={(e) => handleTypeChange(e.target.value)}
             className="w-full px-3 py-1.5 rounded-xl border border-border-default bg-surface-ground text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-500"
           >
-            <optgroup label={isZh ? "威胁情报 (Intel)" : "Threat Intel"}>
-              <option value="extract_iocs">
-                {isZh ? "提取 IOC 实体 (extract_iocs)" : "Extract IOCs"}
-              </option>
-              <option value="ti_lookup_otx">
-                {isZh ? "OTX 威胁情报比对 (ti_lookup_otx)" : "OTX TI Lookup"}
-              </option>
-              <option value="asset_enrich">
-                {isZh ? "资产信誉富化 (asset_enrich)" : "Asset Enrichment"}
-              </option>
+            <optgroup label={t("groupIntel")}>
+              <option value="extract_iocs">{t("optExtractIocs")}</option>
+              <option value="ti_lookup_otx">{t("optTiLookupOtx")}</option>
+              <option value="asset_enrich">{t("optAssetEnrich")}</option>
             </optgroup>
-            <optgroup label={isZh ? "控制分支 (Control Flow)" : "Control Flow"}>
-              <option value="decision">
-                {isZh ? "条件分支决策 (decision)" : "Decision Branch"}
-              </option>
-              <option value="human_approval">
-                {isZh ? "人工复核审批 (human_approval)" : "Human Approval"}
-              </option>
-              <option value="sleep">{isZh ? "延时等待 (sleep)" : "Delay / Sleep"}</option>
+            <optgroup label={t("groupControl")}>
+              <option value="decision">{t("optDecision")}</option>
+              <option value="human_approval">{t("optHumanApproval")}</option>
+              <option value="sleep">{t("optSleep")}</option>
             </optgroup>
-            <optgroup label={isZh ? "响应动作 (Actions)" : "Actions"}>
-              <option value="http_request">
-                {isZh ? "执行 HTTP / API 请求 (http_request)" : "HTTP Request"}
-              </option>
-              <option value="slack_notify">
-                {isZh ? "即时协同通知 (slack_notify)" : "Alert Notification"}
-              </option>
-              <option value="generate_report">
-                {isZh ? "生成处置报告 (generate_report)" : "Generate Report"}
-              </option>
+            <optgroup label={t("groupActions")}>
+              <option value="http_request">{t("optHttpRequest")}</option>
+              <option value="slack_notify">{t("optSlackNotify")}</option>
+              <option value="generate_report">{t("optGenerateReport")}</option>
             </optgroup>
-            <optgroup label={isZh ? "数据解析 (Data)" : "Data"}>
-              <option value="parse_json">
-                {isZh ? "结构化数据解析 (parse_json)" : "Parse JSON"}
-              </option>
+            <optgroup label={t("groupData")}>
+              <option value="parse_json">{t("optParseJson")}</option>
             </optgroup>
           </select>
           <p className="mt-1 text-[10px] text-text-tertiary leading-normal">
@@ -266,7 +247,7 @@ export function NodeInspectorDrawer({
         <div className="pt-3 border-t border-border-subtle space-y-3">
           <div className="flex items-center gap-1.5 text-text-secondary font-medium text-[11px]">
             <Sliders className="w-3.5 h-3.5 text-accent-600 dark:text-accent-400" />
-            <span>{isZh ? "动作参数配置" : "Action Parameters"}</span>
+            <span>{t("actionParams")}</span>
           </div>
 
           {/* 1. HTTP Request */}
@@ -274,7 +255,7 @@ export function NodeInspectorDrawer({
             <div className="space-y-2.5">
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "请求方法 (Method)" : "HTTP Method"}
+                  {t("httpMethod")}
                 </label>
                 <div className="grid grid-cols-4 gap-1">
                   {["GET", "POST", "PUT", "DELETE"].map((m) => {
@@ -300,7 +281,7 @@ export function NodeInspectorDrawer({
 
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "请求 URL" : "Endpoint URL"}
+                  {t("endpointUrl")}
                 </label>
                 <input
                   type="text"
@@ -313,7 +294,7 @@ export function NodeInspectorDrawer({
 
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "超时限制 (秒)" : "Timeout (Seconds)"}
+                  {t("timeoutSeconds")}
                 </label>
                 <input
                   type="number"
@@ -332,7 +313,7 @@ export function NodeInspectorDrawer({
             <div className="space-y-2.5">
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "判定表达式 (Condition Expression)" : "Condition Expression"}
+                  {t("conditionExpr")}
                 </label>
                 <input
                   type="text"
@@ -345,7 +326,7 @@ export function NodeInspectorDrawer({
 
               <div>
                 <span className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "快速表达式预设" : "Quick Snippets"}
+                  {t("quickSnippets")}
                 </span>
                 <div className="space-y-1">
                   {[
@@ -373,7 +354,7 @@ export function NodeInspectorDrawer({
             <div className="space-y-2.5">
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "告警输入源字段" : "Source Field"}
+                  {t("sourceField")}
                 </label>
                 <input
                   type="text"
@@ -386,7 +367,7 @@ export function NodeInspectorDrawer({
 
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "识别实体类型" : "Entity Types"}
+                  {t("entityTypes")}
                 </label>
                 <div className="grid grid-cols-2 gap-1.5">
                   {["ip", "domain", "url", "email", "cve", "hash"].map((ioc) => {
@@ -424,7 +405,7 @@ export function NodeInspectorDrawer({
             <div className="space-y-2.5">
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "脉冲威胁有效天数 (Expiration Days)" : "Pulse Expiration Days"}
+                  {t("pulseExpiration")}
                 </label>
                 <input
                   type="number"
@@ -440,7 +421,7 @@ export function NodeInspectorDrawer({
 
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "判定威胁置信度下限 (Min Confidence)" : "Minimum Confidence Threshold"}
+                  {t("minConfidence")}
                 </label>
                 <input
                   type="number"
@@ -459,7 +440,7 @@ export function NodeInspectorDrawer({
             <div className="space-y-2.5">
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "Webhook 环境变量 / URL" : "Webhook URL or Env Variable"}
+                  {t("webhookUrlEnv")}
                 </label>
                 <input
                   type="text"
@@ -472,17 +453,13 @@ export function NodeInspectorDrawer({
 
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "通知消息模板" : "Message Template"}
+                  {t("messageTemplate")}
                 </label>
                 <textarea
                   rows={3}
                   value={String(inputs.message || "")}
                   onChange={(e) => handleFieldChange("message", e.target.value)}
-                  placeholder={
-                    isZh
-                      ? "告警已阻断: {{$.output.blocked}}"
-                      : "Alert blocked: {{$.output.blocked}}"
-                  }
+                  placeholder={t("alertBlockedPlaceholder")}
                   className="w-full px-2.5 py-1.5 text-[11px] rounded-xl border border-border-default bg-surface-ground text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-500 resize-none font-mono"
                 />
               </div>
@@ -494,7 +471,7 @@ export function NodeInspectorDrawer({
             <div className="space-y-2.5">
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "审批人用户名 (逗号分隔)" : "Approver Usernames (Comma separated)"}
+                  {t("approverUsernames")}
                 </label>
                 <input
                   type="text"
@@ -519,7 +496,7 @@ export function NodeInspectorDrawer({
 
               <div>
                 <label className="block text-[10px] text-text-tertiary mb-1">
-                  {isZh ? "审批超时限制 (分钟)" : "Timeout (Minutes)"}
+                  {t("timeoutMinutes")}
                 </label>
                 <input
                   type="number"
@@ -537,7 +514,7 @@ export function NodeInspectorDrawer({
           {type === "sleep" && (
             <div>
               <label className="block text-[10px] text-text-tertiary mb-1">
-                {isZh ? "等待延迟 (秒)" : "Delay Duration (Seconds)"}
+                {t("delaySeconds")}
               </label>
               <input
                 type="number"
@@ -560,7 +537,7 @@ export function NodeInspectorDrawer({
           >
             <div className="flex items-center gap-1.5">
               <Code2 className="w-3.5 h-3.5" />
-              <span>{isZh ? "高级 JSON 参数配置" : "Raw JSON Config"}</span>
+              <span>{t("rawJsonConfig")}</span>
             </div>
             {showAdvancedJson ? (
               <ChevronUp className="w-3.5 h-3.5" />
@@ -594,10 +571,10 @@ export function NodeInspectorDrawer({
           type="button"
           onClick={() => onDeleteNode(node.id)}
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-danger-500/30 bg-danger-500/10 text-danger-700 dark:text-danger-400 hover:bg-danger-500/20 text-xs font-medium transition-colors"
-          title={isZh ? "删除节点" : "Delete Step"}
+          title={t("deleteNode")}
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>{isZh ? "删除" : "Delete"}</span>
+          <span>{t("delete")}</span>
         </button>
 
         <div className="flex items-center gap-2">
@@ -605,10 +582,10 @@ export function NodeInspectorDrawer({
             type="button"
             onClick={() => onDuplicateNode(node.id)}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-border-subtle bg-surface-card hover:bg-surface-hover text-text-secondary text-xs font-medium transition-colors"
-            title={isZh ? "克隆节点" : "Duplicate Step"}
+            title={t("cloneNode")}
           >
             <Copy className="w-3.5 h-3.5" />
-            <span>{isZh ? "克隆" : "Clone"}</span>
+            <span>{t("clone")}</span>
           </button>
           <button
             type="button"
@@ -616,7 +593,7 @@ export function NodeInspectorDrawer({
             className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-accent-600 hover:bg-accent-700 text-white text-xs font-semibold shadow-xs transition-colors"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>{isZh ? "完成" : "Done"}</span>
+            <span>{t("done")}</span>
           </button>
         </div>
       </div>

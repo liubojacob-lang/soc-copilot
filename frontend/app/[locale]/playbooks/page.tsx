@@ -189,6 +189,7 @@ export default function PlaybooksPage() {
           <select
             value={filters.playbook}
             onChange={(e) => setFilters({ ...filters, playbook: e.target.value })}
+            aria-label={t("allPlaybooks")}
             className="px-3 py-1.5 text-sm border border-border-default rounded-lg bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors h-9"
           >
             <option value="">{t("allPlaybooks")}</option>
@@ -201,6 +202,7 @@ export default function PlaybooksPage() {
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            aria-label={t("allStatuses")}
             className="px-3 py-1.5 text-sm border border-border-default rounded-lg bg-surface-input text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-600 transition-colors h-9"
           >
             <option value="">{t("allStatuses")}</option>
@@ -361,6 +363,8 @@ export default function PlaybooksPage() {
                     <button
                       onClick={() => handlePageChange(runsPagination.currentPage - 1)}
                       disabled={runsPagination.currentPage === 1}
+                      // 纯图标按钮必须自报名称，否则读屏只念「按钮」
+                      aria-label={tCommon("prevPage")}
                       className="p-1.5 border border-border-default rounded-lg hover:bg-surface-hover active:bg-surface-active text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ChevronLeft className="w-4 h-4" />
@@ -371,6 +375,7 @@ export default function PlaybooksPage() {
                     <button
                       onClick={() => handlePageChange(runsPagination.currentPage + 1)}
                       disabled={runsPagination.currentPage === totalRunsPages}
+                      aria-label={tCommon("nextPage")}
                       className="p-1.5 border border-border-default rounded-lg hover:bg-surface-hover active:bg-surface-active text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ChevronRight className="w-4 h-4" />
