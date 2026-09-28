@@ -22,19 +22,19 @@ E2E_USERS = [
     {
         "username": os.getenv("E2E_ADMIN_USERNAME", "admin"),
         "password": os.getenv("E2E_ADMIN_PASSWORD", "admin123"),
-        "email": "admin@soc-copilot.local",
+        "email": "admin@example.com",
         "role": UserRole.ADMIN.value,
     },
     {
         "username": os.getenv("E2E_ANALYST_USERNAME", "analyst"),
         "password": os.getenv("E2E_ANALYST_PASSWORD", "analyst123"),
-        "email": "analyst@soc-copilot.local",
+        "email": "analyst@example.com",
         "role": UserRole.ANALYST.value,
     },
     {
         "username": os.getenv("E2E_AUDITOR_USERNAME", "auditor"),
         "password": os.getenv("E2E_AUDITOR_PASSWORD", "auditor123"),
-        "email": "auditor@soc-copilot.local",
+        "email": "auditor@example.com",
         "role": UserRole.AUDITOR.value,
     },
 ]
