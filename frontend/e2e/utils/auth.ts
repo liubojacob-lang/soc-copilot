@@ -51,12 +51,27 @@ function getLocale(): string {
   return process.env.E2E_LOCALE || "en";
 }
 
+/**
+ * goto with one retry: `next dev` in CI occasionally aborts the document
+ * request (net::ERR_ABORTED) while compiling a route on demand.
+ */
+async function safeGoto(page: Page, url: string): Promise<void> {
+  try {
+    await page.goto(url, { waitUntil: "domcontentloaded" });
+  } catch {
+    await page.waitForTimeout(2000);
+    await page.goto(url, { waitUntil: "domcontentloaded" });
+  }
+}
+
 async function submitLoginForm(page: Page, username: string, password: string): Promise<void> {
   const locale = getLocale();
-  await page.goto(`/${locale}/login`);
+  await safeGoto(page, `/${locale}/login`);
   await page.waitForSelector("#username", { timeout: 15000 });
 
-  // 429 (login rate limit) surfaces as a failed submit; retry with a wait
+  // 429 (login rate limit) surfaces as a failed submit; retry with a wait.
+  // Budget: with the 120s test timeout, worst case is 3 × 25s waits + 2 × 8s
+  // backoffs ≈ 91s, leaving headroom for the assertions after login.
   for (let attempt = 1; attempt <= 3; attempt++) {
     await page.fill("#username", username);
     await page.fill("#password", password);
@@ -64,14 +79,14 @@ async function submitLoginForm(page: Page, username: string, password: string): 
 
     try {
       await page.waitForURL((url) => !url.pathname.includes("/login"), {
-        timeout: 15000,
+        timeout: 25000,
       });
       return;
     } catch {
       if (attempt === 3) throw new Error("Login did not complete after 3 attempts");
-      // Stay on /login — likely rate limited; back off before retrying
-      await page.waitForTimeout(20000);
-      await page.goto(`/${locale}/login`);
+      // Stay on /login — back off before retrying
+      await page.waitForTimeout(8000);
+      await safeGoto(page, `/${locale}/login`);
     }
   }
 }
@@ -137,7 +152,7 @@ export async function logout(page: Page): Promise<void> {
   });
   await page.context().clearCookies();
 
-  await page.goto(`/${locale}/login`);
+  await safeGoto(page, `/${locale}/login`);
   await page.waitForSelector("#username", { timeout: 15000 });
 }
 

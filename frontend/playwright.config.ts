@@ -18,6 +18,10 @@ export default defineConfig({
   // Fail build on CI if you accidentally left test.only in source code
   forbidOnly: !!process.env.CI,
 
+  // Per-test ceiling: CI runs against `next dev`, where the first visit to a
+  // route compiles on demand (20-40s), so the 30s default is not enough.
+  timeout: 120 * 1000,
+
   // Retry on CI only
   retries: process.env.CI ? 2 : 0,
 
@@ -50,6 +54,10 @@ export default defineConfig({
       // Ignore HTTPS errors for local testing
       ignoreHTTPSErrors: true,
     },
+
+    // `next dev` aborts navigations while compiling on demand; give the
+    // document itself a CI-friendly budget instead of the 30s default.
+    navigationTimeout: 45 * 1000,
   },
 
   // Configure projects for major browsers
