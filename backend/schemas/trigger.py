@@ -21,7 +21,7 @@ class WebhookTriggerCreate(BaseModel):
 class WebhookTriggerResponse(BaseModel):
     """Schema for webhook trigger response."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: str
     definition_id: str
@@ -39,7 +39,7 @@ class WebhookTriggerResponse(BaseModel):
 class WebhookTriggerOut(BaseModel):
     """Schema for webhook trigger output (without secret)."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: str
     definition_id: str
@@ -72,7 +72,7 @@ class CronTriggerCreate(BaseModel):
 class CronTriggerResponse(BaseModel):
     """Schema for cron trigger response."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: str
     definition_id: str
@@ -99,7 +99,7 @@ class TriggerUpdate(BaseModel):
 class TriggerOut(BaseModel):
     """Schema for trigger output (generic)."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: str
     definition_id: str
@@ -130,7 +130,7 @@ class TriggerListResponse(BaseModel):
 class TriggerInvocationOut(BaseModel):
     """Schema for trigger invocation output."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: str
     trigger_id: str

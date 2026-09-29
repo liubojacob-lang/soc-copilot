@@ -203,7 +203,14 @@ async def test_webhook_trigger_reaches_dag_scheduler(monkeypatch):
         type="webhook",
         is_active=True,
         secret=secret,
+        # Apply-mode gate (audit-run1): only admin-created triggers execute;
+        # resolve the creator's role via the session query below.
+        created_by="admin-user-1",
     )
+
+    admin_role_result = MagicMock()
+    admin_role_result.scalar_one_or_none = lambda: "admin"
+    service.session.execute = AsyncMock(return_value=admin_role_result)
 
     service.trigger_repo.get_by_id = AsyncMock(return_value=trigger)
     service.trigger_repo.check_idempotency = AsyncMock(return_value=None)
