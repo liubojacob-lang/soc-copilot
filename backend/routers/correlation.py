@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.logger import get_logger
 from core.metrics import observe_correlation_rule_hit
 from db.session import get_session
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_analyst_or_admin
 from middleware.tenant_middleware import resolve_tenant_id
 from models.correlation_rule import CorrelationRule
 from models.user import UserModel
@@ -287,7 +287,7 @@ async def list_correlation_rules(
 async def create_correlation_rule(
     rule: CorrelationRuleCreate,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """Create a new correlation rule."""
     try:
@@ -315,7 +315,7 @@ async def update_correlation_rule(
     rule_id: str,
     updates: CorrelationRuleUpdate,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """Update an existing correlation rule."""
     svc = _svc(db)
@@ -342,7 +342,7 @@ async def update_correlation_rule(
 async def delete_correlation_rule(
     rule_id: str,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """Delete a correlation rule."""
     svc = _svc(db)
@@ -363,7 +363,7 @@ async def delete_correlation_rule(
 async def toggle_correlation_rule(
     rule_id: str,
     db: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """Enable or disable a correlation rule."""
     svc = _svc(db)

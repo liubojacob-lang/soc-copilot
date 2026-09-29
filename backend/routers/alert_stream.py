@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from dependencies import get_current_user
+from dependencies.auth import require_admin, require_analyst_or_admin
 from models.user import UserModel
 from schemas.alert_stream import (
     AlertStreamFilter,
@@ -72,7 +73,7 @@ class TestStreamAlertRequest(BaseModel):
 @router.post("/start", response_model=StreamStatusResponse)
 async def start_stream_service(
     request: StreamStartRequest = StreamStartRequest(),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_admin),
 ):
     """
     Start the Wazuh alert stream service.
@@ -118,7 +119,7 @@ async def start_stream_service(
 
 
 @router.post("/stop", response_model=StreamStatusResponse)
-async def stop_stream_service(current_user: UserModel = Depends(get_current_user)):
+async def stop_stream_service(current_user: UserModel = Depends(require_admin)):
     """
     Stop the Wazuh alert stream service.
     """
@@ -231,7 +232,7 @@ async def get_recent_alerts(
 @router.post("/test-alert", response_model=dict[str, Any])
 async def send_test_alert(
     request: TestStreamAlertRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """
     Send a test alert through the stream.

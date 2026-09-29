@@ -610,13 +610,11 @@ async def api_version_alias(request: Request, call_next):
 
 
 # Setup CSRF protection (must be before exception handlers in request chain)
-setup_csrf_middleware(
-    app,
-    exempt_paths={
-        "/api/triggers/webhook",  # Webhook endpoints have their own validation
-        "/api/playbook-definitions/runs",  # API can be called via API key
-    },
-)
+# Exemptions are exact-matched against the pre-rewrite path; the legacy
+# '/api/triggers/webhook' and '/api/playbook-definitions/runs' strings were
+# removed — they aliased live /api/v1 mutating endpoints (trigger creation,
+# run cancel) which must stay CSRF-enforced (audit run sec-run-1).
+setup_csrf_middleware(app, exempt_paths=set())
 
 # Setup trace logging
 setup_trace_logging()

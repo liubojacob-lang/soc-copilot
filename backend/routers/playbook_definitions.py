@@ -407,9 +407,20 @@ async def cancel_dag_run(
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    """Cancel a running DAG playbook (admin/analyst only)."""
+    """Cancel a running DAG playbook (admin/analyst only, owner or admin)."""
     if current_user.role not in (UserRole.ADMIN, UserRole.ANALYST):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    # Non-admin users can only cancel their own runs (same rule as resume)
+    run_repo = PlaybookRunRepository(db)
+    run = await run_repo.get_by_id(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if current_user.role != UserRole.ADMIN and run.created_by_user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only cancel your own runs",
+        )
 
     svc = DAGExecutionService(session=db)
     result = await svc.cancel_run(run_id, data.reason or "Cancelled by user")
