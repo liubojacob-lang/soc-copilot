@@ -87,6 +87,8 @@
     "verifyDynamicTip": "💡 动态验证码每 30 秒自动更新一次，支持直接复制粘贴",
     "confirmSwitchOtpDesc": "输入 6 位动态验证码确认切换",
     "confirmDisableOtpDesc": "输入 6 位动态验证码确认关闭",
-    "targetPolicyLabel": "目标认证模式"
+    "targetPolicyLabel": "目标认证模式",
+    "setupPasswordLabel": "确认账户密码",
+    "setupPasswordPlaceholder": "输入当前账户密码以授权绑定"
   }
 }

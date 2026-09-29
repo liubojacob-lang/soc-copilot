@@ -3320,6 +3320,8 @@
     "verifyActivationSubtitle": "Open your authenticator app and enter the 6-digit code for SOC Copilot:",
     "verifyDynamicTip": "💡 Codes refresh every 30 seconds. Paste is supported.",
     "confirmSwitchOtpDesc": "Enter 6-digit code to confirm policy switch",
-    "confirmDisableOtpDesc": "Enter 6-digit code to confirm disabling"
+    "confirmDisableOtpDesc": "Enter 6-digit code to confirm disabling",
+    "setupPasswordLabel": "Confirm account password",
+    "setupPasswordPlaceholder": "Enter your current account password to authorize this binding"
   }
 }
