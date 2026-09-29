@@ -100,14 +100,14 @@ class TestTokenInvalidationByUserUpdate:
         is_invalid = is_token_invalidated_by_user_update(payload, user_updated)
         assert is_invalid is True
 
-    def test_invalid_updated_at_format_allows_token(self):
-        """Malformed updated_at should not break authentication (fallback)."""
+    def test_invalid_updated_at_format_rejects_token(self):
+        """Malformed updated_at must fail closed (reject token) for security."""
         token = create_access_token(data={"sub": "user-123"})
         payload = decode_token(token)
 
-        # Invalid date format
+        # Invalid date format - should fail closed
         is_invalid = is_token_invalidated_by_user_update(payload, "not-a-date")
-        assert is_invalid is False  # Fallback: allow token
+        assert is_invalid is True  # Fail closed: cannot verify freshness, reject
 
     def test_token_without_iat_claim_is_rejected(self):
         """Old tokens without 'iat' claim should be rejected."""

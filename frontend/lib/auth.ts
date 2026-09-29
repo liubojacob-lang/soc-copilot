@@ -276,6 +276,7 @@ export function logout(): void {
     fetch("/api/auth/logout", {
       method: "POST",
       credentials: "include",
+      keepalive: true,
     }).catch(() => {
       // Ignore errors during logout
     });
@@ -434,15 +435,29 @@ export function handleUnauthorized(): void {
 }
 
 const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const AUTH_EXEMPT_FRAGMENTS = [
+export const AUTH_EXEMPT_PATHS = new Set([
   "/api/auth/login",
   "/api/auth/refresh",
   "/api/auth/logout",
+  "/api/v1/auth/login",
+  "/api/v1/auth/refresh",
+  "/api/v1/auth/logout",
+  "/api/v1/auth/login-2fa",
   "/login-2fa",
-];
+]);
 
-function isAuthPath(path: string): boolean {
-  return AUTH_EXEMPT_FRAGMENTS.some((fragment) => path.includes(fragment));
+export function isAuthPath(path: string): boolean {
+  try {
+    // If path is a full URL, parse the pathname; otherwise treat leading path
+    const url =
+      path.startsWith("http://") || path.startsWith("https://")
+        ? new URL(path)
+        : new URL(path, "http://localhost");
+    const pathname = url.pathname.replace(/\/$/, "");
+    return AUTH_EXEMPT_PATHS.has(pathname);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -580,9 +595,18 @@ export function getAuthSecurityInfo() {
       usingCookies &&
       (!!loadStoredUser() ||
         (typeof document !== "undefined" && document.cookie.includes("csrf_token"))),
-    usingLocalStorage: strategy === "localStorage" || !!localStorage.getItem(ACCESS_TOKEN_KEY),
+    usingLocalStorage:
+      typeof window !== "undefined" &&
+      (() => {
+        try {
+          return strategy === "localStorage" || !!localStorage.getItem(ACCESS_TOKEN_KEY);
+        } catch {
+          return false;
+        }
+      })(),
     cookieAccessible: typeof document !== "undefined" && navigator.cookieEnabled,
     localStorageAccessible: (() => {
+      if (typeof window === "undefined") return false;
       try {
         localStorage.setItem("test", "test");
         localStorage.removeItem("test");
@@ -602,7 +626,7 @@ export function setStorageStrategy(strategy: StorageStrategy): void {
   detectedStorageStrategy = strategy;
 
   // Migrate data if needed
-  if (strategy === "cookie") {
+  if (strategy === "cookie" && typeof window !== "undefined") {
     // When switching to cookies, clear localStorage tokens
     // (The backend will set HttpOnly cookies)
     localStorage.removeItem(ACCESS_TOKEN_KEY);
@@ -653,10 +677,5 @@ export function hasLocalAuth(): boolean {
  * Use this when auth errors are detected
  */
 export function clearAuthAndRedirect(): void {
-  logout();
-  if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-    const currentPath = window.location.pathname + window.location.search;
-    sessionStorage.setItem("redirect_after_login", currentPath);
-    window.location.href = "/login";
-  }
+  handleUnauthorized();
 }

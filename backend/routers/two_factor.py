@@ -72,9 +72,15 @@ async def enable_2fa(
 
     secret_service = get_secret_service()
     encrypted_secret = secret_service.encrypt(request.secret)
-    encrypted_backup = (
-        secret_service.encrypt(json.dumps(request.backup_codes))
+    # Store backup codes hashed and encrypted to prevent exposure
+    hashed_backup_codes = (
+        TOTPService.hash_backup_codes(request.backup_codes)
         if request.backup_codes
+        else None
+    )
+    encrypted_backup = (
+        secret_service.encrypt(json.dumps(hashed_backup_codes))
+        if hashed_backup_codes
         else None
     )
 
