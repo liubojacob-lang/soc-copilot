@@ -229,11 +229,29 @@ class DAGScheduler:
 
             # Build input from node config + original context + parent outputs
             # Priority: node config < run input < parent outputs
+            #
+            # Security-pinned keys (audit-run1): network destinations stay
+            # bound to the playbook author's node config — run input_context
+            # and parent outputs must not be able to redirect where action
+            # nodes send requests (url / webhook_url / firewall_url /
+            # base_url / domain_controller).
             node_config = (
                 node_def.get("config", {}) if isinstance(node_def, dict) else {}
             )
+            pinned_keys = {
+                "url",
+                "webhook_url",
+                "firewall_url",
+                "base_url",
+                "domain_controller",
+            }
+            overridable_input = {
+                k: v
+                for k, v in self.input_context.items()
+                if k not in pinned_keys
+            }
             input_json = dict(node_config)
-            input_json.update(self.input_context)
+            input_json.update(overridable_input)
             input_json.update(parent_outputs)
 
             # Validate input if plugin supports it
