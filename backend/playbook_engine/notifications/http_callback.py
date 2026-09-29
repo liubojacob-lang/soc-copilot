@@ -145,14 +145,14 @@ class HttpCallbackService:
                     headers={"Content-Type": "application/json"},
                 )
 
-                    if response.status_code in [200, 201, 202, 204]:
-                        logger.info(f"HTTP callback sent successfully to {url}")
-                        return True
-                    else:
-                        logger.warning(
-                            f"HTTP callback attempt {attempt} failed with status "
-                            f"{response.status_code}: {response.text}"
-                        )
+                if response.status_code in [200, 201, 202, 204]:
+                    logger.info(f"HTTP callback sent successfully to {url}")
+                    return True
+                else:
+                    logger.warning(
+                        f"HTTP callback attempt {attempt} failed with status "
+                        f"{response.status_code}: {response.text}"
+                    )
 
             except httpx.TimeoutException:
                 logger.warning(f"HTTP callback attempt {attempt} timed out")
