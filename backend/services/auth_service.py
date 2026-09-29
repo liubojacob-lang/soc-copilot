@@ -211,9 +211,15 @@ class AuthService(BaseService):
                 detail="Invalid refresh token",
             )
 
-        # Check if the old refresh token has already been blacklisted (replay detection)
+        # Atomically claim the single-use refresh token (rotation). The claim
+        # IS the blacklist write, so concurrent replays lose the race instead
+        # of all passing a check-then-add window (audit-run1: replay detection
+        # was defeated by concurrent refreshes).
         blacklist = get_token_blacklist()
-        if await blacklist.is_blacklisted(refresh_token):
+        claimed = await blacklist.claim_single_use(
+            refresh_token, reason="token_rotation"
+        )
+        if not claimed:
             logger.warning(f"Reused refresh token detected for user {user_id}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -227,9 +233,6 @@ class AuthService(BaseService):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found or inactive",
             )
-
-        # Blacklist the old refresh token (rotation)
-        await add_token_to_blacklist(refresh_token, reason="token_rotation")
 
         # Create new tokens with role for authorization
         access_token = create_access_token(

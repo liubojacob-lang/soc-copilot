@@ -183,7 +183,8 @@ async def test_refresh_tokens_already_blacklisted(auth_service):
 
     with patch("services.auth_service.get_token_blacklist") as mock_bl:
         mock_blacklist_inst = AsyncMock()
-        mock_blacklist_inst.is_blacklisted.return_value = True
+        # Atomic single-use claim: False means the token was already consumed
+        mock_blacklist_inst.claim_single_use.return_value = False
         mock_bl.return_value = mock_blacklist_inst
 
         with pytest.raises(HTTPException) as exc_info:
@@ -199,7 +200,7 @@ async def test_refresh_tokens_user_inactive_or_missing(auth_service):
 
     with patch("services.auth_service.get_token_blacklist") as mock_bl:
         mock_blacklist_inst = AsyncMock()
-        mock_blacklist_inst.is_blacklisted.return_value = False
+        mock_blacklist_inst.claim_single_use.return_value = True
         mock_bl.return_value = mock_blacklist_inst
 
         auth_service.user_repo.get_by_id.return_value = None
