@@ -346,12 +346,14 @@ function SidebarBrand({
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent-600 text-white shadow-subtle">
               <ShieldCheck className="h-4 w-4" />
             </div>
-            <span className="sidebar-label truncate text-sm font-semibold tracking-tight text-text-primary flex items-center gap-1.5">
-              <span>SOC Copilot</span>
-              <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-accent-500/15 text-accent-600 dark:text-cyan-400 border border-accent-500/30">
+            <div className="sidebar-label flex flex-col min-w-0">
+              <span className="truncate text-sm font-semibold tracking-tight text-text-primary leading-none">
+                SOC Copilot
+              </span>
+              <span className="text-[9px] font-mono font-bold text-accent-600 dark:text-cyan-400 tracking-wider uppercase leading-none mt-1">
                 SENTINEL
               </span>
-            </span>
+            </div>
           </Link>
 
           <button
