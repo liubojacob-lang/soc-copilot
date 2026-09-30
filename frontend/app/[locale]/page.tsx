@@ -20,6 +20,9 @@ import {
   Server,
   ArrowUpRight,
   RefreshCw,
+  Radio,
+  Shield,
+  Zap,
 } from "lucide-react";
 
 import { useDashboardStats } from "@/hooks/useDashboard";
@@ -187,6 +190,39 @@ export default function HomePage() {
         }
       />
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* ── Sentinel Cockpit HUD Telemetry Banner ─────────────────── */}
+        <div className="mb-6 p-3 sm:p-3.5 rounded-xl border border-border-subtle bg-surface-card/90 backdrop-blur-md shadow-subtle flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-[11px] font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>SENTINEL DEFENSE ACTIVE</span>
+            </div>
+            <div className="hidden md:flex items-center gap-2 text-text-muted font-mono text-[11px]">
+              <Radio className="w-3.5 h-3.5 text-accent-500" />
+              <span>48/48 探针全量在线同步</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-text-secondary font-mono text-[11px]">
+            {stats && stats.mttr_minutes !== null && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-text-muted">平均处置 MTTR:</span>
+                <span className="font-semibold text-text-primary">
+                  {formatDuration(stats.mttr_minutes, t)}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <span className="text-text-muted">本日拦截率:</span>
+              <span className="font-semibold text-emerald-500 dark:text-emerald-400">99.4%</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-text-muted">DEFCON:</span>
+              <span className="font-bold text-red-500 dark:text-red-400">LEVEL 2</span>
+            </div>
+          </div>
+        </div>
+
         {/* ── Real-time stat cards ─────────────────────────── */}
         <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOC Copilot (Sentinel) - 全系统高保真 UI 原型设计中心</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#2563EB', light: '#38BDF8', glow: 'rgba(56, 189, 248, 0.15)' },
+            bg: { main: '#080C14', surface: '#0D131F', card: '#131B2E', elevated: '#1A243B' }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #080C14; }
+    ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 4px; }
+    .glass-card {
+      background: rgba(19, 27, 46, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.1);
+      box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.5);
+    }
+    .active-nav {
+      background: rgba(37, 99, 235, 0.2) !important;
+      border-color: rgba(56, 189, 248, 0.5) !important;
+      color: #38BDF8 !important;
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.25);
+    }
+  </style>
+</head>
+<body class="bg-bg-main text-slate-200 font-sans antialiased h-screen overflow-hidden flex flex-col">
+
+  <!-- 顶部导航栏 -->
+  <header class="h-14 bg-bg-surface/90 border-b border-slate-800/80 px-4 flex items-center justify-between z-30 shrink-0 backdrop-blur-md">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-900 flex items-center justify-center border border-blue-400/40 shadow-[0_0_12px_rgba(37,99,235,0.4)]">
+        <svg class="w-4 h-4 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M12 8v4"/>
+          <path d="M12 16h.01"/>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-sm tracking-wider text-white">SOC COPILOT</span>
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-500/20 text-blue-400 border border-blue-500/40">DESIGN SYSTEM</span>
+        </div>
+        <p class="text-[10px] text-slate-400 font-mono">全套系统原型统一入口 • 7 大核心模块完成度 100%</p>
+      </div>
+    </div>
+
+    <!-- 快捷视图按钮 -->
+    <div class="flex items-center gap-2 font-mono text-xs">
+      <span class="text-slate-400 text-[11px] hidden md:inline">当前视窗：</span>
+      <span id="currentViewName" class="px-2.5 py-1 rounded bg-blue-500/10 text-cyan-400 border border-blue-500/30 text-xs font-bold">01 态势感知大盘与运营中枢</span>
+      <button onclick="openCurrentFullscreen()" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs flex items-center gap-1.5 transition-all">
+        <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+        全屏独立打开
+      </button>
+    </div>
+  </header>
+
+  <!-- 主体工作区 (左侧模块选择 + 右侧即时 Iframe 预览) -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- 左侧 7 大模块切换栏 -->
+    <aside class="w-80 bg-bg-surface/95 border-r border-slate-800/80 flex flex-col shrink-0 z-20 overflow-y-auto p-3 space-y-4">
+      
+      <div>
+        <div class="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold px-2 mb-2 flex items-center justify-between">
+          <span>模块原型列表 (7/7)</span>
+          <span class="text-emerald-400 font-normal">● 全部已落地</span>
+        </div>
+        <div class="space-y-1.5" id="navContainer">
+
+          <button onclick="loadPrototype('01-security-cockpit.html', '01 态势感知大盘与安全运营中枢', this)" class="proto-nav active-nav w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all flex items-start gap-3">
+            <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-mono font-bold shrink-0 mt-0.5">01</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-white flex items-center justify-between">
+                <span>态势感知与运营中枢</span>
+                <span class="text-[9px] px-1 rounded bg-blue-500/20 text-blue-300">全局骨架</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate mt-0.5">DEFCON 状态、MTTD/R 指标、攻击流拓扑、AI 面板</p>
+            </div>
+          </button>
+
+          <button onclick="loadPrototype('02-alert-triage-workbench.html', '02 告警研判与深度调查工作台', this)" class="proto-nav w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all flex items-start gap-3">
+            <span class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-mono font-bold shrink-0 mt-0.5">02</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-slate-200 flex items-center justify-between">
+                <span>告警研判工作台</span>
+                <span class="text-[9px] px-1 rounded bg-amber-500/20 text-amber-300">深度研判</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate mt-0.5">多维过滤、告警队列、IOC 链、进程树、原始日志</p>
+            </div>
+          </button>
+
+          <button onclick="loadPrototype('03-soar-playbook-canvas.html', '03 SOAR 自动化剧本编排引擎', this)" class="proto-nav w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all flex items-start gap-3">
+            <span class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-mono font-bold shrink-0 mt-0.5">03</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-slate-200 flex items-center justify-between">
+                <span>SOAR 剧本编排引擎</span>
+                <span class="text-[9px] px-1 rounded bg-emerald-500/20 text-emerald-300">自动化</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate mt-0.5">React Flow 节点流、粒子仿真动效、Inspector 参数绑定</p>
+            </div>
+          </button>
+
+          <button onclick="loadPrototype('04-case-management.html', '04 安全事件与案件工单中心', this)" class="proto-nav w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all flex items-start gap-3">
+            <span class="w-6 h-6 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-mono font-bold shrink-0 mt-0.5">04</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-slate-200 flex items-center justify-between">
+                <span>案件工单与事件协同</span>
+                <span class="text-[9px] px-1 rounded bg-purple-500/20 text-purple-300">事件管理</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate mt-0.5">全生命周期阶段流、交互式时序时间线、证据保险箱</p>
+            </div>
+          </button>
+
+          <button onclick="loadPrototype('05-threat-intel-dashboard.html', '05 威胁情报中心与溯源图谱', this)" class="proto-nav w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all flex items-start gap-3">
+            <span class="w-6 h-6 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center text-xs font-mono font-bold shrink-0 mt-0.5">05</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-slate-200 flex items-center justify-between">
+                <span>威胁情报与溯源图谱</span>
+                <span class="text-[9px] px-1 rounded bg-red-500/20 text-red-300">威胁狩猎</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate mt-0.5">IOC 智能检索、APT 画像、攻击拓扑图、ATT&CK 矩阵</p>
+            </div>
+          </button>
+
+          <button onclick="loadPrototype('06-assets-ueba.html', '06 资产全景与实体行为基线', this)" class="proto-nav w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all flex items-start gap-3">
+            <span class="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-mono font-bold shrink-0 mt-0.5">06</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-slate-200 flex items-center justify-between">
+                <span>资产管理与 UEBA</span>
+                <span class="text-[9px] px-1 rounded bg-cyan-500/20 text-cyan-300">资产实体</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate mt-0.5">主机资产清单、漏洞基线核查、实体异常行为偏离雷达</p>
+            </div>
+          </button>
+
+          <button onclick="loadPrototype('07-admin-audit-settings.html', '07 系统管理、健康监控与审计中心', this)" class="proto-nav w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all flex items-start gap-3">
+            <span class="w-6 h-6 rounded-lg bg-slate-500/20 text-slate-300 flex items-center justify-center text-xs font-mono font-bold shrink-0 mt-0.5">07</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-slate-200 flex items-center justify-between">
+                <span>系统管理与安全审计</span>
+                <span class="text-[9px] px-1 rounded bg-slate-500/20 text-slate-300">运维审计</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate mt-0.5">48 组探针健康矩阵、全量审计日志表、AI 模型接入配置</p>
+            </div>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- 设计系统色卡规范参考卡 -->
+      <div class="p-3 rounded-xl bg-bg-card border border-slate-800/80 text-[11px] space-y-2">
+        <div class="font-bold text-slate-300 flex items-center justify-between">
+          <span>Design System 规范基准</span>
+          <span class="text-[9px] font-mono text-cyan-400">Dark Mode First</span>
+        </div>
+        <div class="grid grid-cols-5 gap-1.5 pt-1">
+          <div class="text-center">
+            <div class="h-5 rounded bg-[#EF4444] border border-red-400/40"></div>
+            <span class="text-[9px] text-slate-400 font-mono">Critical</span>
+          </div>
+          <div class="text-center">
+            <div class="h-5 rounded bg-[#F97316] border border-orange-400/40"></div>
+            <span class="text-[9px] text-slate-400 font-mono">High</span>
+          </div>
+          <div class="text-center">
+            <div class="h-5 rounded bg-[#F59E0B] border border-amber-400/40"></div>
+            <span class="text-[9px] text-slate-400 font-mono">Medium</span>
+          </div>
+          <div class="text-center">
+            <div class="h-5 rounded bg-[#06B6D4] border border-cyan-400/40"></div>
+            <span class="text-[9px] text-slate-400 font-mono">Low</span>
+          </div>
+          <div class="text-center">
+            <div class="h-5 rounded bg-[#10B981] border border-emerald-400/40"></div>
+            <span class="text-[9px] text-slate-400 font-mono">Safe</span>
+          </div>
+        </div>
+        <p class="text-[10px] text-slate-500 leading-relaxed pt-1">
+          基底: #080C14 • 卡片: #131B2E • 边框: border-slate-800/80 • 字体: Inter + JetBrains Mono
+        </p>
+      </div>
+
+    </aside>
+
+    <!-- 右侧沉浸式 Iframe 原型预览区 -->
+    <main class="flex-1 bg-black relative flex flex-col">
+      <iframe id="protoViewer" src="01-security-cockpit.html" class="w-full h-full border-none"></iframe>
+    </main>
+
+  </div>
+
+  <script>
+    let currentSrc = '01-security-cockpit.html';
+
+    function loadPrototype(src, title, btnElement) {
+      currentSrc = src;
+      document.getElementById('protoViewer').src = src;
+      document.getElementById('currentViewName').innerText = title;
+
+      document.querySelectorAll('.proto-nav').forEach(el => {
+        el.classList.remove('active-nav');
+      });
+      if (btnElement) {
+        btnElement.classList.add('active-nav');
+      }
+    }
+
+    function openCurrentFullscreen() {
+      window.open(currentSrc, '_blank');
+    }
+  </script>
+</body>
+</html>

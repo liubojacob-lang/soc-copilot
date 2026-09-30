@@ -249,6 +249,7 @@ const config: Config = {
           hover: "var(--color-bg-hover)",
           active: "var(--color-bg-active)",
           input: "var(--color-bg-input)",
+          elevated: "var(--color-bg-elevated, var(--color-bg-card))",
         },
         // Text color layers (connected to dynamic CSS variables)
         text: {
