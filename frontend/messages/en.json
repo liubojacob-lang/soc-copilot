@@ -199,6 +199,7 @@
   "home": {
     "title": "SOC Copilot",
     "subtitle": "Security Operations Center",
+    "pageTitle": "Security Operations Workbench",
     "loading": "Loading...",
     "securityOperations": "Security Operations",
     "refreshData": "Refresh Data",

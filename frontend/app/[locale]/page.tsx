@@ -19,12 +19,15 @@ import {
   Flame,
   Server,
   ArrowUpRight,
+  RefreshCw,
 } from "lucide-react";
 
 import { useDashboardStats } from "@/hooks/useDashboard";
 import type { DashboardStats } from "@/lib/api/dashboard";
 import { loadAuthState } from "@/lib/auth";
-import { Card, LoadingSpinner, SkeletonCard } from "@/components/common";
+import { Button, Card, LoadingSpinner, SkeletonCard, buttonVariants } from "@/components/common";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Badge, type Severity } from "@/components/ui/Badge";
 import { SeverityBreakdown } from "@/components/ui/SeverityBreakdown";
@@ -122,7 +125,7 @@ export default function HomePage() {
   const [apiStatus, setApiStatus] = useState<"checking" | "healthy" | "unhealthy">("checking");
   const [mounted, setMounted] = useState(false);
 
-  const { data: stats, isLoading, isError } = useDashboardStats();
+  const { data: stats, isLoading, isError, refetch, isFetching } = useDashboardStats();
 
   useEffect(() => {
     setMounted(true);
@@ -162,6 +165,27 @@ export default function HomePage() {
 
   return (
     <div className="pb-12 pt-4 sm:pt-6">
+      {/* 页头操作提升进顶部导航栏（与 alerts/cases/assets 一致）：
+          设计稿的「页头 + 主操作」在这里落到导航栏的 actions 槽位 */}
+      <PageHeader
+        title={t("pageTitle")}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              leftIcon={<RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} />}
+            >
+              {t("refreshData")}
+            </Button>
+            <Link href="/alerts" className={buttonVariants({ variant: "primary", size: "sm" })}>
+              {t("dashboard.goAlerts")}
+            </Link>
+          </>
+        }
+      />
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* ── Real-time stat cards ─────────────────────────── */}
         <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -366,7 +390,7 @@ export default function HomePage() {
               {isLoading ? (
                 <SkeletonCard />
               ) : stats ? (
-                <SeverityBreakdown counts={stats.alerts_by_severity} layout="list" />
+                <SeverityBreakdown counts={stats.alerts_by_severity} layout="pills" />
               ) : null}
             </div>
 
@@ -421,10 +445,10 @@ export default function HomePage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium text-text-muted border-b border-border-subtle">
-                      <th className="pb-3">{t("dashboard.asset")}</th>
-                      <th className="pb-3 text-right">{t("dashboard.alerts")}</th>
-                      <th className="pb-3 text-right">{t("dashboard.riskScore")}</th>
+                    <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted border-b border-border-subtle">
+                      <th className="pb-2.5">{t("dashboard.asset")}</th>
+                      <th className="pb-2.5 text-right">{t("dashboard.alerts")}</th>
+                      <th className="pb-2.5 text-right">{t("dashboard.riskScore")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-subtle">
