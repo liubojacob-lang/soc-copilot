@@ -120,7 +120,7 @@ function SidebarLink({
           : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
       )}
     >
-      {active && (
+      {!collapsed && active && (
         <span
           aria-hidden="true"
           className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-0.5 rounded-r bg-accent-600 dark:bg-accent-400"
@@ -216,7 +216,10 @@ function NavContent({
   return (
     <nav
       aria-label={t("mainNavigation")}
-      className="sidebar-scrollbar flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 space-y-2.5"
+      className={cn(
+        "sidebar-scrollbar flex-1 overflow-y-auto overflow-x-hidden py-3 space-y-2.5",
+        collapsed ? "px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" : "px-2"
+      )}
     >
       {groups.map((group) => {
         const isGroupCollapsed = !collapsed && collapsedGroups.has(group.key);
@@ -260,7 +263,9 @@ function NavContent({
                 />
               </button>
             )}
-            {collapsed && <div className="mx-2 mb-2 h-px bg-border-subtle" aria-hidden="true" />}
+            {collapsed && (
+              <div className="mx-auto my-1.5 h-px w-8 bg-border-subtle" aria-hidden="true" />
+            )}
             <div
               id={`sidebar-group-${group.key}`}
               className={cn(

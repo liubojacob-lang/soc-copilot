@@ -470,6 +470,16 @@ html[data-sidebar-collapsed="true"] .sidebar-group-label {
   display: none;
 }
 
+/* 折叠态完全隐藏侧栏滚动条槽位，确保图标 100% 水平几何对称居中 */
+html[data-sidebar-collapsed="true"] .sidebar-scrollbar {
+  scrollbar-width: none;
+}
+html[data-sidebar-collapsed="true"] .sidebar-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
