@@ -39,7 +39,7 @@ from fastapi import (
 
 from core.logger import get_logger
 from core.security import decode_token
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_admin
 from services.message_queue import get_message_queue_service
 from services.observability.websocket_monitoring import get_websocket_monitoring
 from services.websocket_compression import get_compression_service
@@ -396,7 +396,7 @@ async def get_compression_stats(user=Depends(get_current_user)):
 
 
 @ops_router.post("/ws/compression/reset-stats")
-async def reset_compression_stats(user=Depends(get_current_user)):
+async def reset_compression_stats(user=Depends(require_admin)):
     """Reset compression statistics."""
     try:
         compression_service = get_compression_service()
@@ -422,7 +422,7 @@ async def get_batch_stats(user=Depends(get_current_user)):
 
 
 @ops_router.post("/ws/batch/flush")
-async def flush_batches(user=Depends(get_current_user)):
+async def flush_batches(user=Depends(require_admin)):
     """Manually flush all pending message batches."""
     try:
         from services.message_batch_service import get_batch_service

@@ -439,11 +439,17 @@ async def lifespan(app_instance: FastAPI):
     logger.info("Shutdown complete")
 
 
+_is_prod = settings.environment == "production"
 app = FastAPI(
     title="SOC Copilot API",
     description="Security Operations Center Analysis Platform with Playbook Engine, OTX Threat Intelligence, and Multi-User Support",
     version=settings.app_version,
     lifespan=lifespan,
+    # Interactive API docs enumerate every route for anonymous users — keep
+    # them out of production (audit-run1 hardening).
+    docs_url=None if _is_prod else "/docs",
+    redoc_url=None if _is_prod else "/redoc",
+    openapi_url=None if _is_prod else "/openapi.json",
 )
 
 # Setup Prometheus metrics

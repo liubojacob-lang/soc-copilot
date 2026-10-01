@@ -1,6 +1,7 @@
 """Service for trigger management and execution."""
 
 import hashlib
+import re
 import secrets
 from datetime import UTC, datetime
 from typing import Any
@@ -213,13 +214,38 @@ class TriggerService:
         except json.JSONDecodeError:
             input_context = {"raw_payload": payload.decode("utf-8", errors="ignore")}
 
-        # Record invocation
-        invocation = await self.trigger_repo.record_invocation(
-            trigger_id=trigger_id,
-            idempotency_key=idempotency_key,
-            payload=payload,
-            status="pending",
-        )
+        # Record invocation. A unique index on (trigger_id, request_hash)
+        # backs the dedupe SELECT above — an IntegrityError here means a
+        # concurrent identical delivery won the race, so treat it as a
+        # duplicate delivery rather than executing twice (audit-run1).
+        from sqlalchemy.exc import IntegrityError
+
+        try:
+            invocation = await self.trigger_repo.record_invocation(
+                trigger_id=trigger_id,
+                idempotency_key=idempotency_key,
+                payload=payload,
+                status="pending",
+            )
+        except IntegrityError as ie:
+            await self.session.rollback()
+            cached = await self.trigger_repo.check_idempotency(
+                trigger_id, idempotency_key, payload
+            )
+            if cached:
+                logger.info(
+                    f"Concurrent duplicate delivery resolved to cached invocation: {cached.id}"
+                )
+                return {
+                    "run_id": cached.run_id,
+                    "status": cached.status,
+                    "cached": True,
+                    "invocation_id": cached.id,
+                }
+            raise ValueError(
+                "Duplicate delivery rejected: "
+                + re.sub(r'["\n]', " ", str(ie.orig))[:120]
+            ) from ie
 
         # Execute playbook
         run = None

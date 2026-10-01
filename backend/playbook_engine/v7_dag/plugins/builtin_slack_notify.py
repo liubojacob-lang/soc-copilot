@@ -108,8 +108,11 @@ class SlackNotifyPlugin(BaseNodePlugin):
             context=context,
         )
 
+        # Do not log URL/secret material — the resolved URL may BE a store
+        # secret when use_secret=true (audit-run1 hardening).
         logger.info(
-            f"[{context.run_id}] Sending Slack notification to {webhook_url[:50]}..."
+            f"[{context.run_id}] Sending Slack notification"
+            + (" from store secret" if use_secret else "")
         )
 
         # Send webhook
