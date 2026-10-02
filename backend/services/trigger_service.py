@@ -305,6 +305,7 @@ class TriggerService:
                 input_context=input_context,
                 mode="apply",
                 failure_strategy="fail_fast",
+                definition_created_by=definition.created_by,
             )
             output = await scheduler.execute()
 
@@ -520,6 +521,7 @@ class TriggerService:
                 input_context=input_context,
                 mode="apply",
                 failure_strategy="fail_fast",
+                definition_created_by=definition.created_by,
             )
             output = await scheduler.execute()
 

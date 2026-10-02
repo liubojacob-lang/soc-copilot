@@ -26,6 +26,12 @@ class NodeRegistry:
         """Initialize an empty node registry."""
         self._plugins: dict[str, type[BaseNodePlugin]] = {}
 
+    def __len__(self) -> int:
+        """Empty registries are falsy so callers' `if not registry` fallback
+        (re-load plugins) actually fires — an empty registry previously tested
+        truthy and every node execution failed with "Plugin not registered"."""
+        return len(self._plugins)
+
     def register(self, node_id: str, plugin_class: type[BaseNodePlugin]) -> None:
         """Register a node plugin class.
 

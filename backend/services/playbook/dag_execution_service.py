@@ -177,6 +177,7 @@ class DAGExecutionService:
                 created_by_user_id=(
                     str(run.created_by_user_id) if run.created_by_user_id else None
                 ),
+                definition_created_by=definition.created_by,
             )
             output = await scheduler.execute()
 

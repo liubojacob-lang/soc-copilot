@@ -31,6 +31,7 @@ class DAGScheduler:
         mode: str = "apply",
         failure_strategy: str = "fail_fast",
         created_by_user_id: str | None = None,
+        definition_created_by: str | None = None,
     ):
         self.session = session
         self.run_id = run_id
@@ -39,6 +40,11 @@ class DAGScheduler:
         self.mode = mode
         self.failure_strategy = failure_strategy
         self.created_by_user_id = created_by_user_id
+        # Secret-binding (audit-run1): the definition AUTHOR decides which
+        # node configs consume secrets, so resolvable secrets are scoped to
+        # the definition creator's own entries plus unattributed/system ones.
+        # None is fail-closed: only unattributed secrets resolve.
+        self.definition_created_by = definition_created_by
 
         # Runtime state
         self.cancelled = False
@@ -57,9 +63,15 @@ class DAGScheduler:
 
             from playbook_engine.v7_dag.registry import NodeRegistry
 
+            # backend/playbook_engine/v7_dag/plugins — three parents up from
+            # services/playbook/; the previous two-level join pointed at a
+            # nonexistent directory and the fallback silently loaded 0 plugins.
             registry = NodeRegistry()
             plugin_dir = (
-                Path(__file__).parent.parent / "playbook_engine" / "v7_dag" / "plugins"
+                Path(__file__).parent.parent.parent
+                / "playbook_engine"
+                / "v7_dag"
+                / "plugins"
             )
             registry.auto_load_plugins(plugin_dir)
             from playbook_engine.v7_dag.registry import set_node_registry
@@ -112,7 +124,15 @@ class DAGScheduler:
             async with AsyncSessionLocal() as session:
                 repo = SecretRepository(session)
                 items = await repo.list_all(limit=500, offset=0)
+                allowed_owners = {None, self.definition_created_by}
                 for s in items:
+                    if s.created_by_user_id not in allowed_owners:
+                        # Cross-author secret: the definition author cannot
+                        # have intended to consume another principal's secret.
+                        logger.info(
+                            f"[{self.run_id}] Secret {s.name} skipped (owner not bound to this definition)"
+                        )
+                        continue
                     try:
                         out[s.name] = svc.decrypt(s.encrypted_value)
                     except Exception as e:

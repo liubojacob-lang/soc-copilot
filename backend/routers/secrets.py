@@ -77,14 +77,15 @@ def mask_secret_value(value: str, visible_chars: int = 4) -> str:
 
     Args:
         value: Secret value to mask
-        visible_chars: Number of leading chars to show
+        visible_chars: Unused — kept for signature compatibility. A fixed
+            constant mask is returned: leaking even a few leading characters
+            narrows offline search space for low-entropy secrets (audit-run1
+            hardening; list view already returns '****').
 
     Returns:
-        Masked value (e.g., "abcd****************")
+        Constant mask.
     """
-    if len(value) <= visible_chars:
-        return "*" * len(value)
-    return value[:visible_chars] + "*" * (len(value) - visible_chars)
+    return "****"
 
 
 # ============ CRUD Endpoints ============
