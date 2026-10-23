@@ -1,16 +1,9 @@
 // Base API client with common utilities
 import { getAuthHeaders } from "./auth";
-import { handleUnauthorized, refreshAccessToken } from "../auth";
+import { handleUnauthorized, isAuthPath, refreshAccessToken } from "../auth";
 import { addCSRFToken, ensureCSRFToken } from "../csrf";
 
-/** Auth endpoints must never trigger the refresh-and-retry flow. */
-const AUTH_EXEMPT_FRAGMENTS = ["/api/auth/login", "/api/auth/refresh", "/api/auth/logout"];
-
 const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-
-function isAuthPath(path: string): boolean {
-  return AUTH_EXEMPT_FRAGMENTS.some((fragment) => path.includes(fragment));
-}
 
 let refreshPromise: Promise<boolean> | null = null;
 

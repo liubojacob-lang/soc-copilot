@@ -53,10 +53,8 @@ export function ClientLayout({
       <ToastProvider>
         <HeaderProvider>
           <SkipToContent />
-          {/* key=pathname：每次路由切换侧边栏随页面一起重新挂载；折叠偏好由
-              localStorage 持久化，挂载后自动恢复。移动端抽屉不参与。 */}
+          {/* 侧边栏常驻布局层，路由切换时复用实例，避免整栏销毁重建导致视觉抖动闪烁 */}
           <Sidebar
-            key={pathname}
             initialRole={initialRole}
             initialCollapsed={initialSidebarCollapsed}
             initialCollapsedGroups={initialCollapsedGroups}

@@ -115,7 +115,7 @@ curl -X POST YOUR_WEBHOOK_URL \
 docker-compose -f docker-compose.prod.yml up -d
 
 # 发送测试通知
-curl -X POST http://localhost:8000/api/v1/notifications/test
+curl -X POST http://localhost:8088/api/v1/notifications/test
 ```
 
 ---

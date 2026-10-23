@@ -47,6 +47,10 @@ class TriggerRepository:
         self.session.add(trigger)
         await self.session.flush()
         await self.session.refresh(trigger)
+        # get_session does not auto-commit (explicit-commit policy); trigger
+        # CRUD has no route-level commit, so flush alone rolled back on
+        # session close — commit here to persist CRUD writes.
+        await self.session.commit()
         logger.info(f"Created trigger: {trigger.id} - type={trigger_type}")
         return trigger
 
@@ -140,6 +144,8 @@ class TriggerRepository:
             await self.session.execute(stmt)
             await self.session.flush()
             await self.session.refresh(trigger)
+            # Commit CRUD updates (same explicit-commit rationale as create)
+            await self.session.commit()
             logger.info(f"Updated trigger: {trigger_id}")
 
         return trigger
@@ -152,6 +158,8 @@ class TriggerRepository:
 
         await self.session.delete(trigger)
         await self.session.flush()
+        # Commit CRUD deletes (same explicit-commit rationale as create)
+        await self.session.commit()
         logger.info(f"Deleted trigger: {trigger_id}")
         return True
 

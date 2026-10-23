@@ -1,0 +1,1982 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统运维管理与安全审计中心 - SOC Copilot (Sentinel)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: {
+              950: '#05080E',
+              900: '#080C14',
+              850: '#0D131F',
+              800: '#131B2E',
+              750: '#182239',
+              700: '#1E2C4A'
+            },
+            cyber: {
+              blue: '#2563EB',
+              sky: '#38BDF8',
+              cyan: '#06B6D4',
+              emerald: '#10B981',
+              crimson: '#EF4444',
+              amber: '#F59E0B',
+              indigo: '#6366F1'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'Menlo', 'Consolas', 'monospace']
+          },
+          boxShadow: {
+            'glow-sky': '0 0 15px -3px rgba(56, 189, 248, 0.25)',
+            'glow-emerald': '0 0 15px -3px rgba(16, 185, 129, 0.25)',
+            'glow-crimson': '0 0 15px -3px rgba(239, 68, 68, 0.25)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080C14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Pulse animation */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .animate-pulse-dot {
+      animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Subtle grid background */
+    .bg-cyber-grid {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-obsidian-900 text-slate-200 font-sans antialiased min-h-screen flex flex-col selection:bg-cyber-sky/30 selection:text-white bg-cyber-grid">
+
+  <!-- ======================== TOP GLOBAL HEADER ======================== -->
+  <header class="h-14 border-b border-slate-800/80 bg-obsidian-950/90 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-5">
+    <!-- Left: Brand & Module Tag -->
+    <div class="flex items-center space-x-3.5">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyber-blue to-cyber-sky flex items-center justify-center shadow-glow-sky border border-cyber-sky/30">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="leading-none">
+          <span class="text-sm font-semibold tracking-wider text-white">SOC COPILOT</span>
+          <span class="text-[10px] font-mono font-medium text-cyber-sky ml-1.5 px-1 py-0.5 rounded bg-cyber-sky/10 border border-cyber-sky/20">SENTINEL</span>
+        </div>
+      </div>
+
+      <div class="h-4 w-px bg-slate-800"></div>
+
+      <div class="flex items-center space-x-2">
+        <div class="w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></div>
+        <h1 class="text-xs font-medium text-slate-300 tracking-wide">系统运维管理与安全审计中心 <span class="text-slate-500 font-mono text-[11px] font-normal">(Sentinel Administration)</span></h1>
+        <span class="text-[10px] font-mono text-slate-400 bg-obsidian-800 px-2 py-0.5 rounded border border-slate-800">v4.8.2-prod</span>
+      </div>
+    </div>
+
+    <!-- Center: Global System Status & Environmental Indicators -->
+    <div class="hidden xl:flex items-center space-x-6 text-xs font-mono">
+      <div class="flex items-center space-x-2 px-2.5 py-1 rounded bg-obsidian-850 border border-slate-800/80">
+        <span class="text-slate-400">集群健康度:</span>
+        <span class="text-cyber-emerald font-semibold flex items-center">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyber-emerald mr-1.5"></span>
+          99.8% HEALTHY
+        </span>
+      </div>
+
+      <div class="flex items-center space-x-2 px-2.5 py-1 rounded bg-obsidian-850 border border-slate-800/80">
+        <span class="text-slate-400">运行时间:</span>
+        <span class="text-slate-200">48d 16h 42m</span>
+      </div>
+
+      <div class="flex items-center space-x-2 px-2.5 py-1 rounded bg-obsidian-850 border border-slate-800/80">
+        <span class="text-slate-400">环境模式:</span>
+        <span class="text-emerald-400 font-medium flex items-center">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>
+          LIVE 生产防护
+        </span>
+      </div>
+    </div>
+
+    <!-- Right: Quick Actions & Profile -->
+    <div class="flex items-center space-x-3 text-xs">
+      <div class="relative hidden md:block">
+        <input type="text" placeholder="全局检索 (Cmd + K)..." class="w-56 h-8 pl-8 pr-10 rounded-md bg-obsidian-850 border border-slate-800 text-xs text-slate-300 placeholder-slate-500 focus:outline-none focus:border-cyber-sky/60 focus:ring-1 focus:ring-cyber-sky/40">
+        <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <span class="absolute right-2 top-1.5 text-[10px] font-mono text-slate-500 bg-obsidian-800 px-1 py-0.5 rounded border border-slate-800">⌘K</span>
+      </div>
+
+      <button onclick="showToast('正在导出安全审计与健康诊断合规包...', 'info')" class="h-8 px-3 rounded-md bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 hover:text-white border border-slate-800 flex items-center space-x-1.5 transition-colors">
+        <svg class="w-3.5 h-3.5 text-cyber-sky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>导出审计包</span>
+      </button>
+
+      <div class="h-4 w-px bg-slate-800"></div>
+
+      <div class="flex items-center space-x-2 pl-1">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-cyber-blue to-purple-600 flex items-center justify-center text-white text-xs font-semibold ring-1 ring-slate-700">
+          SA
+        </div>
+        <div class="hidden lg:block leading-tight text-left">
+          <div class="text-[11px] font-medium text-slate-200">secops_admin</div>
+          <div class="text-[10px] text-cyber-sky font-mono">SecOps Lead (L3)</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================== MAIN DUAL-COLUMN WORKSPACE ======================== -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- 1. LEFT SIDEBAR NAVIGATION (240px) -->
+    <aside class="w-60 flex-shrink-0 border-r border-slate-800/80 bg-obsidian-950/60 flex flex-col justify-between select-none">
+      <div class="p-3">
+        <div class="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold flex items-center justify-between">
+          <span>运维管控域 / CONTROL PLANE</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-cyber-sky/80"></span>
+        </div>
+
+        <nav class="mt-1 space-y-1">
+          <!-- Nav Item 1: Cluster Health (Default Active) -->
+          <button id="nav-btn-health" onclick="switchTab('health')" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group active-nav bg-cyber-blue/15 text-cyber-sky border border-cyber-sky/30 shadow-glow-sky/40">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-base">🩺</span>
+              <span class="text-slate-200 group-hover:text-white font-medium">探针与集群健康</span>
+            </div>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyber-emerald/15 text-cyber-emerald border border-cyber-emerald/30 font-semibold">99.8%</span>
+          </button>
+
+          <!-- Nav Item 2: Audit Logs -->
+          <button id="nav-btn-audit" onclick="switchTab('audit')" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 border border-transparent transition-all group">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-base">📜</span>
+              <span>系统审计日志</span>
+            </div>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 group-hover:text-slate-300">14.2k</span>
+          </button>
+
+          <!-- Nav Item 3: AI Models & Keys -->
+          <button id="nav-btn-aimodels" onclick="switchTab('aimodels')" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 border border-transparent transition-all group">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-base">🤖</span>
+              <span>AI 安全大模型接入</span>
+            </div>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyber-sky/10 text-cyber-sky border border-cyber-sky/20">3 活跃</span>
+          </button>
+
+          <!-- Nav Item 4: RBAC & Users -->
+          <button id="nav-btn-rbac" onclick="switchTab('rbac')" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 border border-transparent transition-all group">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-base">👥</span>
+              <span>租户与 RBAC 权限</span>
+            </div>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">18 用户</span>
+          </button>
+
+          <!-- Nav Item 5: Notification Channels -->
+          <button id="nav-btn-notify" onclick="switchTab('notify')" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 border border-transparent transition-all group">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-base">⚙️</span>
+              <span>告警与通知集成</span>
+            </div>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">4 渠道</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Bottom System Health Telemetry Widget -->
+      <div class="p-3 border-t border-slate-800/80 bg-obsidian-950/80">
+        <div class="text-[11px] font-mono text-slate-400 flex items-center justify-between mb-2">
+          <span>资源开销监测 (NODE-01)</span>
+          <span class="text-cyber-emerald">LOW LOAD</span>
+        </div>
+        <div class="space-y-2 text-[10px] font-mono">
+          <div>
+            <div class="flex justify-between text-slate-400 mb-0.5">
+              <span>CPU 占用</span>
+              <span class="text-slate-200">38.4% (8/16c)</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1 overflow-hidden">
+              <div class="bg-cyber-sky h-1 rounded-full" style="width: 38.4%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-slate-400 mb-0.5">
+              <span>内存用量</span>
+              <span class="text-slate-200">41.2 GB / 64 GB</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1 overflow-hidden">
+              <div class="bg-cyber-blue h-1 rounded-full" style="width: 64.3%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-slate-400 mb-0.5">
+              <span>NVMe 存储池</span>
+              <span class="text-slate-200">22.8% (已用 412G)</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1 overflow-hidden">
+              <div class="bg-cyber-emerald h-1 rounded-full" style="width: 22.8%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500 font-mono">
+          <span>企业特权授权</span>
+          <span class="text-cyber-amber">剩余 218 天</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 2. MAIN CONTENT VIEWPORT -->
+    <main class="flex-1 overflow-y-auto bg-obsidian-900/95 p-6 relative">
+
+      <!-- ========================================================================= -->
+      <!-- TAB A: 探针与集群健康监控看板 (Cluster Health - Default Visible) -->
+      <!-- ========================================================================= -->
+      <section id="tab-health" class="space-y-6 block">
+
+        <!-- Top Overview Header & Diagnostic CTA -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+          <div>
+            <div class="flex items-center space-x-2 text-xs font-mono text-cyber-sky mb-1">
+              <span>CLUSTER TELEMETRY & RUNTIME HEALTH</span>
+              <span>/</span>
+              <span>PROBES MATRIX</span>
+            </div>
+            <h2 class="text-xl font-bold text-white tracking-tight flex items-center space-x-3">
+              <span>探针与集群健康监控看板</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-cyber-emerald/15 text-cyber-emerald border border-cyber-emerald/30 flex items-center">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyber-emerald animate-pulse-dot mr-1.5"></span>
+                全组件正常运行 (HEALTHY)
+              </span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">实时掌控后端微服务、分布式向量库、EDR端点探针及异步剧本调度引擎的连通性与健康状态。</p>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center space-x-3">
+            <button onclick="refreshProbes()" class="h-9 px-3.5 rounded-lg bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 hover:text-white border border-slate-800 text-xs font-medium flex items-center space-x-2 transition-all">
+              <svg id="refresh-icon" class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6"/>
+                <path d="M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+              <span>强制刷新探活</span>
+            </button>
+
+            <button onclick="showToast('正在归档生成当前节点 /var/log/sentinel 诊断报告包...', 'info')" class="h-9 px-3.5 rounded-lg bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 hover:text-white border border-slate-800 text-xs font-medium flex items-center space-x-2 transition-all">
+              <svg class="w-3.5 h-3.5 text-cyber-sky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>导出诊断包</span>
+            </button>
+
+            <button onclick="runSystemDiagnostics()" class="h-9 px-4 rounded-lg bg-gradient-to-r from-cyber-blue to-cyber-sky hover:from-blue-600 hover:to-sky-400 text-white text-xs font-semibold shadow-glow-sky flex items-center space-x-2 transition-all transform hover:scale-[1.01] active:scale-[0.99]">
+              <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span>全系统自检诊断</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Global Health KPI Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- KPI 1 -->
+          <div class="bg-obsidian-800/80 border border-slate-800/90 rounded-xl p-4.5 relative overflow-hidden group hover:border-slate-700 transition-all">
+            <div class="absolute right-3 top-3 opacity-15 text-cyber-emerald group-hover:opacity-25 transition-opacity">
+              <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+            </div>
+            <div class="text-xs font-mono text-slate-400 mb-1 flex items-center justify-between">
+              <span>集群健康度得分</span>
+              <span class="text-[10px] text-cyber-emerald font-semibold">+0.1% 环比</span>
+            </div>
+            <div class="flex items-baseline space-x-2">
+              <span class="text-2xl font-bold font-mono text-white tracking-tight">99.8</span>
+              <span class="text-xs text-cyber-emerald font-semibold">%</span>
+              <span class="text-[10px] font-mono text-slate-400 ml-1">SLA: 99.99%</span>
+            </div>
+            <div class="mt-3 flex items-center text-xs text-slate-400">
+              <span class="w-2 h-2 rounded-full bg-cyber-emerald mr-1.5"></span>
+              <span>连续平稳运行</span>
+              <span class="text-slate-200 font-mono font-medium ml-1">48天 16小时 42分</span>
+            </div>
+          </div>
+
+          <!-- KPI 2 -->
+          <div class="bg-obsidian-800/80 border border-slate-800/90 rounded-xl p-4.5 relative overflow-hidden group hover:border-slate-700 transition-all">
+            <div class="absolute right-3 top-3 opacity-15 text-cyber-sky group-hover:opacity-25 transition-opacity">
+              <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                <line x1="6" y1="6" x2="6.01" y2="6"/>
+                <line x1="6" y1="18" x2="6.01" y2="18"/>
+              </svg>
+            </div>
+            <div class="text-xs font-mono text-slate-400 mb-1 flex items-center justify-between">
+              <span>核心服务存活比</span>
+              <span class="text-[10px] text-cyber-emerald">6/6 ONLINE</span>
+            </div>
+            <div class="flex items-baseline space-x-2">
+              <span class="text-2xl font-bold font-mono text-white tracking-tight">6</span>
+              <span class="text-sm text-slate-400 font-mono">/ 6 组件</span>
+            </div>
+            <div class="mt-3 flex items-center text-xs text-slate-400">
+              <span class="text-cyber-sky font-mono font-semibold">18.4ms</span>
+              <span class="ml-1.5">探针平均心跳延迟</span>
+            </div>
+          </div>
+
+          <!-- KPI 3 -->
+          <div class="bg-obsidian-800/80 border border-slate-800/90 rounded-xl p-4.5 relative overflow-hidden group hover:border-slate-700 transition-all">
+            <div class="absolute right-3 top-3 opacity-15 text-cyber-blue group-hover:opacity-25 transition-opacity">
+              <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                <polyline points="2 17 12 22 22 17"/>
+                <polyline points="2 12 12 17 22 12"/>
+              </svg>
+            </div>
+            <div class="text-xs font-mono text-slate-400 mb-1 flex items-center justify-between">
+              <span>Wazuh EDR 探针状态</span>
+              <span class="text-[10px] text-cyber-emerald">100% 覆盖</span>
+            </div>
+            <div class="flex items-baseline space-x-2">
+              <span class="text-2xl font-bold font-mono text-white tracking-tight">48</span>
+              <span class="text-sm text-slate-400 font-mono">/ 48 在线</span>
+            </div>
+            <div class="mt-3 flex items-center text-xs text-slate-400">
+              <span class="text-slate-200 font-mono font-medium">1,420 台</span>
+              <span class="ml-1.5">受管终端无失联</span>
+            </div>
+          </div>
+
+          <!-- KPI 4 -->
+          <div class="bg-obsidian-800/80 border border-slate-800/90 rounded-xl p-4.5 relative overflow-hidden group hover:border-slate-700 transition-all">
+            <div class="absolute right-3 top-3 opacity-15 text-purple-400 group-hover:opacity-25 transition-opacity">
+              <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <div class="text-xs font-mono text-slate-400 mb-1 flex items-center justify-between">
+              <span>SOAR 调度引擎</span>
+              <span class="text-[10px] text-cyber-sky">8 WORKERS</span>
+            </div>
+            <div class="flex items-baseline space-x-2">
+              <span class="text-2xl font-bold font-mono text-white tracking-tight">0</span>
+              <span class="text-xs text-cyber-emerald font-mono font-semibold">排队积压</span>
+            </div>
+            <div class="mt-3 flex items-center text-xs text-slate-400">
+              <span class="text-slate-200 font-mono font-medium">342 剧本</span>
+              <span class="ml-1.5">今日自动化秒级闭环</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Core Service Probes Matrix Grid (6 Core Services Requested) -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <h3 class="text-sm font-semibold text-slate-200 tracking-wide">核心服务组件探针网格 (Service Matrix)</h3>
+              <span class="text-xs font-mono text-slate-500">6 Nodes Supervised</span>
+            </div>
+            <span class="text-[11px] font-mono text-slate-400">探测策略: HTTP / TCP Ping 每 5 秒自动轮询</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            <!-- Service Probe 1: FastAPI -->
+            <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-4 hover:border-cyber-sky/40 transition-all shadow-sm">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-cyber-emerald">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-white flex items-center">
+                      FastAPI 后端微服务集群
+                      <span class="ml-2 w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+                    </h4>
+                    <p class="text-[11px] font-mono text-slate-400 mt-0.5">127.0.0.1:18088 <span class="text-slate-500">(/api/v1/healthz)</span></p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">正常 24ms</span>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-3 gap-2 text-[10px] font-mono">
+                <div>
+                  <span class="text-slate-500 block">实时 QPS</span>
+                  <span class="text-slate-200 font-semibold">2,840 req/s</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">错误率</span>
+                  <span class="text-cyber-emerald font-semibold">0.002%</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">活跃连接</span>
+                  <span class="text-slate-200 font-semibold">412 sockets</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Probe 2: Next.js Frontend -->
+            <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-4 hover:border-cyber-sky/40 transition-all shadow-sm">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-cyber-sky">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                      <line x1="8" y1="21" x2="16" y2="21"/>
+                      <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-white flex items-center">
+                      Next.js 前端应用网关
+                      <span class="ml-2 w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+                    </h4>
+                    <p class="text-[11px] font-mono text-slate-400 mt-0.5">127.0.0.1:13000 <span class="text-slate-500">(SSR Client)</span></p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">正常 12ms</span>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-3 gap-2 text-[10px] font-mono">
+                <div>
+                  <span class="text-slate-500 block">TTFB 耗时</span>
+                  <span class="text-slate-200 font-semibold">38 ms</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">在线会话</span>
+                  <span class="text-slate-200 font-semibold">36 专员</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">SSR 渲染</span>
+                  <span class="text-cyber-emerald font-semibold">100% 缓存</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Probe 3: PostgreSQL Vector DB -->
+            <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-4 hover:border-cyber-sky/40 transition-all shadow-sm">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-cyber-indigo">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-white flex items-center">
+                      PostgreSQL 向量主库 (pgvector)
+                      <span class="ml-2 w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+                    </h4>
+                    <p class="text-[11px] font-mono text-slate-400 mt-0.5">10.120.10.12:5432 <span class="text-slate-500">(Primary-HA)</span></p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">正常 32/100</span>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-3 gap-2 text-[10px] font-mono">
+                <div>
+                  <span class="text-slate-500 block">连接池</span>
+                  <span class="text-cyber-sky font-semibold">32 / 100</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">向量检索</span>
+                  <span class="text-slate-200 font-semibold">8.2 ms</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">主从同步</span>
+                  <span class="text-cyber-emerald font-semibold">0 延迟</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Probe 4: Redis Cache -->
+            <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-4 hover:border-cyber-sky/40 transition-all shadow-sm">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                      <polyline points="2 17 12 22 22 17"/>
+                      <polyline points="2 12 12 17 22 12"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-white flex items-center">
+                      Redis 高速缓存与异步消息队列
+                      <span class="ml-2 w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+                    </h4>
+                    <p class="text-[11px] font-mono text-slate-400 mt-0.5">10.120.10.15:6379 <span class="text-slate-500">(Cluster Mode)</span></p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">内存 1.2GB</span>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-3 gap-2 text-[10px] font-mono">
+                <div>
+                  <span class="text-slate-500 block">内存占用</span>
+                  <span class="text-slate-200 font-semibold">1.2G / 8G</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">命中率</span>
+                  <span class="text-cyber-emerald font-semibold">99.4%</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">OPS 吞吐</span>
+                  <span class="text-slate-200 font-semibold">38.4k/s</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Probe 5: Wazuh EDR Nodes -->
+            <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-4 hover:border-cyber-sky/40 transition-all shadow-sm">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-lg bg-cyber-blue/10 border border-cyber-blue/20 flex items-center justify-center text-cyber-sky">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-white flex items-center">
+                      Wazuh EDR 探针集群节点
+                      <span class="ml-2 w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+                    </h4>
+                    <p class="text-[11px] font-mono text-slate-400 mt-0.5">wazuh-master.internal:1514</p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">48/48 在线</span>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-3 gap-2 text-[10px] font-mono">
+                <div>
+                  <span class="text-slate-500 block">探针同步率</span>
+                  <span class="text-cyber-emerald font-semibold">100%</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">今日防护事件</span>
+                  <span class="text-slate-200 font-semibold">4,821 条</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">失联节点</span>
+                  <span class="text-cyber-emerald font-semibold">0 离线</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Probe 6: SOAR Celery Workers -->
+            <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-4 hover:border-cyber-sky/40 transition-all shadow-sm">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-cyber-amber">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-white flex items-center">
+                      SOAR Celery Worker 调度引擎
+                      <span class="ml-2 w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+                    </h4>
+                    <p class="text-[11px] font-mono text-slate-400 mt-0.5">celery-soar-pool (gevent)</p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">8 工作协程</span>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-3 gap-2 text-[10px] font-mono">
+                <div>
+                  <span class="text-slate-500 block">活跃协程</span>
+                  <span class="text-slate-200 font-semibold">8 / 8 READY</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">平均执行耗时</span>
+                  <span class="text-slate-200 font-semibold">1.8 秒</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">失败重试</span>
+                  <span class="text-cyber-emerald font-semibold">0 次</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Telemetry History & System Self-Healing Log -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <!-- Left 2 Cols: Real-time latency chart visualizer -->
+          <div class="lg:col-span-2 bg-obsidian-800/70 border border-slate-800 rounded-xl p-4.5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="text-xs font-bold text-slate-200">探针响应延迟与吞吐波动 (最近 60 分钟)</h4>
+                <p class="text-[10px] font-mono text-slate-500">采样精度: 30s | 阈值警戒线: 100ms</p>
+              </div>
+              <div class="flex items-center space-x-3 text-[10px] font-mono">
+                <span class="flex items-center text-cyber-sky">
+                  <span class="w-2.5 h-1 rounded bg-cyber-sky mr-1.5"></span> FastAPI (24ms)
+                </span>
+                <span class="flex items-center text-cyber-emerald">
+                  <span class="w-2.5 h-1 rounded bg-cyber-emerald mr-1.5"></span> Next.js (12ms)
+                </span>
+                <span class="flex items-center text-indigo-400">
+                  <span class="w-2.5 h-1 rounded bg-indigo-400 mr-1.5"></span> pgvector (8.2ms)
+                </span>
+              </div>
+            </div>
+
+            <!-- SVG Latency Curve -->
+            <div class="h-36 w-full relative">
+              <svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 600 120">
+                <defs>
+                  <linearGradient id="grad-sky" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#38BDF8" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <!-- Grid lines -->
+                <line x1="0" y1="30" x2="600" y2="30" stroke="#1E293B" stroke-dasharray="3,3" stroke-width="1"/>
+                <line x1="0" y1="60" x2="600" y2="60" stroke="#1E293B" stroke-dasharray="3,3" stroke-width="1"/>
+                <line x1="0" y1="90" x2="600" y2="90" stroke="#1E293B" stroke-dasharray="3,3" stroke-width="1"/>
+
+                <!-- Area fill -->
+                <path d="M0,85 Q60,78 120,82 T240,75 T360,78 T480,72 T600,75 L600,120 L0,120 Z" fill="url(#grad-sky)"/>
+                
+                <!-- FastAPI line -->
+                <path d="M0,85 Q60,78 120,82 T240,75 T360,78 T480,72 T600,75" fill="none" stroke="#38BDF8" stroke-width="2"/>
+                <!-- Next.js line -->
+                <path d="M0,102 Q60,98 120,100 T240,95 T360,97 T480,94 T600,96" fill="none" stroke="#10B981" stroke-width="1.8"/>
+                <!-- PG Vector line -->
+                <path d="M0,110 Q60,108 120,109 T240,106 T360,107 T480,105 T600,107" fill="none" stroke="#818CF8" stroke-width="1.5"/>
+
+                <!-- Pulse marker at end -->
+                <circle cx="600" cy="75" r="3.5" fill="#38BDF8"/>
+                <circle cx="600" cy="75" r="7" fill="#38BDF8" opacity="0.3"/>
+              </svg>
+            </div>
+            <div class="flex justify-between text-[10px] font-mono text-slate-500 mt-2">
+              <span>-60 min</span>
+              <span>-45 min</span>
+              <span>-30 min</span>
+              <span>-15 min</span>
+              <span>实时 (NOW)</span>
+            </div>
+          </div>
+
+          <!-- Right Col: Self-Healing & Diagnostic Stream -->
+          <div class="bg-obsidian-800/70 border border-slate-800 rounded-xl p-4.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-bold text-slate-200">系统自愈与探测日志</h4>
+                <span class="w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+              </div>
+              <div class="space-y-3 text-[11px] font-mono">
+                <div class="flex items-start space-x-2 pb-2.5 border-b border-slate-800/60">
+                  <span class="text-slate-500 text-[10px] mt-0.5">14:24:18</span>
+                  <div>
+                    <span class="text-cyber-emerald font-semibold">[PROBE_OK]</span>
+                    <span class="text-slate-300 ml-1">Wazuh-048 节点心跳正常同步</span>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-2 pb-2.5 border-b border-slate-800/60">
+                  <span class="text-slate-500 text-[10px] mt-0.5">12:10:04</span>
+                  <div>
+                    <span class="text-cyber-sky font-semibold">[AUTO_HEAL]</span>
+                    <span class="text-slate-300 ml-1">Redis 连接池空闲连接自适应回收完成</span>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-2 pb-2.5 border-b border-slate-800/60">
+                  <span class="text-slate-500 text-[10px] mt-0.5">08:00:00</span>
+                  <div>
+                    <span class="text-purple-400 font-semibold">[CRON_JOB]</span>
+                    <span class="text-slate-300 ml-1">pgvector 每日索引分区 VACUUM 执行完毕</span>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-2">
+                  <span class="text-slate-500 text-[10px] mt-0.5">昨日 23:40</span>
+                  <div>
+                    <span class="text-amber-400 font-semibold">[RETRY_OK]</span>
+                    <span class="text-slate-300 ml-1">Celery Worker-04 瞬时内存抖动自动恢复</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80 mt-3 flex items-center justify-between text-[11px]">
+              <span class="text-slate-400">已启用探针故障自愈机制</span>
+              <span class="text-cyber-emerald font-mono font-medium">AUTO-RESTART: ON</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ========================================================================= -->
+      <!-- TAB B: 系统安全审计日志表格 (Audit Trail) -->
+      <!-- ========================================================================= -->
+      <section id="tab-audit" class="space-y-5 hidden">
+        
+        <!-- Header & Compliance Tag -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+          <div>
+            <div class="flex items-center space-x-2 text-xs font-mono text-cyber-sky mb-1">
+              <span>SECURITY COMPLIANCE & GOVERNANCE</span>
+              <span>/</span>
+              <span>IMMUTABLE AUDIT TRAIL</span>
+            </div>
+            <h2 class="text-xl font-bold text-white tracking-tight flex items-center space-x-3">
+              <span>系统安全审计日志</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                WORM 防篡改已启用
+              </span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">完整记录所有控制台管理员操作、自动化阻断下发、大模型参数调优与密钥轮转流向，符合等保 2.0 三级标准。</p>
+          </div>
+
+          <div class="flex items-center space-x-3 text-xs">
+            <button onclick="showToast('正在导出过去 24 小时加密审计日志 (CEF/JSON 格式)...', 'info')" class="h-9 px-3.5 rounded-lg bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 hover:text-white border border-slate-800 font-medium flex items-center space-x-2 transition-all">
+              <svg class="w-3.5 h-3.5 text-cyber-sky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>导出审计日志</span>
+            </button>
+            <div class="text-[11px] font-mono text-slate-400 bg-obsidian-850 px-3 py-2 rounded-lg border border-slate-800">
+              今日产生审计: <span class="text-cyber-sky font-semibold">1,482</span> 条
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Toolbar (操作人员、操作动作、时间范围、IP 地址) -->
+        <div class="bg-obsidian-850 border border-slate-800/90 rounded-xl p-4 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <!-- Operator Filter -->
+            <div>
+              <label class="block text-[11px] font-mono text-slate-400 mb-1">操作人员 (Operator)</label>
+              <select id="filter-user" onchange="filterAuditTable()" class="w-full h-8 px-2.5 rounded-md bg-obsidian-800 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-cyber-sky">
+                <option value="ALL">全部操作人员 (All Users)</option>
+                <option value="secops_admin">secops_admin (当前主管)</option>
+                <option value="ai_sentinel_daemon">ai_sentinel_daemon (自动化代理)</option>
+                <option value="analyst_chen">analyst_chen (L2 研判员)</option>
+                <option value="soar_engine">soar_engine (SOAR 调度器)</option>
+              </select>
+            </div>
+
+            <!-- Action Type Filter -->
+            <div>
+              <label class="block text-[11px] font-mono text-slate-400 mb-1">操作动作 (Action Type)</label>
+              <select id="filter-action" onchange="filterAuditTable()" class="w-full h-8 px-2.5 rounded-md bg-obsidian-800 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-cyber-sky">
+                <option value="ALL">全部动作类型 (All Actions)</option>
+                <option value="LOGIN">用户身份认证 [LOGIN]</option>
+                <option value="ISOLATE">主机隔离阻断 [ISOLATE]</option>
+                <option value="RULE_DEPLOY">防火墙规则下发 [RULE_DEPLOY]</option>
+                <option value="MODEL_UPDATE">模型配置变更 [MODEL_UPDATE]</option>
+                <option value="KEY_ROTATION">API Key 轮转 [KEY_ROTATION]</option>
+              </select>
+            </div>
+
+            <!-- IP / Keyword Search -->
+            <div>
+              <label class="block text-[11px] font-mono text-slate-400 mb-1">客户端 IP / 对象过滤</label>
+              <input type="text" id="filter-keyword" onkeyup="filterAuditTable()" placeholder="如 10.120. 或 SRV-FIN-01..." class="w-full h-8 px-2.5 rounded-md bg-obsidian-800 border border-slate-700 text-slate-200 text-xs placeholder-slate-500 focus:outline-none focus:border-cyber-sky">
+            </div>
+
+            <!-- Time Range Filter -->
+            <div>
+              <label class="block text-[11px] font-mono text-slate-400 mb-1">时间范围 (Timeframe)</label>
+              <select class="w-full h-8 px-2.5 rounded-md bg-obsidian-800 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-cyber-sky">
+                <option>今天 (Today: 00:00 - 23:59)</option>
+                <option>最近 1 小时 (Last 1 hour)</option>
+                <option>最近 7 天 (Last 7 days)</option>
+                <option>自定义时间范围...</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Table (High Density Enterprise Grade) -->
+        <div class="bg-obsidian-850 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 bg-obsidian-950/70 text-[11px] font-mono text-slate-400">
+                  <th class="py-3 px-4 font-medium">事件时间戳 (UTC+8)</th>
+                  <th class="py-3 px-4 font-medium">操作用户</th>
+                  <th class="py-3 px-4 font-medium">客户端 IP</th>
+                  <th class="py-3 px-4 font-medium">操作对象 (Target)</th>
+                  <th class="py-3 px-4 font-medium">动作类型</th>
+                  <th class="py-3 px-4 font-medium">执行结果</th>
+                  <th class="py-3 px-4 font-medium text-right">原始变更详情</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body" class="divide-y divide-slate-800/60 font-mono text-[11px]">
+                
+                <!-- Row 1: Host Isolate -->
+                <tr class="hover:bg-obsidian-800/80 transition-colors">
+                  <td class="py-3 px-4 text-slate-300">
+                    <span class="text-slate-100 font-medium">2026-09-30 14:18:22</span>
+                    <span class="text-[10px] text-slate-500 block">7 分钟前</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <div class="flex items-center space-x-1.5">
+                      <span class="w-2 h-2 rounded-full bg-cyber-blue"></span>
+                      <span class="text-slate-200 font-semibold">secops_admin</span>
+                      <span class="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-400">L3</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 text-slate-400">
+                    <span>10.120.4.88</span>
+                    <span class="text-[10px] text-slate-500 block">VPN-Corp (Mac)</span>
+                  </td>
+                  <td class="py-3 px-4 text-slate-200 font-medium">
+                    <span class="text-cyber-sky">Host: SRV-FIN-PAYROLL-01</span>
+                    <span class="text-[10px] text-slate-500 block">MAC: 00:50:56:b3:12:4a</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 text-[10px] font-semibold">
+                      [ISOLATE] 主机下发隔离
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center text-cyber-emerald font-semibold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-cyber-emerald mr-1.5"></span>
+                      执行成功
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="openJsonDrawer('AUD-94021')" class="px-2.5 py-1 rounded bg-obsidian-800 hover:bg-slate-700 text-cyber-sky hover:text-white border border-slate-700 text-[10px] transition-all">
+                      查看 JSON 抽屉
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 2: Model Setting Update -->
+                <tr class="hover:bg-obsidian-800/80 transition-colors">
+                  <td class="py-3 px-4 text-slate-300">
+                    <span class="text-slate-100 font-medium">2026-09-30 13:42:09</span>
+                    <span class="text-[10px] text-slate-500 block">43 分钟前</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <div class="flex items-center space-x-1.5">
+                      <span class="w-2 h-2 rounded-full bg-cyber-blue"></span>
+                      <span class="text-slate-200 font-semibold">secops_admin</span>
+                      <span class="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-400">L3</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 text-slate-400">
+                    <span>10.120.4.88</span>
+                    <span class="text-[10px] text-slate-500 block">VPN-Corp (Mac)</span>
+                  </td>
+                  <td class="py-3 px-4 text-slate-200 font-medium">
+                    <span class="text-indigo-400">LLM: Claude-3.7-Sonnet</span>
+                    <span class="text-[10px] text-slate-500 block">Temperature: 0.1 -> 0.0</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 text-[10px] font-semibold">
+                      [MODEL_UPDATE] 模型参数微调
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center text-cyber-emerald font-semibold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-cyber-emerald mr-1.5"></span>
+                      执行成功
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="openJsonDrawer('AUD-94019')" class="px-2.5 py-1 rounded bg-obsidian-800 hover:bg-slate-700 text-cyber-sky hover:text-white border border-slate-700 text-[10px] transition-all">
+                      查看 JSON 抽屉
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 3: Rule Deployment (AI Automated) -->
+                <tr class="hover:bg-obsidian-800/80 transition-colors">
+                  <td class="py-3 px-4 text-slate-300">
+                    <span class="text-slate-100 font-medium">2026-09-30 11:20:15</span>
+                    <span class="text-[10px] text-slate-500 block">3 小时前</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <div class="flex items-center space-x-1.5">
+                      <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                      <span class="text-purple-300 font-semibold">ai_sentinel_daemon</span>
+                      <span class="text-[9px] px-1 py-0.2 rounded bg-purple-900/40 text-purple-300">BOT</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 text-slate-400">
+                    <span>127.0.0.1</span>
+                    <span class="text-[10px] text-slate-500 block">Internal Daemon</span>
+                  </td>
+                  <td class="py-3 px-4 text-slate-200 font-medium">
+                    <span class="text-cyber-sky">WAF: Rule#C2-Block-9042</span>
+                    <span class="text-[10px] text-slate-500 block">IP: 198.51.100.44/32</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] font-semibold">
+                      [RULE_DEPLOY] 封禁恶意 C2 IP
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center text-cyber-emerald font-semibold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-cyber-emerald mr-1.5"></span>
+                      执行成功
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="openJsonDrawer('AUD-94002')" class="px-2.5 py-1 rounded bg-obsidian-800 hover:bg-slate-700 text-cyber-sky hover:text-white border border-slate-700 text-[10px] transition-all">
+                      查看 JSON 抽屉
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 4: Blocked Suspicious Login -->
+                <tr class="hover:bg-obsidian-800/80 transition-colors bg-rose-500/5">
+                  <td class="py-3 px-4 text-slate-300">
+                    <span class="text-slate-100 font-medium">2026-09-30 09:14:02</span>
+                    <span class="text-[10px] text-slate-500 block">5 小时前</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <div class="flex items-center space-x-1.5">
+                      <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                      <span class="text-slate-300 font-semibold">analyst_chen</span>
+                      <span class="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-400">L2</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 text-rose-400">
+                    <span>203.0.113.89</span>
+                    <span class="text-[10px] text-rose-400/80 block">未知海外代理节点</span>
+                  </td>
+                  <td class="py-3 px-4 text-slate-200 font-medium">
+                    <span class="text-slate-300">Sentinel SSO Auth Portal</span>
+                    <span class="text-[10px] text-slate-500 block">MFA 凭据失配三次</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 text-[10px] font-semibold">
+                      [LOGIN] 身份认证登录
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center text-rose-400 font-semibold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>
+                      安全拦截 (BLOCKED)
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="openJsonDrawer('AUD-93988')" class="px-2.5 py-1 rounded bg-obsidian-800 hover:bg-slate-700 text-cyber-sky hover:text-white border border-slate-700 text-[10px] transition-all">
+                      查看 JSON 抽屉
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 5: API Key Rotation -->
+                <tr class="hover:bg-obsidian-800/80 transition-colors">
+                  <td class="py-3 px-4 text-slate-300">
+                    <span class="text-slate-100 font-medium">2026-09-29 18:00:21</span>
+                    <span class="text-[10px] text-slate-500 block">昨天</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <div class="flex items-center space-x-1.5">
+                      <span class="w-2 h-2 rounded-full bg-cyber-blue"></span>
+                      <span class="text-slate-200 font-semibold">secops_admin</span>
+                      <span class="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-400">L3</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 text-slate-400">
+                    <span>10.120.4.88</span>
+                    <span class="text-[10px] text-slate-500 block">VPN-Corp (Mac)</span>
+                  </td>
+                  <td class="py-3 px-4 text-slate-200 font-medium">
+                    <span class="text-cyber-sky">API Key: OpenAI GPT-4o</span>
+                    <span class="text-[10px] text-slate-500 block">sk-proj-78aK... (轮转更新)</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-semibold">
+                      [KEY_ROTATION] 密钥轮转更新
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center text-cyber-emerald font-semibold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-cyber-emerald mr-1.5"></span>
+                      执行成功
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="openJsonDrawer('AUD-93910')" class="px-2.5 py-1 rounded bg-obsidian-800 hover:bg-slate-700 text-cyber-sky hover:text-white border border-slate-700 text-[10px] transition-all">
+                      查看 JSON 抽屉
+                    </button>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Pagination Footer -->
+          <div class="py-3 px-4 bg-obsidian-950/70 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
+            <span>显示 1 - 5 / 共 14,280 条审计条目</span>
+            <div class="flex items-center space-x-1">
+              <button class="px-2 py-1 rounded bg-obsidian-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40" disabled>&lt; 上一页</button>
+              <button class="px-2.5 py-1 rounded bg-cyber-blue text-white font-semibold">1</button>
+              <button class="px-2.5 py-1 rounded bg-obsidian-800 hover:bg-slate-700 text-slate-300">2</button>
+              <button class="px-2.5 py-1 rounded bg-obsidian-800 hover:bg-slate-700 text-slate-300">3</button>
+              <button class="px-2 py-1 rounded bg-obsidian-800 hover:bg-slate-700 text-slate-300">下一页 &gt;</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ========================================================================= -->
+      <!-- TAB C: AI 安全大模型与 API 配置 (AI Models & LLM Keys) -->
+      <!-- ========================================================================= -->
+      <section id="tab-aimodels" class="space-y-6 hidden">
+        
+        <!-- Header & Guardrail Info -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+          <div>
+            <div class="flex items-center space-x-2 text-xs font-mono text-cyber-sky mb-1">
+              <span>FOUNDATION LLM ORCHESTRATION</span>
+              <span>/</span>
+              <span>SECURE INFERENCE GATEWAY</span>
+            </div>
+            <h2 class="text-xl font-bold text-white tracking-tight flex items-center space-x-3">
+              <span>AI 安全大模型与 API 配置</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-cyber-sky/15 text-cyber-sky border border-cyber-sky/30">
+                双擎备份 + 离线沙箱
+              </span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">纳管 Sentinel 智能研判引擎调用的前沿商用模型与内网私有化模型。所有 Prompts 默认启用 PII 敏感脱敏前置网关。</p>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2 bg-obsidian-850 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
+              <span class="text-slate-400 font-mono">数据防泄露 (DLP):</span>
+              <span class="text-cyber-emerald font-semibold flex items-center font-mono">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyber-emerald mr-1"></span>
+                ACTIVE (正则掩码)
+              </span>
+            </div>
+            <button onclick="showToast('正在轮询测试所有 3 款模型端点健康度...', 'info'); setTimeout(()=>showToast('全模型连通探活正常，无故障！', 'success'), 1200)" class="h-9 px-3.5 rounded-lg bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 hover:text-white border border-slate-800 text-xs font-medium flex items-center space-x-2 transition-all">
+              <svg class="w-3.5 h-3.5 text-cyber-sky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              <span>一键探活所有模型</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3 Major Model Cards Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          
+          <!-- MODEL CARD 1: Claude 3.7 Sonnet (Primary Active) -->
+          <div class="bg-obsidian-800/90 border-2 border-cyber-sky/50 rounded-xl p-5 shadow-glow-sky relative overflow-hidden flex flex-col justify-between">
+            <div class="absolute top-0 right-0">
+              <div class="bg-gradient-to-l from-cyber-sky to-cyber-blue text-white text-[10px] font-mono font-bold px-3 py-1 rounded-bl-lg">
+                ★ 默认主研判模型
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center space-x-3 mb-3">
+                <div class="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 font-bold text-lg">
+                  C
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-white flex items-center">
+                    Claude 3.7 Sonnet
+                    <span class="ml-2 w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+                  </h3>
+                  <span class="text-[11px] font-mono text-slate-400">Anthropic Enterprise Tier</span>
+                </div>
+              </div>
+
+              <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                核心威胁链路推演引擎，擅长复杂多步攻击取证分析、SOAR 剧本代码合成与高精度误报剔除。
+              </p>
+
+              <!-- Technical Specs -->
+              <div class="space-y-2.5 text-xs font-mono bg-obsidian-850 p-3 rounded-lg border border-slate-800">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">研判状态</span>
+                  <span class="text-cyber-emerald font-semibold">已启用 (PRIMARY)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">平均响应延迟</span>
+                  <span class="text-slate-200 font-semibold">1.2 秒</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">上下文窗口</span>
+                  <span class="text-slate-200">200K Tokens</span>
+                </div>
+                <div class="flex justify-between items-center pt-1.5 border-t border-slate-800">
+                  <span class="text-slate-400">API Key</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-slate-300 text-[11px]">sk-ant-api03-9f...d7A2</span>
+                    <button onclick="showToast('已复制脱敏 API Key 到剪贴板', 'info')" class="text-slate-400 hover:text-white p-0.5">
+                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+              <span class="text-[10px] font-mono text-slate-400">专线网关代理加速中</span>
+              <div class="flex items-center space-x-2">
+                <button onclick="testModelLatency('Claude 3.7 Sonnet', 1180)" class="px-3 py-1.5 rounded-lg bg-cyber-blue/20 hover:bg-cyber-blue/30 text-cyber-sky border border-cyber-sky/40 text-xs font-medium transition-all">
+                  连通性测试
+                </button>
+                <button onclick="showToast('已进入 Claude 3.7 超参数调优面板', 'info')" class="px-2.5 py-1.5 rounded-lg bg-obsidian-750 hover:bg-slate-700 text-slate-300 text-xs transition-all">
+                  配置
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODEL CARD 2: GPT-4o (Backup Failover) -->
+          <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-all flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-lg">
+                    G
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-white flex items-center">
+                      GPT-4o
+                      <span class="ml-2 w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+                    </h3>
+                    <span class="text-[11px] font-mono text-slate-400">OpenAI Enterprise API</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">高可用备用</span>
+              </div>
+
+              <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                多模态高并发快速响应基座，主攻全球威胁情报翻译、IoC 快速初筛及富文本安全通报生成。
+              </p>
+
+              <!-- Technical Specs -->
+              <div class="space-y-2.5 text-xs font-mono bg-obsidian-850 p-3 rounded-lg border border-slate-800">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">研判状态</span>
+                  <span class="text-cyber-sky font-semibold">待命活跃 (ACTIVE STANDBY)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">平均响应延迟</span>
+                  <span class="text-slate-200 font-semibold">0.9 秒</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">上下文窗口</span>
+                  <span class="text-slate-200">128K Tokens</span>
+                </div>
+                <div class="flex justify-between items-center pt-1.5 border-t border-slate-800">
+                  <span class="text-slate-400">API Key</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-slate-300 text-[11px]">sk-proj-78aK...92B1</span>
+                    <button onclick="showToast('已复制脱敏 API Key 到剪贴板', 'info')" class="text-slate-400 hover:text-white p-0.5">
+                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+              <button onclick="showToast('已将 GPT-4o 切换为当前主力研判基座！', 'success')" class="text-[11px] text-cyber-sky hover:underline font-mono">
+                设为主力
+              </button>
+              <div class="flex items-center space-x-2">
+                <button onclick="testModelLatency('GPT-4o', 890)" class="px-3 py-1.5 rounded-lg bg-obsidian-750 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-all">
+                  连通性测试
+                </button>
+                <button onclick="showToast('已进入 GPT-4o 配置面板', 'info')" class="px-2.5 py-1.5 rounded-lg bg-obsidian-750 hover:bg-slate-700 text-slate-300 text-xs transition-all">
+                  配置
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODEL CARD 3: Local SecLLM (Air-Gapped Private) -->
+          <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-all flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold text-lg">
+                    S
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-white flex items-center">
+                      Local SecLLM 本地模型
+                      <span class="ml-2 w-2 h-2 rounded-full bg-cyber-emerald animate-pulse-dot"></span>
+                    </h3>
+                    <span class="text-[11px] font-mono text-slate-400">离线保密专有集群</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800">100% 离线沙箱</span>
+              </div>
+
+              <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                基于安全专有数据精调，部署于内网 GPU 算力集群，专用于核心涉密取证、内网凭据转储与敏感合规分析。
+              </p>
+
+              <!-- Technical Specs -->
+              <div class="space-y-2.5 text-xs font-mono bg-obsidian-850 p-3 rounded-lg border border-slate-800">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">部署节点</span>
+                  <span class="text-purple-300 font-semibold">10.120.10.88:8000</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">底层架构</span>
+                  <span class="text-slate-200">vLLM / 4× A100 80GB</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">平均推理耗时</span>
+                  <span class="text-cyber-emerald font-semibold">0.45 秒 (内网直连)</span>
+                </div>
+                <div class="flex justify-between items-center pt-1.5 border-t border-slate-800">
+                  <span class="text-slate-400">模型标识</span>
+                  <span class="text-slate-300 text-[11px]">SecLLM-Qwen2.5-72B</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+              <button onclick="showToast('已将 Local SecLLM 设为内网涉密主力研判模型！', 'success')" class="text-[11px] text-purple-400 hover:underline font-mono">
+                设为涉密主力
+              </button>
+              <div class="flex items-center space-x-2">
+                <button onclick="testModelLatency('Local SecLLM', 440)" class="px-3 py-1.5 rounded-lg bg-obsidian-750 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-all">
+                  连通性测试
+                </button>
+                <button onclick="showToast('已进入本地 GPU 算力监控视图', 'info')" class="px-2.5 py-1.5 rounded-lg bg-obsidian-750 hover:bg-slate-700 text-slate-300 text-xs transition-all">
+                  显存
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Token Usage & Billing Telemetry Dashboard -->
+        <div class="bg-obsidian-850 border border-slate-800 rounded-xl p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <div>
+              <h3 class="text-sm font-bold text-white tracking-wide">AI 研判模型 Token 用量与推理成本统计</h3>
+              <p class="text-xs text-slate-400 mt-0.5">近 7 天 Prompts 输入与 Completion 响应分布 (每日累计: 4.8M Tokens)</p>
+            </div>
+            <div class="flex items-center space-x-4 text-xs font-mono">
+              <span class="flex items-center text-cyber-sky">
+                <span class="w-3 h-3 rounded-sm bg-cyber-sky mr-1.5"></span> Claude 3.7 (68%)
+              </span>
+              <span class="flex items-center text-emerald-400">
+                <span class="w-3 h-3 rounded-sm bg-emerald-400 mr-1.5"></span> GPT-4o (22%)
+              </span>
+              <span class="flex items-center text-purple-400">
+                <span class="w-3 h-3 rounded-sm bg-purple-400 mr-1.5"></span> Local SecLLM (10%)
+              </span>
+            </div>
+          </div>
+
+          <!-- Bar Chart Visualizer -->
+          <div class="grid grid-cols-7 gap-3 h-36 items-end pt-4 border-b border-slate-800 pb-2">
+            <!-- Day 1 -->
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <div class="w-full flex flex-col gap-0.5 items-center">
+                <div class="w-8 bg-cyber-sky rounded-t-sm" style="height: 52px" title="Claude: 2.1M"></div>
+                <div class="w-8 bg-emerald-400" style="height: 18px" title="GPT-4o: 0.7M"></div>
+                <div class="w-8 bg-purple-400 rounded-b-sm" style="height: 10px" title="Local: 0.4M"></div>
+              </div>
+              <span class="text-[10px] font-mono text-slate-500">09-24</span>
+            </div>
+
+            <!-- Day 2 -->
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <div class="w-full flex flex-col gap-0.5 items-center">
+                <div class="w-8 bg-cyber-sky rounded-t-sm" style="height: 64px"></div>
+                <div class="w-8 bg-emerald-400" style="height: 20px"></div>
+                <div class="w-8 bg-purple-400 rounded-b-sm" style="height: 12px"></div>
+              </div>
+              <span class="text-[10px] font-mono text-slate-500">09-25</span>
+            </div>
+
+            <!-- Day 3 -->
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <div class="w-full flex flex-col gap-0.5 items-center">
+                <div class="w-8 bg-cyber-sky rounded-t-sm" style="height: 48px"></div>
+                <div class="w-8 bg-emerald-400" style="height: 16px"></div>
+                <div class="w-8 bg-purple-400 rounded-b-sm" style="height: 8px"></div>
+              </div>
+              <span class="text-[10px] font-mono text-slate-500">09-26</span>
+            </div>
+
+            <!-- Day 4 -->
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <div class="w-full flex flex-col gap-0.5 items-center">
+                <div class="w-8 bg-cyber-sky rounded-t-sm" style="height: 72px"></div>
+                <div class="w-8 bg-emerald-400" style="height: 24px"></div>
+                <div class="w-8 bg-purple-400 rounded-b-sm" style="height: 14px"></div>
+              </div>
+              <span class="text-[10px] font-mono text-slate-500">09-27</span>
+            </div>
+
+            <!-- Day 5 -->
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <div class="w-full flex flex-col gap-0.5 items-center">
+                <div class="w-8 bg-cyber-sky rounded-t-sm" style="height: 58px"></div>
+                <div class="w-8 bg-emerald-400" style="height: 19px"></div>
+                <div class="w-8 bg-purple-400 rounded-b-sm" style="height: 11px"></div>
+              </div>
+              <span class="text-[10px] font-mono text-slate-500">09-28</span>
+            </div>
+
+            <!-- Day 6 -->
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <div class="w-full flex flex-col gap-0.5 items-center">
+                <div class="w-8 bg-cyber-sky rounded-t-sm" style="height: 80px"></div>
+                <div class="w-8 bg-emerald-400" style="height: 26px"></div>
+                <div class="w-8 bg-purple-400 rounded-b-sm" style="height: 16px"></div>
+              </div>
+              <span class="text-[10px] font-mono text-slate-500">09-29</span>
+            </div>
+
+            <!-- Day 7 (Today) -->
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <div class="w-full flex flex-col gap-0.5 items-center">
+                <div class="w-8 bg-cyber-sky rounded-t-sm" style="height: 60px"></div>
+                <div class="w-8 bg-emerald-400" style="height: 21px"></div>
+                <div class="w-8 bg-purple-400 rounded-b-sm" style="height: 12px"></div>
+              </div>
+              <span class="text-[10px] font-mono text-cyber-sky font-bold">今日</span>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+            <div class="p-3 bg-obsidian-800 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block text-[11px]">本月研判调用总数</span>
+              <span class="text-lg font-bold text-white">41,200 <span class="text-xs text-slate-400 font-normal">次会话</span></span>
+            </div>
+            <div class="p-3 bg-obsidian-800 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block text-[11px]">敏感实体过滤掩码</span>
+              <span class="text-lg font-bold text-cyber-emerald">100% <span class="text-xs text-slate-400 font-normal">(42 次拦截脱敏)</span></span>
+            </div>
+            <div class="p-3 bg-obsidian-800 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block text-[11px]">平均研判首字延迟</span>
+              <span class="text-lg font-bold text-cyber-sky">620 <span class="text-xs text-slate-400 font-normal">毫秒</span></span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ========================================================================= -->
+      <!-- TAB D: 租户与 RBAC 权限管理 (Users & Roles) -->
+      <!-- ========================================================================= -->
+      <section id="tab-rbac" class="space-y-6 hidden">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">租户与 RBAC 权限管理 (Users & Roles)</h2>
+            <p class="text-xs text-slate-400 mt-1">管理安全运营人员分级授权，支持 L1 初筛、L2 深度溯源、L3 主管处置审批及超级审计员四级权限分立。</p>
+          </div>
+          <button onclick="showToast('已呼出新用户邀请与权限配置弹窗', 'info')" class="h-9 px-4 rounded-lg bg-cyber-blue hover:bg-blue-600 text-white text-xs font-semibold flex items-center space-x-2 transition-all">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>添加安全人员</span>
+          </button>
+        </div>
+
+        <div class="bg-obsidian-850 border border-slate-800 rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs font-mono">
+            <thead>
+              <tr class="bg-obsidian-950/70 border-b border-slate-800 text-[11px] text-slate-400">
+                <th class="py-3 px-4">用户名称 / 工号</th>
+                <th class="py-3 px-4">角色与安全等级</th>
+                <th class="py-3 px-4">所属租户</th>
+                <th class="py-3 px-4">2FA 强认证</th>
+                <th class="py-3 px-4">最近登录时间</th>
+                <th class="py-3 px-4 text-right">管理操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-[11px]">
+              <tr class="hover:bg-obsidian-800/80">
+                <td class="py-3 px-4">
+                  <span class="text-white font-semibold">secops_admin</span>
+                  <span class="text-slate-500 block text-[10px]">admin@sentinel.internal</span>
+                </td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-cyber-blue/15 text-cyber-sky border border-cyber-sky/30">L3 安全运营主管</span></td>
+                <td class="py-3 px-4 text-slate-300">Default Enterprise SOC</td>
+                <td class="py-3 px-4 text-cyber-emerald font-semibold">● TOTP 已启用</td>
+                <td class="py-3 px-4 text-slate-400">在线 (当前会话)</td>
+                <td class="py-3 px-4 text-right"><span class="text-slate-500">主管理员</span></td>
+              </tr>
+              <tr class="hover:bg-obsidian-800/80">
+                <td class="py-3 px-4">
+                  <span class="text-white font-semibold">analyst_chen</span>
+                  <span class="text-slate-500 block text-[10px]">chen.qiang@sentinel.internal</span>
+                </td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">L2 应急响应专家</span></td>
+                <td class="py-3 px-4 text-slate-300">Finance Sec Zone</td>
+                <td class="py-3 px-4 text-cyber-emerald font-semibold">● FIDO2 硬件密钥</td>
+                <td class="py-3 px-4 text-slate-400">2026-09-30 09:14</td>
+                <td class="py-3 px-4 text-right">
+                  <button onclick="showToast('已触发重置该专员权限凭据', 'info')" class="text-cyber-sky hover:underline">编辑</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+      <!-- ========================================================================= -->
+      <!-- TAB E: 告警与通知集成 (Notification Channels) -->
+      <!-- ========================================================================= -->
+      <section id="tab-notify" class="space-y-6 hidden">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">告警与通知渠道集成 (Notification Channels)</h2>
+            <p class="text-xs text-slate-400 mt-1">配置 P0/P1 严重威胁触发时的外部协同通知机器人与 Webhook 实时回调接口。</p>
+          </div>
+          <button onclick="showToast('已打开新增通知通道配置窗口', 'info')" class="h-9 px-4 rounded-lg bg-cyber-blue hover:bg-blue-600 text-white text-xs font-semibold flex items-center space-x-2 transition-all">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>添加 Webhook 通道</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Channel 1: 飞书 (Feishu) -->
+          <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-4.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-base font-bold text-white flex items-center">
+                  <span class="mr-2">🐦</span> 飞书安全应急群
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400">已就绪</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-3">支持富文本卡片告警与群内一键阻断审批回调。</p>
+              <div class="text-[11px] font-mono text-slate-400 bg-obsidian-850 p-2.5 rounded border border-slate-800 break-all">
+                https://open.feishu.cn/open-apis/bot/v2/hook/89f...
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+              <span class="text-[10px] text-slate-500 font-mono">P0/P1 即时推送</span>
+              <button onclick="showToast('已向飞书应急群发送测试告警卡片，HTTP 200 OK！', 'success')" class="text-xs text-cyber-sky hover:underline font-mono">
+                发送测试卡片
+              </button>
+            </div>
+          </div>
+
+          <!-- Channel 2: 钉钉 (DingTalk) -->
+          <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-4.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-base font-bold text-white flex items-center">
+                  <span class="mr-2">📌</span> 钉钉 SOC 战备群
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400">已就绪</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-3">加签验签密钥保护，支持 @负责人 紧急电话强提醒。</p>
+              <div class="text-[11px] font-mono text-slate-400 bg-obsidian-850 p-2.5 rounded border border-slate-800 break-all">
+                https://oapi.dingtalk.com/robot/send?access_token=7a...
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+              <span class="text-[10px] text-slate-500 font-mono">加签: SEC-SIGN-***</span>
+              <button onclick="showToast('已向钉钉群发送测试告警卡片，响应正常！', 'success')" class="text-xs text-cyber-sky hover:underline font-mono">
+                发送测试卡片
+              </button>
+            </div>
+          </div>
+
+          <!-- Channel 3: 企业微信 (WeCom) -->
+          <div class="bg-obsidian-800/90 border border-slate-800 rounded-xl p-4.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-base font-bold text-white flex items-center">
+                  <span class="mr-2">💬</span> 企业微信告警通道
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400">已就绪</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-3">支持 Markdown 语法告警流排版与威胁态势简报。</p>
+              <div class="text-[11px] font-mono text-slate-400 bg-obsidian-850 p-2.5 rounded border border-slate-800 break-all">
+                https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+              <span class="text-[10px] text-slate-500 font-mono">Markdown 模式</span>
+              <button onclick="showToast('已向企业微信发送测试消息，状态 200！', 'success')" class="text-xs text-cyber-sky hover:underline font-mono">
+                发送测试卡片
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: 全系统自检诊断全景拟真弹窗 (System Diagnostics Modal) -->
+  <!-- ========================================================================= -->
+  <div id="diagnostics-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-obsidian-850 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="py-4 px-6 border-b border-slate-800 bg-obsidian-950 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-lg bg-cyber-blue/20 text-cyber-sky flex items-center justify-center border border-cyber-sky/30">
+            <svg class="w-4 h-4 animate-spin" id="diag-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white tracking-wide">全系统自检与探针深度诊断任务</h3>
+            <span id="diag-subtitle" class="text-[11px] font-mono text-cyber-sky">正在执行第 1/6 步检测: FastAPI 核心网关...</span>
+          </div>
+        </div>
+        <button onclick="closeDiagnosticsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Modal Body: Progress Bar & Step Matrix -->
+      <div class="p-6 space-y-5">
+        <!-- Progress Bar -->
+        <div>
+          <div class="flex justify-between text-xs font-mono text-slate-300 mb-1.5">
+            <span>综合诊断进度</span>
+            <span id="diag-percent" class="text-cyber-sky font-bold">16%</span>
+          </div>
+          <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+            <div id="diag-progress-bar" class="bg-gradient-to-r from-cyber-blue to-cyber-sky h-2 rounded-full transition-all duration-300" style="width: 16%"></div>
+          </div>
+        </div>
+
+        <!-- 6 Step Status Checklist -->
+        <div class="space-y-2.5 font-mono text-xs" id="diag-steps-container">
+          <!-- Step 1 -->
+          <div id="step-1" class="flex items-center justify-between p-2.5 rounded-lg bg-obsidian-800 border border-slate-700/80">
+            <div class="flex items-center space-x-2.5">
+              <span id="step-icon-1" class="text-cyber-sky">⚡</span>
+              <span class="text-slate-200">1. FastAPI 后端 API Gateway (127.0.0.1:18088)</span>
+            </div>
+            <span id="step-status-1" class="text-cyber-sky text-[11px]">检测中...</span>
+          </div>
+
+          <!-- Step 2 -->
+          <div id="step-2" class="flex items-center justify-between p-2.5 rounded-lg bg-obsidian-900/60 border border-slate-800 text-slate-400">
+            <div class="flex items-center space-x-2.5">
+              <span id="step-icon-2">⏳</span>
+              <span>2. Next.js 前端应用 (127.0.0.1:13000)</span>
+            </div>
+            <span id="step-status-2" class="text-[11px]">等待队列</span>
+          </div>
+
+          <!-- Step 3 -->
+          <div id="step-3" class="flex items-center justify-between p-2.5 rounded-lg bg-obsidian-900/60 border border-slate-800 text-slate-400">
+            <div class="flex items-center space-x-2.5">
+              <span id="step-icon-3">⏳</span>
+              <span>3. PostgreSQL 向量主库连接池与分区索引</span>
+            </div>
+            <span id="step-status-3" class="text-[11px]">等待队列</span>
+          </div>
+
+          <!-- Step 4 -->
+          <div id="step-4" class="flex items-center justify-between p-2.5 rounded-lg bg-obsidian-900/60 border border-slate-800 text-slate-400">
+            <div class="flex items-center space-x-2.5">
+              <span id="step-icon-4">⏳</span>
+              <span>4. Redis 集群内存碎片率与队列堵塞检测</span>
+            </div>
+            <span id="step-status-4" class="text-[11px]">等待队列</span>
+          </div>
+
+          <!-- Step 5 -->
+          <div id="step-5" class="flex items-center justify-between p-2.5 rounded-lg bg-obsidian-900/60 border border-slate-800 text-slate-400">
+            <div class="flex items-center space-x-2.5">
+              <span id="step-icon-5">⏳</span>
+              <span>5. Wazuh EDR 探针 48/48 节点双向心跳验证</span>
+            </div>
+            <span id="step-status-5" class="text-[11px]">等待队列</span>
+          </div>
+
+          <!-- Step 6 -->
+          <div id="step-6" class="flex items-center justify-between p-2.5 rounded-lg bg-obsidian-900/60 border border-slate-800 text-slate-400">
+            <div class="flex items-center space-x-2.5">
+              <span id="step-icon-6">⏳</span>
+              <span>6. SOAR Celery Worker 剧本响应引擎并发测试</span>
+            </div>
+            <span id="step-status-6" class="text-[11px]">等待队列</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="py-3 px-6 border-t border-slate-800 bg-obsidian-950 flex items-center justify-between text-xs">
+        <span class="text-slate-500 font-mono">诊断测试模式: 生产无损无浸润探测</span>
+        <div class="flex items-center space-x-2">
+          <button id="diag-download-btn" onclick="showToast('诊断报告已打包并保存至本地: sentinel-diag-20260930.tar.gz', 'success')" class="px-3.5 py-1.5 rounded-lg bg-obsidian-800 text-slate-300 hover:text-white border border-slate-700 hidden">
+            下载完整报告
+          </button>
+          <button onclick="closeDiagnosticsModal()" class="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors">
+            关闭窗口
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- DRAWER: 原始变更 JSON 审计详情侧边滑出抽屉 (JSON Drawer) -->
+  <!-- ========================================================================= -->
+  <div id="json-drawer" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden transition-opacity flex justify-end">
+    <!-- Click backdrop to close -->
+    <div class="flex-1" onclick="closeJsonDrawer()"></div>
+
+    <!-- Drawer Panel (560px) -->
+    <div class="w-full max-w-xl bg-obsidian-950 border-l border-slate-800 h-full flex flex-col shadow-2xl transform transition-transform duration-300">
+      
+      <!-- Drawer Header -->
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <div class="flex items-center space-x-2 text-[10px] font-mono text-cyber-sky">
+            <span>AUDIT TRAIL PAYLOAD</span>
+            <span>/</span>
+            <span id="drawer-audit-id" class="text-white font-bold">AUD-94021</span>
+          </div>
+          <h3 class="text-sm font-bold text-white mt-1">原始变更与数字取证详情</h3>
+        </div>
+        <button onclick="closeJsonDrawer()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Drawer Content: Metadata & Formatted JSON -->
+      <div class="p-5 flex-1 overflow-y-auto space-y-4 font-mono text-xs">
+        
+        <!-- Forensic Signature Pill -->
+        <div class="p-3 rounded-lg bg-obsidian-850 border border-slate-800 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] text-slate-500 block">HMAC-SHA256 防篡改验签</span>
+            <span class="text-cyber-emerald text-[11px] font-semibold">● 验签有效 (VALID SIGNATURE)</span>
+          </div>
+          <span class="text-[10px] text-slate-400 bg-obsidian-800 px-2 py-1 rounded border border-slate-700">WORM Block #4812</span>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-slate-400 text-[11px]">Raw JSON Payload (Diff View)</span>
+            <button onclick="copyJsonPayload()" class="text-cyber-sky hover:underline text-[10px]">复制 JSON</button>
+          </div>
+          <!-- Syntax Highlighted JSON Code Box -->
+          <pre class="bg-obsidian-900 border border-slate-800 p-4 rounded-xl text-slate-300 text-[11px] leading-relaxed overflow-x-auto selection:bg-slate-700"><code id="json-code-content">{
+  "audit_id": "AUD-94021",
+  "timestamp": "2026-09-30T14:18:22.418Z",
+  "operator": {
+    "username": "secops_admin",
+    "role": "L3_SECOPS_LEAD",
+    "client_ip": "10.120.4.88",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Sentinel/4.8",
+    "mfa_verified": true
+  },
+  "action": {
+    "type": "HOST_ISOLATE",
+    "category": "CONTAINMENT",
+    "target_id": "SRV-FIN-PAYROLL-01",
+    "mac_address": "00:50:56:b3:12:4a",
+    "reason": "IOC_C2_BEACONING_DETECTED",
+    "mitre_technique": "T1071.001"
+  },
+  "state_diff": {
+    "before": {
+      "network_status": "ONLINE",
+      "wazuh_agent_isolation": false,
+      "ebpf_filter_active": false
+    },
+    "after": {
+      "network_status": "ISOLATED",
+      "wazuh_agent_isolation": true,
+      "ebpf_filter_active": true,
+      "allowed_traffic": [
+        "10.120.10.12:1514 (Wazuh Master)"
+      ]
+    }
+  },
+  "execution_result": {
+    "status": "SUCCESS",
+    "duration_ms": 340,
+    "agent_ack_received": true
+  }
+}</code></pre>
+        </div>
+
+        <div class="text-[11px] text-slate-500 bg-obsidian-900/60 p-3 rounded-lg border border-slate-800">
+          💡 该事件已被同步广播至 Syslog 归档及 SIEM (Splunk/QRadar)，日志哈希已固化不可更改。
+        </div>
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="p-4 border-t border-slate-800 bg-obsidian-950 flex justify-end space-x-2 text-xs">
+        <button onclick="closeJsonDrawer()" class="px-4 py-1.5 rounded-lg bg-obsidian-800 text-slate-300 hover:text-white border border-slate-700">
+          完成阅览
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ======================== TOAST NOTIFICATION CONTAINER ======================== -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+
+  <!-- ======================== JAVASCRIPT APPLICATION LOGIC ======================== -->
+  <script>
+    // --- 1. Tab Switching Controller ---
+    function switchTab(tabKey) {
+      // Hide all tabs
+      const tabs = ['health', 'audit', 'aimodels', 'rbac', 'notify'];
+      tabs.forEach(key => {
+        const section = document.getElementById('tab-' + key);
+        const navBtn = document.getElementById('nav-btn-' + key);
+        if (section) section.classList.add('hidden');
+        if (navBtn) {
+          navBtn.classList.remove('bg-cyber-blue/15', 'text-cyber-sky', 'border-cyber-sky/30', 'shadow-glow-sky/40');
+          navBtn.classList.add('text-slate-400', 'border-transparent');
+        }
+      });
+
+      // Show selected tab
+      const targetSection = document.getElementById('tab-' + tabKey);
+      const targetNavBtn = document.getElementById('nav-btn-' + tabKey);
+      if (targetSection) targetSection.classList.remove('hidden');
+      if (targetNavBtn) {
+        targetNavBtn.classList.add('bg-cyber-blue/15', 'text-cyber-sky', 'border-cyber-sky/30', 'shadow-glow-sky/40');
+        targetNavBtn.classList.remove('text-slate-400', 'border-transparent');
+      }
+    }
+
+    // --- 2. Toast Notification System ---
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let badgeColor = 'bg-cyber-sky text-black';
+      let borderGlow = 'border-cyber-sky/40 shadow-glow-sky';
+      if (type === 'success') {
+        badgeColor = 'bg-cyber-emerald text-black';
+        borderGlow = 'border-cyber-emerald/40 shadow-glow-emerald';
+      } else if (type === 'warning') {
+        badgeColor = 'bg-cyber-amber text-black';
+        borderGlow = 'border-amber-500/40';
+      }
+
+      toast.className = `pointer-events-auto transform transition-all duration-300 ease-out translate-y-2 opacity-0 flex items-center space-x-3 px-4 py-3 rounded-xl bg-obsidian-850/95 border ${borderGlow} text-xs text-slate-200 font-mono shadow-2xl backdrop-blur-md`;
+      toast.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${badgeColor}"></span>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      
+      // Animate in
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      // Auto dismiss after 3.2s
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    // --- 3. Run Health Diagnostics Simulation ---
+    let diagTimer = null;
+    function runSystemDiagnostics() {
+      const modal = document.getElementById('diagnostics-modal');
+      modal.classList.remove('hidden');
+
+      // Reset state
+      const steps = [
+        { id: 1, name: '1. FastAPI 后端 API Gateway (127.0.0.1:18088)', delay: 400 },
+        { id: 2, name: '2. Next.js 前端应用 (127.0.0.1:13000)', delay: 900 },
+        { id: 3, name: '3. PostgreSQL 向量主库连接池与分区索引', delay: 1500 },
+        { id: 4, name: '4. Redis 集群内存碎片率与队列堵塞检测', delay: 2100 },
+        { id: 5, name: '5. Wazuh EDR 探针 48/48 节点双向心跳验证', delay: 2700 },
+        { id: 6, name: '6. SOAR Celery Worker 剧本响应引擎并发测试', delay: 3300 }
+      ];
+
+      for (let i = 1; i <= 6; i++) {
+        document.getElementById(`step-status-${i}`).innerText = '等待队列';
+        document.getElementById(`step-status-${i}`).className = 'text-[11px] text-slate-500';
+        document.getElementById(`step-icon-${i}`).innerText = '⏳';
+        document.getElementById(`step-${i}`).className = 'flex items-center justify-between p-2.5 rounded-lg bg-obsidian-900/60 border border-slate-800 text-slate-400';
+      }
+
+      document.getElementById('diag-download-btn').classList.add('hidden');
+      document.getElementById('diag-spinner').classList.add('animate-spin');
+
+      // Progress animation steps
+      steps.forEach((step, idx) => {
+        setTimeout(() => {
+          // Update current step to running
+          document.getElementById(`step-${step.id}`).className = 'flex items-center justify-between p-2.5 rounded-lg bg-obsidian-800 border border-cyber-sky/40 text-slate-200';
+          document.getElementById(`step-icon-${step.id}`).innerText = '⚡';
+          document.getElementById(`step-status-${step.id}`).innerText = '检测中...';
+          document.getElementById(`step-status-${step.id}`).className = 'text-[11px] text-cyber-sky';
+          
+          document.getElementById('diag-subtitle').innerText = `正在执行第 ${step.id}/6 步检测: ${step.name.split('.')[1]}...`;
+          
+          // Complete step shortly after
+          setTimeout(() => {
+            document.getElementById(`step-icon-${step.id}`).innerText = '✅';
+            document.getElementById(`step-status-${step.id}`).innerText = '100% 正常 (PASS)';
+            document.getElementById(`step-status-${step.id}`).className = 'text-[11px] text-cyber-emerald font-semibold';
+            document.getElementById(`step-${step.id}`).className = 'flex items-center justify-between p-2.5 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-slate-200';
+
+            const pct = Math.round(((idx + 1) / 6) * 100);
+            document.getElementById('diag-percent').innerText = `${pct}%`;
+            document.getElementById('diag-progress-bar').style.width = `${pct}%`;
+
+            if (idx === 5) {
+              document.getElementById('diag-subtitle').innerText = '🎉 全系统 6 大关键服务自检通过，未发现任何安全异常或阻塞！';
+              document.getElementById('diag-subtitle').className = 'text-[11px] font-mono text-cyber-emerald font-semibold';
+              document.getElementById('diag-spinner').classList.remove('animate-spin');
+              document.getElementById('diag-download-btn').classList.remove('hidden');
+              showToast('全系统自检诊断顺利完成！健康度 99.8%', 'success');
+            }
+          }, 350);
+        }, step.delay);
+      });
+    }
+
+    function closeDiagnosticsModal() {
+      document.getElementById('diagnostics-modal').classList.add('hidden');
+    }
+
+    // --- 4. Force Probe Refresh ---
+    function refreshProbes() {
+      const icon = document.getElementById('refresh-icon');
+      icon.classList.add('animate-spin');
+      showToast('正在向 6 个核心服务节点广播实时 TCP/HTTP Ping 探活请求...', 'info');
+      setTimeout(() => {
+        icon.classList.remove('animate-spin');
+        showToast('全网探针探测数据已刷新，节点全部在线！', 'success');
+      }, 800);
+    }
+
+    // --- 5. JSON Drawer Controls ---
+    function openJsonDrawer(auditId) {
+      document.getElementById('drawer-audit-id').innerText = auditId;
+      document.getElementById('json-drawer').classList.remove('hidden');
+    }
+
+    function closeJsonDrawer() {
+      document.getElementById('json-drawer').classList.add('hidden');
+    }
+
+    function copyJsonPayload() {
+      const code = document.getElementById('json-code-content').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        showToast('已复制审计原始 JSON 变更报文', 'success');
+      });
+    }
+
+    // --- 6. Model Latency Ping Test ---
+    function testModelLatency(modelName, ms) {
+      showToast(`正在向 [${modelName}] 发送单次 Token 推理与网络探活包...`, 'info');
+      setTimeout(() => {
+        showToast(`[${modelName}] 探活成功！响应时延: ${ms}ms，HTTP 200 OK，状态极佳。`, 'success');
+      }, 750);
+    }
+
+    // --- 7. Audit Log Table Filter ---
+    function filterAuditTable() {
+      const user = document.getElementById('filter-user').value;
+      const action = document.getElementById('filter-action').value;
+      const kw = document.getElementById('filter-keyword').value.toLowerCase();
+      
+      const rows = document.querySelectorAll('#audit-table-body tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        let matchUser = (user === 'ALL') || text.includes(user.toLowerCase());
+        let matchAction = (action === 'ALL') || text.includes(action.toLowerCase());
+        let matchKw = (kw === '') || text.includes(kw);
+
+        if (matchUser && matchAction && matchKw) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    // Keyboard Shortcuts (Cmd+K)
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        showToast('全局命令控制台快捷搜索面板呼出 (Cmd + K)', 'info');
+      }
+      if (e.key === 'Escape') {
+        closeDiagnosticsModal();
+        closeJsonDrawer();
+      }
+    });
+  </script>
+
+</body>
+</html>

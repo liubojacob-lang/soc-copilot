@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_analyst_or_admin
 from models.user import UserModel
 from services.threat_hunting_service import (
     get_threat_hunting_engine,
@@ -186,7 +186,7 @@ async def create_hunt_hypothesis(
 @router.post("/execute", response_model=HuntResultResponse)
 async def execute_hunt(
     request: HuntExecutionRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
     db: AsyncSession = Depends(get_session),
 ):
     """
@@ -239,7 +239,7 @@ async def execute_hunt(
 @router.post("/ioc-hunt")
 async def hunt_iocs(
     request: IOCHuntRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
     db: AsyncSession = Depends(get_session),
 ):
     """

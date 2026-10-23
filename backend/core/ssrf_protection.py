@@ -34,11 +34,16 @@ _PRIVATE_NETWORKS: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = [
     # Other reserved
     ipaddress.IPv4Network("0.0.0.0/8"),
     ipaddress.IPv4Network("100.64.0.0/10"),  # Carrier-grade NAT
+    ipaddress.IPv4Network("192.0.0.0/24"),  # IETF Protocol Assignments
     ipaddress.IPv4Network("192.0.2.0/24"),  # TEST-NET-1
+    ipaddress.IPv4Network("192.88.99.0/24"),  # 6to4 Relay Anycast
+    ipaddress.IPv4Network("198.18.0.0/15"),  # Benchmarking
     ipaddress.IPv4Network("198.51.100.0/24"),  # TEST-NET-2
     ipaddress.IPv4Network("203.0.113.0/24"),  # TEST-NET-3
     ipaddress.IPv4Network("224.0.0.0/4"),  # Multicast
     ipaddress.IPv4Network("240.0.0.0/4"),  # Reserved
+    ipaddress.IPv6Network("::/128"),  # Unspecified address
+    ipaddress.IPv6Network("64:ff9b::/96"),  # IPv4-IPv6 Translation (NAT64)
 ]
 
 
@@ -48,6 +53,10 @@ def _is_private_ip(ip_str: str) -> bool:
         ip = ipaddress.ip_address(ip_str)
     except ValueError:
         return True  # Treat unparseable IPs as unsafe
+
+    # Normalize IPv4-mapped IPv6 address (::ffff:192.0.2.1) to IPv4
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
 
     return any(ip in network for network in _PRIVATE_NETWORKS)
 
@@ -66,6 +75,11 @@ def is_url_safe(url: str, allowed_hosts: list[str] | None = None) -> tuple[bool,
     except Exception:
         return False, "Invalid URL format"
 
+    # Enforce safe schemes only
+    scheme = (parsed.scheme or "").lower()
+    if scheme not in ("http", "https"):
+        return False, f"Unsupported URL scheme: {scheme or '(none)'}"
+
     hostname = parsed.hostname
     if not hostname:
         return False, "No hostname in URL"
@@ -74,15 +88,16 @@ def is_url_safe(url: str, allowed_hosts: list[str] | None = None) -> tuple[bool,
     if hostname.lower() in BLOCKED_METADATA_HOSTNAMES:
         return False, f"Blocked metadata hostname: {hostname}"
 
-    # If allowed_hosts is configured, enforce deny-by-default
-    if allowed_hosts:
-        if hostname.lower() not in [h.lower() for h in allowed_hosts]:
+    # If allowed_hosts is configured (not None), enforce whitelist
+    # Empty list means deny-all
+    if allowed_hosts is not None:
+        if hostname.lower() not in {h.lower() for h in allowed_hosts}:
             return False, f"Hostname '{hostname}' not in allowed list"
 
     # Resolve hostname and check all resulting IPs
     try:
         addr_infos = socket.getaddrinfo(hostname, None)
-    except socket.gaierror:
+    except (socket.gaierror, OSError, UnicodeError):
         return False, f"Cannot resolve hostname: {hostname}"
 
     for _family, _type, _proto, _canonname, sockaddr in addr_infos:

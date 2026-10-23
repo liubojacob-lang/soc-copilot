@@ -41,6 +41,14 @@ class TokenBlacklistBackend(ABC):
         pass
 
     @abstractmethod
+    async def claim(self, token: str, ttl: int, reason: str = "logged out") -> bool:
+        """Atomically claim a single-use token: blacklist it and report whether
+        this call was the first claim (True) or the token was already consumed
+        (False). Used for refresh-rotation replay detection where a plain
+        check-then-add pair leaves a concurrency window."""
+        pass
+
+    @abstractmethod
     async def contains(self, token: str) -> bool:
         """Check if token is blacklisted."""
         pass
@@ -69,6 +77,16 @@ class InMemoryBackend(TokenBlacklistBackend):
             expires_at = datetime.now(UTC) + timedelta(seconds=ttl)
             self._blacklist[token] = expires_at
             logger.info(f"Token added to in-memory blacklist: {reason}")
+            return True
+
+    async def claim(self, token: str, ttl: int, reason: str = "logged out") -> bool:
+        """Atomically blacklist-and-report-first-claim (check+add under one lock)."""
+        async with self._lock:
+            expires_at = self._blacklist.get(token)
+            if expires_at is not None and datetime.now(UTC) <= expires_at:
+                return False
+            self._blacklist[token] = datetime.now(UTC) + timedelta(seconds=ttl)
+            logger.info(f"Token claimed into in-memory blacklist: {reason}")
             return True
 
     async def contains(self, token: str) -> bool:
@@ -163,6 +181,35 @@ class RedisBackend(TokenBlacklistBackend):
             return True
         except Exception as e:
             logger.error(f"Failed to add token to Redis: {e}")
+            return False
+
+    async def claim(self, token: str, ttl: int, reason: str = "logged out") -> bool:
+        """Atomically claim via SET NX EX: exactly one caller wins; a second
+        concurrent claim sees the existing key and loses (no read-then-write
+        window). The claim IS the blacklist entry, so replay is rejected by
+        the same operation that detects it."""
+        try:
+            r = await self._get_redis()
+            if r is None:
+                return False
+
+            key = f"{self._key_prefix}{self._hash_token(token)}"
+            first = await r.set(
+                key,
+                json.dumps(
+                    {
+                        "reason": reason,
+                        "blacklisted_at": datetime.now(UTC).isoformat(),
+                    }
+                ),
+                nx=True,
+                ex=ttl,
+            )
+            if first:
+                logger.info(f"Token claimed into Redis blacklist: {reason}")
+            return bool(first)
+        except Exception as e:
+            logger.error(f"Failed to claim token in Redis: {e}")
             return False
 
     async def contains(self, token: str) -> bool:
@@ -291,6 +338,51 @@ class TokenBlacklist:
             f"Token prefix: {token[:20]}..., reason: {reason}"
         )
         return await self._fallback_backend.add(token, ttl, reason)
+
+    async def claim_single_use(
+        self,
+        token: str,
+        reason: str = "logged out",
+        ttl: int | None = None,
+    ) -> bool:
+        """Atomically claim a single-use token (refresh rotation).
+
+        Returns True only for the first caller; concurrent callers of the same
+        token get False (replay). The claim doubles as the blacklist entry.
+
+        Production semantics mirror add_to_blacklist: if the Redis backend
+        errors, fail closed rather than falling back to per-worker memory.
+        """
+        if ttl is None:
+            payload = decode_token(token)
+            if payload and "exp" in payload:
+                exp = payload["exp"]
+                now = datetime.now(UTC).timestamp()
+                ttl = max(int(exp - now), 60)
+            else:
+                ttl = 86400
+
+        if self._primary_backend:
+            claimed = await self._primary_backend.claim(token, ttl, reason)
+            if claimed:
+                return True
+            # Distinguish "already claimed" (replay) from "backend error".
+            # In production a backend error must fail closed; a clean
+            # not-first answer is a genuine replay.
+            if self._is_production:
+                reachable = await self._primary_backend.contains(token)
+                if not reachable:
+                    raise RuntimeError(
+                        "Token blacklist claim failed: Redis backend unavailable in production. "
+                        "Cannot verify single-use token state."
+                    )
+            return False
+
+        logger.warning(
+            "⚠️  Token blacklist claim on InMemoryBackend (single-worker fallback). "
+            f"Token prefix: {token[:20]}..., reason: {reason}"
+        )
+        return await self._fallback_backend.claim(token, ttl, reason)
 
     async def is_blacklisted(self, token: str) -> bool:
         """Check if token is blacklisted."""

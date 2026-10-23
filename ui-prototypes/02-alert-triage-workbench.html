@@ -1,0 +1,2141 @@
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安全告警研判与处置工作台 - SOC Alert Workbench</title>
+  <style>
+    :root {
+      --bg:      oklch(98% 0.005 250);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(22% 0.02 240);
+      --muted:   oklch(50% 0.018 240);
+      --border:  oklch(90% 0.008 240);
+      --accent:  oklch(58% 0.16 145);
+
+      --font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    'JetBrains Mono', 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+
+      /* SOC 语义状态色阶 */
+      --sev-crit-bg:   oklch(94% 0.05 25);
+      --sev-crit-fg:   oklch(52% 0.22 25);
+      --sev-crit-bd:   oklch(84% 0.10 25);
+
+      --sev-high-bg:   oklch(95% 0.05 45);
+      --sev-high-fg:   oklch(58% 0.19 45);
+      --sev-high-bd:   oklch(86% 0.10 45);
+
+      --sev-med-bg:    oklch(96% 0.05 85);
+      --sev-med-fg:    oklch(62% 0.16 80);
+      --sev-med-bd:    oklch(88% 0.09 85);
+
+      --sev-low-bg:    oklch(95% 0.03 210);
+      --sev-low-fg:    oklch(52% 0.12 210);
+      --sev-low-bd:    oklch(86% 0.06 210);
+
+      --badge-neutral-bg: oklch(94% 0.008 240);
+      --badge-neutral-fg: oklch(35% 0.015 240);
+
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    [data-theme="dark"] {
+      --bg:      oklch(18% 0.012 250);
+      --surface: oklch(22% 0.014 250);
+      --fg:      oklch(94% 0.005 250);
+      --muted:   oklch(62% 0.012 250);
+      --border:  oklch(29% 0.012 250);
+      --accent:  oklch(68% 0.18 145);
+
+      --sev-crit-bg:   oklch(26% 0.08 25);
+      --sev-crit-fg:   oklch(74% 0.20 25);
+      --sev-crit-bd:   oklch(38% 0.12 25);
+
+      --sev-high-bg:   oklch(28% 0.07 45);
+      --sev-high-fg:   oklch(76% 0.18 45);
+      --sev-high-bd:   oklch(40% 0.11 45);
+
+      --sev-med-bg:    oklch(30% 0.06 85);
+      --sev-med-fg:    oklch(80% 0.15 85);
+      --sev-med-bd:    oklch(42% 0.10 85);
+
+      --sev-low-bg:    oklch(28% 0.04 210);
+      --sev-low-fg:    oklch(76% 0.12 210);
+      --sev-low-bd:    oklch(38% 0.06 210);
+
+      --badge-neutral-bg: oklch(27% 0.012 250);
+      --badge-neutral-fg: oklch(80% 0.008 250);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg);
+      color: var(--fg);
+      font-size: 13px;
+      line-height: 1.45;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 顶部导航条 */
+    .top-navbar {
+      height: 48px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-logo {
+      width: 26px;
+      height: 26px;
+      background: var(--fg);
+      color: var(--surface);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .brand-title {
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+    }
+    .badge-soc {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      background: var(--badge-neutral-bg);
+      color: var(--badge-neutral-fg);
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+    }
+    .soc-live-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 12px;
+    }
+    .live-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 2px oklch(58% 0.16 145 / 0.2);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 oklch(58% 0.16 145 / 0.5); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px oklch(58% 0.16 145 / 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 oklch(58% 0.16 145 / 0); }
+    }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .analyst-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+    }
+    .analyst-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: oklch(62% 0.15 250);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    /* 多维过滤工具栏 */
+    .filter-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .severity-pills {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .sev-pill-btn {
+      border: none;
+      background: transparent;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--muted);
+      border-right: 1px solid var(--border);
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sev-pill-btn:last-child { border-right: none; }
+    .sev-pill-btn:hover { color: var(--fg); background: var(--surface); }
+    .sev-pill-btn.active {
+      background: var(--surface);
+      color: var(--fg);
+      font-weight: 600;
+    }
+    .sev-pill-btn.active.crit { color: var(--sev-crit-fg); background: var(--sev-crit-bg); }
+    .sev-pill-btn.active.high { color: var(--sev-high-fg); background: var(--sev-high-bg); }
+    .sev-pill-btn.active.med  { color: var(--sev-med-fg);  background: var(--sev-med-bg); }
+    .sev-pill-btn.active.low  { color: var(--sev-low-fg);  background: var(--sev-low-bg); }
+
+    .filter-select {
+      height: 28px;
+      padding: 0 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--fg);
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+    }
+    .filter-select:focus {
+      border-color: var(--fg);
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+      max-width: 320px;
+    }
+    .search-input {
+      width: 100%;
+      height: 28px;
+      padding: 0 28px 0 26px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--fg);
+      font-size: 12px;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--fg);
+    }
+    .search-icon {
+      position: absolute;
+      left: 8px;
+      top: 7px;
+      width: 14px;
+      height: 14px;
+      color: var(--muted);
+    }
+    .search-kbd {
+      position: absolute;
+      right: 6px;
+      top: 5px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: var(--muted);
+    }
+
+    .btn-reset-filter {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0 4px;
+    }
+    .btn-reset-filter:hover { color: var(--fg); }
+
+    /* 全局操作工具栏 (Action Toolbar) */
+    .action-toolbar {
+      height: 42px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .selected-summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .selected-summary strong { color: var(--fg); }
+    .toolbar-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 按钮规范 */
+    .btn {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--fg);
+    }
+    .btn:hover {
+      background: var(--bg);
+      border-color: var(--muted);
+    }
+    .btn-primary {
+      background: var(--fg);
+      color: var(--surface);
+      border-color: var(--fg);
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+      background: var(--fg);
+    }
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-accent:hover {
+      filter: brightness(0.95);
+    }
+    .btn-danger {
+      background: var(--sev-crit-bg);
+      color: var(--sev-crit-fg);
+      border-color: var(--sev-crit-bd);
+    }
+    .btn-danger:hover {
+      background: var(--sev-crit-bd);
+    }
+    .btn-sm {
+      height: 24px;
+      padding: 0 7px;
+      font-size: 11px;
+    }
+
+    /* 主体布局：Master-Detail 左右双栏 */
+    .workbench-split {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* 左侧告警列表 (Master Queue) */
+    .queue-panel {
+      width: 410px;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .queue-header {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      font-size: 12px;
+    }
+    .queue-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .queue-count {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--fg);
+    }
+    .queue-sort {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .queue-list {
+      flex: 1;
+      overflow-y: auto;
+      divide-y: 1px solid var(--border);
+    }
+    .alert-card {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s ease;
+      background: var(--surface);
+      border-left: 3px solid transparent;
+    }
+    .alert-card:hover {
+      background: var(--bg);
+    }
+    .alert-card.selected {
+      background: var(--bg);
+      border-left-color: var(--fg);
+    }
+    .alert-card.crit { border-left-color: var(--sev-crit-fg); }
+    .alert-card.high { border-left-color: var(--sev-high-fg); }
+    .alert-card.med  { border-left-color: var(--sev-med-fg); }
+    .alert-card.low  { border-left-color: var(--sev-low-fg); }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .card-tags {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .card-time {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 5px;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .card-asset {
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--fg);
+    }
+
+    /* 严重度 Pill */
+    .sev-pill {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      letter-spacing: 0.02em;
+    }
+    .sev-pill.crit { background: var(--sev-crit-bg); color: var(--sev-crit-fg); border: 1px solid var(--sev-crit-bd); }
+    .sev-pill.high { background: var(--sev-high-bg); color: var(--sev-high-fg); border: 1px solid var(--sev-high-bd); }
+    .sev-pill.med  { background: var(--sev-med-bg);  color: var(--sev-med-fg);  border: 1px solid var(--sev-med-bd); }
+    .sev-pill.low  { background: var(--sev-low-bg);  color: var(--sev-low-fg);  border: 1px solid var(--sev-low-bd); }
+
+    /* AI 风险分徽标 */
+    .ai-score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .ai-score-badge.high-risk {
+      color: var(--sev-crit-fg);
+      background: var(--sev-crit-bg);
+      border-color: var(--sev-crit-bd);
+    }
+    .ai-score-badge.med-risk {
+      color: var(--sev-high-fg);
+      background: var(--sev-high-bg);
+      border-color: var(--sev-high-bd);
+    }
+
+    /* 右侧深度研判检视面板 (Detail Inspection Sheet) */
+    .detail-panel {
+      flex: 1;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .detail-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      flex-shrink: 0;
+    }
+    .detail-headline-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+    .detail-title-group {
+      flex: 1;
+    }
+    .detail-id-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .detail-id {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .detail-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--fg);
+      letter-spacing: -0.01em;
+    }
+    .detail-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .meta-item-label {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 2px;
+    }
+    .meta-item-val {
+      font-weight: 500;
+      color: var(--fg);
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* AI 研判推断摘要横幅 */
+    .ai-copilot-banner {
+      margin: 14px 20px 0 20px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-sm);
+      display: flex;
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .ai-copilot-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      background: oklch(92% 0.05 145);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    .ai-copilot-content {
+      flex: 1;
+      font-size: 12px;
+    }
+    .ai-copilot-header {
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ai-confidence-tag {
+      font-size: 11px;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    /* 研判视图多标签 Tabs */
+    .detail-tabs-bar {
+      margin: 14px 20px 0 20px;
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab-btn:hover { color: var(--fg); }
+    .tab-btn.active {
+      color: var(--fg);
+      font-weight: 600;
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--fg);
+    }
+    .tab-count {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 8px;
+      background: var(--badge-neutral-bg);
+      color: var(--badge-neutral-fg);
+    }
+
+    /* 标签页内容区域 */
+    .tab-content-area {
+      padding: 14px 20px 24px 20px;
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* 模块卡片 */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .section-card-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .section-card-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .section-card-body {
+      padding: 14px;
+    }
+
+    /* IOC 证据链表格 */
+    .ioc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .ioc-table th {
+      text-align: left;
+      padding: 8px 10px;
+      background: var(--bg);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 11px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ioc-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .ioc-table tr:last-child td { border-bottom: none; }
+    .ioc-val {
+      font-family: var(--font-mono);
+      font-weight: 500;
+      word-break: break-all;
+    }
+    .ioc-type-pill {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      background: var(--badge-neutral-bg);
+      color: var(--badge-neutral-fg);
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .threat-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--sev-crit-bg);
+      color: var(--sev-crit-fg);
+      font-family: var(--font-mono);
+    }
+
+    /* 进程树可视化图谱 (Process Tree DAG) */
+    .process-tree-container {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      position: relative;
+      overflow-x: auto;
+    }
+    .ptree-node {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .ptree-line-wrapper {
+      position: relative;
+      padding-left: 20px;
+    }
+    .ptree-line-wrapper::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: -6px;
+      bottom: 14px;
+      width: 1px;
+      background: var(--border);
+    }
+    .ptree-line-wrapper::after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 14px;
+      width: 12px;
+      height: 1px;
+      background: var(--border);
+    }
+    .proc-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 320px;
+      max-width: 580px;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .proc-box:hover {
+      border-color: var(--fg);
+    }
+    .proc-box.alert-trigger {
+      border-color: var(--sev-crit-fg);
+      background: var(--sev-crit-bg);
+    }
+    .proc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .proc-name {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--fg);
+    }
+    .proc-pid {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .proc-cmd {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 4px 6px;
+      border-radius: 3px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .proc-box.alert-trigger .proc-cmd {
+      background: var(--surface);
+      color: var(--sev-crit-fg);
+    }
+
+    /* 原始事件日志视图 (Raw Wazuh / Syslog) */
+    .raw-log-viewer {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .log-toolbar {
+      padding: 6px 12px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+    .log-content-box {
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.6;
+      max-height: 380px;
+      overflow: auto;
+      white-space: pre;
+    }
+    .log-key { color: #79c0ff; }
+    .log-str { color: #a5d6ff; }
+    .log-num { color: #d2a8ff; }
+    .log-bool { color: #ff7b72; }
+
+    /* 一键处置响应卡片 */
+    .remediation-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .remed-card {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .remed-card:hover {
+      border-color: var(--muted);
+    }
+    .remed-title {
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .remed-desc {
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* 交互式模态弹窗 */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+    .modal-dialog {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 500px;
+      max-width: 90vw;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: modalFadeIn 0.15s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .modal-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .modal-body {
+      padding: 18px;
+      font-size: 13px;
+    }
+    .modal-footer {
+      padding: 12px 18px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* 全局轻提示 Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast-msg {
+      background: var(--fg);
+      color: var(--surface);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+      animation: toastIn 0.2s ease-out;
+    }
+    @keyframes toastIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部系统导航栏 -->
+  <header class="top-navbar" data-od-id="top-navbar">
+    <div class="brand-section">
+      <div class="brand-logo">SOC</div>
+      <div class="brand-title">Sentinel 威胁研判与响应工作台</div>
+      <span class="badge-soc">v3.8-SecOps</span>
+      <div class="soc-live-status">
+        <span class="live-pulse"></span>
+        <span>实时告警流接入 (Syslog/Wazuh 探针联机)</span>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-sm" id="themeToggleBtn" title="切换暗黑/浅色模式">
+        <span id="themeIcon">🌙</span> 模式切换
+      </button>
+      <div class="analyst-card">
+        <div class="analyst-avatar">王</div>
+        <div>
+          <div style="font-weight:600; line-height:1.2;">王安 (L2 研判专员)</div>
+          <div style="color:var(--muted); font-size:10px;">Shift-02 晚班在线</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 多维筛选控制台 -->
+  <section class="filter-bar" data-od-id="filter-bar">
+    <!-- 严重级别过滤 -->
+    <div class="filter-group">
+      <span class="filter-label">严重级别</span>
+      <div class="severity-pills" id="sevFilterGroup">
+        <button class="sev-pill-btn active" data-sev="ALL">全部 (18)</button>
+        <button class="sev-pill-btn crit" data-sev="CRITICAL">严重 (4)</button>
+        <button class="sev-pill-btn high" data-sev="HIGH">高危 (6)</button>
+        <button class="sev-pill-btn med" data-sev="MED">中危 (5)</button>
+        <button class="sev-pill-btn low" data-sev="LOW">低危 (3)</button>
+      </div>
+    </div>
+
+    <!-- MITRE Tactic 筛选 -->
+    <div class="filter-group">
+      <span class="filter-label">MITRE 战术</span>
+      <select class="filter-select" id="mitreFilter">
+        <option value="ALL">全部战术阶段</option>
+        <option value="TA0006">TA0006 凭据访问 (Credential Access)</option>
+        <option value="TA0011">TA0011 命令与控制 (Command & Control)</option>
+        <option value="TA0002">TA0002 执行 (Execution)</option>
+        <option value="TA0005">TA0005 防御绕过 (Defense Evasion)</option>
+        <option value="TA0040">TA0040 系统破坏 (Impact)</option>
+      </select>
+    </div>
+
+    <!-- 资产标签筛选 -->
+    <div class="filter-group">
+      <span class="filter-label">资产标签</span>
+      <select class="filter-select" id="assetTagFilter">
+        <option value="ALL">全部资产类型</option>
+        <option value="core-db">核心数据库集群 (Tier-0)</option>
+        <option value="dmz-gw">DMZ 业务网关</option>
+        <option value="ad-dc">Active Directory 域控</option>
+        <option value="k8s-node">K8s 容器生产节点</option>
+      </select>
+    </div>
+
+    <!-- 处置状态筛选 -->
+    <div class="filter-group">
+      <span class="filter-label">研判状态</span>
+      <select class="filter-select" id="statusFilter">
+        <option value="ALL">全部状态</option>
+        <option value="OPEN" selected>待研判 (Open)</option>
+        <option value="INVESTIGATING">调查中 (Investigating)</option>
+        <option value="RESOLVED">已处置 (Resolved)</option>
+      </select>
+    </div>
+
+    <!-- 时间跨度筛选 -->
+    <div class="filter-group">
+      <span class="filter-label">时间范围</span>
+      <select class="filter-select" id="timeRangeFilter">
+        <option value="15m">最近 15 分钟</option>
+        <option value="1h" selected>最近 1 小时</option>
+        <option value="24h">最近 24 小时</option>
+        <option value="7d">最近 7 天</option>
+      </select>
+    </div>
+
+    <!-- 实时快速搜索 -->
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" class="search-input" id="quickSearchInput" placeholder="搜告警ID、特征IP、进程名、CVE...">
+      <span class="search-kbd">/</span>
+    </div>
+
+    <button class="btn-reset-filter" id="resetFilterBtn">重置过滤</button>
+  </section>
+
+  <!-- 全局快速操作工具栏 (Action Toolbar) -->
+  <section class="action-toolbar" data-od-id="action-toolbar">
+    <div class="selected-summary">
+      <span>已选告警：</span>
+      <strong id="selectedAlertDisplayId">ALT-20260930-8841</strong>
+      <span class="badge-soc" id="selectedAlertTacticBadge">TA0006 凭证转储</span>
+    </div>
+
+    <div class="toolbar-buttons">
+      <!-- 分配研判专家 -->
+      <button class="btn" id="btnAssignAnalyst" data-od-id="btn-assign">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        分配分析师
+      </button>
+
+      <!-- 合并至安全事件工单 -->
+      <button class="btn" id="btnMergeCase" data-od-id="btn-merge-case">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path></svg>
+        合并至事件工单
+      </button>
+
+      <!-- 运行自动响应剧本 (Playbook) -->
+      <button class="btn btn-accent" id="btnRunPlaybook" data-od-id="btn-run-playbook">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        运行处置剧本 (Playbook)
+      </button>
+
+      <!-- 误报白名单抑制 -->
+      <button class="btn btn-danger" id="btnSuppressFP" data-od-id="btn-suppress">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+        误报特征抑制
+      </button>
+    </div>
+  </section>
+
+  <!-- 主体工作区：Master-Detail 左右双栏 -->
+  <main class="workbench-split" data-od-id="workbench-split">
+    
+    <!-- 左栏：告警队列流 (Master Queue List) -->
+    <aside class="queue-panel" data-od-id="queue-panel">
+      <div class="queue-header">
+        <div class="queue-title-wrap">
+          <input type="checkbox" id="selectAllCheckbox" title="全选当前列表" style="cursor:pointer;">
+          <span>告警队列</span>
+          <span class="queue-count" id="queueTotalCount">18 条待审</span>
+        </div>
+        <div class="queue-sort">
+          <span>排序: AI风险分</span>
+          <span style="font-family:var(--font-mono); color:var(--accent);">● 10s 轮询</span>
+        </div>
+      </div>
+
+      <!-- 告警卡片滚动容器 -->
+      <div class="queue-list" id="alertQueueContainer" data-od-id="alert-queue-list">
+        <!-- 由 JavaScript 动态渲染高仿真 SOC 告警 -->
+      </div>
+    </aside>
+
+    <!-- 右栏：深度研判检视大面板 (Deep Dive Inspection Sheet) -->
+    <section class="detail-panel" id="detailPanel" data-od-id="detail-panel">
+      <!-- 告警基础信息头部 -->
+      <div class="detail-header" data-od-id="detail-header">
+        <div class="detail-headline-row">
+          <div class="detail-title-group">
+            <div class="detail-id-wrap">
+              <span class="sev-pill crit" id="detailSevBadge">CRITICAL</span>
+              <span class="detail-id" id="detailAlertId">ALT-20260930-8841</span>
+              <span class="ai-score-badge high-risk" id="detailAiScoreBadge">AI 风险分: 96/100 极高</span>
+              <span class="badge-soc" id="detailStatusBadge">调查中 (Investigating)</span>
+            </div>
+            <h1 class="detail-title" id="detailTitleText">检测到 LSASS 内存凭据抓取与 Mimikatz 特征调用链</h1>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px; color:var(--muted); margin-bottom:2px;">首次捕获时间</div>
+            <div style="font-family:var(--font-mono); font-size:12px; font-weight:600;" id="detailFirstSeen">2026-09-30 11:38:22 UTC+8</div>
+          </div>
+        </div>
+
+        <!-- 关键资产与上下文网格 -->
+        <div class="detail-meta-grid">
+          <div>
+            <div class="meta-item-label">受影响资产 / 主机名</div>
+            <div class="meta-item-val" id="detailHost">prod-db-cluster-01</div>
+          </div>
+          <div>
+            <div class="meta-item-label">内部 IP 地址</div>
+            <div class="meta-item-val" id="detailInternalIp">10.120.4.15</div>
+          </div>
+          <div>
+            <div class="meta-item-label">资产定级 & 标签</div>
+            <div class="meta-item-val" style="color:var(--sev-crit-fg);">Tier-0 (核心数据库集群)</div>
+          </div>
+          <div>
+            <div class="meta-item-label">MITRE 战术与技术编号</div>
+            <div class="meta-item-val" id="detailMitreCode">T1003.001 (LSASS Memory)</div>
+          </div>
+          <div>
+            <div class="meta-item-label">告警规则源</div>
+            <div class="meta-item-val">Wazuh-Sysmon #92014</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 研判专家推断摘要 (AI Copilot Analysis) -->
+      <div class="ai-copilot-banner" data-od-id="ai-copilot-banner">
+        <div class="ai-copilot-icon">AI</div>
+        <div class="ai-copilot-content">
+          <div class="ai-copilot-header">
+            <span>Copilot 威胁研判假设与攻击研判推断</span>
+            <span class="ai-confidence-tag">模型置信度: 98.4% (高确定性)</span>
+          </div>
+          <p id="aiHypothesisText" style="color:var(--fg); line-height:1.5;">
+            攻击者疑似通过先前被攻破的 DMZ 堡垒机，利用非工作时间的异常 SSH/WMI 会话横向移动至该核心数据库。母进程 powershell.exe 在内联脚本中解码了 Base64 编码的载荷，尝试直接通过 OpenProcess(PROCESS_VM_READ) 注入并转储 lsass.exe。威胁情报匹配到与已知 APT 团伙同源的 C2 通信回连行为，建议立即阻断主机外部流量。
+          </p>
+        </div>
+      </div>
+
+      <!-- 视图标签栏切换 -->
+      <div class="detail-tabs-bar" data-od-id="detail-tabs">
+        <button class="tab-btn active" data-tab="ioc">
+          <span>IOC 威胁证据链</span>
+          <span class="tab-count" id="iocCountBadge">4</span>
+        </button>
+        <button class="tab-btn" data-tab="ptree">
+          <span>进程树调用图谱 (Process Tree)</span>
+          <span class="tab-count">5 节点</span>
+        </button>
+        <button class="tab-btn" data-tab="rawlogs">
+          <span>原始事件与日志 (Wazuh/Syslog)</span>
+        </button>
+        <button class="tab-btn" data-tab="remed">
+          <span>一键响应与自动化处置 (Remediation)</span>
+          <span class="tab-count" style="background:var(--sev-crit-bg); color:var(--sev-crit-fg);">急需处置</span>
+        </button>
+      </div>
+
+      <!-- 标签页内容区域 -->
+      <div class="tab-content-area">
+        
+        <!-- Tab 1: IOC 证据链 -->
+        <div class="tab-pane active" id="pane-ioc" data-od-id="pane-ioc">
+          <div class="section-card">
+            <div class="section-card-header">
+              <span class="section-card-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                关联威胁指标清单 (Indicators of Compromise)
+              </span>
+              <div style="font-size:11px; color:var(--muted);">已自动联动 VirusTotal / 微步威胁情报 / AlienVault OTX</div>
+            </div>
+            <div class="section-card-body" style="padding:0;">
+              <table class="ioc-table">
+                <thead>
+                  <tr>
+                    <th>IOC 类型</th>
+                    <th>特征指标值</th>
+                    <th>威胁情报研判结果</th>
+                    <th>情报置信度</th>
+                    <th style="text-align:right;">快捷遏制操作</th>
+                  </tr>
+                </thead>
+                <tbody id="iocTableBody">
+                  <!-- 动态插入 IOC 表项 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: 进程树调用图谱 (Process Tree DAG) -->
+        <div class="tab-pane" id="pane-ptree" data-od-id="pane-ptree">
+          <div class="section-card">
+            <div class="section-card-header">
+              <span class="section-card-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Sysmon / Auditd 进程执行链路可视化
+              </span>
+              <span style="font-size:11px; color:var(--muted);">点击节点可审查完整环境变量与调用命令行</span>
+            </div>
+            <div class="section-card-body">
+              <div class="process-tree-container" id="processTreeContainer">
+                <!-- 交互式进程树节点 -->
+                <div class="ptree-node">
+                  <div class="proc-box" onclick="showProcessDetail('wininit.exe', '644', 'NT AUTHORITY\\SYSTEM', 'C:\\Windows\\System32\\wininit.exe')">
+                    <div class="proc-header">
+                      <span class="proc-name">wininit.exe</span>
+                      <span class="proc-pid">PID: 644</span>
+                    </div>
+                    <div class="proc-cmd">C:\Windows\System32\wininit.exe</div>
+                  </div>
+                </div>
+
+                <div class="ptree-line-wrapper">
+                  <div class="ptree-node">
+                    <div class="proc-box" onclick="showProcessDetail('services.exe', '728', 'NT AUTHORITY\\SYSTEM', 'C:\\Windows\\System32\\services.exe')">
+                      <div class="proc-header">
+                        <span class="proc-name">services.exe</span>
+                        <span class="proc-pid">PID: 728</span>
+                      </div>
+                      <div class="proc-cmd">C:\Windows\System32\services.exe</div>
+                    </div>
+                  </div>
+
+                  <div class="ptree-line-wrapper">
+                    <div class="ptree-node">
+                      <div class="proc-box" onclick="showProcessDetail('svchost.exe', '1042', 'NT AUTHORITY\\SYSTEM', 'C:\\Windows\\System32\\svchost.exe -k netsvcs -p')">
+                        <div class="proc-header">
+                          <span class="proc-name">svchost.exe (RPCSS)</span>
+                          <span class="proc-pid">PID: 1042</span>
+                        </div>
+                        <div class="proc-cmd">C:\Windows\System32\svchost.exe -k netsvcs -p</div>
+                      </div>
+                    </div>
+
+                    <div class="ptree-line-wrapper">
+                      <div class="ptree-node">
+                        <div class="proc-box" onclick="showProcessDetail('powershell.exe', '5920', 'NT AUTHORITY\\SYSTEM', 'powershell.exe -ExecutionPolicy Bypass -NoProfile -enc SQBFAFgA...')">
+                          <div class="proc-header">
+                            <span class="proc-name" style="color:var(--sev-high-fg);">powershell.exe [可疑无文件启动]</span>
+                            <span class="proc-pid">PID: 5920</span>
+                          </div>
+                          <div class="proc-cmd">powershell.exe -ExecutionPolicy Bypass -NoProfile -enc SQBFAFgA... (Base64 混淆)</div>
+                        </div>
+                      </div>
+
+                      <div class="ptree-line-wrapper">
+                        <div class="ptree-node">
+                          <div class="proc-box alert-trigger" onclick="showProcessDetail('mimi64.exe', '6814', 'NT AUTHORITY\\SYSTEM', 'C:\\ProgramData\\Temp\\mimi64.exe sekurlsa::logonpasswords exit')">
+                            <div class="proc-header">
+                              <span class="proc-name" style="color:var(--sev-crit-fg);">⚠️ mimi64.exe [触发告警核心进程]</span>
+                              <span class="sev-pill crit">CRITICAL</span>
+                            </div>
+                            <div class="proc-cmd">C:\ProgramData\Temp\mimi64.exe "sekurlsa::logonpasswords" "privilege::debug" exit</div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: 原始日志与事件 (Raw Wazuh / Syslog) -->
+        <div class="tab-pane" id="pane-rawlogs" data-od-id="pane-rawlogs">
+          <div class="section-card">
+            <div class="section-card-header">
+              <span class="section-card-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                Wazuh Agent 与 Linux/Windows Syslog 原生事件
+              </span>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-sm" id="btnCopyRawLog">复制完整 JSON</button>
+                <button class="btn btn-sm" onclick="showToast('正在导出 Syslog .pcap / 日志审计文件...')">导出审计日志</button>
+              </div>
+            </div>
+            <div class="section-card-body" style="padding:0;">
+              <div class="raw-log-viewer">
+                <div class="log-toolbar">
+                  <span>事件来源: Wazuh Manager (Master-Cluster) | Rule ID: <strong>92014</strong> | Level: <strong>14</strong></span>
+                  <span style="font-family:var(--font-mono); color:var(--muted);">Encoding: UTF-8</span>
+                </div>
+                <div class="log-content-box" id="rawLogContentBox">
+{
+  <span class="log-key">"timestamp"</span>: <span class="log-str">"2026-09-30T11:38:22.419+0800"</span>,
+  <span class="log-key">"rule"</span>: {
+    <span class="log-key">"level"</span>: <span class="log-num">14</span>,
+    <span class="log-key">"description"</span>: <span class="log-str">"Mimikatz credential dumping behavior detected against lsass.exe"</span>,
+    <span class="log-key">"id"</span>: <span class="log-str">"92014"</span>,
+    <span class="log-key">"mitre"</span>: {
+      <span class="log-key">"id"</span>: [<span class="log-str">"T1003.001"</span>],
+      <span class="log-key">"tactic"</span>: [<span class="log-str">"Credential Access"</span>]
+    }
+  },
+  <span class="log-key">"agent"</span>: {
+    <span class="log-key">"id"</span>: <span class="log-str">"042"</span>,
+    <span class="log-key">"name"</span>: <span class="log-str">"prod-db-cluster-01"</span>,
+    <span class="log-key">"ip"</span>: <span class="log-str">"10.120.4.15"</span>
+  },
+  <span class="log-key">"data"</span>: {
+    <span class="log-key">"win"</span>: {
+      <span class="log-key">"eventdata"</span>: {
+        <span class="log-key">"sourceImage"</span>: <span class="log-str">"C:\\ProgramData\\Temp\\mimi64.exe"</span>,
+        <span class="log-key">"targetImage"</span>: <span class="log-str">"C:\\Windows\\System32\\lsass.exe"</span>,
+        <span class="log-key">"grantedAccess"</span>: <span class="log-str">"0x1010"</span>,
+        <span class="log-key">"callTrace"</span>: <span class="log-str">"C:\\Windows\\SYSTEM32\\ntdll.dll+9d414|C:\\ProgramData\\Temp\\mimi64.exe+3ab1"</span>,
+        <span class="log-key">"sourceUser"</span>: <span class="log-str">"NT AUTHORITY\\SYSTEM"</span>
+      }
+    }
+  },
+  <span class="log-key">"network"</span>: {
+    <span class="log-key">"c2_egress_ip"</span>: <span class="log-str">"185.220.101.45"</span>,
+    <span class="log-key">"c2_port"</span>: <span class="log-num">8443</span>,
+    <span class="log-key">"threat_intel_match"</span>: <span class="log-bool">true</span>
+  }
+}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: 一键响应与处置自动化 (Remediation) -->
+        <div class="tab-pane" id="pane-remed" data-od-id="pane-remed">
+          <div class="section-card">
+            <div class="section-card-header">
+              <span class="section-card-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                即时应急遏制剧本与控制动作 (One-Click Actions)
+              </span>
+              <span class="badge-soc">支持微隔离与防火墙联动</span>
+            </div>
+            <div class="section-card-body">
+              <div class="remediation-grid">
+                
+                <div class="remed-card">
+                  <div>
+                    <div class="remed-title" style="color:var(--sev-crit-fg);">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      一键主机网络微隔离
+                    </div>
+                    <div class="remed-desc">下发 EDR 策略阻断 10.120.4.15 的所有东西向与南北向网络连接，仅保留 8443 安全管控与探针上报信道。</div>
+                  </div>
+                  <button class="btn btn-danger" onclick="triggerHostIsolation()">执行网络隔离</button>
+                </div>
+
+                <div class="remed-card">
+                  <div>
+                    <div class="remed-title" style="color:var(--sev-high-fg);">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                      边界防火墙阻断 C2 IP
+                    </div>
+                    <div class="remed-desc">将恶意外联 IP 185.220.101.45 下发至 PaloAlto / Fortinet 边缘边界防火墙黑名单，全网拦截丢弃。</div>
+                  </div>
+                  <button class="btn" style="border-color:var(--sev-high-bd); color:var(--sev-high-fg);" onclick="triggerBlockIp('185.220.101.45')">下发 IP 阻断策略</button>
+                </div>
+
+                <div class="remed-card">
+                  <div>
+                    <div class="remed-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                      终结异常进程树
+                    </div>
+                    <div class="remed-desc">立即向目标主机发送 SIGKILL 信号，查杀恶意进程 PID: 6814 (mimi64.exe) 及父进程 PID: 5920。</div>
+                  </div>
+                  <button class="btn" onclick="triggerKillProcess('6814')">强制查杀 PID 6814</button>
+                </div>
+
+                <div class="remed-card">
+                  <div>
+                    <div class="remed-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                      强制重置受害凭据
+                    </div>
+                    <div class="remed-desc">通知域控制器禁用可能泄露的服务账户会话票据，重置本地 Administrator 与数据库接入凭证。</div>
+                  </div>
+                  <button class="btn" onclick="showToast('已向 AD 域控提交会话注销与凭证重置工单')">注销并重置凭据</button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- 模态框 1: 分配分析师 (Assign Analyst) -->
+  <div class="modal-backdrop" id="modalAssign">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">分配告警研判分析师</div>
+        <button class="btn btn-sm" onclick="closeModal('modalAssign')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:12px; color:var(--muted);">将当前告警 <strong id="assignModalAlertId">ALT-20260930-8841</strong> 指派给对应值班安全工程师：</p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <label style="display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer;">
+            <input type="radio" name="analystChoice" value="王安" checked>
+            <div>
+              <div style="font-weight:600;">王安 (L2 资深研判专家)</div>
+              <div style="font-size:11px; color:var(--muted);">当前在办告警 2 起 · 平均响应时间 4.2 分钟</div>
+            </div>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer;">
+            <input type="radio" name="analystChoice" value="李工">
+            <div>
+              <div style="font-weight:600;">李工 (L3 应急响应组长)</div>
+              <div style="font-size:11px; color:var(--muted);">当前在办重保事件 1 起 · 擅长逆向与内网排查</div>
+            </div>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer;">
+            <input type="radio" name="analystChoice" value="自动流转组">
+            <div>
+              <div style="font-weight:600;">SOAR 自动化初筛机器人</div>
+              <div style="font-size:11px; color:var(--muted);">根据规则自动执行情报富化并输出初步报告</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('modalAssign')">取消</button>
+        <button class="btn btn-primary" onclick="confirmAssignAnalyst()">确认分配</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模态框 2: 合并至事件工单 (Merge Incident Case) -->
+  <div class="modal-backdrop" id="modalMergeCase">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">合并至安全事件工单 (Incident Case)</div>
+        <button class="btn btn-sm" onclick="closeModal('modalMergeCase')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:12px; color:var(--muted);">选择已立案的全局安全事件，或创建新的 P1 级重大事件：</p>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:11px; font-weight:600; color:var(--muted);">关联已有安全案件</label>
+          <select class="filter-select" style="width:100%; height:32px; margin-top:4px;" id="caseSelect">
+            <option value="INC-2026-0929-APT">[INC-0929] 疑似 APT-29 针对核心数据库网段的渗透事件 (进行中)</option>
+            <option value="INC-2026-0928-RANSOM">[INC-0928] 办公网多终端横向传播异常排查 (研判中)</option>
+            <option value="NEW_CASE">+ 创建全新高优先级安全事件 (P1-Critical)</option>
+          </select>
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="font-size:11px; font-weight:600; color:var(--muted);">研判合流备注</label>
+          <textarea style="width:100%; height:60px; padding:6px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--fg); font-size:12px; outline:none;" placeholder="输入合并理由与威胁上下文关联说明..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('modalMergeCase')">取消</button>
+        <button class="btn btn-primary" onclick="confirmMergeCase()">确认合流并关联</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模态框 3: 运行处置剧本 (Run Playbook) -->
+  <div class="modal-backdrop" id="modalPlaybook">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">运行安全编排与响应剧本 (SOAR Playbook)</div>
+        <button class="btn btn-sm" onclick="closeModal('modalPlaybook')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:12px;">
+          <label style="font-size:11px; font-weight:600; color:var(--muted);">选择预置应急剧本</label>
+          <select class="filter-select" style="width:100%; height:32px; margin-top:4px;" id="playbookSelect">
+            <option value="pb-containment">PB-01: 核心主机入侵应急遏制套件 (微隔离 + 内存 Dump + 进程查杀)</option>
+            <option value="pb-c2-block">PB-02: 威胁情报 C2 联动封禁 (边界防火墙 + DNS 黑洞下发)</option>
+            <option value="pb-forensics">PB-03: 取证镜像采集 (网络抓包 + 易失性内存快照上传 S3)</option>
+          </select>
+        </div>
+        <div style="background:var(--bg); border:1px solid var(--border); padding:10px; border-radius:var(--radius-sm); font-size:12px;">
+          <div style="font-weight:600; margin-bottom:4px;">剧本将自动执行以下原子步骤：</div>
+          <ol style="padding-left:18px; color:var(--muted); line-height:1.6;">
+            <li>调用 EDR API 验证 10.120.4.15 状态</li>
+            <li>执行防火墙封锁与域名解析劫持</li>
+            <li>触发主机易失性内存快照保留法庭证据</li>
+            <li>在 SOC Slack/企业微信安全群发布通知</li>
+          </ol>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('modalPlaybook')">取消</button>
+        <button class="btn btn-accent" onclick="confirmRunPlaybook()">立即异步执行剧本</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模态框 4: 误报特征抑制 (False Positive Suppression) -->
+  <div class="modal-backdrop" id="modalSuppress">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">误报特征过滤与规则抑制 (FP Suppression)</div>
+        <button class="btn btn-sm" onclick="closeModal('modalSuppress')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:12px; color:var(--muted);">确认该告警为安全测试或已知内部合法运维行为，配置放行抑制策略：</p>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" checked>
+            <span>抑制规则：Wazuh #92014 (仅针对资产 prod-db-cluster-01)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" checked>
+            <span>抑制时间窗口：未来 24 小时内不重复告警</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox">
+            <span>将发起运维源 IP 添加至安全渗透测试白名单</span>
+          </label>
+        </div>
+        <div>
+          <label style="font-size:11px; font-weight:600; color:var(--muted);">误报抑制原因与依据</label>
+          <input type="text" class="search-input" style="width:100%; height:30px; margin-top:4px;" placeholder="例如：经核实为 DBA 计划内合规导出测试...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('modalSuppress')">取消</button>
+        <button class="btn btn-danger" onclick="confirmSuppressFP()">确认提交抑制策略</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 轻量全局通知容器 (Toast) -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // 模拟全真 SOC 告警数据集
+    const ALERT_DATA = [
+      {
+        id: "ALT-20260930-8841",
+        title: "检测到 LSASS 内存凭据抓取与 Mimikatz 特征调用链",
+        severity: "CRITICAL",
+        status: "INVESTIGATING",
+        tactic: "TA0006",
+        tacticName: "凭证访问 (Credential Access)",
+        mitreCode: "T1003.001 (LSASS Memory)",
+        assetTag: "core-db",
+        assetName: "prod-db-cluster-01",
+        internalIp: "10.120.4.15",
+        time: "11:38:22",
+        aiScore: 96,
+        aiHypothesis: "攻击者疑似通过先前被攻破的 DMZ 堡垒机，利用非工作时间的异常 SSH/WMI 会话横向移动至该核心数据库。母进程 powershell.exe 在内联脚本中解码了 Base64 载荷，尝试直接通过 OpenProcess 内存读取转储 lsass.exe。威胁情报匹配到与已知 APT 团伙同源的 C2 通信回连行为，建议立即阻断主机外部流量。",
+        iocs: [
+          { type: "IP", value: "185.220.101.45", intel: "Tor 出口节点 / APT-29 C2 节点", confidence: "99%", action: "封禁防火墙" },
+          { type: "Domain", value: "update.ms-telemetry-cdn.xyz", intel: "新建 3 天的高危 DGA 隐蔽信道", confidence: "94%", action: "DNS 阻断" },
+          { type: "File Hash", value: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", intel: "Mimikatz 2.2.0 内核驱动特权提取模块", confidence: "100%", action: "Hash 全网查杀" },
+          { type: "Command", value: "powershell.exe -ExecutionPolicy Bypass -NoProfile -enc SQBFAFgA...", intel: "Base64 编码的远程内存反射加载器", confidence: "92%", action: "规则查杀" }
+        ],
+        rawJson: {
+          timestamp: "2026-09-30T11:38:22.419+0800",
+          rule: { level: 14, description: "Mimikatz credential dumping detected", id: "92014", mitre: { id: ["T1003.001"], tactic: ["Credential Access"] } },
+          agent: { id: "042", name: "prod-db-cluster-01", ip: "10.120.4.15" },
+          data: { win: { eventdata: { sourceImage: "C:\\ProgramData\\Temp\\mimi64.exe", targetImage: "C:\\Windows\\System32\\lsass.exe", grantedAccess: "0x1010" } } },
+          network: { c2_egress_ip: "185.220.101.45", c2_port: 8443, threat_intel_match: true }
+        }
+      },
+      {
+        id: "ALT-20260930-8839",
+        title: "Cobalt Strike DNS 隐蔽信道持续心跳与高频外联异常",
+        severity: "CRITICAL",
+        status: "OPEN",
+        tactic: "TA0011",
+        tacticName: "命令与控制 (C2 Beacon)",
+        mitreCode: "T1071.004 (DNS C2)",
+        assetTag: "dmz-gw",
+        assetName: "prod-gateway-edge-02",
+        internalIp: "192.168.10.8",
+        time: "11:35:10",
+        aiScore: 94,
+        aiHypothesis: "监测到主机以 5 秒为周期的固定抖动间隔向特定权威 NS 发送 TXT 记录查询，熵值高达 4.88，符合 Cobalt Strike DNS Beacon 特征。已触发高频数据渗漏警戒阈值。",
+        iocs: [
+          { type: "Domain", value: "ns1.cloud-edge-resolve.cc", intel: "Cobalt Strike DNS 监听器", confidence: "98%", action: "下发 DNS 黑洞" },
+          { type: "IP", value: "45.154.255.89", intel: "已知恶意外联 C2 服务器", confidence: "97%", action: "封禁防火墙" }
+        ],
+        rawJson: {
+          timestamp: "2026-09-30T11:35:10.112+0800",
+          rule: { level: 13, description: "DNS Tunneling activity detected", id: "88211" },
+          agent: { id: "018", name: "prod-gateway-edge-02", ip: "192.168.10.8" }
+        }
+      },
+      {
+        id: "ALT-20260930-8832",
+        title: "利用 vssadmin 恶意删除卷影副本 (Ransomware 勒索前兆)",
+        severity: "CRITICAL",
+        status: "OPEN",
+        tactic: "TA0040",
+        tacticName: "系统破坏 (Impact)",
+        mitreCode: "T1490 (Inhibit System Recovery)",
+        assetTag: "ad-dc",
+        assetName: "ad-primary-dc01",
+        internalIp: "10.120.1.5",
+        time: "11:29:40",
+        aiScore: 98,
+        aiHypothesis: "攻击者尝试执行 vssadmin.exe delete shadows /all /quiet 阻断 Windows 系统恢复机制，高度吻合勒索软件大规模加密启动前的标准前置流程。必须即刻切断该节点网络！",
+        iocs: [
+          { type: "Command", value: "vssadmin.exe delete shadows /all /quiet", intel: "勒索破坏卷影命令", confidence: "100%", action: "阻断命令" },
+          { type: "Process", value: "C:\\Windows\\Temp\\lockbit_stage2.exe", intel: "LockBit 3.0 勒索载荷", confidence: "99%", action: "全网隔离" }
+        ],
+        rawJson: {
+          timestamp: "2026-09-30T11:29:40.804+0800",
+          rule: { level: 14, description: "Volume Shadow Copy deletion detected", id: "91002" }
+        }
+      },
+      {
+        id: "ALT-20260930-8824",
+        title: "K8s 容器逃逸风险：特权容器内挂载 HostPath /proc 与 Docker.sock",
+        severity: "HIGH",
+        status: "INVESTIGATING",
+        tactic: "TA0002",
+        tacticName: "执行 (Execution)",
+        mitreCode: "T1611 (Escape to Host)",
+        assetTag: "k8s-node",
+        assetName: "k8s-worker-node-09",
+        internalIp: "10.140.22.109",
+        time: "11:21:05",
+        aiScore: 88,
+        aiHypothesis: "运行中的测试 Pod 被注入了特权模式启动命令，并通过 nsenter 试图切换至 Node 节点命名空间，存在接管底层宿主机节点的极高风险。",
+        iocs: [
+          { type: "Pod", value: "payments-api-7b89f-2m4k", intel: "被注入提权容器", confidence: "91%", action: "销毁 Pod" },
+          { type: "Command", value: "nsenter --target 1 --mount --uts --ipc --net --pid -- bash", intel: "Namespace 逃逸指令", confidence: "95%", action: "阻止执行" }
+        ],
+        rawJson: {
+          timestamp: "2026-09-30T11:21:05.320+0800",
+          rule: { level: 11, description: "Container escape activity observed", id: "72091" }
+        }
+      },
+      {
+        id: "ALT-20260930-8818",
+        title: "SSH 外部暴力破解成功并伴随即时下载远程 ELF 脚本",
+        severity: "HIGH",
+        status: "OPEN",
+        tactic: "TA0006",
+        tacticName: "凭证访问 (Credential Access)",
+        mitreCode: "T1110 (Brute Force)",
+        assetTag: "dmz-gw",
+        assetName: "test-bastion-external",
+        internalIp: "192.168.10.24",
+        time: "11:15:33",
+        aiScore: 82,
+        aiHypothesis: "外部 IP 在经历 340 次登录失败后通过弱口令成功连入 test-bastion，并在 12 秒内通过 curl 下载执行了远程恶意 shell 脚本并创建后门账号。",
+        iocs: [
+          { type: "IP", value: "91.240.118.17", intel: "俄罗斯活跃扫描器及 SSH 爆破源", confidence: "96%", action: "封禁防火墙" },
+          { type: "URL", value: "http://malware-drop.ru/sh.bin", intel: "Mirai 变种 ELF 样本下载源", confidence: "95%", action: "黑洞封堵" }
+        ],
+        rawJson: {
+          timestamp: "2026-09-30T11:15:33.910+0800",
+          rule: { level: 10, description: "SSH brute force success followed by curl execution", id: "5710" }
+        }
+      },
+      {
+        id: "ALT-20260930-8805",
+        title: "检测到 WebShell 冰蝎 (Behinder) AES 动态解密交互流量",
+        severity: "HIGH",
+        status: "OPEN",
+        tactic: "TA0005",
+        tacticName: "防御绕过 (Defense Evasion)",
+        mitreCode: "T1505.003 (Web Shell)",
+        assetTag: "dmz-gw",
+        assetName: "crm-web-frontend-01",
+        internalIp: "10.120.8.44",
+        time: "11:02:18",
+        aiScore: 85,
+        aiHypothesis: "CRM 站点的 /uploads/202609/api.jsp 返回包特征匹配冰蝎 4.0 动态 AES 协商协议，存在远程攻击者常驻 Web 控制台的情况。",
+        iocs: [
+          { type: "File", value: "/var/www/crm/uploads/202609/api.jsp", intel: "冰蝎 4.0 动态交互木马", confidence: "99%", action: "文件隔离" },
+          { type: "IP", value: "103.203.57.19", intel: "攻击控制端 IP", confidence: "90%", action: "IP 封禁" }
+        ],
+        rawJson: {
+          timestamp: "2026-09-30T11:02:18.420+0800",
+          rule: { level: 12, description: "WebShell Behinder traffic matched", id: "88019" }
+        }
+      },
+      {
+        id: "ALT-20260930-8798",
+        title: "可疑的定时任务 Crontab 注入与 Wget 后台反弹 Shell",
+        severity: "MED",
+        status: "OPEN",
+        tactic: "TA0002",
+        tacticName: "执行 (Execution)",
+        mitreCode: "T1053.003 (Cron)",
+        assetTag: "core-db",
+        assetName: "backup-nas-node",
+        internalIp: "10.120.4.88",
+        time: "10:48:12",
+        aiScore: 68,
+        aiHypothesis: "系统 /etc/cron.d 目录下新增了隐藏文件并尝试每 10 分钟外联未知 IP，需确认是否为运维例行备份作业。",
+        iocs: [
+          { type: "IP", value: "194.38.20.12", intel: "未分类外部云主机 IP", confidence: "65%", action: "审计确认" }
+        ],
+        rawJson: {
+          timestamp: "2026-09-30T10:48:12.110+0800",
+          rule: { level: 7, description: "Unusual cron job created", id: "5301" }
+        }
+      },
+      {
+        id: "ALT-20260930-8780",
+        title: "研发环境主机触发全端口 SYN 端口扫描行为",
+        severity: "LOW",
+        status: "OPEN",
+        tactic: "TA0002",
+        tacticName: "发现 (Discovery)",
+        mitreCode: "T1046 (Network Service Discovery)",
+        assetTag: "dmz-gw",
+        assetName: "dev-build-runner-03",
+        internalIp: "10.130.15.11",
+        time: "10:30:00",
+        aiScore: 42,
+        aiHypothesis: "内部研发服务器产生高密度的 SYN 探测，极可能为安全部门内部 Nessus/Nmap 漏扫作业引起。",
+        iocs: [
+          { type: "IP", value: "10.130.15.11", intel: "内部研发资产网段", confidence: "30%", action: "白名单加白" }
+        ],
+        rawJson: {
+          timestamp: "2026-09-30T10:30:00.000+0800",
+          rule: { level: 4, description: "Port scan detected from internal subnet", id: "3011" }
+        }
+      }
+    ];
+
+    let currentSelectedAlertId = "ALT-20260930-8841";
+    let activeSeverityFilter = "ALL";
+    let activeMitreFilter = "ALL";
+    let activeAssetTagFilter = "ALL";
+    let activeStatusFilter = "OPEN";
+    let searchQuery = "";
+
+    // 页面初始化
+    document.addEventListener("DOMContentLoaded", () => {
+      renderAlertQueue();
+      bindEvents();
+      loadAlertDetail(currentSelectedAlertId);
+    });
+
+    // 绑定各类交互与事件监听
+    function bindEvents() {
+      // 严重等级 Pills 切换
+      const sevButtons = document.querySelectorAll("#sevFilterGroup .sev-pill-btn");
+      sevButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          sevButtons.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          activeSeverityFilter = btn.getAttribute("data-sev");
+          renderAlertQueue();
+        });
+      });
+
+      // 下拉框联动
+      document.getElementById("mitreFilter").addEventListener("change", (e) => {
+        activeMitreFilter = e.target.value;
+        renderAlertQueue();
+      });
+      document.getElementById("assetTagFilter").addEventListener("change", (e) => {
+        activeAssetTagFilter = e.target.value;
+        renderAlertQueue();
+      });
+      document.getElementById("statusFilter").addEventListener("change", (e) => {
+        activeStatusFilter = e.target.value;
+        renderAlertQueue();
+      });
+
+      // 快速搜索栏
+      const searchInput = document.getElementById("quickSearchInput");
+      searchInput.addEventListener("input", (e) => {
+        searchQuery = e.target.value.trim().toLowerCase();
+        renderAlertQueue();
+      });
+
+      // 键盘快捷键 '/' 聚焦搜索
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "/" && document.activeElement !== searchInput) {
+          e.preventDefault();
+          searchInput.focus();
+        }
+      });
+
+      // 重置筛选
+      document.getElementById("resetFilterBtn").addEventListener("click", () => {
+        activeSeverityFilter = "ALL";
+        activeMitreFilter = "ALL";
+        activeAssetTagFilter = "ALL";
+        activeStatusFilter = "ALL";
+        searchQuery = "";
+        searchInput.value = "";
+        document.getElementById("mitreFilter").value = "ALL";
+        document.getElementById("assetTagFilter").value = "ALL";
+        document.getElementById("statusFilter").value = "ALL";
+        sevButtons.forEach(b => b.classList.remove("active"));
+        sevButtons[0].classList.add("active");
+        renderAlertQueue();
+        showToast("已重置所有组合筛选条件");
+      });
+
+      // 全局操作工具栏按钮弹窗交互
+      document.getElementById("btnAssignAnalyst").addEventListener("click", () => openModal("modalAssign"));
+      document.getElementById("btnMergeCase").addEventListener("click", () => openModal("modalMergeCase"));
+      document.getElementById("btnRunPlaybook").addEventListener("click", () => openModal("modalPlaybook"));
+      document.getElementById("btnSuppressFP").addEventListener("click", () => openModal("modalSuppress"));
+
+      // 切换视图 Tabs
+      const tabBtns = document.querySelectorAll(".tab-btn");
+      tabBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          tabBtns.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const tabId = btn.getAttribute("data-tab");
+          document.querySelectorAll(".tab-pane").forEach(pane => pane.classList.remove("active"));
+          document.getElementById(`pane-${tabId}`).classList.add("active");
+        });
+      });
+
+      // 复制原始 JSON
+      document.getElementById("btnCopyRawLog").addEventListener("click", () => {
+        const text = document.getElementById("rawLogContentBox").innerText;
+        navigator.clipboard.writeText(text).then(() => {
+          showToast("已成功复制原始 JSON 日志至剪贴板");
+        }).catch(() => {
+          showToast("复制失败，请手动选取复制");
+        });
+      });
+
+      // 暗黑模式切换
+      const themeBtn = document.getElementById("themeToggleBtn");
+      themeBtn.addEventListener("click", () => {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        if (isDark) {
+          document.documentElement.removeAttribute("data-theme");
+          document.getElementById("themeIcon").textContent = "🌙";
+          showToast("已切换至标准高亮度模式");
+        } else {
+          document.documentElement.setAttribute("data-theme", "dark");
+          document.getElementById("themeIcon").textContent = "☀️";
+          showToast("已切换至夜班暗黑 SOC 模式");
+        }
+      });
+    }
+
+    // 渲染告警列表 (Master List)
+    function renderAlertQueue() {
+      const container = document.getElementById("alertQueueContainer");
+      const filtered = ALERT_DATA.filter(item => {
+        if (activeSeverityFilter !== "ALL" && item.severity !== activeSeverityFilter) return false;
+        if (activeMitreFilter !== "ALL" && item.tactic !== activeMitreFilter) return false;
+        if (activeAssetTagFilter !== "ALL" && item.assetTag !== activeAssetTagFilter) return false;
+        if (activeStatusFilter !== "ALL" && item.status !== activeStatusFilter) return false;
+        if (searchQuery) {
+          const matchStr = (item.id + item.title + item.assetName + item.internalIp + item.mitreCode).toLowerCase();
+          if (!matchStr.includes(searchQuery)) return false;
+        }
+        return true;
+      });
+
+      document.getElementById("queueTotalCount").textContent = `${filtered.length} 条待审`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="padding:40px 20px; text-align:center; color:var(--muted);">
+            <div style="font-size:24px; margin-bottom:8px;">🔍</div>
+            <div style="font-weight:600; margin-bottom:4px;">未找到匹配告警</div>
+            <div style="font-size:11px;">请尝试放宽筛选条件或清空搜索关键词</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const isSelected = item.id === currentSelectedAlertId ? "selected" : "";
+        const sevClass = item.severity.toLowerCase();
+        const scoreClass = item.aiScore >= 90 ? "high-risk" : "med-risk";
+
+        return `
+          <div class="alert-card ${sevClass} ${isSelected}" onclick="selectAlert('${item.id}')" data-id="${item.id}">
+            <div class="card-top">
+              <div class="card-tags">
+                <span class="sev-pill ${sevClass}">${item.severity}</span>
+                <span class="ai-score-badge ${scoreClass}">AI: ${item.aiScore}</span>
+              </div>
+              <span class="card-time">${item.time}</span>
+            </div>
+            <div class="card-title">${item.title}</div>
+            <div class="card-meta">
+              <div class="card-asset">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                <span>${item.assetName}</span>
+              </div>
+              <span style="font-family:var(--font-mono);">${item.internalIp}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // 选中指定告警并刷新右侧面板
+    function selectAlert(id) {
+      currentSelectedAlertId = id;
+      document.querySelectorAll(".alert-card").forEach(el => {
+        el.classList.toggle("selected", el.getAttribute("data-id") === id);
+      });
+      loadAlertDetail(id);
+    }
+
+    // 加载右侧深度调查面板数据
+    function loadAlertDetail(id) {
+      const alert = ALERT_DATA.find(a => a.id === id) || ALERT_DATA[0];
+
+      // 更新顶部工具栏信息
+      document.getElementById("selectedAlertDisplayId").textContent = alert.id;
+      document.getElementById("selectedAlertTacticBadge").textContent = alert.tacticName;
+      document.getElementById("assignModalAlertId").textContent = alert.id;
+
+      // 更新 Detail Header
+      const sevBadge = document.getElementById("detailSevBadge");
+      sevBadge.className = `sev-pill ${alert.severity.toLowerCase()}`;
+      sevBadge.textContent = alert.severity;
+
+      document.getElementById("detailAlertId").textContent = alert.id;
+      document.getElementById("detailTitleText").textContent = alert.title;
+      document.getElementById("detailHost").textContent = alert.assetName;
+      document.getElementById("detailInternalIp").textContent = alert.internalIp;
+      document.getElementById("detailMitreCode").textContent = alert.mitreCode;
+      document.getElementById("detailFirstSeen").textContent = `2026-09-30 ${alert.time}:22 UTC+8`;
+
+      const aiBadge = document.getElementById("detailAiScoreBadge");
+      aiBadge.className = `ai-score-badge ${alert.aiScore >= 90 ? 'high-risk' : 'med-risk'}`;
+      aiBadge.textContent = `AI 风险分: ${alert.aiScore}/100 ${alert.aiScore >= 90 ? '极高' : '中高危'}`;
+
+      document.getElementById("detailStatusBadge").textContent = alert.status === "OPEN" ? "待研判 (Open)" : "调查中 (Investigating)";
+
+      // 更新 AI 研判推断
+      document.getElementById("aiHypothesisText").textContent = alert.aiHypothesis;
+
+      // 更新 IOC 证据链
+      const iocCount = alert.iocs ? alert.iocs.length : 0;
+      document.getElementById("iocCountBadge").textContent = iocCount;
+      const iocTableBody = document.getElementById("iocTableBody");
+      if (alert.iocs && alert.iocs.length > 0) {
+        iocTableBody.innerHTML = alert.iocs.map(ioc => `
+          <tr>
+            <td><span class="ioc-type-pill">${ioc.type}</span></td>
+            <td><span class="ioc-val">${ioc.value}</span></td>
+            <td><span class="threat-tag">⚠️ ${ioc.intel}</span></td>
+            <td style="font-family:var(--font-mono); font-weight:600; color:var(--sev-crit-fg);">${ioc.confidence}</td>
+            <td style="text-align:right;">
+              <button class="btn btn-sm btn-danger" onclick="triggerQuickAction('${ioc.type}', '${ioc.value}', '${ioc.action}')">${ioc.action}</button>
+            </td>
+          </tr>
+        `).join("");
+      } else {
+        iocTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">暂未提取到直接 IOC 指标</td></tr>`;
+      }
+
+      // 更新 Raw JSON 视图
+      document.getElementById("rawLogContentBox").innerHTML = syntaxHighlightJson(alert.rawJson || {});
+    }
+
+    // JSON 语法高亮美化
+    function syntaxHighlightJson(json) {
+      if (typeof json !== 'string') {
+        json = JSON.stringify(json, null, 2);
+      }
+      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'log-num';
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = 'log-key';
+          } else {
+            cls = 'log-str';
+          }
+        } else if (/true|false/.test(match)) {
+          cls = 'log-bool';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+      });
+    }
+
+    // 模态弹窗控制
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add("open");
+    }
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove("open");
+    }
+
+    // 业务弹窗触发确认
+    function confirmAssignAnalyst() {
+      const selected = document.querySelector('input[name="analystChoice"]:checked').value;
+      closeModal("modalAssign");
+      showToast(`已成功将告警指派给 [${selected}]，并发送即时研判协同任务`);
+    }
+
+    function confirmMergeCase() {
+      const caseVal = document.getElementById("caseSelect").value;
+      closeModal("modalMergeCase");
+      showToast(`告警已成功合流至安全案件 [${caseVal}]`);
+    }
+
+    function confirmRunPlaybook() {
+      const pb = document.getElementById("playbookSelect").value;
+      closeModal("modalPlaybook");
+      showToast(`处置剧本 [${pb}] 已加入执行队列，正在自动化下发隔离策略...`);
+    }
+
+    function confirmSuppressFP() {
+      closeModal("modalSuppress");
+      showToast(`误报白名单抑制特征已下发至规则引擎，24 小时内不再告警`);
+    }
+
+    // 一键处置行动
+    function triggerHostIsolation() {
+      if (confirm("【警告】确定要对核心主机实施网络微隔离吗？此操作将切断该主机的业务网络连接！")) {
+        showToast("已成功下发主机微隔离策略：10.120.4.15 现已全面封锁");
+      }
+    }
+
+    function triggerBlockIp(ip) {
+      showToast(`已向边界防火墙集群下发 IP 封禁规则：DROP ${ip}`);
+    }
+
+    function triggerKillProcess(pid) {
+      showToast(`已向受害端 EDR 下发强制查杀指令：KILL -9 PID ${pid}`);
+    }
+
+    function triggerQuickAction(type, val, action) {
+      showToast(`已执行动作 [${action}]: 目标 ${type} (${val}) 已完成处置`);
+    }
+
+    function showProcessDetail(name, pid, user, cmd) {
+      alert(`【进程详细上下文】\n进程名称: ${name}\nPID: ${pid}\n运行账号: ${user}\n完整命令行:\n${cmd}`);
+    }
+
+    // 全局轻提示 Toast
+    function showToast(msg) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast-msg";
+      toast.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>${msg}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(20px)";
+        toast.style.transition = "all 0.25s ease";
+        setTimeout(() => toast.remove(), 250);
+      }, 3200);
+    }
+  </script>
+</body>
+</html>

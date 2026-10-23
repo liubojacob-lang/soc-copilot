@@ -21,7 +21,7 @@ from core.config import settings
 from core.logger import get_logger
 from core.token_blacklist import REDIS_AVAILABLE
 from db.session import AsyncSessionLocal
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_admin
 from models.monitor_history import MonitorHistoryModel
 from models.user import UserModel
 
@@ -430,7 +430,7 @@ async def get_monitor_history(
 @router.delete("/history/cleanup")
 async def cleanup_old_monitor_history(
     days: int = 7,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_admin),
 ) -> dict[str, Any]:
     """
     Clean up monitor history older than specified days.
@@ -481,7 +481,7 @@ async def cleanup_old_monitor_history(
 
 @router.delete("/history/clear")
 async def clear_all_monitor_history(
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_admin),
 ) -> dict[str, Any]:
     """
     Clear ALL monitor history data.

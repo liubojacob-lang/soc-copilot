@@ -107,11 +107,11 @@ nano .env.wazuh  # 更新密码
 # 方法 2: 手动测试
 # 1. 登录前端获取 JWT Token
 # 2. 启动流服务
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/start \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # 3. 发送测试告警
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/test-alert \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/test-alert \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"agent_id": "001", "severity": "high", "count": 3}'
 ```
@@ -232,7 +232,7 @@ grep WAZUH_ENABLED backend/.env
 
 # 3. 启动流服务
 TOKEN="your_jwt_token"
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/start \
   -H "Authorization: Bearer $TOKEN"
 
 # 4. 查看详细故障排除指南

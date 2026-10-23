@@ -71,6 +71,7 @@ class TestTwoFactorEndpoints:
             json={
                 "secret": secret,
                 "code": valid_code,
+                "password": TEST_PASSWORD,
                 "policy": "sudo",
                 "backup_codes": setup_data["backup_codes"],
             },

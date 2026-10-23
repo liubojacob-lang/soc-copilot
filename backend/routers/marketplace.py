@@ -90,7 +90,10 @@ async def get_playbook(
 ):
     """Get detailed playbook information."""
     playbook = await repo.get_playbook(playbook_id)
-    if not playbook:
+    if not playbook or not playbook.is_visible:
+        # Pending/rejected entries are hidden from detail reads too — the
+        # list endpoint filters them; otherwise their full dag_json leaks
+        # to any authenticated user before review (audit-run1 hardening).
         raise HTTPException(status_code=404, detail="Playbook not found")
     return MarketplacePlaybookDetail.model_validate(playbook)
 

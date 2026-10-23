@@ -2,6 +2,7 @@
   "home": {
     "title": "SOC Copilot",
     "subtitle": "安全运营中心",
+    "pageTitle": "安全运营工作台",
     "loading": "加载中...",
     "securityOperations": "安全运营",
     "refreshData": "刷新数据",

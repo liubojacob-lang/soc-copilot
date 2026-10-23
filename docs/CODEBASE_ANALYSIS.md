@@ -38,7 +38,7 @@ SOC Copilot 是面向安全运营中心（SOC）团队的智能分析工作台�
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | 前端 | 3003 | Next.js 开发/生产服务 |
-| 后端 API | 8000 | FastAPI + Uvicorn |
+| 后端 API | 8088 | FastAPI + Uvicorn |
 | PostgreSQL | 5432 | 生产数据库（Docker） |
 | Redis | 6379 | 缓存/Token 黑名单/幂等（Docker） |
 | Grafana/Loki | 依配置 | 可选监控与日志 |
@@ -170,7 +170,7 @@ graph TB
         F5[next-intl 国际化]
     end
 
-    subgraph 后端层 [⚙️ 后端层 FastAPI :8000]
+    subgraph 后端层 [⚙️ 后端层 FastAPI :8088]
         M1[中间件链<br/>认证/授权/审计/安全头]
         M2[API Routers]
         M3[Services 业务逻辑]
@@ -582,7 +582,7 @@ make install
 # 启动前后端（开发）
 make dev
 # 或分别启动
-make dev-backend   # port 8000
+make dev-backend   # port 8088
 make dev-frontend  # port 3003
 ```
 

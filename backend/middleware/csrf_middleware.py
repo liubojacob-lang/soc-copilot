@@ -75,18 +75,19 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         if request.method in self.safe_methods:
             return await call_next(request)
 
-        # Skip CSRF for exempt paths
+        # Skip CSRF for exempt paths (exact match only — never prefix-match:
+        # a startswith here let legacy alias paths cover live /api/v1 routes)
         path = request.url.path
         if path in self.exempt_paths:
             return await call_next(request)
 
-        # Skip CSRF for paths starting with exempt prefixes
-        for exempt_path in self.exempt_paths:
-            if path.startswith(exempt_path):
-                return await call_next(request)
-
         # Skip CSRF for webhook endpoints (they have their own validation)
-        if path.startswith("/api/webhooks/"):
+        # Covers both the legacy alias (/api/webhooks/*) and the canonical
+        # HMAC-authenticated invocation endpoint (/api/v1/webhooks/{id}) —
+        # the X-Webhook-Secret HMAC is the in-band authentication there.
+        if path.startswith("/api/webhooks/") or path.startswith(
+            "/api/v1/webhooks/"
+        ):
             return await call_next(request)
 
         # Skip CSRF for API key authenticated requests

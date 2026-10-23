@@ -2,7 +2,7 @@ import secrets
 import string
 from functools import lru_cache
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -68,7 +68,10 @@ class Settings(BaseSettings):
     threat_intel_cache_retention_days: int = 30  # expired rows purge window
 
     # Environment: production 时将校验敏感默认值
-    environment: str = "development"  # development | production
+    environment: str = Field(
+        default="development",
+        description="deployment environment (development | production)",
+    )
     strict_production_checks: bool = (
         False  # True 时 production 下默认敏感配置将导致启动失败
     )
@@ -195,6 +198,17 @@ class Settings(BaseSettings):
           deployment with weak secrets must fail fast rather than warn)
         """
         return self.strict_production_checks or self.environment == "production"
+
+    @field_validator("environment", mode="before")
+    @classmethod
+    def _normalize_environment(cls, v: str) -> str:
+        """Lowercase the environment value.
+
+        audit-run1 hardening: 'PRODUCTION' (uppercase) previously selected the
+        development code path — auto-generated secrets, no strict checks —
+        because comparisons were literal.
+        """
+        return str(v).strip().lower() if isinstance(v, str) else v
 
     @field_validator("jwt_secret")
     @classmethod

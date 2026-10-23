@@ -38,7 +38,7 @@ GET    /api/ueba/dashboard           - Get UEBA dashboard
 
 ```bash
 # Detect anomalies for a user
-curl -X POST http://localhost:8000/api/ueba/detect \
+curl -X POST http://localhost:8088/api/ueba/detect \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -50,7 +50,7 @@ curl -X POST http://localhost:8000/api/ueba/detect \
   }'
 
 # Get user risk profile
-curl http://localhost:8000/api/ueba/risk-profile/user_001 \
+curl http://localhost:8088/api/ueba/risk-profile/user_001 \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -97,11 +97,11 @@ GET    /api/threat-hunting/dashboard       - Get hunting dashboard
 
 ```bash
 # List available hypotheses
-curl http://localhost:8000/api/threat-hunting/hypotheses \
+curl http://localhost:8088/api/threat-hunting/hypotheses \
   -H "Authorization: Bearer $TOKEN"
 
 # Execute a hunt
-curl -X POST http://localhost:8000/api/threat-hunting/execute \
+curl -X POST http://localhost:8088/api/threat-hunting/execute \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -110,7 +110,7 @@ curl -X POST http://localhost:8000/api/threat-hunting/execute \
   }'
 
 # Hunt for IOCs
-curl -X POST http://localhost:8000/api/threat-hunting/ioc-hunt \
+curl -X POST http://localhost:8088/api/threat-hunting/ioc-hunt \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -250,8 +250,8 @@ python -m uvicorn main:app --reload
 
 ### 3. Access API Documentation
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Swagger UI: http://localhost:8088/docs
+- ReDoc: http://localhost:8088/redoc
 
 ### 4. Test the APIs
 

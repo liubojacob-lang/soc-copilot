@@ -180,11 +180,11 @@ docker compose -f docker-compose.prod.yml up -d --scale alert-worker=6
 
 ```bash
 # Windows
-netstat -ano | findstr :8000
+netstat -ano | findstr :8088
 taskkill /PID <PID> /F
 
 # Linux/Mac
-lsof -i :8000
+lsof -i :8088
 kill -9 <PID>
 ```
 

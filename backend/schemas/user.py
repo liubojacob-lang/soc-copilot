@@ -151,11 +151,17 @@ class TOTPSetupResponse(BaseModel):
 
 
 class TOTPEnableRequest(BaseModel):
-    """Request to verify code and activate 2FA."""
+    """Request to verify code and activate 2FA.
+
+    password is mandatory step-up: binding a second factor must require the
+    account password, so momentary session control alone cannot replace the
+    factor (audit-run1).
+    """
 
     secret: str
     code: str
-    policy: str = "sudo"  # "sudo" | "login"
+    password: str
+    policy: str = Field(default="sudo", pattern="^(sudo|login)$")
     backup_codes: list[str] = Field(default_factory=list)
 
 

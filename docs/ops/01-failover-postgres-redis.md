@@ -76,6 +76,6 @@ docker restart soc-redis
 ---
 
 ## 5. 验证与业务回归检查单
-- [ ] 执行 `curl -f http://localhost:8000/api/v1/health` 确认 DB 与 Redis 探针均为 `healthy`
+- [ ] 执行 `curl -f http://localhost:8088/api/v1/health` 确认 DB 与 Redis 探针均为 `healthy`
 - [ ] 检查 WebSocket 管理器已重新建立 Redis Pub/Sub 订阅
 - [ ] 验证告警入库 `POST /api/v1/alerts/` 延迟低于 50ms

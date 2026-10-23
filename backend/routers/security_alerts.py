@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_analyst_or_admin
 from models.security_alert import SecurityAlert
 from models.user import UserModel
 from schemas.security_alert import (
@@ -412,7 +412,7 @@ async def update_alert(
     alert_id: int,
     update_data: SecurityAlertUpdate,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> SecurityAlertResponse:
     """
     Update alert status and metadata.
@@ -467,7 +467,7 @@ async def update_alert(
 async def delete_alert(
     alert_id: int,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> dict:
     """
     Delete an alert.

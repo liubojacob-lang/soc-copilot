@@ -61,6 +61,7 @@ export function TwoFactorSettings() {
   const [setupData, setSetupData] = useState<TOTPSetupData | null>(null);
   const [setupPolicy, setSetupPolicy] = useState<"sudo" | "login">("sudo");
   const [setupCode, setSetupCode] = useState("");
+  const [setupPassword, setSetupPassword] = useState("");
   const [setupLoading, setSetupLoading] = useState(false);
   const [setupError, setSetupError] = useState("");
   const [copiedSecret, setCopiedSecret] = useState(false);
@@ -100,6 +101,7 @@ export function TwoFactorSettings() {
   const handleStartSetup = async () => {
     setSetupError("");
     setSetupCode("");
+    setSetupPassword("");
     setSetupStep(1);
     setSetupPolicy("sudo");
     setShowManualKey(false);
@@ -130,12 +132,14 @@ export function TwoFactorSettings() {
         body: JSON.stringify({
           secret: setupData.secret,
           code: codeToVerify,
+          password: setupPassword,
           policy: setupPolicy,
           backup_codes: setupData.backup_codes,
         }),
       });
       setStatus(res);
       setShowSetupModal(false);
+      setSetupPassword("");
       showToast(t("setupSuccess"), "success");
     } catch (err: unknown) {
       setSetupError(err instanceof Error ? err.message : t("errorGeneric"));
@@ -925,13 +929,29 @@ export function TwoFactorSettings() {
                   </p>
                 </div>
 
+                {/* Account password step-up (audit-run1): binding the factor
+                    requires proving account ownership */}
+                <div className="max-w-md mx-auto space-y-1.5 text-left">
+                  <label className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">
+                    {t("setupPasswordLabel")}
+                  </label>
+                  <Input
+                    type="password"
+                    value={setupPassword}
+                    onChange={(e) => setSetupPassword(e.target.value)}
+                    placeholder={t("setupPasswordPlaceholder")}
+                    disabled={setupLoading}
+                    autoComplete="current-password"
+                  />
+                </div>
+
                 {/* 6-Digit Segmented OtpInput */}
                 <div className="py-2">
                   <OtpInput
                     value={setupCode}
                     onChange={setSetupCode}
                     onComplete={(code) => handleEnable2FA(code)}
-                    disabled={setupLoading}
+                    disabled={setupLoading || !setupPassword}
                     autoFocus
                     error={Boolean(setupError)}
                   />
@@ -955,7 +975,7 @@ export function TwoFactorSettings() {
                   <button
                     type="button"
                     onClick={() => handleEnable2FA()}
-                    disabled={setupLoading || setupCode.length !== 6}
+                    disabled={setupLoading || setupCode.length !== 6 || !setupPassword}
                     className="group relative h-10 px-6 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-accent-600 via-indigo-600 to-accent-600 bg-[length:200%_auto] hover:bg-right transition-all duration-300 shadow-md shadow-accent-600/20 hover:shadow-lg hover:shadow-accent-600/30 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap inline-flex items-center justify-center gap-2 border border-white/10 min-w-[140px]"
                   >
                     {setupLoading ? (

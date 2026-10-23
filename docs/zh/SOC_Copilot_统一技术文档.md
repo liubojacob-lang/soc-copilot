@@ -50,7 +50,7 @@ SOC Copilot 是一个面向安全运营中心(SOC)团队的智能分析工作台
 cd backend
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8088
 ```
 
 **前端启动**:
@@ -65,7 +65,7 @@ npm install && npm run dev
 | 服务    | URL                        | 默认凭证         |
 | ------- | -------------------------- | ---------------- |
 | 前端    | http://localhost:3003      | admin / admin123 |
-| API文档 | http://localhost:8000/docs | -                |
+| API文档 | http://localhost:8088/docs | -                |
 | 数据库  | `data/app.db`              | 自动创建         |
 
 ---
@@ -280,7 +280,7 @@ docker-compose up -d
 
 # 访问应用
 # 前端: http://localhost:3000
-# 后端: http://localhost:8000
+# 后端: http://localhost:8088
 ```
 
 ### 5.2 生产部署
@@ -338,7 +338,7 @@ RUN_QUEUE_MAX=3
 docker-compose logs -f
 
 # 健康检查
-curl http://localhost:8000/api/health
+curl http://localhost:8088/api/health
 
 # 数据库备份
 docker-compose exec postgres pg_dump -U soc_copilot soc_copilot > backup.sql
@@ -385,7 +385,7 @@ services:
 
 ```bash
 # 发送测试告警
-curl -X POST http://localhost:8000/api/v1/security-alerts/ingest \
+curl -X POST http://localhost:8088/api/v1/security-alerts/ingest \
   -H "Content-Type: application/json" \
   -d '{
     "source": "wazuh",
@@ -634,14 +634,14 @@ cd backend && pytest --cov=. --cov-report=html
 docker-compose -f docker-compose.security.yml up -d
 
 # 查看API文档
-open http://localhost:8000/docs
+open http://localhost:8088/docs
 ```
 
 ### C. 故障排查
 
 | 问题             | 解决方案                       |
 | ---------------- | ------------------------------ |
-| 端口被占用       | `lsof -i :8000` 查找并终止进程 |
+| 端口被占用       | `lsof -i :8088` 查找并终止进程 |
 | 数据库连接失败   | 检查Docker服务状态             |
 | Kibana版本不兼容 | 使用与ES相同的8.12.0版本       |
 | API路由未加载    | 重启后端服务                   |

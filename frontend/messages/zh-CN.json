@@ -199,6 +199,7 @@
   "home": {
     "title": "SOC Copilot",
     "subtitle": "安全运营中心",
+    "pageTitle": "安全运营工作台",
     "loading": "加载中...",
     "securityOperations": "安全运营",
     "refreshData": "刷新数据",
@@ -3320,6 +3321,8 @@
     "verifyActivationSubtitle": "打开您刚绑定的认证器 App，输入为当前 SOC Copilot 账号生成的 6 位实时数字口令：",
     "verifyDynamicTip": "💡 动态验证码每 30 秒自动更新一次，支持直接复制粘贴",
     "confirmSwitchOtpDesc": "输入 6 位动态验证码确认切换",
-    "confirmDisableOtpDesc": "输入 6 位动态验证码确认关闭"
+    "confirmDisableOtpDesc": "输入 6 位动态验证码确认关闭",
+    "setupPasswordLabel": "确认账户密码",
+    "setupPasswordPlaceholder": "输入当前账户密码以授权绑定"
   }
 }

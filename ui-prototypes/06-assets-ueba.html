@@ -1,0 +1,1908 @@
+
+<!doctype html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>资产管理与实体风险基线 (Sentinel Assets & UEBA) - SOC Copilot</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: {
+              950: '#05080E',
+              900: '#080C14',
+              850: '#0D131F',
+              800: '#131B2E',
+              750: '#17223B',
+              700: '#1A243B',
+              600: '#263554',
+            },
+            cyber: {
+              blue: '#2563EB',
+              cobalt: '#38BDF8',
+              cyan: '#06B6D4',
+              crimson: '#EF4444',
+              amber: '#F59E0B',
+              emerald: '#10B981',
+              violet: '#8B5CF6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'Menlo', 'Consolas', 'monospace'],
+          },
+          boxShadow: {
+            'cyber-glow': '0 0 15px -3px rgba(56, 189, 248, 0.25)',
+            'crimson-glow': '0 0 18px -2px rgba(239, 68, 68, 0.35)',
+            'amber-glow': '0 0 15px -2px rgba(245, 158, 11, 0.25)',
+            'emerald-glow': '0 0 15px -2px rgba(16, 185, 129, 0.25)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar for high-density enterprise UI */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080C14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+    .hairline-border {
+      border: 1px solid rgba(51, 65, 85, 0.5);
+    }
+    .glass-panel {
+      background: rgba(19, 27, 46, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.05); }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 2.4s ease-in-out infinite;
+    }
+    @keyframes radar-sweep {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .animate-radar {
+      animation: radar-sweep 6s linear infinite;
+      transform-origin: center center;
+    }
+    .ticker-stream {
+      display: inline-block;
+      white-space: nowrap;
+      animation: marquee 35s linear infinite;
+    }
+    @keyframes marquee {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-50%); }
+    }
+  </style>
+</head>
+<body class="bg-obsidian-900 text-slate-200 font-sans antialiased min-h-screen flex flex-col selection:bg-cyber-cobalt selection:text-black text-xs leading-normal overflow-x-hidden">
+
+  <!-- ==================== 1. 全局系统顶部状态栏 (Top Global Header) ==================== -->
+  <header class="h-14 border-b border-slate-800/80 bg-obsidian-950/90 glass-panel sticky top-0 z-40 px-4 flex items-center justify-between gap-4">
+    <!-- 左侧 Logo 与当前模块标识 -->
+    <div class="flex items-center gap-3 shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-cyber-glow">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <circle cx="12" cy="11" r="3" fill="#38BDF8"/>
+          </svg>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-bold text-sm tracking-wide text-white flex items-center gap-1.5">
+            SENTINEL <span class="text-cyber-cobalt font-mono text-xs px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/50">SOC COPILOT</span>
+          </span>
+          <span class="text-[10px] text-slate-400 font-medium">Enterprise Defense Platform v4.8</span>
+        </div>
+      </div>
+
+      <div class="h-4 w-px bg-slate-800 mx-1"></div>
+
+      <!-- 当前模块面包屑 -->
+      <div class="flex items-center gap-1.5 text-slate-300">
+        <span class="text-slate-500">空间 /</span>
+        <span class="text-slate-400">资产态势感知 /</span>
+        <span class="text-cyber-cobalt font-semibold flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyber-cobalt animate-pulse"></span>
+          资产管理与实体风险基线 (Sentinel Assets & UEBA)
+        </span>
+      </div>
+    </div>
+
+    <!-- 中间：实时告警广播带 (Live Ticker) -->
+    <div class="hidden lg:flex items-center flex-1 max-w-xl mx-4 overflow-hidden h-7 rounded-md bg-obsidian-900 border border-slate-800/70 px-2.5">
+      <span class="shrink-0 flex items-center gap-1 text-[11px] font-mono text-cyber-crimson font-semibold mr-2">
+        <span class="w-2 h-2 rounded-full bg-cyber-crimson animate-ping"></span>
+        实时威胁流:
+      </span>
+      <div class="overflow-hidden w-full relative">
+        <div class="ticker-stream text-[11px] text-slate-300 font-mono flex items-center gap-8">
+          <span>[14:17:02] <strong class="text-cyber-crimson">svc_backup</strong> 触发非工作时间异地高频 RPC 扫描 (异常度 92)</span>
+          <span>[14:15:30] 核心资产 <strong class="text-cyber-cobalt">prod-db-cluster-01</strong> 匹配新披露 CVE-2024-3400 (CVSS 9.8)</span>
+          <span>[14:11:08] 账号 <strong class="text-cyber-amber">vpn_guest</strong> 10分钟内扫描 820+ SMB 端口</span>
+          <span>[14:05:44] <strong class="text-cyber-emerald">Agent-AutoPatch</strong> 完成 14 台 K8s 节点安全基线固化</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧状态控制元与用户信息 -->
+    <div class="flex items-center gap-3 shrink-0">
+      <!-- 生产/演练模式切换 -->
+      <div class="flex items-center bg-obsidian-900 border border-slate-800 rounded-md p-0.5">
+        <button id="simModeBtn" onclick="toggleSimMode()" class="px-2.5 py-1 rounded text-[11px] font-medium transition-all flex items-center gap-1.5 bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 shadow-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>生产实时 (LIVE)</span>
+        </button>
+      </div>
+
+      <!-- DEFCON 威胁等级表征 -->
+      <div class="px-2.5 py-1 rounded border border-amber-800/60 bg-amber-950/40 text-amber-300 flex items-center gap-1.5">
+        <span class="text-[10px] uppercase font-mono text-amber-400/80">THREAT:</span>
+        <span class="font-mono font-bold text-xs tracking-wider">DEFCON 2</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+      </div>
+
+      <!-- 全局快捷搜索 Cmd+K 按钮 -->
+      <button onclick="toggleCommandPalette()" class="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-md bg-obsidian-850 hover:bg-obsidian-800 text-slate-400 border border-slate-800 hover:border-slate-700 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <span class="text-[11px]">全局检索资产/实体...</span>
+        <kbd class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded font-mono text-slate-400 border border-slate-700">⌘K</kbd>
+      </button>
+
+      <!-- 快速动作与通知 -->
+      <button onclick="showToast('资产快照同步', '已启动全网 3,420 台资产 EDR 探针健康状态同步任务', 'info')" class="p-1.5 text-slate-400 hover:text-white rounded-md bg-obsidian-850 border border-slate-800 hover:border-slate-700 transition" title="立即同步探针">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
+
+      <div class="relative">
+        <button class="p-1.5 text-slate-400 hover:text-white rounded-md bg-obsidian-850 border border-slate-800 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          <span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyber-crimson border-2 border-obsidian-950"></span>
+        </button>
+      </div>
+
+      <!-- 用户角色 -->
+      <div class="flex items-center gap-2 pl-2 border-l border-slate-800">
+        <div class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-cyber-cobalt">
+          L3
+        </div>
+        <div class="hidden xl:flex flex-col text-left">
+          <span class="text-[11px] font-medium text-slate-200">SecOps Admin</span>
+          <span class="text-[9px] text-slate-400 font-mono">SOC 首席分析师</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 2. 页面主体容器 (Main Viewport) ==================== -->
+  <main class="flex-1 p-4 lg:p-6 space-y-5 max-w-[1920px] w-full mx-auto">
+
+    <!-- A. 顶部核心资产指标带 (Top Assets KPI Ribbon) -->
+    <section data-od-id="assets-kpi-ribbon" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5">
+      <!-- KPI 1: 全网资产总数 -->
+      <div class="bg-obsidian-850 border border-slate-800/90 hover:border-slate-700 rounded-xl p-3.5 transition group relative overflow-hidden shadow-sm">
+        <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition"></div>
+        <div class="flex items-center justify-between text-slate-400 mb-1.5">
+          <span class="text-[11px] font-medium">全网资产总数</span>
+          <span class="p-1 rounded bg-slate-800/80 text-cyber-cobalt">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-bold font-mono text-white tracking-tight">3,420</span>
+          <span class="text-[10px] text-emerald-400 font-mono font-medium flex items-center">
+            ↑ +14 今日新增
+          </span>
+        </div>
+        <div class="mt-2 flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-800/60 pt-2">
+          <span>物理/云主机/容器集群</span>
+          <span class="text-slate-300 font-mono">100% 录入</span>
+        </div>
+      </div>
+
+      <!-- KPI 2: 已受保护纳管 -->
+      <div class="bg-obsidian-850 border border-slate-800/90 hover:border-slate-700 rounded-xl p-3.5 transition group relative overflow-hidden shadow-sm">
+        <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition"></div>
+        <div class="flex items-center justify-between text-slate-400 mb-1.5">
+          <span class="text-[11px] font-medium">已受保护纳管</span>
+          <span class="p-1 rounded bg-slate-800/80 text-cyber-emerald">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-bold font-mono text-emerald-400 tracking-tight">3,412</span>
+          <span class="text-[10px] text-slate-400 font-mono">/ 3,420 台</span>
+        </div>
+        <div class="mt-2 flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-800/60 pt-2">
+          <span class="text-emerald-400 font-mono font-semibold">99.76% 探针覆盖率</span>
+          <span class="text-slate-400">Agent v4.8</span>
+        </div>
+      </div>
+
+      <!-- KPI 3: 离线/异常探针 -->
+      <div class="bg-obsidian-850 border border-amber-900/40 hover:border-amber-700/60 rounded-xl p-3.5 transition group relative overflow-hidden shadow-sm">
+        <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition"></div>
+        <div class="flex items-center justify-between text-slate-400 mb-1.5">
+          <span class="text-[11px] font-medium text-amber-200">离线/异常探针</span>
+          <span class="p-1 rounded bg-amber-950/60 text-cyber-amber border border-amber-800/50">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-bold font-mono text-amber-400 tracking-tight">8</span>
+          <span class="text-[10px] text-amber-300/80 font-mono">台探针断连</span>
+        </div>
+        <div class="mt-2 flex items-center justify-between text-[10px] border-t border-slate-800/60 pt-2">
+          <span class="text-amber-400/80">心跳超时 &gt; 2h</span>
+          <button onclick="filterOfflineAssets()" class="text-amber-300 underline hover:text-amber-200 font-medium">筛选主机 →</button>
+        </div>
+      </div>
+
+      <!-- KPI 4: 高危失陷风险资产 -->
+      <div class="bg-obsidian-850 border border-red-900/50 hover:border-red-600/80 rounded-xl p-3.5 transition group relative overflow-hidden shadow-crimson-glow">
+        <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-red-600/15 rounded-full blur-xl group-hover:bg-red-600/25 transition"></div>
+        <div class="flex items-center justify-between text-slate-400 mb-1.5">
+          <span class="text-[11px] font-medium text-red-200">高危失陷风险资产</span>
+          <span class="p-1 rounded bg-red-950/80 text-cyber-crimson border border-red-800/60 animate-pulse">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-bold font-mono text-cyber-crimson tracking-tight">6</span>
+          <span class="text-[10px] text-red-300 font-mono">台亟待阻断隔离</span>
+        </div>
+        <div class="mt-2 flex items-center justify-between text-[10px] border-t border-slate-800/60 pt-2">
+          <span class="text-red-400">CVSS 9.8 漏洞关联</span>
+          <span class="text-cyber-crimson font-mono font-semibold">Tier 0 核心生产</span>
+        </div>
+      </div>
+
+      <!-- KPI 5: 高危异常账号实体 (UEBA) -->
+      <div class="col-span-2 md:col-span-1 bg-obsidian-850 border border-purple-900/50 hover:border-purple-600/70 rounded-xl p-3.5 transition group relative overflow-hidden shadow-sm">
+        <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-purple-600/15 rounded-full blur-xl group-hover:bg-purple-600/25 transition"></div>
+        <div class="flex items-center justify-between text-slate-400 mb-1.5">
+          <span class="text-[11px] font-medium text-purple-200">高危异常账号实体 (UEBA)</span>
+          <span class="p-1 rounded bg-purple-950/80 text-cyber-violet border border-purple-800/60">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-bold font-mono text-purple-300 tracking-tight">3</span>
+          <span class="text-[10px] text-purple-300/80 font-mono">特权实体偏离基线</span>
+        </div>
+        <div class="mt-2 flex items-center justify-between text-[10px] border-t border-slate-800/60 pt-2">
+          <span class="text-purple-400 font-mono">得分 &gt; 75 极高风险</span>
+          <button onclick="switchTab('ueba')" class="text-purple-300 underline hover:text-purple-200 font-medium">查看基线 →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- B. 模块主视图切换标签栏 (Tabs Bar) -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-1">
+      <div class="flex items-center gap-2">
+        <button id="tabBtn-assets" onclick="switchTab('assets')" class="tab-btn px-4 py-2.5 rounded-lg font-medium text-xs flex items-center gap-2 transition bg-cyber-blue text-white shadow-cyber-glow">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <span>💻 核心资产清单与漏洞暴露面</span>
+          <span class="px-1.5 py-0.5 rounded-full bg-blue-900/80 text-[10px] font-mono text-blue-200">3,420</span>
+        </button>
+
+        <button id="tabBtn-ueba" onclick="switchTab('ueba')" class="tab-btn px-4 py-2.5 rounded-lg font-medium text-xs flex items-center gap-2 transition text-slate-400 hover:text-slate-200 hover:bg-obsidian-800 border border-transparent">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <span>👤 UEBA 实体与账号异常行为分析</span>
+          <span class="px-1.5 py-0.5 rounded-full bg-purple-950 text-[10px] font-mono text-purple-300 border border-purple-800/50">3 高危</span>
+        </button>
+
+        <button id="tabBtn-topo" onclick="switchTab('topo')" class="tab-btn px-4 py-2.5 rounded-lg font-medium text-xs flex items-center gap-2 transition text-slate-400 hover:text-slate-200 hover:bg-obsidian-800 border border-transparent">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span>🌐 网络与云原生资产拓扑</span>
+          <span class="px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-mono text-slate-300">4 网段</span>
+        </button>
+      </div>
+
+      <!-- 右侧快捷批量操作 -->
+      <div class="flex items-center gap-2">
+        <button onclick="triggerBatchScan()" class="px-3 py-1.5 rounded-md bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 border border-slate-700/80 hover:border-slate-600 transition flex items-center gap-1.5 text-[11px]">
+          <svg class="w-3.5 h-3.5 text-cyber-cobalt" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span>批量下发探针全盘扫描</span>
+        </button>
+        <button onclick="exportAssetInventory()" class="px-3 py-1.5 rounded-md bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 border border-slate-700/80 hover:border-slate-600 transition flex items-center gap-1.5 text-[11px]">
+          <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span>导出资产合规台账 (CSV)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== C. 主工作区 1: 资产清单与健康度视窗 ==================== -->
+    <div id="view-assets" class="space-y-4">
+      <!-- 多维筛选与搜索工具栏 (Filter Ribbon) -->
+      <div class="bg-obsidian-850 border border-slate-800/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+        <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+          <!-- 检索输入框 -->
+          <div class="relative min-w-[220px] max-w-sm flex-1">
+            <svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input id="assetSearchInput" type="text" oninput="applyFilters()" placeholder="搜索资产名、IP (如 10.120.4.15)、负责人、CVE..." class="w-full bg-obsidian-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-cobalt transition font-mono">
+          </div>
+
+          <!-- 资产定级筛选 (Tier) -->
+          <div class="flex items-center gap-1 bg-obsidian-950 border border-slate-800 rounded-lg p-0.5">
+            <span class="text-[10px] text-slate-400 pl-2 pr-1 font-mono">定级:</span>
+            <select id="tierFilter" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 py-1 pr-3 focus:outline-none cursor-pointer">
+              <option value="ALL" class="bg-obsidian-900">全部级别 (Tier 0-2)</option>
+              <option value="Tier 0" class="bg-obsidian-900 text-red-400 font-semibold">Tier 0 核心生产 (312)</option>
+              <option value="Tier 1" class="bg-obsidian-900 text-amber-400 font-semibold">Tier 1 重要业务 (890)</option>
+              <option value="Tier 2" class="bg-obsidian-900 text-blue-400">Tier 2 常规节点 (2,218)</option>
+            </select>
+          </div>
+
+          <!-- 系统平台筛选 (OS) -->
+          <div class="flex items-center gap-1 bg-obsidian-950 border border-slate-800 rounded-lg p-0.5">
+            <span class="text-[10px] text-slate-400 pl-2 pr-1 font-mono">平台:</span>
+            <select id="osFilter" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 py-1 pr-3 focus:outline-none cursor-pointer">
+              <option value="ALL" class="bg-obsidian-900">全部平台架构</option>
+              <option value="Linux" class="bg-obsidian-900">Linux (RHEL / Ubuntu / Alpine)</option>
+              <option value="Windows" class="bg-obsidian-900">Windows Server</option>
+              <option value="K8s" class="bg-obsidian-900">K8s Pod / 微服务</option>
+              <option value="Gateway" class="bg-obsidian-900">云安全网关 / WAF</option>
+            </select>
+          </div>
+
+          <!-- 风险状态筛选 (Risk Status) -->
+          <div class="flex items-center gap-1 bg-obsidian-950 border border-slate-800 rounded-lg p-0.5">
+            <span class="text-[10px] text-slate-400 pl-2 pr-1 font-mono">风险排序:</span>
+            <select id="riskSort" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 py-1 pr-3 focus:outline-none cursor-pointer">
+              <option value="RISK_DESC" class="bg-obsidian-900 text-red-400">风险评分 (由高到低 ↓)</option>
+              <option value="RISK_ASC" class="bg-obsidian-900">风险评分 (由低到高 ↑)</option>
+              <option value="TIME_DESC" class="bg-obsidian-900">最近扫描时间 (最新)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 计数与快捷重置 -->
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+          <span>共筛选出 <strong id="filteredCount" class="text-cyber-cobalt font-mono">8</strong> 台典型资产</span>
+          <button onclick="resetFilters()" class="text-slate-400 hover:text-slate-200 underline text-[11px]">重置条件</button>
+        </div>
+      </div>
+
+      <!-- 资产高密度数据表格 (Asset Inventory Table) -->
+      <div class="bg-obsidian-850 border border-slate-800/80 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-obsidian-950 border-b border-slate-800 text-[11px] text-slate-400 font-mono">
+                <th class="py-3 px-4 w-10 text-center"><input type="checkbox" class="rounded bg-slate-900 border-slate-700 text-cyber-blue focus:ring-0"></th>
+                <th class="py-3 px-4">资产名称 / 主机标识</th>
+                <th class="py-3 px-4">内网 IP / 所属网段</th>
+                <th class="py-3 px-3">资产定级</th>
+                <th class="py-3 px-4">负责人 / 部门</th>
+                <th class="py-3 px-3">探针运行状态</th>
+                <th class="py-3 px-4">未修补 CVE 漏洞暴露面</th>
+                <th class="py-3 px-3">综合风险评分</th>
+                <th class="py-3 px-4">最近扫描核查</th>
+                <th class="py-3 px-4 text-right">操作处置</th>
+              </tr>
+            </thead>
+            <tbody id="assetTableBody" class="divide-y divide-slate-800/60 font-sans text-xs">
+              <!-- JS 会动态填充资产列表，初始直接预填 8 条高保真实战数据 -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 表格底部分页与统计 -->
+        <div class="bg-obsidian-950 px-4 py-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <div class="flex items-center gap-2">
+            <span>显示第 1 至 8 项，共 3,420 台受纳管资产</span>
+            <span class="text-slate-600">|</span>
+            <span class="text-slate-400">已选 0 项</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button class="px-2.5 py-1 rounded bg-obsidian-850 border border-slate-800 hover:border-slate-700 text-slate-400 disabled:opacity-50 text-xs" disabled>&lt; 上一页</button>
+            <button class="px-2.5 py-1 rounded bg-cyber-blue text-white font-mono text-xs">1</button>
+            <button class="px-2.5 py-1 rounded bg-obsidian-850 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-mono">2</button>
+            <button class="px-2.5 py-1 rounded bg-obsidian-850 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-mono">3</button>
+            <span class="px-1 text-slate-600">...</span>
+            <button class="px-2.5 py-1 rounded bg-obsidian-850 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-mono">428</button>
+            <button class="px-2.5 py-1 rounded bg-obsidian-850 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs">下一页 &gt;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== D. 主工作区 2: UEBA 实体与账号异常行为分析 ==================== -->
+    <div id="view-ueba" class="space-y-5 hidden">
+      <!-- 顶部通知 banner -->
+      <div class="bg-gradient-to-r from-purple-950/40 via-obsidian-850 to-obsidian-850 border border-purple-800/40 rounded-xl p-4 flex items-center justify-between gap-4 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-purple-950 border border-purple-700/60 flex items-center justify-center text-purple-300 shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              UEBA 行为偏离监控引擎 (AI Sentinel Baseline Engine)
+              <span class="px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-300 border border-purple-700/50 text-[10px] font-mono">实时学习模型 v3.2</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              基于前 90 天全网 1,840 个特权及服务账号的时段访问矩阵、网络调用熵值与外发流速率生成动态基线。当前捕获 <strong class="text-red-400 font-mono">3</strong> 个实体严重偏离基线特征。
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="refreshUebaBaselines()" class="px-3 py-1.5 rounded-lg bg-purple-950/80 hover:bg-purple-900 border border-purple-700 text-purple-200 text-xs font-medium transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>重新拟合行为基线</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 重点监控高危特权实体账号卡片流 (Key Monitored Privileged Entities) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- 卡片 1: svc_backup (风险得分 92 - 极高危) -->
+        <div id="card-svc_backup" class="bg-obsidian-850 border border-red-800/80 hover:border-red-600 rounded-xl p-4 transition relative overflow-hidden shadow-crimson-glow">
+          <div class="absolute top-0 right-0 px-3 py-1 bg-red-950/90 border-b border-l border-red-800 rounded-bl-lg text-[10px] font-mono text-red-300 font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+            CRITICAL DEVIATION
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-lg bg-red-950/80 border border-red-800 flex items-center justify-center text-red-400 font-mono font-bold text-sm shrink-0">
+              SV
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-bold text-white font-mono">svc_backup</h4>
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">系统服务</span>
+              </div>
+              <p class="text-[11px] text-slate-400">所属组件: 数据中心跨机房异地冷备</p>
+            </div>
+          </div>
+
+          <div class="mt-3.5 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-2">
+            <div class="bg-obsidian-950 p-2 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">异常风险偏离分</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span class="text-xl font-bold font-mono text-cyber-crimson">92</span>
+                <span class="text-[10px] text-red-400 font-mono">/100 (极危)</span>
+              </div>
+            </div>
+            <div class="bg-obsidian-950 p-2 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">偏离基线幅度</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span class="text-xl font-bold font-mono text-cyber-amber">+450%</span>
+                <span class="text-[10px] text-amber-400">突发激增</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 space-y-1.5 text-[11px]">
+            <div class="flex items-start gap-1.5 text-slate-300">
+              <span class="text-cyber-crimson font-bold">●</span>
+              <span><strong>非工作时间异地登录</strong>：3:00 AM 触发保加利亚代理 IP</span>
+            </div>
+            <div class="flex items-start gap-1.5 text-slate-300">
+              <span class="text-cyber-crimson font-bold">●</span>
+              <span><strong>异常数据外发</strong>：突发 4.8 GB 加密外发 (超历史均值 80x)</span>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+            <button onclick="lockEntityAccount('svc_backup')" class="flex-1 py-1.5 rounded-lg bg-red-950 hover:bg-red-900 border border-red-700/80 text-red-200 text-xs font-medium transition flex items-center justify-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              <span>锁定实体账号</span>
+            </button>
+            <button onclick="openUebaDrawer('svc_backup')" class="px-3 py-1.5 rounded-lg bg-obsidian-750 hover:bg-obsidian-700 border border-slate-700 text-slate-200 text-xs font-medium transition">
+              分析取证 →
+            </button>
+          </div>
+        </div>
+
+        <!-- 卡片 2: vpn_guest (风险得分 85 - 高危) -->
+        <div id="card-vpn_guest" class="bg-obsidian-850 border border-amber-800/80 hover:border-amber-600 rounded-xl p-4 transition relative overflow-hidden shadow-amber-glow">
+          <div class="absolute top-0 right-0 px-3 py-1 bg-amber-950/90 border-b border-l border-amber-800 rounded-bl-lg text-[10px] font-mono text-amber-300 font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+            HIGH DEVIATION
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-950/80 border border-amber-800 flex items-center justify-center text-amber-400 font-mono font-bold text-sm shrink-0">
+              VP
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-bold text-white font-mono">vpn_guest</h4>
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">第三方外包</span>
+              </div>
+              <p class="text-[11px] text-slate-400">接入网关: SSL-VPN-Ext (供应商运维)</p>
+            </div>
+          </div>
+
+          <div class="mt-3.5 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-2">
+            <div class="bg-obsidian-950 p-2 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">异常风险偏离分</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span class="text-xl font-bold font-mono text-cyber-amber">85</span>
+                <span class="text-[10px] text-amber-400 font-mono">/100 (高危)</span>
+              </div>
+            </div>
+            <div class="bg-obsidian-950 p-2 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">偏离基线幅度</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span class="text-xl font-bold font-mono text-amber-400">+320%</span>
+                <span class="text-[10px] text-amber-400">横向扫描</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 space-y-1.5 text-[11px]">
+            <div class="flex items-start gap-1.5 text-slate-300">
+              <span class="text-cyber-amber font-bold">●</span>
+              <span><strong>突发高频内网 SMB 扫描</strong>：10分钟遍历 820+ 主机 445 端口</span>
+            </div>
+            <div class="flex items-start gap-1.5 text-slate-300">
+              <span class="text-cyber-amber font-bold">●</span>
+              <span><strong>敏感资产横向探测</strong>：尝试探查 Tier 0 财务与结算数据库</span>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+            <button onclick="enforceMFA('vpn_guest')" class="flex-1 py-1.5 rounded-lg bg-amber-950 hover:bg-amber-900 border border-amber-700/80 text-amber-200 text-xs font-medium transition flex items-center justify-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              <span>强制二次 MFA 验证</span>
+            </button>
+            <button onclick="openUebaDrawer('vpn_guest')" class="px-3 py-1.5 rounded-lg bg-obsidian-750 hover:bg-obsidian-700 border border-slate-700 text-slate-200 text-xs font-medium transition">
+              分析取证 →
+            </button>
+          </div>
+        </div>
+
+        <!-- 卡片 3: dev_admin (风险得分 78 - 高危) -->
+        <div id="card-dev_admin" class="bg-obsidian-850 border border-slate-800 hover:border-slate-700 rounded-xl p-4 transition relative overflow-hidden shadow-sm">
+          <div class="absolute top-0 right-0 px-3 py-1 bg-purple-950/90 border-b border-l border-purple-800 rounded-bl-lg text-[10px] font-mono text-purple-300 font-bold flex items-center gap-1">
+            ELEVATED RISK
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-lg bg-purple-950/80 border border-purple-800 flex items-center justify-center text-purple-400 font-mono font-bold text-sm shrink-0">
+              DA
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-bold text-white font-mono">dev_admin</h4>
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">特权管理员</span>
+              </div>
+              <p class="text-[11px] text-slate-400">所属部门: 核心基础架构平台部</p>
+            </div>
+          </div>
+
+          <div class="mt-3.5 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-2">
+            <div class="bg-obsidian-950 p-2 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">异常风险偏离分</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span class="text-xl font-bold font-mono text-purple-400">78</span>
+                <span class="text-[10px] text-purple-300 font-mono">/100 (高危)</span>
+              </div>
+            </div>
+            <div class="bg-obsidian-950 p-2 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">偏离基线幅度</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span class="text-xl font-bold font-mono text-purple-300">+190%</span>
+                <span class="text-[10px] text-slate-400">多点认证</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 space-y-1.5 text-[11px]">
+            <div class="flex items-start gap-1.5 text-slate-300">
+              <span class="text-purple-400 font-bold">●</span>
+              <span><strong>不可能的旅行 (Impossible Travel)</strong>：15分钟跨时区认证</span>
+            </div>
+            <div class="flex items-start gap-1.5 text-slate-300">
+              <span class="text-purple-400 font-bold">●</span>
+              <span><strong>多重 Kerberos 凭据提取</strong>：触发 Mimikatz 签名预警</span>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+            <button onclick="revokeKerberosTokens('dev_admin')" class="flex-1 py-1.5 rounded-lg bg-purple-950 hover:bg-purple-900 border border-purple-700/80 text-purple-200 text-xs font-medium transition flex items-center justify-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+              <span>撤销全量 Kerberos Token</span>
+            </button>
+            <button onclick="openUebaDrawer('dev_admin')" class="px-3 py-1.5 rounded-lg bg-obsidian-750 hover:bg-obsidian-700 border border-slate-700 text-slate-200 text-xs font-medium transition">
+              分析取证 →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 行为基线异常偏离雷达 & 事件取证时间链 (双列综合分析区) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- 左侧 5 列：五维行为基线雷达图与偏离分解 -->
+        <div class="lg:col-span-5 bg-obsidian-850 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h4 class="text-sm font-semibold text-white">五维行为基线偏离雷达 (Radar Deviation)</h4>
+                <p class="text-[11px] text-slate-400">绿色基线：历史学习常态 / 红色覆盖：当前受审实体 (svc_backup)</p>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-800 text-[10px] font-mono">偏离度 92%</span>
+            </div>
+
+            <!-- SVG 交互式雷达图 -->
+            <div class="relative w-full aspect-square max-w-[280px] mx-auto my-2 flex items-center justify-center">
+              <svg viewBox="0 0 300 300" class="w-full h-full">
+                <!-- 背景同心网格环 -->
+                <circle cx="150" cy="150" r="120" fill="none" stroke="#1E293B" stroke-width="1" stroke-dasharray="3,3"/>
+                <circle cx="150" cy="150" r="90" fill="none" stroke="#1E293B" stroke-width="1" stroke-dasharray="3,3"/>
+                <circle cx="150" cy="150" r="60" fill="none" stroke="#1E293B" stroke-width="1"/>
+                <circle cx="150" cy="150" r="30" fill="none" stroke="#1E293B" stroke-width="1"/>
+
+                <!-- 五个坐标轴线 -->
+                <!-- 1: 时段异常 (Top, 150, 30) -->
+                <line x1="150" y1="150" x2="150" y2="30" stroke="#334155" stroke-width="1"/>
+                <!-- 2: 数据吞吐 (Top Right, 150+114=264, 150-37=113) -->
+                <line x1="150" y1="150" x2="264" y2="113" stroke="#334155" stroke-width="1"/>
+                <!-- 3: 横向移动 (Bottom Right, 150+70=220, 150+97=247) -->
+                <line x1="150" y1="150" x2="220" y2="247" stroke="#334155" stroke-width="1"/>
+                <!-- 4: 地理熵值 (Bottom Left, 150-70=80, 150+97=247) -->
+                <line x1="150" y1="150" x2="80" y2="247" stroke="#334155" stroke-width="1"/>
+                <!-- 5: 特权提权 (Top Left, 150-114=36, 150-37=113) -->
+                <line x1="150" y1="150" x2="36" y2="113" stroke="#334155" stroke-width="1"/>
+
+                <!-- 历史正常基线 (绿色柔和多边形) -->
+                <polygon points="150,135 168,142 160,165 140,165 132,142" fill="rgba(16, 185, 129, 0.2)" stroke="#10B981" stroke-width="1.8"/>
+
+                <!-- 当前异常实体覆盖 (红色高危多边形，明显凸出) -->
+                <!-- 1: 150, 42 (90% 时段) 
+                     2: 245, 120 (85% 吞吐) 
+                     3: 215, 240 (95% 横向移动) 
+                     4: 95, 225 (80% 地理熵) 
+                     5: 60, 122 (78% 特权) -->
+                <polygon points="150,42 245,120 215,240 95,225 60,122" fill="rgba(239, 68, 68, 0.35)" stroke="#EF4444" stroke-width="2.2"/>
+
+                <!-- 节点光斑点 -->
+                <circle cx="150" cy="42" r="3.5" fill="#EF4444" class="animate-pulse"/>
+                <circle cx="245" cy="120" r="3.5" fill="#EF4444"/>
+                <circle cx="215" cy="240" r="3.5" fill="#EF4444"/>
+                <circle cx="95" cy="225" r="3.5" fill="#EF4444"/>
+                <circle cx="60" cy="122" r="3.5" fill="#EF4444"/>
+
+                <!-- 文字标注 -->
+                <text x="150" y="20" fill="#94A3B8" font-size="10" text-anchor="middle" font-family="sans-serif">非工作时段 (94分)</text>
+                <text x="270" y="115" fill="#94A3B8" font-size="10" text-anchor="start" font-family="sans-serif">超大外发 (88分)</text>
+                <text x="225" y="265" fill="#94A3B8" font-size="10" text-anchor="middle" font-family="sans-serif">横向 SMB 扫描 (96分)</text>
+                <text x="75" y="265" fill="#94A3B8" font-size="10" text-anchor="middle" font-family="sans-serif">地理 IP 熵值 (82分)</text>
+                <text x="25" y="115" fill="#94A3B8" font-size="10" text-anchor="end" font-family="sans-serif">特权提权 (75分)</text>
+              </svg>
+            </div>
+          </div>
+
+          <!-- 5 个维度的精细化评分指标 -->
+          <div class="space-y-2 mt-2 pt-3 border-t border-slate-800">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-400">1. 非工作时段登录 (3:00 AM)</span>
+              <span class="font-mono text-red-400 font-semibold">94 / 100 <span class="text-slate-500 font-normal">(基线: 12)</span></span>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-400">2. 突发数据吞吐 (4.8 GB 外发)</span>
+              <span class="font-mono text-red-400 font-semibold">88 / 100 <span class="text-slate-500 font-normal">(基线: 15)</span></span>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-400">3. 横向移动 (820+ 主机探测)</span>
+              <span class="font-mono text-red-400 font-semibold">96 / 100 <span class="text-slate-500 font-normal">(基线: 5)</span></span>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-400">4. 异地登录源 (保加利亚代理)</span>
+              <span class="font-mono text-amber-400 font-semibold">82 / 100 <span class="text-slate-500 font-normal">(基线: 10)</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧 7 列：异常行为审计时间轴与溯源链路 (Kill Chain Investigation) -->
+        <div class="lg:col-span-7 bg-obsidian-850 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="text-sm font-semibold text-white">实体异常行为链路取证 (Kill Chain Forensic Timeline)</h4>
+                <p class="text-[11px] text-slate-400">抓取自 Sentinel 统一遥测日志汇聚管道 (EDR + Kerberos + Flow + WAF)</p>
+              </div>
+              <button onclick="showToast('导出取证包', '已下载当前时间段全量 PCAP 流量与 Sysmon 事件日志包', 'success')" class="px-2.5 py-1 rounded bg-obsidian-950 border border-slate-700 text-[11px] text-slate-300 hover:text-white transition">
+                导出 PCAP/取证包
+              </button>
+            </div>
+
+            <!-- 时间轴流水线 -->
+            <div class="space-y-4 pl-2 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-800">
+              <!-- Event 1: 异地登录 -->
+              <div class="relative flex items-start gap-3">
+                <div class="w-7 h-7 rounded-full bg-red-950 border-2 border-red-500 text-red-300 flex items-center justify-center shrink-0 z-10 font-mono text-[10px]">
+                  01
+                </div>
+                <div class="bg-obsidian-950 border border-slate-800 rounded-lg p-3 flex-1">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-mono text-red-400 font-bold flex items-center gap-1.5">
+                      <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                      13:30:15 - 异地非工作时间认证成功 (Initial Authentication)
+                    </span>
+                    <span class="text-slate-500 font-mono">13 分钟前</span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 font-mono">
+                    认证协议: Kerberos AS-REQ | 来源 IP: <span class="text-amber-300">198.51.100.44</span> (保加利亚索菲亚 / ASN-48209 商业代理)
+                  </p>
+                  <div class="mt-1.5 text-[11px] text-slate-400">
+                    基线模型判定：账号 <code class="text-slate-300">svc_backup</code> 历史 100% 仅由内网网段 (10.120.0.0/16) 鉴权，判定为凭据泄露。
+                  </div>
+                </div>
+              </div>
+
+              <!-- Event 2: 横向扫描 -->
+              <div class="relative flex items-start gap-3">
+                <div class="w-7 h-7 rounded-full bg-amber-950 border-2 border-amber-500 text-amber-300 flex items-center justify-center shrink-0 z-10 font-mono text-[10px]">
+                  02
+                </div>
+                <div class="bg-obsidian-950 border border-slate-800 rounded-lg p-3 flex-1">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-mono text-amber-400 font-bold flex items-center gap-1.5">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      13:34:02 - 触发高频内网横向扫描 (Lateral Reconnaissance)
+                    </span>
+                    <span class="text-slate-500 font-mono">9 分钟前</span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 font-mono">
+                    扫描目标: 10.120.4.0/24 网段 | 端口: <span class="text-amber-300">445 (SMB), 139 (NetBIOS), 3389 (RDP)</span>
+                  </p>
+                  <div class="mt-1.5 text-[11px] text-slate-400">
+                    EDR 探测发现：进程 <code class="text-slate-300">cmd.exe /c for /L %i in (1,1,254)...</code> 进行激进内网存活扫描，命中 14 台服务器。
+                  </div>
+                </div>
+              </div>
+
+              <!-- Event 3: 大数据外发 -->
+              <div class="relative flex items-start gap-3">
+                <div class="w-7 h-7 rounded-full bg-red-950 border-2 border-red-500 text-red-300 flex items-center justify-center shrink-0 z-10 font-mono text-[10px] animate-pulse">
+                  03
+                </div>
+                <div class="bg-obsidian-950 border border-red-900/60 rounded-lg p-3 flex-1 shadow-crimson-glow">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-mono text-cyber-crimson font-bold flex items-center gap-1.5">
+                      <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+                      13:38:40 - 敏感数据打包与外发窃密 (Data Exfiltration in Progress)
+                    </span>
+                    <span class="text-slate-500 font-mono">4 分钟前</span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 font-mono">
+                    目标文件: <span class="text-red-300">/opt/db/backup_finance_q3.tar.gz (4.8 GB)</span> → 外部 C2: <span class="text-red-400 font-bold">203.0.113.195:8443</span>
+                  </p>
+                  <div class="mt-1.5 text-[11px] text-slate-400">
+                    流量探针分析：外发流量经多层 base64 + TLS 混淆通道，已阻断外发进程并保留当前内存快照。
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 底部快速一键处置按钮组 -->
+          <div class="mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs text-slate-400 font-mono">推荐响应剧本: SOAR-Playbook #409 (特权失陷快速隔离)</span>
+            <div class="flex items-center gap-2">
+              <button onclick="lockEntityAccount('svc_backup')" class="px-3 py-1.5 rounded-lg bg-cyber-crimson hover:bg-red-600 text-white font-medium text-xs transition shadow-crimson-glow flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <span>立即锁定 svc_backup</span>
+              </button>
+              <button onclick="enforceMFA('svc_backup')" class="px-3 py-1.5 rounded-lg bg-obsidian-750 hover:bg-obsidian-700 border border-slate-700 text-slate-200 text-xs transition">
+                强制二次 MFA
+              </button>
+              <button onclick="revokeKerberosTokens('svc_backup')" class="px-3 py-1.5 rounded-lg bg-obsidian-750 hover:bg-obsidian-700 border border-slate-700 text-slate-200 text-xs transition">
+                撤销全量 Token
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== E. 主工作区 3: 网络与云原生资产拓扑 ==================== -->
+    <div id="view-topo" class="space-y-4 hidden">
+      <div class="bg-obsidian-850 border border-slate-800/80 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              全网安全边界与横向渗透爆炸半径拓扑 (Blast Radius Topology)
+              <span class="px-2 py-0.5 rounded bg-blue-950 text-cyber-cobalt border border-blue-800 text-[10px] font-mono">动态可交互 Canvas</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">红虚线与红光圈代表当前检测到的高危横向渗透攻击链路，点击任意节点可快速展开资产详情。</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>安全正常</span>
+            <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>存在漏洞</span>
+            <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>已失陷/高危攻击源</span>
+          </div>
+        </div>
+
+        <!-- 交互式 SVG 拓扑网络画布 -->
+        <div class="w-full h-[520px] bg-obsidian-950 rounded-xl border border-slate-800 relative overflow-hidden flex items-center justify-center p-4">
+          <!-- 背景网格微点 -->
+          <div class="absolute inset-0 bg-[radial-gradient(#1E293B_1px,transparent_1px)] [background-size:24px_24px] opacity-40"></div>
+
+          <svg class="w-full h-full max-w-5xl" viewBox="0 0 900 480" fill="none">
+            <!-- 连线 (Links) -->
+            <!-- 边界到网关 -->
+            <path d="M 120 240 L 260 140" stroke="#334155" stroke-width="2" stroke-dasharray="4,4"/>
+            <path d="M 120 240 L 260 340" stroke="#334155" stroke-width="2"/>
+            
+            <!-- 网关到中间微服务 -->
+            <path d="M 260 140 L 460 140" stroke="#EF4444" stroke-width="2.5" stroke-dasharray="6,4" class="animate-pulse"/>
+            <path d="M 260 140 L 460 240" stroke="#334155" stroke-width="2"/>
+            <path d="M 260 340 L 460 340" stroke="#334155" stroke-width="2"/>
+
+            <!-- 中间微服务到核心数据库 -->
+            <path d="M 460 140 L 680 180" stroke="#EF4444" stroke-width="3" stroke-dasharray="8,4" class="animate-pulse"/>
+            <path d="M 460 240 L 680 180" stroke="#334155" stroke-width="2"/>
+            <path d="M 460 340 L 680 340" stroke="#334155" stroke-width="2"/>
+
+            <!-- 核心数据库到备份节点 -->
+            <path d="M 680 180 L 820 180" stroke="#EF4444" stroke-width="3" stroke-dasharray="6,4"/>
+
+            <!-- 节点 1: 外部互联网与边界入口 -->
+            <g transform="translate(70, 200)" class="cursor-pointer" onclick="showToast('节点', '互联网边界入站 (Cloudflare WAF Ingress)', 'info')">
+              <rect width="100" height="80" rx="8" fill="#131B2E" stroke="#38BDF8" stroke-width="1.5"/>
+              <circle cx="50" cy="30" r="14" fill="#0D131F" stroke="#38BDF8" stroke-width="1.5"/>
+              <text x="50" y="34" fill="#38BDF8" font-size="12" font-family="monospace" text-anchor="middle">WAN</text>
+              <text x="50" y="58" fill="#F8FAFC" font-size="11" font-weight="bold" text-anchor="middle">公网 Ingress</text>
+              <text x="50" y="70" fill="#64748B" font-size="9" text-anchor="middle font-mono">1.1.1.1 / WAF</text>
+            </g>
+
+            <!-- 节点 2: DMZ 网关与代理集群 -->
+            <g transform="translate(210, 100)" class="cursor-pointer" onclick="openAssetDrawer('k8s-ingress-gateway-02')">
+              <rect width="110" height="80" rx="8" fill="#131B2E" stroke="#EF4444" stroke-width="2" class="shadow-crimson-glow"/>
+              <circle cx="55" cy="28" r="13" fill="#3B0707" stroke="#EF4444" stroke-width="1.5"/>
+              <text x="55" y="32" fill="#EF4444" font-size="10" font-family="monospace" text-anchor="middle">GW-02</text>
+              <text x="55" y="56" fill="#F8FAFC" font-size="10" font-weight="bold" text-anchor="middle">k8s-ingress-02</text>
+              <text x="55" y="68" fill="#EF4444" font-size="9" font-family="monospace" text-anchor="middle">CVE-2024-3400</text>
+            </g>
+
+            <g transform="translate(210, 300)" class="cursor-pointer" onclick="openAssetDrawer('dmz-waf-proxy-04')">
+              <rect width="110" height="80" rx="8" fill="#131B2E" stroke="#334155" stroke-width="1.5"/>
+              <circle cx="55" cy="28" r="13" fill="#0D131F" stroke="#10B981" stroke-width="1.5"/>
+              <text x="55" y="32" fill="#10B981" font-size="10" font-family="monospace" text-anchor="middle">WAF</text>
+              <text x="55" y="56" fill="#F8FAFC" font-size="10" font-weight="bold" text-anchor="middle">dmz-waf-proxy-04</text>
+              <text x="55" y="68" fill="#64748B" font-size="9" font-family="monospace" text-anchor="middle">10.120.1.12</text>
+            </g>
+
+            <!-- 节点 3: 内部应用微服务层 -->
+            <g transform="translate(410, 100)" class="cursor-pointer" onclick="openAssetDrawer('payment-api-core-node3')">
+              <rect width="115" height="80" rx="8" fill="#131B2E" stroke="#F59E0B" stroke-width="1.8"/>
+              <circle cx="57" cy="28" r="13" fill="#2E1B05" stroke="#F59E0B" stroke-width="1.5"/>
+              <text x="57" y="32" fill="#F59E0B" font-size="10" font-family="monospace" text-anchor="middle">API</text>
+              <text x="57" y="56" fill="#F8FAFC" font-size="10" font-weight="bold" text-anchor="middle">payment-api-03</text>
+              <text x="57" y="68" fill="#F59E0B" font-size="9" font-family="monospace" text-anchor="middle">4 中危漏洞</text>
+            </g>
+
+            <g transform="translate(410, 200)" class="cursor-pointer" onclick="openAssetDrawer('jumpbox-bastion-01')">
+              <rect width="115" height="80" rx="8" fill="#131B2E" stroke="#334155" stroke-width="1.5"/>
+              <circle cx="57" cy="28" r="13" fill="#0D131F" stroke="#10B981" stroke-width="1.5"/>
+              <text x="57" y="32" fill="#10B981" font-size="10" font-family="monospace" text-anchor="middle">SSH</text>
+              <text x="57" y="56" fill="#F8FAFC" font-size="10" font-weight="bold" text-anchor="middle">运维堡垒机</text>
+              <text x="57" y="68" fill="#10B981" font-size="9" font-family="monospace" text-anchor="middle">健康正常</text>
+            </g>
+
+            <g transform="translate(410, 300)" class="cursor-pointer" onclick="openAssetDrawer('sap-erp-app-prod01')">
+              <rect width="115" height="80" rx="8" fill="#131B2E" stroke="#334155" stroke-width="1.5"/>
+              <circle cx="57" cy="28" r="13" fill="#0D131F" stroke="#10B981" stroke-width="1.5"/>
+              <text x="57" y="32" fill="#10B981" font-size="10" font-family="monospace" text-anchor="middle">ERP</text>
+              <text x="57" y="56" fill="#F8FAFC" font-size="10" font-weight="bold" text-anchor="middle">sap-erp-app</text>
+              <text x="57" y="68" fill="#64748B" font-size="9" font-family="monospace" text-anchor="middle">10.120.16.50</text>
+            </g>
+
+            <!-- 节点 4: 核心生产数据库 (Tier 0 极高危目标) -->
+            <g transform="translate(630, 140)" class="cursor-pointer" onclick="openAssetDrawer('prod-db-cluster-01')">
+              <!-- 发光扩散圆圈 -->
+              <circle cx="65" cy="40" r="55" fill="none" stroke="#EF4444" stroke-width="1" stroke-dasharray="4,4" class="animate-pulse"/>
+              <rect width="130" height="85" rx="8" fill="#1F131D" stroke="#EF4444" stroke-width="2.2"/>
+              <circle cx="65" cy="28" r="14" fill="#3B0707" stroke="#EF4444" stroke-width="2"/>
+              <text x="65" y="32" fill="#EF4444" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">DB-01</text>
+              <text x="65" y="56" fill="#FFFFFF" font-size="11" font-weight="bold" text-anchor="middle">prod-db-cluster-01</text>
+              <text x="65" y="70" fill="#EF4444" font-size="10" font-weight="bold" font-family="monospace" text-anchor="middle">⚠️ 失陷风险: 91分</text>
+            </g>
+
+            <!-- 节点 5: 异地备份与冷存储 -->
+            <g transform="translate(790, 140)" class="cursor-pointer" onclick="openUebaDrawer('svc_backup')">
+              <rect width="90" height="85" rx="8" fill="#131B2E" stroke="#8B5CF6" stroke-width="1.8"/>
+              <circle cx="45" cy="28" r="13" fill="#20113B" stroke="#8B5CF6" stroke-width="1.5"/>
+              <text x="45" y="32" fill="#C4B5FD" font-size="10" font-family="monospace" text-anchor="middle">BKUP</text>
+              <text x="45" y="56" fill="#F8FAFC" font-size="10" font-weight="bold" text-anchor="middle">svc_backup</text>
+              <text x="45" y="70" fill="#EF4444" font-size="9" font-family="monospace" text-anchor="middle">异地数据泄密</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== F. 深度交互右侧滑出抽屉 (Slide-Over Inspection Drawer) ==================== -->
+  <div id="drawerOverlay" onclick="closeDrawer()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+  <aside id="inspectionDrawer" class="fixed top-0 right-0 h-full w-full max-w-2xl bg-obsidian-900 border-l border-slate-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+    <!-- 抽屉顶部 Bar -->
+    <div class="h-16 px-6 border-b border-slate-800 flex items-center justify-between bg-obsidian-950/80">
+      <div class="flex items-center gap-3">
+        <div id="drawerIconBox" class="w-9 h-9 rounded-lg bg-blue-950 border border-blue-700/60 flex items-center justify-center text-cyber-cobalt font-mono font-bold">
+          SR
+        </div>
+        <div>
+          <h3 id="drawerTitle" class="text-sm font-bold text-white font-mono flex items-center gap-2">
+            prod-db-cluster-01
+            <span id="drawerTierBadge" class="px-2 py-0.5 rounded text-[10px] bg-red-950 text-red-300 border border-red-800 font-sans">Tier 0 核心生产</span>
+          </h3>
+          <p id="drawerSubtitle" class="text-xs text-slate-400 font-mono mt-0.5">内网 IP: 10.120.4.15 | 所属系统: Linux RHEL 9.2</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="closeDrawer()" class="p-2 rounded-lg bg-obsidian-850 hover:bg-obsidian-800 text-slate-400 hover:text-white border border-slate-800 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 抽屉核心滚动内容区 -->
+    <div id="drawerContent" class="flex-1 overflow-y-auto p-6 space-y-6">
+      <!-- 动态内容将被 JS 根据点击项填充 -->
+    </div>
+
+    <!-- 抽屉底部动作处置栏 (Action Bar) -->
+    <div id="drawerActions" class="p-4 border-t border-slate-800 bg-obsidian-950 flex items-center justify-between gap-3">
+      <!-- 动态动作按钮 -->
+    </div>
+  </aside>
+
+  <!-- ==================== G. 全局 Command Palette (Cmd + K 快速检索) ==================== -->
+  <div id="cmdPaletteModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-start justify-center pt-20 px-4">
+    <div class="bg-obsidian-850 border border-slate-700 rounded-xl w-full max-w-xl overflow-hidden shadow-2xl">
+      <div class="p-3 border-b border-slate-800 flex items-center gap-2.5">
+        <svg class="w-4 h-4 text-cyber-cobalt" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input id="globalCmdInput" oninput="handleCmdSearch()" type="text" placeholder="输入关键字、资产名、CVE 编号或 UEBA 实体..." class="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 focus:outline-none font-mono">
+        <kbd onclick="toggleCommandPalette()" class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs font-mono cursor-pointer">ESC</kbd>
+      </div>
+      <div id="cmdResults" class="p-2 max-h-80 overflow-y-auto space-y-1">
+        <div class="px-3 py-1.5 text-[10px] text-slate-500 font-mono">快捷导航推荐</div>
+        <div onclick="selectCmdItem('prod-db-cluster-01')" class="px-3 py-2 rounded-lg hover:bg-obsidian-800 cursor-pointer flex items-center justify-between text-xs transition">
+          <div class="flex items-center gap-2">
+            <span class="text-red-400 font-mono font-bold">💻 prod-db-cluster-01</span>
+            <span class="text-slate-400">10.120.4.15 (Tier 0 极高危)</span>
+          </div>
+          <span class="text-[10px] text-red-400 font-mono">CVSS 9.8</span>
+        </div>
+        <div onclick="selectCmdItem('svc_backup')" class="px-3 py-2 rounded-lg hover:bg-obsidian-800 cursor-pointer flex items-center justify-between text-xs transition">
+          <div class="flex items-center gap-2">
+            <span class="text-purple-400 font-mono font-bold">👤 svc_backup</span>
+            <span class="text-slate-400">UEBA 异常实体账号 (得分 92)</span>
+          </div>
+          <span class="text-[10px] text-purple-300 font-mono">异地数据外发</span>
+        </div>
+        <div onclick="selectCmdItem('k8s-ingress-gateway-02')" class="px-3 py-2 rounded-lg hover:bg-obsidian-800 cursor-pointer flex items-center justify-between text-xs transition">
+          <div class="flex items-center gap-2">
+            <span class="text-amber-400 font-mono font-bold">🌐 k8s-ingress-gateway-02</span>
+            <span class="text-slate-400">10.120.1.8 (DMZ 核心网关)</span>
+          </div>
+          <span class="text-[10px] text-amber-300 font-mono">CVE-2024-3400</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== H. 动态 Toast 通知容器 ==================== -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- ==================== I. 业务数据与交互脚本 (Plain Vanilla JS) ==================== -->
+  <script>
+    // 资产全量数据定义
+    const mockAssets = [
+      {
+        id: 'prod-db-cluster-01',
+        name: 'prod-db-cluster-01',
+        ip: '10.120.4.15',
+        publicIp: 'N/A (私网独占)',
+        tier: 'Tier 0',
+        platform: 'Linux',
+        os: 'Red Hat Enterprise Linux 9.2',
+        owner: '基础架构部 / 周工',
+        agentStatus: 'ONLINE',
+        agentVersion: 'Agent v4.8.2-sec',
+        cveHigh: 3,
+        cveMed: 5,
+        cveLow: 2,
+        cveNames: ['CVE-2024-3400 (CVSS 9.8)', 'CVE-2023-48795 (CVSS 7.5)', 'CVE-2024-21626 (CVSS 8.6)'],
+        riskScore: 91,
+        lastScan: '12 分钟前',
+        status: 'CRITICAL',
+        vpc: 'VPC-Prod-Finance-East',
+        ports: [
+          { port: '22/TCP', service: 'OpenSSH 8.7', status: 'Listen' },
+          { port: '5432/TCP', service: 'PostgreSQL 15.4 (Core Ledger)', status: 'Listen (Auth Required)' },
+          { port: '9100/TCP', service: 'Prometheus Node Exporter', status: 'Listen' },
+          { port: '9092/TCP', service: 'Kafka Replication Bus', status: 'Listen' }
+        ],
+        baselineRate: 86,
+        baselineCheck: '48 项合规通过 / 4 项弱配置 (未禁用空密码 / 审计日志保留天数不足)',
+        packages: [
+          { name: 'openssl', version: '1.1.1k-7.el9_2', note: '存在高危溢出风险' },
+          { name: 'kernel', version: '5.14.0-284.11.1.el9_2.x86_64', note: '补丁待重启' },
+          { name: 'postgresql15-server', version: '15.4-1PGDG.rhel9', note: '运行健康' }
+        ]
+      },
+      {
+        id: 'k8s-ingress-gateway-02',
+        name: 'k8s-ingress-gateway-02',
+        ip: '10.120.1.8',
+        publicIp: '203.0.113.88',
+        tier: 'Tier 0',
+        platform: 'Gateway',
+        os: 'Alpine Linux Hardened v3.19',
+        owner: '网络安全组 / 郑工',
+        agentStatus: 'ONLINE',
+        agentVersion: 'Agent v4.8.2-sec',
+        cveHigh: 2,
+        cveMed: 3,
+        cveLow: 1,
+        cveNames: ['CVE-2024-3400 (CVSS 9.8)', 'CVE-2023-44487 (HTTP/2 Rapid Reset)'],
+        riskScore: 84,
+        lastScan: '45 分钟前',
+        status: 'HIGH',
+        vpc: 'VPC-DMZ-Ingress',
+        ports: [
+          { port: '80/TCP', service: 'Nginx Ingress (Redirect 443)', status: 'Listen' },
+          { port: '443/TCP', service: 'Envoy Gateway TLS 1.3', status: 'Listen' },
+          { port: '10254/TCP', service: 'Ingress Controller Health', status: 'Internal' }
+        ],
+        baselineRate: 92,
+        baselineCheck: '52 项合规通过 / 2 项配置建议',
+        packages: [
+          { name: 'envoy', version: '1.28.0', note: '受 HTTP/2 漏洞影响' },
+          { name: 'nginx-ingress', version: 'v1.9.4', note: '运行正常' }
+        ]
+      },
+      {
+        id: 'win-ad-dc01.corp',
+        name: 'win-ad-dc01.corp',
+        ip: '10.120.0.10',
+        publicIp: 'N/A (内部专属)',
+        tier: 'Tier 0',
+        platform: 'Windows',
+        os: 'Windows Server 2022 Datacenter',
+        owner: '身份与认证组 / 陈工',
+        agentStatus: 'ONLINE',
+        agentVersion: 'Agent v4.8.1-win',
+        cveHigh: 1,
+        cveMed: 4,
+        cveLow: 6,
+        cveNames: ['CVE-2024-21408 (CVSS 8.8 Kerberos 提权)'],
+        riskScore: 79,
+        lastScan: '2 小时前',
+        status: 'HIGH',
+        vpc: 'VPC-Identity-Core',
+        ports: [
+          { port: '88/TCP/UDP', service: 'Kerberos KDC Authentication', status: 'Listen' },
+          { port: '389/TCP', service: 'LDAP Active Directory', status: 'Listen' },
+          { port: '636/TCP', service: 'LDAPS Secure Active Directory', status: 'Listen' },
+          { port: '445/TCP', service: 'Microsoft-DS SMB', status: 'Listen' }
+        ],
+        baselineRate: 88,
+        baselineCheck: '60 项合规通过 / 3 项策略未启用 (NTLMv1 尚未彻底弃用)',
+        packages: [
+          { name: 'ActiveDirectoryDomainServices', version: '10.0.20348', note: '建议升级补丁 KB5035857' }
+        ]
+      },
+      {
+        id: 'payment-api-core-node3',
+        name: 'payment-api-core-node3',
+        ip: '10.120.8.22',
+        publicIp: 'N/A (内网微服务)',
+        tier: 'Tier 1',
+        platform: 'K8s',
+        os: 'Ubuntu 22.04.3 LTS (Container Pod)',
+        owner: '支付结算组 / 赵工',
+        agentStatus: 'ONLINE',
+        agentVersion: 'Agent v4.8.2-sec',
+        cveHigh: 0,
+        cveMed: 4,
+        cveLow: 2,
+        cveNames: ['CVE-2023-38545 (curl SOCKS5)', 'CVE-2023-4807 (PKCS7 overflow)'],
+        riskScore: 42,
+        lastScan: '1 小时前',
+        status: 'MEDIUM',
+        vpc: 'VPC-Prod-Apps',
+        ports: [
+          { port: '8080/TCP', service: 'Spring Boot Payment Gateway', status: 'Listen' },
+          { port: '8081/TCP', service: 'Actuator Metrics & Health', status: 'Internal' }
+        ],
+        baselineRate: 95,
+        baselineCheck: '42 项合规通过 / 1 项配置建议',
+        packages: [
+          { name: 'openjdk-17-jdk', version: '17.0.9+9-1~22.04', note: '稳定运行' }
+        ]
+      },
+      {
+        id: 'gitlab-runner-ci-09',
+        name: 'gitlab-runner-ci-09',
+        ip: '10.120.99.14',
+        publicIp: 'N/A (研发局域网)',
+        tier: 'Tier 2',
+        platform: 'Linux',
+        os: 'Ubuntu 20.04 LTS',
+        owner: '研发工程效能组 / 钱工',
+        agentStatus: 'OFFLINE',
+        agentVersion: 'Agent v4.6.0 (过期)',
+        cveHigh: 1,
+        cveMed: 6,
+        cveLow: 3,
+        cveNames: ['CVE-2023-22809 (sudo 权限提权)'],
+        riskScore: 68,
+        lastScan: '6 小时前',
+        status: 'OFFLINE_WARN',
+        vpc: 'VPC-Dev-Pipelines',
+        ports: [
+          { port: '22/TCP', service: 'OpenSSH 8.2p1', status: 'Listen' }
+        ],
+        baselineRate: 74,
+        baselineCheck: '探针心跳中断已超过 3h45m，宿主机 CPU 占用长期 100%',
+        packages: [
+          { name: 'docker-ce', version: '20.10.21', note: '版本陈旧需更新' }
+        ]
+      },
+      {
+        id: 'sap-erp-app-prod01',
+        name: 'sap-erp-app-prod01',
+        ip: '10.120.16.50',
+        publicIp: 'N/A (内网专用)',
+        tier: 'Tier 1',
+        platform: 'Linux',
+        os: 'SUSE Linux Enterprise Server 15 SP4',
+        owner: 'ERP 运维组 / 孙工',
+        agentStatus: 'ONLINE',
+        agentVersion: 'Agent v4.8.2-sec',
+        cveHigh: 0,
+        cveMed: 1,
+        cveLow: 4,
+        cveNames: ['CVE-2023-39325 (HTTP/2 Rapid Reset)'],
+        riskScore: 28,
+        lastScan: '4 小时前',
+        status: 'LOW',
+        vpc: 'VPC-Prod-ERP',
+        ports: [
+          { port: '3200/TCP', service: 'SAP Dispatcher', status: 'Listen' },
+          { port: '8000/TCP', service: 'SAP WebGUI HTTPS', status: 'Listen' }
+        ],
+        baselineRate: 98,
+        baselineCheck: '全量 54 项基线达标，已配置审计隔离与高可用双活',
+        packages: [
+          { name: 'sap-host-agent', version: '7.22.SP05', note: '健康正常' }
+        ]
+      },
+      {
+        id: 'jumpbox-bastion-01',
+        name: 'jumpbox-bastion-01',
+        ip: '10.120.0.5',
+        publicIp: '198.51.100.12',
+        tier: 'Tier 0',
+        platform: 'Linux',
+        os: 'Debian 12 Bookworm (Hardened Kernel)',
+        owner: '信息安全部 / 陆工',
+        agentStatus: 'ONLINE',
+        agentVersion: 'Agent v4.8.2-sec',
+        cveHigh: 0,
+        cveMed: 0,
+        cveLow: 1,
+        cveNames: ['CVE-2023-5678 (Low Impact)'],
+        riskScore: 12,
+        lastScan: '30 分钟前',
+        status: 'SAFE',
+        vpc: 'VPC-Bastion-Management',
+        ports: [
+          { port: '2222/TCP', service: 'OpenSSH (FIDO2 物理密钥强制二次鉴权)', status: 'Listen' }
+        ],
+        baselineRate: 100,
+        baselineCheck: '100% 满分达标，无未加固漏洞',
+        packages: [
+          { name: 'teleport', version: '14.1.2', note: '证书自动轮换' }
+        ]
+      },
+      {
+        id: 'dmz-waf-proxy-04',
+        name: 'dmz-waf-proxy-04',
+        ip: '10.120.1.12',
+        publicIp: '203.0.113.99',
+        tier: 'Tier 1',
+        platform: 'Gateway',
+        os: 'Custom Hardened Linux Gateway',
+        owner: '网络安全组 / 郑工',
+        agentStatus: 'ONLINE',
+        agentVersion: 'Agent v4.8.2-sec',
+        cveHigh: 1,
+        cveMed: 2,
+        cveLow: 2,
+        cveNames: ['CVE-2024-27980 (Go HTTP/2 DoS)'],
+        riskScore: 65,
+        lastScan: '20 分钟前',
+        status: 'MEDIUM_HIGH',
+        vpc: 'VPC-DMZ-Ingress',
+        ports: [
+          { port: '80/TCP', service: 'WAF Reverse Proxy', status: 'Listen' },
+          { port: '443/TCP', service: 'WAF Reverse Proxy (TLS)', status: 'Listen' }
+        ],
+        baselineRate: 90,
+        baselineCheck: '45 项通过 / 1 项端口暴露需加固',
+        packages: [
+          { name: 'coraza-waf', version: 'v3.0.2', note: '规则库已同步今日最新' }
+        ]
+      }
+    ];
+
+    // UEBA 异常账号实体数据
+    const mockUebaEntities = {
+      'svc_backup': {
+        name: 'svc_backup',
+        title: '系统服务备份账号 (DataCenter Backup Cluster)',
+        riskScore: 92,
+        status: 'CRITICAL',
+        dept: '基础架构存储组',
+        role: 'Service Account (高权限跨网段读)',
+        anomalies: [
+          { title: '非工作时间异地登录', desc: '03:00 AM 触发保加利亚代理 IP 认证 (历史从无海外记录)', severity: 'CRITICAL' },
+          { title: '突发超大文件外发 (Data Exfiltration)', desc: '13:38 产生 4.8 GB 核心财务备份压缩包加密外发流', severity: 'CRITICAL' },
+          { title: '非典型横向 SMB 扫描', desc: '遍历探测 10.120.4.0/24 网段 445 端口', severity: 'HIGH' }
+        ],
+        associatedAssets: ['prod-db-cluster-01', 'backup-nas-east-02', 'win-ad-dc01.corp']
+      },
+      'vpn_guest': {
+        name: 'vpn_guest',
+        title: '第三方外包技术支持账号 (Vendor SSL-VPN)',
+        riskScore: 85,
+        status: 'HIGH',
+        dept: '外部供应商运维团队',
+        role: 'Remote Access / 跳板权限',
+        anomalies: [
+          { title: '突发高频内网横向 SMB 扫描', desc: '10分钟内遍历探测 820+ 主机，尝试利用弱口令连接', severity: 'HIGH' },
+          { title: '探测敏感财务库端口', desc: '尝试直接访问 5432/PostgreSQL 与 3389/RDP', severity: 'HIGH' }
+        ],
+        associatedAssets: ['jumpbox-bastion-01', 'k8s-ingress-gateway-02']
+      },
+      'dev_admin': {
+        name: 'dev_admin',
+        title: '研发中心域管理员特权账号 (DevOps Admin)',
+        riskScore: 78,
+        status: 'HIGH',
+        dept: '核心基础架构平台部',
+        role: 'Domain Admin / Kubernetes ClusterAdmin',
+        anomalies: [
+          { title: '不可能的旅行 (Impossible Travel)', desc: '15分钟内在香港与法兰克福两个不同 IP 同时发起 Kerberos 认证', severity: 'HIGH' },
+          { title: '可疑 Kerberoasting 凭据探测', desc: '短时间内请求大量 SPN Ticket 票据', severity: 'MEDIUM' }
+        ],
+        associatedAssets: ['win-ad-dc01.corp', 'gitlab-runner-ci-09']
+      }
+    };
+
+    // 渲染资产表格
+    function renderAssetTable(assetsToRender) {
+      const tbody = document.getElementById('assetTableBody');
+      tbody.innerHTML = '';
+
+      if (assetsToRender.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" class="py-12 text-center text-slate-500 font-mono">
+              <svg class="w-8 h-8 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              暂无匹配筛选条件的资产，请尝试重置筛选工具栏
+            </td>
+          </tr>
+        `;
+        document.getElementById('filteredCount').innerText = '0';
+        return;
+      }
+
+      document.getElementById('filteredCount').innerText = assetsToRender.length;
+
+      assetsToRender.forEach(asset => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-obsidian-800/60 cursor-pointer transition border-b border-slate-800/40 group';
+        tr.onclick = (e) => {
+          // 若点击的是操作按钮则不触发整行抽屉
+          if (e.target.closest('button') || e.target.closest('input')) return;
+          openAssetDrawer(asset.id);
+        };
+
+        // 定级颜色
+        let tierBadgeClass = 'bg-blue-950/80 text-blue-300 border-blue-800/60';
+        if (asset.tier === 'Tier 0') tierBadgeClass = 'bg-red-950 text-red-300 border-red-800/70 font-bold';
+        else if (asset.tier === 'Tier 1') tierBadgeClass = 'bg-amber-950/80 text-amber-300 border-amber-800/70';
+
+        // 探针状态
+        let agentBadge = `
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 font-mono">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 在线 (${asset.agentVersion})
+          </span>
+        `;
+        if (asset.agentStatus === 'OFFLINE') {
+          agentBadge = `
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-amber-950 text-amber-300 border border-amber-800 font-mono">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> 探针断连
+            </span>
+          `;
+        }
+
+        // 风险评分徽标
+        let riskColor = 'text-emerald-400';
+        let riskProgress = 'bg-emerald-500';
+        if (asset.riskScore >= 80) {
+          riskColor = 'text-cyber-crimson font-bold';
+          riskProgress = 'bg-cyber-crimson shadow-crimson-glow';
+        } else if (asset.riskScore >= 50) {
+          riskColor = 'text-cyber-amber font-semibold';
+          riskProgress = 'bg-cyber-amber';
+        }
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-center">
+            <input type="checkbox" class="rounded bg-slate-900 border-slate-700 text-cyber-blue focus:ring-0">
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-md bg-obsidian-950 border border-slate-800 flex items-center justify-center font-mono text-[10px] text-slate-300 group-hover:border-slate-700">
+                ${asset.platform === 'Windows' ? '🪟' : (asset.platform === 'K8s' ? '☸️' : (asset.platform === 'Gateway' ? '🌐' : '🐧'))}
+              </div>
+              <div>
+                <div class="font-mono font-semibold text-white hover:text-cyber-cobalt flex items-center gap-1.5">
+                  ${asset.name}
+                  ${asset.riskScore >= 80 ? '<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>' : ''}
+                </div>
+                <div class="text-[10px] text-slate-400">${asset.os}</div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 px-4 font-mono">
+            <div class="text-slate-200">${asset.ip}</div>
+            <div class="text-[10px] text-slate-400">${asset.vpc}</div>
+          </td>
+          <td class="py-3 px-3">
+            <span class="px-2 py-0.5 rounded text-[10px] border font-mono ${tierBadgeClass}">
+              ${asset.tier}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-slate-300">
+            <div>${asset.owner.split('/')[0]}</div>
+            <div class="text-[10px] text-slate-400">${asset.owner.split('/')[1] || ''}</div>
+          </td>
+          <td class="py-3 px-3">
+            ${agentBadge}
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex items-center gap-1.5 font-mono text-[10px]">
+              ${asset.cveHigh > 0 ? `<span class="px-1.5 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-800 font-bold">${asset.cveHigh} 高危</span>` : ''}
+              ${asset.cveMed > 0 ? `<span class="px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-800/80">${asset.cveMed} 中危</span>` : ''}
+              ${asset.cveHigh === 0 && asset.cveMed === 0 ? '<span class="text-emerald-400">0 脆弱性</span>' : ''}
+            </div>
+          </td>
+          <td class="py-3 px-3 font-mono">
+            <div class="flex items-center gap-2">
+              <span class="${riskColor} text-sm">${asset.riskScore}</span>
+              <div class="w-14 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                <div class="h-full ${riskProgress}" style="width: ${asset.riskScore}%"></div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">
+            ${asset.lastScan}
+          </td>
+          <td class="py-3 px-4 text-right">
+            <div class="flex items-center justify-end gap-1.5">
+              <button onclick="isolateAsset('${asset.id}')" class="px-2 py-1 rounded bg-obsidian-950 hover:bg-red-950 text-slate-400 hover:text-red-300 border border-slate-800 hover:border-red-800 text-[10px] transition" title="下发微隔离阻断">
+                隔离
+              </button>
+              <button onclick="scanAsset('${asset.id}')" class="px-2 py-1 rounded bg-obsidian-950 hover:bg-blue-950 text-slate-400 hover:text-cyber-cobalt border border-slate-800 hover:border-blue-800 text-[10px] transition" title="下发即时漏洞扫描">
+                扫描
+              </button>
+              <button onclick="openAssetDrawer('${asset.id}')" class="px-2 py-1 rounded bg-cyber-blue/20 hover:bg-cyber-blue text-cyber-cobalt hover:text-white border border-blue-800/60 text-[10px] transition font-medium">
+                详情 →
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 筛选与检索逻辑
+    function applyFilters() {
+      const search = document.getElementById('assetSearchInput').value.toLowerCase().trim();
+      const tier = document.getElementById('tierFilter').value;
+      const os = document.getElementById('osFilter').value;
+      const sort = document.getElementById('riskSort').value;
+
+      let filtered = mockAssets.filter(asset => {
+        // 搜索匹配
+        const matchSearch = !search || 
+          asset.name.toLowerCase().includes(search) || 
+          asset.ip.toLowerCase().includes(search) || 
+          asset.owner.toLowerCase().includes(search) ||
+          asset.cveNames.some(c => c.toLowerCase().includes(search));
+
+        // Tier 匹配
+        const matchTier = (tier === 'ALL') || (asset.tier === tier);
+
+        // OS 匹配
+        const matchOs = (os === 'ALL') || (asset.platform === os);
+
+        return matchSearch && matchTier && matchOs;
+      });
+
+      // 排序
+      if (sort === 'RISK_DESC') {
+        filtered.sort((a, b) => b.riskScore - a.riskScore);
+      } else if (sort === 'RISK_ASC') {
+        filtered.sort((a, b) => a.riskScore - b.riskScore);
+      }
+
+      renderAssetTable(filtered);
+    }
+
+    function resetFilters() {
+      document.getElementById('assetSearchInput').value = '';
+      document.getElementById('tierFilter').value = 'ALL';
+      document.getElementById('osFilter').value = 'ALL';
+      document.getElementById('riskSort').value = 'RISK_DESC';
+      applyFilters();
+      showToast('条件已重置', '已恢复展示全部 3,420 台受纳管资产视图', 'info');
+    }
+
+    function filterOfflineAssets() {
+      switchTab('assets');
+      document.getElementById('assetSearchInput').value = '';
+      document.getElementById('tierFilter').value = 'ALL';
+      document.getElementById('osFilter').value = 'ALL';
+      const offline = mockAssets.filter(a => a.agentStatus === 'OFFLINE');
+      renderAssetTable(offline);
+      showToast('已筛选探针离线主机', '当前展示 8 台心跳断连需排查的节点', 'warning');
+    }
+
+    // 主视图 Tab 切换
+    function switchTab(tabId) {
+      const views = ['assets', 'ueba', 'topo'];
+      views.forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+        const btn = document.getElementById(`tabBtn-${v}`);
+        btn.classList.remove('bg-cyber-blue', 'text-white', 'shadow-cyber-glow');
+        btn.classList.add('text-slate-400', 'border-transparent');
+      });
+
+      document.getElementById(`view-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tabBtn-${tabId}`);
+      activeBtn.classList.add('bg-cyber-blue', 'text-white', 'shadow-cyber-glow');
+      activeBtn.classList.remove('text-slate-400', 'border-transparent');
+    }
+
+    // 打开资产详情抽屉
+    function openAssetDrawer(assetId) {
+      const asset = mockAssets.find(a => a.id === assetId) || mockAssets[0];
+      
+      document.getElementById('drawerIconBox').innerText = asset.name.substring(0, 2).toUpperCase();
+      document.getElementById('drawerTitle').innerHTML = `
+        ${asset.name}
+        <span class="px-2 py-0.5 rounded text-[10px] ${asset.tier === 'Tier 0' ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-blue-950 text-blue-300 border border-blue-800'} font-sans">${asset.tier}</span>
+      `;
+      document.getElementById('drawerSubtitle').innerText = `内网 IP: ${asset.ip} | 架构: ${asset.platform} | 所属: ${asset.vpc}`;
+
+      const content = document.getElementById('drawerContent');
+      content.innerHTML = `
+        <!-- 概览指标行 -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-obsidian-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">综合安全健康分</span>
+            <div class="text-xl font-bold font-mono ${asset.riskScore >= 80 ? 'text-cyber-crimson' : (asset.riskScore >= 50 ? 'text-cyber-amber' : 'text-emerald-400')} mt-0.5">
+              ${asset.riskScore} <span class="text-xs text-slate-400 font-normal">/ 100</span>
+            </div>
+          </div>
+          <div class="bg-obsidian-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">未修补高危漏洞</span>
+            <div class="text-xl font-bold font-mono text-red-400 mt-0.5">
+              ${asset.cveHigh} <span class="text-xs text-slate-400 font-normal">个 CVE</span>
+            </div>
+          </div>
+          <div class="bg-obsidian-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">CIS 基线达标率</span>
+            <div class="text-xl font-bold font-mono text-cyber-cobalt mt-0.5">
+              ${asset.baselineRate}% <span class="text-xs text-slate-400 font-normal">通过</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 基本元数据 -->
+        <div class="bg-obsidian-950 p-4 rounded-xl border border-slate-800 space-y-2">
+          <h4 class="text-xs font-semibold text-slate-200 border-b border-slate-800 pb-2 flex items-center justify-between">
+            <span>资产设备画像与宿主详情</span>
+            <span class="text-[10px] font-mono text-slate-400">ID: ASSET-${asset.id}</span>
+          </h4>
+          <div class="grid grid-cols-2 gap-y-2 text-xs">
+            <div><span class="text-slate-400">操作系统版本:</span> <span class="font-mono text-slate-200">${asset.os}</span></div>
+            <div><span class="text-slate-400">公网绑定 IP:</span> <span class="font-mono text-slate-200">${asset.publicIp}</span></div>
+            <div><span class="text-slate-400">所属负责人:</span> <span class="text-slate-200">${asset.owner}</span></div>
+            <div><span class="text-slate-400">探针运行状态:</span> <span class="font-mono text-emerald-400">${asset.agentVersion} (已激活)</span></div>
+            <div><span class="text-slate-400">最近合规核查:</span> <span class="font-mono text-slate-300">${asset.lastScan}</span></div>
+            <div><span class="text-slate-400">所属网络区域:</span> <span class="font-mono text-cyber-cobalt">${asset.vpc}</span></div>
+          </div>
+        </div>
+
+        <!-- CIS 安全基线核查报告 -->
+        <div class="bg-obsidian-950 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-semibold text-slate-200">CIS Benchmark 安全基线核查报告</h4>
+            <span class="px-2 py-0.5 rounded bg-blue-950 text-cyber-cobalt border border-blue-800 text-[10px] font-mono">得分: ${asset.baselineRate}%</span>
+          </div>
+          <p class="text-xs text-slate-400 bg-obsidian-900 p-2.5 rounded-lg border border-slate-800/80 font-mono">
+            ${asset.baselineCheck}
+          </p>
+          <div class="space-y-1.5 text-[11px]">
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5"><span class="text-emerald-400">✔</span> SSH 强制仅允许密钥登录 (PasswordAuthentication=no)</span>
+              <span class="text-emerald-400 font-mono">PASS</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5"><span class="text-emerald-400">✔</span> 启用内核地址随机化与防利用保护 (KASLR)</span>
+              <span class="text-emerald-400 font-mono">PASS</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5"><span class="text-red-400">✖</span> /etc/shadow 存在未强制过期且超过 90 天未改密账号</span>
+              <span class="text-red-400 font-mono font-bold">FAIL (高危)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 开放网络端口与活跃服务 -->
+        <div class="bg-obsidian-950 p-4 rounded-xl border border-slate-800 space-y-3">
+          <h4 class="text-xs font-semibold text-slate-200">开放网络端口与活跃监听服务 (Network Exposure)</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono">
+              <thead>
+                <tr class="text-slate-400 border-b border-slate-800 pb-1">
+                  <th class="py-1.5">端口/协议</th>
+                  <th class="py-1.5">进程与服务</th>
+                  <th class="py-1.5 text-right">监听状态</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/40 text-slate-300">
+                ${asset.ports.map(p => `
+                  <tr>
+                    <td class="py-2 text-cyber-cobalt font-bold">${p.port}</td>
+                    <td class="py-2">${p.service}</td>
+                    <td class="py-2 text-right"><span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">${p.status}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 关联 CVE 漏洞暴露面 -->
+        <div class="bg-obsidian-950 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-semibold text-white">关联 CVE 漏洞利用面及加固建议</h4>
+            <span class="text-red-400 font-mono text-xs font-bold">${asset.cveHigh} 个高危</span>
+          </div>
+          <div class="space-y-2">
+            ${asset.cveNames.map(c => `
+              <div class="p-2.5 rounded-lg bg-red-950/40 border border-red-900/60 flex items-start justify-between gap-2">
+                <div>
+                  <span class="font-mono text-red-300 font-bold text-xs block">${c}</span>
+                  <span class="text-[11px] text-slate-400 mt-0.5 block">官方已发布紧急补丁修复库，建议立即在下一维护窗口推送热补丁</span>
+                </div>
+                <button onclick="showToast('工单已派发', '已向负责人 ${asset.owner} 指派针对 ${c.split(' ')[0]} 的加固工单', 'success')" class="px-2 py-1 rounded bg-red-900/60 hover:bg-red-800 text-red-200 text-[10px] shrink-0 font-medium">
+                  指派加固
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // 抽屉动作栏
+      const actions = document.getElementById('drawerActions');
+      actions.innerHTML = `
+        <div class="text-[11px] text-slate-400 font-mono">
+          状态: <span class="text-emerald-400 font-bold">${asset.agentStatus}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="isolateAsset('${asset.id}')" class="px-3 py-1.5 rounded-lg bg-red-950 hover:bg-red-900 text-red-200 border border-red-700/80 text-xs font-medium transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+            <span>一键网络微隔离</span>
+          </button>
+          <button onclick="scanAsset('${asset.id}')" class="px-3 py-1.5 rounded-lg bg-cyber-blue hover:bg-blue-600 text-white text-xs font-medium transition shadow-cyber-glow flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>即刻下发探针漏洞扫描</span>
+          </button>
+        </div>
+      `;
+
+      showDrawer();
+    }
+
+    // 打开 UEBA 实体抽屉
+    function openUebaDrawer(entityId) {
+      const entity = mockUebaEntities[entityId] || mockUebaEntities['svc_backup'];
+
+      document.getElementById('drawerIconBox').innerText = entity.name.substring(0, 2).toUpperCase();
+      document.getElementById('drawerTitle').innerHTML = `
+        ${entity.name}
+        <span class="px-2 py-0.5 rounded text-[10px] bg-purple-950 text-purple-300 border border-purple-800 font-sans">UEBA 异常得分: ${entity.riskScore}</span>
+      `;
+      document.getElementById('drawerSubtitle').innerText = `${entity.title} | 所属: ${entity.dept}`;
+
+      const content = document.getElementById('drawerContent');
+      content.innerHTML = `
+        <!-- 概览指标 -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-obsidian-950 p-3 rounded-xl border border-red-900/60">
+            <span class="text-[10px] text-slate-400 block">综合异常偏离风险</span>
+            <div class="text-xl font-bold font-mono text-red-400 mt-0.5">
+              ${entity.riskScore} <span class="text-xs text-slate-400 font-normal">/ 100</span>
+            </div>
+          </div>
+          <div class="bg-obsidian-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">偏离行为特征数</span>
+            <div class="text-xl font-bold font-mono text-amber-400 mt-0.5">
+              ${entity.anomalies.length} <span class="text-xs text-slate-400 font-normal">项关键违规</span>
+            </div>
+          </div>
+          <div class="bg-obsidian-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">关联波及资产</span>
+            <div class="text-xl font-bold font-mono text-cyber-cobalt mt-0.5">
+              ${entity.associatedAssets.length} <span class="text-xs text-slate-400 font-normal">台服务器</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 实体元属性 -->
+        <div class="bg-obsidian-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+          <h4 class="font-semibold text-white border-b border-slate-800 pb-2">实体账户属性与基线模型比对</h4>
+          <div class="grid grid-cols-2 gap-y-2">
+            <div><span class="text-slate-400">实体类型:</span> <span class="text-slate-200 font-mono">${entity.role}</span></div>
+            <div><span class="text-slate-400">归属部门:</span> <span class="text-slate-200">${entity.dept}</span></div>
+            <div><span class="text-slate-400">基线学习窗口:</span> <span class="text-slate-200 font-mono">过去 90 天连续遥测</span></div>
+            <div><span class="text-slate-400">当前处置状态:</span> <span id="entityStatusInDrawer" class="text-red-400 font-mono font-bold">待阻断研判</span></div>
+          </div>
+        </div>
+
+        <!-- 异常特征流 -->
+        <div class="bg-obsidian-950 p-4 rounded-xl border border-slate-800 space-y-3">
+          <h4 class="text-xs font-semibold text-white">模型捕获的关键异常偏离特征 (Triggered Rules)</h4>
+          <div class="space-y-2">
+            ${entity.anomalies.map(a => `
+              <div class="p-3 rounded-lg bg-obsidian-900 border border-red-900/40">
+                <div class="flex items-center justify-between text-xs font-semibold text-red-300">
+                  <span>${a.title}</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-950 text-red-300 border border-red-800">${a.severity}</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">${a.desc}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 关联涉事核心资产 -->
+        <div class="bg-obsidian-950 p-4 rounded-xl border border-slate-800 space-y-2">
+          <h4 class="text-xs font-semibold text-white">实体跨越访问的关联主机</h4>
+          <div class="flex flex-wrap gap-2">
+            ${entity.associatedAssets.map(ast => `
+              <span onclick="openAssetDrawer('${ast}')" class="px-2.5 py-1 rounded bg-obsidian-900 hover:bg-obsidian-800 border border-slate-700 text-xs font-mono text-cyber-cobalt cursor-pointer transition">
+                💻 ${ast} →
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      const actions = document.getElementById('drawerActions');
+      actions.innerHTML = `
+        <div class="text-[11px] text-slate-400 font-mono">
+          建议立即对该实体执行会话阻断
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="lockEntityAccount('${entity.name}')" class="px-3 py-1.5 rounded-lg bg-red-950 hover:bg-red-900 text-red-200 border border-red-700/80 text-xs font-medium transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            <span>锁定实体账号</span>
+          </button>
+          <button onclick="enforceMFA('${entity.name}')" class="px-3 py-1.5 rounded-lg bg-amber-950 hover:bg-amber-900 text-amber-200 border border-amber-800 text-xs font-medium transition">
+            强制二次 MFA
+          </button>
+          <button onclick="revokeKerberosTokens('${entity.name}')" class="px-3 py-1.5 rounded-lg bg-cyber-blue hover:bg-blue-600 text-white text-xs font-medium transition shadow-cyber-glow">
+            撤销 Token
+          </button>
+        </div>
+      `;
+
+      showDrawer();
+    }
+
+    function showDrawer() {
+      const drawer = document.getElementById('inspectionDrawer');
+      const overlay = document.getElementById('drawerOverlay');
+      drawer.classList.remove('translate-x-full');
+      overlay.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    function closeDrawer() {
+      const drawer = document.getElementById('inspectionDrawer');
+      const overlay = document.getElementById('drawerOverlay');
+      drawer.classList.add('translate-x-full');
+      overlay.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    // 交互动作函数与动态 Toast
+    function isolateAsset(assetId) {
+      showToast('网络微隔离生效', `已下发 EDR 策略阻断资产 [${assetId}] 的全部横向流量 (保留 22 管理端口通道)`, 'crimson');
+      const asset = mockAssets.find(a => a.id === assetId);
+      if (asset) {
+        asset.status = 'QUARANTINED';
+        applyFilters();
+      }
+    }
+
+    function scanAsset(assetId) {
+      showToast('漏洞扫描已下发', `已向探针 [${assetId}] 派发即时基线与 CVE-2024 高危脆弱性检测指令`, 'info');
+      const asset = mockAssets.find(a => a.id === assetId);
+      if (asset) {
+        asset.lastScan = '刚刚 (扫描中...)';
+        applyFilters();
+      }
+    }
+
+    function triggerBatchScan() {
+      showToast('全网批量扫描已启动', '已向全网 3,412 台在线 Agent 并发下发轻量脆弱性快照探测任务', 'info');
+    }
+
+    function exportAssetInventory() {
+      showToast('资产报表导出成功', '已生成 sentinel-assets-inventory-2026.csv (包含 3,420 条纳管记录)', 'success');
+    }
+
+    function lockEntityAccount(entityName) {
+      showToast('实体账号已成功锁定', `已阻断特权账号 [${entityName}] 的全部鉴权通道，并终止其当前活动的 3 个 SSH/RDP 会话`, 'crimson');
+      const card = document.getElementById(`card-${entityName}`);
+      if (card) {
+        card.classList.remove('border-red-800/80', 'border-amber-800/80');
+        card.classList.add('border-slate-800', 'opacity-60');
+      }
+      const statusEl = document.getElementById('entityStatusInDrawer');
+      if (statusEl) {
+        statusEl.innerText = '已锁定 (Account Locked)';
+        statusEl.className = 'text-slate-400 font-mono font-bold';
+      }
+    }
+
+    function enforceMFA(entityName) {
+      showToast('已强制二次 MFA 验证', `已将账号 [${entityName}] 标记为高疑实体，下次发起任何 RPC/鉴权必须通过 Authenticator TOTP 校验`, 'warning');
+    }
+
+    function revokeKerberosTokens(entityName) {
+      showToast('Kerberos 票据已全量吊销', `已同步向 Windows 域控 win-ad-dc01 下发指令，撤销 [${entityName}] 的全部 TGT/TGS 凭据`, 'success');
+    }
+
+    function refreshUebaBaselines() {
+      showToast('行为基线重新拟合完成', 'Sentinel UEBA 引擎已基于过去 24 小时流遥测更新特征权重，动态偏离阈值已校正', 'info');
+    }
+
+    function toggleSimMode() {
+      const btn = document.getElementById('simModeBtn');
+      if (btn.innerText.includes('LIVE')) {
+        btn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span><span>沙箱演练 (SIMULATION)</span>`;
+        btn.className = "px-2.5 py-1 rounded text-[11px] font-medium transition-all flex items-center gap-1.5 bg-amber-950/80 text-amber-300 border border-amber-800/60 shadow-sm";
+        showToast('已切入模拟演练环境', '当前操作处于沙箱隔离态，所有阻断动作将以仿真日志记录，不影响真实业务主机', 'warning');
+      } else {
+        btn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span>生产实时 (LIVE)</span>`;
+        btn.className = "px-2.5 py-1 rounded text-[11px] font-medium transition-all flex items-center gap-1.5 bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 shadow-sm";
+        showToast('已切回生产实时环境', '当前操作将直接作用于真实网络防御设备', 'info');
+      }
+    }
+
+    // Command Palette 控制
+    function toggleCommandPalette() {
+      const modal = document.getElementById('cmdPaletteModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        document.getElementById('globalCmdInput').focus();
+      }
+    }
+
+    function handleCmdSearch() {
+      const q = document.getElementById('globalCmdInput').value.toLowerCase();
+      // 这里简要联动筛选或提示
+    }
+
+    function selectCmdItem(id) {
+      toggleCommandPalette();
+      if (mockAssets.some(a => a.id === id)) {
+        switchTab('assets');
+        openAssetDrawer(id);
+      } else if (mockUebaEntities[id]) {
+        switchTab('ueba');
+        openUebaDrawer(id);
+      }
+    }
+
+    // 键盘监听快捷键 (Cmd+K, Esc)
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        toggleCommandPalette();
+      }
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('cmdPaletteModal');
+        if (!modal.classList.contains('hidden')) {
+          modal.classList.add('hidden');
+        } else {
+          closeDrawer();
+        }
+      }
+    });
+
+    // Toast 提示框实现
+    function showToast(title, message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let borderClass = 'border-blue-600 bg-obsidian-950';
+      let icon = 'ℹ️';
+      if (type === 'crimson') {
+        borderClass = 'border-red-600 bg-obsidian-950 shadow-crimson-glow';
+        icon = '🛡️';
+      } else if (type === 'warning') {
+        borderClass = 'border-amber-600 bg-obsidian-950';
+        icon = '⚠️';
+      } else if (type === 'success') {
+        borderClass = 'border-emerald-600 bg-obsidian-950 shadow-emerald-glow';
+        icon = '✅';
+      }
+
+      toast.className = `p-3.5 rounded-xl border ${borderClass} text-xs text-white shadow-xl transition-all duration-300 transform translate-y-3 opacity-0 pointer-events-auto flex items-start gap-3 w-80`;
+      toast.innerHTML = `
+        <div class="text-base shrink-0">${icon}</div>
+        <div class="flex-1">
+          <div class="font-bold flex items-center justify-between">
+            <span>${title}</span>
+            <span class="text-[9px] font-mono text-slate-400">刚刚</span>
+          </div>
+          <p class="text-[11px] text-slate-300 mt-0.5 leading-snug">${message}</p>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-3', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // 页面初始化加载
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAssetTable(mockAssets);
+    });
+  </script>
+</body>
+</html>

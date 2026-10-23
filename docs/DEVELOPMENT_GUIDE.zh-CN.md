@@ -135,7 +135,7 @@ sec/
         │                        客户端(浏览器)                       │
         │  Next.js 16 / React 19 / TanStack Query / Zustand / WS+SSE   │
         └───────────────┬───────────────────────────┬──────────────────┘
-                        │ HTTPS(/api → :8000 代理) │ WebSocket / SSE
+                        │ HTTPS(/api → :8088 代理) │ WebSocket / SSE
                         ▼                            ▼
         ┌─────────────────────────────────────────────────────────────┐
         │                     FastAPI 应用(main.py)                   │
@@ -421,14 +421,14 @@ cp .env.example .env          # 填写:JWT_SECRET、ZHIPU_API_KEY/ANTHROPIC_API_
 
 ### 8.2 运行(开发)
 ```bash
-# 在仓库根目录 — 并发运行后端(:8000)+ 前端(:3003)
+# 在仓库根目录 — 并发运行后端(:8088)+ 前端(:3003)
 npm run dev
 
 # 或分开运行:
-npm run dev:backend    # uvicorn main:app --reload --port 8000
+npm run dev:backend    # uvicorn main:app --reload --port 8088
 npm run dev:frontend   # next dev -p 3003
 ```
-- 前端将 `/api/*` 代理到 `http://localhost:8000/api/*`(在 `next.config.js` 中)。
+- 前端将 `/api/*` 代理到 `http://localhost:8088/api/*`(在 `next.config.js` 中)。
 - 数据库默认为 `data/app.db`(SQLite)— 设置 `DATABASE_URL=postgresql://...` 切换 Postgres。
 
 ### 8.3 数据库

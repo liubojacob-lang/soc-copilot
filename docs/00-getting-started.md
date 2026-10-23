@@ -94,13 +94,13 @@ venv\Scripts\activate
 pip install -r requirements.txt
 
 # 启动服务
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8088
 ```
 
 ✅ **预期输出：**
 
 ```
-INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     Uvicorn running on http://0.0.0.0:8088
 INFO:     Application startup complete.
 ```
 
@@ -139,7 +139,7 @@ ready - started server on 0.0.0.0:3003, url: http://localhost:3003
 | 🌐 服务      | 🔗 URL                     | 👤 默认账号          |
 | :----------- | :------------------------- | :------------------- |
 | **前端界面** | http://localhost:3003      | `admin` / `admin123` |
-| **API 文档** | http://localhost:8000/docs | -                    |
+| **API 文档** | http://localhost:8088/docs | -                    |
 | **数据库**   | `backend/data/app.db`      | -                    |
 
 </div>
@@ -194,7 +194,7 @@ LOG_FILE=backend.log
 
 ```env
 # API 后端地址
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8088
 ```
 
 > [!TIP]
@@ -208,7 +208,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 | ❌ 症状          | 🔍 原因          | ✅ 解决方案                                               |
 | :--------------- | :--------------- | :-------------------------------------------------------- |
-| 端口 8000 被占用 | 其他服务占用端口 | `netstat -ano \| findstr :8000` 查找并关闭                |
+| 端口 8088 被占用 | 其他服务占用端口 | `netstat -ano \| findstr :8088` 查找并关闭                |
 | pip 安装失败     | 网络超时         | `pip install --trusted-host pypi.org -r requirements.txt` |
 | npm install 报错 | Node 版本不兼容  | 使用 nvm 切换到 Node 18+                                  |
 | 数据库迁移失败   | SQLite 锁        | 删除 `data/*.db` 重新迁移                                 |

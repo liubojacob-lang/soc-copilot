@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.logger import get_logger
 from db.session import get_session
 from dependencies import get_current_user
+from dependencies.auth import require_analyst_or_admin
 from models.user import UserModel
 from services.alerting.alert_enrichment import AlertEnrichmentService
 from services.query_cache import cached
@@ -23,7 +24,7 @@ router = APIRouter(prefix="/api/v1/alert-enrichment", tags=["alert-enrichment"])
 async def process_single_alert(
     alert_id: int,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> dict[str, Any]:
     """
     Manually trigger enrichment for a specific alert
@@ -57,7 +58,7 @@ async def process_single_alert(
 async def process_recent_alerts(
     hours: int = 1,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> dict[str, Any]:
     """
     Manually trigger enrichment for recent alerts

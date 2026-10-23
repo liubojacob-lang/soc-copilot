@@ -62,7 +62,23 @@ async def enable_2fa(
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ) -> TOTPStatusResponse:
-    """Verify code and activate 2FA with the chosen policy."""
+    """Verify password + code and activate 2FA with the chosen policy."""
+    # Password step-up: binding/replacing the second factor requires proving
+    # account ownership beyond the session (audit-run1).
+    if not verify_password(request.password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid account password.",
+        )
+
+    # An enabled binding must be removed (with password + code) before it can
+    # be replaced — silent overwrite would let a session thief swap the factor.
+    if current_user.is_totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="2FA is already enabled. Disable it first with your password and a current code.",
+        )
+
     valid, _, _ = TOTPService.verify_code(request.secret, request.code)
     if not valid:
         raise HTTPException(
@@ -72,9 +88,15 @@ async def enable_2fa(
 
     secret_service = get_secret_service()
     encrypted_secret = secret_service.encrypt(request.secret)
-    encrypted_backup = (
-        secret_service.encrypt(json.dumps(request.backup_codes))
+    # Store backup codes hashed and encrypted to prevent exposure
+    hashed_backup_codes = (
+        TOTPService.hash_backup_codes(request.backup_codes)
         if request.backup_codes
+        else None
+    )
+    encrypted_backup = (
+        secret_service.encrypt(json.dumps(hashed_backup_codes))
+        if hashed_backup_codes
         else None
     )
 

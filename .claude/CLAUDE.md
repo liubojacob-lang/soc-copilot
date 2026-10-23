@@ -99,7 +99,7 @@ chore: 构建/工具
 ```bash
 # 后端
 cd backend && source venv/bin/activate
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8088
 
 # 前端
 cd frontend && npm run dev

@@ -1,6 +1,6 @@
 # 🔔 Security Alerts API - Quick Reference
 
-**Base URL**: `http://localhost:8000/api/v1/security-alerts`
+**Base URL**: `http://localhost:8088/api/v1/security-alerts`
 
 ---
 
@@ -9,7 +9,7 @@
 ### 1. Test Ingest Alert
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/security-alerts/ingest \
+curl -X POST http://localhost:8088/api/v1/security-alerts/ingest \
   -H "Content-Type: application/json" \
   -d '{
     "source": "wazuh",
@@ -30,22 +30,22 @@ curl -X POST http://localhost:8000/api/v1/security-alerts/ingest \
 
 ```bash
 # All alerts
-curl http://localhost:8000/api/v1/security-alerts/
+curl http://localhost:8088/api/v1/security-alerts/
 
 # Filter by severity
-curl "http://localhost:8000/api/v1/security-alerts/?severity=high"
+curl "http://localhost:8088/api/v1/security-alerts/?severity=high"
 
 # Filter by status
-curl "http://localhost:8000/api/v1/security-alerts/?status=open"
+curl "http://localhost:8088/api/v1/security-alerts/?status=open"
 
 # Search in title/description
-curl "http://localhost:8000/api/v1/security-alerts/?search=sql"
+curl "http://localhost:8088/api/v1/security-alerts/?search=sql"
 ```
 
 ### 3. Get Statistics
 
 ```bash
-curl http://localhost:8000/api/v1/security-alerts/stats/summary
+curl http://localhost:8088/api/v1/security-alerts/stats/summary
 ```
 
 ---
@@ -189,7 +189,7 @@ cd backend
 python test_security_alerts.py
 
 # View API docs
-open http://localhost:8000/docs
+open http://localhost:8088/docs
 
 # Check database
 sqlite3 sec_copilot.db "SELECT COUNT(*) FROM security_alerts;"

@@ -1,6 +1,7 @@
 """Service for trigger management and execution."""
 
 import hashlib
+import re
 import secrets
 from datetime import UTC, datetime
 from typing import Any
@@ -121,6 +122,25 @@ class TriggerService:
             logger.warning(f"Invalid cron expression '{cron_expr}': {e}")
             return False
 
+    async def _creator_is_admin(self, trigger: PlaybookTriggerModel) -> bool:
+        """Resolve the trigger creator's role.
+
+        Apply-mode execution mirrors the direct-run admin gate
+        (dag_execution_service.execute): only admin-created triggers may run
+        their DAG with real side effects.
+        """
+        if not trigger.created_by:
+            return False
+        from sqlalchemy import select
+
+        from models.user import UserModel, UserRole
+
+        result = await self.session.execute(
+            select(UserModel.role).where(UserModel.id == trigger.created_by)
+        )
+        role = result.scalar_one_or_none()
+        return role == UserRole.ADMIN
+
     async def handle_webhook(
         self,
         trigger_id: str,
@@ -194,13 +214,38 @@ class TriggerService:
         except json.JSONDecodeError:
             input_context = {"raw_payload": payload.decode("utf-8", errors="ignore")}
 
-        # Record invocation
-        invocation = await self.trigger_repo.record_invocation(
-            trigger_id=trigger_id,
-            idempotency_key=idempotency_key,
-            payload=payload,
-            status="pending",
-        )
+        # Record invocation. A unique index on (trigger_id, request_hash)
+        # backs the dedupe SELECT above — an IntegrityError here means a
+        # concurrent identical delivery won the race, so treat it as a
+        # duplicate delivery rather than executing twice (audit-run1).
+        from sqlalchemy.exc import IntegrityError
+
+        try:
+            invocation = await self.trigger_repo.record_invocation(
+                trigger_id=trigger_id,
+                idempotency_key=idempotency_key,
+                payload=payload,
+                status="pending",
+            )
+        except IntegrityError as ie:
+            await self.session.rollback()
+            cached = await self.trigger_repo.check_idempotency(
+                trigger_id, idempotency_key, payload
+            )
+            if cached:
+                logger.info(
+                    f"Concurrent duplicate delivery resolved to cached invocation: {cached.id}"
+                )
+                return {
+                    "run_id": cached.run_id,
+                    "status": cached.status,
+                    "cached": True,
+                    "invocation_id": cached.id,
+                }
+            raise ValueError(
+                "Duplicate delivery rejected: "
+                + re.sub(r'["\n]', " ", str(ie.orig))[:120]
+            ) from ie
 
         # Execute playbook
         run = None
@@ -228,6 +273,13 @@ class TriggerService:
             except DAGValidationError as e:
                 raise ValueError(f"Invalid DAG definition: {e}")
 
+            # Apply-mode authority: non-admin-created triggers must not run
+            # with real side effects (same policy as the direct-run gate)
+            if not await self._creator_is_admin(trigger):
+                raise ValueError(
+                    "Apply-mode trigger execution requires an admin-created trigger"
+                )
+
             # Create run
             run = await self.run_repo.create(
                 playbook_name=definition.name,
@@ -253,6 +305,7 @@ class TriggerService:
                 input_context=input_context,
                 mode="apply",
                 failure_strategy="fail_fast",
+                definition_created_by=definition.created_by,
             )
             output = await scheduler.execute()
 
@@ -434,6 +487,15 @@ class TriggerService:
                 )
                 return None
 
+            # Apply-mode authority: non-admin-created triggers must not run
+            # with real side effects (same policy as the direct-run gate)
+            if not await self._creator_is_admin(trigger):
+                logger.warning(
+                    f"Cron trigger {trigger_id} skipped: apply-mode execution "
+                    "requires an admin-created trigger"
+                )
+                return None
+
             # Create run
             input_context = {"trigger_source": "cron"}
             run = await self.run_repo.create(
@@ -459,6 +521,7 @@ class TriggerService:
                 input_context=input_context,
                 mode="apply",
                 failure_strategy="fail_fast",
+                definition_created_by=definition.created_by,
             )
             output = await scheduler.execute()
 
