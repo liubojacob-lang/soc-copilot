@@ -55,14 +55,14 @@ GET    /api/marketplace/dashboard           # Dashboard stats
 
 ```bash
 # Search playbooks
-curl "http://localhost:8000/api/marketplace/playbooks?category=phishing&difficulty=beginner"
+curl "http://localhost:8088/api/marketplace/playbooks?category=phishing&difficulty=beginner"
 
 # Download playbook
-curl -X POST http://localhost:8000/api/marketplace/playbooks/market_001/download \
+curl -X POST http://localhost:8088/api/marketplace/playbooks/market_001/download \
   -H "Authorization: Bearer $TOKEN"
 
 # Submit review
-curl -X POST http://localhost:8000/api/marketplace/playbooks/market_001/reviews \
+curl -X POST http://localhost:8088/api/marketplace/playbooks/market_001/reviews \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"rating": 5, "comment": "Excellent playbook!"}'
 ```
@@ -107,21 +107,21 @@ GET    /api/cloud-native/dashboard          # Dashboard
 
 ```bash
 # Scan container image
-curl -X POST http://localhost:8000/api/cloud-native/containers/scan \
+curl -X POST http://localhost:8088/api/cloud-native/containers/scan \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"image": "nginx", "tag": "1.21"}'
 
 # Scan Kubernetes cluster
-curl -X POST http://localhost:8000/api/cloud-native/kubernetes/scan \
+curl -X POST http://localhost:8088/api/cloud-native/kubernetes/scan \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"cluster_name": "production", "namespace": "default"}'
 
 # Get AWS CloudTrail events
-curl http://localhost:8000/api/cloud-native/cloud/events/aws?hours=24 \
+curl http://localhost:8088/api/cloud-native/cloud/events/aws?hours=24 \
   -H "Authorization: Bearer $TOKEN"
 
 # Get compliance report
-curl http://localhost:8000/api/cloud-native/compliance/report \
+curl http://localhost:8088/api/cloud-native/compliance/report \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -218,7 +218,7 @@ python -m uvicorn main:app --reload
 ### 2. Access Documentation
 
 ```
-http://localhost:8000/docs
+http://localhost:8088/docs
 ```
 
 ### 3. Configure Cloud Credentials (Optional)

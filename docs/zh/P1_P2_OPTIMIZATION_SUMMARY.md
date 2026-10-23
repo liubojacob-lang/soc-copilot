@@ -174,20 +174,20 @@ cd backend
 python main.py
 
 # 2. 首次调用统计API（缓存未命中）
-curl http://localhost:8000/api/v1/security-alerts/stats/summary
+curl http://localhost:8088/api/v1/security-alerts/stats/summary
 
 # 3. 60秒内再次调用（缓存命中）
-curl http://localhost:8000/api/v1/security-alerts/stats/summary
+curl http://localhost:8088/api/v1/security-alerts/stats/summary
 
 # 4. 查看Prometheus指标
-curl http://localhost:8000/metrics/prometheus | grep cache
+curl http://localhost:8088/metrics/prometheus | grep cache
 ```
 
 ### 2. Gzip压缩验证
 
 ```bash
 # 1. 请求大响应并检查压缩
-curl -H "Accept-Encoding: gzip" -I http://localhost:8000/api/v1/security-alerts/
+curl -H "Accept-Encoding: gzip" -I http://localhost:8088/api/v1/security-alerts/
 
 # 2. 检查响应头是否包含 Content-Encoding: gzip
 ```
@@ -196,7 +196,7 @@ curl -H "Accept-Encoding: gzip" -I http://localhost:8000/api/v1/security-alerts/
 
 ```bash
 # 访问指标端点
-curl http://localhost:8000/metrics/prometheus
+curl http://localhost:8088/metrics/prometheus
 
 # 查看新增的指标
 # soc_cache_hits_total

@@ -238,28 +238,28 @@ npm run dev
 ### 1. List Pending Approvals
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/approvals?status=pending&page=1&page_size=20" \
+curl -X GET "http://localhost:8088/api/playbook/approvals?status=pending&page=1&page_size=20" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 2. Get All Approvals (Admin/Auditor)
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/approvals" \
+curl -X GET "http://localhost:8088/api/playbook/approvals" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 3. Get My Approvals (Analyst)
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/approvals" \
+curl -X GET "http://localhost:8088/api/playbook/approvals" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 4. Approve a Request
 
 ```bash
-curl -X POST "http://localhost:8000/api/playbook/approvals/{approval_id}/approve" \
+curl -X POST "http://localhost:8088/api/playbook/approvals/{approval_id}/approve" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"comments": "Reviewed and approved remediation plan"}'
@@ -268,7 +268,7 @@ curl -X POST "http://localhost:8000/api/playbook/approvals/{approval_id}/approve
 ### 5. Reject a Request
 
 ```bash
-curl -X POST "http://localhost:8000/api/playbook/approvals/{approval_id}/reject" \
+curl -X POST "http://localhost:8088/api/playbook/approvals/{approval_id}/reject" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"comments": "Insufficient evidence for containment"}'
@@ -277,14 +277,14 @@ curl -X POST "http://localhost:8000/api/playbook/approvals/{approval_id}/reject"
 ### 6. Get Pending Count
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/approvals/pending/count" \
+curl -X GET "http://localhost:8088/api/playbook/approvals/pending/count" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 7. Create Playbook with Human Approval
 
 ```bash
-curl -X POST "http://localhost:8000/api/playbook/run" \
+curl -X POST "http://localhost:8088/api/playbook/run" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -300,21 +300,21 @@ curl -X POST "http://localhost:8000/api/playbook/run" \
 ### 8. Get Run Details with Approval Status
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/runs/{run_id}" \
+curl -X GET "http://localhost:8088/api/playbook/runs/{run_id}" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 9. Get Run Nodes (including approval nodes)
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/runs/{run_id}/nodes" \
+curl -X GET "http://localhost:8088/api/playbook/runs/{run_id}/nodes" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 10. Resume Playbook from Approval
 
 ```bash
-curl -X POST "http://localhost:8000/api/playbook/runs/{run_id}/resume" \
+curl -X POST "http://localhost:8088/api/playbook/runs/{run_id}/resume" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -327,7 +327,7 @@ curl -X POST "http://localhost:8000/api/playbook/runs/{run_id}/resume" \
 
 ```bash
 # Include in playbook definition
-curl -X POST "http://localhost:8000/api/playbook-definitions/{id}/run" \
+curl -X POST "http://localhost:8088/api/playbook-definitions/{id}/run" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -349,21 +349,21 @@ SLACK_WEBHOOK_DEFAULT=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ### 13. Get Available Playbooks
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/playbooks" \
+curl -X GET "http://localhost:8088/api/playbook/playbooks" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 14. Get Run History
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/runs?page=1&page_size=20" \
+curl -X GET "http://localhost:8088/api/playbook/runs?page=1&page_size=20" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 15. Search Approvals by Date Range
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/approvals?status=pending&page=1&page_size=20" \
+curl -X GET "http://localhost:8088/api/playbook/approvals?status=pending&page=1&page_size=20" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -463,7 +463,7 @@ curl -X GET "http://localhost:8000/api/playbook/approvals?status=pending&page=1&
 
 ```bash
 # Create definition with approval
-curl -X POST "http://localhost:8000/api/playbook-definitions" \
+curl -X POST "http://localhost:8088/api/playbook-definitions" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d @- << 'EOF'
@@ -505,7 +505,7 @@ EOF
 ### 2. Execute the Playbook
 
 ```bash
-curl -X POST "http://localhost:8000/api/playbook-definitions/{definition_id}/run" \
+curl -X POST "http://localhost:8088/api/playbook-definitions/{definition_id}/run" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"mode": "dry_run", "input_json": {}}'
@@ -514,7 +514,7 @@ curl -X POST "http://localhost:8000/api/playbook-definitions/{definition_id}/run
 ### 3. Check for Pending Approvals
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/approvals?status=pending" \
+curl -X GET "http://localhost:8088/api/playbook/approvals?status=pending" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -522,7 +522,7 @@ curl -X GET "http://localhost:8000/api/playbook/approvals?status=pending" \
 
 ```bash
 # Get approval_id from step 3, then:
-curl -X POST "http://localhost:8000/api/playbook/approvals/{approval_id}/approve" \
+curl -X POST "http://localhost:8088/api/playbook/approvals/{approval_id}/approve" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"comments": "Approved - IOCs verified"}'
@@ -531,7 +531,7 @@ curl -X POST "http://localhost:8000/api/playbook/approvals/{approval_id}/approve
 ### 5. Verify Execution Continued
 
 ```bash
-curl -X GET "http://localhost:8000/api/playbook/runs/{run_id}/nodes" \
+curl -X GET "http://localhost:8088/api/playbook/runs/{run_id}/nodes" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -564,11 +564,11 @@ curl -X GET "http://localhost:8000/api/playbook/runs/{run_id}/nodes" \
 
 ```bash
 # Check if approval exists
-curl -X GET "http://localhost:8000/api/playbook/approvals/{approval_id}" \
+curl -X GET "http://localhost:8088/api/playbook/approvals/{approval_id}" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Check run status
-curl -X GET "http://localhost:8000/api/playbook/runs/{run_id}" \
+curl -X GET "http://localhost:8088/api/playbook/runs/{run_id}" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -589,7 +589,7 @@ curl -X POST YOUR_WEBHOOK_URL \
 
 ```bash
 # Check node status
-curl -X GET "http://localhost:8000/api/playbook/runs/{run_id}/nodes" \
+curl -X GET "http://localhost:8088/api/playbook/runs/{run_id}/nodes" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Check for errors in backend logs
@@ -645,7 +645,7 @@ This will:
 
 ## Documentation Links
 
-- [API Documentation](http://localhost:8000/docs)
+- [API Documentation](http://localhost:8088/docs)
 - [OpenAPI Specification](./openapi.json)
 - [Test Cases](./TEST_CASES.md)
 - [Manual Test Guide](./MANUAL_TEST_GUIDE.md)

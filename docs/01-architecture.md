@@ -50,7 +50,7 @@ graph TB
         B4[🎨 Tailwind UI]
     end
 
-    subgraph 后端层[⚙️ 后端层 - FastAPI :8000]
+    subgraph 后端层[⚙️ 后端层 - FastAPI :8088]
         C1[🔐 Authentication<br/>JWT / API Key]
         C2[🤖 AI Service<br/>NVIDIA / OpenAI]
         C3[🛡️ Alert Analyzer<br/>Timeline / Report]

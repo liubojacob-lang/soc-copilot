@@ -47,7 +47,7 @@ POST /api/api-keys
 # 使用
 curl -H "X-API-Key: key_abc123" \
      -H "X-API-Secret: sk_live_xyz789..." \
-     http://localhost:8000/api/alerts
+     http://localhost:8088/api/alerts
 ```
 
 ## 操作审计

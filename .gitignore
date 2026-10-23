@@ -125,6 +125,8 @@ backups/
 # Agent working state & review artifacts (local only)
 .workbuddy/
 .zcode/
+.video_agent/
+graphify-out/
 deliverables/
 
 # Playwright generated artifacts

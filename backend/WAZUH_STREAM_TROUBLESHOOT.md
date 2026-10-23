@@ -48,14 +48,14 @@ python main.py
 TOKEN="your_jwt_token"
 
 # 启动服务
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/start \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 4. **验证状态**
 
 ```bash
-curl http://localhost:8000/api/v1/wazuh/stream/status \
+curl http://localhost:8088/api/v1/wazuh/stream/status \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -75,14 +75,14 @@ python main.py
 ```bash
 TOKEN="your_jwt_token"
 
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/start \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 3. **发送测试告警**
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/test-alert \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/test-alert \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
     "agent_id": "001",
@@ -115,10 +115,10 @@ tail -f server.err
 
 ```bash
 # 流服务状态
-curl http://localhost:8000/api/v1/wazuh/stream/status
+curl http://localhost:8088/api/v1/wazuh/stream/status
 
 # 订阅统计
-curl http://localhost:8000/api/v1/wazuh/stream/subscriptions
+curl http://localhost:8088/api/v1/wazuh/stream/subscriptions
 ```
 
 ### 前端调试
@@ -129,7 +129,7 @@ curl http://localhost:8000/api/v1/wazuh/stream/subscriptions
 2. **Network 标签** - 筛选 "WS" 查看 WebSocket 连接
 3. **查看请求 URL** - 应该类似：
    ```
-   ws://localhost:8000/api/v1/ws/alerts?token=xxx&channels=wazuh
+   ws://localhost:8088/api/v1/ws/alerts?token=xxx&channels=wazuh
    ```
 
 ### 常见错误和解决
@@ -137,7 +137,7 @@ curl http://localhost:8000/api/v1/wazuh/stream/subscriptions
 #### 错误 1: 404 Not Found
 
 **原因**: WebSocket 端点不存在
-**解决**: 确保后端正在运行，检查端口 8000
+**解决**: 确保后端正在运行，检查端口 8088
 
 #### 错误 2: 401 Unauthorized
 
@@ -186,5 +186,5 @@ chmod +x test_wazuh_stream.sh
 **需要帮助？**
 
 1. 检查后端日志: `tail -f backend/server.err`
-2. 检查服务状态: `curl http://localhost:8000/api/health`
+2. 检查服务状态: `curl http://localhost:8088/api/health`
 3. 查看浏览器控制台错误

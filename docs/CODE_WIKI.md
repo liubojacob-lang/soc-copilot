@@ -870,8 +870,8 @@ PENDING → RUNNING → SUCCESS
 
 ### 5.6 API集成
 
-- **代理模式**: Next.js rewrites 将 `/api/*` 代理至 `http://localhost:8000/api/*`
-- **WebSocket**: 直连 `ws://localhost:8000/ws` 实现实时告警推送
+- **代理模式**: Next.js rewrites 将 `/api/*` 代理至 `http://localhost:8088/api/*`
+- **WebSocket**: 直连 `ws://localhost:8088/ws` 实现实时告警推送
 - **认证**: JWT Bearer Token + Cookie 双模式
 - **CSRF**: Double Submit Cookie 模式
 
@@ -1042,7 +1042,7 @@ make dev
 npm run dev
 
 # 7. 启动开发服务器 (方式三: 分别启动)
-cd backend && source ../venv/bin/activate && uvicorn main:app --reload --port 8000
+cd backend && source ../venv/bin/activate && uvicorn main:app --reload --port 8088
 cd frontend && npm run dev   # 端口 3003
 ```
 
@@ -1090,8 +1090,8 @@ kubectl apply -f k8s/06-hpa.yaml
 | 服务 | URL | 默认凭据 |
 |------|-----|----------|
 | 前端 | http://localhost:3003 | admin / (自动生成，见控制台) |
-| 后端API | http://localhost:8000 | - |
-| API文档 | http://localhost:8000/docs | - |
+| 后端API | http://localhost:8088 | - |
+| API文档 | http://localhost:8088/docs | - |
 | 数据库 | `data/app.db` (SQLite自动创建) | - |
 
 ---

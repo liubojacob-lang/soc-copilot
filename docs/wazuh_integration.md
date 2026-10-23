@@ -417,7 +417,7 @@ python test_wazuh_integration.py
 #### Test 1: Verify API Connectivity
 
 ```bash
-curl -X GET http://localhost:8000/api/v1/wazuh/health
+curl -X GET http://localhost:8088/api/v1/wazuh/health
 ```
 
 Expected: `{"healthy": true, "api_url": "...", "message": "Connected"}`
@@ -425,7 +425,7 @@ Expected: `{"healthy": true, "api_url": "...", "message": "Connected"}`
 #### Test 2: Fetch Agents
 
 ```bash
-curl -X GET http://localhost:8000/api/v1/wazuh/agents
+curl -X GET http://localhost:8088/api/v1/wazuh/agents
 ```
 
 Expected: JSON array of agent objects
@@ -433,7 +433,7 @@ Expected: JSON array of agent objects
 #### Test 3: Create Test Alert
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/wazuh/test-alert \
+curl -X POST http://localhost:8088/api/v1/wazuh/test-alert \
   -H "Content-Type: application/json" \
   -d '{
     "agent_id": "001",
@@ -447,7 +447,7 @@ Expected: Test alert created and published to queue
 #### Test 4: Check Queue
 
 ```bash
-curl -X GET http://localhost:8000/api/v1/notifications/queue/stats
+curl -X GET http://localhost:8088/api/v1/notifications/queue/stats
 ```
 
 Expected: Shows alerts in queue (pending messages)
@@ -550,7 +550,7 @@ Check your Feishu/Slack/Email for the test alert notification
 1. Check Wazuh dashboard for alerts
 2. Verify agents are connected and active:
    ```bash
-   curl -X GET http://localhost:8000/api/v1/wazuh/agents?status_filter=active
+   curl -X GET http://localhost:8088/api/v1/wazuh/agents?status_filter=active
    ```
 3. Test with a real security event (e.g., failed SSH login)
 4. Increase lookback window and restart receiver
@@ -640,10 +640,10 @@ Check metrics:
 
 ```bash
 # Receiver stats
-curl http://localhost:8000/api/v1/wazuh/receiver/stats
+curl http://localhost:8088/api/v1/wazuh/receiver/stats
 
 # Queue stats
-curl http://localhost:8000/api/v1/notifications/queue/stats
+curl http://localhost:8088/api/v1/notifications/queue/stats
 ```
 
 ---

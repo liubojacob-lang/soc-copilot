@@ -46,7 +46,7 @@ SOC Copilot WebSocket API 提供实时安全告警、playbook 执行更新和系
 ```javascript
 // WebSocket 连接 URL
 const wsUrl =
-  "ws://localhost:8000/api/v1/ws/alerts?token=YOUR_JWT_TOKEN&channels=alerts,playbook_runs,system";
+  "ws://localhost:8088/api/v1/ws/alerts?token=YOUR_JWT_TOKEN&channels=alerts,playbook_runs,system";
 
 // 建立连接
 const ws = new WebSocket(wsUrl);
@@ -272,7 +272,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 #### 连接端点
 
 ```
-ws://localhost:8000/api/v1/ws/alerts?token=JWT&channels=alerts,system
+ws://localhost:8088/api/v1/ws/alerts?token=JWT&channels=alerts,system
 ```
 
 **查询参数**:

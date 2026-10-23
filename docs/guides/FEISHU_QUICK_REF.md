@@ -74,7 +74,7 @@ curl -X POST $FEISHU_WEBHOOK_URL \
   -d '{"msg_type":"text","content":{"text":"测试消息"}}'
 
 # 方法 3: API 测试 (服务启动后)
-curl -X POST http://localhost:8000/api/v1/notifications/test
+curl -X POST http://localhost:8088/api/v1/notifications/test
 ```
 
 ---

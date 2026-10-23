@@ -96,10 +96,10 @@ python test_system.py
 
 ```bash
 # 执行无头模式压测（200 虚拟用户，5 分钟，自动生成 HTML 分析报告）
-./tests/perf/run_perf_test.sh http://localhost:8000 200 20 5m
+./tests/perf/run_perf_test.sh http://localhost:8088 200 20 5m
 
 # 长时间稳定性测试 (Soak Test，持续 24 小时，监测内存泄漏与连接池水位)
-./tests/perf/run_perf_test.sh http://localhost:8000 100 10 24h
+./tests/perf/run_perf_test.sh http://localhost:8088 100 10 24h
 ```
 
 **容量安全阈值红线：**
