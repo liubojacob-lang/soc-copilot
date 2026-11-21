@@ -229,7 +229,10 @@
       "goCases": "Open Cases",
       "goPlaybooks": "Playbook Runs",
       "goApprovals": "Pending Approvals",
-      "sources": "Top Alert Sources"
+      "sources": "Top Alert Sources",
+      "probesOnline": "48/48 probes online in sync",
+      "mttrLabel": "Avg. MTTR:",
+      "blockRateToday": "Today's Block Rate:"
     },
     "tabs": {
       "alertAnalyzer": "Alert Analyzer",

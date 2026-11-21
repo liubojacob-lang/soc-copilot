@@ -309,8 +309,8 @@ function SidebarBrand({
   isMounted?: boolean;
 }) {
   const tCommon = useTranslations("common");
-  const collapseTitle = `${tCommon("collapse") || "收起侧边栏"} (⌘B)`;
-  const expandTitle = `${tCommon("expand") || "展开侧边栏"} (⌘B)`;
+  const collapseTitle = `${tCommon("collapse")} (⌘B)`;
+  const expandTitle = `${tCommon("expand")} (⌘B)`;
 
   return (
     <div
@@ -326,7 +326,7 @@ function SidebarBrand({
           type="button"
           onClick={onToggle}
           aria-expanded={false}
-          aria-label={tCommon("expand") || "展开侧边栏"}
+          aria-label={tCommon("expand")}
           title={expandTitle}
           className="group relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 cursor-pointer"
         >
@@ -365,7 +365,7 @@ function SidebarBrand({
             type="button"
             onClick={onToggle}
             aria-expanded={true}
-            aria-label={tCommon("collapse") || "收起侧边栏"}
+            aria-label={tCommon("collapse")}
             title={collapseTitle}
             className="sidebar-label flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 cursor-pointer"
           >

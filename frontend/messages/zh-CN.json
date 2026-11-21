@@ -229,7 +229,10 @@
       "goCases": "查看案例",
       "goPlaybooks": "执行历史",
       "goApprovals": "待审批",
-      "sources": "主要告警来源"
+      "sources": "主要告警来源",
+      "probesOnline": "48/48 探针全量在线同步",
+      "mttrLabel": "平均处置 MTTR:",
+      "blockRateToday": "本日拦截率:"
     },
     "tabs": {
       "alertAnalyzer": "告警分析器",

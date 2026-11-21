@@ -199,21 +199,21 @@ export default function HomePage() {
             </div>
             <div className="hidden md:flex items-center gap-2 text-text-muted font-mono text-[11px]">
               <Radio className="w-3.5 h-3.5 text-accent-500" />
-              <span>48/48 探针全量在线同步</span>
+              <span>{t("dashboard.probesOnline")}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-text-secondary font-mono text-[11px]">
             {stats && stats.mttr_minutes !== null && (
               <div className="flex items-center gap-1.5">
-                <span className="text-text-muted">平均处置 MTTR:</span>
+                <span className="text-text-muted">{t("dashboard.mttrLabel")}</span>
                 <span className="font-semibold text-text-primary">
                   {formatDuration(stats.mttr_minutes, t)}
                 </span>
               </div>
             )}
             <div className="flex items-center gap-1.5">
-              <span className="text-text-muted">本日拦截率:</span>
+              <span className="text-text-muted">{t("dashboard.blockRateToday")}</span>
               <span className="font-semibold text-emerald-500 dark:text-emerald-400">99.4%</span>
             </div>
             <div className="flex items-center gap-1.5">
