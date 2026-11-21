@@ -5,6 +5,41 @@ All notable changes to SOC Copilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-11-21
+
+### Security — audit-run1 加固批次 (9 提交)
+
+- **RBAC 与越权修复**: `security_alerts` / `correlation` / `wazuh` / `system` 等端点补角色守卫；CSRF 豁免改精确匹配；playbook run cancel 对齐 owner-or-admin；marketplace 审核中剧本不再泄露完整 `dag_json`
+- **Refresh token 原子单次使用**: Redis SET NX / 内存加锁下 claim 即黑名单，并发重放由 `[200,200]` 收紧为 `[200,401]`
+- **Playbook 网络节点 SSRF 收口**: `slack_notify` 出口校验、重定向逐跳校验（上限 5）、pinned resolver 修复后真正生效、安全键位（url/webhook_url 等）不可被 run input 覆盖
+- **2FA 加固**: 绑定要求密码 step-up、禁止静默覆盖已有因子、管理员改密清除 TOTP 状态
+- **Trigger**: apply 门禁（非 admin 创建拒绝/跳过）、幂等唯一索引 + 并发去重（迁移 0010）、CRUD 持久化修复（此前返回 200 但未落库）
+- **密钥作用域**: playbook secret 解析绑定 definition 作者（fail-closed）；ENVIRONMENT 大小写归一；AddCredentials 精确 host 匹配；审计日志敏感字段脱敏；secret 预览常量掩码
+- **生产环境** 禁用 `/docs` `/redoc` `/openapi.json`
+- **安全门禁修复**: `check_pip_audit.py` 兼容 pip-audit ≥ 2.8 的 `vulns` 字段（此前 32 条 advisories 被统计为 0 并放行），附回归测试
+
+### Added
+
+- **Sentinel 设计系统一期**: 深色基底 token、severity 五档语义色、cockpit 遥测横幅与首页工作台对齐；7 套高保真原型入库 `ui-prototypes/`
+- **E2E 回归 CI 修复链**: hydration 竞态防护、种子时序、Next dev 冷编译时序
+- 后端开发端口统一为 8088（Makefile / 脚本 / 文档对齐）
+
+### Changed
+
+- **依赖升级（漏洞清零）**:
+  - 前端: `next` 16.3.5 → 16.4.6、`@sentry/nextjs` 10.43.0 → 10.76.2、`sharp` → 0.35.5、`source-map-js` → 1.2.4（npm audit 生产依赖 critical/high 清零）
+  - 后端: `aiohttp` 3.14.3 → 3.14.4（CVE-2026-111064 批次）、`opentelemetry-*` 1.44.0 → 1.45.2、instrumentation 0.65b0 → 0.66b2（`pip-audit -r requirements.txt` 清零）
+- **i18n**: Sentinel 首页遥测文案入 catalogs；侧边栏冗余硬编码回退文案移除；CJK 棘轮基线 201 → 198
+- **健康检查版本** 不再硬编码 `0.9.0`，统一读取 `settings.app_version`
+- **开发体验**: `alembic.ini` / `requirements.txt` 纯 ASCII 化（非 UTF-8 locale 可运行）；design-token 门禁改为跨平台 tailwind CLI 调用；`ruff` 0 错误
+- `api.generated.ts` 按最新 OpenAPI 重新生成
+
+### Known residual（记录在案，不阻塞本版）
+
+- `filelock 3.32.7`（安全扫描工具链传递依赖）存在 CVE-2026-1129xx，受 `safety 3.8.1` 的 `filelock<4` 约束暂不可升，仅影响开发工具链，不进入生产依赖
+- CJK 硬编码存量 198 处 / 硬编码色存量 4,569 处维持棘轮基线，按 `docs/FUTURE_BACKLOG.md` 消化
+- v1.0 就绪度评估的 B2/B3/S1 与性能/移动端/Safari 验证列入 v1.1.x 后续迭代
+
 ## [1.0.0] - 2026-09-21
 
 ### Milestone — Production GA Release

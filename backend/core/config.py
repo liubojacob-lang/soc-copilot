@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_version: str = "1.0.0"
+    app_version: str = "1.1.0"
     ai_provider: str = (
         "zhipu"  # Options: zhipu, claude, openai, nvidia, moonshot, openrouter
     )

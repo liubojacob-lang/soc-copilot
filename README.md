@@ -1,6 +1,6 @@
 # SOC Copilot - Security Operations Center Intelligent Analysis Platform
 
-[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.1.0-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/node.js-20+-green.svg)](https://nodejs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
@@ -546,6 +546,6 @@ This project is an internal security operations tool for authorized users only.
 
 ---
 
-**Version**: v1.0.0
+**Version**: v1.1.0
 **Last Updated**: 2026-09-21
 **Maintainer**: SOC Team
