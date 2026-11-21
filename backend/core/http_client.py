@@ -3,13 +3,12 @@ HTTP Client Manager - Singleton HTTP client for connection pooling
 and SSRF-safe outbound request utilities with DNS-rebinding protection.
 """
 
-from typing import Any, Optional
-from urllib.parse import urlparse
+from typing import Optional
 
 import httpx
 
 from core.logger import get_logger
-from core.ssrf_protection import _is_private_ip, is_url_safe
+from core.ssrf_protection import is_url_safe
 
 logger = get_logger(__name__)
 
