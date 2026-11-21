@@ -192,7 +192,7 @@ async def health_detailed() -> HealthStatus:
 
     return HealthStatus(
         status=overall_status,
-        version="0.9.0",
+        version=settings.app_version,
         timestamp=datetime.now(UTC).isoformat(),
         uptime_seconds=round(time.time() - _startup_time, 2),
         components=components,
@@ -202,7 +202,7 @@ async def health_detailed() -> HealthStatus:
 # Prometheus metrics
 METRICS_TEMPLATE = """# HELP soc_copilot_info Application information
 # TYPE soc_copilot_info gauge
-soc_copilot_info{{version="0.9.0",environment="{environment}"}} 1
+soc_copilot_info{{version="{version}",environment="{environment}"}} 1
 
 # HELP soc_copilot_uptime_seconds Application uptime in seconds
 # TYPE soc_copilot_uptime_seconds gauge
@@ -241,6 +241,7 @@ async def metrics() -> Response:
     blacklist_health = await check_token_blacklist()
 
     metrics_text = METRICS_TEMPLATE.format(
+        version=settings.app_version,
         environment=settings.environment,
         uptime=round(time.time() - _startup_time, 2),
         db_status=status_to_metric(db_health.status),
