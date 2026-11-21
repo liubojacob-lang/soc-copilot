@@ -41,18 +41,14 @@ class UserService(BaseService):
 
     async def create_user(self, admin_id: str, user_data: UserCreate) -> UserModel:
         """Create a new user (admin only)."""
-        # Check if username exists
-        if await self.user_repo.get_by_username(user_data.username):
+        # Check if username or email already exists (prevent account enumeration with unified message)
+        if (
+            await self.user_repo.get_by_username(user_data.username)
+            or await self.user_repo.get_by_email(user_data.email)
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already exists",
-            )
-
-        # Check if email exists
-        if await self.user_repo.get_by_email(user_data.email):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already exists",
+                detail="User account already exists or registration details are invalid",
             )
 
         # Create user

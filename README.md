@@ -1,6 +1,6 @@
 # SOC Copilot - Security Operations Center Intelligent Analysis Platform
 
-[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.1.0-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/node.js-20+-green.svg)](https://nodejs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
@@ -143,7 +143,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 
 # Start server (database auto-initializes)
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8088
 ```
 
 ### 2. Frontend Setup
@@ -163,8 +163,8 @@ npm run dev
 | Service           | URL                          | Default Credentials |
 | ----------------- | ---------------------------- | ------------------- |
 | Frontend          | http://localhost:3003        | admin / admin123    |
-| Backend API       | http://localhost:8000        | -                   |
-| API Documentation | http://localhost:8000/docs   | -                   |
+| Backend API       | http://localhost:8088        | -                   |
+| API Documentation | http://localhost:8088/docs   | -                   |
 | Database          | `data/app.db` (auto-created) | -                   |
 
 ---
@@ -533,7 +533,7 @@ This project has undergone comprehensive security optimization. [View Full Repor
 ## Related Documentation
 
 - [CHANGELOG.md](./CHANGELOG.md) - Version history
-- [API Documentation](http://localhost:8000/docs) - Interactive API Documentation (backend must be running)
+- [API Documentation](http://localhost:8088/docs) - Interactive API Documentation (backend must be running)
 - [`openapi.json`](./openapi.json) - Full machine-readable spec (269 paths / 314 operations)
 - [docs/api-retry-policy.md](./docs/api-retry-policy.md) - Rate limits & retry policy
 - [PROJECT_FINAL_AUDIT.md](./docs/reports/PROJECT_FINAL_AUDIT.md) - Final acceptance audit
@@ -546,6 +546,6 @@ This project is an internal security operations tool for authorized users only.
 
 ---
 
-**Version**: v1.0.0
+**Version**: v1.1.0
 **Last Updated**: 2026-09-21
 **Maintainer**: SOC Team

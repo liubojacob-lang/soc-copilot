@@ -69,6 +69,23 @@ class SlackNotifyPlugin(BaseNodePlugin):
                 "message": "No webhook URL configured",
             }
 
+        # SSRF protection: same gate as the sibling network nodes
+        # (http_request, firewall_block_ip, edr_isolate). The webhook URL can
+        # arrive from node config, run input, or a store secret — validate at
+        # the sink regardless of provenance (audit-run1).
+        from core.ssrf_protection import is_url_safe
+
+        is_safe, ssrf_reason = is_url_safe(webhook_url)
+        if not is_safe:
+            logger.error(
+                f"[{context.run_id}] Slack webhook URL blocked by SSRF protection: {ssrf_reason}"
+            )
+            return {
+                "status": "error",
+                "message": f"Webhook URL blocked by SSRF protection: {ssrf_reason}",
+                "notification_failed": True,
+            }
+
         # Build message
         message_template = context.input_json.get(
             "message", "Playbook run {{run_id}} completed"
@@ -91,8 +108,11 @@ class SlackNotifyPlugin(BaseNodePlugin):
             context=context,
         )
 
+        # Do not log URL/secret material — the resolved URL may BE a store
+        # secret when use_secret=true (audit-run1 hardening).
         logger.info(
-            f"[{context.run_id}] Sending Slack notification to {webhook_url[:50]}..."
+            f"[{context.run_id}] Sending Slack notification"
+            + (" from store secret" if use_secret else "")
         )
 
         # Send webhook

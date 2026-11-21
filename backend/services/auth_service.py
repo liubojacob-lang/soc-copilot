@@ -99,11 +99,22 @@ class AuthService(BaseService):
         password_valid = verify_password(credentials.password, user.hashed_password)
 
         if not password_valid:
-            # Increment failed login attempts
-            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            # Atomic increment (audit-run1): a Python read-modify-write lost
+            # updates under concurrent logins, stretching the only per-account
+            # brute-force bound. UPDATE ... RETURNING makes the counter
+            # race-free on PostgreSQL and SQLite alike.
+            from sqlalchemy import update
+
+            result = await self.session.execute(
+                update(UserModel)
+                .where(UserModel.id == user.id)
+                .values(failed_login_attempts=UserModel.failed_login_attempts + 1)
+                .returning(UserModel.failed_login_attempts)
+            )
+            attempts = result.scalar_one()
 
             # Check if we should lock the account
-            if user.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
+            if attempts >= MAX_LOGIN_ATTEMPTS:
                 lockout_until = datetime.now(UTC) + timedelta(
                     minutes=LOCKOUT_DURATION_MINUTES
                 )
@@ -114,7 +125,7 @@ class AuthService(BaseService):
                     reason="max_login_attempts_exceeded",
                     status_code=423,
                     extra_json={
-                        "attempts": user.failed_login_attempts,
+                        "attempts": attempts,
                         "locked_until": lockout_until.isoformat(),
                     },
                 )
@@ -130,7 +141,7 @@ class AuthService(BaseService):
                 reason="invalid_password",
                 status_code=401,
                 extra_json={
-                    "attempts": user.failed_login_attempts,
+                    "attempts": attempts,
                     "max_attempts": MAX_LOGIN_ATTEMPTS,
                 },
             )
@@ -211,9 +222,15 @@ class AuthService(BaseService):
                 detail="Invalid refresh token",
             )
 
-        # Check if the old refresh token has already been blacklisted (replay detection)
+        # Atomically claim the single-use refresh token (rotation). The claim
+        # IS the blacklist write, so concurrent replays lose the race instead
+        # of all passing a check-then-add window (audit-run1: replay detection
+        # was defeated by concurrent refreshes).
         blacklist = get_token_blacklist()
-        if await blacklist.is_blacklisted(refresh_token):
+        claimed = await blacklist.claim_single_use(
+            refresh_token, reason="token_rotation"
+        )
+        if not claimed:
             logger.warning(f"Reused refresh token detected for user {user_id}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -227,9 +244,6 @@ class AuthService(BaseService):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found or inactive",
             )
-
-        # Blacklist the old refresh token (rotation)
-        await add_token_to_blacklist(refresh_token, reason="token_rotation")
 
         # Create new tokens with role for authorization
         access_token = create_access_token(

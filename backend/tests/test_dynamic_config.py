@@ -6,12 +6,34 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from core.config import settings
 from core.dynamic_config import (
     CONFIG_REDIS_HASH,
     CONFIG_RELOAD_CHANNEL,
     DynamicConfigService,
     get_dynamic_config,
 )
+
+
+@pytest.fixture
+async def require_redis():
+    """Skip the API test when no Redis is reachable at the configured URL.
+
+    The REST endpoints persist overrides through Redis; without it the PUT
+    returns 500 and the test fails for environmental reasons (mirrors the
+    ``Redis not available`` skip in tests/test_message_queue.py).
+    """
+    redis_url = settings.redis_url or "redis://localhost:6379/0"
+    try:
+        import redis.asyncio as redis_asyncio
+
+        client = redis_asyncio.from_url(
+            redis_url, socket_connect_timeout=1, socket_timeout=1
+        )
+        await client.ping()
+        await client.aclose()
+    except Exception as exc:  # skip on any connection failure
+        pytest.skip(f"Redis not available at {redis_url}: {exc}")
 
 
 @pytest.fixture
@@ -183,7 +205,7 @@ def test_singleton_accessor():
 
 
 @pytest.mark.asyncio
-async def test_dynamic_config_api_endpoints(auth_client):
+async def test_dynamic_config_api_endpoints(auth_client, require_redis):
     """Test dynamic config REST API endpoints."""
     # 1. GET /api/v1/admin/settings/dynamic
     resp = await auth_client.get("/api/v1/admin/settings/dynamic")

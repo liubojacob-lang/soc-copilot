@@ -1,0 +1,1556 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOAR 自动化安全剧本编排引擎 — SOC Copilot Sentinel</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: {
+              950: '#05080E',
+              900: '#080C14',
+              850: '#0D131F',
+              800: '#131B2E',
+              750: '#18233C',
+              700: '#1E2B48',
+            },
+            cyber: {
+              blue: '#38BDF8',
+              cobalt: '#2563EB',
+              crimson: '#EF4444',
+              amber: '#F59E0B',
+              emerald: '#10B981',
+              cyan: '#06B6D4',
+              purple: '#A855F7',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #080C14; }
+    ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* Canvas Dot Matrix Pattern */
+    .bg-dot-matrix {
+      background-color: #080C14;
+      background-image: radial-gradient(rgba(56, 189, 248, 0.12) 1.2px, transparent 1.2px);
+      background-size: 24px 24px;
+    }
+
+    /* Animated Flow Particles on SVG Paths */
+    @keyframes dashFlow {
+      from { stroke-dashoffset: 40; }
+      to { stroke-dashoffset: 0; }
+    }
+    .flow-line-active {
+      stroke-dasharray: 6 6;
+      animation: dashFlow 0.8s linear infinite;
+    }
+    .flow-line-pulsing {
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+    }
+
+    /* Node Card Hover and Glows */
+    .node-card {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .node-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px 1px rgba(56, 189, 248, 0.15);
+    }
+    .node-selected {
+      border-color: #38BDF8 !important;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35), 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+    }
+
+    /* Pulse Indicator */
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 0; }
+      100% { transform: scale(0.95); opacity: 0; }
+    }
+    .pulse-ring::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 9999px;
+      border: 2px solid #10B981;
+      animation: pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Drag Ghost Style */
+    .palette-item {
+      cursor: grab;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .palette-item:hover {
+      background: #18233C;
+      border-color: #334155;
+      transform: translateX(2px);
+    }
+    .palette-item:active {
+      cursor: grabbing;
+    }
+
+    /* Handle Pins */
+    .node-handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #080C14;
+      border: 2px solid #64748B;
+      transition: all 0.2s ease;
+      z-index: 10;
+    }
+    .node-card:hover .node-handle, .node-selected .node-handle {
+      border-color: #38BDF8;
+      background: #0284C7;
+      box-shadow: 0 0 8px #38BDF8;
+    }
+    .handle-left { left: -5px; top: 50%; transform: translateY(-50%); }
+    .handle-right { right: -5px; top: 50%; transform: translateY(-50%); }
+    .handle-top { top: -5px; left: 50%; transform: translateX(-50%); }
+    .handle-bottom { bottom: -5px; left: 50%; transform: translateX(-50%); }
+  </style>
+</head>
+
+<body class="bg-obsidian-950 text-slate-200 font-sans antialiased h-screen overflow-hidden flex flex-col select-none">
+
+  <!-- ========================================================================= -->
+  <!-- 1. TOP CONTROL BAR (Canvas Toolbar) -->
+  <!-- ========================================================================= -->
+  <header class="h-14 border-b border-slate-800/80 bg-obsidian-900/95 backdrop-blur-md px-4 flex items-center justify-between z-30 shrink-0">
+    <!-- Left: Brand, Breadcrumbs, Trigger Badges & Save Status -->
+    <div class="flex items-center gap-3">
+      <!-- Sentinel Shield Logo -->
+      <div class="flex items-center gap-2 pr-3 border-r border-slate-800">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyber-cobalt to-cyber-blue flex items-center justify-center shadow-lg shadow-cyber-blue/20">
+          <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold tracking-wider text-slate-100 uppercase">Sentinel SOAR</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded font-mono bg-cyber-blue/15 text-cyber-blue border border-cyber-blue/30 font-semibold">STUDIO</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Playbook Title & Metadata -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-400">剧本库 /</span>
+        <div class="relative group">
+          <input 
+            type="text" 
+            id="playbook-title" 
+            value="APT29 勒索威胁自愈处置流" 
+            class="bg-transparent text-sm font-semibold text-white px-2 py-1 rounded hover:bg-obsidian-800 focus:bg-obsidian-800 focus:ring-1 focus:ring-cyber-blue outline-none transition border border-transparent focus:border-slate-700 w-56 font-sans truncate"
+            title="点击重命名剧本"
+          />
+        </div>
+
+        <!-- Trigger Badges -->
+        <div class="flex items-center gap-1.5 ml-1">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-cyber-purple/15 text-purple-300 border border-cyber-purple/30">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyber-purple animate-pulse"></span>
+            WEBHOOK 实时触发
+          </span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
+            <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            CRON 5m 轮询保底
+          </span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-cyber-emerald/15 text-emerald-300 border border-cyber-emerald/30">
+            v2.4-published
+          </span>
+        </div>
+
+        <!-- Autosave Status Indicator -->
+        <div class="hidden xl:flex items-center gap-1.5 text-slate-400 text-xs pl-2 border-l border-slate-800">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyber-emerald"></span>
+          <span class="text-[11px] text-slate-400">已自动同步 (14:03:22) · 负责人: sec-ops-levent</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Canvas View Controls (Zoom, Fit, Snap, Mode) -->
+    <div class="flex items-center gap-1 bg-obsidian-850 p-1 rounded-lg border border-slate-800 shadow-inner">
+      <button id="btn-zoom-out" class="w-7 h-7 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-obsidian-750 transition" title="缩小 (Ctrl -)">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/></svg>
+      </button>
+      <span id="zoom-label" class="text-xs font-mono font-medium text-slate-300 px-2 min-w-[52px] text-center">100%</span>
+      <button id="btn-zoom-in" class="w-7 h-7 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-obsidian-750 transition" title="放大 (Ctrl +)">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      </button>
+      <div class="h-4 w-px bg-slate-800 mx-1"></div>
+      <button id="btn-fit-view" class="px-2 h-7 flex items-center gap-1.5 rounded text-xs text-slate-300 hover:text-white hover:bg-obsidian-750 transition" title="适应全貌">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+        </svg>
+        <span>自适应</span>
+      </button>
+      <button id="btn-snap-grid" class="px-2 h-7 flex items-center gap-1.5 rounded text-xs text-cyber-blue bg-cyber-blue/10 border border-cyber-blue/30 transition" title="磁吸网格">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+        <span>网格对齐</span>
+      </button>
+    </div>
+
+    <!-- Right Action Buttons (Simulation Run, Step Debug, Versions, Publish) -->
+    <div class="flex items-center gap-2">
+      <!-- Step Debug Button -->
+      <button id="btn-step-debug" class="h-8 px-3 rounded-md bg-obsidian-800 hover:bg-obsidian-750 text-slate-200 border border-slate-700/80 text-xs font-medium flex items-center gap-1.5 transition active:scale-95">
+        <svg class="w-3.5 h-3.5 text-cyber-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+        </svg>
+        <span>单步调试</span>
+      </button>
+
+      <!-- Primary Simulate Run Button -->
+      <button id="btn-simulate-run" class="h-8 px-3.5 rounded-md bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-medium text-xs flex items-center gap-2 shadow-lg shadow-blue-500/25 transition active:scale-95 border border-sky-400/40">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        <span class="font-semibold tracking-wide">仿真调试运行</span>
+        <span class="text-[10px] bg-black/30 px-1.5 py-0.5 rounded font-mono text-sky-100">⌘R</span>
+      </button>
+
+      <!-- Version History -->
+      <button class="h-8 px-2.5 rounded-md bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 border border-slate-700/80 text-xs flex items-center gap-1 transition" title="查看历史版本差异">
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>v2.4</span>
+      </button>
+
+      <!-- Publish Action -->
+      <button id="btn-publish" class="h-8 px-3.5 rounded-md bg-emerald-600/90 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1.5 shadow-md shadow-emerald-900/40 transition active:scale-95 border border-emerald-400/40">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>发布生效</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN WORKSPACE: 3 PANES (Left Palette | Center Canvas | Right Inspector) -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- ----------------------------------------------------------------------- -->
+    <!-- 2. LEFT COMPONENT ACTION PALETTE (Width 260px, Collapsible) -->
+    <!-- ----------------------------------------------------------------------- -->
+    <aside id="left-palette" class="w-64 border-r border-slate-800/80 bg-obsidian-900 flex flex-col z-20 shrink-0 transition-all duration-300">
+      <!-- Palette Header & Search -->
+      <div class="p-3 border-b border-slate-800 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-cyber-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span class="text-xs font-bold text-slate-200 tracking-wide uppercase">编排节点库</span>
+          </div>
+          <span class="text-[10px] font-mono text-slate-400 bg-obsidian-800 px-1.5 py-0.5 rounded border border-slate-700">22 动作</span>
+        </div>
+        <!-- Search Input -->
+        <div class="relative">
+          <input 
+            type="text" 
+            placeholder="搜索节点、触发器、处置..." 
+            class="w-full bg-obsidian-850 border border-slate-800 rounded-md py-1.5 pl-7 pr-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue transition"
+          />
+          <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2 top-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Scrollable Categories -->
+      <div class="flex-1 overflow-y-auto p-2 space-y-3">
+
+        <!-- Category 1: 触发器 (Triggers) -->
+        <div>
+          <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-purple-400 tracking-wider uppercase">
+            <span>⚡ 触发器 (Triggers)</span>
+            <span class="text-[10px] text-slate-500 font-mono">4</span>
+          </div>
+          <div class="space-y-1 mt-1">
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">Wazuh / Sysmon 告警</div>
+                <div class="text-[10px] text-slate-500 truncate">SIEM 实时 Syslog 事件</div>
+              </div>
+            </div>
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">Webhook 回调接收器</div>
+                <div class="text-[10px] text-slate-500 truncate">HTTP POST JSON Payload</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category 2: 威胁研判与数据增强 (Enrichment) -->
+        <div>
+          <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-cyber-cyan tracking-wider uppercase">
+            <span>🔍 数据增强与情报 (Enrichment)</span>
+            <span class="text-[10px] text-slate-500 font-mono">4</span>
+          </div>
+          <div class="space-y-1 mt-1">
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">VirusTotal 哈希信誉</div>
+                <div class="text-[10px] text-slate-500 truncate">70+ 安全引擎样本检出率</div>
+              </div>
+            </div>
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">微步威胁情报 (ThreatBook)</div>
+                <div class="text-[10px] text-slate-500 truncate">IP/域名 APT 家族画像</div>
+              </div>
+            </div>
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">AD 域账户与权限探针</div>
+                <div class="text-[10px] text-slate-500 truncate">Kerberos 票据/提权扫描</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category 3: 条件与逻辑 (Logic & AI) -->
+        <div>
+          <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-cyber-blue tracking-wider uppercase">
+            <span>🧠 逻辑与 AI 智能决策 (Logic)</span>
+            <span class="text-[10px] text-slate-500 font-mono">4</span>
+          </div>
+          <div class="space-y-1 mt-1">
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-cyber-blue shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">SecLLM 威胁判定</div>
+                <div class="text-[10px] text-sky-400 font-mono truncate">AI 大模型攻击链推理 (96%)</div>
+              </div>
+            </div>
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-cyber-blue shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">IF-ELSE 条件路由</div>
+                <div class="text-[10px] text-slate-500 truncate">多因子威胁评分阈值分流</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category 4: 自动化遏制与响应 (Response Actions) -->
+        <div>
+          <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-cyber-crimson tracking-wider uppercase">
+            <span>🛡️ 自动化遏制处置 (Response)</span>
+            <span class="text-[10px] text-slate-500 font-mono">5</span>
+          </div>
+          <div class="space-y-1 mt-1">
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">EDR 主机网络深度隔离</div>
+                <div class="text-[10px] text-slate-500 truncate">阻断 IP 横向扩散 (保留通道)</div>
+              </div>
+            </div>
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">撤销特权凭证 / 冻结 AD</div>
+                <div class="text-[10px] text-slate-500 truncate">强制断开 Active Session</div>
+              </div>
+            </div>
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">防火墙 IP 黑名单下发</div>
+                <div class="text-[10px] text-slate-500 truncate">边界阻断 C2 通信信标</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category 5: 协同与通知 (Notification & Case) -->
+        <div>
+          <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-cyber-emerald tracking-wider uppercase">
+            <span>📢 协同与事件通知 (Notification)</span>
+            <span class="text-[10px] text-slate-500 font-mono">3</span>
+          </div>
+          <div class="space-y-1 mt-1">
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">飞书 / 钉钉 / Slack 告警</div>
+                <div class="text-[10px] text-slate-500 truncate">向安全应急群派发卡片</div>
+              </div>
+            </div>
+            <div class="palette-item p-2 rounded-md bg-obsidian-850 border border-slate-800/80 flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-slate-200 truncate">自动立案 (Create Case)</div>
+                <div class="text-[10px] text-slate-500 truncate">生成 SBAR 标准事件复盘报告</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Palette Footer Hint -->
+      <div class="p-2 border-t border-slate-800/80 bg-obsidian-950/60 text-center">
+        <span class="text-[10px] text-slate-500 flex items-center justify-center gap-1">
+          <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+          点击节点即可查看右侧属性配置
+        </span>
+      </div>
+    </aside>
+
+    <!-- ----------------------------------------------------------------------- -->
+    <!-- 3. CENTRAL REACT FLOW STYLE VISUAL CANVAS -->
+    <!-- ----------------------------------------------------------------------- -->
+    <main id="canvas-container" class="flex-1 bg-dot-matrix relative overflow-hidden flex items-center justify-center">
+
+      <!-- Viewport Wrapper (Transforms on Zoom & Pan) -->
+      <div id="canvas-viewport" class="absolute w-[2200px] h-[1400px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 origin-center transition-transform duration-200">
+
+        <!-- SVG Connection Lines Layer (Curved Bezier Paths with Glow & Flow Particles) -->
+        <svg id="canvas-svg" class="absolute inset-0 w-full h-full pointer-events-none z-0">
+          <defs>
+            <!-- Glowing Gradients for Paths -->
+            <linearGradient id="grad-active" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#06B6D4" stop-opacity="0.8"/>
+            </linearGradient>
+            <linearGradient id="grad-crimson" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#EF4444" stop-opacity="0.9"/>
+            </linearGradient>
+            <linearGradient id="grad-emerald" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#EF4444" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#10B981" stop-opacity="0.9"/>
+            </linearGradient>
+
+            <!-- Arrow Markers -->
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#38BDF8"/>
+            </marker>
+            <marker id="arrow-crimson" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#EF4444"/>
+            </marker>
+            <marker id="arrow-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981"/>
+            </marker>
+          </defs>
+
+          <!-- 1. Path: Node 1 -> Node 2 -->
+          <path id="path-1-2" d="M 370 650 C 450 650, 470 650, 540 650" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+          <path id="flow-1-2" d="M 370 650 C 450 650, 470 650, 540 650" fill="none" stroke="#38BDF8" stroke-width="2.5" class="opacity-0 transition-opacity duration-300"/>
+
+          <!-- 2. Path: Node 2 -> Node 3 -->
+          <path id="path-2-3" d="M 830 650 C 900 650, 920 650, 990 650" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+          <path id="flow-2-3" d="M 830 650 C 900 650, 920 650, 990 650" fill="none" stroke="#38BDF8" stroke-width="2.5" class="opacity-0 transition-opacity duration-300"/>
+
+          <!-- 3. Path: Node 3 -> Node 4 (Branch Critical: EDR Isolate) -->
+          <path id="path-3-4" d="M 1280 625 C 1360 625, 1370 520, 1440 520" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow-crimson)"/>
+          <path id="flow-3-4" d="M 1280 625 C 1360 625, 1370 520, 1440 520" fill="none" stroke="#EF4444" stroke-width="2.5" class="opacity-0 transition-opacity duration-300"/>
+
+          <!-- 4. Path: Node 3 -> Node 5 (Branch Critical: AD Revoke) -->
+          <path id="path-3-5" d="M 1280 675 C 1360 675, 1370 780, 1440 780" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow-crimson)"/>
+          <path id="flow-3-5" d="M 1280 675 C 1360 675, 1370 780, 1440 780" fill="none" stroke="#EF4444" stroke-width="2.5" class="opacity-0 transition-opacity duration-300"/>
+
+          <!-- 5. Path: Node 4 -> Node 6 (EDR -> Notification) -->
+          <path id="path-4-6" d="M 1730 520 C 1800 520, 1810 635, 1880 635" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+          <path id="flow-4-6" d="M 1730 520 C 1800 520, 1810 635, 1880 635" fill="none" stroke="#10B981" stroke-width="2.5" class="opacity-0 transition-opacity duration-300"/>
+
+          <!-- 6. Path: Node 5 -> Node 6 (AD -> Notification) -->
+          <path id="path-5-6" d="M 1730 780 C 1800 780, 1810 665, 1880 665" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+          <path id="flow-5-6" d="M 1730 780 C 1800 780, 1810 665, 1880 665" fill="none" stroke="#10B981" stroke-width="2.5" class="opacity-0 transition-opacity duration-300"/>
+
+          <!-- Branch Label Pill (Critical > 90%) -->
+          <g transform="translate(1310, 545)">
+            <rect width="90" height="20" rx="4" fill="#131B2E" stroke="#EF4444" stroke-width="1"/>
+            <text x="45" y="14" font-size="10" font-family="JetBrains Mono" fill="#F87171" text-anchor="middle" font-weight="600">置信度 ≥ 90%</text>
+          </g>
+          <g transform="translate(1310, 735)">
+            <rect width="90" height="20" rx="4" fill="#131B2E" stroke="#EF4444" stroke-width="1"/>
+            <text x="45" y="14" font-size="10" font-family="JetBrains Mono" fill="#F87171" text-anchor="middle" font-weight="600">账户劫持特征</text>
+          </g>
+        </svg>
+
+        <!-- ------------------------------------------------------------------- -->
+        <!-- CANVAS NODES (Interactive Cards in Absolute Coordinates) -->
+        <!-- ------------------------------------------------------------------- -->
+
+        <!-- NODE 1: TRIGGER (Wazuh Sysmon) -->
+        <div id="node-1" onclick="selectNode(1)" class="node-card absolute left-[90px] top-[580px] w-[280px] bg-obsidian-800 rounded-xl border border-purple-500/40 shadow-xl overflow-hidden cursor-pointer select-none z-10" data-node="1">
+          <!-- Handles -->
+          <div class="node-handle handle-right"></div>
+          <!-- Left Color Accent Strip -->
+          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-cyber-purple"></div>
+          
+          <div class="p-3.5 pl-4">
+            <!-- Node Header -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 uppercase tracking-wide">
+                TRIGGER · 触发器
+              </span>
+              <span id="node-1-status" class="inline-flex items-center gap-1.5 text-[11px] font-mono text-emerald-400">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                就绪
+              </span>
+            </div>
+            
+            <h4 class="text-sm font-semibold text-white flex items-center gap-1.5">
+              捕获高危勒索告警
+            </h4>
+            <p class="text-xs text-slate-400 mt-0.5">Wazuh Sysmon EventID #92014</p>
+
+            <!-- Key Parameters Preview -->
+            <div class="mt-3 p-2 bg-obsidian-900/90 rounded border border-slate-800/80 font-mono text-[11px] space-y-1">
+              <div class="text-slate-400 flex justify-between">
+                <span>Rule:</span>
+                <span class="text-purple-300">sysmon_lsass_dump</span>
+              </div>
+              <div class="text-slate-400 flex justify-between">
+                <span>Src Host:</span>
+                <span class="text-slate-200">10.120.4.15</span>
+              </div>
+            </div>
+
+            <!-- Execution Time Badge -->
+            <div class="mt-2.5 flex items-center justify-between text-[10px] text-slate-500 font-mono border-t border-slate-800/60 pt-2">
+              <span>超时: 10s</span>
+              <span id="node-1-time" class="text-slate-400">耗时: 12ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NODE 2: ENRICHMENT (VirusTotal / ThreatBook) -->
+        <div id="node-2" onclick="selectNode(2)" class="node-card absolute left-[540px] top-[575px] w-[290px] bg-obsidian-800 rounded-xl border border-cyan-500/40 shadow-xl overflow-hidden cursor-pointer select-none z-10" data-node="2">
+          <!-- Handles -->
+          <div class="node-handle handle-left"></div>
+          <div class="node-handle handle-right"></div>
+          <!-- Left Color Accent Strip -->
+          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-cyber-cyan"></div>
+          
+          <div class="p-3.5 pl-4">
+            <!-- Node Header -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 uppercase tracking-wide">
+                ENRICHMENT · 威胁情报增强
+              </span>
+              <span id="node-2-status" class="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+                待执行
+              </span>
+            </div>
+            
+            <h4 class="text-sm font-semibold text-white flex items-center gap-1.5">
+              自动提取 Hash & 关联情报
+            </h4>
+            <p class="text-xs text-slate-400 mt-0.5">VirusTotal + 微步在线 ThreatBook</p>
+
+            <!-- Key Parameters Preview -->
+            <div class="mt-3 p-2 bg-obsidian-900/90 rounded border border-slate-800/80 font-mono text-[11px] space-y-1">
+              <div class="text-slate-400 flex justify-between">
+                <span>IOC SHA256:</span>
+                <span class="text-cyan-300 truncate max-w-[120px]">7d8f...4e1a</span>
+              </div>
+              <div class="text-slate-400 flex justify-between">
+                <span>检出引擎:</span>
+                <span class="text-red-400 font-semibold">68 / 72 恶意 (Trojan)</span>
+              </div>
+            </div>
+
+            <!-- Execution Time Badge -->
+            <div class="mt-2.5 flex items-center justify-between text-[10px] text-slate-500 font-mono border-t border-slate-800/60 pt-2">
+              <span>并发 API: 2</span>
+              <span id="node-2-time" class="text-slate-400">耗时: 145ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NODE 3: LOGIC & AI (SecLLM Triage) -->
+        <div id="node-3" onclick="selectNode(3)" class="node-card absolute left-[990px] top-[565px] w-[290px] bg-obsidian-800 rounded-xl border border-blue-500/50 shadow-xl overflow-hidden cursor-pointer select-none z-10" data-node="3">
+          <!-- Handles -->
+          <div class="node-handle handle-left"></div>
+          <div class="node-handle handle-right" style="top: 38%;"></div>
+          <div class="node-handle handle-right" style="top: 72%;"></div>
+          <!-- Left Color Accent Strip -->
+          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-blue-400 to-purple-500"></div>
+          
+          <div class="p-3.5 pl-4">
+            <!-- Node Header -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-sky-300 border border-blue-500/30 uppercase tracking-wide flex items-center gap-1">
+                <span class="text-xs">✨</span> AI 智能判别 (SecLLM)
+              </span>
+              <span id="node-3-status" class="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+                待执行
+              </span>
+            </div>
+            
+            <h4 class="text-sm font-semibold text-white flex items-center gap-1.5">
+              SecLLM 自动化威胁研判
+            </h4>
+            <p class="text-xs text-slate-400 mt-0.5">Sentinel-Sec-70B · 攻击链上下文推理</p>
+
+            <!-- Key Parameters Preview -->
+            <div class="mt-3 p-2 bg-obsidian-900/90 rounded border border-slate-800/80 font-mono text-[11px] space-y-1">
+              <div class="text-slate-400 flex justify-between">
+                <span>判定模型:</span>
+                <span class="text-slate-300">Sentinel-Sec-v4</span>
+              </div>
+              <div class="text-slate-400 flex justify-between">
+                <span>置信度输出:</span>
+                <span class="text-emerald-400 font-bold">96.8% (APT29 勒索)</span>
+              </div>
+            </div>
+
+            <!-- Execution Time Badge -->
+            <div class="mt-2.5 flex items-center justify-between text-[10px] text-slate-500 font-mono border-t border-slate-800/60 pt-2">
+              <span>分支策略: 双重阻断</span>
+              <span id="node-3-time" class="text-slate-400">耗时: 320ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NODE 4: RESPONSE (EDR Host Isolation) - DEFAULT SELECTED -->
+        <div id="node-4" onclick="selectNode(4)" class="node-card node-selected absolute left-[1440px] top-[450px] w-[290px] bg-obsidian-800 rounded-xl border border-red-500/60 shadow-xl overflow-hidden cursor-pointer select-none z-10" data-node="4">
+          <!-- Handles -->
+          <div class="node-handle handle-left"></div>
+          <div class="node-handle handle-right"></div>
+          <!-- Left Color Accent Strip -->
+          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-cyber-crimson"></div>
+          
+          <div class="p-3.5 pl-4">
+            <!-- Node Header -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/30 uppercase tracking-wide">
+                RESPONSE · 遏制与隔离
+              </span>
+              <span id="node-4-status" class="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+                待执行
+              </span>
+            </div>
+            
+            <h4 class="text-sm font-semibold text-white flex items-center gap-1.5">
+              EDR 主机网络深度隔离
+            </h4>
+            <p class="text-xs text-slate-400 mt-0.5">CrowdStrike / Wazuh Agent 隔离动作</p>
+
+            <!-- Key Parameters Preview -->
+            <div class="mt-3 p-2 bg-obsidian-900/90 rounded border border-slate-800/80 font-mono text-[11px] space-y-1">
+              <div class="text-slate-400 flex justify-between">
+                <span>隔离目标:</span>
+                <span class="text-red-300 font-bold">10.120.4.15</span>
+              </div>
+              <div class="text-slate-400 flex justify-between">
+                <span>保留通道:</span>
+                <span class="text-slate-300">SOC VPN :443 (调查)</span>
+              </div>
+            </div>
+
+            <!-- Execution Time Badge -->
+            <div class="mt-2.5 flex items-center justify-between text-[10px] text-slate-500 font-mono border-t border-slate-800/60 pt-2">
+              <span>超时限制: 30s</span>
+              <span id="node-4-time" class="text-slate-400">耗时: 88ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NODE 5: RESPONSE (Revoke AD Credentials) -->
+        <div id="node-5" onclick="selectNode(5)" class="node-card absolute left-[1440px] top-[710px] w-[290px] bg-obsidian-800 rounded-xl border border-red-500/60 shadow-xl overflow-hidden cursor-pointer select-none z-10" data-node="5">
+          <!-- Handles -->
+          <div class="node-handle handle-left"></div>
+          <div class="node-handle handle-right"></div>
+          <!-- Left Color Accent Strip -->
+          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-cyber-crimson"></div>
+          
+          <div class="p-3.5 pl-4">
+            <!-- Node Header -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/30 uppercase tracking-wide">
+                RESPONSE · 凭证阻断
+              </span>
+              <span id="node-5-status" class="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+                待执行
+              </span>
+            </div>
+            
+            <h4 class="text-sm font-semibold text-white flex items-center gap-1.5">
+              撤销特权凭证 / 冻结 AD
+            </h4>
+            <p class="text-xs text-slate-400 mt-0.5">Active Directory 临时禁用账号与 Token</p>
+
+            <!-- Key Parameters Preview -->
+            <div class="mt-3 p-2 bg-obsidian-900/90 rounded border border-slate-800/80 font-mono text-[11px] space-y-1">
+              <div class="text-slate-400 flex justify-between">
+                <span>受损账号:</span>
+                <span class="text-red-300 font-bold">CORP\svc_backup</span>
+              </div>
+              <div class="text-slate-400 flex justify-between">
+                <span>动作:</span>
+                <span class="text-slate-300">Revoke Sessions & Reset</span>
+              </div>
+            </div>
+
+            <!-- Execution Time Badge -->
+            <div class="mt-2.5 flex items-center justify-between text-[10px] text-slate-500 font-mono border-t border-slate-800/60 pt-2">
+              <span>超时限制: 15s</span>
+              <span id="node-5-time" class="text-slate-400">耗时: 64ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NODE 6: NOTIFICATION & CASE (Alert WarRoom & Case) -->
+        <div id="node-6" onclick="selectNode(6)" class="node-card absolute left-[1880px] top-[590px] w-[290px] bg-obsidian-800 rounded-xl border border-emerald-500/50 shadow-xl overflow-hidden cursor-pointer select-none z-10" data-node="6">
+          <!-- Handles -->
+          <div class="node-handle handle-left"></div>
+          <!-- Left Color Accent Strip -->
+          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-cyber-emerald"></div>
+          
+          <div class="p-3.5 pl-4">
+            <!-- Node Header -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 uppercase tracking-wide">
+                COLLAB · 协同与事件通知
+              </span>
+              <span id="node-6-status" class="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+                待执行
+              </span>
+            </div>
+            
+            <h4 class="text-sm font-semibold text-white flex items-center gap-1.5">
+              发送紧急阻断报告 & 结案
+            </h4>
+            <p class="text-xs text-slate-400 mt-0.5">飞书/钉钉 SOC 战备群 & SBAR 报告</p>
+
+            <!-- Key Parameters Preview -->
+            <div class="mt-3 p-2 bg-obsidian-900/90 rounded border border-slate-800/80 font-mono text-[11px] space-y-1">
+              <div class="text-slate-400 flex justify-between">
+                <span>通知群组:</span>
+                <span class="text-slate-200">#SOC-P1-WarRoom</span>
+              </div>
+              <div class="text-slate-400 flex justify-between">
+                <span>工单流水:</span>
+                <span class="text-emerald-400 font-bold">#INC-2026-8812</span>
+              </div>
+            </div>
+
+            <!-- Execution Time Badge -->
+            <div class="mt-2.5 flex items-center justify-between text-[10px] text-slate-500 font-mono border-t border-slate-800/60 pt-2">
+              <span>状态: 自动化归档</span>
+              <span id="node-6-time" class="text-slate-400">耗时: 92ms</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Canvas Floating Quick Guide & Status -->
+      <div class="absolute bottom-5 left-6 bg-obsidian-900/90 backdrop-blur-md px-3.5 py-2 rounded-lg border border-slate-800 text-xs text-slate-400 flex items-center gap-3 shadow-lg pointer-events-auto">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-cyber-blue animate-ping"></span>
+          <span class="font-medium text-slate-200">画布交互指南:</span>
+        </div>
+        <span>鼠标按住背景可平移拖拽</span>
+        <span class="text-slate-600">|</span>
+        <span>滚轮缩放视口</span>
+        <span class="text-slate-600">|</span>
+        <span>点击节点检视右侧配置</span>
+      </div>
+
+    </main>
+
+    <!-- ----------------------------------------------------------------------- -->
+    <!-- 4. RIGHT INSPECTOR DRAWER (Width 340px, Collapsible) -->
+    <!-- ----------------------------------------------------------------------- -->
+    <aside id="right-inspector" class="w-[340px] border-l border-slate-800/80 bg-obsidian-900 flex flex-col z-20 shrink-0 transition-all duration-300">
+      
+      <!-- Inspector Header -->
+      <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-obsidian-900">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-cyber-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          <span class="text-xs font-bold text-slate-200 tracking-wide uppercase">节点属性与变量映射</span>
+        </div>
+        <button onclick="toggleInspector()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-obsidian-800">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Inspector Body (Dynamic Content by Selected Node) -->
+      <div id="inspector-content" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <!-- Rendered via JavaScript: default is Node 4 (EDR 隔离主机) -->
+      </div>
+
+      <!-- Inspector Bottom Save/Apply Trigger -->
+      <div class="p-3 border-t border-slate-800 bg-obsidian-950/80 flex items-center justify-between gap-2">
+        <button class="flex-1 py-1.5 px-3 rounded bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 text-xs font-medium border border-slate-700 transition">
+          重置默认值
+        </button>
+        <button onclick="applyNodeChanges()" class="flex-1 py-1.5 px-3 rounded bg-cyber-cobalt hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-500/20 transition">
+          应用配置保存
+        </button>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 5. BOTTOM DEBUG TERMINAL & EXECUTION HISTORY DRAWER (Collapsible) -->
+  <!-- ========================================================================= -->
+  <footer id="bottom-console" class="border-t border-slate-800 bg-obsidian-900 flex flex-col z-30 shrink-0 transition-all duration-300" style="height: 190px;">
+    
+    <!-- Console Control Header -->
+    <div class="h-9 px-4 border-b border-slate-800/80 bg-obsidian-850 flex items-center justify-between cursor-pointer select-none" onclick="toggleBottomConsole()">
+      <div class="flex items-center gap-3">
+        <!-- Terminal Icon & Title -->
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-cyber-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span class="text-xs font-bold text-slate-200 tracking-wide uppercase">调试控制台与执行实例 (Debug Terminal)</span>
+        </div>
+
+        <!-- Live Execution Metric Chips -->
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            最近实例: 成功 (721ms)
+          </span>
+          <span class="text-[10px] font-mono text-slate-400">成功率: 100% (5/5)</span>
+        </div>
+      </div>
+
+      <!-- Right Toggle Chevron & Actions -->
+      <div class="flex items-center gap-2">
+        <button class="text-xs text-slate-400 hover:text-white px-2 py-0.5 rounded hover:bg-obsidian-800 font-mono text-[11px]" onclick="event.stopPropagation(); clearTerminalLogs()">
+          清空输出
+        </button>
+        <button id="btn-toggle-bottom" class="text-slate-400 hover:text-white p-1 rounded hover:bg-obsidian-800">
+          <svg id="chevron-bottom" class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Console Body (Split: Left Run Instances 260px | Right Waterfall & Raw Stream Logs) -->
+    <div class="flex-1 flex overflow-hidden">
+      
+      <!-- Left: Recent 5 Execution Instances -->
+      <div class="w-64 border-r border-slate-800 bg-obsidian-900/90 overflow-y-auto p-2 space-y-1 font-mono text-xs">
+        <div class="text-[10px] text-slate-500 font-semibold px-2 py-1 uppercase tracking-wider">最近执行实例 (Instances)</div>
+        
+        <div class="p-2 rounded bg-obsidian-800 border border-cyber-blue/40 flex items-center justify-between cursor-pointer">
+          <div>
+            <div class="text-[11px] font-semibold text-white">#RUN-20260930-0941</div>
+            <div class="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
+              <span>● 全流程自动化通过</span>
+              <span class="text-slate-500">· 721ms</span>
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-400">刚刚</span>
+        </div>
+
+        <div class="p-2 rounded hover:bg-obsidian-850 border border-transparent hover:border-slate-800 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <div class="text-[11px] font-semibold text-slate-300">#RUN-20260930-0940</div>
+            <div class="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
+              <span>● 成功</span>
+              <span class="text-slate-500">· 698ms</span>
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-500">13:55</span>
+        </div>
+
+        <div class="p-2 rounded hover:bg-obsidian-850 border border-transparent hover:border-slate-800 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <div class="text-[11px] font-semibold text-slate-300">#RUN-20260930-0939</div>
+            <div class="text-[10px] text-amber-400 flex items-center gap-1 mt-0.5">
+              <span>● 单步中断调试</span>
+              <span class="text-slate-500">· 465ms</span>
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-500">13:42</span>
+        </div>
+
+        <div class="p-2 rounded hover:bg-obsidian-850 border border-transparent hover:border-slate-800 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <div class="text-[11px] font-semibold text-slate-300">#RUN-20260930-0938</div>
+            <div class="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
+              <span>● 成功</span>
+              <span class="text-slate-500">· 740ms</span>
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-500">11:20</span>
+        </div>
+      </div>
+
+      <!-- Right: Waterfall Timeline & Raw Output Stream -->
+      <div class="flex-1 flex flex-col overflow-hidden bg-obsidian-950 font-mono">
+        <!-- Waterfall Bar Chips -->
+        <div class="px-4 py-1.5 border-b border-slate-800/80 bg-obsidian-900/60 flex items-center gap-2 overflow-x-auto text-[11px]">
+          <span class="text-slate-500 text-[10px] uppercase font-bold shrink-0">耗时瀑布流:</span>
+          <div class="flex items-center gap-1 shrink-0">
+            <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">1.Wazuh (12ms)</span>
+            <span class="text-slate-600">→</span>
+            <span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">2.VT+微步 (145ms)</span>
+            <span class="text-slate-600">→</span>
+            <span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-sky-300 border border-blue-500/30">3.SecLLM (320ms)</span>
+            <span class="text-slate-600">→</span>
+            <span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30">4.EDR隔离 (88ms) + 5.AD冻结 (64ms)</span>
+            <span class="text-slate-600">→</span>
+            <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">6.战备群播报 (92ms)</span>
+          </div>
+        </div>
+
+        <!-- Terminal Logs Scroll Area -->
+        <div id="terminal-logs" class="flex-1 overflow-y-auto p-3 text-xs space-y-1 text-slate-300 select-text">
+          <div class="text-slate-500">[14:02:18.012] [INFO] [ENGINE] Initializing Playbook Session: APT29_Ransomware_SelfHealing_v2.4</div>
+          <div class="text-purple-400">[14:02:18.024] [TRIGGER] [NODE-1] Ingested Syslog event #92014 from Wazuh-Agent-Linux. Process: /tmp/mimikatz_lin. Exec: 12ms.</div>
+          <div class="text-cyan-400">[14:02:18.169] [ENRICH] [NODE-2] IOC Query: SHA256 '7d8f9b...4e1a' matched VirusTotal (68/72 engines malicious, ransomware.apt29). Exec: 145ms.</div>
+          <div class="text-sky-400">[14:02:18.489] [AI_LOGIC] [NODE-3] SecLLM Sentinel-Sec-70B inference finished. Confidence: 0.968. Decision: CRITICAL_BLOCK. Exec: 320ms.</div>
+          <div class="text-red-400">[14:02:18.577] [CONTAINMENT] [NODE-4] EDR API Invocation: isolate_host('10.120.4.15', keep_soc_vpn=True). Status: SUCCESS. Exec: 88ms.</div>
+          <div class="text-red-400">[14:02:18.641] [CONTAINMENT] [NODE-5] Active Directory LDAP: Revoke token & lock user 'CORP\svc_backup'. Status: LOCKED. Exec: 64ms.</div>
+          <div class="text-emerald-400">[14:02:18.733] [COLLAB] [NODE-6] Sent SBAR notification to #SOC-P1-WarRoom. Created incident ticket #INC-2026-8812. Exec: 92ms.</div>
+          <div class="text-slate-400 font-semibold mt-1">✔ [14:02:18.734] [COMPLETE] Simulation finished in 721ms. All 6 nodes resolved successfully with 0 errors.</div>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- 6. GLOBAL TOAST NOTIFICATION MODAL -->
+  <!-- ========================================================================= -->
+  <div id="toast-container" class="fixed top-16 right-6 z-50 pointer-events-none space-y-2"></div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT: APPLICATION LOGIC & INTERACTIONS -->
+  <!-- ========================================================================= -->
+  <script>
+    // --- Node Data Models ---
+    const nodeConfigurations = {
+      1: {
+        id: 1,
+        title: "捕获高危勒索告警",
+        category: "触发器 · Trigger",
+        categoryColor: "purple",
+        description: "监听 Wazuh Syslog 产生的实时安全事件流",
+        timeout: 10,
+        mode: "auto",
+        params: [
+          { label: "Event ID 过滤", value: "92014 (Sysmon LSASS Dump)" },
+          { label: "告警严重性级别", value: "Level >= 12 (Critical)" },
+          { label: "去重静默窗口", value: "120s" }
+        ],
+        payload: {
+          event_id: 92014,
+          rule_id: "sysmon_lsass_dump",
+          source_ip: "10.120.4.15",
+          compromised_user: "CORP\\svc_backup",
+          sample_hash: "7d8f9b2a1c0e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a"
+        }
+      },
+      2: {
+        id: 2,
+        title: "自动提取 Hash & 关联威胁情报",
+        category: "数据增强 · Enrichment",
+        categoryColor: "cyan",
+        description: "并发请求 VirusTotal 与微步在线 ThreatBook 情报 API",
+        timeout: 20,
+        mode: "auto",
+        params: [
+          { label: "目标 Hash 变量", value: "{{ trigger.event.sample_hash }}" },
+          { label: "微步情报威胁评级", value: "高危木马 (APT29 / CozyBear)" },
+          { label: "VT 引擎报警阈值", value: ">= 45 厂商检出" }
+        ],
+        payload: {
+          target_ioc: "{{ trigger.event.sample_hash }}",
+          vt_positives: 68,
+          vt_total: 72,
+          threatbook_confidence: "99%",
+          malware_family: "Ransomware.Win32.APT29"
+        }
+      },
+      3: {
+        id: 3,
+        title: "SecLLM 自动化威胁研判",
+        category: "逻辑与 AI · SecLLM",
+        categoryColor: "blue",
+        description: "使用垂直安全大模型 Sentinel-Sec-70B 进行上下文推演",
+        timeout: 30,
+        mode: "auto",
+        params: [
+          { label: "基座大模型", value: "Sentinel-Sec-70B-CyberOps" },
+          { label: "提示词策略", value: "Chain-of-Thought (思维链攻击溯源)" },
+          { label: "高危自动阻断阈值", value: "置信度 >= 90.0%" }
+        ],
+        payload: {
+          llm_reasoning: "样本调用 OpenProcess 读取 LSASS 内存，配合 C2 离岸 IP 外连，高度符合 APT29 凭证横向窃取战术特征 (T1003.001)。",
+          confidence_score: 0.968,
+          recommended_action: "EXECUTE_IMMEDIATE_CONTAINMENT"
+        }
+      },
+      4: {
+        id: 4,
+        title: "EDR 主机网络深度隔离",
+        category: "遏制处置 · Response",
+        categoryColor: "red",
+        description: "调用 EDR API 实施终端网络断开，并保留调查通道",
+        timeout: 30,
+        mode: "auto", // or 'hitl'
+        params: [
+          { label: "隔离目标 IP", value: "{{ trigger.event.source_ip }}" },
+          { label: "保留白名单端口", value: "TCP:443 (SOC VPN Forensics)" },
+          { label: "重试与降级策略", value: "重试 3 次，间隔 5s；失败转人工工单" }
+        ],
+        payload: {
+          action: "crowdstrike_isolate_host",
+          target_ip: "10.120.4.15",
+          policy: "retain_agent_channel",
+          retry_count: 3,
+          retry_interval: 5,
+          fallback: "dispatch_p1_incident_ticket"
+        }
+      },
+      5: {
+        id: 5,
+        title: "撤销特权凭证 / 冻结 AD",
+        category: "凭证阻断 · Response",
+        categoryColor: "red",
+        description: "连接 Active Directory 域控，撤销 Kerberos Ticket 并重置密码",
+        timeout: 15,
+        mode: "auto",
+        params: [
+          { label: "目标域账户", value: "{{ trigger.event.compromised_user }}" },
+          { label: "会话下线模式", value: "Force Revoke All Refresh Tokens" },
+          { label: "临时重置密码", value: "True (随机 32 位熵值)" }
+        ],
+        payload: {
+          action: "ad_lock_and_revoke",
+          username: "CORP\\svc_backup",
+          domain_controller: "dc01.corp.internal",
+          action_status: "SUCCESS_LOCKED"
+        }
+      },
+      6: {
+        id: 6,
+        title: "发送紧急阻断报告 & 结案",
+        category: "协同通知 · Notification",
+        categoryColor: "emerald",
+        description: "向安全应急 WarRoom 广播结构化卡片并同步更新 SOAR Case",
+        timeout: 10,
+        mode: "auto",
+        params: [
+          { label: "Webhook 目标", value: "飞书/钉钉 SOC 核心战备值班群" },
+          { label: "报告生成格式", value: "SBAR (Situation, Background, Action, Result)" },
+          { label: "关联工单流水号", value: "#INC-2026-8812" }
+        ],
+        payload: {
+          channel: "feishu_bot_warroom",
+          ticket_id: "INC-2026-8812",
+          status: "AUTO_CONTAINED",
+          sbar_summary: "【P1 告警已自动阻断】主机 10.120.4.15 与账户 svc_backup 已被 EDR 与 AD 隔离。"
+        }
+      }
+    };
+
+    // --- State Variables ---
+    let currentSelectedNodeId = 4; // Default to Node 4
+    let isSimulating = false;
+    let canvasZoom = 1.0;
+    let isBottomConsoleExpanded = true;
+    let isInspectorVisible = true;
+
+    // --- Inspector Rendering ---
+    function renderInspector(nodeId) {
+      const data = nodeConfigurations[nodeId];
+      if (!data) return;
+
+      const container = document.getElementById("inspector-content");
+      
+      let colorClass = "text-cyber-blue border-cyber-blue/30 bg-cyber-blue/10";
+      if (data.categoryColor === "purple") colorClass = "text-purple-300 border-purple-500/30 bg-purple-500/10";
+      if (data.categoryColor === "cyan") colorClass = "text-cyan-300 border-cyan-500/30 bg-cyan-500/10";
+      if (data.categoryColor === "red") colorClass = "text-red-300 border-red-500/30 bg-red-500/10";
+      if (data.categoryColor === "emerald") colorClass = "text-emerald-300 border-emerald-500/30 bg-emerald-500/10";
+
+      container.innerHTML = `
+        <!-- Category & Title -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded border uppercase tracking-wider ${colorClass}">
+              ${data.category}
+            </span>
+            <span class="text-xs font-mono text-slate-400">Node ID: #${data.id}</span>
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400">节点名称 (Node Label)</label>
+            <input type="text" id="inspector-node-title" value="${data.title}" class="w-full bg-obsidian-850 border border-slate-700/80 rounded px-2.5 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-cyber-blue mt-1">
+          </div>
+          <p class="text-[11px] text-slate-400 leading-relaxed mt-1">${data.description}</p>
+        </div>
+
+        <!-- Execution Mode Radio: Auto vs Human-in-the-loop -->
+        <div class="space-y-2 pt-2 border-t border-slate-800">
+          <label class="text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>执行决策模式 (Execution Policy)</span>
+            <span class="text-[10px] text-cyber-blue">零接触自愈</span>
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="p-2 rounded border border-cyber-blue/50 bg-cyber-blue/10 flex flex-col gap-1 cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-white">全自动执行</span>
+                <input type="radio" name="exec_mode_${data.id}" value="auto" checked class="accent-cyber-blue">
+              </div>
+              <span class="text-[10px] text-slate-400">条件满足即刻触发阻断</span>
+            </label>
+            <label class="p-2 rounded border border-slate-800 bg-obsidian-850 flex flex-col gap-1 cursor-pointer hover:border-slate-700">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-300">人工二次审批</span>
+                <input type="radio" name="exec_mode_${data.id}" value="hitl" class="accent-cyber-blue">
+              </div>
+              <span class="text-[10px] text-slate-400">需 Tier-2 分析师确认</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Input Parameters & Dynamic Variable Binding -->
+        <div class="space-y-2 pt-2 border-t border-slate-800">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-200">输入参数与变量映射</label>
+            <span class="text-[10px] text-slate-400 font-mono">Dynamic Bindings</span>
+          </div>
+          
+          <div class="space-y-2">
+            ${data.params.map((p, idx) => `
+              <div>
+                <label class="text-[11px] text-slate-400 flex items-center justify-between">
+                  <span>${p.label}</span>
+                  <span class="text-[10px] font-mono text-cyan-400/80 cursor-pointer hover:underline" onclick="showVariableHelper()">{{ 变量 }}</span>
+                </label>
+                <div class="relative mt-1">
+                  <input type="text" value="${p.value}" class="w-full bg-obsidian-850 border border-slate-700/80 rounded px-2.5 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyber-blue">
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Retry and Fallback Policy -->
+        <div class="space-y-2 pt-2 border-t border-slate-800">
+          <label class="text-xs font-semibold text-slate-200">失败重试与容灾降级</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="text-[11px] text-slate-400">重试次数</label>
+              <select class="w-full mt-1 bg-obsidian-850 border border-slate-700/80 rounded px-2 py-1.5 text-slate-200 text-xs">
+                <option selected>3 次重试</option>
+                <option>1 次</option>
+                <option>5 次</option>
+                <option>不重试</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400">重试间隔</label>
+              <select class="w-full mt-1 bg-obsidian-850 border border-slate-700/80 rounded px-2 py-1.5 text-slate-200 text-xs">
+                <option selected>5 秒 (指数退避)</option>
+                <option>2 秒</option>
+                <option>10 秒</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-1">
+            <label class="text-[11px] text-slate-400">若最终失败时采取动作</label>
+            <input type="text" value="自动升级派发 P1 紧急事件工单至 SOC 现场处置组" class="w-full mt-1 bg-obsidian-850 border border-slate-700/80 rounded px-2.5 py-1.5 text-xs text-slate-300">
+          </div>
+        </div>
+
+        <!-- Real-time JSON Payload Preview -->
+        <div class="space-y-1.5 pt-2 border-t border-slate-800">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-200">实时计算 Payload (JSON)</label>
+            <span class="text-[10px] text-slate-500 font-mono">Live Computed</span>
+          </div>
+          <pre class="p-2.5 rounded bg-obsidian-950 border border-slate-800 text-[11px] font-mono text-cyan-300 overflow-x-auto select-all max-h-36">${JSON.stringify(data.payload, null, 2)}</pre>
+        </div>
+      `;
+    }
+
+    // --- Node Selection Handler ---
+    function selectNode(nodeId) {
+      currentSelectedNodeId = nodeId;
+      
+      // Update canvas cards UI
+      for (let i = 1; i <= 6; i++) {
+        const el = document.getElementById(`node-${i}`);
+        if (el) {
+          if (i === nodeId) {
+            el.classList.add("node-selected");
+          } else {
+            el.classList.remove("node-selected");
+          }
+        }
+      }
+
+      // Render inspector content
+      renderInspector(nodeId);
+
+      // Ensure inspector is visible
+      if (!isInspectorVisible) {
+        toggleInspector();
+      }
+    }
+
+    // --- Simulation Run Engine ---
+    async function runSimulation() {
+      if (isSimulating) return;
+      isSimulating = true;
+
+      const btn = document.getElementById("btn-simulate-run");
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.classList.add("opacity-80");
+      btn.innerHTML = `
+        <svg class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="font-semibold tracking-wide">仿真推进中...</span>
+      `;
+
+      showToast("仿真启动", "正在加载剧本环境参数并进行单步符号执行...", "info");
+
+      // Reset all node statuses
+      for (let i = 1; i <= 6; i++) {
+        const statusEl = document.getElementById(`node-${i}-status`);
+        if (statusEl) {
+          statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500"></span> 待执行`;
+          statusEl.className = "inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400";
+        }
+      }
+
+      // Hide all flowing lines
+      const flows = ["flow-1-2", "flow-2-3", "flow-3-4", "flow-3-5", "flow-4-6", "flow-5-6"];
+      flows.forEach(f => {
+        const el = document.getElementById(f);
+        if (el) el.classList.remove("opacity-100", "flow-line-active", "flow-line-pulsing");
+      });
+
+      // Clear terminal
+      clearTerminalLogs();
+      appendTerminalLog(`[${new Date().toLocaleTimeString()}.001] [INFO] [ENGINE] Initializing Automated Simulation: APT29_Ransomware_SelfHealing_v2.4`, "text-slate-500");
+
+      // --- STEP 1: Node 1 Trigger ---
+      setNodeRunning(1);
+      await sleep(350);
+      setNodeSuccess(1, "12ms");
+      appendTerminalLog(`[${new Date().toLocaleTimeString()}.014] [TRIGGER] [NODE-1] Ingested Syslog event #92014 from Wazuh-Agent. Process: mimikatz_dump. Exec: 12ms.`, "text-purple-400");
+      activateFlow("flow-1-2");
+
+      // --- STEP 2: Node 2 Enrichment ---
+      await sleep(300);
+      setNodeRunning(2);
+      await sleep(600);
+      setNodeSuccess(2, "145ms");
+      appendTerminalLog(`[${new Date().toLocaleTimeString()}.168] [ENRICH] [NODE-2] IOC Query: SHA256 '7d8f9b...4e1a' matched VirusTotal (68/72 engines malicious). Exec: 145ms.`, "text-cyan-400");
+      activateFlow("flow-2-3");
+
+      // --- STEP 3: Node 3 SecLLM Logic ---
+      await sleep(350);
+      setNodeRunning(3);
+      await sleep(750);
+      setNodeSuccess(3, "320ms");
+      appendTerminalLog(`[${new Date().toLocaleTimeString()}.490] [AI_LOGIC] [NODE-3] SecLLM Sentinel-Sec-70B inference finished. Confidence: 0.968. Branch: CRITICAL_BLOCK. Exec: 320ms.`, "text-sky-400");
+      activateFlow("flow-3-4");
+      activateFlow("flow-3-5");
+
+      // --- STEP 4 & 5: Node 4 & 5 Concurrent Response ---
+      await sleep(350);
+      setNodeRunning(4);
+      setNodeRunning(5);
+      await sleep(550);
+      setNodeSuccess(4, "88ms");
+      setNodeSuccess(5, "64ms");
+      appendTerminalLog(`[${new Date().toLocaleTimeString()}.580] [CONTAINMENT] [NODE-4] EDR API: isolate_host('10.120.4.15', keep_soc_vpn=True). Status: SUCCESS. Exec: 88ms.`, "text-red-400");
+      appendTerminalLog(`[${new Date().toLocaleTimeString()}.644] [CONTAINMENT] [NODE-5] Active Directory LDAP: Revoke token & lock user 'CORP\\svc_backup'. Status: LOCKED. Exec: 64ms.`, "text-red-400");
+      activateFlow("flow-4-6");
+      activateFlow("flow-5-6");
+
+      // --- STEP 6: Node 6 Notification ---
+      await sleep(350);
+      setNodeRunning(6);
+      await sleep(500);
+      setNodeSuccess(6, "92ms");
+      appendTerminalLog(`[${new Date().toLocaleTimeString()}.736] [COLLAB] [NODE-6] Sent SBAR notification to #SOC-P1-WarRoom. Created incident ticket #INC-2026-8812. Exec: 92ms.`, "text-emerald-400");
+      appendTerminalLog(`✔ [${new Date().toLocaleTimeString()}.738] [COMPLETE] Simulation finished in 721ms. All 6 nodes resolved successfully with 0 errors.`, "text-emerald-400 font-semibold mt-1");
+
+      // Simulation Complete Toast
+      showToast("仿真验证通过", "剧本「APT29 勒索威胁自愈处置流」全链路 6 节点仿真验证通过，总耗时 721ms，0 错误！", "success");
+
+      // Restore button
+      btn.disabled = false;
+      btn.classList.remove("opacity-80");
+      btn.innerHTML = originalText;
+      isSimulating = false;
+    }
+
+    // Helper functions for node states during simulation
+    function setNodeRunning(id) {
+      const el = document.getElementById(`node-${id}-status`);
+      if (el) {
+        el.className = "inline-flex items-center gap-1.5 text-[11px] font-mono text-cyber-blue";
+        el.innerHTML = `
+          <svg class="animate-spin w-2.5 h-2.5 text-cyber-blue" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          执行中...
+        `;
+      }
+    }
+
+    function setNodeSuccess(id, timeStr) {
+      const el = document.getElementById(`node-${id}-status`);
+      const timeEl = document.getElementById(`node-${id}-time`);
+      if (el) {
+        el.className = "inline-flex items-center gap-1.5 text-[11px] font-mono text-emerald-400 font-semibold";
+        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 pulse-ring relative"></span> 成功`;
+      }
+      if (timeEl && timeStr) {
+        timeEl.textContent = `耗时: ${timeStr}`;
+      }
+    }
+
+    function activateFlow(flowId) {
+      const el = document.getElementById(flowId);
+      if (el) {
+        el.classList.add("opacity-100", "flow-line-active", "flow-line-pulsing");
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function appendTerminalLog(msg, colorClass) {
+      const logs = document.getElementById("terminal-logs");
+      if (logs) {
+        const div = document.createElement("div");
+        div.className = colorClass || "text-slate-300";
+        div.textContent = msg;
+        logs.appendChild(div);
+        logs.scrollTop = logs.scrollHeight;
+      }
+    }
+
+    function clearTerminalLogs() {
+      const logs = document.getElementById("terminal-logs");
+      if (logs) logs.innerHTML = "";
+    }
+
+    // --- UI Toggles (Drawers & Panels) ---
+    function toggleBottomConsole() {
+      const consoleEl = document.getElementById("bottom-console");
+      const chevron = document.getElementById("chevron-bottom");
+      isBottomConsoleExpanded = !isBottomConsoleExpanded;
+
+      if (isBottomConsoleExpanded) {
+        consoleEl.style.height = "190px";
+        chevron.style.transform = "rotate(0deg)";
+      } else {
+        consoleEl.style.height = "36px";
+        chevron.style.transform = "rotate(180deg)";
+      }
+    }
+
+    function toggleInspector() {
+      const el = document.getElementById("right-inspector");
+      isInspectorVisible = !isInspectorVisible;
+      if (isInspectorVisible) {
+        el.classList.remove("w-0", "opacity-0", "overflow-hidden");
+        el.classList.add("w-[340px]");
+      } else {
+        el.classList.remove("w-[340px]");
+        el.classList.add("w-0", "opacity-0", "overflow-hidden");
+      }
+    }
+
+    // --- Canvas Zoom & Pan Handling ---
+    const viewport = document.getElementById("canvas-viewport");
+    const zoomLabel = document.getElementById("zoom-label");
+
+    document.getElementById("btn-zoom-in").addEventListener("click", () => {
+      if (canvasZoom < 1.8) {
+        canvasZoom = Math.min(1.8, canvasZoom + 0.1);
+        applyZoom();
+      }
+    });
+
+    document.getElementById("btn-zoom-out").addEventListener("click", () => {
+      if (canvasZoom > 0.5) {
+        canvasZoom = Math.max(0.5, canvasZoom - 0.1);
+        applyZoom();
+      }
+    });
+
+    document.getElementById("btn-fit-view").addEventListener("click", () => {
+      canvasZoom = 1.0;
+      applyZoom();
+      showToast("视口重置", "画布已自动恢复 100% 居中缩放", "info");
+    });
+
+    function applyZoom() {
+      viewport.style.transform = `translate(-50%, -50%) scale(${canvasZoom})`;
+      zoomLabel.textContent = `${Math.round(canvasZoom * 100)}%`;
+    }
+
+    // --- Button Bindings & Toasts ---
+    document.getElementById("btn-simulate-run").addEventListener("click", runSimulation);
+
+    document.getElementById("btn-step-debug").addEventListener("click", () => {
+      showToast("单步调试模式", "已在 [节点 4: EDR 主机隔离] 命中断点，右侧已自动捕获运行时变量。", "info");
+      selectNode(4);
+    });
+
+    document.getElementById("btn-publish").addEventListener("click", () => {
+      showToast("剧本发布成功", "版本 v2.5-published 已发布生效至生产集群，SOAR 引擎将在下个告警触发时启用。", "success");
+    });
+
+    function applyNodeChanges() {
+      const titleInput = document.getElementById("inspector-node-title");
+      if (titleInput) {
+        const val = titleInput.value.trim();
+        if (val) {
+          nodeConfigurations[currentSelectedNodeId].title = val;
+          const nodeTitleEl = document.querySelector(`#node-${currentSelectedNodeId} h4`);
+          if (nodeTitleEl) nodeTitleEl.textContent = val;
+        }
+      }
+      showToast("参数保存成功", `节点 #${currentSelectedNodeId} 的配置与变量映射已同步更新。`, "success");
+    }
+
+    function showVariableHelper() {
+      showToast("变量选择助手", "可用上下文变量：trigger.event.*, enrichment.vt.*, ai.confidence, host.ip", "info");
+    }
+
+    // Toast Generator
+    function showToast(title, message, type = "info") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      
+      let borderCol = "border-cyber-blue/40";
+      let iconColor = "text-cyber-blue";
+      let iconSvg = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+      
+      if (type === "success") {
+        borderCol = "border-emerald-500/50";
+        iconColor = "text-emerald-400";
+        iconSvg = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>`;
+      }
+
+      toast.className = `p-3 rounded-lg bg-obsidian-850/95 backdrop-blur-md border ${borderCol} shadow-2xl text-slate-200 flex items-start gap-2.5 max-w-sm pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0`;
+      toast.innerHTML = `
+        <div class="${iconColor} shrink-0 mt-0.5">${iconSvg}</div>
+        <div class="flex-1">
+          <div class="text-xs font-semibold text-white">${title}</div>
+          <div class="text-[11px] text-slate-300 leading-snug mt-0.5">${message}</div>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      
+      // Animate in
+      setTimeout(() => {
+        toast.classList.remove("translate-y-2", "opacity-0");
+      }, 10);
+
+      // Auto dismiss
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "translate-y-2");
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Keyboard Shortcut (Cmd+R or Ctrl+R for Simulate)
+    window.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        runSimulation();
+      }
+    });
+
+    // Initialize Default State
+    window.addEventListener("DOMContentLoaded", () => {
+      renderInspector(4);
+    });
+  </script>
+</body>
+</html>

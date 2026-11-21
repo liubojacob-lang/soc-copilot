@@ -1,6 +1,7 @@
 """Security utilities for JWT, password hashing, and API keys."""
 
 import hashlib
+import hmac
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -188,8 +189,8 @@ def is_token_invalidated_by_user_update(
         else:
             user_updated = user_updated_at
     except (ValueError, TypeError):
-        logger.warning(f"Invalid updated_at format: {user_updated_at}")
-        return False  # If we can't parse, allow token (fallback behavior)
+        logger.error(f"Invalid updated_at format, failing closed: {user_updated_at}")
+        return True  # Fail closed: cannot verify token freshness, reject token
 
     # Parse token iat (may be float timestamp or datetime)
     try:
@@ -203,18 +204,14 @@ def is_token_invalidated_by_user_update(
                     token_issued = token_issued.replace(tzinfo=UTC)
     except (ValueError, TypeError, OSError):
         logger.warning(f"Invalid iat format: {token_iat}")
-        return False  # If we can't parse, allow token (fallback behavior)
+        return True  # Fail closed: invalid token timestamp
 
     # Token is invalid if issued before user update
-    # v1.0: Normalize timezone awareness for safe comparison (DB DateTime(timezone=True))
+    # Normalize timezone awareness for safe comparison (DB DateTime(timezone=True))
     _user_updated = user_updated
     if isinstance(_user_updated, datetime) and _user_updated.tzinfo is None:
         _user_updated = _user_updated.replace(tzinfo=UTC)
-    if isinstance(_user_updated, str):
-        _user_updated = datetime.fromisoformat(_user_updated)
-        if _user_updated.tzinfo is None:
-            _user_updated = _user_updated.replace(tzinfo=UTC)
-    # v1.0: Compare at second precision - JWT iat is second-precision while
+    # Compare at second precision - JWT iat is second-precision while
     # DB updated_at has microseconds. Truncating avoids false rejection of
     # tokens issued in the same second as a user update, while still
     # invalidating tokens issued BEFORE the update.
@@ -280,9 +277,9 @@ def verify_api_key(plain_api_key: str, hashed_api_key: str) -> bool:
         # New bcrypt hash (native API)
         return verify_password(plain_api_key, hashed_api_key[3:])
     else:
-        # Legacy SHA256 hash - for backward compatibility
+        # Legacy SHA256 hash - for backward compatibility (using constant-time comparison)
         legacy_hash = hashlib.sha256(plain_api_key.encode()).hexdigest()
-        return legacy_hash == hashed_api_key
+        return hmac.compare_digest(legacy_hash, hashed_api_key)
 
 
 def generate_api_key() -> str:

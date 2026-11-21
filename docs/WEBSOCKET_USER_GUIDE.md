@@ -83,7 +83,7 @@ SOC Copilot 现在支持 WebSocket 实时告警推送功能，让您能够即时
 ### 默认配置
 
 ```yaml
-WebSocket URL: ws://localhost:8000/ws/alerts
+WebSocket URL: ws://localhost:8088/ws/alerts
 聚合窗口: 10 秒
 最大缓冲: 10,000 条告警
 历史记录: 1,000 条告警
@@ -96,7 +96,7 @@ WebSocket URL: ws://localhost:8000/ws/alerts
 如需自定义 WebSocket URL，修改 `.env.local`：
 
 ```bash
-NEXT_PUBLIC_WS_URL=ws://your-server:8000/ws/alerts
+NEXT_PUBLIC_WS_URL=ws://your-server:8088/ws/alerts
 ```
 
 ## 🔧 故障排除
@@ -119,7 +119,7 @@ NEXT_PUBLIC_WS_URL=ws://your-server:8000/ws/alerts
 
 1. 检查后端是否正在运行：
    ```bash
-   curl http://localhost:8000/api/health
+   curl http://localhost:8088/api/health
    ```
 2. 检查网络连接
 3. 点击 "Retry" 按钮尝试重连
@@ -135,18 +135,18 @@ NEXT_PUBLIC_WS_URL=ws://your-server:8000/ws/alerts
 
    ```bash
    # 获取 token
-   TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
+   TOKEN=$(curl -s -X POST http://localhost:8088/api/auth/login \
      -H "Content-Type: application/json" \
      -d '{"username":"admin","password":"admin123"}' | jq -r '.access_token')
 
    # 检查状态
-   curl -X GET http://localhost:8000/api/v1/wazuh/stream/status \
+   curl -X GET http://localhost:8088/api/v1/wazuh/stream/status \
      -H "Authorization: Bearer $TOKEN"
    ```
 
 2. 如果 `running: false`，启动流服务：
    ```bash
-   curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
+   curl -X POST http://localhost:8088/api/v1/wazuh/stream/start \
      -H "Authorization: Bearer $TOKEN"
    ```
 
@@ -195,7 +195,7 @@ NEXT_PUBLIC_WS_URL=ws://your-server:8000/ws/alerts
 ### WebSocket 端点
 
 ```
-ws://localhost:8000/ws/alerts?token=<JWT>&channels=alerts
+ws://localhost:8088/ws/alerts?token=<JWT>&channels=alerts
 ```
 
 **参数**:

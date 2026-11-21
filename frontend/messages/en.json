@@ -199,6 +199,7 @@
   "home": {
     "title": "SOC Copilot",
     "subtitle": "Security Operations Center",
+    "pageTitle": "Security Operations Workbench",
     "loading": "Loading...",
     "securityOperations": "Security Operations",
     "refreshData": "Refresh Data",
@@ -228,7 +229,10 @@
       "goCases": "Open Cases",
       "goPlaybooks": "Playbook Runs",
       "goApprovals": "Pending Approvals",
-      "sources": "Top Alert Sources"
+      "sources": "Top Alert Sources",
+      "probesOnline": "48/48 probes online in sync",
+      "mttrLabel": "Avg. MTTR:",
+      "blockRateToday": "Today's Block Rate:"
     },
     "tabs": {
       "alertAnalyzer": "Alert Analyzer",
@@ -3320,6 +3324,8 @@
     "verifyActivationSubtitle": "Open your authenticator app and enter the 6-digit code for SOC Copilot:",
     "verifyDynamicTip": "💡 Codes refresh every 30 seconds. Paste is supported.",
     "confirmSwitchOtpDesc": "Enter 6-digit code to confirm policy switch",
-    "confirmDisableOtpDesc": "Enter 6-digit code to confirm disabling"
+    "confirmDisableOtpDesc": "Enter 6-digit code to confirm disabling",
+    "setupPasswordLabel": "Confirm account password",
+    "setupPasswordPlaceholder": "Enter your current account password to authorize this binding"
   }
 }

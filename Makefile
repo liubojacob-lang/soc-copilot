@@ -1,7 +1,7 @@
 # SOC Copilot Makefile
 # Usage: make <command>
 
-.PHONY: help dev build test lint format clean install docker-dev-up docker-dev-down docker-dev-logs docker-dev-build branch-setup branch-validate branch-list branch-create-feature branch-create-fix branch-create-release branch-create-hotfix branch-cleanup release-plan release-start release-changelog release-bump release-finish release-status release-list release-abort setup-dev setup-dev-check setup-env venv-install hooks-install check-versions dev-env-up dev-env-down dev-env-logs db-create-migration db-seed db-shell redis-cli
+.PHONY: help dev build test lint format format-check clean install docker-dev-up docker-dev-down docker-dev-logs docker-dev-build branch-setup branch-validate branch-list branch-create-feature branch-create-fix branch-create-release branch-create-hotfix branch-cleanup release-plan release-start release-changelog release-bump release-finish release-status release-list release-abort setup-dev setup-dev-check setup-env venv-install hooks-install check-versions dev-env-up dev-env-down dev-env-logs db-create-migration db-seed db-shell redis-cli
 
 # Default target
 help:
@@ -10,7 +10,7 @@ help:
 	@echo "  Development:"
 	@echo "    dev              Start both frontend and backend"
 	@echo "    dev-frontend     Start frontend only (port 3003)"
-	@echo "    dev-backend      Start backend only (port 8000)"
+	@echo "    dev-backend      Start backend only (port 8088)"
 	@echo ""
 	@echo "  Dev Environment (FR-004):"
 	@echo "    setup-dev        One-click dev environment setup (full initialization)"
@@ -87,16 +87,19 @@ dev:
 
 dev-frontend:
 	@echo "🎨 Starting frontend server..."
-	cd frontend && npm run dev
+	npm run dev:frontend
 
+# 端口唯一定义点在根 package.json 的 dev:backend (默认 8088)。
+# 前端 /api 代理(next.config.js)与 .env:NEXT_PUBLIC_API_URL 均指向 8088，
+# 切勿在此处另写端口，否则前端请求会全部打空。
 dev-backend:
-	@echo "⚙️  Starting backend server..."
-	cd backend && source ../venv/bin/activate && uvicorn main:app --reload --port 8000
+	@echo "⚙️  Starting backend server (:8088)..."
+	npm run dev:backend
 
 # Building
 build:
 	@echo "🏗️  Building frontend..."
-	cd frontend && npm run build
+	npm run build
 
 build-analyze:
 	@echo "📊 Building with bundle analyzer..."
@@ -109,19 +112,19 @@ test:
 
 test-frontend:
 	@echo "🧪 Running frontend tests..."
-	cd frontend && npm run test
+	npm run test:frontend
 
 test-backend:
 	@echo "🧪 Running backend tests..."
-	cd backend && source ../venv/bin/activate && pytest
+	npm run test:backend
 
 test-e2e:
 	@echo "🎭 Running E2E tests..."
-	cd frontend && npm run test:e2e
+	npm run test:e2e
 
 test-coverage:
 	@echo "📈 Running tests with coverage..."
-	npm run test-coverage
+	npm run test:coverage
 
 # Code Quality
 lint:
@@ -130,32 +133,36 @@ lint:
 
 lint-frontend:
 	@echo "🔍 Linting frontend..."
-	cd frontend && npm run lint
+	npm run lint:frontend
 
 lint-backend:
 	@echo "🔍 Linting backend..."
-	cd backend && source ../venv/bin/activate && ruff check .
+	npm run lint:backend
 
 format:
 	@echo "✨ Formatting code..."
 	npm run format
 
+format-check:
+	@echo "🔎 Checking formatting..."
+	npm run format:check
+
 type-check:
 	@echo "📝 Running TypeScript type checking..."
-	cd frontend && npm run type-check
+	npm run type-check
 
 # Database
 db-migrate:
 	@echo "📦 Running database migrations..."
-	cd backend && source ../venv/bin/activate && alembic upgrade head
+	npm run db:migrate
 
 db-rollback:
 	@echo "⏪ Rolling back migration..."
-	cd backend && source ../venv/bin/activate && alembic downgrade -1
+	npm run db:rollback
 
 db-reset:
 	@echo "🔄 Resetting database..."
-	cd backend && source ../venv/bin/activate && alembic downgrade base && alembic upgrade head
+	npm run db:reset
 
 # 数据库备份/恢复（SQLite 开发库与 PostgreSQL 容器均支持）
 db-backup:
@@ -172,13 +179,13 @@ db-restore:
 # Dev Environment Setup (FR-004)
 setup-dev:
 	@echo "🛠️  Running full development environment setup..."
-	@chmod +x scripts/setup-dev.sh
-	@./scripts/setup-dev.sh
+	@chmod +x Scripts/setup-dev.sh
+	@./Scripts/setup-dev.sh
 
 setup-dev-check:
 	@echo "🔍 Checking development environment prerequisites..."
-	@chmod +x scripts/setup-dev.sh
-	@./scripts/setup-dev.sh --check-only
+	@chmod +x Scripts/setup-dev.sh
+	@./Scripts/setup-dev.sh --check-only
 
 setup-env:
 	@echo "📝 Setting up .env file..."
@@ -235,7 +242,7 @@ dev-env-logs:
 # Additional Code Quality
 format-backend:
 	@echo "✨ Formatting backend code..."
-	cd backend && source ../venv/bin/activate && black . && isort .
+	npm run format:backend
 
 type-check-backend:
 	@echo "📝 Running Python type checking..."
@@ -271,19 +278,16 @@ redis-cli:
 		redis-cli -a "$${REDIS_PASSWORD}"
 
 # Setup & Cleanup
+# 在仓库根执行一次 npm install 即可：workspaces 已声明 frontend，
+# 再 cd frontend 装一遍属于重复安装。
 install:
 	@echo "📦 Installing dependencies..."
 	npm install
-	cd frontend && npm install
 	cd backend && source ../venv/bin/activate && pip install -r requirements.txt
 
 clean:
 	@echo "🧹 Cleaning build artifacts..."
-	rm -rf frontend/.next frontend/out frontend/node_modules/.cache
-	rm -rf backend/__pycache__ backend/**/__pycache__
-	rm -rf .pytest_cache
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	npm run clean
 
 reset: clean install
 	@echo "✅ Reset complete!"
@@ -335,15 +339,15 @@ prod-start:
 # Branch Management (FR-001)
 branch-setup:
 	@echo "🔒 Setting up GitHub branch protection rules..."
-	./scripts/setup-branch-protection.sh
+	./Scripts/setup-branch-protection.sh
 
 branch-setup-dry-run:
 	@echo "🔍 Dry-run: Previewing branch protection rules..."
-	./scripts/setup-branch-protection.sh --dry-run
+	./Scripts/setup-branch-protection.sh --dry-run
 
 branch-validate:
 	@echo "✅ Validating branch name..."
-	./scripts/validate-branch-name.sh
+	./Scripts/validate-branch-name.sh
 
 branch-list:
 	@echo "📋 Branch listing:"
@@ -442,8 +446,8 @@ release-start:
 		exit 1; \
 	fi
 	@echo "🚀 Starting release v$(VER)..."
-	@chmod +x scripts/release-branch.sh scripts/bump-version.sh scripts/generate-changelog.sh
-	@./scripts/release-branch.sh start $(VER)
+	@chmod +x Scripts/release-branch.sh Scripts/bump-version.sh Scripts/generate-changelog.sh
+	@./Scripts/release-branch.sh start $(VER)
 
 # 步骤2: 生成 CHANGELOG
 release-changelog:
@@ -453,8 +457,8 @@ release-changelog:
 		exit 1; \
 	fi
 	@echo "📝 Generating CHANGELOG for v$(VER)..."
-	@chmod +x scripts/generate-changelog.sh
-	@./scripts/generate-changelog.sh $(VER)
+	@chmod +x Scripts/generate-changelog.sh
+	@./Scripts/generate-changelog.sh $(VER)
 
 # 版本号更新（仅更新版本号，不创建分支）
 release-bump:
@@ -464,8 +468,8 @@ release-bump:
 		exit 1; \
 	fi
 	@echo "🔢 Bumping version to v$(VER)..."
-	@chmod +x scripts/bump-version.sh
-	@./scripts/bump-version.sh $(VER)
+	@chmod +x Scripts/bump-version.sh
+	@./Scripts/bump-version.sh $(VER)
 
 # 步骤8: 完成 release（合并回 develop + 清理分支）
 release-finish:
@@ -475,20 +479,20 @@ release-finish:
 		exit 1; \
 	fi
 	@echo "🏁 Finishing release v$(VER)..."
-	@chmod +x scripts/release-branch.sh
-	@./scripts/release-branch.sh finish $(VER)
+	@chmod +x Scripts/release-branch.sh
+	@./Scripts/release-branch.sh finish $(VER)
 
 # 查看 release 状态
 release-status:
 	@echo "📊 Release Status"
-	@chmod +x scripts/release-branch.sh
-	@./scripts/release-branch.sh status
+	@chmod +x Scripts/release-branch.sh
+	@./Scripts/release-branch.sh status
 
 # 列出所有 release 分支
 release-list:
 	@echo "📋 Release Branches"
-	@chmod +x scripts/release-branch.sh
-	@./scripts/release-branch.sh list
+	@chmod +x Scripts/release-branch.sh
+	@./Scripts/release-branch.sh list
 
 # 中止发布
 release-abort:
@@ -498,5 +502,5 @@ release-abort:
 		exit 1; \
 	fi
 	@echo "🚨 Aborting release v$(VER)..."
-	@chmod +x scripts/release-branch.sh
-	@./scripts/release-branch.sh abort $(VER)
+	@chmod +x Scripts/release-branch.sh
+	@./Scripts/release-branch.sh abort $(VER)

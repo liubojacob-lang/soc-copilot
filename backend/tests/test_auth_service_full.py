@@ -102,17 +102,43 @@ async def test_authenticate_account_locked_expired(auth_service):
     assert user.failed_login_attempts == 0
 
 
+async def _authenticate_and_capture(auth_service, user, creds):
+    """Run authenticate with the atomic-increment UPDATE mocked.
+
+    Returns {status_code, attempts} captured from the raised HTTPException
+    and the RETURNING result configured to attempts_before + 1.
+    """
+    from types import SimpleNamespace
+
+    returning = SimpleNamespace(
+        scalar_one=lambda: (user.failed_login_attempts or 0) + 1
+    )
+    auth_service.session.execute = AsyncMock(return_value=returning)
+    auth_service._last_returning = returning
+    status_code = None
+    try:
+        await auth_service.authenticate(creds)
+    except HTTPException as exc:
+        status_code = exc.status_code
+    assert status_code is not None
+    return {"status_code": status_code, "attempts": returning.scalar_one()}
+
+
+async def _last_returning(auth_service):
+    return auth_service._last_returning.scalar_one()
+
+
 @pytest.mark.asyncio
 async def test_authenticate_wrong_password_under_limit(auth_service):
     user = _make_mock_user(failed_attempts=2)
     auth_service.user_repo.get_by_username.return_value = user
 
     creds = UserLogin(username=user.username, password="WrongPassword123!")
-    with pytest.raises(HTTPException) as exc_info:
-        await auth_service.authenticate(creds)
-
-    assert exc_info.value.status_code == 401
-    assert user.failed_login_attempts == 3
+    # Atomic counter: authenticate issues UPDATE ... RETURNING; the DB-side
+    # value (2 existing + 1) comes back from the query, not the ORM attribute.
+    executed = await _authenticate_and_capture(auth_service, user, creds)
+    assert executed["status_code"] == 401
+    assert executed["attempts"] == 3
     assert user.locked_until is None
 
 
@@ -121,14 +147,21 @@ async def test_authenticate_wrong_password_triggers_lockout(auth_service):
     user = _make_mock_user(failed_attempts=MAX_LOGIN_ATTEMPTS - 1)
     auth_service.user_repo.get_by_username.return_value = user
 
+    from types import SimpleNamespace
+
+    returning = SimpleNamespace(
+        scalar_one=lambda: MAX_LOGIN_ATTEMPTS  # 4 existing + 1 via RETURNING
+    )
+    auth_service.session.execute = AsyncMock(return_value=returning)
+
     creds = UserLogin(username=user.username, password="WrongPassword123!")
     with pytest.raises(HTTPException) as exc_info:
         await auth_service.authenticate(creds)
-
     assert exc_info.value.status_code == 423
-    assert user.failed_login_attempts == MAX_LOGIN_ATTEMPTS
     assert user.locked_until is not None
     assert "Account locked for 30 minutes" in exc_info.value.detail
+    # counter went DB-side: 4 existing + 1 = 5, returned by RETURNING
+    assert returning.scalar_one() == MAX_LOGIN_ATTEMPTS
 
 
 @pytest.mark.asyncio
@@ -183,7 +216,8 @@ async def test_refresh_tokens_already_blacklisted(auth_service):
 
     with patch("services.auth_service.get_token_blacklist") as mock_bl:
         mock_blacklist_inst = AsyncMock()
-        mock_blacklist_inst.is_blacklisted.return_value = True
+        # Atomic single-use claim: False means the token was already consumed
+        mock_blacklist_inst.claim_single_use.return_value = False
         mock_bl.return_value = mock_blacklist_inst
 
         with pytest.raises(HTTPException) as exc_info:
@@ -199,7 +233,7 @@ async def test_refresh_tokens_user_inactive_or_missing(auth_service):
 
     with patch("services.auth_service.get_token_blacklist") as mock_bl:
         mock_blacklist_inst = AsyncMock()
-        mock_blacklist_inst.is_blacklisted.return_value = False
+        mock_blacklist_inst.claim_single_use.return_value = True
         mock_bl.return_value = mock_blacklist_inst
 
         auth_service.user_repo.get_by_id.return_value = None

@@ -1,6 +1,8 @@
 """TOTP Two-Factor Authentication Service (RFC 6238)."""
 
 import base64
+import hashlib
+import hmac
 import io
 import secrets
 import string
@@ -20,6 +22,17 @@ class TOTPService:
     def generate_secret() -> str:
         """Generate a random 32-character base32 secret."""
         return pyotp.random_base32()
+
+    @staticmethod
+    def hash_backup_code(code: str) -> str:
+        """Hash a backup recovery code for storage using SHA-256."""
+        normalized = code.strip().replace(" ", "").lower()
+        return hashlib.sha256(normalized.encode()).hexdigest()
+
+    @staticmethod
+    def hash_backup_codes(codes: list[str]) -> list[str]:
+        """Hash a list of backup codes for storage."""
+        return [TOTPService.hash_backup_code(c) for c in codes]
 
     @staticmethod
     def get_provisioning_uri(
@@ -67,10 +80,12 @@ class TOTPService:
     ) -> tuple[bool, bool, list[str] | None]:
         """Verify a TOTP code or backup code.
 
+        Supports both hashed backup codes (SHA-256) and legacy plaintext backup codes.
+
         Args:
             secret: Base32 TOTP secret
             code: 6-digit TOTP code or backup code
-            backup_codes: Optional list of available backup codes
+            backup_codes: Optional list of available backup codes (hashes or plain)
             valid_window: Number of 30-second steps to allow before/after (default 1 = +/-30s)
 
         Returns:
@@ -87,15 +102,24 @@ class TOTPService:
             except Exception as e:
                 logger.warning(f"TOTP verify error: {e}")
 
-        # 2. Try backup codes if provided
+        # 2. Try backup codes if provided (constant-time comparison)
         if backup_codes:
             normalized_code = clean_code.lower()
-            normalized_backup = [c.lower() for c in backup_codes]
-            if normalized_code in normalized_backup:
-                idx = normalized_backup.index(normalized_code)
-                new_backup = list(backup_codes)
-                new_backup.pop(idx)
-                logger.info("A 2FA backup recovery code was successfully used.")
-                return True, True, new_backup
+            code_hash = hashlib.sha256(normalized_code.encode()).hexdigest()
+
+            for idx, stored in enumerate(backup_codes):
+                # Check hashed backup code first (SHA-256 64-char hex)
+                is_match = False
+                if len(stored) == 64:
+                    is_match = hmac.compare_digest(code_hash, stored)
+                else:
+                    # Legacy plaintext fallback
+                    is_match = hmac.compare_digest(normalized_code, stored.lower())
+
+                if is_match:
+                    new_backup = list(backup_codes)
+                    new_backup.pop(idx)
+                    logger.info("A 2FA backup recovery code was successfully used.")
+                    return True, True, new_backup
 
         return False, False, backup_codes

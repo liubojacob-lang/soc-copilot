@@ -62,8 +62,8 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d --bui
 | 服务     | URL                        | 说明       |
 | -------- | -------------------------- | ---------- |
 | 前端     | http://localhost:3003      | 用户界面   |
-| 后端 API | http://localhost:8000      | REST API   |
-| API 文档 | http://localhost:8000/docs | Swagger UI |
+| 后端 API | http://localhost:8088      | REST API   |
+| API 文档 | http://localhost:8088/docs | Swagger UI |
 
 **默认管理员账号**:
 
@@ -101,7 +101,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
-python -m uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8088
 ```
 
 **前端**:
@@ -235,7 +235,7 @@ docker-compose restart nginx
 
 - [安全优化报告](./SECURITY_OPTIMIZATION_SUMMARY.md)
 - [安全修复报告](./SECURITY_FIX_REPORT.md)
-- [API 文档](http://localhost:8000/docs)
+- [API 文档](http://localhost:8088/docs)
 - [手动测试指南](./MANUAL_TEST.md)
 - [测试用例](./TEST_CASES.md)
 
@@ -245,7 +245,7 @@ docker-compose restart nginx
 
 1. 查看日志: `docker-compose logs -f`
 2. 检查状态: `docker-compose ps`
-3. 验证健康: `curl http://localhost:8000/api/health`
+3. 验证健康: `curl http://localhost:8088/api/health`
 
 ---
 

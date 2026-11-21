@@ -1,0 +1,1472 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOC Copilot Sentinel — 威胁情报中心与溯源图谱</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: {
+              950: '#060910',
+              900: '#080C14',
+              850: '#0D131F',
+              800: '#131B2E',
+              750: '#18233C',
+              700: '#1E2C4A'
+            },
+            cyber: {
+              blue: '#2563EB',
+              cyan: '#38BDF8',
+              glow: 'rgba(56, 189, 248, 0.15)',
+              danger: '#EF4444',
+              warning: '#F59E0B',
+              success: '#10B981',
+              accent: '#8B5CF6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'Menlo', 'monospace']
+          },
+          animation: {
+            'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'radar': 'radar 4s linear infinite',
+            'scan': 'scanline 8s linear infinite'
+          },
+          keyframes: {
+            radar: {
+              '0%': { transform: 'rotate(0deg)' },
+              '100%': { transform: 'rotate(360deg)' }
+            },
+            scanline: {
+              '0%': { transform: 'translateY(-100%)' },
+              '100%': { transform: 'translateY(1000%)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* 细边框发光与深色网格纹理 */
+    body {
+      background-color: #080C14;
+      color: #E2E8F0;
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    }
+    .cyber-grid {
+      background-image: linear-gradient(to right, rgba(30, 41, 59, 0.2) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(30, 41, 59, 0.2) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    .hairline-border {
+      border: 1px solid rgba(51, 65, 85, 0.7);
+    }
+    .hairline-border-b {
+      border-bottom: 1px solid rgba(51, 65, 85, 0.7);
+    }
+    .hairline-border-r {
+      border-right: 1px solid rgba(51, 65, 85, 0.7);
+    }
+    .hairline-border-l {
+      border-left: 1px solid rgba(51, 65, 85, 0.7);
+    }
+    .glow-blue {
+      box-shadow: 0 0 20px -3px rgba(56, 189, 248, 0.25);
+    }
+    .glow-red {
+      box-shadow: 0 0 20px -3px rgba(239, 68, 68, 0.35);
+    }
+    /* 自定义滚动条 */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080C14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col font-sans select-none antialiased cyber-grid" data-od-id="threat-intel-body">
+
+  <!-- 1. 全局顶部系统状态导航栏 (Global Header) -->
+  <header class="h-14 bg-obsidian-950/90 backdrop-blur-md hairline-border-b px-4 flex items-center justify-between z-30 shrink-0" data-od-id="header-nav">
+    <!-- 左侧品牌与模块定位 -->
+    <div class="flex items-center space-x-3.5">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 via-indigo-600 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/20">
+          <div class="w-full h-full bg-obsidian-950 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold tracking-wider text-sm bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">SENTINEL SOC</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/15 text-cyan-300 border border-blue-500/30">COPILOT v3.4</span>
+          </div>
+          <p class="text-[10px] text-slate-400 font-mono tracking-tight">MISSION-CRITICAL DEFENSE PLATFORM</p>
+        </div>
+      </div>
+
+      <div class="h-4 w-px bg-slate-800"></div>
+
+      <!-- 当前模块指示 -->
+      <div class="flex items-center space-x-2">
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-950/60 text-cyan-300 border border-cyan-800/60">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-1.5 animate-pulse"></span>
+          威胁情报与深度溯源平台 (Sentinel Threat Intel)
+        </span>
+      </div>
+    </div>
+
+    <!-- 中间全局 IOC 检索框 -->
+    <div class="w-[420px] relative hidden lg:block" data-od-id="global-search-container">
+      <div class="relative flex items-center">
+        <svg class="w-4 h-4 text-slate-500 absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input 
+          id="globalIocSearchInput" 
+          type="text" 
+          placeholder="输入 IP (如 185.220.101.45)、域名、SHA256、CVE 编号或 APT 代号..."
+          class="w-full bg-obsidian-850/90 border border-slate-700/80 rounded-md pl-9 pr-14 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 font-mono transition-all"
+        />
+        <div class="absolute right-2 flex items-center space-x-1">
+          <kbd class="px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-obsidian-950 border border-slate-700 rounded shadow-inner">⌘K</kbd>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧系统状态 & 态势仪表 -->
+    <div class="flex items-center space-x-3.5">
+      <!-- 实时全局威胁热度等级 -->
+      <div class="flex items-center space-x-2 px-2.5 py-1 rounded bg-red-950/30 border border-red-900/50">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+        </span>
+        <span class="text-[11px] font-mono font-semibold text-red-400">DEFCON 2 · 高危警备</span>
+        <span class="text-[10px] font-mono text-slate-400">78.4/100</span>
+      </div>
+
+      <!-- 仿真 / 生产切换器 -->
+      <div class="flex items-center rounded-md bg-obsidian-850 p-0.5 border border-slate-800 text-[11px]">
+        <button id="btnModeLive" onclick="setLiveMode(true)" class="px-2 py-0.5 rounded bg-blue-600 text-white font-medium shadow-sm transition-colors">实时生产</button>
+        <button id="btnModeSim" onclick="setLiveMode(false)" class="px-2 py-0.5 rounded text-slate-400 hover:text-slate-200 transition-colors">沙盒演练</button>
+      </div>
+
+      <div class="h-4 w-px bg-slate-800"></div>
+
+      <!-- 用户角色与同步状态 -->
+      <div class="flex items-center space-x-2">
+        <div class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs text-cyan-300 font-mono font-semibold">
+          SC
+        </div>
+        <div class="text-left hidden sm:block">
+          <div class="text-[11px] font-medium leading-none text-slate-200">SecOps Tier-3</div>
+          <div class="text-[9px] text-emerald-400 font-mono flex items-center space-x-1 mt-0.5">
+            <span class="w-1 h-1 rounded-full bg-emerald-400"></span>
+            <span>节点已互联</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. 全局情报度量与数据同步流 (Metrics Banner) -->
+  <div class="h-11 bg-obsidian-900 hairline-border-b px-4 flex items-center justify-between text-xs z-20 shrink-0" data-od-id="metrics-banner">
+    <div class="flex items-center space-x-6 overflow-x-auto py-1">
+      <!-- 指标 1 -->
+      <div class="flex items-center space-x-2 shrink-0">
+        <span class="text-slate-400 text-[11px]">全球库容威胁指标 (IOCs):</span>
+        <span class="font-mono font-bold text-slate-100 text-xs">1,420,890</span>
+        <span class="text-[10px] text-emerald-400 font-mono bg-emerald-950/40 px-1 py-0.2 rounded border border-emerald-800/40">+12,450 过去24h</span>
+      </div>
+      <div class="h-3 w-px bg-slate-800"></div>
+      <!-- 指标 2 -->
+      <div class="flex items-center space-x-2 shrink-0">
+        <span class="text-slate-400 text-[11px]">今日捕获高危 IOC:</span>
+        <span class="font-mono font-bold text-red-400 text-xs flex items-center">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-400 mr-1.5 animate-pulse"></span>
+          342 个
+        </span>
+        <span class="text-[10px] text-red-300/80 font-mono">(98% 已下发策略封禁)</span>
+      </div>
+      <div class="h-3 w-px bg-slate-800"></div>
+      <!-- 指标 3 -->
+      <div class="flex items-center space-x-2 shrink-0">
+        <span class="text-slate-400 text-[11px]">多源同步状态:</span>
+        <div class="flex items-center space-x-2.5 font-mono text-[10px]">
+          <span class="flex items-center text-slate-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1"></span>微步在线 ThreatBook
+          </span>
+          <span class="flex items-center text-slate-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1"></span>VirusTotal Enterprise
+          </span>
+          <span class="flex items-center text-slate-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1"></span>AlienVault OTX
+          </span>
+          <span class="flex items-center text-slate-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1"></span>Wazuh Feed
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快捷操作按钮 -->
+    <div class="flex items-center space-x-2 shrink-0 ml-4">
+      <button onclick="triggerFeedSync()" class="px-2.5 py-1 text-[11px] font-mono text-cyan-300 hover:text-cyan-200 bg-cyan-950/50 hover:bg-cyan-900/60 border border-cyan-800/70 rounded flex items-center space-x-1.5 transition-all">
+        <svg class="w-3.5 h-3.5 animate-spin-reverse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span>立即同步全源</span>
+      </button>
+      <button onclick="showToast('正在生成 STIX 2.1 威胁交换包并打包加密...', 'info')" class="px-2.5 py-1 text-[11px] font-mono text-slate-300 hover:text-white bg-obsidian-850 hover:bg-obsidian-800 border border-slate-700 rounded flex items-center space-x-1 transition-all">
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        <span>导出情报周报</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. 三栏工作台主体 (Main Tri-Pane Workspace) -->
+  <main class="flex-1 flex overflow-hidden relative" data-od-id="main-workspace-layout">
+
+    <!-- 左侧栏：威胁多源分类与高危榜单 (Threat Feeds & Trending APT - 310px) -->
+    <aside class="w-[310px] bg-obsidian-900/95 hairline-border-r flex flex-col shrink-0 z-10" data-od-id="left-threat-feed-pane">
+      <!-- 模块标题栏 -->
+      <div class="px-3.5 py-2.5 hairline-border-b bg-obsidian-950/60 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-sm bg-cyan-400"></span>
+          <span class="text-xs font-semibold text-slate-200 tracking-wide">威胁主体与实时命中</span>
+        </div>
+        <span class="text-[10px] font-mono text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded">4 ACTIVE APTS</span>
+      </div>
+
+      <!-- 左侧内容滚动区 -->
+      <div class="flex-1 overflow-y-auto divide-y divide-slate-800/60">
+
+        <!-- 1. 重点流行 APT 组织追踪 -->
+        <div class="p-3">
+          <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>流行 APT 组织追踪画像</span>
+            <span class="text-cyan-400 text-[10px] cursor-pointer hover:underline">查看全谱</span>
+          </div>
+
+          <div class="space-y-2" id="aptListContainer">
+            <!-- APT29 -->
+            <div onclick="selectAptActor('APT29')" id="aptCard-APT29" class="p-2.5 rounded-lg border bg-obsidian-800 border-cyan-500/60 shadow-lg shadow-cyan-950/40 cursor-pointer transition-all hover:border-cyan-400 group">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">APT29</span>
+                    <span class="text-[10px] text-slate-400 font-mono">(Cozy Bear / Nobelium)</span>
+                  </div>
+                  <div class="text-[11px] text-slate-300 mt-0.5">目标：政府国防、高科技、能源电力</div>
+                </div>
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-red-950/80 text-red-400 border border-red-800/60 flex items-center">
+                  <span class="w-1 h-1 rounded-full bg-red-400 mr-1 animate-pulse"></span>CRITICAL
+                </span>
+              </div>
+              <div class="mt-2 pt-2 border-t border-slate-700/50 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                <span>关联武器: Cobalt Strike, Mimikatz</span>
+                <span class="text-amber-400">活跃度 94%</span>
+              </div>
+            </div>
+
+            <!-- Lazarus Group -->
+            <div onclick="selectAptActor('Lazarus')" id="aptCard-Lazarus" class="p-2.5 rounded-lg border bg-obsidian-850/60 border-slate-800/80 cursor-pointer transition-all hover:border-slate-700 hover:bg-obsidian-800 group">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">Lazarus Group</span>
+                    <span class="text-[10px] text-slate-400 font-mono">(Hidden Cobra)</span>
+                  </div>
+                  <div class="text-[11px] text-slate-300 mt-0.5">目标：跨国金融、加密货币交易所、国防</div>
+                </div>
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-red-950/50 text-red-400 border border-red-900/40">
+                  CRITICAL
+                </span>
+              </div>
+              <div class="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                <span>关联武器: AppleJeus, Dtrack</span>
+                <span class="text-red-400">活跃度 88%</span>
+              </div>
+            </div>
+
+            <!-- Volt Typhoon -->
+            <div onclick="selectAptActor('VoltTyphoon')" id="aptCard-VoltTyphoon" class="p-2.5 rounded-lg border bg-obsidian-850/60 border-slate-800/80 cursor-pointer transition-all hover:border-slate-700 hover:bg-obsidian-800 group">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">Volt Typhoon</span>
+                    <span class="text-[10px] text-slate-400 font-mono">(Vanguard Panda)</span>
+                  </div>
+                  <div class="text-[11px] text-slate-300 mt-0.5">目标：关键基础设施、水利电力、电信运营商</div>
+                </div>
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-950/60 text-amber-400 border border-amber-800/50">
+                  HIGH
+                </span>
+              </div>
+              <div class="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                <span>战术: 离地攻击 (LotL), SOHO 代理</span>
+                <span class="text-amber-400">潜伏活跃</span>
+              </div>
+            </div>
+
+            <!-- LockBit 3.0 -->
+            <div onclick="selectAptActor('LockBit')" id="aptCard-LockBit" class="p-2.5 rounded-lg border bg-obsidian-850/60 border-slate-800/80 cursor-pointer transition-all hover:border-slate-700 hover:bg-obsidian-800 group">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">LockBit 3.0 (Black)</span>
+                    <span class="text-[10px] text-slate-400 font-mono">(Ransomware RaaS)</span>
+                  </div>
+                  <div class="text-[11px] text-slate-300 mt-0.5">目标：大型制造业、医疗供应链、政府</div>
+                </div>
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-red-950/60 text-red-400 border border-red-800/50">
+                  CRITICAL
+                </span>
+              </div>
+              <div class="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                <span>战术: 双重勒索, 域控提权</span>
+                <span class="text-red-400">活跃勒索</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 近期高频命中 IOC 实时流 -->
+        <div class="p-3">
+          <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>近期高频命中 IOC 实时流</span>
+            <span class="text-emerald-400 text-[10px] font-mono animate-pulse">● 实时捕获中</span>
+          </div>
+
+          <!-- 标签过滤 -->
+          <div class="flex items-center space-x-1 mb-2.5 text-[10px] font-mono">
+            <button class="px-2 py-0.5 rounded bg-blue-600/30 text-cyan-300 border border-blue-500/40">全部 (342)</button>
+            <button class="px-2 py-0.5 rounded bg-obsidian-850 text-slate-400 hover:text-slate-200 border border-slate-800">C2 节点</button>
+            <button class="px-2 py-0.5 rounded bg-obsidian-850 text-slate-400 hover:text-slate-200 border border-slate-800">恶意域名</button>
+            <button class="px-2 py-0.5 rounded bg-obsidian-850 text-slate-400 hover:text-slate-200 border border-slate-800">样本 Hash</button>
+          </div>
+
+          <!-- IOC 列表项 -->
+          <div class="space-y-1.5" id="iocListStream">
+            <!-- IOC 1 -->
+            <div onclick="selectIocNode('c2-ip')" class="p-2 rounded bg-obsidian-850/80 border border-slate-800/80 hover:border-cyan-500/60 hover:bg-obsidian-800 cursor-pointer transition-all">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-semibold text-red-400 flex items-center">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></span>
+                  185.220.101.45
+                </span>
+                <span class="text-[10px] font-mono bg-red-950/60 text-red-300 px-1 py-0.2 rounded border border-red-800/40">置信 99%</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+                <span>Tor Exit / C2 Controller · 🇳🇱 荷兰</span>
+                <span class="text-amber-400 font-mono">拦截 14 次</span>
+              </div>
+            </div>
+
+            <!-- IOC 2 -->
+            <div onclick="selectIocNode('c2-domain')" class="p-2 rounded bg-obsidian-850/80 border border-slate-800/80 hover:border-cyan-500/60 hover:bg-obsidian-800 cursor-pointer transition-all">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-semibold text-amber-400 flex items-center truncate max-w-[190px]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>
+                  cdn-security-check.com
+                </span>
+                <span class="text-[10px] font-mono bg-amber-950/60 text-amber-300 px-1 py-0.2 rounded border border-amber-800/40">置信 96%</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+                <span>诱饵仿冒伪装域 · 🇺🇸 美国</span>
+                <span class="text-cyan-400 font-mono">DNS 污染阻断</span>
+              </div>
+            </div>
+
+            <!-- IOC 3 -->
+            <div onclick="selectIocNode('malware-hash')" class="p-2 rounded bg-obsidian-850/80 border border-slate-800/80 hover:border-cyan-500/60 hover:bg-obsidian-800 cursor-pointer transition-all">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[11px] text-slate-200 flex items-center truncate max-w-[190px]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-purple-400 mr-1.5"></span>
+                  e3b0c44298fc1c14...
+                </span>
+                <span class="text-[10px] font-mono bg-purple-950/60 text-purple-300 px-1 py-0.2 rounded border border-purple-800/40">置信 99%</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+                <span>Cobalt Strike 4.9 Beacon Loader</span>
+                <span class="text-red-400 font-mono">EDR 阻断隔离</span>
+              </div>
+            </div>
+
+            <!-- IOC 4 -->
+            <div onclick="selectIocNode('cve-node')" class="p-2 rounded bg-obsidian-850/80 border border-slate-800/80 hover:border-cyan-500/60 hover:bg-obsidian-800 cursor-pointer transition-all">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-semibold text-rose-400 flex items-center">
+                  <span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>
+                  CVE-2024-3400
+                </span>
+                <span class="text-[10px] font-mono bg-rose-950/60 text-rose-300 px-1 py-0.2 rounded border border-rose-800/40">CVSS 10.0</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+                <span>PAN-OS 网关命令注入在野利用</span>
+                <span class="text-rose-400 font-mono">在野活跃利用</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- 中央主体：多维攻击关系溯源图谱与 MITRE 矩阵 (Threat Knowledge Graph & MITRE View) -->
+    <section class="flex-1 flex flex-col bg-obsidian-950 relative overflow-hidden" data-od-id="center-knowledge-workspace">
+      <!-- 视图控制头栏 -->
+      <div class="h-12 bg-obsidian-900/90 hairline-border-b px-4 flex items-center justify-between shrink-0 z-10">
+        <!-- 标签页切换器 -->
+        <div class="flex items-center space-x-1 bg-obsidian-950 p-1 rounded-lg border border-slate-800">
+          <button id="tabGraphBtn" onclick="switchView('graph')" class="px-3 py-1 rounded-md text-xs font-semibold text-white bg-blue-600 shadow-sm flex items-center space-x-2 transition-all">
+            <svg class="w-3.5 h-3.5 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="6" cy="6" r="3" stroke-width="2"/>
+              <circle cx="18" cy="6" r="3" stroke-width="2"/>
+              <circle cx="12" cy="18" r="3" stroke-width="2"/>
+              <path d="M6 9v3a3 3 0 003 3h3m6-6v3a3 3 0 01-3 3h-3" stroke-width="2"/>
+            </svg>
+            <span>溯源关系拓扑图 (Knowledge Graph)</span>
+          </button>
+          <button id="tabMitreBtn" onclick="switchView('mitre')" class="px-3 py-1 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+            </svg>
+            <span>MITRE ATT&CK 攻击杀伤链矩阵</span>
+          </button>
+        </div>
+
+        <!-- 画布辅助图例 (Legend) -->
+        <div class="hidden xl:flex items-center space-x-4 text-[11px] font-mono text-slate-300">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-500/50"></span>
+            <span>攻击行为体 (APT)</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span>
+            <span>武器工具 (Malware)</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm shadow-purple-500/50"></span>
+            <span>基础设施 (C2/Domain)</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></span>
+            <span>受害内网资产</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span>
+            <span>利用漏洞 (CVE)</span>
+          </div>
+        </div>
+
+        <!-- 拓扑画布操作工具栏 -->
+        <div class="flex items-center space-x-1">
+          <button onclick="zoomGraph(1.15)" title="放大画布" class="p-1.5 rounded bg-obsidian-850 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </button>
+          <button onclick="zoomGraph(0.85)" title="缩小画布" class="p-1.5 rounded bg-obsidian-850 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+          </button>
+          <button onclick="resetGraphView()" title="重置居中" class="px-2 py-1 text-[11px] font-mono rounded bg-obsidian-850 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition-colors">
+            适应画布
+          </button>
+          <button onclick="toggleSimulation()" id="btnSimState" title="暂停/启动拓扑粒子流" class="px-2 py-1 text-[11px] font-mono rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/80 hover:bg-cyan-900/60 transition-colors">
+            动态粒子: 开
+          </button>
+        </div>
+      </div>
+
+      <!-- 画布容器 1：交互式力导向网络拓扑关系图谱 (Canvas) -->
+      <div id="graphViewContainer" class="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden">
+        <canvas id="topologyCanvas" class="w-full h-full block"></canvas>
+
+        <!-- 悬浮节点详情 Tooltip -->
+        <div id="nodeTooltip" class="absolute pointer-events-none hidden bg-obsidian-950/95 border border-cyan-500/60 rounded-lg p-2.5 text-xs shadow-2xl backdrop-blur-md z-40 max-w-xs transition-opacity duration-150">
+          <div id="tooltipTitle" class="font-bold text-white mb-1 flex items-center space-x-1.5"></div>
+          <div id="tooltipMeta" class="text-slate-300 font-mono text-[10px] space-y-0.5"></div>
+          <div class="mt-1.5 pt-1.5 border-t border-slate-800 text-[10px] text-cyan-300 flex items-center justify-between">
+            <span>点击查看深度情报</span>
+            <span class="font-mono">ENTER →</span>
+          </div>
+        </div>
+
+        <!-- 拓扑底层水印与态势指示 -->
+        <div class="absolute bottom-4 left-4 pointer-events-none bg-obsidian-950/80 backdrop-blur-sm border border-slate-800/80 rounded-lg p-2.5 text-[11px] font-mono text-slate-400 space-y-1">
+          <div class="flex items-center space-x-2 text-slate-200">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            <span class="font-bold">当前拓扑主轴：APT29 攻击行为体溯源链</span>
+          </div>
+          <div>拓扑节点：8 实体 | 关联攻击链路：11 边 | 物理张力算法：Barnes-Hut</div>
+          <div class="text-[10px] text-slate-500">提示：鼠标左键拖拽节点，滚轮缩放，单击节点加载右侧深度取证</div>
+        </div>
+      </div>
+
+      <!-- 画布容器 2：MITRE ATT&CK 攻击杀伤链映射矩阵 (Mitre Matrix) -->
+      <div id="mitreViewContainer" class="flex-1 w-full h-full overflow-x-auto overflow-y-auto p-4 hidden bg-obsidian-950">
+        <div class="mb-3 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+              <span>MITRE ATT&CK v15 企业攻击技术矩阵映射</span>
+              <span class="text-xs font-mono font-normal text-cyan-400 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded">APT29 技战术覆盖度：34.2%</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">高亮标红技术点为当前攻击事件中已捕获并成功阻断的实战战术。</p>
+          </div>
+          <div class="flex items-center space-x-2 text-xs font-mono">
+            <span class="px-2 py-1 rounded bg-red-950/80 text-red-300 border border-red-800/60">■ 本次事件命中 (6项)</span>
+            <span class="px-2 py-1 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60">■ APT29 常用武器库 (12项)</span>
+            <span class="px-2 py-1 rounded bg-slate-900 text-slate-400 border border-slate-800">□ 未激活策略</span>
+          </div>
+        </div>
+
+        <!-- MITRE 12 阶段列网格 -->
+        <div class="grid grid-cols-6 xl:grid-cols-11 gap-2.5 min-w-[1300px]">
+          <!-- 阶段 1: 侦察 Reconnaissance -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">1. 侦察 (Recon)</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400 hover:border-slate-700">T1595 主动扫描</div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400 hover:border-slate-700">T1592 收集受害者信息</div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400 hover:border-slate-700">T1589 凭据搜索</div>
+            </div>
+          </div>
+
+          <!-- 阶段 2: 初始访问 Initial Access -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">2. 初始访问</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div onclick="selectIocNode('cve-node')" class="p-1.5 rounded bg-red-950/80 border border-red-500/80 text-red-300 cursor-pointer shadow-sm hover:brightness-110">
+                <div class="font-bold">T1190 利用外网应用</div>
+                <div class="text-[9px] text-red-400">CVE-2024-3400 命中</div>
+              </div>
+              <div class="p-1.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300">
+                <div>T1566 鱼叉钓鱼邮件</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1078 有效凭据登录</div>
+            </div>
+          </div>
+
+          <!-- 阶段 3: 执行 Execution -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">3. 执行 (Exec)</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div onclick="selectIocNode('tool-ps')" class="p-1.5 rounded bg-red-950/80 border border-red-500/80 text-red-300 cursor-pointer shadow-sm hover:brightness-110">
+                <div class="font-bold">T1059.001 PowerShell</div>
+                <div class="text-[9px] text-red-400">混淆编码脚本注入</div>
+              </div>
+              <div class="p-1.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300">
+                <div>T1059.003 Windows Cmd</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1204 用户执行</div>
+            </div>
+          </div>
+
+          <!-- 阶段 4: 持久化 Persistence -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">4. 持久化</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div class="p-1.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300">
+                <div class="font-bold">T1053 计划任务/Cron</div>
+                <div class="text-[9px] text-amber-400">每日 03:00 心跳</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1547 启动项注入</div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1136 创建隐藏账户</div>
+            </div>
+          </div>
+
+          <!-- 阶段 5: 提权 Privilege Escalation -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">5. 权限提升</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div class="p-1.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300">
+                <div class="font-bold">T1068 漏洞提权利用</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1548 越权提权机制</div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1055 进程注入</div>
+            </div>
+          </div>
+
+          <!-- 阶段 6: 防御绕过 Defense Evasion -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">6. 防御绕过</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div class="p-1.5 rounded bg-red-950/80 border border-red-500/80 text-red-300">
+                <div class="font-bold">T1027 混淆与伪装文件</div>
+                <div class="text-[9px] text-red-400">伪装 Microsoft 签名</div>
+              </div>
+              <div class="p-1.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300">
+                <div>T1562.001 禁用安全工具</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1070 清除 Windows 日志</div>
+            </div>
+          </div>
+
+          <!-- 阶段 7: 凭据获取 Credential Access -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">7. 凭据获取</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div onclick="selectIocNode('tool-mimikatz')" class="p-1.5 rounded bg-red-950/80 border border-red-500/80 text-red-300 cursor-pointer shadow-sm hover:brightness-110">
+                <div class="font-bold">T1003.001 LSASS 内存转储</div>
+                <div class="text-[9px] text-red-400">Mimikatz 提取 NTLM</div>
+              </div>
+              <div class="p-1.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300">
+                <div>T1555 密码存储库嗅探</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1110 暴力破解</div>
+            </div>
+          </div>
+
+          <!-- 阶段 8: 发现与侦测 Discovery -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">8. 内网发现</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div class="p-1.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300">
+                <div class="font-bold">T1018 远程系统探测</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1087 域账户枚举</div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1082 系统信息枚举</div>
+            </div>
+          </div>
+
+          <!-- 阶段 9: 横向移动 Lateral Movement -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">9. 横向移动</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div onclick="selectIocNode('asset-dc')" class="p-1.5 rounded bg-red-950/80 border border-red-500/80 text-red-300 cursor-pointer shadow-sm hover:brightness-110">
+                <div class="font-bold">T1021.002 SMB/域控渗透</div>
+                <div class="text-[9px] text-red-400">ad-primary-dc01 探测</div>
+              </div>
+              <div class="p-1.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300">
+                <div>T1550 传递哈希 (Pass-the-Hash)</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1563 SSH 会话劫持</div>
+            </div>
+          </div>
+
+          <!-- 阶段 10: 命令与控制 Command & Control -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">10. 命令控制</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div onclick="selectIocNode('c2-ip')" class="p-1.5 rounded bg-red-950/80 border border-red-500/80 text-red-300 cursor-pointer shadow-sm hover:brightness-110">
+                <div class="font-bold">T1071.001 伪装 HTTPS C2</div>
+                <div class="text-[9px] text-red-400">185.220.101.45 回连</div>
+              </div>
+              <div onclick="selectIocNode('c2-domain')" class="p-1.5 rounded bg-red-950/80 border border-red-500/80 text-red-300 cursor-pointer shadow-sm hover:brightness-110">
+                <div class="font-bold">T1568 动态 DNS/诱饵域名</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1090 代理跳板通信</div>
+            </div>
+          </div>
+
+          <!-- 阶段 11: 数据渗出 Exfiltration -->
+          <div class="bg-obsidian-900/90 rounded border border-slate-800/80 p-2">
+            <div class="text-[11px] font-bold text-slate-300 mb-2 pb-1 border-b border-slate-800">11. 数据渗出</div>
+            <div class="space-y-1.5 text-[10px] font-mono">
+              <div class="p-1.5 rounded bg-amber-950/60 border border-amber-800/50 text-amber-300">
+                <div class="font-bold">T1048 备用协议加密渗出</div>
+              </div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1567 渗出至云存储</div>
+              <div class="p-1.5 rounded bg-obsidian-850 border border-slate-800 text-slate-400">T1020 自动化数据打包</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右侧深度情报详情抽屉 (Deep Intelligence Inspector - 340px) -->
+    <aside class="w-[340px] bg-obsidian-900/95 hairline-border-l flex flex-col shrink-0 z-10" data-od-id="right-inspector-pane">
+      <!-- 抽屉标题栏 -->
+      <div class="px-4 py-2.5 hairline-border-b bg-obsidian-950/60 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+          <span class="text-xs font-semibold text-slate-100">深度情报审查器 (Inspector)</span>
+        </div>
+        <span id="inspectorEntityBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-800/60">
+          C2 节点
+        </span>
+      </div>
+
+      <!-- 抽屉详细内容区 -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs" id="inspectorContent">
+
+        <!-- 实体主体名称与危险分表 -->
+        <div class="p-3 rounded-lg bg-obsidian-850 border border-slate-800 relative overflow-hidden">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">TARGET ENTITY (IOC)</div>
+              <h2 id="inspectorEntityName" class="text-base font-mono font-bold text-red-400 mt-0.5 break-all">185.220.101.45</h2>
+              <div id="inspectorEntitySub" class="text-[11px] text-slate-300 mt-1">Tor Exit Node / C2 Command Controller</div>
+            </div>
+            <!-- 危险分数仪表 -->
+            <div class="text-center bg-red-950/80 border border-red-800/80 rounded-lg p-2 min-w-[65px] glow-red">
+              <div id="inspectorThreatScore" class="text-lg font-mono font-bold text-red-400 leading-none">98</div>
+              <div class="text-[9px] font-mono text-red-300 mt-0.5">极高危</div>
+            </div>
+          </div>
+
+          <!-- 威胁标签 Pills -->
+          <div id="inspectorTags" class="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-slate-700/60 font-mono text-[10px]">
+            <span class="px-1.5 py-0.5 rounded bg-red-950 text-red-300 border border-red-800/60">Botnet C2</span>
+            <span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/60">APT29 基础设施</span>
+            <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800/60">CobaltStrike 监听端</span>
+          </div>
+        </div>
+
+        <!-- 详细情报元数据网格 -->
+        <div class="space-y-2">
+          <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">TELEMETRY & ATTRIBUTION (基础遥测)</div>
+
+          <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+            <div class="p-2 rounded bg-obsidian-850/80 border border-slate-800">
+              <div class="text-[10px] text-slate-400">自治系统 (ASN)</div>
+              <div id="inspectorAsn" class="text-slate-200 font-semibold mt-0.5">AS9009 (LeaseWeb)</div>
+            </div>
+            <div class="p-2 rounded bg-obsidian-850/80 border border-slate-800">
+              <div class="text-[10px] text-slate-400">地理物理位置</div>
+              <div id="inspectorGeo" class="text-slate-200 font-semibold mt-0.5">🇳🇱 荷兰 阿姆斯特丹</div>
+            </div>
+            <div class="p-2 rounded bg-obsidian-850/80 border border-slate-800">
+              <div class="text-[10px] text-slate-400">首次捕获时间</div>
+              <div id="inspectorFirstSeen" class="text-slate-200 mt-0.5">2024-03-12 04:12</div>
+            </div>
+            <div class="p-2 rounded bg-obsidian-850/80 border border-slate-800">
+              <div class="text-[10px] text-slate-400">最近心跳活动</div>
+              <div id="inspectorLastSeen" class="text-red-400 font-semibold mt-0.5">3 分钟前 (持续活跃)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关联资产与反向解析关系 -->
+        <div class="space-y-2">
+          <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">CORRELATED GRAPH EDGES (拓扑关联合成)</div>
+
+          <div class="p-2.5 rounded bg-obsidian-850 border border-slate-800 space-y-2 text-[11px]">
+            <div class="flex items-center justify-between font-mono">
+              <span class="text-slate-400">绑定解析域名:</span>
+              <span id="inspectorRelatedDomain" class="text-cyan-400 hover:underline cursor-pointer">cdn-security-check.com</span>
+            </div>
+            <div class="flex items-center justify-between font-mono">
+              <span class="text-slate-400">关联在野漏洞:</span>
+              <span class="text-rose-400 font-semibold">CVE-2024-3400 (PAN-OS)</span>
+            </div>
+            <div class="flex items-center justify-between font-mono">
+              <span class="text-slate-400">受害内网终端:</span>
+              <span class="text-amber-300 font-semibold">host-fin-04 (财务部终端)</span>
+            </div>
+            <div class="flex items-center justify-between font-mono">
+              <span class="text-slate-400">阻断拦截日志:</span>
+              <span class="text-red-400 font-bold">14 次主动会话请求拦截</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sentinel AI 研判建议卡片 -->
+        <div class="p-3 rounded-lg bg-blue-950/30 border border-blue-800/60 relative">
+          <div class="flex items-center space-x-2 text-cyan-300 font-semibold text-xs mb-1.5">
+            <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+              <path d="M12 2a10 10 0 0 1 10 10"/>
+              <circle cx="12" cy="12" r="4"/>
+            </svg>
+            <span>Sentinel AI 溯源研判决策</span>
+          </div>
+          <p id="inspectorAiNote" class="text-[11px] text-slate-300 leading-relaxed font-sans">
+            该节点是 APT29 攻击行为体在欧洲区域的核心 C2 跳板，正通过 TLS 伪装信道对内网资产 host-fin-04 进行命令回连下发。建议立即在全网防火墙下发黑名单封禁，并在 EDR 中对受影响端点触发隔离与内存取证剧本。
+          </p>
+        </div>
+
+        <!-- 交互处置动作工具栏 (One-Click SecOps Remediation) -->
+        <div class="pt-2 space-y-2" data-od-id="action-remediation-group">
+          <button onclick="executeAction('firewall-block')" class="w-full py-2 px-3 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-red-950/60 transition-all active:scale-[0.98]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+            </svg>
+            <span>防火墙全局下发黑名单 (Block IP)</span>
+          </button>
+
+          <button onclick="executeAction('soar-isolate')" class="w-full py-2 px-3 rounded-lg bg-obsidian-800 hover:bg-obsidian-750 text-cyan-300 border border-cyan-800/80 font-medium text-xs flex items-center justify-center space-x-2 transition-all active:scale-[0.98]">
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span>SOAR 自动封禁关联会话与主机隔离</span>
+          </button>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="executeAction('export-stix')" class="py-1.5 px-2 rounded bg-obsidian-850 hover:bg-slate-800 text-slate-300 border border-slate-700 font-mono text-[11px] flex items-center justify-center space-x-1 transition-all">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <span>导出 STIX 2.1</span>
+            </button>
+            <button onclick="executeAction('siem-hunt')" class="py-1.5 px-2 rounded bg-obsidian-850 hover:bg-slate-800 text-slate-300 border border-slate-700 font-mono text-[11px] flex items-center justify-center space-x-1 transition-all">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <span>SIEM 关联检索</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- 全局交互 Toast 通知容器 -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- 4. 核心逻辑脚本：力导向图谱渲染、状态联动、MITRE 切换与响应交互 -->
+  <script>
+    // 拓扑图数据集定义 (支持按 APT 组织动态切换)
+    const datasets = {
+      'APT29': {
+        name: 'APT29 (Cozy Bear)',
+        nodes: [
+          { id: 'apt29-root', label: 'APT29 (Cozy Bear)', type: 'actor', color: '#EF4444', size: 36, x: 0, y: 0, category: '国家级威胁行为体', score: 99 },
+          { id: 'cve-node', label: 'CVE-2024-3400', type: 'cve', color: '#F43F5E', size: 24, x: -160, y: -120, category: '漏洞利用突破口', score: 95 },
+          { id: 'tool-cs', label: 'Cobalt Strike 4.9', type: 'tool', color: '#F59E0B', size: 26, x: -180, y: 80, category: '武器化渗透框架', score: 96 },
+          { id: 'tool-mimikatz', label: 'Mimikatz x64', type: 'tool', color: '#F59E0B', size: 22, x: -100, y: 190, category: 'LSASS 凭据转储工具', score: 94 },
+          { id: 'tool-ps', label: 'PowerShell Runner', type: 'tool', color: '#F59E0B', size: 20, x: -240, y: -20, category: '无文件免杀脚本', score: 90 },
+          { id: 'c2-ip', label: '185.220.101.45', type: 'c2', color: '#A855F7', size: 28, x: 190, y: -90, category: 'Botnet C2 核心控制器', score: 98 },
+          { id: 'c2-domain', label: 'cdn-security-check.com', type: 'domain', color: '#A855F7', size: 22, x: 250, y: 60, category: 'DGA 伪装诱饵域名', score: 96 },
+          { id: 'asset-fin', label: 'host-fin-04', type: 'victim', color: '#38BDF8', size: 26, x: 130, y: 170, category: '财务内网受害终端', score: 85 },
+          { id: 'asset-dc', label: 'ad-primary-dc01', type: 'victim', color: '#38BDF8', size: 28, x: 20, y: 260, category: '核心域控主服务器', score: 92 }
+        ],
+        edges: [
+          { from: 'apt29-root', to: 'cve-node', label: '初始漏洞突破' },
+          { from: 'apt29-root', to: 'tool-cs', label: '载荷下发' },
+          { from: 'apt29-root', to: 'tool-ps', label: '执行混淆脚本' },
+          { from: 'cve-node', to: 'asset-fin', label: '内网突破植入' },
+          { from: 'tool-cs', to: 'c2-ip', label: 'C2 心跳信道' },
+          { from: 'c2-ip', to: 'c2-domain', label: 'DNS 伪装解析' },
+          { from: 'c2-ip', to: 'asset-fin', label: '反向指令回连' },
+          { from: 'asset-fin', to: 'tool-mimikatz', label: '执行内存抓密' },
+          { from: 'tool-mimikatz', to: 'asset-dc', label: '获取凭据横向探测' }
+        ]
+      },
+      'Lazarus': {
+        name: 'Lazarus Group',
+        nodes: [
+          { id: 'lazarus-root', label: 'Lazarus Group', type: 'actor', color: '#EF4444', size: 36, x: 0, y: 0, category: '跨国黑客集团', score: 98 },
+          { id: 'tool-applejeus', label: 'AppleJeus Troj', type: 'tool', color: '#F59E0B', size: 25, x: -180, y: -70, category: '加密钱包木马', score: 95 },
+          { id: 'c2-ip-lz', label: '104.244.76.103', type: 'c2', color: '#A855F7', size: 26, x: 180, y: -80, category: 'Lazarus C2 节点', score: 96 },
+          { id: 'asset-crypto', label: 'svr-crypto-vault01', type: 'victim', color: '#38BDF8', size: 26, x: 120, y: 150, category: '数字资产托管服务器', score: 90 }
+        ],
+        edges: [
+          { from: 'lazarus-root', to: 'tool-applejeus', label: '诱饵应用分发' },
+          { from: 'tool-applejeus', to: 'c2-ip-lz', label: '加密信道回传' },
+          { from: 'c2-ip-lz', to: 'asset-crypto', label: '私钥窃取攻击' }
+        ]
+      },
+      'VoltTyphoon': {
+        name: 'Volt Typhoon',
+        nodes: [
+          { id: 'volt-root', label: 'Volt Typhoon', type: 'actor', color: '#EF4444', size: 36, x: 0, y: 0, category: '基础设施针对性威胁', score: 97 },
+          { id: 'cve-soho', label: 'CVE-2023-46805', type: 'cve', color: '#F43F5E', size: 24, x: -170, y: -100, category: 'SOHO 边缘路由漏洞', score: 94 },
+          { id: 'tool-lotl', label: 'Living-off-the-Land', type: 'tool', color: '#F59E0B', size: 24, x: -160, y: 90, category: '合法命令脚本免杀', score: 91 },
+          { id: 'asset-grid', label: 'scada-plc-gw02', type: 'victim', color: '#38BDF8', size: 28, x: 160, y: 120, category: '工业变电站主网关', score: 93 }
+        ],
+        edges: [
+          { from: 'volt-root', to: 'cve-soho', label: '边缘设备沦陷' },
+          { from: 'volt-root', to: 'tool-lotl', label: '零日志执行' },
+          { from: 'cve-soho', to: 'asset-grid', label: '工业网段横向渗透' }
+        ]
+      },
+      'LockBit': {
+        name: 'LockBit 3.0',
+        nodes: [
+          { id: 'lockbit-root', label: 'LockBit 3.0 (Black)', type: 'actor', color: '#EF4444', size: 36, x: 0, y: 0, category: 'RaaS 勒索集团', score: 99 },
+          { id: 'tool-encryptor', label: 'LockBit3.exe Encryptor', type: 'tool', color: '#F59E0B', size: 26, x: -160, y: 70, category: '多线程高速勒索器', score: 98 },
+          { id: 'c2-onion', label: 'lockbitsup...onion', type: 'c2', color: '#A855F7', size: 26, x: 180, y: -60, category: '暗网协商门户', score: 97 },
+          { id: 'asset-nas', label: 'nas-storage-corp01', type: 'victim', color: '#38BDF8', size: 28, x: 130, y: 160, category: '企业核心备份存储 NAS', score: 95 }
+        ],
+        edges: [
+          { from: 'lockbit-root', to: 'tool-encryptor', label: '下发加密载荷' },
+          { from: 'tool-encryptor', to: 'asset-nas', label: '卷影副本删除并加密' },
+          { from: 'tool-encryptor', to: 'c2-onion', label: '上传勒索声明' }
+        ]
+      }
+    };
+
+    // 画布与物理引擎状态
+    let currentActor = 'APT29';
+    let currentGraph = JSON.parse(JSON.stringify(datasets['APT29']));
+    let canvas = document.getElementById('topologyCanvas');
+    let ctx = canvas.getContext('2d');
+    let width = 0, height = 0;
+    let scale = 1.0;
+    let panX = 0, panY = 0;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let draggedNode = null;
+    let hoveredNode = null;
+    let selectedNodeId = 'c2-ip';
+    let particles = [];
+    let isParticleSimActive = true;
+    let animationFrameId = null;
+
+    // 初始化高分辨率画布
+    function resizeCanvas() {
+      const container = document.getElementById('graphViewContainer');
+      width = container.clientWidth;
+      height = container.clientHeight;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+      if (panX === 0 && panY === 0) {
+        panX = width / 2;
+        panY = height / 2;
+      }
+    }
+
+    // 初始化攻击流动粒子 (Attack Flow Particles)
+    function initParticles() {
+      particles = [];
+      currentGraph.edges.forEach((edge, index) => {
+        for (let i = 0; i < 2; i++) {
+          particles.push({
+            edgeIndex: index,
+            progress: Math.random(),
+            speed: 0.006 + Math.random() * 0.005,
+            color: '#38BDF8'
+          });
+        }
+      });
+    }
+
+    // 画布渲染主循环
+    function render() {
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.translate(panX, panY);
+      ctx.scale(scale, scale);
+
+      // 1. 绘制连线 (Edges)
+      currentGraph.edges.forEach(edge => {
+        const source = currentGraph.nodes.find(n => n.id === edge.from);
+        const target = currentGraph.nodes.find(n => n.id === edge.to);
+        if (!source || !target) return;
+
+        const isHighlighted = (source.id === selectedNodeId || target.id === selectedNodeId);
+
+        ctx.beginPath();
+        ctx.moveTo(source.x, source.y);
+        ctx.lineTo(target.x, target.y);
+
+        if (isHighlighted) {
+          ctx.strokeStyle = '#38BDF8';
+          ctx.lineWidth = 2.5;
+          ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
+          ctx.shadowBlur = 8;
+        } else {
+          ctx.strokeStyle = 'rgba(71, 85, 105, 0.45)';
+          ctx.lineWidth = 1.2;
+          ctx.shadowBlur = 0;
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // 连线关系文字 (Edge Label)
+        const midX = (source.x + target.x) / 2;
+        const midY = (source.y + target.y) / 2;
+        ctx.font = '9px "JetBrains Mono", monospace';
+        ctx.fillStyle = isHighlighted ? '#38BDF8' : 'rgba(148, 163, 184, 0.7)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(edge.label, midX, midY - 6);
+      });
+
+      // 2. 绘制流动光流粒子 (Attack Beaconing Signals)
+      if (isParticleSimActive) {
+        particles.forEach(p => {
+          const edge = currentGraph.edges[p.edgeIndex];
+          if (!edge) return;
+          const source = currentGraph.nodes.find(n => n.id === edge.from);
+          const target = currentGraph.nodes.find(n => n.id === edge.to);
+          if (!source || !target) return;
+
+          p.progress += p.speed;
+          if (p.progress > 1) p.progress = 0;
+
+          const px = source.x + (target.x - source.x) * p.progress;
+          const py = source.y + (target.y - source.y) * p.progress;
+
+          ctx.beginPath();
+          ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#38BDF8';
+          ctx.shadowColor = '#38BDF8';
+          ctx.shadowBlur = 6;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        });
+      }
+
+      // 3. 绘制节点 (Nodes)
+      currentGraph.nodes.forEach(node => {
+        const isSelected = (node.id === selectedNodeId);
+        const isHovered = (node === hoveredNode);
+
+        // 外层脉冲光环
+        if (isSelected || node.type === 'actor') {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, node.size + 8, 0, Math.PI * 2);
+          ctx.fillStyle = isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(239, 68, 68, 0.15)';
+          ctx.fill();
+        }
+
+        // 节点本体圆圈
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
+        ctx.fillStyle = node.color;
+        if (isSelected) {
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#38BDF8';
+          ctx.shadowBlur = 15;
+        } else if (isHovered) {
+          ctx.strokeStyle = '#38BDF8';
+          ctx.lineWidth = 2.5;
+          ctx.shadowBlur = 8;
+        } else {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+          ctx.lineWidth = 1.5;
+          ctx.shadowBlur = 0;
+        }
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // 节点内部图标/首字母
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 11px "JetBrains Mono", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        let glyph = '●';
+        if (node.type === 'actor') glyph = 'APT';
+        else if (node.type === 'cve') glyph = 'CVE';
+        else if (node.type === 'c2') glyph = 'C2';
+        else if (node.type === 'victim') glyph = 'HOST';
+        else if (node.type === 'tool') glyph = 'TOOL';
+        ctx.fillText(glyph, node.x, node.y);
+
+        // 节点下方文字标签 (Label Badge)
+        ctx.font = '500 11px Inter, sans-serif';
+        const labelWidth = ctx.measureText(node.label).width;
+        ctx.fillStyle = 'rgba(8, 12, 20, 0.85)';
+        ctx.fillRect(node.x - labelWidth / 2 - 6, node.y + node.size + 4, labelWidth + 12, 18);
+        ctx.strokeStyle = isSelected ? '#38BDF8' : 'rgba(51, 65, 85, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(node.x - labelWidth / 2 - 6, node.y + node.size + 4, labelWidth + 12, 18);
+
+        ctx.fillStyle = isSelected ? '#38BDF8' : '#F1F5F9';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(node.label, node.x, node.y + node.size + 13);
+      });
+
+      ctx.restore();
+
+      animationFrameId = requestAnimationFrame(render);
+    }
+
+    // 坐标拾取计算
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.clientX - rect.left;
+      const clientY = e.clientY - rect.top;
+      const x = (clientX - panX) / scale;
+      const y = (clientY - panY) / scale;
+      return { x, y, clientX, clientY };
+    }
+
+    // 查找点击命中的节点
+    function findNodeAt(x, y) {
+      for (let i = currentGraph.nodes.length - 1; i >= 0; i--) {
+        const node = currentGraph.nodes[i];
+        const dx = node.x - x;
+        const dy = node.y - y;
+        if (Math.sqrt(dx * dx + dy * dy) <= node.size + 6) {
+          return node;
+        }
+      }
+      return null;
+    }
+
+    // 画布鼠标事件交互
+    canvas.addEventListener('mousedown', e => {
+      const { x, y } = getCanvasCoords(e);
+      const clicked = findNodeAt(x, y);
+      if (clicked) {
+        draggedNode = clicked;
+        selectNode(clicked.id);
+      } else {
+        isDragging = true;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+      }
+    });
+
+    window.addEventListener('mousemove', e => {
+      const { x, y, clientX, clientY } = getCanvasCoords(e);
+
+      if (draggedNode) {
+        draggedNode.x = x;
+        draggedNode.y = y;
+        return;
+      }
+
+      if (isDragging) {
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        return;
+      }
+
+      // Hover 提示
+      const found = findNodeAt(x, y);
+      const tooltip = document.getElementById('nodeTooltip');
+      if (found) {
+        hoveredNode = found;
+        canvas.style.cursor = 'pointer';
+        tooltip.style.left = (clientX + 16) + 'px';
+        tooltip.style.top = (clientY + 16) + 'px';
+        tooltip.classList.remove('hidden');
+
+        document.getElementById('tooltipTitle').innerHTML = `
+          <span class="w-2 h-2 rounded-full" style="background:${found.color}"></span>
+          <span>${found.label}</span>
+        `;
+        document.getElementById('tooltipMeta').innerHTML = `
+          <div>分类：${found.category}</div>
+          <div>威胁置信分：<span class="text-red-400 font-bold">${found.score}/100</span></div>
+          <div>拓扑标识：${found.id}</div>
+        `;
+      } else {
+        hoveredNode = null;
+        canvas.style.cursor = 'grab';
+        tooltip.classList.add('hidden');
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+      draggedNode = null;
+    });
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+      zoomGraph(zoomFactor);
+    }, { passive: false });
+
+    function zoomGraph(factor) {
+      scale = Math.max(0.4, Math.min(2.5, scale * factor));
+    }
+
+    function resetGraphView() {
+      scale = 1.0;
+      panX = width / 2;
+      panY = height / 2;
+    }
+
+    function toggleSimulation() {
+      isParticleSimActive = !isParticleSimActive;
+      const btn = document.getElementById('btnSimState');
+      btn.innerText = isParticleSimActive ? '动态粒子: 开' : '动态粒子: 关';
+    }
+
+    // 选中节点并更新右侧审查详情抽屉
+    function selectNode(nodeId) {
+      selectedNodeId = nodeId;
+      const node = currentGraph.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      const badge = document.getElementById('inspectorEntityBadge');
+      const name = document.getElementById('inspectorEntityName');
+      const sub = document.getElementById('inspectorEntitySub');
+      const score = document.getElementById('inspectorThreatScore');
+      const tags = document.getElementById('inspectorTags');
+      const asn = document.getElementById('inspectorAsn');
+      const geo = document.getElementById('inspectorGeo');
+      const firstSeen = document.getElementById('inspectorFirstSeen');
+      const lastSeen = document.getElementById('inspectorLastSeen');
+      const domain = document.getElementById('inspectorRelatedDomain');
+      const note = document.getElementById('inspectorAiNote');
+
+      name.innerText = node.label;
+      sub.innerText = node.category;
+      score.innerText = node.score;
+
+      if (node.type === 'c2') {
+        badge.innerText = 'C2 节点';
+        badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/60';
+        tags.innerHTML = `
+          <span class="px-1.5 py-0.5 rounded bg-red-950 text-red-300 border border-red-800/60">Botnet C2</span>
+          <span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/60">APT29 基础设施</span>
+          <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800/60">CobaltStrike 监听端</span>
+        `;
+        asn.innerText = 'AS9009 (LeaseWeb)';
+        geo.innerText = '🇳🇱 荷兰 阿姆斯特丹';
+        firstSeen.innerText = '2024-03-12 04:12';
+        lastSeen.innerText = '3 分钟前 (持续活跃)';
+        domain.innerText = 'cdn-security-check.com';
+        note.innerText = 'Sentinel AI 研判建议：该 C2 节点属于 APT29 常用战术设施，当前已在内网探测到 2 台主机与其建立 TLS 加密信道，置信度 99.4%。建议立即执行全网阻断并在 SOAR 中触发主机内存转储取证剧本。';
+      } else if (node.type === 'actor') {
+        badge.innerText = 'APT 攻击组织';
+        badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-800/60';
+        tags.innerHTML = `
+          <span class="px-1.5 py-0.5 rounded bg-red-950 text-red-300 border border-red-800/60">Nation-State</span>
+          <span class="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60">Cyber Espionage</span>
+          <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">MITRE G0016</span>
+        `;
+        asn.innerText = '多跳全球代理网';
+        geo.innerText = '东欧 / 国际跳板网络';
+        firstSeen.innerText = '2014-08-01 (建档追踪)';
+        lastSeen.innerText = '今日活跃利用 (高频)';
+        domain.innerText = '多达 142 衍生域名';
+        note.innerText = 'APT29 (Cozy Bear) 通常针对高科技和关键政企展开供应链渗透与云上特权越权攻击，擅长通过无文件 PowerShell 和内存凭据提取进行潜伏。建议全面审计 Active Directory 特权组变更。';
+      } else if (node.type === 'victim') {
+        badge.innerText = '受害内网主机';
+        badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-cyan-300 border border-blue-800/60';
+        tags.innerHTML = `
+          <span class="px-1.5 py-0.5 rounded bg-blue-950 text-cyan-300 border border-blue-800/60">生产区内网资产</span>
+          <span class="px-1.5 py-0.5 rounded bg-red-950 text-red-300 border border-red-800/60">已建立可疑外连</span>
+        `;
+        asn.innerText = '内部私网 VLAN-20 (财务网段)';
+        geo.innerText = '总部 B 栋机房 3F';
+        firstSeen.innerText = '2023-11-20 (资产注册)';
+        lastSeen.innerText = '正在与 C2 发送心跳包';
+        domain.innerText = '解析指向内部 DNS-01';
+        note.innerText = '检测到该端点已被植入 Cobalt Strike 恶意载荷，并正在尝试对内网域控制器发起 SMB 爆破与凭据提取。建议立即下发 EDR 网络层隔离，切断其局域网访问。';
+      } else if (node.type === 'cve') {
+        badge.innerText = '关键安全漏洞';
+        badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/60';
+        tags.innerHTML = `
+          <span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/60">CVSS 10.0</span>
+          <span class="px-1.5 py-0.5 rounded bg-red-950 text-red-300 border border-red-800/60">远程代码执行 (RCE)</span>
+        `;
+        asn.innerText = '外部边缘网关接入面';
+        geo.innerText = '全球公网暴露';
+        firstSeen.innerText = '2024-04-12 (公布)';
+        lastSeen.innerText = '拦截探测利用 38 次';
+        domain.innerText = '针对 VPN 网关';
+        note.innerText = 'PAN-OS 全球高危命令注入在野利用漏洞，允许未经身份验证的远程攻击者在防火墙上以 root 权限执行任意 OS 命令。请立即核对网关热补丁升级版本。';
+      } else {
+        badge.innerText = '攻击武器工具';
+        badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800/60';
+        tags.innerHTML = `
+          <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800/60">免杀载荷</span>
+          <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">特征码库已更新</span>
+        `;
+        asn.innerText = '本地内存驻留进程';
+        geo.innerText = '内网受害主机中加载';
+        firstSeen.innerText = '2024-03-28';
+        lastSeen.innerText = 'EDR 捕获并拦截执行';
+        domain.innerText = '通过内存反射注入';
+        note.innerText = '该工具用于绕过常规静态杀毒特征扫描，通过反射式 DLL 注入或混淆 PowerShell 指令直接在系统内存空间执行，必须借助行为分析引擎进行拦截阻断。';
+      }
+    }
+
+    // 从左侧列表中点击选择 IOC 节点
+    function selectIocNode(nodeId) {
+      if (document.getElementById('mitreViewContainer').classList.contains('hidden') === false) {
+        switchView('graph');
+      }
+      selectNode(nodeId);
+      const node = currentGraph.nodes.find(n => n.id === nodeId);
+      if (node) {
+        panX = width / 2 - node.x * scale;
+        panY = height / 2 - node.y * scale;
+      }
+      showToast(`已在拓扑图谱中定位节点: ${node ? node.label : nodeId}`, 'info');
+    }
+
+    // 切换 APT 组织数据集
+    function selectAptActor(aptKey) {
+      currentActor = aptKey;
+      currentGraph = JSON.parse(JSON.stringify(datasets[aptKey]));
+      initParticles();
+
+      // 更新卡片激活样式
+      ['APT29', 'Lazarus', 'VoltTyphoon', 'LockBit'].forEach(key => {
+        const card = document.getElementById(`aptCard-${key}`);
+        if (!card) return;
+        if (key === aptKey) {
+          card.className = 'p-2.5 rounded-lg border bg-obsidian-800 border-cyan-500/60 shadow-lg shadow-cyan-950/40 cursor-pointer transition-all group';
+        } else {
+          card.className = 'p-2.5 rounded-lg border bg-obsidian-850/60 border-slate-800/80 cursor-pointer transition-all hover:border-slate-700 hover:bg-obsidian-800 group';
+        }
+      });
+
+      // 默认选中主根节点
+      const rootNode = currentGraph.nodes[0];
+      if (rootNode) {
+        selectNode(rootNode.id);
+      }
+      resetGraphView();
+      showToast(`已载入 ${datasets[aptKey].name} 专属攻击链拓扑关系`, 'success');
+    }
+
+    // 视图切换：拓扑图 vs MITRE 攻击矩阵
+    function switchView(viewName) {
+      const graphContainer = document.getElementById('graphViewContainer');
+      const mitreContainer = document.getElementById('mitreViewContainer');
+      const graphBtn = document.getElementById('tabGraphBtn');
+      const mitreBtn = document.getElementById('tabMitreBtn');
+
+      if (viewName === 'graph') {
+        graphContainer.classList.remove('hidden');
+        mitreContainer.classList.add('hidden');
+        graphBtn.className = 'px-3 py-1 rounded-md text-xs font-semibold text-white bg-blue-600 shadow-sm flex items-center space-x-2 transition-all';
+        mitreBtn.className = 'px-3 py-1 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-all';
+      } else {
+        graphContainer.classList.add('hidden');
+        mitreContainer.classList.remove('hidden');
+        mitreBtn.className = 'px-3 py-1 rounded-md text-xs font-semibold text-white bg-blue-600 shadow-sm flex items-center space-x-2 transition-all';
+        graphBtn.className = 'px-3 py-1 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-all';
+      }
+    }
+
+    // 全局处置动作 (防火墙封禁、SOAR隔离、STIX导出等)
+    function executeAction(actionType) {
+      const node = currentGraph.nodes.find(n => n.id === selectedNodeId) || { label: '185.220.101.45' };
+
+      if (actionType === 'firewall-block') {
+        showToast(`已向全球 12 台边缘防火墙下发阻断策略：黑名单封禁 ${node.label} (TTL: 永久)`, 'danger');
+      } else if (actionType === 'soar-isolate') {
+        showToast(`已触发 SOAR 自动化剧本 [Playbook-IR-08]：终止可疑连接并下发端点隔离指令`, 'warning');
+      } else if (actionType === 'export-stix') {
+        showToast(`成功打包 STIX 2.1 JSON 威胁交换情报包：stix_intel_${selectedNodeId}.json`, 'success');
+      } else if (actionType === 'siem-hunt') {
+        showToast(`正在 SIEM 日志湖中发起过去 30 天回溯猎捕：检索目标 [${node.label}]...`, 'info');
+      }
+    }
+
+    // 多源威胁情报手动同步
+    function triggerFeedSync() {
+      showToast('正在从 微步在线、VirusTotal、AlienVault OTX 同步最新威胁情报流...', 'info');
+      setTimeout(() => {
+        showToast('情报流同步完成！新收录高危 IOC 28 个，已自动关联内部威胁图谱。', 'success');
+      }, 1200);
+    }
+
+    // 生产模式 / 沙盒演练切换
+    function setLiveMode(isLive) {
+      const btnLive = document.getElementById('btnModeLive');
+      const btnSim = document.getElementById('btnModeSim');
+      if (isLive) {
+        btnLive.className = 'px-2 py-0.5 rounded bg-blue-600 text-white font-medium shadow-sm transition-colors';
+        btnSim.className = 'px-2 py-0.5 rounded text-slate-400 hover:text-slate-200 transition-colors';
+        showToast('已接入企业生产级实时防御遥测引擎', 'info');
+      } else {
+        btnSim.className = 'px-2 py-0.5 rounded bg-amber-600 text-white font-medium shadow-sm transition-colors';
+        btnLive.className = 'px-2 py-0.5 rounded text-slate-400 hover:text-slate-200 transition-colors';
+        showToast('已切换至红蓝对抗安全演练沙盒模拟环境 (Simulation Mode)', 'warning');
+      }
+    }
+
+    // 全局 IOC 搜索过滤
+    const searchInput = document.getElementById('globalIocSearchInput');
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const val = searchInput.value.trim().toLowerCase();
+        if (!val) return;
+        const matched = currentGraph.nodes.find(n => n.label.toLowerCase().includes(val) || n.id.toLowerCase().includes(val));
+        if (matched) {
+          selectNode(matched.id);
+          panX = width / 2 - matched.x * scale;
+          panY = height / 2 - matched.y * scale;
+          showToast(`已快速定位目标实体: ${matched.label}`, 'success');
+        } else {
+          showToast(`跨源检索未在当前图谱命中 "${val}"，已加入外部威胁情报搜索队列`, 'info');
+        }
+      }
+    });
+
+    // 动态 Toast 通知组件
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let borderCol = 'border-blue-500/80';
+      let textCol = 'text-cyan-300';
+      let iconSvg = '<svg class="w-4 h-4 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+
+      if (type === 'danger') {
+        borderCol = 'border-red-500/80';
+        textCol = 'text-red-300';
+        iconSvg = '<svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>';
+      } else if (type === 'warning') {
+        borderCol = 'border-amber-500/80';
+        textCol = 'text-amber-300';
+        iconSvg = '<svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+      } else if (type === 'success') {
+        borderCol = 'border-emerald-500/80';
+        textCol = 'text-emerald-300';
+        iconSvg = '<svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+      }
+
+      toast.className = `p-3 rounded-lg bg-obsidian-950/95 border ${borderCol} shadow-2xl backdrop-blur-md flex items-start space-x-2.5 max-w-sm pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300`;
+      toast.innerHTML = `
+        ${iconSvg}
+        <div class="text-xs ${textCol} flex-1 font-mono">${message}</div>
+      `;
+
+      container.appendChild(toast);
+
+      // 进入动画
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      // 4 秒后淡出移除
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3800);
+    }
+
+    // 页面初始化加载
+    window.addEventListener('load', () => {
+      resizeCanvas();
+      initParticles();
+      render();
+      selectNode('c2-ip');
+    });
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+    });
+  </script>
+</body>
+</html>

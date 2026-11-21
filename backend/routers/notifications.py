@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from core.logger import get_logger
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_analyst_or_admin
 from models.user import UserModel
 from services.message_queue_manager import get_message_queue_manager
 from services.notification_service import get_notification_service
@@ -41,7 +41,7 @@ class QueueStatsResponse(BaseModel):
 @router.post("/test", response_model=dict[str, bool])
 async def send_test_notification(
     request: TestNotificationRequest | None = None,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ) -> dict[str, bool]:
     """
     发送测试通知

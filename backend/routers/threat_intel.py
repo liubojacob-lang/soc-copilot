@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.logger import get_logger
 from db.session import get_session
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_analyst_or_admin
 from models.threat_intel_cache import ThreatIntelCacheDB
 from models.user import UserModel
 from schemas.threat_intel import (
@@ -103,7 +103,7 @@ async def refresh_single_ioc(
     ioc_type: str,
     ioc_value: str,
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """Invalidate single IOC cache entry, forcing fresh lookup.
 
@@ -133,7 +133,7 @@ async def refresh_bulk_iocs(
         ..., description="List of {ioc_type, ioc_value} to refresh"
     ),
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """Bulk invalidate IOC cache entries.
 
@@ -167,7 +167,7 @@ async def refresh_bulk_iocs(
 @router.delete("/cache/expired")
 async def clear_expired_cache(
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """Clear all expired cache entries.
 
@@ -189,7 +189,7 @@ async def clear_expired_cache(
 async def clear_all_cache(
     confirm: bool = Query(..., description="Must be true to confirm action"),
     session: AsyncSession = Depends(get_session),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_analyst_or_admin),
 ):
     """Clear entire TI cache (dangerous operation).
 

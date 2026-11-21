@@ -51,6 +51,22 @@ SENSITIVE_FIELD_NAMES: set[str] = {
     "rsa_key",
 }
 
+# Substring markers: any field name containing one of these is sensitive.
+SENSITIVE_KEY_MARKERS: tuple[str, ...] = (
+    "password",
+    "secret",
+    "token",
+    "api_key",
+    "apikey",
+    "private_key",
+    "credential",
+    "authorization",
+    "totp_code",
+    "backup_code",
+    "session",
+    "signature",
+)
+
 # Patterns for detecting sensitive data in strings
 SENSITIVE_PATTERNS = [
     # Credit card numbers (basic pattern)
@@ -108,7 +124,12 @@ def is_sensitive_field(field_name: str) -> bool:
         True if the field is considered sensitive
     """
     normalized = field_name.lower().replace("-", "_").replace(" ", "_")
-    return normalized in SENSITIVE_FIELD_NAMES
+    if normalized in SENSITIVE_FIELD_NAMES:
+        return True
+    # Substring rule (audit-run1 hardening): exact matching missed variant
+    # keys such as webhook_secret, client_secret, totp_code — any key that
+    # CONTAINS a credential word is treated as sensitive.
+    return any(marker in normalized for marker in SENSITIVE_KEY_MARKERS)
 
 
 def redact_dict(data: dict, depth: int = 0, max_depth: int = 5) -> dict:

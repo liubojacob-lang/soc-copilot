@@ -134,13 +134,13 @@ python test_wazuh_integration.py
 docker-compose logs backend | grep Wazuh
 
 # Restart receiver
-curl -X POST http://localhost:8000/api/v1/wazuh/receiver/restart
+curl -X POST http://localhost:8088/api/v1/wazuh/receiver/restart
 
 # Check queue stats
-curl http://localhost:8000/api/v1/notifications/queue/stats
+curl http://localhost:8088/api/v1/notifications/queue/stats
 
 # View agents
-curl http://localhost:8000/api/v1/wazuh/agents
+curl http://localhost:8088/api/v1/wazuh/agents
 ```
 
 ---
@@ -187,7 +187,7 @@ WAZUH_RECEIVER_AUTO_START=true # Auto-start
 **Check**:
 
 ```bash
-curl http://localhost:8000/api/v1/wazuh/receiver/stats
+curl http://localhost:8088/api/v1/wazuh/receiver/stats
 ```
 
 ---

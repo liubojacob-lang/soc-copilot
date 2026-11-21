@@ -91,12 +91,32 @@ logger = get_logger(__name__)
 
 
 class AddCredentialsMiddleware(BaseHTTPMiddleware):
-    """Add credentials header for specific origins."""
+    """Add credentials header for specific origins.
+
+    Exact host matching (audit-run1): a substring match granted
+    Access-Control-Allow-Credentials to attacker origins like
+    https://localhost.attacker.com.
+    """
+
+    _TRUSTED_LOCAL_HOSTS = {
+        "localhost",
+        "127.0.0.1",
+        "::1",
+        "0.0.0.0",
+    }
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         origin = request.headers.get("origin", "")
-        if "localhost" in origin or "127.0.0.1" in origin:
+        hostname = ""
+        if origin:
+            try:
+                from urllib.parse import urlsplit
+
+                hostname = (urlsplit(origin).hostname or "").lower()
+            except ValueError:
+                hostname = ""
+        if hostname in self._TRUSTED_LOCAL_HOSTS:
             response.headers["Access-Control-Allow-Credentials"] = "true"
         return response
 
@@ -382,9 +402,12 @@ async def lifespan(app_instance: FastAPI):
     # Load node plugins
     from pathlib import Path
 
-    from playbook_engine.v7_dag.registry import NodeRegistry
+    from playbook_engine.v7_dag.registry import get_node_registry
 
-    node_registry = NodeRegistry()
+    # Load into the GLOBAL registry (audit-run1 fix): the previous code built
+    # a throwaway local NodeRegistry, so the singleton stayed empty and every
+    # v7 node execution failed with "Plugin not registered".
+    node_registry = get_node_registry()
     plugin_dir = Path(__file__).parent / "playbook_engine" / "v7_dag" / "plugins"
     plugin_count = node_registry.auto_load_plugins(plugin_dir)
     logger.info(f"Loaded {plugin_count} node plugins")
@@ -439,11 +462,17 @@ async def lifespan(app_instance: FastAPI):
     logger.info("Shutdown complete")
 
 
+_is_prod = settings.environment == "production"
 app = FastAPI(
     title="SOC Copilot API",
     description="Security Operations Center Analysis Platform with Playbook Engine, OTX Threat Intelligence, and Multi-User Support",
     version=settings.app_version,
     lifespan=lifespan,
+    # Interactive API docs enumerate every route for anonymous users — keep
+    # them out of production (audit-run1 hardening).
+    docs_url=None if _is_prod else "/docs",
+    redoc_url=None if _is_prod else "/redoc",
+    openapi_url=None if _is_prod else "/openapi.json",
 )
 
 # Setup Prometheus metrics
@@ -610,13 +639,11 @@ async def api_version_alias(request: Request, call_next):
 
 
 # Setup CSRF protection (must be before exception handlers in request chain)
-setup_csrf_middleware(
-    app,
-    exempt_paths={
-        "/api/triggers/webhook",  # Webhook endpoints have their own validation
-        "/api/playbook-definitions/runs",  # API can be called via API key
-    },
-)
+# Exemptions are exact-matched against the pre-rewrite path; the legacy
+# '/api/triggers/webhook' and '/api/playbook-definitions/runs' strings were
+# removed — they aliased live /api/v1 mutating endpoints (trigger creation,
+# run cancel) which must stay CSRF-enforced (audit run sec-run-1).
+setup_csrf_middleware(app, exempt_paths=set())
 
 # Setup trace logging
 setup_trace_logging()

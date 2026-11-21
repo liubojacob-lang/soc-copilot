@@ -5,6 +5,7 @@ from typing import Any
 
 import httpx
 
+from core.http_client import get_safe_http_client
 from core.logger import get_logger
 from core.ssrf_protection import is_url_safe
 
@@ -134,23 +135,24 @@ class HttpCallbackService:
             logger.error(f"HTTP callback URL blocked by SSRF protection: {reason}")
             return False
 
+        safe_client = get_safe_http_client(timeout=self.timeout)
+
         for attempt in range(1, self.max_retries + 1):
             try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    response = await client.post(
-                        url,
-                        json=payload,
-                        headers={"Content-Type": "application/json"},
-                    )
+                response = await safe_client.post(
+                    url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                )
 
-                    if response.status_code in [200, 201, 202, 204]:
-                        logger.info(f"HTTP callback sent successfully to {url}")
-                        return True
-                    else:
-                        logger.warning(
-                            f"HTTP callback attempt {attempt} failed with status "
-                            f"{response.status_code}: {response.text}"
-                        )
+                if response.status_code in [200, 201, 202, 204]:
+                    logger.info(f"HTTP callback sent successfully to {url}")
+                    return True
+                else:
+                    logger.warning(
+                        f"HTTP callback attempt {attempt} failed with status "
+                        f"{response.status_code}: {response.text}"
+                    )
 
             except httpx.TimeoutException:
                 logger.warning(f"HTTP callback attempt {attempt} timed out")

@@ -277,11 +277,11 @@ curl -k -u wazuh-wui:wazuh-wui-password \
 TOKEN="your_jwt_token"
 
 # Start stream service
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/start \
   -H "Authorization: Bearer $TOKEN"
 
 # Send test alert
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/test-alert \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/test-alert \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
     "agent_id": "001",
@@ -356,14 +356,14 @@ grep WAZUH_ENABLED backend/.env
 
 ```bash
 TOKEN="your_jwt_token"
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/start \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/start \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 4. **Check service status**:
 
 ```bash
-curl http://localhost:8000/api/v1/wazuh/stream/status \
+curl http://localhost:8088/api/v1/wazuh/stream/status \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -375,7 +375,7 @@ curl http://localhost:8000/api/v1/wazuh/stream/status \
 
 ```bash
 # Send test alert
-curl -X POST http://localhost:8000/api/v1/wazuh/stream/test-alert \
+curl -X POST http://localhost:8088/api/v1/wazuh/stream/test-alert \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"agent_id": "001", "severity": "high", "count": 5}'
 

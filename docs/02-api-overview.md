@@ -44,14 +44,14 @@ Content-Type: application/json
 后续请求携带 Token：
 
 ```bash
-curl -X GET http://localhost:8000/api/alerts \
+curl -X GET http://localhost:8088/api/alerts \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
 ```
 
 ### API Key 认证
 
 ```bash
-curl -X GET http://localhost:8000/api/assets \
+curl -X GET http://localhost:8088/api/assets \
   -H "X-API-Key: your-api-key-here"
 ```
 

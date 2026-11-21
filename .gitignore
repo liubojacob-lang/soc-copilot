@@ -41,6 +41,13 @@ Lib/site-packages/
 *~
 .DS_Store
 
+# macOS AppleDouble resource-fork files (created when copying from macOS)
+._*
+
+# Python tool caches
+.mypy_cache/
+.ruff_cache/
+
 # Environment variables
 .env
 .env.*
@@ -125,6 +132,8 @@ backups/
 # Agent working state & review artifacts (local only)
 .workbuddy/
 .zcode/
+.video_agent/
+graphify-out/
 deliverables/
 
 # Playwright generated artifacts

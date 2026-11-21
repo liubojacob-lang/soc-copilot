@@ -5,12 +5,12 @@
 ### 后端 (Backend)
 
 ```bash
-# 方式1: 使用根目录脚本 (端口 8000)
+# 方式1: 使用根目录脚本 (端口 8088)
 npm run dev:backend
 
 # 方式2: 直接运行
 cd backend
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8088
 ```
 
 ### 前端 (Frontend)
@@ -41,14 +41,14 @@ npm run start
 ### 查看端口占用
 
 ```bash
-# 查看 8000 端口 (后端)
-lsof -i :8000
+# 查看 8088 端口 (后端)
+lsof -i :8088
 
 # 查看 3003 端口 (前端)
 lsof -i :3003
 
 # 查看所有占用端口
-lsof -i :8000,3003
+lsof -i :8088,3003
 ```
 
 ### 关闭占用端口
@@ -58,7 +58,7 @@ lsof -i :8000,3003
 kill -9 <PID>
 
 # 或使用端口号直接关闭
-kill $(lsof -t -i :8000)
+kill $(lsof -t -i :8088)
 kill $(lsof -t -i :3003)
 
 # 关闭所有相关进程
@@ -72,6 +72,6 @@ killall -9 node     # 前端
 
 | 服务     | 地址                       |
 | -------- | -------------------------- |
-| 后端 API | http://localhost:8000      |
+| 后端 API | http://localhost:8088      |
 | 前端界面 | http://localhost:3003      |
-| API 文档 | http://localhost:8000/docs |
+| API 文档 | http://localhost:8088/docs |

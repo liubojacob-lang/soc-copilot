@@ -56,10 +56,12 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Health
-     * @description Health check endpoint.
+     * Health Detailed
+     * @description Detailed health check with all components.
+     *
+     *     Returns comprehensive status of all system components.
      */
-    get: operations["health_api_v1_health_get"];
+    get: operations["health_detailed_api_v1_health_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -457,6 +459,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/auth/login-2fa": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 2FA 二次验证登录
+     * @description 当用户启用登录 2FA 时，校验 pre_auth_token 和 6 位验证码以签发正式凭据。
+     */
+    post: operations["login_2fa_api_v1_auth_login_2fa_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/auth/refresh": {
     parameters: {
       query?: never;
@@ -582,6 +604,126 @@ export interface paths {
      *     Clears failed login attempts and lockout status for the specified user.
      */
     post: operations["unlock_user_account_api_v1_auth_unlock_user__username__post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/2fa/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get 2Fa Status
+     * @description Get current user's 2FA enablement status and active policy.
+     */
+    get: operations["get_2fa_status_api_v1_auth_2fa_status_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/2fa/setup": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Setup 2Fa
+     * @description Initiate 2FA setup by generating a secret, QR code, and backup codes.
+     */
+    post: operations["setup_2fa_api_v1_auth_2fa_setup_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/2fa/enable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Enable 2Fa
+     * @description Verify password + code and activate 2FA with the chosen policy.
+     */
+    post: operations["enable_2fa_api_v1_auth_2fa_enable_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/2fa/policy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Switch 2Fa Policy
+     * @description Switch 2FA authentication policy (sudo vs login) after verifying current code.
+     */
+    post: operations["switch_2fa_policy_api_v1_auth_2fa_policy_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/2fa/verify-sudo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Verify Sudo Mode
+     * @description Verify 2FA code for Sudo Mode and issue a temporary sudo token (10 mins valid).
+     */
+    post: operations["verify_sudo_mode_api_v1_auth_2fa_verify_sudo_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/2fa/disable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Disable 2Fa
+     * @description Disable 2FA after validating both password and 2FA code.
+     */
+    post: operations["disable_2fa_api_v1_auth_2fa_disable_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -825,7 +967,8 @@ export interface paths {
      * @description Analyze a security alert/log.
      *
      *     Args:
-     *         request: Alert analysis request with raw log
+     *         payload: Alert analysis request with raw log or alert attributes
+     *         request: HTTP request for rate limiting and tracing
      *         session: Database session
      *
      *     Returns:
@@ -852,7 +995,8 @@ export interface paths {
      * @description Generate report templates from alert analysis.
      *
      *     Args:
-     *         request: Report generation request
+     *         payload: Report generation request body
+     *         request: Raw request (consumed by the rate limiter)
      *         session: Database session
      *
      *     Returns:
@@ -921,6 +1065,66 @@ export interface paths {
      *     - recommendations: ["..."] (optional)
      */
     post: operations["generate_compliance_report_api_v1_reports_compliance__framework__post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{alert_id}/root-cause-analysis": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Run Root Cause Analysis
+     * @description Run an AI root cause analysis for an alert and persist the result.
+     */
+    post: operations["run_root_cause_analysis_api_v1_alerts__alert_id__root_cause_analysis_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{alert_id}/root-cause-analyses": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Root Cause Analyses
+     * @description List historical root cause analyses for an alert (newest first).
+     */
+    get: operations["list_root_cause_analyses_api_v1_alerts__alert_id__root_cause_analyses_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/root-cause-analyses/{rca_id}/feedback": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Submit Root Cause Feedback
+     * @description Record an analyst verdict on a root cause analysis.
+     */
+    post: operations["submit_root_cause_feedback_api_v1_root_cause_analyses__rca_id__feedback_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1187,7 +1391,7 @@ export interface paths {
     post?: never;
     /**
      * Delete Asset
-     * @description Delete an asset.
+     * @description Delete an asset (admin only).
      */
     delete: operations["delete_asset_api_v1_assets__asset_id__delete"];
     options?: never;
@@ -1287,7 +1491,7 @@ export interface paths {
     };
     /**
      * List Ioc Hits
-     * @description List IOC hits with optional IOC filter.
+     * @description List IOC hits with optional IOC filter. If ioc is omitted, returns recent hits.
      */
     get: operations["list_ioc_hits_api_v1_ioc_hits_get"];
     put?: never;
@@ -2387,7 +2591,7 @@ export interface paths {
     put?: never;
     /**
      * Cancel Dag Run
-     * @description Cancel a running DAG playbook (admin/analyst only).
+     * @description Cancel a running DAG playbook (admin/analyst only, owner or admin).
      */
     post: operations["cancel_dag_run_api_v1_playbook_definitions_runs__run_id__cancel_post"];
     delete?: never;
@@ -2966,6 +3170,10 @@ export interface paths {
     /**
      * Chat
      * @description Chat with SOC Copilot AI assistant.
+     *
+     *     Rate limited per client IP (30/min): the endpoint triggers real LLM
+     *     calls, so unbounded request volume translates directly into provider
+     *     cost.
      */
     post: operations["chat_api_v1_ai_chat_post"];
     delete?: never;
@@ -2988,6 +3196,30 @@ export interface paths {
      * @description Generate investigation report using AI.
      */
     post: operations["generate_report_api_v1_ai_generate_report_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/chat/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Chat Stream
+     * @description Stream chat deltas over Server-Sent Events.
+     *
+     *     Frames: `data: {"meta": {routed_model, route_reason}}`, then
+     *     `data: {"delta": "..."}` repeatedly, then `data: {"done": true}`.
+     *     Falls back to a single delta when the provider cannot stream.
+     */
+    post: operations["chat_stream_api_v1_ai_chat_stream_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -3784,6 +4016,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/marketplace/external/search": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Search External
+     * @description Search external open-source SOAR playbook repositories.
+     */
+    get: operations["search_external_api_v1_marketplace_external_search_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/marketplace/external/adapt": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Adapt External
+     * @description Fetch external playbook content and adapt it into standard DAG using AI (admin only).
+     */
+    post: operations["adapt_external_api_v1_marketplace_external_adapt_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/marketplace/external/import": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import External
+     * @description Import adapted playbook into local definitions or community marketplace (admin only).
+     *
+     *     Security (G7): When target is 'marketplace', the entry is created with
+     *     status=PENDING and verified=False so it must pass admin review before
+     *     becoming publicly visible.
+     */
+    post: operations["import_external_api_v1_marketplace_external_import_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/marketplace/admin/pending": {
     parameters: {
       query?: never;
@@ -3887,6 +4183,26 @@ export interface paths {
      *     - Network policy gaps
      */
     post: operations["scan_kubernetes_cluster_api_v1_cloud_native_kubernetes_scan_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cloud-native/kubernetes/clusters": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Kubernetes Clusters
+     * @description Get list of connected Kubernetes clusters with health and metadata.
+     */
+    get: operations["get_kubernetes_clusters_api_v1_cloud_native_kubernetes_clusters_get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -4070,6 +4386,48 @@ export interface paths {
      *     force_rescan is set to true.
      */
     post: operations["scan_with_trivy_api_v1_cloud_native_containers_trivy_scan_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cloud-native/containers": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Containers
+     * @description Get inventory of all containers across Kubernetes clusters.
+     *
+     *     Supports filtering by cluster, namespace, health status, and keyword search with pagination.
+     */
+    get: operations["list_containers_api_v1_cloud_native_containers_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cloud-native/containers/{container_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Container Detail
+     * @description Get detailed security and configuration information for a specific container.
+     */
+    get: operations["get_container_detail_api_v1_cloud_native_containers__container_id__get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -4746,107 +5104,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/ws/stats": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get Websocket Stats
-     * @description Get WebSocket connection statistics.
-     */
-    get: operations["get_websocket_stats_ws_stats_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/ws/monitoring/metrics": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get Monitoring Metrics
-     * @description Get current WebSocket monitoring metrics.
-     */
-    get: operations["get_monitoring_metrics_ws_monitoring_metrics_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/ws/monitoring/health": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get Monitoring Health
-     * @description Get WebSocket system health score.
-     */
-    get: operations["get_monitoring_health_ws_monitoring_health_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/ws/monitoring/summary": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get Monitoring Summary
-     * @description Get WebSocket monitoring summary.
-     */
-    get: operations["get_monitoring_summary_ws_monitoring_summary_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/ws/compression/stats": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get Compression Stats
-     * @description Get message compression statistics.
-     */
-    get: operations["get_compression_stats_ws_compression_stats_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/ws/compression/reset-stats": {
+  "/api/v1/alerts/import": {
     parameters: {
       query?: never;
       header?: never;
@@ -4856,37 +5114,17 @@ export interface paths {
     get?: never;
     put?: never;
     /**
-     * Reset Compression Stats
-     * @description Reset compression statistics.
+     * Import Alert
+     * @description 导入单条告警（CEF/Syslog/JSON/CSV 文本），解析并入库。
      */
-    post: operations["reset_compression_stats_ws_compression_reset_stats_post"];
+    post: operations["import_alert_api_v1_alerts_import_post"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/ws/batch/stats": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get Batch Stats
-     * @description Get message batching statistics.
-     */
-    get: operations["get_batch_stats_ws_batch_stats_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/ws/batch/flush": {
+  "/api/v1/alerts/import/preview": {
     parameters: {
       query?: never;
       header?: never;
@@ -4896,30 +5134,50 @@ export interface paths {
     get?: never;
     put?: never;
     /**
-     * Flush Batches
-     * @description Manually flush all pending message batches.
+     * Preview Alert Import
+     * @description 解析单条告警但不入库。
      */
-    post: operations["flush_batches_ws_batch_flush_post"];
+    post: operations["preview_alert_import_api_v1_alerts_import_preview_post"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/ws/pool/stats": {
+  "/api/v1/alerts/import/batch": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    /**
-     * Get Pool Stats
-     * @description Get connection pool statistics.
-     */
-    get: operations["get_pool_stats_ws_pool_stats_get"];
+    get?: never;
     put?: never;
-    post?: never;
+    /**
+     * Import Alerts Batch
+     * @description 批量导入告警；preview_only=true 时仅解析不入库。
+     */
+    post: operations["import_alerts_batch_api_v1_alerts_import_batch_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/import/batch/preview": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Preview Alerts Batch
+     * @description 批量解析告警但不入库。
+     */
+    post: operations["preview_alerts_batch_api_v1_alerts_import_batch_preview_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -5564,6 +5822,66 @@ export interface paths {
      * @description Replay messages from DLQ (events:dlq) back to active processing stream.
      */
     post: operations["replay_dlq_messages_api_v1_system_queue_dlq_replay_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/system/connections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get detailed data connection statistics
+     * @description Get complete connection transparency for PostgreSQL, Redis, and Integrations.
+     */
+    get: operations["get_system_connections_api_v1_system_connections_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/system/connections/db/{pid}/terminate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Terminate a stuck database connection
+     * @description Terminate a stuck or long-running database connection by PID (admin only).
+     */
+    post: operations["terminate_db_connection_api_v1_system_connections_db__pid__terminate_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/system/diagnostics/ping": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Run live diagnostics on all core components
+     * @description Run real-time active ping diagnostics across core system components.
+     */
+    post: operations["run_system_diagnostics_api_v1_system_diagnostics_ping_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -6219,28 +6537,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/{path}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete?: never;
-    /**
-     * Options Handler
-     * @description Handle OPTIONS preflight requests for CORS.
-     *
-     *     SECURITY: Validate origin against whitelist to prevent unauthorized cross-origin access.
-     */
-    options: operations["options_handler__path__options"];
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/": {
     parameters: {
       query?: never;
@@ -6310,11 +6606,15 @@ export interface components {
       /** Is Default */
       is_default: boolean;
       /** Capabilities */
-      capabilities?: Record<string, never> | null;
+      capabilities?: {
+        [key: string]: unknown;
+      } | null;
       /** Max Tokens */
       max_tokens?: number | null;
       /** Config */
-      config?: Record<string, never> | null;
+      config?: {
+        [key: string]: unknown;
+      } | null;
       /** Created At */
       created_at: string;
       /** Updated At */
@@ -6508,6 +6808,20 @@ export interface components {
        */
       note?: string | null;
     };
+    /** AlertBatchImportPayload */
+    AlertBatchImportPayload: {
+      /** Content */
+      content: string;
+      /** Format */
+      format?: string | null;
+      /** Source */
+      source?: string | null;
+      /**
+       * Preview Only
+       * @default false
+       */
+      preview_only: boolean;
+    };
     /**
      * AlertBatchResponse
      * @description 批量更新响应
@@ -6627,6 +6941,15 @@ export interface components {
       /** Resolution Notes */
       resolution_notes?: string | null;
     };
+    /** AlertImportPayload */
+    AlertImportPayload: {
+      /** Content */
+      content: string;
+      /** Format */
+      format?: string | null;
+      /** Source */
+      source?: string | null;
+    };
     /**
      * AlertLifecycleResponse
      * @description 告警生命周期响应
@@ -6667,7 +6990,16 @@ export interface components {
        * Timeline
        * @default []
        */
-      timeline: Record<string, never>[];
+      timeline: {
+        [key: string]: unknown;
+      }[];
+      /**
+       * Related Cases
+       * @default []
+       */
+      related_cases: {
+        [key: string]: unknown;
+      }[];
     };
     /**
      * AlertMetricType
@@ -6773,7 +7105,9 @@ export interface components {
       channels?: components["schemas"]["AlertChannelType"][];
       /** Channel Config */
       channel_config?: {
-        [key: string]: Record<string, never>;
+        [key: string]: {
+          [key: string]: unknown;
+        };
       };
       /**
        * Cooldown Seconds
@@ -6841,7 +7175,9 @@ export interface components {
       channels?: components["schemas"]["AlertChannelType"][] | null;
       /** Channel Config */
       channel_config?: {
-        [key: string]: Record<string, never>;
+        [key: string]: {
+          [key: string]: unknown;
+        };
       } | null;
       /** Cooldown Seconds */
       cooldown_seconds?: number | null;
@@ -6963,12 +7299,16 @@ export interface components {
        * Top Agents
        * @description Top alerting agents
        */
-      top_agents?: Record<string, never>[];
+      top_agents?: {
+        [key: string]: unknown;
+      }[];
       /**
        * Top Source Ips
        * @description Top source IPs
        */
-      top_source_ips?: Record<string, never>[];
+      top_source_ips?: {
+        [key: string]: unknown;
+      }[];
       /**
        * Stream Start Time
        * Format: date-time
@@ -7037,7 +7377,9 @@ export interface components {
      */
     ApprovalListResponse: {
       /** Items */
-      items: Record<string, never>[];
+      items: {
+        [key: string]: unknown;
+      }[];
       /** Total */
       total: number;
       /** Page */
@@ -7256,7 +7598,9 @@ export interface components {
       /** Duration Ms */
       duration_ms?: number | null;
       /** Extra Json */
-      extra_json?: Record<string, never>;
+      extra_json?: {
+        [key: string]: unknown;
+      };
       /** Created At */
       created_at: string;
       /** Username */
@@ -7319,7 +7663,9 @@ export interface components {
        * Errors
        * @description Error details for failed items [{case_id, error}]
        */
-      errors?: Record<string, never>[];
+      errors?: {
+        [key: string]: unknown;
+      }[];
     };
     /**
      * BatchCaseResult
@@ -7534,6 +7880,17 @@ export interface components {
        */
       disabled: boolean;
       /**
+       * Provider Status
+       * @description Provider configuration status ('configured' or 'unconfigured')
+       * @default configured
+       */
+      provider_status: string | null;
+      /**
+       * Error Reason
+       * @description Reason if external TI disabled
+       */
+      error_reason?: string | null;
+      /**
        * Results
        * @description List of lookup results
        */
@@ -7577,7 +7934,7 @@ export interface components {
      */
     CaseAlertLink: {
       /** Alert Ids */
-      alert_ids: number[];
+      alert_ids: (number | string)[];
     };
     /**
      * CaseAssign
@@ -7604,6 +7961,8 @@ export interface components {
       assigned_to?: string | null;
       /** Sla Due At */
       sla_due_at?: string | null;
+      /** Alert Ids */
+      alert_ids?: (string | number)[] | null;
     };
     /**
      * CaseDetailResponse
@@ -7642,6 +8001,15 @@ export interface components {
        * Format: date-time
        */
       updated_at: string;
+      /** Sla Deadline */
+      sla_deadline?: string | null;
+      /** Tags */
+      tags?: string[];
+      /**
+       * Related Alert Count
+       * @default 0
+       */
+      related_alert_count: number;
       /**
        * Alert Count
        * @default 0
@@ -7653,13 +8021,17 @@ export interface components {
        */
       comment_count: number;
       /** Alerts */
-      alerts?: Record<string, never>[];
+      alerts?: {
+        [key: string]: unknown;
+      }[];
       /** Timeline Entries */
       timeline_entries?: components["schemas"]["TimelineEntryResponse"][];
       /** Comments */
       comments?: components["schemas"]["CommentResponse"][];
       /** Assignee */
-      assignee?: Record<string, never> | null;
+      assignee?: {
+        [key: string]: unknown;
+      } | null;
     };
     /**
      * CaseListResponse
@@ -7668,6 +8040,8 @@ export interface components {
     CaseListResponse: {
       /** Items */
       items: components["schemas"]["CaseResponse"][];
+      /** Cases */
+      cases?: components["schemas"]["CaseResponse"][];
       /** Total */
       total: number;
       /**
@@ -7718,6 +8092,15 @@ export interface components {
        * Format: date-time
        */
       updated_at: string;
+      /** Sla Deadline */
+      sla_deadline?: string | null;
+      /** Tags */
+      tags?: string[];
+      /**
+       * Related Alert Count
+       * @default 0
+       */
+      related_alert_count: number;
       /**
        * Alert Count
        * @default 0
@@ -7840,6 +8223,10 @@ export interface components {
     /**
      * ChatMessage
      * @description Chat message.
+     *
+     *     Role is restricted to user|assistant: the server owns the system
+     *     prompt, so client-supplied "system" entries would be an injection
+     *     vector into the model context.
      */
     ChatMessage: {
       /** Role */
@@ -7892,6 +8279,167 @@ export interface components {
        * Format: date-time
        */
       updated_at: string;
+    };
+    /** ConnectionsDashboardResponse */
+    ConnectionsDashboardResponse: {
+      /** Timestamp */
+      timestamp: string;
+      /** Health Score */
+      health_score: number;
+      /** Warnings */
+      warnings: string[];
+      database: components["schemas"]["DBConnectionsDetail"];
+      redis: components["schemas"]["RedisConnectionsDetail"];
+      integrations: components["schemas"]["SystemIntegrationsDetail"];
+    };
+    /**
+     * ContainerDetailResponse
+     * @description Full detail of a container instance including configuration and context.
+     */
+    ContainerDetailResponse: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Pod Name */
+      pod_name: string;
+      /** Namespace */
+      namespace: string;
+      /** Cluster Name */
+      cluster_name: string;
+      /** Image */
+      image: string;
+      /** Status */
+      status: string;
+      /** State Reason */
+      state_reason?: string | null;
+      /** Restart Count */
+      restart_count: number;
+      /** Cpu Usage */
+      cpu_usage: string;
+      /** Memory Usage */
+      memory_usage: string;
+      /** Ip Address */
+      ip_address: string;
+      /** Ports */
+      ports: string[];
+      /** Privileged */
+      privileged: boolean;
+      /** Run As Root */
+      run_as_root: boolean;
+      /** Readonly Rootfs */
+      readonly_rootfs: boolean;
+      /** Vulnerabilities Count */
+      vulnerabilities_count: number;
+      /** Critical Vulns */
+      critical_vulns: number;
+      /** High Vulns */
+      high_vulns: number;
+      /** Created At */
+      created_at: string;
+      /**
+       * Node Name
+       * @default node-worker-01
+       */
+      node_name: string;
+      /** Remediation */
+      remediation?: string | null;
+      /** Command */
+      command?: string[];
+      /** Mounts */
+      mounts?: string[];
+      /** Env Vars */
+      env_vars?: {
+        [key: string]: string;
+      };
+    };
+    /**
+     * ContainerListItem
+     * @description Container item summary.
+     */
+    ContainerListItem: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Pod Name */
+      pod_name: string;
+      /** Namespace */
+      namespace: string;
+      /** Cluster Name */
+      cluster_name: string;
+      /** Image */
+      image: string;
+      /** Status */
+      status: string;
+      /** State Reason */
+      state_reason?: string | null;
+      /** Restart Count */
+      restart_count: number;
+      /** Cpu Usage */
+      cpu_usage: string;
+      /** Memory Usage */
+      memory_usage: string;
+      /** Ip Address */
+      ip_address: string;
+      /** Ports */
+      ports: string[];
+      /** Privileged */
+      privileged: boolean;
+      /** Run As Root */
+      run_as_root: boolean;
+      /** Readonly Rootfs */
+      readonly_rootfs: boolean;
+      /** Vulnerabilities Count */
+      vulnerabilities_count: number;
+      /** Critical Vulns */
+      critical_vulns: number;
+      /** High Vulns */
+      high_vulns: number;
+      /** Created At */
+      created_at: string;
+      /**
+       * Node Name
+       * @default node-worker-01
+       */
+      node_name: string;
+      /** Remediation */
+      remediation?: string | null;
+    };
+    /**
+     * ContainerListResponse
+     * @description Response containing container inventory and breakdown metrics with pagination.
+     */
+    ContainerListResponse: {
+      /** Total */
+      total: number;
+      /** Filtered Total */
+      filtered_total: number;
+      /**
+       * Page
+       * @default 1
+       */
+      page: number;
+      /**
+       * Page Size
+       * @default 10
+       */
+      page_size: number;
+      /**
+       * Total Pages
+       * @default 1
+       */
+      total_pages: number;
+      /** Running */
+      running: number;
+      /** Warning */
+      warning: number;
+      /** Terminated */
+      terminated: number;
+      /** Vulnerable */
+      vulnerable: number;
+      /** Containers */
+      containers: components["schemas"]["ContainerListItem"][];
     };
     /**
      * ContainerScanRequest
@@ -7951,7 +8499,9 @@ export interface components {
       /** Raw Event Count */
       raw_event_count: number;
       /** Common Entities */
-      common_entities: Record<string, never>;
+      common_entities: {
+        [key: string]: unknown;
+      };
       /** First Seen */
       first_seen: string;
       /** Last Seen */
@@ -7960,7 +8510,10 @@ export interface components {
       status: string;
       /** Risk Score */
       risk_score: number;
-      /** Created At */
+      /**
+       * Created At
+       * Format: date-time
+       */
       created_at: string;
     };
     /**
@@ -7969,7 +8522,9 @@ export interface components {
      */
     CorrelationRequest: {
       /** Events */
-      events: Record<string, never>[];
+      events: {
+        [key: string]: unknown;
+      }[];
       /** Rule Ids */
       rule_ids?: string[] | null;
     };
@@ -7988,21 +8543,27 @@ export interface components {
        */
       time_window_seconds: number;
       /** Entity Types */
-      entity_types?: Record<string, never>;
+      entity_types?: {
+        [key: string]: unknown;
+      };
       /**
        * Min Similarity
        * @default 0.7
        */
       min_similarity: number;
       /** Conditions */
-      conditions?: Record<string, never> | null;
+      conditions?: {
+        [key: string]: unknown;
+      } | null;
       /**
        * Action
        * @default aggregate
        */
       action: string;
       /** Action Params */
-      action_params?: Record<string, never> | null;
+      action_params?: {
+        [key: string]: unknown;
+      } | null;
       /**
        * Priority
        * @default 50
@@ -8047,15 +8608,21 @@ export interface components {
       /** Time Window Seconds */
       time_window_seconds?: number | null;
       /** Entity Types */
-      entity_types?: Record<string, never> | null;
+      entity_types?: {
+        [key: string]: unknown;
+      } | null;
       /** Min Similarity */
       min_similarity?: number | null;
       /** Conditions */
-      conditions?: Record<string, never> | null;
+      conditions?: {
+        [key: string]: unknown;
+      } | null;
       /** Action */
       action?: string | null;
       /** Action Params */
-      action_params?: Record<string, never> | null;
+      action_params?: {
+        [key: string]: unknown;
+      } | null;
       /** Priority */
       priority?: number | null;
       /** Group By Field */
@@ -8091,7 +8658,9 @@ export interface components {
        * Config
        * @description Additional configuration
        */
-      config?: Record<string, never>;
+      config?: {
+        [key: string]: unknown;
+      };
       /**
        * Is Active
        * @description Whether the trigger is active
@@ -8111,13 +8680,14 @@ export interface components {
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: "cron";
       /** Name */
       name: string | null;
       /** Config Json */
-      config_json: Record<string, never>;
+      config_json: {
+        [key: string]: unknown;
+      };
       /** Cron Expr */
       cron_expr: string;
       /** Is Active */
@@ -8144,7 +8714,9 @@ export interface components {
        * Input Json
        * @description Input parameters for DAG execution
        */
-      input_json?: Record<string, never>;
+      input_json?: {
+        [key: string]: unknown;
+      };
       /**
        * Mode
        * @description Execution mode: dry_run (simulation) or apply (live)
@@ -8184,9 +8756,13 @@ export interface components {
       /** Last Error */
       last_error?: string | null;
       /** Input Json */
-      input_json?: Record<string, never>;
+      input_json?: {
+        [key: string]: unknown;
+      };
       /** Output Json */
-      output_json?: Record<string, never>;
+      output_json?: {
+        [key: string]: unknown;
+      };
       /** Created At */
       created_at?: string | null;
     };
@@ -8202,7 +8778,9 @@ export interface components {
        */
       mode: "dry_run" | "apply";
       /** Input Context */
-      input_context?: Record<string, never>;
+      input_context?: {
+        [key: string]: unknown;
+      };
       /**
        * Failure Strategy
        * @default fail_fast
@@ -8243,9 +8821,13 @@ export interface components {
       /** Created By User Id */
       created_by_user_id?: string | null;
       /** Input Json */
-      input_json?: Record<string, never>;
+      input_json?: {
+        [key: string]: unknown;
+      };
       /** Output Json */
-      output_json?: Record<string, never>;
+      output_json?: {
+        [key: string]: unknown;
+      };
       /**
        * Started At
        * Format: date-time
@@ -8295,6 +8877,58 @@ export interface components {
        */
       can_resume: boolean;
     };
+    /** DBConnectionItem */
+    DBConnectionItem: {
+      /** Pid */
+      pid: number;
+      /** Usename */
+      usename: string;
+      /** Client Addr */
+      client_addr?: string | null;
+      /** State */
+      state: string;
+      /**
+       * Duration Seconds
+       * @default 0
+       */
+      duration_seconds: number;
+      /** Wait Event Type */
+      wait_event_type?: string | null;
+      /** Wait Event */
+      wait_event?: string | null;
+      /** Query */
+      query: string;
+      /**
+       * Is Slow
+       * @default false
+       */
+      is_slow: boolean;
+      /**
+       * Is Idle Tx
+       * @default false
+       */
+      is_idle_tx: boolean;
+    };
+    /** DBConnectionsDetail */
+    DBConnectionsDetail: {
+      /** Engine */
+      engine: string;
+      /** Summary */
+      summary: {
+        [key: string]: number;
+      };
+      pool?: components["schemas"]["PoolStatus"] | null;
+      /**
+       * Pool Utilization
+       * @default 0
+       */
+      pool_utilization: number;
+      /**
+       * Connections
+       * @default []
+       */
+      connections: components["schemas"]["DBConnectionItem"][];
+    };
     /**
      * DashboardStats
      * @description Real-time operational dashboard statistics.
@@ -8342,6 +8976,8 @@ export interface components {
        * @default 0
        */
       playbook_runs_today: number;
+      /** Mitre Tactics */
+      mitre_tactics?: components["schemas"]["MITRETacticItem"][];
     };
     /**
      * DatabaseStatus
@@ -8359,6 +8995,30 @@ export interface components {
       database_size?: string | null;
       /** Active Connections */
       active_connections?: number | null;
+    };
+    /** DiagnosticItem */
+    DiagnosticItem: {
+      /** Name */
+      name: string;
+      /** Status */
+      status: string;
+      /** Latency Ms */
+      latency_ms?: number | null;
+      /** Message */
+      message: string;
+      /** Details */
+      details?: {
+        [key: string]: unknown;
+      } | null;
+    };
+    /** DiagnosticsResponse */
+    DiagnosticsResponse: {
+      /** Timestamp */
+      timestamp: string;
+      /** Overall Status */
+      overall_status: string;
+      /** Items */
+      items: components["schemas"]["DiagnosticItem"][];
     };
     /**
      * DiskUsage
@@ -8434,7 +9094,9 @@ export interface components {
        * Details
        * @description 详细错误信息
        */
-      details?: Record<string, never> | null;
+      details?: {
+        [key: string]: unknown;
+      } | null;
     };
     /**
      * EventType
@@ -8451,10 +9113,80 @@ export interface components {
       | "lateral_movement"
       | "data_exfil"
       | "unknown";
+    /**
+     * ExternalPlaybookAdaptRequest
+     * @description Request to adapt an external playbook by URL or raw content.
+     */
+    ExternalPlaybookAdaptRequest: {
+      /** Url */
+      url?: string | null;
+      /** Content */
+      content?: string | null;
+      /** Title Hint */
+      title_hint?: string | null;
+      /** Source Platform */
+      source_platform?: string | null;
+    };
+    /**
+     * ExternalPlaybookImportRequest
+     * @description Request to import an adapted playbook into local definitions or marketplace.
+     */
+    ExternalPlaybookImportRequest: {
+      /** Playbook Data */
+      playbook_data: {
+        [key: string]: unknown;
+      };
+      /**
+       * Target
+       * @default local
+       */
+      target: string;
+    };
+    /**
+     * ExternalPlaybookSearchItem
+     * @description External playbook search result item from online sources.
+     */
+    ExternalPlaybookSearchItem: {
+      /** Id */
+      id: string;
+      /** Title */
+      title: string;
+      /** Repository */
+      repository: string;
+      /** Source Platform */
+      source_platform: string;
+      /** Description */
+      description: string;
+      /**
+       * Stars
+       * @default 0
+       */
+      stars: number;
+      /** Url */
+      url: string;
+      /** Raw Url */
+      raw_url?: string | null;
+      /**
+       * Category
+       * @default malware_response
+       */
+      category: string;
+      /**
+       * Difficulty
+       * @default intermediate
+       */
+      difficulty: string;
+      /** Tags */
+      tags?: string[];
+      /** Standard */
+      standard?: string | null;
+    };
     /** ExtractIOCsRequest */
     ExtractIOCsRequest: {
       /** Otx Result */
-      otx_result: Record<string, never>;
+      otx_result: {
+        [key: string]: unknown;
+      };
       /**
        * Case Id
        * @default
@@ -8468,9 +9200,13 @@ export interface components {
       /** Total Extracted */
       total_extracted: number;
       /** Extracted Iocs */
-      extracted_iocs: Record<string, never>;
+      extracted_iocs: {
+        [key: string]: unknown;
+      };
       /** Summary */
-      summary: Record<string, never>;
+      summary: {
+        [key: string]: unknown;
+      };
     };
     /**
      * FalcoAlertRequest
@@ -8501,7 +9237,9 @@ export interface components {
        * Output Fields
        * @description Structured output fields
        */
-      output_fields?: Record<string, never>;
+      output_fields?: {
+        [key: string]: unknown;
+      };
       /**
        * Source
        * @description Falco event source
@@ -8739,7 +9477,9 @@ export interface components {
       /** Actions */
       actions: components["schemas"]["RemediationAction"][];
       /** Meta */
-      meta?: Record<string, never>;
+      meta?: {
+        [key: string]: unknown;
+      };
     };
     /**
      * GenerateQueriesRequest
@@ -8797,7 +9537,9 @@ export interface components {
       /** Results */
       results: components["schemas"]["PlatformQueries"][];
       /** Meta */
-      meta?: Record<string, never>;
+      meta?: {
+        [key: string]: unknown;
+      };
     };
     /** GenerateReportRequest */
     GenerateReportRequest: {
@@ -8826,17 +9568,23 @@ export interface components {
        * Otx Result
        * @default {}
        */
-      otx_result: Record<string, never>;
+      otx_result: {
+        [key: string]: unknown;
+      };
       /**
        * Secondary Iocs
        * @default {}
        */
-      secondary_iocs: Record<string, never>;
+      secondary_iocs: {
+        [key: string]: unknown;
+      };
       /**
        * Action Result
        * @default {}
        */
-      action_result: Record<string, never>;
+      action_result: {
+        [key: string]: unknown;
+      };
       /**
        * Note
        * @default
@@ -8877,7 +9625,9 @@ export interface components {
       /** Uptime Seconds */
       uptime_seconds: number;
       /** Components */
-      components: Record<string, never>;
+      components: {
+        [key: string]: unknown;
+      };
     };
     /**
      * HistoryListResponse
@@ -8906,7 +9656,9 @@ export interface components {
       /** Input Text */
       input_text: string;
       /** Output Json */
-      output_json: Record<string, never>;
+      output_json: {
+        [key: string]: unknown;
+      };
       /** Output Markdown */
       output_markdown: string | null;
       /** Extracted Iocs */
@@ -8914,7 +9666,9 @@ export interface components {
         [key: string]: string[];
       };
       /** Tags */
-      tags: Record<string, never> | null;
+      tags: {
+        [key: string]: unknown;
+      } | null;
       /** Request Id */
       request_id: string | null;
       /** Model Used */
@@ -8955,7 +9709,9 @@ export interface components {
       /** Severity */
       severity: string;
       /** Evidence */
-      evidence: Record<string, never>;
+      evidence: {
+        [key: string]: unknown;
+      };
       /** Recommended Actions */
       recommended_actions: string[];
       /**
@@ -9035,7 +9791,9 @@ export interface components {
       /** Findings */
       findings: components["schemas"]["HuntFindingResponse"][];
       /** Statistics */
-      statistics: Record<string, never>;
+      statistics: {
+        [key: string]: unknown;
+      };
     };
     /**
      * IOCBatchRequest
@@ -9095,7 +9853,9 @@ export interface components {
        * Errors
        * @description Error details [{ioc_type, ioc_value, error}]
        */
-      errors?: Record<string, never>[];
+      errors?: {
+        [key: string]: unknown;
+      }[];
     };
     /**
      * IOCBatchResultItem
@@ -9133,7 +9893,9 @@ export interface components {
        * Details
        * @description Additional details/raw data
        */
-      details?: Record<string, never>;
+      details?: {
+        [key: string]: unknown;
+      };
       /**
        * Cached
        * @default false
@@ -9164,6 +9926,11 @@ export interface components {
     /**
      * IOCHitCreate
      * @description Schema for creating an IOC hit.
+     *
+     *     QA-007 fix: the create boundary validates against the enums again, so
+     *     typos and hostile values are rejected with 422 instead of being persisted.
+     *     IOCHitBase/IOCHitResponse intentionally stay ``str`` so historical rows
+     *     with unexpected values still read back fine.
      */
     IOCHitCreate: {
       /**
@@ -9176,7 +9943,6 @@ export interface components {
        * @description Associated asset ID
        */
       asset_id?: string | null;
-      /** @description IOC type */
       ioc_type: components["schemas"]["IOCType"];
       /**
        * Ioc Value
@@ -9189,7 +9955,6 @@ export interface components {
        * @default 60
        */
       confidence: number;
-      /** @description IOC source */
       source: components["schemas"]["IOCSource"];
       /**
        * Context Snippet
@@ -9227,8 +9992,11 @@ export interface components {
        * @description Associated asset ID
        */
       asset_id?: string | null;
-      /** @description IOC type */
-      ioc_type: components["schemas"]["IOCType"];
+      /**
+       * Ioc Type
+       * @description IOC type
+       */
+      ioc_type: string;
       /**
        * Ioc Value
        * @description IOC value
@@ -9240,8 +10008,11 @@ export interface components {
        * @default 60
        */
       confidence: number;
-      /** @description IOC source */
-      source: components["schemas"]["IOCSource"];
+      /**
+       * Source
+       * @description IOC source
+       */
+      source: string;
       /**
        * Context Snippet
        * @description Context snippet
@@ -9269,7 +10040,9 @@ export interface components {
        * Iocs
        * @description List of IOCs to hunt for
        */
-      iocs: Record<string, never>[];
+      iocs: {
+        [key: string]: unknown;
+      }[];
       /**
        * Time Range Days
        * @default 30
@@ -9415,7 +10188,9 @@ export interface components {
       /** Raw Data */
       raw_data: string;
       /** Parsed Fields */
-      parsed_fields: Record<string, never>;
+      parsed_fields: {
+        [key: string]: unknown;
+      };
       /** Alert Id */
       alert_id: string | null;
       /** Created At */
@@ -9451,12 +10226,24 @@ export interface components {
        * Parsed Fields
        * @description Structured parsed fields
        */
-      parsed_fields?: Record<string, never>;
+      parsed_fields?: {
+        [key: string]: unknown;
+      };
       /**
        * Alert Id
        * @description Associated security alert ID
        */
       alert_id?: string | null;
+    };
+    /**
+     * Login2FARequest
+     * @description Request to complete login when 2FA is required.
+     */
+    Login2FARequest: {
+      /** Pre Auth Token */
+      pre_auth_token: string;
+      /** Code */
+      code: string;
     };
     /**
      * MITRETactic
@@ -9469,6 +10256,24 @@ export interface components {
       technique?: string | null;
       /** Tactic */
       tactic?: string | null;
+    };
+    /** MITRETacticItem */
+    MITRETacticItem: {
+      /** Tactic */
+      tactic: string;
+      /** Tactic Id */
+      tactic_id: string;
+      /** Techniques */
+      techniques?: components["schemas"]["MITRETechniqueItem"][];
+    };
+    /** MITRETechniqueItem */
+    MITRETechniqueItem: {
+      /** Technique */
+      technique: string;
+      /** Technique Id */
+      technique_id: string;
+      /** Count */
+      count: number;
     };
     /**
      * MarketplaceApprovalRequest
@@ -9577,7 +10382,9 @@ export interface components {
        */
       updated_at: string;
       /** Dag Json */
-      dag_json: Record<string, never>;
+      dag_json: {
+        [key: string]: unknown;
+      };
       /** Documentation */
       documentation: string | null;
       /** Required Plugins */
@@ -9714,6 +10521,16 @@ export interface components {
       id: string;
       /** Is Active */
       is_active: boolean;
+      /**
+       * Is Totp Enabled
+       * @default false
+       */
+      is_totp_enabled: boolean;
+      /**
+       * Totp Policy
+       * @default sudo
+       */
+      totp_policy: string;
       /** Created At */
       created_at: string | null;
       /** Updated At */
@@ -9797,9 +10614,13 @@ export interface components {
       /** Intent */
       intent: string;
       /** Parameters */
-      parameters: Record<string, never>;
+      parameters: {
+        [key: string]: unknown;
+      };
       /** Filter Criteria */
-      filter_criteria: Record<string, never>;
+      filter_criteria: {
+        [key: string]: unknown;
+      };
       /** Response */
       response: string;
       /** Processed At */
@@ -9961,7 +10782,9 @@ export interface components {
       /** Description */
       description: string | null;
       /** Dag */
-      dag: Record<string, never>;
+      dag: {
+        [key: string]: unknown;
+      };
       /** Created By User Id */
       created_by_user_id: string | null;
       /**
@@ -10004,7 +10827,9 @@ export interface components {
       /** Description */
       description?: string | null;
       /** Dag */
-      dag?: Record<string, never> | null;
+      dag?: {
+        [key: string]: unknown;
+      } | null;
       /** Is Active */
       is_active?: boolean | null;
     };
@@ -10037,7 +10862,9 @@ export interface components {
       /** Platform */
       platform: string | null;
       /** Output Json */
-      output_json: Record<string, never>;
+      output_json: {
+        [key: string]: unknown;
+      };
       /** Request Id */
       request_id: string | null;
       /** Degraded */
@@ -10117,7 +10944,9 @@ export interface components {
       /** From Step */
       from_step: number;
       /** Output Json */
-      output_json: Record<string, never>;
+      output_json: {
+        [key: string]: unknown;
+      };
     };
     /**
      * PlaybookRunCancelRequest
@@ -10166,7 +10995,9 @@ export interface components {
        * Input Json
        * @description Input parameters for the playbook
        */
-      input_json?: Record<string, never>;
+      input_json?: {
+        [key: string]: unknown;
+      };
     };
     /**
      * PlaybookRunErrorResponse
@@ -10193,7 +11024,9 @@ export interface components {
        * Details
        * @description Additional error details
        */
-      details?: Record<string, never> | null;
+      details?: {
+        [key: string]: unknown;
+      } | null;
       /**
        * Trace Id
        * @description Request trace ID for debugging
@@ -10232,9 +11065,13 @@ export interface components {
       /** Created By User Id */
       created_by_user_id: string | null;
       /** Input Json */
-      input_json: Record<string, never>;
+      input_json: {
+        [key: string]: unknown;
+      };
       /** Output Json */
-      output_json: Record<string, never>;
+      output_json: {
+        [key: string]: unknown;
+      };
       /**
        * Started At
        * Format: date-time
@@ -10271,9 +11108,13 @@ export interface components {
       /** Duration Ms */
       duration_ms: number | null;
       /** Input Json */
-      input_json: Record<string, never>;
+      input_json: {
+        [key: string]: unknown;
+      };
       /** Output Json */
-      output_json: Record<string, never>;
+      output_json: {
+        [key: string]: unknown;
+      };
       /** Error Text */
       error_text: string | null;
       /** Skipped Reason */
@@ -10352,7 +11193,12 @@ export interface components {
       /** Content */
       content: string;
       /** Variables */
-      variables: string[] | Record<string, never> | unknown[];
+      variables:
+        | string[]
+        | {
+            [key: string]: unknown;
+          }
+        | unknown[];
       /** Environment */
       environment: string;
       /** Is Active */
@@ -10430,13 +11276,79 @@ export interface components {
       /**
        * Details
        * @description Detailed explanation
+       * @default
        */
       details: string;
       /**
+       * Description
+       * @description Alias for details for frontend compatibility
+       */
+      description?: string | null;
+      /**
        * Verification
        * @description How to verify the action was effective
+       * @default
        */
       verification: string;
+      /**
+       * Automated
+       * @description Whether action can be automated
+       * @default false
+       */
+      automated: boolean;
+    };
+    /** RedisClientItem */
+    RedisClientItem: {
+      /** Id */
+      id: string;
+      /** Addr */
+      addr: string;
+      /**
+       * Age Seconds
+       * @default 0
+       */
+      age_seconds: number;
+      /**
+       * Idle Seconds
+       * @default 0
+       */
+      idle_seconds: number;
+      /**
+       * Cmd
+       * @default
+       */
+      cmd: string;
+      /**
+       * Flags
+       * @default
+       */
+      flags: string;
+      /**
+       * Name
+       * @default
+       */
+      name: string;
+    };
+    /** RedisConnectionsDetail */
+    RedisConnectionsDetail: {
+      /** Status */
+      status: string;
+      /** Summary */
+      summary: {
+        [key: string]: unknown;
+      };
+      /**
+       * Clients
+       * @default []
+       */
+      clients: components["schemas"]["RedisClientItem"][];
+      /**
+       * Queue
+       * @default {}
+       */
+      queue: {
+        [key: string]: unknown;
+      };
     };
     /**
      * RedisStatus
@@ -10605,7 +11517,9 @@ export interface components {
       /** Risk Level */
       risk_level: string;
       /** Risk Factors */
-      risk_factors: Record<string, never>[];
+      risk_factors: {
+        [key: string]: unknown;
+      }[];
       /** Anomalous Behaviors */
       anomalous_behaviors: components["schemas"]["AnomalyDetectionResponse"][];
       /** Compromised Probability */
@@ -10615,6 +11529,65 @@ export interface components {
        * Format: date-time
        */
       last_activity: string;
+    };
+    /** RootCauseAnalysisListResponse */
+    RootCauseAnalysisListResponse: {
+      /** Items */
+      items: components["schemas"]["RootCauseAnalysisResponse"][];
+      /** Total */
+      total: number;
+    };
+    /**
+     * RootCauseAnalysisResponse
+     * @description A persisted root cause analysis record.
+     */
+    RootCauseAnalysisResponse: {
+      /** Id */
+      id: string;
+      /** Alert Id */
+      alert_id: string;
+      /** Root Cause Category */
+      root_cause_category: string;
+      /** Root Cause Subcategory */
+      root_cause_subcategory: string | null;
+      /** Confidence */
+      confidence: number;
+      /** Reasoning Steps */
+      reasoning_steps: {
+        [key: string]: unknown;
+      }[];
+      /** Evidence Chain */
+      evidence_chain: {
+        [key: string]: unknown;
+      }[];
+      /** Verification Steps */
+      verification_steps: string[];
+      /** Suggested Remediation */
+      suggested_remediation: string | null;
+      /** Remediation Priority */
+      remediation_priority: string;
+      /** Ai Model */
+      ai_model: string;
+      /** Analysis Duration Ms */
+      analysis_duration_ms: number | null;
+      /** Human Verified */
+      human_verified: boolean;
+      /** Human Feedback */
+      human_feedback: string | null;
+      /** Feedback Category */
+      feedback_category: string | null;
+      /** Created At */
+      created_at: string;
+    };
+    /** RootCauseFeedbackRequest */
+    RootCauseFeedbackRequest: {
+      /**
+       * Verdict
+       * @enum {string}
+       */
+      verdict: "accurate" | "partially_accurate" | "inaccurate";
+      /** Comment */
+      comment?: string | null;
     };
     /** RuleAggregation */
     RuleAggregation: {
@@ -10658,16 +11631,22 @@ export interface components {
     /** RuleEngineEvaluateRequest */
     RuleEngineEvaluateRequest: {
       /** Events */
-      events: Record<string, never>[];
+      events: {
+        [key: string]: unknown;
+      }[];
       /** Rules */
       rules: components["schemas"]["CorrelationRuleDSL"][];
     };
     /** RuleEngineEvaluateResponse */
     RuleEngineEvaluateResponse: {
       /** Incidents */
-      incidents: Record<string, never>[];
+      incidents: {
+        [key: string]: unknown;
+      }[];
       /** Execution Logs */
-      execution_logs: Record<string, never>[];
+      execution_logs: {
+        [key: string]: unknown;
+      }[];
     };
     /** RuleThreshold */
     RuleThreshold: {
@@ -10899,12 +11878,16 @@ export interface components {
        * Geoip
        * @description Geographic IP information
        */
-      geoip?: Record<string, never> | null;
+      geoip?: {
+        [key: string]: unknown;
+      } | null;
       /**
        * Raw Data
        * @description Original raw alert data
        */
-      raw_data?: Record<string, never> | null;
+      raw_data?: {
+        [key: string]: unknown;
+      } | null;
     };
     /**
      * SecurityAlertListResponse
@@ -11106,7 +12089,9 @@ export interface components {
       /** Mitre Techniques */
       mitre_techniques: string[];
       /** Logsource */
-      logsource: Record<string, never>;
+      logsource: {
+        [key: string]: unknown;
+      };
       /** False Positives */
       false_positives: string[];
       /** References */
@@ -11169,7 +12154,9 @@ export interface components {
       /** Total Matches */
       total_matches: number;
       /** Matches */
-      matches: Record<string, never>[];
+      matches: {
+        [key: string]: unknown;
+      }[];
       /** Timestamp */
       timestamp: string;
     };
@@ -11273,7 +12260,9 @@ export interface components {
        * Input Data
        * @description Additional input data
        */
-      input_data?: Record<string, never> | null;
+      input_data?: {
+        [key: string]: unknown;
+      } | null;
       /**
        * Model Id
        * @description Specific model to use
@@ -11345,6 +12334,33 @@ export interface components {
         [key: string]: boolean;
       };
     };
+    /** SystemIntegrationsDetail */
+    SystemIntegrationsDetail: {
+      /**
+       * Websocket Connections
+       * @default 0
+       */
+      websocket_connections: number;
+      /**
+       * Wazuh
+       * @default {}
+       */
+      wazuh: {
+        [key: string]: unknown;
+      };
+      /**
+       * Threat Intel
+       * @default {}
+       */
+      threat_intel: {
+        [key: string]: unknown;
+      };
+      /**
+       * Ai Models Count
+       * @default 0
+       */
+      ai_models_count: number;
+    };
     /**
      * SystemStats
      * @description System statistics model.
@@ -11360,6 +12376,96 @@ export interface components {
       platform: string;
       /** Python Version */
       python_version: string;
+    };
+    /**
+     * TOTPDisableRequest
+     * @description Request to disable 2FA.
+     */
+    TOTPDisableRequest: {
+      /** Code */
+      code: string;
+      /** Password */
+      password: string;
+    };
+    /**
+     * TOTPEnableRequest
+     * @description Request to verify code and activate 2FA.
+     *
+     *     password is mandatory step-up: binding a second factor must require the
+     *     account password, so momentary session control alone cannot replace the
+     *     factor (audit-run1).
+     */
+    TOTPEnableRequest: {
+      /** Secret */
+      secret: string;
+      /** Code */
+      code: string;
+      /** Password */
+      password: string;
+      /**
+       * Policy
+       * @default sudo
+       */
+      policy: string;
+      /** Backup Codes */
+      backup_codes?: string[];
+    };
+    /**
+     * TOTPPolicyRequest
+     * @description Request to switch 2FA authentication policy.
+     */
+    TOTPPolicyRequest: {
+      /** Policy */
+      policy: string;
+      /** Code */
+      code: string;
+    };
+    /**
+     * TOTPSetupResponse
+     * @description Response returned when initiating 2FA setup.
+     */
+    TOTPSetupResponse: {
+      /** Secret */
+      secret: string;
+      /** Qr Code */
+      qr_code: string;
+      /** Provisioning Uri */
+      provisioning_uri: string;
+      /** Backup Codes */
+      backup_codes: string[];
+    };
+    /**
+     * TOTPStatusResponse
+     * @description 2FA status and policy response.
+     */
+    TOTPStatusResponse: {
+      /** Is Enabled */
+      is_enabled: boolean;
+      /** Policy */
+      policy: string;
+    };
+    /**
+     * TOTPSudoResponse
+     * @description Response returned upon successful sudo-mode 2FA verification.
+     */
+    TOTPSudoResponse: {
+      /** Valid */
+      valid: boolean;
+      /** Sudo Token */
+      sudo_token: string;
+      /**
+       * Expires In Seconds
+       * @default 600
+       */
+      expires_in_seconds: number;
+    };
+    /**
+     * TOTPVerifyRequest
+     * @description Request to verify a 2FA code for Sudo Mode.
+     */
+    TOTPVerifyRequest: {
+      /** Code */
+      code: string;
     };
     /**
      * TaskListResponse
@@ -11383,9 +12489,13 @@ export interface components {
       /** Status */
       status: string;
       /** Input Data */
-      input_data?: Record<string, never> | null;
+      input_data?: {
+        [key: string]: unknown;
+      } | null;
       /** Result */
-      result?: Record<string, never> | null;
+      result?: {
+        [key: string]: unknown;
+      } | null;
       /** Error Message */
       error_message?: string | null;
       /** Created At */
@@ -11648,7 +12758,9 @@ export interface components {
        * Raw
        * @description Raw response from provider
        */
-      raw?: Record<string, never>;
+      raw?: {
+        [key: string]: unknown;
+      };
       /**
        * Error Reason
        * @description Error message if lookup failed
@@ -11659,6 +12771,12 @@ export interface components {
        * @description Reason for skipping (e.g., 'private_ip', 'internal_domain')
        */
       skipped_reason?: string | null;
+      /**
+       * Provider Status
+       * @description Provider configuration status ('configured' or 'unconfigured')
+       * @default configured
+       */
+      provider_status: string | null;
     };
     /**
      * ThreatIntelligenceStats
@@ -11719,7 +12837,9 @@ export interface components {
       /** Description */
       description: string;
       /** Key Fields */
-      key_fields: Record<string, never>;
+      key_fields: {
+        [key: string]: unknown;
+      };
     };
     /**
      * TimelineRequest
@@ -11837,6 +12957,13 @@ export interface components {
        * @default false
        */
       must_change_password: boolean | null;
+      /**
+       * Require 2Fa
+       * @default false
+       */
+      require_2fa: boolean;
+      /** Pre Auth Token */
+      pre_auth_token?: string | null;
     };
     /** TopRiskyAsset */
     TopRiskyAsset: {
@@ -11990,7 +13117,9 @@ export interface components {
       /** Name */
       name: string | null;
       /** Config Json */
-      config_json: Record<string, never>;
+      config_json: {
+        [key: string]: unknown;
+      };
       /** Is Active */
       is_active: boolean;
       /**
@@ -12020,7 +13149,9 @@ export interface components {
       /** Name */
       name?: string | null;
       /** Config */
-      config?: Record<string, never> | null;
+      config?: {
+        [key: string]: unknown;
+      } | null;
       /**
        * Cron Expr
        * @description For cron triggers only
@@ -12043,7 +13174,9 @@ export interface components {
       /** Name */
       name: string | null;
       /** Config Json */
-      config_json: Record<string, never>;
+      config_json: {
+        [key: string]: unknown;
+      };
       /** Is Active */
       is_active: boolean;
       /**
@@ -12103,7 +13236,9 @@ export interface components {
         [key: string]: number;
       };
       /** Vulnerabilities */
-      vulnerabilities: Record<string, never>[];
+      vulnerabilities: {
+        [key: string]: unknown;
+      }[];
     };
     /**
      * UserCreate
@@ -12150,6 +13285,16 @@ export interface components {
       id: string;
       /** Is Active */
       is_active: boolean;
+      /**
+       * Is Totp Enabled
+       * @default false
+       */
+      is_totp_enabled: boolean;
+      /**
+       * Totp Policy
+       * @default sudo
+       */
+      totp_policy: string;
       /** Created At */
       created_at: string | null;
       /** Updated At */
@@ -12438,7 +13583,9 @@ export interface components {
       /** Groups */
       groups?: string[];
       /** Mitre */
-      mitre?: Record<string, never> | null;
+      mitre?: {
+        [key: string]: unknown;
+      } | null;
     };
     /**
      * WebhookTriggerCreate
@@ -12459,7 +13606,9 @@ export interface components {
        * Config
        * @description Additional configuration
        */
-      config?: Record<string, never>;
+      config?: {
+        [key: string]: unknown;
+      };
       /**
        * Is Active
        * @description Whether the trigger is active
@@ -12479,13 +13628,14 @@ export interface components {
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: "webhook";
       /** Name */
       name: string | null;
       /** Config Json */
-      config_json: Record<string, never>;
+      config_json: {
+        [key: string]: unknown;
+      };
       /** Secret */
       secret: string;
       /**
@@ -12547,9 +13697,12 @@ export interface components {
        */
       alert_type: string;
       /** Metadata */
-      metadata?: Record<string, never>;
+      metadata?: {
+        [key: string]: unknown;
+      };
       /**
        * Use Rag
+       * @deprecated
        * @default true
        */
       use_rag: boolean;
@@ -12573,7 +13726,9 @@ export interface components {
       /** Alert Id */
       alert_id: string;
       /** Investigation Data */
-      investigation_data: Record<string, never>;
+      investigation_data: {
+        [key: string]: unknown;
+      };
     };
     /**
      * AlertAnalysisRequest
@@ -12584,7 +13739,27 @@ export interface components {
        * Raw Log
        * @description Raw alert/log content
        */
-      raw_log: string;
+      raw_log?: string | null;
+      /**
+       * Title
+       * @description Alert title
+       */
+      title?: string | null;
+      /**
+       * Description
+       * @description Alert description
+       */
+      description?: string | null;
+      /**
+       * Source
+       * @description Alert source
+       */
+      source?: string | null;
+      /**
+       * Severity
+       * @description Alert severity
+       */
+      severity?: string | null;
     };
     /**
      * AlertAnalysisResponse
@@ -12593,6 +13768,11 @@ export interface components {
     schemas__alert__AlertAnalysisResponse: {
       event_type: components["schemas"]["EventType"];
       severity: components["schemas"]["schemas__alert__Severity"];
+      /**
+       * Attack Pattern
+       * @description Identified attack pattern or technique
+       */
+      attack_pattern?: string | null;
       iocs: components["schemas"]["IOCsFinal"];
       iocs_local: components["schemas"]["IOCsLocal"];
       iocs_llm: components["schemas"]["IOCsLLM"];
@@ -12688,7 +13868,9 @@ export interface components {
        * Definition Json
        * @description DAG definition (nodes, edges)
        */
-      definition_json?: Record<string, never>;
+      definition_json?: {
+        [key: string]: unknown;
+      };
     };
     /**
      * PlaybookDefinitionCreate
@@ -12712,7 +13894,9 @@ export interface components {
        * Dag
        * @description DAG definition with nodes and edges
        */
-      dag: Record<string, never>;
+      dag: {
+        [key: string]: unknown;
+      };
       /**
        * Is Active
        * @description Active status
@@ -12760,7 +13944,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
     };
@@ -12780,12 +13966,14 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
     };
   };
-  health_api_v1_health_get: {
+  health_detailed_api_v1_health_get: {
     parameters: {
       query?: never;
       header?: never;
@@ -12800,9 +13988,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": {
-            [key: string]: string;
-          };
+          "application/json": components["schemas"]["HealthStatus"];
         };
       };
     };
@@ -12842,7 +14028,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
     };
@@ -12901,7 +14089,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -13288,7 +14478,9 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": Record<string, never>[];
+        "application/json": {
+          [key: string]: unknown;
+        }[];
       };
     };
     responses: {
@@ -13513,7 +14705,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -13585,6 +14779,39 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  login_2fa_api_v1_auth_login_2fa_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Login2FARequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
       };
     };
   };
@@ -13762,6 +14989,214 @@ export interface operations {
         };
         content: {
           "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_2fa_status_api_v1_auth_2fa_status_get: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TOTPStatusResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  setup_2fa_api_v1_auth_2fa_setup_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TOTPSetupResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  enable_2fa_api_v1_auth_2fa_enable_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TOTPEnableRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TOTPStatusResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  switch_2fa_policy_api_v1_auth_2fa_policy_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TOTPPolicyRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TOTPStatusResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  verify_sudo_mode_api_v1_auth_2fa_verify_sudo_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TOTPVerifyRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TOTPSudoResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  disable_2fa_api_v1_auth_2fa_disable_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TOTPDisableRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TOTPStatusResponse"];
         };
       };
       /** @description Validation Error */
@@ -14450,7 +15885,9 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": Record<string, never>;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -14461,6 +15898,114 @@ export interface operations {
         };
         content: {
           "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  run_root_cause_analysis_api_v1_alerts__alert_id__root_cause_analysis_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path: {
+        alert_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RootCauseAnalysisResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_root_cause_analyses_api_v1_alerts__alert_id__root_cause_analyses_get: {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path: {
+        alert_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RootCauseAnalysisListResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  submit_root_cause_feedback_api_v1_root_cause_analyses__rca_id__feedback_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path: {
+        rca_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RootCauseFeedbackRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RootCauseAnalysisResponse"];
         };
       };
       /** @description Validation Error */
@@ -15423,7 +16968,9 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": Record<string, never>[];
+        "application/json": {
+          [key: string]: unknown;
+        }[];
       };
     };
     responses: {
@@ -15882,7 +17429,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -15921,7 +17470,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -15957,7 +17508,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -15991,7 +17544,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16029,7 +17584,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16063,7 +17620,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16138,7 +17697,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16176,7 +17737,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16208,7 +17771,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16236,7 +17801,9 @@ export interface operations {
     };
     requestBody?: {
       content: {
-        "application/json": Record<string, never>;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -16246,7 +17813,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16280,7 +17849,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16309,7 +17880,9 @@ export interface operations {
     };
     requestBody?: {
       content: {
-        "application/json": Record<string, never>;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -16319,7 +17892,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16347,7 +17922,9 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": Record<string, never>;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -16357,7 +17934,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16391,7 +17970,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16428,7 +18009,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -16454,7 +18037,9 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": Record<string, never>;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -16464,7 +18049,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -17007,7 +18594,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -18008,6 +19597,42 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["routers__ai__ReportGenerationRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  chat_stream_api_v1_ai_chat_stream_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ChatRequest"];
       };
     };
     responses: {
@@ -19120,7 +20745,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -19224,7 +20851,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -19261,7 +20890,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -19331,7 +20962,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>[];
+          "application/json": {
+            [key: string]: unknown;
+          }[];
         };
       };
       /** @description Validation Error */
@@ -19445,6 +21078,117 @@ export interface operations {
       };
     };
   };
+  search_external_api_v1_marketplace_external_search_get: {
+    parameters: {
+      query?: {
+        query?: string;
+        limit?: number;
+      };
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ExternalPlaybookSearchItem"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  adapt_external_api_v1_marketplace_external_adapt_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ExternalPlaybookAdaptRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  import_external_api_v1_marketplace_external_import_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ExternalPlaybookImportRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   get_pending_playbooks_api_v1_marketplace_admin_pending_get: {
     parameters: {
       query?: {
@@ -19466,7 +21210,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -19601,6 +21347,38 @@ export interface operations {
         "application/json": components["schemas"]["K8sScanRequest"];
       };
     };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_kubernetes_clusters_api_v1_cloud_native_kubernetes_clusters_get: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description Successful Response */
       200: {
@@ -19898,6 +21676,85 @@ export interface operations {
       };
     };
   };
+  list_containers_api_v1_cloud_native_containers_get: {
+    parameters: {
+      query?: {
+        /** @description Filter by cluster name */
+        cluster?: string | null;
+        /** @description Filter by namespace */
+        namespace?: string | null;
+        /** @description Filter by status (all, running, warning, terminated) */
+        status?: string | null;
+        /** @description Search keyword for container, pod, or image */
+        search?: string | null;
+        /** @description Page number (1-indexed) */
+        page?: number;
+        /** @description Items per page */
+        page_size?: number;
+      };
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContainerListResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_container_detail_api_v1_cloud_native_containers__container_id__get: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path: {
+        container_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContainerDetailResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   monitor_stream_api_v1_monitor_stream_get: {
     parameters: {
       query?: never;
@@ -19948,7 +21805,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -19982,7 +21841,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -20016,7 +21877,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -20048,7 +21911,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -20084,7 +21949,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -20286,7 +22153,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -20358,7 +22227,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -20392,7 +22263,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -20424,7 +22297,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -20564,7 +22439,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -20979,7 +22856,7 @@ export interface operations {
       };
     };
   };
-  get_websocket_stats_ws_stats_get: {
+  import_alert_api_v1_alerts_import_post: {
     parameters: {
       query?: never;
       header?: {
@@ -20989,7 +22866,11 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AlertImportPayload"];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -20997,7 +22878,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -21011,7 +22894,7 @@ export interface operations {
       };
     };
   };
-  get_monitoring_metrics_ws_monitoring_metrics_get: {
+  preview_alert_import_api_v1_alerts_import_preview_post: {
     parameters: {
       query?: never;
       header?: {
@@ -21021,7 +22904,11 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AlertImportPayload"];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -21029,7 +22916,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -21043,7 +22932,7 @@ export interface operations {
       };
     };
   };
-  get_monitoring_health_ws_monitoring_health_get: {
+  import_alerts_batch_api_v1_alerts_import_batch_post: {
     parameters: {
       query?: never;
       header?: {
@@ -21053,7 +22942,11 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AlertBatchImportPayload"];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -21061,7 +22954,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -21075,7 +22970,7 @@ export interface operations {
       };
     };
   };
-  get_monitoring_summary_ws_monitoring_summary_get: {
+  preview_alerts_batch_api_v1_alerts_import_batch_preview_post: {
     parameters: {
       query?: never;
       header?: {
@@ -21085,7 +22980,11 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AlertBatchImportPayload"];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -21093,167 +22992,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  get_compression_stats_ws_compression_stats_get: {
-    parameters: {
-      query?: never;
-      header?: {
-        "x-api-key"?: string | null;
-        cookie?: string | null;
-      };
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  reset_compression_stats_ws_compression_reset_stats_post: {
-    parameters: {
-      query?: never;
-      header?: {
-        "x-api-key"?: string | null;
-        cookie?: string | null;
-      };
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  get_batch_stats_ws_batch_stats_get: {
-    parameters: {
-      query?: never;
-      header?: {
-        "x-api-key"?: string | null;
-        cookie?: string | null;
-      };
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  flush_batches_ws_batch_flush_post: {
-    parameters: {
-      query?: never;
-      header?: {
-        "x-api-key"?: string | null;
-        cookie?: string | null;
-      };
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  get_pool_stats_ws_pool_stats_get: {
-    parameters: {
-      query?: never;
-      header?: {
-        "x-api-key"?: string | null;
-        cookie?: string | null;
-      };
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -21731,7 +23472,9 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": Record<string, never>;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -22398,6 +24141,104 @@ export interface operations {
       };
     };
   };
+  get_system_connections_api_v1_system_connections_get: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConnectionsDashboardResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  terminate_db_connection_api_v1_system_connections_db__pid__terminate_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path: {
+        pid: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  run_system_diagnostics_api_v1_system_diagnostics_ping_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-api-key"?: string | null;
+        cookie?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DiagnosticsResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   list_vulnerabilities_api_v1_security_vulnerabilities_get: {
     parameters: {
       query?: {
@@ -22425,7 +24266,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Not found */
@@ -22509,7 +24352,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Not found */
@@ -22568,7 +24413,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Not found */
@@ -22611,7 +24458,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Not found */
@@ -22650,7 +24499,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Not found */
@@ -22693,7 +24544,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Not found */
@@ -22734,7 +24587,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Not found */
@@ -22944,7 +24799,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": Record<string, never>;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */
@@ -23055,7 +24912,9 @@ export interface operations {
         };
         content: {
           "application/json": {
-            [key: string]: Record<string, never>;
+            [key: string]: {
+              [key: string]: unknown;
+            };
           };
         };
       };
@@ -23082,7 +24941,9 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": Record<string, never>;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -23754,37 +25615,6 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["APIResponse_LogDetailResponse_"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  options_handler__path__options: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        path: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
         };
       };
       /** @description Validation Error */

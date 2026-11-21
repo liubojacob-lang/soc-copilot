@@ -2,6 +2,10 @@
 
 /**
  * StatCard - Modern KPI metric card for SOC dashboards
+ *
+ * 版式对齐 sec-security-dashboard.html 设计稿的 kpi-card：
+ * 第一行是「小标签 + 角标」，中间是大号 tabular 数值与趋势，
+ * 底部副文案用虚线分隔压成 footer，而不是散落在数值旁边。
  */
 
 import React, { type ReactNode } from "react";
@@ -35,7 +39,7 @@ function isNumericTrend(
 
 const variantStyles: Record<
   string,
-  { iconBg: string; iconColor: string; trendGood: string; trendBad: string; accentBorder?: string }
+  { iconBg: string; iconColor: string; trendGood: string; trendBad: string }
 > = {
   default: {
     iconBg: "bg-surface-ground border border-border-subtle",
@@ -91,16 +95,18 @@ const StatCard = React.memo(function StatCard({
     return (
       <div
         className={cn(
-          "rounded-xl border border-border-subtle bg-surface-card p-5 shadow-subtle animate-pulse",
+          "flex flex-col rounded-xl border border-border-subtle bg-surface-card p-4 shadow-subtle animate-pulse",
           className
         )}
       >
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center justify-between">
           <div className="h-3.5 bg-surface-ground rounded w-24" />
-          <div className="w-9 h-9 rounded-lg bg-surface-ground" />
+          <div className="h-7 w-7 rounded-lg bg-surface-ground" />
         </div>
-        <div className="h-8 bg-surface-ground rounded w-16 mb-2" />
-        <div className="h-3 bg-surface-ground rounded w-28" />
+        <div className="h-7 bg-surface-ground rounded w-16 mt-3" />
+        <div className="border-t border-dashed border-border-subtle mt-4 pt-2.5">
+          <div className="h-3 bg-surface-ground rounded w-28" />
+        </div>
       </div>
     );
   }
@@ -108,30 +114,28 @@ const StatCard = React.memo(function StatCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border-subtle bg-surface-card p-5 shadow-subtle transition-all duration-200 hover:border-border-default hover:shadow-elevated",
+        "flex flex-col rounded-xl border border-border-subtle bg-surface-card p-4 shadow-subtle transition-all duration-200 hover:border-border-default hover:shadow-elevated min-h-[110px]",
         className
       )}
     >
-      <div className="flex items-start justify-between mb-3">
-        <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-          {title}
-        </h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs font-medium text-text-muted truncate">{title}</h3>
         {icon && (
           <div
             className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105",
+              "h-7 w-7 shrink-0 rounded-lg flex items-center justify-center",
               styles.iconBg
             )}
           >
-            <span className={cn("w-4.5 h-4.5 flex items-center justify-center", styles.iconColor)}>
+            <span className={cn("h-4 w-4 flex items-center justify-center", styles.iconColor)}>
               {icon}
             </span>
           </div>
         )}
       </div>
 
-      <div className="flex items-baseline gap-2 mb-1.5">
-        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-text-primary tabular-nums">
+      <div className="mt-2.5 flex items-baseline gap-2 pb-3">
+        <span className="text-[26px] leading-none font-semibold tracking-tight text-text-primary tabular-nums">
           {value}
         </span>
         {trend && isNumericTrend(trend) && (
@@ -152,7 +156,11 @@ const StatCard = React.memo(function StatCard({
         )}
       </div>
 
-      {subtitle && <p className="text-xs text-text-muted truncate leading-relaxed">{subtitle}</p>}
+      {subtitle && (
+        <p className="mt-auto pt-2.5 text-[11px] text-text-muted truncate leading-relaxed border-t border-dashed border-border-subtle">
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 });

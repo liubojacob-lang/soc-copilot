@@ -124,39 +124,93 @@ class HttpRequestPlugin(BaseNodePlugin):
         # Make the request through the pinned resolver: whatever addresses
         # the connector uses have just passed the private-IP check, closing
         # the DNS-rebinding (TOCTOU) gap between validation and connect.
+        #
+        # Redirects are followed manually (audit-run1): aiohttp's connector
+        # resolves IP-literal hosts via a fast path that never consults the
+        # pinned resolver, so an automatic redirect to an IP literal (e.g.
+        # 302 -> http://127.0.0.1/) would bypass the SSRF sandbox entirely.
+        # Every hop is re-validated with is_url_safe before connecting.
+        max_redirects = 5
+        current_url = url
+        current_method = method
+        current_body = body
         try:
-            async with aiohttp.ClientSession(resolver=_SsrfPinnedResolver()) as session:
-                async with session.request(
-                    method,
-                    url,
-                    headers=headers,
-                    json=body,
-                    timeout=aiohttp.ClientTimeout(total=timeout),
-                ) as response:
-                    response_body = await response.text()
-                    response_headers = dict(response.headers)
+            # The resolver belongs on the connector (aiohttp 3.x); passing it
+            # to ClientSession raised TypeError, so the pinned resolver had
+            # never actually been in effect before this fix.
+            connector = aiohttp.TCPConnector(resolver=_SsrfPinnedResolver())
+            async with aiohttp.ClientSession(connector=connector) as session:
+                for _hop in range(max_redirects + 1):
+                    if _hop > 0:
+                        is_safe, reason = is_url_safe(current_url, allowed_hosts)
+                        if not is_safe:
+                            raise ValueError(
+                                f"Redirect target blocked by SSRF protection: {reason}"
+                            )
+                        logger.info(
+                            f"[{context.run_id}] Following redirect to {current_url}"
+                        )
 
-                    logger.info(
-                        f"[{context.run_id}] HTTP response: "
-                        f"{response.status} {len(response_body)} bytes"
-                    )
+                    async with session.request(
+                        current_method,
+                        current_url,
+                        headers=headers,
+                        json=current_body,
+                        timeout=aiohttp.ClientTimeout(total=timeout),
+                        allow_redirects=False,
+                    ) as response:
+                        if response.status in (301, 302, 303, 307, 308):
+                            location = response.headers.get("Location")
+                            if not location:
+                                response_body = await response.text()
+                                return {
+                                    "status": "success",
+                                    "status_code": response.status,
+                                    "headers": dict(response.headers),
+                                    "body": response_body,
+                                    "url": current_url,
+                                    "method": current_method,
+                                }
+                            from yarl import URL
 
-                    return {
-                        "status": "success",
-                        "status_code": response.status,
-                        "headers": response_headers,
-                        "body": response_body,
-                        "url": url,
-                        "method": method,
-                    }
+                            current_url = str(response.url.join(URL(location)))
+                            # 301/302/303 downgrade non-GET bodies per fetch spec
+                            if (
+                                response.status in (301, 302, 303)
+                                and current_method != "GET"
+                            ):
+                                current_method = "GET"
+                                current_body = None
+                            continue
+
+                        response_body = await response.text()
+                        response_headers = dict(response.headers)
+
+                        logger.info(
+                            f"[{context.run_id}] HTTP response: "
+                            f"{response.status} {len(response_body)} bytes"
+                        )
+
+                        return {
+                            "status": "success",
+                            "status_code": response.status,
+                            "headers": response_headers,
+                            "body": response_body,
+                            "url": current_url,
+                            "method": current_method,
+                        }
+
+                raise ValueError(
+                    f"Too many redirects (more than {max_redirects}) from {url}"
+                )
 
         except aiohttp.ClientError as e:
             logger.error(f"[{context.run_id}] HTTP request failed: {e}")
             return {
                 "status": "error",
                 "error": str(e),
-                "url": url,
-                "method": method,
+                "url": current_url,
+                "method": current_method,
             }
 
     def get_required_secrets(self) -> list[str]:

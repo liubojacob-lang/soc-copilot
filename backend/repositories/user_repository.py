@@ -168,6 +168,13 @@ class UserRepository(BaseRepository[UserModel]):
         # compares token iat with user.updated_at — without this update,
         # existing tokens would remain valid after password change
         user.updated_at = datetime.now(UTC)
+        # Recovery must restore access: clear any 2FA binding set while the old
+        # credential was compromised (audit-run1) — otherwise an attacker-set
+        # factor survives the reset and locks the legitimate user out.
+        user.totp_secret = None
+        user.totp_backup_codes = None
+        user.is_totp_enabled = False
+        user.totp_policy = "sudo"
         self.session.add(user)
         await self.session.flush()
         return True

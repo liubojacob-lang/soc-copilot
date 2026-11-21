@@ -48,6 +48,18 @@ const SEVERITY_I18N_KEY: Record<SeverityLevel, string> = {
   info: "info",
 };
 
+/**
+ * pills 布局的色块 token（对标设计稿 vuln-pill：severity 的 bg/fg/border 三槽位）。
+ * 同样必须是静态字面量，原因同上 —— 拼接类名不会被 Tailwind JIT 扫到。
+ */
+const SEVERITY_PILL_STYLES: Record<SeverityLevel, string> = {
+  critical: "bg-severity-critical-bg text-severity-critical-fg border-severity-critical-border",
+  high: "bg-severity-high-bg text-severity-high-fg border-severity-high-border",
+  medium: "bg-severity-medium-bg text-severity-medium-fg border-severity-medium-border",
+  low: "bg-severity-low-bg text-severity-low-fg border-severity-low-border",
+  info: "bg-severity-info-bg text-severity-info-fg border-severity-info-border",
+};
+
 export interface SeverityBreakdownProps {
   /**
    * 各级别告警数。用 Partial<Record<SeverityLevel, number>> 而不是
@@ -59,10 +71,12 @@ export interface SeverityBreakdownProps {
   counts?: Partial<Record<SeverityLevel, number>> | undefined;
   /**
    * 容器排布。条目本身的视觉完全一致，只有外框不同：
-   *   list —— 竖向单列，用于窄卡片（仪表盘）
-   *   grid —— 2/5 列自适应，用于整页宽度的页头（告警列表）
+   *   list  —— 竖向单列，用于窄卡片（仪表盘）
+   *   grid  —— 2/5 列自适应，用于整页宽度的页头（告警列表）
+   *   pills —— severity 底色的计数色块行（对标设计稿 vuln-stats-bar），
+   *            用于仪表盘的「按严重度」卡片：绝对数比比例条更抢眼
    */
-  layout?: "list" | "grid";
+  layout?: "list" | "grid" | "pills";
   showBadge?: boolean;
   className?: string;
 }
@@ -78,6 +92,35 @@ export function SeverityBreakdown({
   if (!counts) return null;
 
   const total = SEVERITY_ORDER.reduce((acc, level) => acc + (counts[level] || 0), 0);
+
+  if (layout === "pills") {
+    return (
+      <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5", className)}>
+        {SEVERITY_ORDER.map((level) => {
+          const count = counts[level] || 0;
+          const label = tSeverity(SEVERITY_I18N_KEY[level] as never);
+
+          return (
+            <div
+              key={level}
+              className={cn(
+                "flex min-w-0 flex-col gap-1 rounded-lg border px-3 py-2",
+                SEVERITY_PILL_STYLES[level]
+              )}
+            >
+              {/* 对标设计稿 vuln-pill：只有标签 + 绝对数。
+                  窄卡片里五列各 ~80px，百分比会挤到换行/溢出，
+                  占比信息由页头的「合计」与 list/grid 布局承担 */}
+              <span className="truncate text-[10px] font-semibold uppercase tracking-wider">
+                {label}
+              </span>
+              <span className="text-lg font-bold leading-none tabular-nums">{count}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <ul

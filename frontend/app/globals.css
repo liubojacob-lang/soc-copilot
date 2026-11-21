@@ -271,12 +271,13 @@
   /* 深色下原生表单控件自动反色（日历图标、下拉面板、滚动条） */
   color-scheme: dark;
 
-  /* 背景层级 (深邃精致的现代 Midnight Navy) */
-  --color-bg-page: #090d16;
-  --color-bg-card: #0f172a;
+  /* 背景层级 (深邃黑曜石 Sentinel Cyber-Defense) */
+  --color-bg-page: #080c14;
+  --color-bg-card: #131b2e;
   --color-bg-hover: #1e293b;
-  --color-bg-active: #334155;
-  --color-bg-input: #0b1120;
+  --color-bg-active: #222f4c;
+  --color-bg-input: #0d131f;
+  --color-bg-elevated: #1a243b;
 
   /* 文字层级
      深色底（#0f172a / #090d16）比浅底暗得多，中性灰必须随主题整体提亮。
@@ -292,14 +293,14 @@
   --color-text-secondary: #94a3b8;
   --color-text-tertiary: #8595ab;
   --color-text-disabled: #475569;
-  --color-text-inverse: #090d16;
+  --color-text-inverse: #080c14;
   --color-text-link: #38bdf8;
   --color-text-mono: #f8fafc;
 
-  /* 边框 (细致的半透明边缘高光) */
-  --color-border-subtle: rgba(255, 255, 255, 0.08);
-  --color-border-default: rgba(255, 255, 255, 0.14);
-  --color-border-strong: rgba(255, 255, 255, 0.26);
+  /* 边框 (赛博微边高光，取代单一灰色) */
+  --color-border-subtle: rgba(56, 189, 248, 0.09);
+  --color-border-default: rgba(56, 189, 248, 0.16);
+  --color-border-strong: rgba(56, 189, 248, 0.28);
   --color-border-focus: #38bdf8;
 
   /* 语义色深色映射 */
@@ -467,6 +468,16 @@ html[data-sidebar-collapsed="true"] {
 html[data-sidebar-collapsed="true"] .sidebar-label,
 html[data-sidebar-collapsed="true"] .sidebar-group-label {
   display: none;
+}
+
+/* 折叠态完全隐藏侧栏滚动条槽位，确保图标 100% 水平几何对称居中 */
+html[data-sidebar-collapsed="true"] .sidebar-scrollbar {
+  scrollbar-width: none;
+}
+html[data-sidebar-collapsed="true"] .sidebar-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1090,4 +1101,47 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator {
 .react-flow .react-flow__minimap-mask {
   fill: var(--color-text-muted);
   fill-opacity: 0.22;
+}
+
+/* ==================== Sentinel Cyber Design Utilities ==================== */
+.dark .glass-panel {
+  background: rgba(19, 27, 46, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.09);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+}
+
+.dark .glass-panel-elevated {
+  background: rgba(26, 36, 59, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+
+.glow-border-accent {
+  box-shadow: 0 0 15px -3px rgba(37, 99, 235, 0.28);
+}
+
+.glow-border-critical {
+  box-shadow: 0 0 15px -3px rgba(239, 68, 68, 0.35);
+}
+
+.glow-border-cyan {
+  box-shadow: 0 0 15px -3px rgba(56, 189, 248, 0.25);
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+  }
+  50% {
+    opacity: 0.4;
+    filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.2));
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

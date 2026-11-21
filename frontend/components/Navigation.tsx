@@ -143,6 +143,14 @@ export default function Navigation({ apiStatus, actions, onOpenMobileNav }: Navi
                   <span className="text-[11px] font-medium text-text-secondary">{statusLabel}</span>
                 </div>
               )}
+              <div
+                className="hidden xl:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400 font-mono text-[10px] font-bold shrink-0"
+                title="DEFCON 2 (ELEVATED) - Active Threat Monitoring"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />
+                <span>DEFCON 2</span>
+                <span className="opacity-70 font-normal">ELEVATED</span>
+              </div>
             </div>
           ) : (
             <Breadcrumbs />

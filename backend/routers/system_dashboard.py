@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,7 +24,7 @@ from core.config import settings
 from core.logger import get_logger
 from core.token_blacklist import REDIS_AVAILABLE
 from db.session import AsyncSessionLocal, engine
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, require_admin
 from models.user import UserModel
 
 logger = get_logger(__name__)
@@ -647,7 +647,7 @@ async def get_feature_flags(
 
 class ReplayDLQRequest(BaseModel):
     target_stream: str = "events:medium"
-    limit: int = 100
+    limit: int = Field(default=100, ge=1, le=1000)
 
 
 @router.get("/queue/stats", summary="Get Redis Streams queue and DLQ stats")
@@ -670,7 +670,7 @@ async def get_queue_dashboard_stats(
 @router.post("/queue/dlq/replay", summary="Replay dead-letter queue (DLQ) messages")
 async def replay_dlq_messages(
     request: ReplayDLQRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_admin),
 ):
     """Replay messages from DLQ (events:dlq) back to active processing stream."""
     from services.message_broker import get_message_broker

@@ -135,7 +135,7 @@ Home(`/`) · login · alerts · alerts/[id] · playbooks · playbooks/definition
         │                        CLIENT (Browser)                      │
         │  Next.js 16 / React 19 / TanStack Query / Zustand / WS+SSE   │
         └───────────────┬───────────────────────────┬──────────────────┘
-                        │ HTTPS (/api → :8000 proxy)│ WebSocket / SSE
+                        │ HTTPS (/api → :8088 proxy)│ WebSocket / SSE
                         ▼                            ▼
         ┌─────────────────────────────────────────────────────────────┐
         │                     FastAPI APP (main.py)                    │
@@ -421,14 +421,14 @@ cp .env.example .env          # fill in: JWT_SECRET, ZHIPU_API_KEY/ANTHROPIC_API
 
 ### 8.2 Run (dev)
 ```bash
-# From repo root — runs backend (:8000) + frontend (:3003) concurrently
+# From repo root — runs backend (:8088) + frontend (:3003) concurrently
 npm run dev
 
 # Or separately:
-npm run dev:backend    # uvicorn main:app --reload --port 8000
+npm run dev:backend    # uvicorn main:app --reload --port 8088
 npm run dev:frontend   # next dev -p 3003
 ```
-- Frontend proxies `/api/*` → `http://localhost:8000/api/*` (in `next.config.js`).
+- Frontend proxies `/api/*` → `http://localhost:8088/api/*` (in `next.config.js`).
 - DB defaults to `data/app.db` (SQLite) — set `DATABASE_URL=postgresql://...` for Postgres.
 
 ### 8.3 Database
