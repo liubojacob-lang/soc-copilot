@@ -64,22 +64,33 @@ const hardcodedTotal = [...hardcoded.values()].reduce((a, b) => a + b, 0);
 
 // ---------------------------------------------------------------- check 1
 // Generate the real Tailwind output and confirm every semantic token class resolves.
-function resolveTailwindBin() {
-  const candidates = [
+function resolveTailwindCmd() {
+  // Prefer invoking the package's Node CLI directly — works on every platform
+  // and sidesteps .bin shim differences (extensionless on POSIX, .cmd on Windows,
+  // which spawnSync cannot exec without a shell).
+  const cliCandidates = [
+    join(ROOT, "node_modules", "tailwindcss", "lib", "cli.js"),
+    join(ROOT, "..", "node_modules", "tailwindcss", "lib", "cli.js"),
+  ];
+  const cli = cliCandidates.find((p) => existsSync(p));
+  if (cli) return [process.execPath, cli];
+  const binCandidates = [
     join(ROOT, "node_modules", ".bin", "tailwindcss"),
     join(ROOT, "..", "node_modules", ".bin", "tailwindcss"),
   ];
-  return candidates.find((p) => existsSync(p));
+  const bin = binCandidates.find((p) => existsSync(p));
+  return bin ? [bin] : null;
 }
 
-const tailwindBin = resolveTailwindBin();
+const tailwindCmd = resolveTailwindCmd();
 let deadClasses = [];
 
-if (!tailwindBin) {
+if (!tailwindCmd) {
   console.warn("[design-tokens] ⚠️  tailwindcss binary not found — skipping dead-class check.");
 } else {
   const outCss = join(mkdtempSync(join(tmpdir(), "tw-check-")), "out.css");
-  execFileSync(tailwindBin, ["-i", join(ROOT, "app", "globals.css"), "-o", outCss], {
+  const [bin, ...preArgs] = tailwindCmd;
+  execFileSync(bin, [...preArgs, "-i", join(ROOT, "app", "globals.css"), "-o", outCss], {
     cwd: ROOT,
     stdio: "pipe",
   });
